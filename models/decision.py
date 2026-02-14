@@ -1,8 +1,8 @@
 """Agent output and execution models: Order, Decision, ExecutedTrade, DecisionResult."""
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Order(BaseModel):
@@ -30,7 +30,6 @@ class ExecutedTrade(BaseModel):
     side: Literal["buy", "sell"]
     quantity: int
     price: float
-    commission: float = 0.0
 
 
 class DecisionResult(BaseModel):
@@ -45,3 +44,18 @@ class DecisionResult(BaseModel):
     status: Literal["accepted", "rejected"]
     executed_trades: list[ExecutedTrade]  # Non-empty only when status is "accepted"
     message: str = ""  # When rejected, must mention reason (e.g. ticker not in Case.tickers)
+
+
+class SubmitDecisionInput(BaseModel):
+    """Input schema for the ``submit_decision`` tool.
+
+    Used by LangChain to describe the tool's arguments to the LLM.
+    """
+
+    orders: list[dict[str, Any]] = Field(
+        description=(
+            "List of orders. Each order is an object with keys: "
+            "'ticker' (str), 'side' ('buy' or 'sell'), 'quantity' (int, positive). "
+            "Pass an empty list to hold (no trades)."
+        ),
+    )
