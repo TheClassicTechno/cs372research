@@ -285,14 +285,23 @@ An empty list means **hold** (no trades). The tool returns a JSON response with 
 
 ## Case Data Format
 
-Case templates are loaded from disk and stamped with a live portfolio at runtime. Each case on disk needs `case_data` and `stock_data`:
+Each case represents a **single ticker at a specific date** — typically aligned with a quarterly earnings report. A case bundles together:
+
+- **Earnings data** — the earnings report for the quarter.
+- **News articles** — relevant news from the period.
+- **Price history** — daily OHLCV bars covering the interval since the previous case (roughly one quarter).
+- **Current price** — the execution price available to the agent at this decision point.
+
+Cases are loaded from disk as templates and stamped with the live portfolio at runtime. On disk, each case needs `case_data` and `stock_data`:
 
 ```json
 {
   "case_data": {
     "items": [
-      {"kind": "news", "content": "AAPL reports record Q4 earnings..."},
-      {"kind": "earnings", "content": "Revenue: $94.9B, EPS: $1.64"}
+      {"kind": "earnings", "content": "AAPL Q4 2024 — Revenue: $94.9B (+6% YoY), EPS: $1.64 (beat est. $1.58). Services revenue hit record $23.1B. Guided Q1 revenue $89-93B."},
+      {"kind": "news", "content": "Apple Vision Pro launched in February with tepid initial demand..."},
+      {"kind": "news", "content": "iPhone 16 sales in China slowed amid Huawei competition..."},
+      {"kind": "news", "content": "Apple announces $110B share buyback, largest in US history..."}
     ]
   },
   "stock_data": {
@@ -300,27 +309,50 @@ Case templates are loaded from disk and stamped with a live portfolio at runtime
       "ticker": "AAPL",
       "current_price": 185.50,
       "daily_bars": [
-        {"timestamp": "2025-01-13", "open": 182.0, "high": 186.0, "low": 181.5, "close": 185.5, "volume": 5000000}
-      ]
-    },
-    "MSFT": {
-      "ticker": "MSFT",
-      "current_price": 420.00,
-      "daily_bars": [
-        {"timestamp": "2025-01-13", "open": 418.0, "high": 422.0, "low": 417.0, "close": 420.0, "volume": 3000000}
+        {"timestamp": "2024-10-01", "open": 174.0, "high": 175.5, "low": 173.2, "close": 175.0, "volume": 4800000},
+        {"timestamp": "2024-10-02", "open": 175.1, "high": 176.8, "low": 174.5, "close": 176.3, "volume": 5100000},
+        "... (daily bars for the full quarter) ...",
+        {"timestamp": "2024-12-31", "open": 184.0, "high": 186.0, "low": 183.5, "close": 185.5, "volume": 5200000}
       ]
     }
   }
 }
 ```
 
+> **Note:** Each case's `stock_data` contains a single ticker entry. The `daily_bars` array covers the price movement from the previous decision point (or the start of the dataset) up to the current earnings date.
+
+### Dataset directory structure
+
+The recommended layout separates each ticker into its own sub-directory. Within each sub-directory, files are named so they sort chronologically (e.g., by year and quarter):
+
+```
+data/cases/
+├── AAPL/
+│   ├── 2023_Q1.json
+│   ├── 2023_Q2.json
+│   ├── 2023_Q3.json
+│   ├── 2023_Q4.json
+│   ├── 2024_Q1.json
+│   ├── 2024_Q2.json
+│   ├── 2024_Q3.json
+│   └── 2024_Q4.json
+├── GOOGL/
+│   ├── 2023_Q1.json
+│   └── ...
+└── MSFT/
+    ├── 2023_Q1.json
+    └── ...
+```
+
+The case loader **recursively** searches for `.json` files and sorts them by their path relative to the dataset root. With the layout above, the simulation processes all of AAPL's quarters in order, then GOOGL's, then MSFT's — giving the agent a chronological view of each stock's history.
+
 ### Supported dataset formats
 
-| Format                   | `dataset_path` value      | Description                                 |
-|--------------------------|---------------------------|---------------------------------------------|
-| Directory of JSON files  | `data/cases/`             | One `.json` file per case, sorted by filename |
-| Single JSON array        | `data/cases.json`         | A JSON file containing an array of cases     |
-| JSON-lines               | `data/cases.jsonl`        | One case per line                            |
+| Format                          | `dataset_path` value | Description                                                  |
+|---------------------------------|----------------------|--------------------------------------------------------------|
+| Directory (with sub-dirs)       | `data/cases/`        | Recursively finds all `.json` files, sorted by relative path |
+| Single JSON array               | `data/cases.json`    | A JSON file containing an array of cases                     |
+| JSON-lines                      | `data/cases.jsonl`   | One case per line                                            |
 
 ## Output Structure
 

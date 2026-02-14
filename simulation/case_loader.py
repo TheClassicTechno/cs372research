@@ -6,8 +6,10 @@ the live portfolio and IDs at simulation time.
 
 Supported formats
 -----------------
-* **Directory of JSON files**: each file is one case (sorted by filename to
-  establish decision-point ordering).
+* **Directory (with optional sub-directories)**: the loader recursively
+  finds all ``.json`` files under the dataset path.  Cases are sorted by
+  their path relative to the dataset root, so a structure like
+  ``AAPL/2024_Q1.json`` naturally orders cases by ticker, then by quarter.
 * **Single JSON-lines file**: each line is one case.
 * **Single JSON file**: a JSON array of cases.
 
@@ -83,10 +85,18 @@ def load_case_templates(dataset_path: str) -> list[Case]:
 # ------------------------------------------------------------------
 
 def _load_from_directory(directory: Path) -> list[Case]:
-    """Load one case per JSON file, sorted by filename."""
-    files = sorted(directory.glob("*.json"))
+    """Load one case per JSON file, recursively searching sub-directories.
+
+    Files are sorted by their path relative to *directory* so that a
+    per-ticker layout like ``AAPL/2024_Q1.json`` orders cases by ticker
+    first, then chronologically within each ticker.
+    """
+    files = sorted(
+        directory.rglob("*.json"),
+        key=lambda f: f.relative_to(directory),
+    )
     if not files:
-        raise FileNotFoundError(f"No .json files found in '{directory}'.")
+        raise FileNotFoundError(f"No .json files found under '{directory}'.")
     cases = [
         Case.model_validate(json.loads(f.read_text(encoding="utf-8")))
         for f in files
