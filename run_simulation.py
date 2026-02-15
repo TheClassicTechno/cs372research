@@ -18,8 +18,13 @@ import asyncio
 import logging
 import sys
 
+from dotenv import load_dotenv
+
 from models.config import SimulationConfig
 from simulation.runner import AsyncSimulationRunner
+
+# Load .env file (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY) into environment.
+load_dotenv()
 
 
 def _parse_args() -> argparse.Namespace:
