@@ -48,10 +48,10 @@ class SimulationLogger:
         config: SimulationConfig,
         run_name: str,
     ) -> None:
-        self._run_dir = Path(output_dir) / run_name
+        self._run_dir = _unique_run_dir(Path(output_dir), run_name)
         self._episodes_dir = self._run_dir / "episodes"
         self._simulation_log = SimulationLog(
-            run_name=run_name,
+            run_name=self._run_dir.name,
             config=config,
         )
 
@@ -129,6 +129,25 @@ class SimulationLogger:
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
+def _unique_run_dir(output_dir: Path, run_name: str) -> Path:
+    """Return a run directory that does not already exist.
+
+    If ``output_dir/run_name`` is free, use it directly (first run keeps
+    a clean name).  Otherwise append an incrementing suffix:
+    ``run_name_001``, ``run_name_002``, etc.
+    """
+    candidate = output_dir / run_name
+    if not candidate.exists():
+        return candidate
+
+    idx = 1
+    while True:
+        candidate = output_dir / f"{run_name}_{idx:03d}"
+        if not candidate.exists():
+            return candidate
+        idx += 1
+
 
 def _write_json(path: Path, data: Any) -> None:
     """Write *data* as pretty-printed JSON to *path*."""
