@@ -70,10 +70,12 @@ class Case(BaseModel):
     # Agent-facing: passed in the prompt
     case_data: CaseData
     stock_data: dict[str, StockData]
-    portfolio: PortfolioSnapshot
+    portfolio: PortfolioSnapshot = PortfolioSnapshot(cash=0, positions={})
 
-    # Metadata: stored but not passed to the agent
-    case_id: str  # Required; must uniquely identify this case (e.g. f"{episode_id}:{decision_point_idx}")
+    # Metadata: stored but not passed to the agent.
+    # Defaults allow Case to be loaded from disk as a template (without
+    # runtime fields); the simulation runner stamps these via model_copy().
+    case_id: str = ""
     decision_point_idx: int = 0
     information_cutoff_timestamp: str | None = None
 
