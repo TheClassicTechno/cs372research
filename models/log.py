@@ -43,6 +43,21 @@ class EpisodeLog(BaseModel):
     decision_point_logs: list[DecisionPointLog] = []
     trades: list[ExecutedTrade] = []
     final_portfolio: PortfolioSnapshot | None = None
+    final_prices: dict[str, float] = {}
+
+    @property
+    def book_value(self) -> float | None:
+        """Total portfolio book value: cash + sum(shares * last price).
+
+        Returns ``None`` if ``final_portfolio`` is not set.
+        """
+        if self.final_portfolio is None:
+            return None
+        positions_value = sum(
+            self.final_prices.get(ticker, 0.0) * qty
+            for ticker, qty in self.final_portfolio.positions.items()
+        )
+        return self.final_portfolio.cash + positions_value
 
 
 class SimulationLog(BaseModel):

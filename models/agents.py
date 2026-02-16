@@ -1,5 +1,7 @@
 """Agent interface models."""
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from models.case import Case
@@ -19,3 +21,4 @@ class AgentInvocationResult(BaseModel):
     """Parsed output from the agent."""
 
     decision: Decision
+    raw_output: dict[str, Any] | str | None = None

@@ -31,6 +31,7 @@ class Broker:
         self._cash: float = config.initial_cash
         self._positions: dict[str, int] = {}
         self._trade_history: list[ExecutedTrade] = []
+        self._last_prices: dict[str, float] = {}
 
     # ------------------------------------------------------------------
     # Public interface
@@ -43,6 +44,10 @@ class Broker:
     def get_trade_history(self) -> list[ExecutedTrade]:
         """Return the full list of executed trades so far."""
         return list(self._trade_history)
+
+    def get_last_prices(self) -> dict[str, float]:
+        """Return the last-seen price for every ticker observed so far."""
+        return dict(self._last_prices)
 
     def execute_decision(
         self,
@@ -59,6 +64,10 @@ class Broker:
         Returns a ``DecisionResult`` that is fed back to the agent as tool
         output.
         """
+        # Record the latest prices from this case for book-value calculation.
+        for ticker, stock in case.stock_data.items():
+            self._last_prices[ticker] = stock.current_price
+
         if not decision.orders:
             # Empty orders = hold; accepted with no trades.
             return DecisionResult(

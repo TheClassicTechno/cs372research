@@ -124,6 +124,9 @@ class SingleLLMAgent(AgentSystem):
         # Extract the decision from the tool's stored state.
         decision = self._extract_decision()
 
+        # Serialize the full message trace for logging.
+        raw_output = _serialize_messages(result.get("messages", []))
+
         logger.info(
             "Agent %s decision for case %s: %d order(s)",
             invocation.agent_id,
@@ -131,7 +134,7 @@ class SingleLLMAgent(AgentSystem):
             len(decision.orders),
         )
 
-        return AgentInvocationResult(decision=decision)
+        return AgentInvocationResult(decision=decision, raw_output=raw_output)
 
     def _extract_decision(self) -> Decision:
         """Extract the last submitted decision from the tool's state.
@@ -150,3 +153,32 @@ class SingleLLMAgent(AgentSystem):
             return Decision(orders=[])
 
         return last_decision
+
+
+# ------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------
+
+def _serialize_messages(messages: list) -> str:
+    """Convert LangChain message objects into a human-readable trace string."""
+    parts: list[str] = []
+    for msg in messages:
+        role = msg.type.upper()  # "system", "human", "ai", "tool"
+        content = getattr(msg, "content", "") or ""
+
+        # AI messages may also carry tool_calls.
+        tool_calls = getattr(msg, "tool_calls", None)
+
+        header = f"--- {role} ---"
+        parts.append(header)
+
+        if content:
+            parts.append(content)
+
+        if tool_calls:
+            for tc in tool_calls:
+                name = tc.get("name", "unknown")
+                args = tc.get("args", {})
+                parts.append(f"[tool_call: {name}({json.dumps(args, indent=2)})]")
+
+    return "\n".join(parts)

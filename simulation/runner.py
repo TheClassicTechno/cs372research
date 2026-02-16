@@ -132,7 +132,7 @@ class AsyncSimulationRunner:
             try:
                 result = await agent.invoke(invocation)
                 decision = result.decision
-                agent_output: dict | str | None = None  # TODO: capture raw LLM output
+                agent_output: dict | str | None = result.raw_output
             except Exception as exc:
                 logger.warning(
                     "Agent error on case %s: %s — defaulting to hold.",
@@ -173,19 +173,22 @@ class AsyncSimulationRunner:
 
         # Build the flattened episode log.
         final_portfolio = broker.get_portfolio()
+        final_prices = broker.get_last_prices()
         episode_log = EpisodeLog(
             episode_id=episode_id,
             agent_id=agent_id,
             decision_point_logs=decision_point_logs,
             trades=broker.get_trade_history(),
             final_portfolio=final_portfolio,
+            final_prices=final_prices,
         )
 
         logger.info(
-            "Episode '%s' complete. Final cash: $%.2f, positions: %s",
+            "Episode '%s' complete. Final cash: $%.2f, positions: %s, book value: $%.2f",
             episode_id,
             final_portfolio.cash,
             final_portfolio.positions,
+            episode_log.book_value or 0.0,
         )
         return episode_log
 
@@ -201,12 +204,24 @@ class AsyncSimulationRunner:
         for ep in episodes:
             if ep.final_portfolio is None:
                 continue
+
+            # Per-position market values.
+            position_values = {
+                ticker: qty * ep.final_prices.get(ticker, 0.0)
+                for ticker, qty in ep.final_portfolio.positions.items()
+            }
+            book_value = ep.book_value or 0.0
+
             summaries.append(
                 {
                     "episode_id": ep.episode_id,
                     "initial_cash": initial_cash,
                     "final_cash": ep.final_portfolio.cash,
                     "final_positions": ep.final_portfolio.positions,
+                    "final_prices": ep.final_prices,
+                    "position_values": position_values,
+                    "book_value": book_value,
+                    "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
                     "total_trades": len(ep.trades),
                 }
             )
