@@ -15,12 +15,19 @@ Usage:
     python -m multi_agent.demo
 
     # Live mode (requires OPENAI_API_KEY):
-    OPENAI_API_KEY=sk-... python -m multi_agent.demo --live
+    python -m multi_agent.demo --live
+
+    # Run a single config in live mode:
+    python -m multi_agent.demo --live --config 1
+
+    # Run specific configs:
+    python -m multi_agent.demo --live --config 1,6,8
 """
 
 from __future__ import annotations
 
 import sys
+import time
 
 from multi_agent.config import AgentRole, DebateConfig
 from multi_agent.models import (
@@ -133,9 +140,18 @@ def run_demo_config(
     print(f"  Justification: {action.justification[:120]}...")
 
 
+def _parse_config_arg() -> set[int] | None:
+    """Parse --config N or --config 1,3,8 from sys.argv. Returns None = run all."""
+    for i, arg in enumerate(sys.argv):
+        if arg == "--config" and i + 1 < len(sys.argv):
+            return {int(x) for x in sys.argv[i + 1].split(",")}
+    return None
+
+
 def main():
     live = "--live" in sys.argv
     mock = not live
+    selected = _parse_config_arg()
 
     if live and not __import__("os").environ.get("OPENAI_API_KEY"):
         print("ERROR: --live mode requires OPENAI_API_KEY environment variable")
@@ -144,111 +160,67 @@ def main():
     print("\n" + "=" * 70)
     print("  CS372 Multi-Agent Debate System — Demo")
     print(f"  Mode: {'LIVE (OpenAI API)' if live else 'MOCK (no API calls)'}")
+    if selected:
+        print(f"  Running configs: {sorted(selected)}")
     print("=" * 70)
 
     observations = generate_sample_observations()
-    obs = observations[0]  # Use the bullish scenario for all configs
+    obs = observations[0]  # Use the bullish scenario for most configs
+    obs_risk = observations[2]
 
     trace_dir = "/tmp/cs372_demo_traces"
 
-    # --- Config 1: Default 4-agent debate ---
-    run_demo_config(
-        "Config 1: Default 4-Agent Debate",
-        DebateConfig(
+    # All configs in order
+    configs: list[tuple[int, str, DebateConfig, Observation]] = [
+        (1, "Config 1: Default 4-Agent Debate", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 2: With sentiment agent ---
-    run_demo_config(
-        "Config 2: 5 Agents (+ Sentiment)",
-        DebateConfig(
+            mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (2, "Config 2: 5 Agents (+ Sentiment)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 3: With devil's advocate ---
-    run_demo_config(
-        "Config 3: Adversarial Mode (Devil's Advocate)",
-        DebateConfig(
+            mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (3, "Config 3: Adversarial Mode (Devil's Advocate)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            enable_adversarial=True,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 4: High agreeableness (sycophantic) ---
-    run_demo_config(
-        "Config 4: High Agreeableness (0.9 — sycophantic)",
-        DebateConfig(
+            enable_adversarial=True, mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (4, "Config 4: High Agreeableness (0.9 — sycophantic)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.9,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 5: Low agreeableness (confrontational) ---
-    run_demo_config(
-        "Config 5: Low Agreeableness (0.1 — confrontational)",
-        DebateConfig(
+            agreeableness=0.9, mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (5, "Config 5: Low Agreeableness (0.1 — confrontational)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.1,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 6: Multiple debate rounds ---
-    run_demo_config(
-        "Config 6: 3 Debate Rounds",
-        DebateConfig(
+            agreeableness=0.1, mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (6, "Config 6: 3 Debate Rounds", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            max_rounds=3,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 7: No pipeline (raw observation only) ---
-    run_demo_config(
-        "Config 7: No Pipeline Preprocessing",
-        DebateConfig(
+            max_rounds=3, mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (7, "Config 7: No Pipeline Preprocessing", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs,
-    )
-
-    # --- Config 8: Risk-off scenario with all agents ---
-    print("\n\n--- Switching to Risk-Off Scenario ---")
-    obs_risk = observations[2]
-    run_demo_config(
-        "Config 8: Full System on Risk-Off Scenario",
-        DebateConfig(
+            enable_news_pipeline=False, enable_data_pipeline=False,
+            mock=mock, trace_dir=trace_dir,
+        ), obs),
+        (8, "Config 8: Full System on Risk-Off Scenario", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
-            enable_adversarial=True,
-            max_rounds=2,
-            agreeableness=0.3,
-            mock=mock,
-            trace_dir=trace_dir,
-        ),
-        obs_risk,
-    )
+            enable_adversarial=True, max_rounds=2, agreeableness=0.3,
+            mock=mock, trace_dir=trace_dir,
+        ), obs_risk),
+    ]
+
+    # Filter to selected configs
+    to_run = [(n, name, cfg, o) for n, name, cfg, o in configs if selected is None or n in selected]
+
+    for i, (num, name, cfg, observation) in enumerate(to_run):
+        if num == 8 and (selected is None or len(to_run) > 1):
+            print("\n\n--- Switching to Risk-Off Scenario ---")
+
+        run_demo_config(name, cfg, observation)
+
+        # In live mode, wait 5s between configs to avoid rate limits
+        if live and i < len(to_run) - 1:
+            print("\n  [Waiting 5s before next config to avoid rate limits...]", flush=True)
+            time.sleep(5)
 
     print(f"\n{'='*70}")
     print(f"  Demo complete! Traces saved to: {trace_dir}")

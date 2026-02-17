@@ -84,12 +84,18 @@ class DebateState(TypedDict):
 
 
 def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
-    """Call LLM with the given system and user prompts. Returns raw text."""
+    """Call LLM with the given system and user prompts. Returns raw text.
+
+    Retries up to 3 times with exponential backoff on transient errors
+    (connection errors, rate limits, timeouts).
+    """
     if config.get("mock", False):
         return "{}"
 
+    import time
+
     from langchain_openai import ChatOpenAI
-    from langchain_core.messages import HumanMessage, SystemMessage
+    from langchain_core.messages import HumanMessage, SystemMessage  # type: ignore[import-not-found]
 
     llm = ChatOpenAI(
         model=config.get("model_name", "gpt-4o-mini"),
@@ -97,15 +103,24 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
         api_key=os.environ.get("OPENAI_API_KEY", "sk-dummy"),
         request_timeout=60,
     )
-    try:
-        response = llm.invoke([
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ])
-        return response.content
-    except Exception as e:
-        print(f"  [LLM ERROR] {type(e).__name__}: {e}")
-        return "{}"
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = llm.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt),
+            ])
+            return response.content
+        except Exception as e:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            if attempt < max_retries - 1:
+                print(f"  [LLM RETRY] {type(e).__name__} — retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", flush=True)
+                time.sleep(wait)
+            else:
+                print(f"  [LLM ERROR] {type(e).__name__}: {e} (all {max_retries} attempts failed)", flush=True)
+                return "{}"
+    return "{}"
 
 
 def _parse_json(text: str) -> dict:
