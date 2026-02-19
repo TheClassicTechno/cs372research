@@ -1,0 +1,20 @@
+{
+  "name": "multi_agent_debate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent team: single-agent, majority vote, and multi-agent debate for CS372 trading simulator",
+  "scripts": {
+    "demo": "tsx agents/demo.ts",
+    "demo:mock": "MOCK=1 tsx agents/demo.ts"
+  },
+  "dependencies": {
+    "openai": "^6.16.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
