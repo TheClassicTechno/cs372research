@@ -293,6 +293,102 @@ def _mock_pipeline(agent_type: str, obs_dict: dict) -> dict:
 
 
 # =============================================================================
+# VERBOSE DISPLAY HELPERS
+# =============================================================================
+
+_ROLE_LABELS = {
+    "macro": "MACRO STRATEGIST",
+    "value": "VALUE ANALYST",
+    "risk": "RISK MANAGER",
+    "technical": "TECHNICAL ANALYST",
+    "sentiment": "SENTIMENT ANALYST",
+    "devils_advocate": "DEVIL'S ADVOCATE",
+}
+
+
+def _verbose_proposal(role: str, result: dict) -> None:
+    """Print a formatted proposal for verbose mode."""
+    label = _ROLE_LABELS.get(role, role.upper())
+    orders = result.get("orders", [])
+    orders_str = ", ".join(f"{o.get('side')} {o.get('size')} {o.get('ticker')}" for o in orders) or "HOLD"
+    conf = result.get("confidence", 0.5)
+    hyp = result.get("hypothesis", result.get("justification", ""))[:200]
+    claims = result.get("claims", [])
+
+    print(f"\n    ┌─── {label} proposes ───", flush=True)
+    print(f"    │ Orders: {orders_str}", flush=True)
+    print(f"    │ Confidence: {conf:.0%}", flush=True)
+    print(f"    │ Thesis: {hyp}", flush=True)
+    for c in claims[:2]:
+        lvl = c.get("pearl_level", "?")
+        txt = c.get("claim_text", "")[:120]
+        print(f"    │ Claim [{lvl}]: {txt}", flush=True)
+    falsifiers = result.get("risks_or_falsifiers", "")
+    if falsifiers:
+        print(f"    │ Falsifier: {falsifiers[:120]}", flush=True)
+    print(f"    └{'─' * 50}", flush=True)
+
+
+def _verbose_critique(role: str, result: dict) -> None:
+    """Print a formatted critique for verbose mode."""
+    label = _ROLE_LABELS.get(role, role.upper())
+    critiques = result.get("critiques", [])
+    self_crit = result.get("self_critique", "")
+
+    print(f"\n    ┌─── {label} critiques ───", flush=True)
+    for c in critiques[:3]:
+        target = _ROLE_LABELS.get(c.get("target_role", ""), c.get("target_role", "?"))
+        obj = c.get("objection", "")[:150]
+        print(f"    │ → {target}: {obj}", flush=True)
+        falsifier = c.get("falsifier", "")
+        if falsifier:
+            print(f"    │   Falsifier: {falsifier[:100]}", flush=True)
+    if self_crit:
+        print(f"    │ Self-critique: {self_crit[:120]}", flush=True)
+    print(f"    └{'─' * 50}", flush=True)
+
+
+def _verbose_revision(role: str, result: dict) -> None:
+    """Print a formatted revision for verbose mode."""
+    label = _ROLE_LABELS.get(role, role.upper())
+    orders = result.get("orders", [])
+    orders_str = ", ".join(f"{o.get('side')} {o.get('size')} {o.get('ticker')}" for o in orders) or "HOLD"
+    conf = result.get("confidence", 0.5)
+    notes = result.get("revision_notes", result.get("justification", ""))[:200]
+
+    print(f"\n    ┌─── {label} revises ───", flush=True)
+    print(f"    │ Orders: {orders_str}", flush=True)
+    print(f"    │ Confidence: {conf:.0%}", flush=True)
+    if notes:
+        print(f"    │ Revision: {notes}", flush=True)
+    print(f"    └{'─' * 50}", flush=True)
+
+
+def _verbose_judge(result: dict) -> None:
+    """Print a formatted judge decision for verbose mode."""
+    orders = result.get("orders", [])
+    orders_str = ", ".join(f"{o.get('side')} {o.get('size')} {o.get('ticker')}" for o in orders) or "HOLD"
+    conf = result.get("confidence", 0.5)
+    memo = result.get("audited_memo", result.get("justification", ""))[:300]
+    objection = result.get("strongest_objection", "")[:200]
+
+    print(f"\n    ╔{'═' * 54}", flush=True)
+    print(f"    ║  JUDGE FINAL DECISION", flush=True)
+    print(f"    ╠{'═' * 54}", flush=True)
+    print(f"    ║  Orders: {orders_str}", flush=True)
+    print(f"    ║  Confidence: {conf:.0%}", flush=True)
+    if memo:
+        # Wrap long memo text
+        for line in [memo[i:i+70] for i in range(0, len(memo), 70)]:
+            print(f"    ║  {line}", flush=True)
+    if objection:
+        print(f"    ║", flush=True)
+        print(f"    ║  Strongest objection preserved:", flush=True)
+        print(f"    ║  {objection}", flush=True)
+    print(f"    ╚{'═' * 54}", flush=True)
+
+
+# =============================================================================
 # NODE FUNCTIONS
 # =============================================================================
 
@@ -386,6 +482,9 @@ def propose_node(state: DebateState) -> dict:
             "claims": result.get("claims", []),
         }
 
+        if config.get("verbose"):
+            _verbose_proposal(role, result)
+
         proposals.append({
             "role": role,
             "action_dict": action_dict,
@@ -447,6 +546,9 @@ def critique_node(state: DebateState) -> dict:
             )
             raw = _call_llm(config, system_msg, prompt)
             result = _parse_json(raw)
+
+        if config.get("verbose"):
+            _verbose_critique(role, result)
 
         critiques.append({
             "role": role,
@@ -517,6 +619,9 @@ def revise_node(state: DebateState) -> dict:
             "claims": result.get("claims", []),
         }
 
+        if config.get("verbose"):
+            _verbose_revision(role, result)
+
         revisions.append({
             "role": role,
             "action_dict": action_dict,
@@ -580,6 +685,9 @@ def judge_node(state: DebateState) -> dict:
         system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
         raw = _call_llm(config, system_msg, prompt)
         result = _parse_json(raw)
+
+    if config.get("verbose"):
+        _verbose_judge(result)
 
     final_action = {
         "orders": result.get("orders", []),

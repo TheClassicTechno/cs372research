@@ -22,6 +22,10 @@ Usage:
 
     # Run specific configs:
     python -m multi_agent.demo --live --config 1,6,8
+
+    # Verbose mode (show full debate content):
+    python -m multi_agent.demo --verbose
+    python -m multi_agent.demo --live --verbose --config 1
 """
 
 from __future__ import annotations
@@ -150,6 +154,7 @@ def _parse_config_arg() -> set[int] | None:
 
 def main():
     live = "--live" in sys.argv
+    verbose = "--verbose" in sys.argv
     mock = not live
     selected = _parse_config_arg()
 
@@ -160,6 +165,8 @@ def main():
     print("\n" + "=" * 70)
     print("  CS372 Multi-Agent Debate System — Demo")
     print(f"  Mode: {'LIVE (OpenAI API)' if live else 'MOCK (no API calls)'}")
+    if verbose:
+        print("  Verbose: ON (showing full debate content)")
     if selected:
         print(f"  Running configs: {sorted(selected)}")
     print("=" * 70)
@@ -174,37 +181,37 @@ def main():
     configs: list[tuple[int, str, DebateConfig, Observation]] = [
         (1, "Config 1: Default 4-Agent Debate", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
-            mock=mock, trace_dir=trace_dir,
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (2, "Config 2: 5 Agents (+ Sentiment)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
-            mock=mock, trace_dir=trace_dir,
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (3, "Config 3: Adversarial Mode (Devil's Advocate)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            enable_adversarial=True, mock=mock, trace_dir=trace_dir,
+            enable_adversarial=True, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (4, "Config 4: High Agreeableness (0.9 — sycophantic)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.9, mock=mock, trace_dir=trace_dir,
+            agreeableness=0.9, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (5, "Config 5: Low Agreeableness (0.1 — confrontational)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.1, mock=mock, trace_dir=trace_dir,
+            agreeableness=0.1, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (6, "Config 6: 3 Debate Rounds", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            max_rounds=3, mock=mock, trace_dir=trace_dir,
+            max_rounds=3, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (7, "Config 7: No Pipeline Preprocessing", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             enable_news_pipeline=False, enable_data_pipeline=False,
-            mock=mock, trace_dir=trace_dir,
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs),
         (8, "Config 8: Full System on Risk-Off Scenario", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
             enable_adversarial=True, max_rounds=2, agreeableness=0.3,
-            mock=mock, trace_dir=trace_dir,
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs_risk),
     ]
 
