@@ -325,7 +325,8 @@ def _verbose_proposal(role: str, result: dict) -> None:
         print(f"    │ Claim [{lvl}]: {txt}", flush=True)
     falsifiers = result.get("risks_or_falsifiers", "")
     if falsifiers:
-        print(f"    │ Falsifier: {falsifiers[:120]}", flush=True)
+        falsifiers_str = str(falsifiers)
+        print(f"    │ Falsifier: {falsifiers_str[:120]}", flush=True)
     print(f"    └{'─' * 50}", flush=True)
 
 
