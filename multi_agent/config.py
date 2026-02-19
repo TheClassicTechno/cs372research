@@ -69,6 +69,9 @@ class DebateConfig:
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
 
+    # --- Verbose mode (print full debate content to terminal) ---
+    verbose: bool = False
+
     # --- Output ---
     trace_dir: str = "./traces"
 
@@ -84,5 +87,6 @@ class DebateConfig:
             "model_name": self.model_name,
             "temperature": self.temperature,
             "mock": self.mock,
+            "verbose": self.verbose,
             "trace_dir": self.trace_dir,
         }
