@@ -26,6 +26,9 @@ Usage:
     # Verbose mode (show full debate content):
     python -m multi_agent.demo --verbose
     python -m multi_agent.demo --live --verbose --config 1
+
+    # Custom trace directory (default: /tmp/cs372_demo_traces):
+    python -m multi_agent.demo --trace-dir /path/to/traces
 """
 
 from __future__ import annotations
@@ -152,6 +155,14 @@ def _parse_config_arg() -> set[int] | None:
     return None
 
 
+def _parse_trace_dir() -> str:
+    """Parse --trace-dir PATH from sys.argv. Returns default if not provided."""
+    for i, arg in enumerate(sys.argv):
+        if arg == "--trace-dir" and i + 1 < len(sys.argv):
+            return sys.argv[i + 1]
+    return "/tmp/cs372_demo_traces"
+
+
 def main():
     live = "--live" in sys.argv
     verbose = "--verbose" in sys.argv
@@ -175,7 +186,7 @@ def main():
     obs = observations[0]  # Use the bullish scenario for most configs
     obs_risk = observations[2]
 
-    trace_dir = "/tmp/cs372_demo_traces"
+    trace_dir = _parse_trace_dir()
 
     # All configs in order
     configs: list[tuple[int, str, DebateConfig, Observation]] = [
