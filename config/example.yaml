@@ -1,0 +1,50 @@
+# ============================================================================
+# Example Simulation Configuration
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/example.yaml
+#   python run_simulation.py --config config/example.yaml --output-dir results/
+#
+# The run name is derived from the config file name (e.g. "example").
+
+# Path to the case dataset.
+# Accepts a directory of .json files (one per case), a single .json file
+# containing a JSON array, or a .jsonl file (one case template per line).
+dataset_path: "data/cases"
+
+# Universe of ticker symbols available in this simulation.
+tickers:
+  - NVDA
+
+# Number of independent episodes to run (each starts with a fresh portfolio).
+num_episodes: 1
+
+# --------------------------------------------------------------------------
+# Agent Configuration
+# --------------------------------------------------------------------------
+agent:
+  # Registered agent system name. Built-in options:
+  #   - "single_llm"  : Single ReAct agent with one LLM.
+  agent_system: "single_llm"
+
+  # LLM provider and model.
+  llm_provider: "openai"
+  llm_model: "gpt-4o"
+
+  # Sampling temperature (0.0 = deterministic, 2.0 = max randomness).
+  temperature: 0.7
+
+  # Maximum number of submit_decision retries allowed per case.
+  # If the agent's decision is rejected, it can revise and resubmit up to
+  # this many times before the simulation defaults to hold.
+  max_retries: 3
+
+  # Optional: override the default system prompt entirely.
+  # system_prompt_override: "You are a cautious value investor..."
+
+# --------------------------------------------------------------------------
+# Broker Configuration
+# --------------------------------------------------------------------------
+broker:
+  # Starting cash balance.
+  initial_cash: 100000.0
