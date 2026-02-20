@@ -470,11 +470,13 @@ def propose_node(state: DebateState) -> dict:
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_proposal(role, obs)
+            raw_text = json.dumps(result, indent=2)
         else:
-            raw = _call_llm(config, role_system, user_prompt)
-            result = _parse_json(raw)
+            raw_text = _call_llm(config, role_system, user_prompt)
+            result = _parse_json(raw_text)
 
         action_dict = {
             "orders": result.get("orders", []),
@@ -489,7 +491,7 @@ def propose_node(state: DebateState) -> dict:
         proposals.append({
             "role": role,
             "action_dict": action_dict,
-            "raw_response": json.dumps(result),
+            "raw_response": raw_text,
         })
 
         turns.append({
@@ -498,6 +500,9 @@ def propose_node(state: DebateState) -> dict:
             "role": role,
             "type": "proposal",
             "content": result,
+            "raw_system_prompt": role_system,
+            "raw_user_prompt": user_prompt,
+            "raw_response": raw_text,
         })
 
     print(f"  [Round 0 - Propose] All {len(roles)} proposals complete.", flush=True)
