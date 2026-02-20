@@ -136,6 +136,8 @@ class MultiAgentRunner:
             debate_turns=None,  # Stored in full_state for auditability
             action=action,
             logged_at=datetime.now(timezone.utc).isoformat(),
+            initial_market_state=observation.market_state,
+            initial_portfolio_state=observation.portfolio_state,
         )
 
     def _save_trace(self, trace: AgentTrace, full_state: dict) -> None:
