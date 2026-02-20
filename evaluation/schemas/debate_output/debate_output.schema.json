@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs372-project/schemas/debate_output_v2.schema.json",
+  "title": "Unified Debate Output Schema v2 (flexible + in-loop extensions)",
+  "type": "object",
+  "required": ["schema_version", "debate_id", "run_id", "run_metadata", "metadata", "participants", "turns"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.0.0" },
+
+    "debate_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1, "description": "Unique identifier for this generation run. Recommended: UUID v4." },
+
+    "evaluation_mode": {
+      "type": "string",
+      "enum": ["posthoc", "in_loop"],
+      "description": "posthoc: attempts omitted or attempts length 1. in_loop: attempts may be >1."
+    },
+
+    "run_metadata": {
+      "type": "object",
+      "required": ["generation_mode"],
+      "properties": {
+        "generation_mode": { "type": "string", "description": "e.g. live, mock, ablation, test" },
+        "global_model_name": { "type": ["string", "null"] },
+        "temperature": { "type": ["number", "null"] },
+        "top_p": { "type": ["number", "null"] },
+        "seed": { "type": ["integer", "null"] },
+        "max_tokens": { "type": ["integer", "null"] },
+        "prompt_bundle_version": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "required": ["created_at"],
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "scenario_id": { "type": "string" },
+        "task_type": { "type": "string" },
+        "market_context": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "participants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["agent_id", "role"],
+        "properties": {
+          "agent_id": { "type": "string", "minLength": 1 },
+          "role": { "type": "string" },
+          "model_name": { "type": "string" },
+          "system_prompt_version": { "type": "string" }
+        }
+      }
+    },
+
+    "intervention_log": {
+      "type": ["array", "null"],
+      "description": "Optional global log of mid-debate interventions (control-loop trace).",
+      "items": {
+        "type": "object",
+        "required": ["turn_index", "speaker_id", "trigger", "instruction_sent", "timestamp"],
+        "properties": {
+          "turn_index": { "type": "integer", "minimum": 0 },
+          "speaker_id": { "type": "string", "minLength": 1 },
+          "trigger": { "type": "string", "description": "e.g. rca_fail, crit_fail, t3_fail, pid_escalation" },
+          "instruction_sent": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+
+    "raud_it": {
+      "type": ["object", "null"],
+      "description": "Optional container for RAudit-style run-level behavioral metrics and audit configuration. Extensible by design.",
+      "properties": {
+        "audit_strength": { "type": ["string", "number", "null"] },
+        "metrics": { "type": ["object", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "turns": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/turn" }
+    }
+  },
+
+  "$defs": {
+    "turn": {
+      "type": "object",
+      "required": ["turn_id", "turn_index", "speaker_id", "content"],
+      "properties": {
+        "turn_id": { "type": "string", "minLength": 1 },
+        "turn_index": { "type": "integer", "minimum": 0 },
+        "round_index": { "type": ["integer", "null"], "minimum": 1 },
+        "speaker_id": { "type": "string", "minLength": 1 },
+
+        "turn_type": {
+          "type": ["string", "null"],
+          "enum": ["argument", "rebuttal", "synthesis", "meta", null]
+        },
+
+        "content": { "type": "string", "minLength": 1 },
+
+        "recommendation": { "$ref": "#/$defs/recommendationOrNull" },
+
+        "rca_trace": {
+          "type": ["object", "null"],
+          "required": ["reasoning_steps", "final_answer"],
+          "properties": {
+            "reasoning_steps": { "type": "string" },
+            "structured_steps": { "type": ["array", "null"], "items": { "type": "string" } },
+            "final_answer": { "type": "string" }
+          }
+        },
+
+        "turn_metadata": {
+          "type": ["object", "null"],
+          "properties": {
+            "model_name": { "type": "string" },
+            "temperature": { "type": "number" },
+            "top_p": { "type": "number" },
+            "seed": { "type": ["integer", "null"] }
+          }
+        },
+
+        "attempts": {
+          "type": ["array", "null"],
+          "description": "Optional. Present in in_loop mode. If absent, treat as a single implicit attempt containing this turn's content.",
+          "items": { "$ref": "#/$defs/attempt" }
+        }
+      }
+    },
+
+    "attempt": {
+      "type": "object",
+      "required": ["attempt_index", "timestamp", "content", "final_answer"],
+      "properties": {
+        "attempt_index": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": "string", "format": "date-time" },
+
+        "content": {
+          "type": "string",
+          "description": "Raw attempt content (may differ across retries)."
+        },
+
+        "reasoning_trace": {
+          "type": ["string", "null"],
+          "description": "Optional trace used by RCA or other judges."
+        },
+
+        "final_answer": {
+          "type": "string",
+          "description": "Attempt-level final answer string (may be same as recommendation or a textual conclusion)."
+        },
+
+        "recommendation": { "$ref": "#/$defs/recommendationOrNull" },
+
+        "audit": {
+          "type": ["object", "null"],
+          "description": "Optional. Extensible audit outputs from CRIT/RCA/T3/PID.",
+          "properties": {
+            "crit": { "$ref": "#/$defs/critAudit" },
+            "rca": { "$ref": "#/$defs/rcaAudit" },
+            "t3": { "$ref": "#/$defs/t3Audit" },
+            "pid": { "$ref": "#/$defs/pidAudit" },
+            "raud_it": { "type": ["object", "null"], "description": "Optional RAudit per-attempt fields. Extensible." }
+          }
+        },
+        "control_state": {
+          "type": ["object", "null"],
+          "description": "Optional. PID/controller state and knobs applied at this attempt.",
+          "properties": {
+            "e_t": { "type": ["integer", "number", "null"] },
+            "u_t": { "type": ["number", "null"] },
+            "persona": { "type": ["string", "null"] },
+            "strategy_level": { "type": ["string", "null"] },
+            "retry_count": { "type": ["integer", "null"] },
+            "temperature_override": { "type": ["number", "null"] }
+          }
+        },
+        "attempt_metadata": {
+          "type": ["object", "null"],
+          "properties": {
+            "model_name": { "type": ["string", "null"] },
+            "temperature": { "type": ["number", "null"] },
+            "top_p": { "type": ["number", "null"] },
+            "seed": { "type": ["integer", "null"] }
+          }
+        }
+      }
+    },
+    "recommendationOrNull": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/recommendation" }
+      ]
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "position_size_pct_min",
+        "position_size_pct_max",
+        "horizon_days_min",
+        "horizon_days_max",
+        "conviction",
+        "raw_text"
+      ],
+      "properties": {
+        "action": { "type": "string", "enum": ["BUY", "SELL", "SHORT", "HOLD"] },
+        "position_size_pct_min": { "type": "number", "minimum": 0 },
+        "position_size_pct_max": { "type": "number", "minimum": 0 },
+        "horizon_days_min": { "type": "integer", "minimum": 0 },
+        "horizon_days_max": { "type": "integer", "minimum": 0 },
+        "conviction": { "type": "number", "minimum": 0, "maximum": 1 },
+        "raw_text": { "type": "string" }
+      }
+    },
+    "critAudit": {
+      "type": ["object", "null"],
+      "description": "Optional. CRIT audit outputs. Extensible.",
+      "properties": {
+        "gamma_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "theta_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "threshold_pass": { "type": ["boolean", "null"] },
+        "feedback": { "type": ["string", "null"] }
+      }
+    },
+    "rcaAudit": {
+      "type": ["object", "null"],
+      "description": "Optional. RCA audit outputs. Extensible.",
+      "properties": {
+        "blind_verification": { "type": ["boolean", "null"] },
+        "trace_output_consistent": { "type": ["boolean", "null"] },
+        "violation_type": { "type": ["string", "null"] },
+        "verdict": { "type": ["string", "null"], "enum": ["pass", "fail", null] },
+        "feedback": { "type": ["string", "null"] }
+      }
+    },
+
+    "t3Audit": {
+      "type": ["object", "null"],
+      "description": "Optional. T3 audit outputs. Extensible.",
+      "properties": {
+        "required_rung": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
+        "pearl_rung_detected": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
+        "trap_type": { "type": ["string", "null"] },
+        "pass": { "type": ["boolean", "null"] },
+        "feedback": { "type": ["string", "null"] }
+      }
+    },
+    "pidAudit": {
+      "type": ["object", "null"],
+      "description": "Optional. PID/controller outputs. Extensible.",
+      "properties": {
+        "e_t": { "type": ["integer", "number", "null"] },
+        "u_t": { "type": ["number", "null"] },
+        "k_p": { "type": ["number", "null"] },
+        "k_i": { "type": ["number", "null"] },
+        "k_d": { "type": ["number", "null"] },
+        "feedback": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

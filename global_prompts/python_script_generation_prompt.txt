@@ -1,0 +1,144 @@
+ROLE
+You are an expert software engineer writing a production-quality script.
+
+TASK
+Write a script (Python by default unless otherwise specified) that follows ALL requirements below. Do not omit any section unless explicitly stated.
+
+SCRIPT REQUIREMENTS (MANDATORY)
+
+0. IN-PLACE EDITING + OPTIONAL BACKUP (UPDATED — CRITICAL)
+
+**0.1 When In-Place Editing Applies**
+
+* If the script takes an input JSON file and performs edits/transformations, it MUST operate **in place**:
+
+  * The script MUST modify the **originally named input file itself** (no separate output file required by default).
+
+**0.2 Backup Must Be Optional and Off by Default**
+
+* The script MUST support a flag:
+
+  * `--create_backup` (boolean flag)
+  * Default behavior: **false** (no backup file is created unless explicitly enabled)
+
+**0.3 Backup Behavior (Only When Editing AND create_backup is enabled)**
+
+* BEFORE making any changes to the input file (unless `--dry_run` is enabled), the script MUST:
+
+  * Create a **backup copy** of the input file in the **same directory**
+  * The backup filename MUST preserve the original base name and append:
+
+    * a suffix like `.backup`
+    * plus a **timestamp** for versioning
+  * Example:
+
+    * Input: `cases.json`
+    * Backup: `cases.json.backup.20260209_031522`
+* The script MUST print the resolved backup path it created.
+
+**0.4 If `--create_backup` is NOT enabled**
+
+* The script MUST NOT create a backup.
+* The script MUST clearly narrate that backups are disabled.
+
+**0.5 Dry Run Requirements**
+
+* If `--dry_run` is enabled:
+
+  * The script MUST NOT write the backup (even if `--create_backup` is enabled)
+  * The script MUST NOT modify the input file
+  * The script MUST print exactly what it WOULD do
+
+    * including the backup path it WOULD create **if** `--create_backup` is enabled
+    * and explicitly stating **no backup would be created** if `--create_backup` is not enabled
+
+1. ARGUMENT PARSING
+
+* Use argparse.
+* ALL command-line arguments MUST use long-form flags only (e.g. `--input_file`, `--output_dir`).
+* No positional arguments unless explicitly requested.
+* Include clear help text for every argument.
+* Include the boolean flags:
+
+  * `--dry_run`
+  * `--create_backup`
+  * (Optional) `--quiet`
+
+2. TOP-OF-FILE USAGE EXAMPLES (CRITICAL)
+
+* At the VERY TOP of the script, include a large comment block titled:
+  "USAGE EXAMPLES"
+* This block MUST contain at least 5–6 concrete example commands showing:
+
+  * different combinations of arguments
+  * optional flags on/off
+  * dry-run usage
+  * backup flag usage on/off
+  * both CLI-passed file paths and hard-coded paths
+* The goal is that the script is fully understandable without external documentation.
+
+3. HARD-CODED FILE PATH OVERRIDES
+
+* If the script reads or writes files, define OPTIONAL hard-coded paths near the top of the script using ALL-CAPS constants, e.g.:
+
+  * `INPUT_FILE = None`
+* If these constants are set (not None), they MUST override command-line arguments.
+* If they are None, fall back to argparse values.
+* This behavior must be clearly documented in comments.
+
+4. DRY RUN MODE
+
+* Include a `--dry_run` flag.
+* When `--dry_run` is enabled:
+
+  * No files are modified
+  * No backups are written (even if `--create_backup` is enabled)
+  * No outputs are written
+  * The script prints exactly what WOULD happen instead
+* Dry-run behavior must be explicit and visible in the code (not implicit).
+
+5. VERBOSE EXECUTION NARRATION (REQUIRED)
+
+* The script MUST print verbose, human-readable status messages describing:
+
+  * what step is currently running
+  * what inputs are being used
+  * what decisions or branches are taken
+* These messages should read like a running commentary of the script’s behavior.
+* Verbose messages should be ON BY DEFAULT.
+* If a `--quiet` flag is provided (optional), it may suppress non-essential messages.
+
+6. FINAL SUMMARY REPORT (REQUIRED)
+
+* At the end of execution, the script MUST print a clearly delimited summary report.
+* The report should include (as applicable):
+
+  * whether this was a dry run or real execution
+  * key input paths used
+  * whether backups were enabled
+  * backup path created (or would be created, if applicable)
+  * counts of items processed / skipped / modified
+  * any warnings or notable conditions
+  * total runtime (if reasonable to compute)
+* The report should be easy to visually scan and clearly labeled (e.g., "FINAL REPORT").
+
+7. STRUCTURE AND READABILITY
+
+* Use a clear main() function.
+* Keep logic modular and readable.
+* Prefer explicit variable names over cleverness.
+* Print informative status messages for major steps.
+
+8. OUTPUT
+
+* Output ONLY the final script.
+* Do NOT include explanations outside the script.
+* The script must be immediately runnable.
+
+OPTIONAL (ONLY IF RELEVANT)
+
+* If applicable, include input validation and clear error messages.
+* If applicable, support `--verbose` / `--quiet` behavior explicitly (but default remains verbose).
+* If applicable, track and report simple metrics (counts, elapsed time).
+
+If any requirement conflicts with the task, STOP and explain the conflict instead of guessing.
