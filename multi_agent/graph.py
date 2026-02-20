@@ -615,15 +615,18 @@ def revise_node(state: DebateState) -> dict:
                         "falsifier": crit.get("falsifier"),
                     })
 
+        # Build prompts unconditionally so eval module can inspect them even in mock mode
+        prompt = build_revision_prompt(
+            role, context, my_proposal, critiques_received, agreeableness,
+        )
+        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs)
+            raw_text = json.dumps(result, indent=2)
         else:
-            prompt = build_revision_prompt(
-                role, context, my_proposal, critiques_received, agreeableness,
-            )
-            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
-            raw = _call_llm(config, system_msg, prompt)
-            result = _parse_json(raw)
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
 
         action_dict = {
             "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
@@ -647,6 +650,9 @@ def revise_node(state: DebateState) -> dict:
             "role": role,
             "type": "revision",
             "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
         })
 
     print(f"  [Round {current_round} - Revise] All revisions complete.", flush=True)
