@@ -697,13 +697,17 @@ def judge_node(state: DebateState) -> dict:
         for r in revisions
     ]
 
+    # Build prompts unconditionally so eval module can inspect them even in mock mode
+    prompt = build_judge_prompt(context, revisions_for_judge, critiques_text)
+    system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+
+    raw_text = None  # Raw LLM output for eval module
     if is_mock:
         result = _mock_judge(revisions)
+        raw_text = json.dumps(result, indent=2)
     else:
-        prompt = build_judge_prompt(context, revisions_for_judge, critiques_text)
-        system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
-        raw = _call_llm(config, system_msg, prompt)
-        result = _parse_json(raw)
+        raw_text = _call_llm(config, system_msg, prompt)
+        result = _parse_json(raw_text)
 
     if config.get("verbose"):
         _verbose_judge(result)
@@ -722,6 +726,9 @@ def judge_node(state: DebateState) -> dict:
             "role": "judge",
             "type": "judge_decision",
             "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
         }
     ]
 
