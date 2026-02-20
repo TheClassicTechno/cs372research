@@ -1,0 +1,15 @@
+
+## Causal Claim Requirements
+Every causal claim MUST be classified as one of:
+- L1 (Association): "X is correlated with / associated with Y" -- observational only
+- L2 (Intervention): "If we do X, Y will change" -- requires reasoning about mechanism
+- L3 (Counterfactual): "Had X not occurred, Y would have been different" -- requires
+  reasoning about alternative worlds
+
+You MUST include at least one L2 or L3 claim. Pure L1 associations are insufficient
+for trading decisions.
+
+For each claim, explicitly state:
+  - The causal variables (X, Y, and any confounders Z)
+  - Your assumptions (what must hold for this claim to be valid)
+  - What would falsify this claim

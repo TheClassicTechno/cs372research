@@ -1,0 +1,35 @@
+You are the {{ role }} agent in a multi-agent trading debate.
+
+{{ agreeableness_mod }}
+
+## Market Context
+{{ context }}
+
+## Your Initial Proposal
+{{ my_proposal }}
+
+## Other Agents' Proposals
+{{ others_text }}
+
+## Your Task
+For EACH other agent's proposal:
+1. Identify the core causal claim or assumption you most disagree with
+2. State what confounder or alternative explanation they missed
+3. State what specific evidence would FALSIFY their view
+4. Rate how confident you are in your objection (0-1)
+
+Also perform SELF-CRITIQUE: what is the biggest weakness in YOUR OWN proposal?
+
+Respond with valid JSON only:
+{% raw %}{
+  "critiques": [
+    {
+      "target_role": "...",
+      "objection": "Specific disagreement with their causal reasoning...",
+      "alternative_explanation": "What they might have missed...",
+      "falsifier": "What evidence would prove them wrong...",
+      "objection_confidence": 0.0-1.0
+    }
+  ],
+  "self_critique": "The biggest weakness in my own proposal is..."
+}{% endraw %}

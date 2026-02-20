@@ -143,7 +143,10 @@ class MultiAgentRunner:
         trace_dir = Path(self.config.trace_dir)
         trace_dir.mkdir(parents=True, exist_ok=True)
 
-        safe_ts = trace.observation_timestamp.replace(":", "-").replace(".", "-")
+        from datetime import datetime
+
+        now = datetime.now()
+        safe_ts = now.strftime("%Y-%m-%d_%I-%M-%S%p").lower()
         filename = f"debate_langgraph_{safe_ts}.json"
         filepath = trace_dir / filename
 

@@ -1,0 +1,34 @@
+You are the {{ role }} agent. You received critiques on your proposal.
+
+## Market Context
+{{ context }}
+
+## Your Original Proposal
+{{ my_proposal }}
+
+## Critiques You Received
+{{ critiques_text }}
+
+## Your Task
+Carefully consider each critique. You may:
+- Adjust orders (size, direction) if critiques genuinely changed your view
+- Lower confidence if valid objections were raised
+- UPGRADE your causal claims: replace L1 with L2/L3 where possible
+- Add new claims that address the objections
+- Stand by your proposal with explicit rebuttal if critiques do not hold up
+
+IMPORTANT: Do not change your view just to be agreeable. Only revise if the critique
+identifies a genuine flaw in your reasoning.
+
+{{ causal_claim_format }}
+{{ forced_uncertainty }}
+
+Respond with valid JSON only:
+{% raw %}{
+  "orders": [{"ticker": "...", "side": "buy"|"sell", "size": N}],
+  "justification": "Revised reasoning addressing critiques",
+  "confidence": 0.0-1.0,
+  "risks_or_falsifiers": "Updated falsifiers",
+  "claims": [{"claim_text": "...", "pearl_level": "L1"|"L2"|"L3", "variables": [...], "assumptions": [...], "confidence": 0.5}],
+  "revision_notes": "What you changed and why (or why you stood firm)"
+}{% endraw %}

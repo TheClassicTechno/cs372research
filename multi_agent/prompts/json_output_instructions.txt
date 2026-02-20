@@ -1,0 +1,21 @@
+
+## Output Format
+Respond with valid JSON only (no markdown, no extra text):
+{
+  "what_i_saw": "Brief summary of what you observed",
+  "hypothesis": "Your thesis and market direction call",
+  "orders": [{"ticker": "...", "side": "buy"|"sell", "size": N}],
+  "justification": "Detailed reasoning chain",
+  "confidence": 0.0-1.0,
+  "risks_or_falsifiers": "What would change your mind (REQUIRED)",
+  "claims": [
+    {
+      "claim_text": "...",
+      "pearl_level": "L1"|"L2"|"L3",
+      "variables": ["X", "Y"],
+      "assumptions": ["..."],
+      "confidence": 0.0-1.0
+    }
+  ]
+}
+If you hold (no trade), use "orders": [].
