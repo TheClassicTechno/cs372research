@@ -13,9 +13,11 @@ Tests verify:
   8. Adversarial mode adds devil's advocate
   9. Pipeline agents produce structured output
   10. Multiple debate rounds work correctly
+  11. Template files exist, are non-empty, and render correctly
 """
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -860,3 +862,87 @@ class TestEdgeCases:
         runner = MultiAgentRunner(config)
         action, trace = runner.run(sample_observation)
         assert isinstance(action, Action)
+
+
+# =============================================================================
+# 10. PROMPT TEMPLATE TESTS
+# =============================================================================
+
+
+class TestPromptTemplates:
+    """Verify that .txt template files exist, are non-empty, and render correctly."""
+
+    TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "prompts"
+
+    EXPECTED_FILES = [
+        "causal_claim_format.txt",
+        "forced_uncertainty.txt",
+        "trap_awareness.txt",
+        "json_output_instructions.txt",
+        "role_macro.txt",
+        "role_value.txt",
+        "role_risk.txt",
+        "role_technical.txt",
+        "role_sentiment.txt",
+        "role_devils_advocate.txt",
+        "news_digest_system.txt",
+        "data_analysis_system.txt",
+        "agreeableness_confrontational.txt",
+        "agreeableness_skeptical.txt",
+        "agreeableness_balanced.txt",
+        "agreeableness_collaborative.txt",
+        "agreeableness_agreeable.txt",
+        "proposal.txt",
+        "critique.txt",
+        "revision.txt",
+        "judge.txt",
+    ]
+
+    @pytest.mark.parametrize("filename", EXPECTED_FILES)
+    def test_template_file_exists_and_nonempty(self, filename: str):
+        path = self.TEMPLATE_DIR / filename
+        assert path.exists(), f"Template file missing: {filename}"
+        content = path.read_text()
+        assert len(content.strip()) > 0, f"Template file is empty: {filename}"
+
+    def test_proposal_template_renders(self):
+        result = build_proposal_user_prompt("Test market context")
+        assert "Test market context" in result
+        assert "Causal Claim" in result
+        assert "Uncertainty" in result
+
+    def test_critique_template_renders(self):
+        result = build_critique_prompt(
+            "macro",
+            "Test context",
+            [{"role": "value", "proposal": "buy AAPL"}],
+            "my proposal text",
+            agreeableness=0.5,
+        )
+        assert "MACRO" in result
+        assert "Test context" in result
+        assert "my proposal text" in result
+        assert "BALANCED" in result
+
+    def test_revision_template_renders(self):
+        result = build_revision_prompt(
+            "risk",
+            "Test context",
+            "original proposal",
+            [{"from_role": "macro", "objection": "Too risky"}],
+        )
+        assert "RISK" in result
+        assert "Too risky" in result
+        assert "Causal Claim" in result
+
+    def test_judge_template_renders(self):
+        result = build_judge_prompt(
+            "Test context",
+            [{"role": "macro", "action": "buy", "confidence": 0.8}],
+            "critique text here",
+            strongest_disagreements="a strong disagreement",
+        )
+        assert "JUDGE" in result
+        assert "MACRO" in result
+        assert "critique text here" in result
+        assert "a strong disagreement" in result
