@@ -4,8 +4,8 @@
   "private": true,
   "description": "Agent team: single-agent, majority vote, and multi-agent debate for CS372 trading simulator",
   "scripts": {
-    "demo": "tsx agents/demo.ts",
-    "demo:mock": "MOCK=1 tsx agents/demo.ts"
+    "demo": "tsx ts_agents/demo.ts",
+    "demo:mock": "MOCK=1 tsx ts_agents/demo.ts"
   },
   "dependencies": {
     "openai": "^6.16.0"
