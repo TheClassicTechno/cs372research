@@ -115,7 +115,18 @@ class Action(BaseModel):
 
 
 class DebateTurn(BaseModel):
-    """A single turn in a multi-agent debate."""
+    """A single turn in a multi-agent debate.
+
+    For eval-module consumption, each turn carries the full LLM interaction:
+      - raw_system_prompt: the system message (role persona + instructions)
+      - raw_user_prompt:   the user message (market context + other agents'
+                           turns + formatting/reasoning instructions)
+      - raw_response:      the unprocessed string returned by the LLM
+      - content:           (in the saved trace dict) the parsed JSON object
+
+    The eval module can reconstruct exactly what the agent saw, was asked,
+    and answered without relying on the model's self-reported metadata.
+    """
 
     round: int
     agent_id: str
@@ -124,6 +135,9 @@ class DebateTurn(BaseModel):
     critique: Optional[str] = None
     objections: Optional[list[str]] = None
     revision: Optional[Action] = None
+    raw_system_prompt: Optional[str] = None  # System message sent to LLM
+    raw_user_prompt: Optional[str] = None    # User message sent to LLM
+    raw_response: Optional[str] = None       # Unprocessed LLM output
 
 
 class AgentTrace(BaseModel):

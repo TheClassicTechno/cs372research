@@ -470,11 +470,13 @@ def propose_node(state: DebateState) -> dict:
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_proposal(role, obs)
+            raw_text = json.dumps(result, indent=2)
         else:
-            raw = _call_llm(config, role_system, user_prompt)
-            result = _parse_json(raw)
+            raw_text = _call_llm(config, role_system, user_prompt)
+            result = _parse_json(raw_text)
 
         action_dict = {
             "orders": result.get("orders", []),
@@ -489,7 +491,7 @@ def propose_node(state: DebateState) -> dict:
         proposals.append({
             "role": role,
             "action_dict": action_dict,
-            "raw_response": json.dumps(result),
+            "raw_response": raw_text,
         })
 
         turns.append({
@@ -498,6 +500,9 @@ def propose_node(state: DebateState) -> dict:
             "role": role,
             "type": "proposal",
             "content": result,
+            "raw_system_prompt": role_system,
+            "raw_user_prompt": user_prompt,
+            "raw_response": raw_text,
         })
 
     print(f"  [Round 0 - Propose] All {len(roles)} proposals complete.", flush=True)
@@ -535,18 +540,22 @@ def critique_node(state: DebateState) -> dict:
         print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
+        # Build prompts unconditionally so eval module can inspect them even in mock mode
+        prompt = build_critique_prompt(
+            role, context, all_proposals_for_critique, my_proposal, agreeableness,
+        )
+        system_msg = (
+            f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+            + get_agreeableness_modifier(agreeableness)
+        )
+
+        raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_critique(role, source)
+            raw_text = json.dumps(result, indent=2)
         else:
-            prompt = build_critique_prompt(
-                role, context, all_proposals_for_critique, my_proposal, agreeableness,
-            )
-            system_msg = (
-                f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
-                + get_agreeableness_modifier(agreeableness)
-            )
-            raw = _call_llm(config, system_msg, prompt)
-            result = _parse_json(raw)
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
 
         if config.get("verbose"):
             _verbose_critique(role, result)
@@ -563,6 +572,9 @@ def critique_node(state: DebateState) -> dict:
             "role": role,
             "type": "critique",
             "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
         })
 
     print(f"  [Round {current_round} - Critique] All critiques complete.", flush=True)
@@ -603,15 +615,18 @@ def revise_node(state: DebateState) -> dict:
                         "falsifier": crit.get("falsifier"),
                     })
 
+        # Build prompts unconditionally so eval module can inspect them even in mock mode
+        prompt = build_revision_prompt(
+            role, context, my_proposal, critiques_received, agreeableness,
+        )
+        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs)
+            raw_text = json.dumps(result, indent=2)
         else:
-            prompt = build_revision_prompt(
-                role, context, my_proposal, critiques_received, agreeableness,
-            )
-            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
-            raw = _call_llm(config, system_msg, prompt)
-            result = _parse_json(raw)
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
 
         action_dict = {
             "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
@@ -635,6 +650,9 @@ def revise_node(state: DebateState) -> dict:
             "role": role,
             "type": "revision",
             "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
         })
 
     print(f"  [Round {current_round} - Revise] All revisions complete.", flush=True)
@@ -679,13 +697,17 @@ def judge_node(state: DebateState) -> dict:
         for r in revisions
     ]
 
+    # Build prompts unconditionally so eval module can inspect them even in mock mode
+    prompt = build_judge_prompt(context, revisions_for_judge, critiques_text)
+    system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+
+    raw_text = None  # Raw LLM output for eval module
     if is_mock:
         result = _mock_judge(revisions)
+        raw_text = json.dumps(result, indent=2)
     else:
-        prompt = build_judge_prompt(context, revisions_for_judge, critiques_text)
-        system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
-        raw = _call_llm(config, system_msg, prompt)
-        result = _parse_json(raw)
+        raw_text = _call_llm(config, system_msg, prompt)
+        result = _parse_json(raw_text)
 
     if config.get("verbose"):
         _verbose_judge(result)
@@ -704,6 +726,9 @@ def judge_node(state: DebateState) -> dict:
             "role": "judge",
             "type": "judge_decision",
             "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
         }
     ]
 
