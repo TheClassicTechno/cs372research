@@ -246,12 +246,12 @@ This layered architecture is intentional.
 We are intentionally keeping the system simple:
 
 ```
-Debate → Debate Output File → Validation → Eval Schema → Evaluation
+Debate → Debate Output File → Validation → Evaluation -> Eval Results Schema
 ```
 
 No retries.
 No intervention.
 No in-loop gating.
 
-Just clean generation and clean post-hoc analysis.
+Just clean generation and clean post-hoc analysis for now.
 
