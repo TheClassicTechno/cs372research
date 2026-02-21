@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.2.0",
+  "debate_id": "nvda_q1_2026",
+  "run_id": "run_0042",
+  "evaluation_mode": "in_loop",
+  "evaluated_at": "2026-02-20T03:15:22Z",
+
+  "experiment_config": {
+    "label": "debate_rca_pid",
+    "category": "core_ablation",
+    "interventions": {
+      "crit_in_loop": false,
+      "rca_in_loop": true
+    },
+    "control": {
+      "enabled": true,
+      "policy": {
+        "type": "pid",
+        "parameters": {
+          "Kp": 0.8,
+          "Ki": 0.2,
+          "Kd": 0.1
+        }
+      },
+      "signals": [
+        {
+          "signal_id": "s_rca",
+          "source": "rca",
+          "metric": "trace_consistency_rate",
+          "direction": "target",
+          "target": 0.95,
+          "bounds": { "min": 0, "max": 1 },
+          "aggregation": "per_turn",
+          "notes": null
+        }
+      ],
+      "actuators": [
+        {
+          "actuator_id": "retry1",
+          "type": "retry",
+          "limits": { "max": 3 },
+          "notes": null
+        }
+      ],
+      "termination": {
+        "max_rounds": 6,
+        "max_retries_per_turn": 3,
+        "stop_when": [
+          {
+            "signal_id": "s_rca",
+            "op": ">=",
+            "value": 0.95
+          }
+        ]
+      },
+      "logging": {
+        "log_level": "per_step",
+        "store_step_series": true
+      }
+    },
+    "extra_dimensions": null,
+    "notes": "PID regulating RCA consistency."
+  },
+
+  "eval_metadata": {
+    "evaluator_version": "eval_v3",
+    "crit_version": null,
+    "rca_version": "rca_v1",
+    "t3_version": null,
+    "pid_version": "pid_v1",
+    "raud_it_version": null,
+    "notes": null
+  },
+
+  "run_summary": {
+    "overall_verdict": "pass",
+    "crit_summary": null,
+    "rca_summary": {
+      "trace_consistency_rate": 0.96,
+      "verdict": "pass",
+      "notes": null
+    },
+    "t3_summary": null,
+    "pid_summary": {
+      "retry_count_total": 2,
+      "intervention_count_total": 2,
+      "instability_index": 0.08,
+      "notes": null
+    },
+    "raud_it_summary": null
+  },
+
+  "turn_evaluations": null,
+
+  "control_trace": [
+    {
+      "step_index": 0,
+      "timestamp": "2026-02-20T03:15:25Z",
+      "observations": [
+        { "signal_id": "s_rca", "value": 0.88 }
+      ],
+      "actions": [
+        { "actuator_id": "retry1", "payload": null }
+      ],
+      "notes": null
+    }
+  ]
+}

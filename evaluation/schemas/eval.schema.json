@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs372-project/schemas/eval_v1_2.schema.json",
+  "title": "CS372 Evaluation Artifact Schema v1.2.0",
+  "type": "object",
+  "additionalProperties": false,
+
+  "required": [
+    "schema_version",
+    "debate_id",
+    "run_id",
+    "evaluation_mode",
+    "evaluated_at",
+    "eval_metadata",
+    "run_summary"
+  ],
+
+  "properties": {
+
+    "schema_version": {
+      "type": "string",
+      "const": "1.2.0"
+    },
+
+    "debate_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable debate identifier from debate_output.json."
+    },
+
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Run identifier from debate_output.json."
+    },
+
+    "evaluation_mode": {
+      "type": "string",
+      "enum": ["posthoc", "in_loop"]
+    },
+
+    "evaluated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "experiment_config": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "category": { "type": ["string", "null"] },
+        "interventions": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "crit_in_loop": { "type": ["boolean", "null"] },
+            "rca_in_loop": { "type": ["boolean", "null"] }
+          }
+        },
+        "control": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/controlBlock" }
+          ]
+        },
+        "extra_dimensions": {},
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "eval_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluator_version"],
+      "properties": {
+        "evaluator_version": { "type": "string" },
+        "crit_version": { "type": ["string", "null"] },
+        "rca_version": { "type": ["string", "null"] },
+        "t3_version": { "type": ["string", "null"] },
+        "pid_version": { "type": ["string", "null"] },
+        "raud_it_version": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "run_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall_verdict"],
+      "properties": {
+
+        "overall_verdict": {
+          "type": "string",
+          "enum": ["pass", "fail", "mixed"]
+        },
+
+        "crit_summary": { "$ref": "#/$defs/critSummary" },
+        "rca_summary": { "$ref": "#/$defs/rcaSummary" },
+        "t3_summary": { "$ref": "#/$defs/t3Summary" },
+        "pid_summary": { "$ref": "#/$defs/pidSummary" },
+        "raud_it_summary": { "$ref": "#/$defs/raudItSummary" }
+      }
+    },
+
+    "turn_evaluations": {
+      "type": ["array", "null"],
+      "description": "Optional per-turn evaluation outputs. Does not include raw content.",
+      "items": { "$ref": "#/$defs/turnEval" }
+    },
+
+    "control_trace": {
+      "type": ["array", "null"],
+      "description": "Optional step-by-step control loop trace. Present in in_loop mode with PID.",
+      "items": { "$ref": "#/$defs/controlStep" }
+    }
+
+  },
+
+  "$defs": {
+
+    "controlBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "policy": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["pid", "threshold", "manual"] },
+            "parameters": { "type": ["object", "null"] }
+          }
+        },
+        "signals": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/signal" }
+        },
+        "actuators": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/actuator" }
+        },
+        "termination": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "max_rounds": { "type": ["integer", "null"], "minimum": 1 },
+            "max_retries_per_turn": { "type": ["integer", "null"], "minimum": 0 },
+            "stop_when": {
+              "type": ["array", "null"],
+              "items": { "$ref": "#/$defs/stopCondition" }
+            }
+          }
+        },
+        "logging": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "log_level": { "type": ["string", "null"] },
+            "store_step_series": { "type": ["boolean", "null"] }
+          }
+        }
+      }
+    },
+
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signal_id", "source", "metric"],
+      "properties": {
+        "signal_id": { "type": "string", "minLength": 1 },
+        "source": { "type": "string" },
+        "metric": { "type": "string" },
+        "direction": { "type": ["string", "null"], "enum": ["target", "minimize", "maximize", null] },
+        "target": { "type": ["number", "null"] },
+        "bounds": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": ["number", "null"] },
+            "max": { "type": ["number", "null"] }
+          }
+        },
+        "aggregation": { "type": ["string", "null"], "enum": ["per_turn", "per_round", "global", null] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "actuator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actuator_id", "type"],
+      "properties": {
+        "actuator_id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["retry", "intervention", "temperature_shift"] },
+        "limits": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "max": { "type": ["integer", "null"], "minimum": 0 }
+          }
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "stopCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signal_id", "op", "value"],
+      "properties": {
+        "signal_id": { "type": "string", "minLength": 1 },
+        "op": { "type": "string", "enum": [">=", "<=", "==", ">", "<"] },
+        "value": { "type": "number" }
+      }
+    },
+
+    "controlStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_index"],
+      "properties": {
+        "step_index": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": ["string", "null"], "format": "date-time" },
+        "observations": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "required": ["signal_id", "value"],
+            "properties": {
+              "signal_id": { "type": "string" },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "actions": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "required": ["actuator_id"],
+            "properties": {
+              "actuator_id": { "type": "string" },
+              "payload": {}
+            }
+          }
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "critSummary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "gamma_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "theta_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "threshold_pass": { "type": ["boolean", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "rcaSummary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "blind_verification_pass_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "trace_consistency_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "verdict": { "type": ["string", "null"], "enum": ["pass", "fail", "mixed", null] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "t3Summary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "required_rung": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
+        "detected_rung": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
+        "trap_detected": { "type": ["string", "null"] },
+        "pass": { "type": ["boolean", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "pidSummary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "retry_count_total": { "type": ["integer", "null"], "minimum": 0 },
+        "intervention_count_total": { "type": ["integer", "null"], "minimum": 0 },
+        "instability_index": { "type": ["number", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "raudItSummary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "audit_strength": { "type": ["number", "null"] },
+        "instability_index": { "type": ["number", "null"] },
+        "behavioral_drift_score": { "type": ["number", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "turnEval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turn_id"],
+      "properties": {
+        "turn_id": { "type": "string" },
+        "crit": { "$ref": "#/$defs/critSummary" },
+        "rca": { "$ref": "#/$defs/rcaSummary" },
+        "t3": { "$ref": "#/$defs/t3Summary" },
+        "pid": { "$ref": "#/$defs/pidSummary" },
+        "raud_it": { "$ref": "#/$defs/raudItSummary" }
+      }
+    }
+
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.2.0",
+  "debate_id": "causal_trap_L3_case_12",
+  "run_id": "run_0007",
+  "evaluation_mode": "in_loop",
+  "evaluated_at": "2026-02-20T02:45:00Z",
+
+  "experiment_config": {
+    "label": "debate_crit_rca",
+    "category": "core_ablation",
+    "interventions": {
+      "crit_in_loop": true,
+      "rca_in_loop": true
+    },
+    "control": null,
+    "extra_dimensions": null,
+    "notes": "CRIT and RCA used for retry gating."
+  },
+
+  "eval_metadata": {
+    "evaluator_version": "eval_v3",
+    "crit_version": "crit_v2",
+    "rca_version": "rca_v1",
+    "t3_version": "t3_v1",
+    "pid_version": null,
+    "raud_it_version": null,
+    "notes": null
+  },
+
+  "run_summary": {
+    "overall_verdict": "pass",
+    "crit_summary": {
+      "gamma_mean": 0.81,
+      "theta_mean": 0.77,
+      "threshold_pass": true,
+      "notes": null
+    },
+    "rca_summary": {
+      "trace_consistency_rate": 0.94,
+      "verdict": "pass",
+      "notes": null
+    },
+    "t3_summary": {
+      "required_rung": "L3",
+      "detected_rung": "L3",
+      "trap_detected": null,
+      "pass": true,
+      "notes": null
+    },
+    "pid_summary": null,
+    "raud_it_summary": null
+  },
+
+  "turn_evaluations": [
+    {
+      "turn_id": "round1_turn1",
+      "crit": {
+        "gamma_mean": 0.75,
+        "theta_mean": 0.71,
+        "threshold_pass": true,
+        "notes": null
+      },
+      "rca": {
+        "trace_consistency_rate": 0.90,
+        "verdict": "pass",
+        "notes": null
+      },
+      "t3": null,
+      "pid": null,
+      "raud_it": null
+    }
+  ],
+
+  "control_trace": null
+}
