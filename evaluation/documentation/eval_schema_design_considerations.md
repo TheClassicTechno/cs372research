@@ -315,7 +315,7 @@ Examples:
 * `crit_version`
 * `rca_version`
 * `pid_version`
-* `raud_it_version`
+* `raudit_version`
 
 This helps with reproducibility.
 
@@ -336,7 +336,7 @@ It includes:
 * `rca_summary`
 * `t3_summary`
 * `pid_summary`
-* `raud_it_summary`
+* `raudit_summary`
 
 Each block stores structured metrics.
 

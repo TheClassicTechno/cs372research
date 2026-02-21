@@ -80,7 +80,7 @@
         "rca_version": { "type": ["string", "null"] },
         "t3_version": { "type": ["string", "null"] },
         "pid_version": { "type": ["string", "null"] },
-        "raud_it_version": { "type": ["string", "null"] },
+        "raudit_version": { "type": ["string", "null"] },
         "notes": { "type": ["string", "null"] }
       }
     },
@@ -100,7 +100,7 @@
         "rca_summary": { "$ref": "#/$defs/rcaSummary" },
         "t3_summary": { "$ref": "#/$defs/t3Summary" },
         "pid_summary": { "$ref": "#/$defs/pidSummary" },
-        "raud_it_summary": { "$ref": "#/$defs/raudItSummary" }
+        "raudit_summary": { "$ref": "#/$defs/raudItSummary" }
       }
     },
 
@@ -317,7 +317,7 @@
         "rca": { "$ref": "#/$defs/rcaSummary" },
         "t3": { "$ref": "#/$defs/t3Summary" },
         "pid": { "$ref": "#/$defs/pidSummary" },
-        "raud_it": { "$ref": "#/$defs/raudItSummary" }
+        "raudit": { "$ref": "#/$defs/raudItSummary" }
       }
     }
 
