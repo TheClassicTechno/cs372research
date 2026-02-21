@@ -1,0 +1,110 @@
+{
+  "schema_version": "2.0.0",
+  "debate_id": "nvda_structured_debate_v1",
+  "run_id": "8c3e9b9c-7d55-4f36-9e72-2f1c1b9a7a01",
+  "mode": "posthoc",
+  "created_at": "2026-02-20T21:15:00Z",
+
+  "run_metadata": {
+    "generation_mode": "live",
+    "global_model_name": "gpt-4o",
+    "temperature": 0.4,
+    "top_p": 0.9,
+    "seed": 42,
+    "max_tokens": 2048,
+    "prompt_bundle_version": "v3.2",
+    "prompt_regime": "structured",
+    "notes": "Baseline structured investment debate."
+  },
+
+  "debate_metadata": {
+    "task_type": "investment_debate",
+    "scenario_id": "nvda_q1_structural_vs_cyclical",
+    "market_context": "AI infrastructure expansion cycle",
+    "topic": "NVIDIA valuation durability",
+    "asset_symbol": "NVDA",
+    "time_horizon_default": "12 months",
+    "notes": "Post-hoc evaluation only."
+  },
+
+  "participants": [
+    {
+      "agent_id": "NVDA_BEAR_GPT4o",
+      "role": "bear",
+      "model_name": "gpt-4o",
+      "system_prompt_version": "bear_v2"
+    },
+    {
+      "agent_id": "NVDA_BULL_Claude",
+      "role": "bull",
+      "model_name": "claude-3-opus",
+      "system_prompt_version": "bull_v2"
+    }
+  ],
+
+  "rounds": [
+    {
+      "round_index": 1,
+      "turns": [
+        {
+          "turn_id": "r1_t1",
+          "round_index": 1,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BEAR_GPT4o",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T21:15:01Z",
+              "status": "ok",
+              "content": "### CLAIM\nNVIDIA’s valuation embeds sustained hypergrowth assumptions that are vulnerable to deceleration over the next 3–6 months.\n\n### DECISION\nSHORT NVDA | SIZE: 5–7% | HORIZON: 3–6 months\n\n### REASON 1 — Multiple Compression Risk\nIf revenue growth moderates from extreme to strong, valuation multiples can compress disproportionately.\n\n### REASON 2 — Buyer Concentration\nHyperscaler bargaining leverage may pressure margins if procurement diversifies.\n\n### REASON 3 — Gradual Competitive Catch-Up\nSwitching costs are real but may erode incrementally as tooling matures.\n\n### FINAL CONSISTENCY CHECK\nCLAIM matches DECISION: YES",
+              "final_answer": "SHORT NVDA",
+              "recommendation_hint": {
+                "action": "SHORT",
+                "position_size_pct_min": 5,
+                "position_size_pct_max": 7,
+                "horizon_days_min": 90,
+                "horizon_days_max": 180,
+                "conviction": 0.65
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "round_index": 2,
+      "turns": [
+        {
+          "turn_id": "r2_t1",
+          "round_index": 2,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BULL_Claude",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T21:16:02Z",
+              "status": "ok",
+              "content": "### CLAIM\nNVIDIA is the dominant infrastructure layer in a multi-year structural AI transition.\n\n### DECISION\nBUY NVDA | SIZE: 8–12% | HORIZON: 12–24 months\n\n### REASON 1 — Ecosystem Lock-In\nCUDA creates durable switching costs.\n\n### REASON 2 — ROI-Driven Enterprise Adoption\nAI spending becomes embedded when productivity gains are measurable.\n\n### REASON 3 — Multi-Year Capex Momentum\nHyperscaler infrastructure rollouts extend across multiple quarters.\n\n### FINAL CONSISTENCY CHECK\nCLAIM matches DECISION: YES",
+              "final_answer": "BUY NVDA",
+              "recommendation_hint": {
+                "action": "BUY",
+                "position_size_pct_min": 8,
+                "position_size_pct_max": 12,
+                "horizon_days_min": 365,
+                "horizon_days_max": 720,
+                "conviction": 0.8
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": "2.0.0",
+  "debate_id": "nvda_natural_debate_v1",
+  "run_id": "a12c9f7e-9b10-4f2a-9f63-11d8a4b22101",
+  "mode": "posthoc",
+  "created_at": "2026-02-20T23:10:00Z",
+
+  "run_metadata": {
+    "generation_mode": "ablation",
+    "global_model_name": "mixed",
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "seed": 777,
+    "max_tokens": 2500,
+    "prompt_bundle_version": "v3.3",
+    "prompt_regime": "natural",
+    "notes": "Natural-expression regime baseline."
+  },
+
+  "debate_metadata": {
+    "task_type": "investment_debate",
+    "scenario_id": "nvda_structural_vs_multiple",
+    "market_context": "AI infrastructure buildout",
+    "topic": "Valuation durability",
+    "asset_symbol": "NVDA",
+    "time_horizon_default": "12 months",
+    "notes": "Natural format without enforced structure."
+  },
+
+  "participants": [
+    {
+      "agent_id": "NVDA_BEAR_GPT4o",
+      "role": "bear",
+      "model_name": "gpt-4o",
+      "system_prompt_version": "bear_natural_v1"
+    },
+    {
+      "agent_id": "NVDA_BULL_Claude",
+      "role": "bull",
+      "model_name": "claude-3-opus",
+      "system_prompt_version": "bull_natural_v1"
+    }
+  ],
+
+  "rounds": [
+    {
+      "round_index": 1,
+      "turns": [
+        {
+          "turn_id": "r1_t1",
+          "round_index": 1,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BEAR_GPT4o",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T23:10:01Z",
+              "status": "ok",
+              "content": "I believe NVIDIA’s current valuation assumes a continuation of extreme growth rates that may be difficult to sustain over the next several quarters. Even if growth remains strong, a transition from hypergrowth to merely strong growth could trigger meaningful multiple compression. Much of the stock’s premium rests on expectations that hyperscaler capex continues accelerating without pause. If spending stabilizes rather than accelerates, the asymmetry shifts to the downside. For that reason, I would take a 6% short position over a 4–8 month horizon, recognizing volatility but viewing risk/reward as skewed negatively.",
+              "final_answer": "SHORT NVDA 6%",
+              "recommendation_hint": {
+                "action": "SHORT",
+                "position_size_pct_min": 6,
+                "position_size_pct_max": 6,
+                "horizon_days_min": 120,
+                "horizon_days_max": 240,
+                "conviction": 0.7
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "round_index": 2,
+      "turns": [
+        {
+          "turn_id": "r2_t1",
+          "round_index": 2,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BULL_Claude",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T23:11:02Z",
+              "status": "ok",
+              "content": "I disagree with the assumption that moderating growth necessarily implies valuation compression. NVIDIA is not simply riding a cyclical wave — it is embedded at the core of a structural AI transition. Enterprise AI deployment is still in early innings, and productivity gains are increasingly measurable. When AI spending becomes tied to ROI and competitive survival, it transitions from discretionary to strategic. CUDA’s ecosystem lock-in further reinforces pricing power. I would take a 10% long position with a 12–24 month horizon, as I see durable structural demand rather than a short-term peak.",
+              "final_answer": "BUY NVDA 10%",
+              "recommendation_hint": {
+                "action": "BUY",
+                "position_size_pct_min": 10,
+                "position_size_pct_max": 10,
+                "horizon_days_min": 365,
+                "horizon_days_max": 720,
+                "conviction": 0.82
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
