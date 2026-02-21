@@ -40,7 +40,7 @@ for decision_point_idx in range(num_decision_points):
 models/
 ├── README.md           # This file
 ├── __init__.py         # Re-exports all models
-├── case.py             # Case, CaseData, CaseDataItem, StockData, PricePoint, IntervalPriceSummary
+├── case.py             # Case, CaseData, CaseDataItem, StockData, ClosePricePoint, IntervalPriceSummary
 ├── portfolio.py        # PortfolioSnapshot
 ├── decision.py         # Order, Decision, ExecutedTrade, DecisionResult
 ├── episode.py          # EpisodeConfig, EpisodeResult, TradeHistory
@@ -59,9 +59,9 @@ models/
 | `Case` | Wraps case_data, stock_data, portfolio; **case_id** is required (e.g. `f"{episode_id}:{decision_point_idx}"`). Metadata (decision_point_idx, information_cutoff_timestamp) stored but not passed to the agent. Use `case.for_agent()` for the agent payload. |
 | `CaseData` | Variable-length list of information items (earnings, news, etc.). |
 | `CaseDataItem` | Single item: kind (earnings/news/other), content. |
-| `StockData` | Per-ticker: current_price, daily_bars (each with timestamp), and optional **interval_summary** (lighter payload for the agent). |
-| `PricePoint` | One day's OHLCV bar with **timestamp** (e.g. YYYY-MM-DD). |
-| `IntervalPriceSummary` | Optional open/close/high/low/volume summary for the interval; use in agent payload to reduce token usage. |
+| `StockData` | Per-ticker: current_price, daily_bars (each ClosePricePoint with timestamp and close), and optional **interval_summary** (lighter payload for the agent). |
+| `ClosePricePoint` | One day's close price with **timestamp** (e.g. YYYY-MM-DD). |
+| `IntervalPriceSummary` | Optional open/close summary for the interval; use in agent payload to reduce token usage. |
 
 Portfolio on Case is set dynamically by the simulation; other case attributes can be pre-computed.
 

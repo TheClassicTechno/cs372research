@@ -12,6 +12,11 @@
 # containing a JSON array, or a .jsonl file (one case template per line).
 dataset_path: "data/cases"
 
+# Optional: filter case_data items to top N by impact_score at load time.
+# Items are sorted by abs(impact_score) descending; agent never sees the score.
+# Omit or set to null for no filtering (include all items).
+# top_n_news: 20
+
 # Universe of ticker symbols available in this simulation.
 tickers:
   - NVDA

@@ -4,7 +4,7 @@ All three groups (Simulation, Agent, Evaluation) import from models.
 """
 
 from models.agents import AgentInvocation, AgentInvocationResult
-from models.case import Case, CaseData, CaseDataItem, IntervalPriceSummary, PricePoint, StockData
+from models.case import Case, CaseData, CaseDataItem, ClosePricePoint, IntervalPriceSummary, StockData
 from models.config import AgentConfig, BrokerConfig, SimulationConfig
 from models.decision import Decision, DecisionResult, ExecutedTrade, Order, SubmitDecisionInput
 from models.log import DecisionPointLog, EpisodeLog, SimulationLog
@@ -18,8 +18,8 @@ __all__ = [
     "Case",
     "CaseData",
     "CaseDataItem",
+    "ClosePricePoint",
     "IntervalPriceSummary",
-    "PricePoint",
     "StockData",
     # config
     "AgentConfig",
