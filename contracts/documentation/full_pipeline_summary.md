@@ -37,16 +37,19 @@ Everything else builds on that.
 
 # 🔎 Quick Navigation
 
-| What You Want                       | Go Here                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| Debate Output file format           | `contracts/schemas/debate_output.schema.json`                                |
-| Debate format & shared mental model | ⭐ `contracts/documentation/debate_output_schema_design.md`                   |
-| Debate topology assumptions         | `contracts/documentation/debate_topology_considerations.md`                  |
-| Speaking order assumptions          | `contracts/documentation/agent_response_order_considerations.md`             |
-| Transcript visibility assumptions   | `contracts/documentation/agent_full_transcript_visibility_considerations.md` |
-| Prompting standards                 | `contracts/documentation/prompting_guide_for_eval_robustness.md`             |
-| Eval schema contract                | `evaluation/schemas/eval.schema.json`                                        |
-| Debate Output validator             | `contracts/scripts/validate_debate_output.py`                                |
+# 🔎 Quick Navigation
+
+| **What You Want**                   | **Go Here**                                                                       |
+|-------------------------------------|-----------------------------------------------------------------------------------|
+| Debate Output file format           | `contracts/schemas/debate_output.schema.json`                                     |
+| Debate Output JSON file example     | `contracts/schemas/EXAMPLE_from_structured_reasoning_prompt_debate_output_1.json` |
+| Debate format & shared mental model | ⭐ `contracts/documentation/debate_output_schema_design.md`                        |
+| Debate topology assumptions         | `contracts/documentation/debate_topology_considerations.md`                       |
+| Speaking order assumptions          | `contracts/documentation/agent_response_order_considerations.md`                  |
+| Transcript visibility assumptions   | `contracts/documentation/agent_full_transcript_visibility_considerations.md`      |
+| Prompting standards                 | `contracts/documentation/prompting_guide_for_eval_robustness.md`                  |
+| Eval results schema contract        | `evaluation/schemas/eval.schema.json` *(PR up)*                                   |
+| Debate Output validator             | `contracts/scripts/validate_debate_output.py`                                     |
 
 ---
 
@@ -127,13 +130,15 @@ They are inactive for now.
 Each turn must include exactly one attempt:
 
 ```json
-"attempts": [
-  {
-    "attempt_index": 0,
-    "status": "ok",
-    "content": "..."
-  }
-]
+{
+   "attempts": [
+     {
+       "attempt_index": 0,
+       "status": "ok",
+       "content": "..."
+     }
+   ]
+}
 ```
 
 Keep it simple.
@@ -185,7 +190,7 @@ Debate Team produces the file.
 
 Eval Team validates it.
 
-If validation fails, the file is returned for correction.
+If validation fails, Eval works with Debate team to fix errors.
 
 This ensures:
 

@@ -1038,23 +1038,22 @@ Useful for:
 Eval will:
 
 1. Validate transcript (schema + runtime script)
-2. Transform turns into canonical eval schema
-3. Extract:
+ 
+2. Extract:
 
    * recommendations
    * reasoning traces
    * rebuttal structure
-4. Run:
+
+3. Run:
 
    * CRIT
    * RCA
    * T³
    * PID metrics
    * RAudit metrics
-
-The Debate Team does not need to produce canonical eval JSON.
-
-Eval owns transformation.
+   
+4. Output eval results json
 
 ---
 
