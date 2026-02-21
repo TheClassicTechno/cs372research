@@ -43,7 +43,7 @@ cs372research/
 ├── config/
 │   └── example.yaml            # Example experiment configuration
 ├── models/                     # Pydantic data models (shared contracts)
-│   ├── case.py                 # Case, CaseData, StockData, PricePoint
+│   ├── case.py                 # Case, CaseData, StockData, ClosePricePoint
 │   ├── portfolio.py            # PortfolioSnapshot
 │   ├── decision.py             # Order, Decision, ExecutedTrade, DecisionResult
 │   ├── agents.py               # AgentInvocation, AgentInvocationResult
@@ -289,7 +289,7 @@ Each case represents a **single ticker at a specific date** — typically aligne
 
 - **Earnings data** — the earnings report for the quarter.
 - **News articles** — relevant news from the period.
-- **Price history** — daily OHLCV bars covering the interval since the previous case (roughly one quarter).
+- **Price history** — daily close prices covering the interval since the previous case (roughly one quarter).
 - **Current price** — the execution price available to the agent at this decision point.
 
 Cases are loaded from disk as templates and stamped with the live portfolio at runtime. On disk, each case needs `case_data` and `stock_data`:
@@ -309,10 +309,10 @@ Cases are loaded from disk as templates and stamped with the live portfolio at r
       "ticker": "AAPL",
       "current_price": 185.50,
       "daily_bars": [
-        {"timestamp": "2024-10-01", "open": 174.0, "high": 175.5, "low": 173.2, "close": 175.0, "volume": 4800000},
-        {"timestamp": "2024-10-02", "open": 175.1, "high": 176.8, "low": 174.5, "close": 176.3, "volume": 5100000},
-        "... (daily bars for the full quarter) ...",
-        {"timestamp": "2024-12-31", "open": 184.0, "high": 186.0, "low": 183.5, "close": 185.5, "volume": 5200000}
+        {"timestamp": "2024-10-01", "close": 175.0},
+        {"timestamp": "2024-10-02", "close": 176.3},
+        "... (daily close prices for the full quarter) ...",
+        {"timestamp": "2024-12-31", "close": 185.5}
       ]
     }
   }
