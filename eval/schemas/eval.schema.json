@@ -90,12 +90,7 @@
       "additionalProperties": false,
       "required": ["overall_verdict"],
       "properties": {
-
-        "overall_verdict": {
-          "type": "string",
-          "enum": ["pass", "fail", "mixed"]
-        },
-
+        
         "crit_summary": { "$ref": "#/$defs/critSummary" },
         "rca_summary": { "$ref": "#/$defs/rcaSummary" },
         "t3_summary": { "$ref": "#/$defs/t3Summary" },
