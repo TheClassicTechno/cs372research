@@ -503,6 +503,9 @@ def propose_node(state: DebateState) -> dict:
             "raw_system_prompt": role_system,
             "raw_user_prompt": user_prompt,
             "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+            },
         })
 
     print(f"  [Round 0 - Propose] All {len(roles)} proposals complete.", flush=True)
@@ -575,6 +578,11 @@ def critique_node(state: DebateState) -> dict:
             "raw_system_prompt": system_msg,
             "raw_user_prompt": prompt,
             "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "all_proposals_for_critique": all_proposals_for_critique,
+                "my_proposal": my_proposal,
+            }
         })
 
     print(f"  [Round {current_round} - Critique] All critiques complete.", flush=True)
@@ -653,6 +661,11 @@ def revise_node(state: DebateState) -> dict:
             "raw_system_prompt": system_msg,
             "raw_user_prompt": prompt,
             "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "my_proposal": my_proposal,
+                "critiques_received": critiques_received,
+            }
         })
 
     print(f"  [Round {current_round} - Revise] All revisions complete.", flush=True)
@@ -729,6 +742,11 @@ def judge_node(state: DebateState) -> dict:
             "raw_system_prompt": system_msg,
             "raw_user_prompt": prompt,
             "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "revisions_for_judge": revisions_for_judge,
+                "critiques_text": critiques_text
+            }
         }
     ]
 

@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.2.0",
+  "debate_id": "nvda_q1_2026",
+  "run_id": "run_0001",
+  "evaluation_mode": "posthoc",
+  "evaluated_at": "2026-02-20T02:11:00Z",
+
+  "experiment_config": {
+    "label": "single_agent_baseline",
+    "category": "core_ablation",
+    "interventions": {
+      "crit_in_loop": false,
+      "rca_in_loop": false
+    },
+    "control": null,
+    "extra_dimensions": null,
+    "notes": "Baseline run with no intervention."
+  },
+
+  "eval_metadata": {
+    "evaluator_version": "eval_v3",
+    "crit_version": "crit_v2",
+    "rca_version": "rca_v1",
+    "t3_version": "t3_v1",
+    "pid_version": null,
+    "raudit_version": null,
+    "notes": null
+  },
+
+  "run_summary": {
+    "overall_verdict": "mixed",
+    "crit_summary": {
+      "gamma_mean": 0.64,
+      "theta_mean": 0.59,
+      "threshold_pass": false,
+      "notes": null
+    },
+    "rca_summary": {
+      "trace_consistency_rate": 0.82,
+      "verdict": "mixed",
+      "notes": null
+    },
+    "t3_summary": {
+      "required_rung": "L2",
+      "detected_rung": "L1",
+      "trap_detected": null,
+      "pass": false,
+      "notes": null
+    },
+    "pid_summary": null,
+    "raudit_summary": null
+  },
+
+  "turn_evaluations": null,
+  "control_trace": null
+}

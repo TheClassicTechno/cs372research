@@ -6,7 +6,7 @@ Matches the TypeScript types in agents/types.ts for cross-language compatibility
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import Optional, Dict
 
 from pydantic import BaseModel, Field
 
@@ -138,6 +138,7 @@ class DebateTurn(BaseModel):
     raw_system_prompt: Optional[str] = None  # System message sent to LLM
     raw_user_prompt: Optional[str] = None    # User message sent to LLM
     raw_response: Optional[str] = None       # Unprocessed LLM output
+    input_params: Dict[str, str]
 
 
 class AgentTrace(BaseModel):
@@ -156,6 +157,8 @@ class AgentTrace(BaseModel):
     debate_turns: Optional[list[DebateTurn]] = None
     action: Action
     logged_at: str
+    initial_market_state: Optional[MarketState] = None
+    initial_portfolio_state: Optional[PortfolioState] = None
 
 
 # =============================================================================

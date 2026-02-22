@@ -224,6 +224,10 @@ def main():
             enable_adversarial=True, max_rounds=2, agreeableness=0.3,
             mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs_risk),
+        (9, "Config 9: Minimal 2-agent Debate", DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.RISK],
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
+        ), obs),
     ]
 
     # Filter to selected configs
