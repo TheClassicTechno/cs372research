@@ -1,0 +1,422 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cs372-project/schemas/debate_output.schema.json",
+  "title": "Debate Transcript JSON Spec v2.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "debate_id",
+    "run_id",
+    "mode",
+    "created_at",
+    "run_metadata",
+    "debate_metadata",
+    "participants",
+    "rounds"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.0.0" },
+
+    "debate_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable debate identifier across reruns / ablations."
+    },
+
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique identifier for this particular run (recommended: UUID v4)."
+    },
+
+    "mode": {
+      "type": "string",
+      "enum": ["posthoc", "in_loop"],
+      "description": "posthoc: no controller-driven retries required. in_loop: retries/interventions allowed and expected."
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of transcript creation."
+    },
+
+    "run_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generation_mode"],
+      "properties": {
+        "generation_mode": {
+          "type": "string",
+          "description": "e.g., live, mock, ablation, test"
+        },
+        "global_model_name": { "type": ["string", "null"] },
+        "temperature": { "type": ["number", "null"] },
+        "top_p": { "type": ["number", "null"] },
+        "seed": { "type": ["integer", "null"] },
+        "max_tokens": { "type": ["integer", "null"] },
+        "prompt_bundle_version": { "type": ["string", "null"] },
+        "prompt_regime": {
+          "type": ["string", "null"],
+          "enum": ["natural", "structured", "mixed", null],
+          "description": "Optional label for the prompting regime used."
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "debate_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_type"],
+      "properties": {
+        "task_type": {
+          "type": "string",
+          "description": "e.g., investment_debate, causal_reasoning, math, etc."
+        },
+        "scenario_id": { "type": ["string", "null"] },
+        "market_context": { "type": ["string", "null"] },
+        "topic": { "type": ["string", "null"] },
+        "asset_symbol": { "type": ["string", "null"], "description": "Optional e.g. NVDA" },
+        "time_horizon_default": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "participants": {
+      "type": "array",
+      "minItems": 1,
+      "description": "All agents that are expected to participate in the run. Agents can be dropped later; see participant_state_log.",
+      "items": { "$ref": "#/$defs/participant" }
+    },
+
+    "participant_state_log": {
+      "type": ["array", "null"],
+      "description": "Optional run-level log of participant availability changes (dropouts, timeouts, restarts).",
+      "items": { "$ref": "#/$defs/participantStateEvent" }
+    },
+
+    "rounds": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Round-based debate transcript. Each round contains 0..N turns (to allow partial rounds).",
+      "items": { "$ref": "#/$defs/round" }
+    },
+
+    "intervention_log": {
+      "type": ["array", "null"],
+      "description": "Optional global log of controller or human interventions. In in_loop mode this is recommended.",
+      "items": { "$ref": "#/$defs/interventionEvent" }
+    },
+
+    "raud_it": {
+      "type": ["object", "null"],
+      "description": "Optional run-level RAudit container (configuration + summary metrics). Not required for debate team, but reserved for compatibility.",
+      "additionalProperties": true,
+      "properties": {
+        "audit_strength": { "type": ["string", "number", "null"] },
+        "metrics": { "type": ["object", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "integrity": {
+      "type": ["object", "null"],
+      "description": "Optional checksum block to help catch corruption when sharing large artifacts out-of-band.",
+      "additionalProperties": false,
+      "properties": {
+        "sha256": { "type": ["string", "null"] },
+        "byte_length": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  },
+
+  "$defs": {
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "role"],
+      "properties": {
+        "agent_id": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "model_name": { "type": ["string", "null"] },
+        "system_prompt_version": { "type": ["string", "null"] },
+        "tags": { "type": ["array", "null"], "items": { "type": "string" } }
+      }
+    },
+
+    "participantStateEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timestamp", "agent_id", "event_type"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "event_type": {
+          "type": "string",
+          "enum": ["joined", "dropped", "timeout", "recovered", "restarted"]
+        },
+        "reason": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "round": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["round_index", "turns"],
+      "properties": {
+        "round_index": { "type": "integer", "minimum": 1 },
+
+        "planned_speaking_order": {
+          "type": ["array", "null"],
+          "description": "Optional. Deterministic rotating order or other plan. If omitted, order is implied by turns[].turn_index_in_round.",
+          "items": { "type": "string" }
+        },
+
+        "transcript_visibility": {
+          "type": ["string", "null"],
+          "enum": ["full", "prior_round_only", null],
+          "description": "Optional per-round override for what context agents saw."
+        },
+
+        "round_status": {
+          "type": ["string", "null"],
+          "enum": ["complete", "partial", "aborted", null],
+          "description": "complete: expected turns present. partial: some agents missing. aborted: round ended early."
+        },
+
+        "round_notes": { "type": ["string", "null"] },
+
+        "turns": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "$ref": "#/$defs/turn" }
+        }
+      }
+    },
+
+    "turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turn_id",
+        "round_index",
+        "turn_index_in_round",
+        "speaker_id",
+        "attempts"
+      ],
+      "properties": {
+        "turn_id": { "type": "string", "minLength": 1 },
+
+        "round_index": { "type": "integer", "minimum": 1 },
+
+        "turn_index_in_round": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0-based order within the round."
+        },
+
+        "speaker_id": { "type": "string", "minLength": 1 },
+
+        "turn_type": {
+          "type": ["string", "null"],
+          "enum": ["argument", "rebuttal", "synthesis", "meta", null]
+        },
+
+        "addresses": {
+          "type": ["array", "null"],
+          "description": "Optional explicit mapping of which other agents/claims were addressed (helps post-hoc graph inference).",
+          "items": { "$ref": "#/$defs/addressEdge" }
+        },
+
+        "turn_metadata": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "model_name": { "type": ["string", "null"] },
+            "temperature": { "type": ["number", "null"] },
+            "top_p": { "type": ["number", "null"] },
+            "seed": { "type": ["integer", "null"] },
+            "max_tokens": { "type": ["integer", "null"] }
+          }
+        },
+
+        "attempts": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Always present. posthoc typically has exactly 1 attempt. in_loop may have retries. Includes FAILED attempts.",
+          "items": { "$ref": "#/$defs/attempt" }
+        },
+
+        "final_attempt_index": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Optional explicit pointer. If null/absent, final attempt is last in attempts[]."
+        },
+
+        "turn_outcome": {
+          "type": ["string", "null"],
+          "enum": ["success", "timeout", "dropped", "error", null],
+          "description": "If not success, attempts may include an error attempt with diagnostic content."
+        }
+      }
+    },
+
+    "addressEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_agent_id"],
+      "properties": {
+        "target_agent_id": { "type": "string", "minLength": 1 },
+        "target_claim_id": {
+          "type": ["string", "null"],
+          "description": "Optional. If the debate team assigns claim IDs, include them; otherwise omit."
+        },
+        "evidence": {
+          "type": ["string", "null"],
+          "description": "Optional quote/snippet pointer used to justify the edge."
+        }
+      }
+    },
+
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attempt_index", "timestamp", "status", "content"],
+      "properties": {
+        "attempt_index": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": "string", "format": "date-time" },
+
+        "status": {
+          "type": "string",
+          "enum": ["ok", "retry", "failed"],
+          "description": "ok: usable output. retry: superseded by later attempt. failed: generation failed/aborted but preserved."
+        },
+
+        "content": {
+          "type": "string",
+          "description": "Raw natural language response (the primary payload)."
+        },
+
+        "final_answer": {
+          "type": ["string", "null"],
+          "description": "Optional short extracted conclusion. Debate team may omit; eval can compute later."
+        },
+
+        "recommendation_hint": {
+          "type": ["object", "null"],
+          "description": "Optional lightweight structured hint (NOT the eval schema). Helps parsing; safe to omit.",
+          "additionalProperties": false,
+          "properties": {
+            "action": { "type": ["string", "null"], "enum": ["BUY", "SELL", "SHORT", "HOLD", null] },
+            "position_size_pct_min": { "type": ["number", "null"], "minimum": 0 },
+            "position_size_pct_max": { "type": ["number", "null"], "minimum": 0 },
+            "horizon_days_min": { "type": ["integer", "null"], "minimum": 0 },
+            "horizon_days_max": { "type": ["integer", "null"], "minimum": 0 },
+            "conviction": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+          }
+        },
+
+        "reasoning_trace": {
+          "type": ["string", "null"],
+          "description": "Optional. If a model emits a separate reasoning trace string, store it here (do not require)."
+        },
+
+        "control_state": {
+          "type": ["object", "null"],
+          "description": "Optional. PID/controller state and knobs applied at this attempt (in_loop mode).",
+          "additionalProperties": false,
+          "properties": {
+            "e_t": { "type": ["number", "null"], "description": "Controller error signal at attempt t." },
+            "u_t": { "type": ["number", "null"], "description": "Controller output/actuation at attempt t." },
+            "k_p": { "type": ["number", "null"] },
+            "k_i": { "type": ["number", "null"] },
+            "k_d": { "type": ["number", "null"] },
+            "retry_count": { "type": ["integer", "null"], "minimum": 0 },
+            "temperature_override": { "type": ["number", "null"] },
+            "persona": { "type": ["string", "null"] },
+            "strategy_level": { "type": ["string", "null"] }
+          }
+        },
+
+        "interventions_applied": {
+          "type": ["array", "null"],
+          "description": "Optional. Interventions that were applied specifically before this attempt.",
+          "items": { "$ref": "#/$defs/interventionAppliedRef" }
+        },
+
+        "diagnostics": {
+          "type": ["object", "null"],
+          "description": "Optional failure payload (timeouts, API errors, truncation, etc.).",
+          "additionalProperties": false,
+          "properties": {
+            "error_type": { "type": ["string", "null"] },
+            "error_message": { "type": ["string", "null"] },
+            "truncated": { "type": ["boolean", "null"] },
+            "token_usage_prompt": { "type": ["integer", "null"], "minimum": 0 },
+            "token_usage_completion": { "type": ["integer", "null"], "minimum": 0 },
+            "latency_ms": { "type": ["integer", "null"], "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "interventionAppliedRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intervention_id"],
+      "properties": {
+        "intervention_id": { "type": "string", "minLength": 1 },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "interventionEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intervention_id", "timestamp", "scope", "trigger", "instruction_sent"],
+      "properties": {
+        "intervention_id": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "string", "format": "date-time" },
+
+        "scope": {
+          "type": "string",
+          "enum": ["global", "round", "turn", "attempt"],
+          "description": "What the intervention targeted."
+        },
+
+        "round_index": { "type": ["integer", "null"], "minimum": 1 },
+        "turn_id": { "type": ["string", "null"] },
+        "speaker_id": { "type": ["string", "null"] },
+        "attempt_index": { "type": ["integer", "null"], "minimum": 0 },
+
+        "trigger": {
+          "type": "string",
+          "description": "e.g., rca_fail, crit_fail, t3_fail, pid_escalation, human_override, timeout_recovery"
+        },
+
+        "instruction_sent": {
+          "type": "string",
+          "description": "The actual instruction injected (or a faithful summary if too long)."
+        },
+
+        "controller_snapshot": {
+          "type": ["object", "null"],
+          "description": "Optional: controller state at the time of intervention (useful for PID/RAudit).",
+          "additionalProperties": false,
+          "properties": {
+            "e_t": { "type": ["number", "null"] },
+            "u_t": { "type": ["number", "null"] },
+            "k_p": { "type": ["number", "null"] },
+            "k_i": { "type": ["number", "null"] },
+            "k_d": { "type": ["number", "null"] }
+          }
+        },
+
+        "notes": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "schema_version": "2.0.0",
+  "debate_id": "nvda_natural_debate_v2_interactive",
+  "run_id": "c44e19f2-3b7c-48a5-8c19-99871b2b2102",
+  "mode": "posthoc",
+  "created_at": "2026-02-20T23:40:00Z",
+
+  "run_metadata": {
+    "generation_mode": "ablation",
+    "global_model_name": "mixed",
+    "temperature": 0.65,
+    "top_p": 0.97,
+    "seed": 991,
+    "max_tokens": 3000,
+    "prompt_bundle_version": "v3.3",
+    "prompt_regime": "natural",
+    "notes": "Natural-expression extended debate."
+  },
+
+  "debate_metadata": {
+    "task_type": "investment_debate",
+    "scenario_id": "nvda_capex_inflection_natural",
+    "market_context": "Hyperscaler demand trajectory",
+    "topic": "Structural vs cyclical AI demand",
+    "asset_symbol": "NVDA",
+    "time_horizon_default": "6–18 months",
+    "notes": "Three-round natural regime."
+  },
+
+  "participants": [
+    {
+      "agent_id": "NVDA_BEAR_GPT4o",
+      "role": "bear",
+      "model_name": "gpt-4o",
+      "system_prompt_version": "bear_natural_v1"
+    },
+    {
+      "agent_id": "NVDA_BULL_Claude",
+      "role": "bull",
+      "model_name": "claude-3-opus",
+      "system_prompt_version": "bull_natural_v1"
+    }
+  ],
+
+  "rounds": [
+    {
+      "round_index": 1,
+      "turns": [
+        {
+          "turn_id": "r1_t1",
+          "round_index": 1,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BEAR_GPT4o",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T23:40:01Z",
+              "status": "ok",
+              "content": "My concern is not that NVIDIA is a weak company — it is clearly dominant — but that expectations have reached a level where even modest deceleration could have disproportionate effects on valuation. The stock is priced for uninterrupted acceleration in hyperscaler spending. If that spending plateaus or grows less aggressively, multiple compression could be severe. I would initiate a 6% short position for a 4–8 month window, viewing the setup as tactically asymmetric.",
+              "final_answer": "SHORT NVDA 6%",
+              "recommendation_hint": {
+                "action": "SHORT",
+                "position_size_pct_min": 6,
+                "position_size_pct_max": 6,
+                "horizon_days_min": 120,
+                "horizon_days_max": 240,
+                "conviction": 0.72
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "round_index": 2,
+      "turns": [
+        {
+          "turn_id": "r2_t1",
+          "round_index": 2,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BULL_Claude",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T23:41:03Z",
+              "status": "ok",
+              "content": "You’re treating AI infrastructure spending as though it behaves like a traditional semiconductor cycle. I think that framing is outdated. AI adoption is increasingly tied to measurable productivity improvements, which makes spending resilient rather than cyclical. CUDA’s ecosystem depth and switching costs make rapid competitive displacement unlikely. Even if growth moderates from extreme to strong, the structural profit pool expansion could justify premium multiples. I would take a 10% long position with a 12–24 month horizon.",
+              "final_answer": "BUY NVDA 10%",
+              "recommendation_hint": {
+                "action": "BUY",
+                "position_size_pct_min": 10,
+                "position_size_pct_max": 10,
+                "horizon_days_min": 365,
+                "horizon_days_max": 720,
+                "conviction": 0.83
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "round_index": 3,
+      "turns": [
+        {
+          "turn_id": "r3_t1",
+          "round_index": 3,
+          "turn_index_in_round": 0,
+          "speaker_id": "NVDA_BEAR_GPT4o",
+          "turn_outcome": "success",
+          "attempts": [
+            {
+              "attempt_index": 0,
+              "timestamp": "2026-02-20T23:42:10Z",
+              "status": "ok",
+              "content": "Even if the structural story is correct, valuation still matters. The market often overshoots durable narratives before resetting to more sustainable assumptions. If earnings growth slows even slightly relative to current embedded expectations, the repricing could be swift. I am not arguing long-term irrelevance — only that near-term expectations leave little margin for error. I would maintain the 6% short allocation within a 4–8 month tactical window.",
+              "final_answer": "Maintain SHORT NVDA 6%",
+              "recommendation_hint": {
+                "action": "SHORT",
+                "position_size_pct_min": 6,
+                "position_size_pct_max": 6,
+                "horizon_days_min": 120,
+                "horizon_days_max": 240,
+                "conviction": 0.69
+              },
+              "reasoning_trace": null,
+              "control_state": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
