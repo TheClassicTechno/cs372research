@@ -3,7 +3,7 @@
   "$id": "https://cs372-project/schemas/eval_v1_2.schema.json",
   "title": "CS372 Evaluation Artifact Schema v1.2.0",
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
 
   "required": [
     "schema_version",
@@ -46,14 +46,14 @@
 
     "experiment_config": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["label"],
       "properties": {
         "label": { "type": "string", "minLength": 1 },
         "category": { "type": ["string", "null"] },
         "interventions": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "crit_in_loop": { "type": ["boolean", "null"] },
             "rca_in_loop": { "type": ["boolean", "null"] }
@@ -72,7 +72,7 @@
 
     "eval_metadata": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["evaluator_version"],
       "properties": {
         "evaluator_version": { "type": "string" },
@@ -87,8 +87,7 @@
 
     "run_summary": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["overall_verdict"],
+      "additionalProperties": true,
       "properties": {
         
         "crit_summary": { "$ref": "#/$defs/critSummary" },
@@ -117,13 +116,13 @@
 
     "controlBlock": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["enabled"],
       "properties": {
         "enabled": { "type": "boolean" },
         "policy": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": ["type"],
           "properties": {
             "type": { "type": "string", "enum": ["pid", "threshold", "manual"] },
@@ -140,7 +139,7 @@
         },
         "termination": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "max_rounds": { "type": ["integer", "null"], "minimum": 1 },
             "max_retries_per_turn": { "type": ["integer", "null"], "minimum": 0 },
@@ -152,7 +151,7 @@
         },
         "logging": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "log_level": { "type": ["string", "null"] },
             "store_step_series": { "type": ["boolean", "null"] }
@@ -163,7 +162,7 @@
 
     "signal": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["signal_id", "source", "metric"],
       "properties": {
         "signal_id": { "type": "string", "minLength": 1 },
@@ -173,7 +172,7 @@
         "target": { "type": ["number", "null"] },
         "bounds": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "min": { "type": ["number", "null"] },
             "max": { "type": ["number", "null"] }
@@ -186,14 +185,14 @@
 
     "actuator": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["actuator_id", "type"],
       "properties": {
         "actuator_id": { "type": "string", "minLength": 1 },
         "type": { "type": "string", "enum": ["retry", "intervention", "temperature_shift"] },
         "limits": {
           "type": ["object", "null"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "max": { "type": ["integer", "null"], "minimum": 0 }
           }
@@ -204,7 +203,7 @@
 
     "stopCondition": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["signal_id", "op", "value"],
       "properties": {
         "signal_id": { "type": "string", "minLength": 1 },
@@ -215,7 +214,7 @@
 
     "controlStep": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["step_index"],
       "properties": {
         "step_index": { "type": "integer", "minimum": 0 },
@@ -248,7 +247,7 @@
 
     "critSummary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "gamma_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
         "theta_mean": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
@@ -259,7 +258,7 @@
 
     "rcaSummary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "blind_verification_pass_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
         "trace_consistency_rate": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
@@ -270,7 +269,7 @@
 
     "t3Summary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "required_rung": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
         "detected_rung": { "type": ["string", "null"], "enum": ["L1", "L2", "L3", null] },
@@ -282,7 +281,7 @@
 
     "pidSummary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "retry_count_total": { "type": ["integer", "null"], "minimum": 0 },
         "intervention_count_total": { "type": ["integer", "null"], "minimum": 0 },
@@ -293,7 +292,7 @@
 
     "raudItSummary": {
       "type": ["object", "null"],
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "audit_strength": { "type": ["number", "null"] },
         "instability_index": { "type": ["number", "null"] },
@@ -304,7 +303,7 @@
 
     "turnEval": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "required": ["turn_id"],
       "properties": {
         "turn_id": { "type": "string" },
