@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from evaluation.utils.validate_eval_schema import validate_semantics
+from eval.utils.validate_eval_schema import validate_semantics
 
 DUMMY_PATH = Path("test_file.json")
 
