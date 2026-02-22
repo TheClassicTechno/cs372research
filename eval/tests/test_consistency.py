@@ -82,6 +82,10 @@ class TestConsistencyJudge(unittest.TestCase):
 
         result = self.judge.check_critique(turn)
 
+        # Check return value
+        self.assertEqual(result, expected_result)
+
+        # Verify chain invocation inputs
         arg = self.get_chain_call_arg()
         arg_str = str(arg)
         self.assertIn("Buy AAPL", arg_str)
@@ -112,6 +116,10 @@ class TestConsistencyJudge(unittest.TestCase):
 
         result = self.judge.check_revision(turn)
 
+        # Check return value
+        self.assertEqual(result, expected_result)
+
+        # Verify chain invocation inputs
         arg = self.get_chain_call_arg()
         arg_str = str(arg)
         self.assertIn('"size": 100', arg_str)
@@ -142,6 +150,10 @@ class TestConsistencyJudge(unittest.TestCase):
 
         result = self.judge.check_judge_decision(turn)
 
+        # Check return value
+        self.assertEqual(result, expected_result)
+
+        # Verify chain invocation inputs
         arg = self.get_chain_call_arg()
         arg_str = str(arg)
         self.assertIn("Balanced approach", arg_str)
