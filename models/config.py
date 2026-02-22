@@ -59,6 +59,12 @@ class SimulationConfig(BaseModel):
     """
 
     dataset_path: str = Field(description="Path to the case dataset (directory or file).")
+    top_n_news: int | None = Field(
+        default=None,
+        ge=1,
+        description="If set, filter case_data items to top N by abs(impact_score) at load time. "
+        "Items without impact_score are included after scored items. Agent never sees impact_score.",
+    )
     agent: AgentConfig = Field(description="Agent system configuration.")
     broker: BrokerConfig = Field(
         default_factory=BrokerConfig,

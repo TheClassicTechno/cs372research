@@ -57,27 +57,59 @@ def build_case(
 # Loading from disk
 # ------------------------------------------------------------------
 
-def load_case_templates(dataset_path: str) -> list[Case]:
+def load_case_templates(
+    dataset_path: str,
+    top_n_news: int | None = None,
+) -> list[Case]:
     """Load cases from *dataset_path*.
 
     Accepts a directory of ``.json`` files, a single ``.json`` file containing
     a JSON array, or a ``.jsonl`` file (one case per line).  Returns cases in
     decision-point order.
+
+    If *top_n_news* is set, each case's case_data.items are filtered to the
+    top N by abs(impact_score) descending.  Items without impact_score are
+    included after scored items.  The agent never sees impact_score.
     """
     path = Path(dataset_path)
 
     if path.is_dir():
-        return _load_from_directory(path)
+        cases = _load_from_directory(path)
     elif path.is_file() and path.suffix in (".jsonl", ".json"):
         if path.suffix == ".jsonl":
-            return _load_from_jsonl(path)
+            cases = _load_from_jsonl(path)
         else:
-            return _load_from_json_array(path)
+            cases = _load_from_json_array(path)
     else:
         raise FileNotFoundError(
             f"Dataset path '{dataset_path}' is neither a directory nor a "
             f"supported file (.json, .jsonl)."
         )
+
+    if top_n_news is not None:
+        cases = [_apply_top_n(c, top_n_news) for c in cases]
+        logger.info("Applied top_n_news=%d to %d cases.", top_n_news, len(cases))
+
+    return cases
+
+
+def _apply_top_n(case: Case, n: int) -> Case:
+    """Filter case_data.items to top N by abs(impact_score)."""
+    items = case.case_data.items
+    if len(items) <= n:
+        return case
+
+    def sort_key(item):
+        score = item.impact_score
+        if score is None:
+            return (1, 0.0)  # Items without score go last
+        return (0, -abs(score))
+
+    sorted_items = sorted(items, key=sort_key)
+    filtered = sorted_items[:n]
+    return case.model_copy(
+        update={"case_data": case.case_data.model_copy(update={"items": filtered})}
+    )
 
 
 # ------------------------------------------------------------------
