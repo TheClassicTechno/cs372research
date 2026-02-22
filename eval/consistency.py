@@ -50,6 +50,8 @@ def getl(dictionary, field, default):
         print(f"WARNING: '{field}' missing, using '{default}': {dictionary}")
     return dictionary.get(field, default)
 
+MAX_RETRIES = 3
+
 class ConsistencyJudge:
     """
     RCA-style Judge that evaluates trace-output consistency without access to ground truth.
@@ -115,7 +117,7 @@ Evaluate trace-output consistency."""
             "claims": json.dumps(getl(content, "claims", []), indent=2),
             "orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        })
+        }).with_retry(stop_after_attempt=MAX_RETRIES)
 
     def check_critique(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
         """
@@ -168,7 +170,7 @@ Evaluate the critique."""
             "target_text": getl(proposal_to_critique[0], "proposal", "N/A"),
             "own_proposal": getl(input_params, "my_proposal", ""),
             "critique": json.dumps(critiques[0], indent=2),
-        })
+        }).with_retry(stop_after_attempt=MAX_RETRIES)
 
     def check_revision(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
         """
@@ -223,7 +225,7 @@ Evaluate trace-output consistency. Did the agent actually do what they said they
             "new_justification": getl(content, "justification", "N/A"),
             "new_orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        })
+        }).with_retry(stop_after_attempt=MAX_RETRIES)
 
 
     def check_judge_decision(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
@@ -280,7 +282,16 @@ Evaluate trace-output consistency. Did the judge effectively synthesize the deba
             "strongest_objection": getl(content, "strongest_objection", "N/A"),
             "final_orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        })
+        }).with_retry(stop_after_attempt=MAX_RETRIES)
+
+
+def _print_result(result):
+    if not result:
+        return
+    passed = result.verdict in [ProposalConsistencyVerdict.CONSISTENT, DebateConsistencyVerdict.CONSISTENT]
+    status = "✅ PASS" if passed else "❌ FAIL"
+    print(f"  Result: {status} ({result.verdict}) (Conf: {result.confidence})")
+    print(f"  Explanation: {result.explanation}")
 
 
 def analyze_trace_file(file_path: str):
@@ -315,6 +326,7 @@ def analyze_trace_file(file_path: str):
         
         if turn_type == "proposal":
             result = judge.check_proposal(turn)
+            _print_result(result)
             
         elif turn_type == "critique":
             content = getl(turn, "content", {})
@@ -327,21 +339,19 @@ def analyze_trace_file(file_path: str):
                 # TODO maybe remove target role
                 turn_for_judge["content"]["critiques"] = [crit] 
                 turn_for_judge["input_params"]["all_proposals_for_critique"] = [proposals_by_role[role]]
+                print(f"  > Checking critique against {role}...")
                 result = judge.check_critique(turn_for_judge)
+                _print_result(result)
 
         elif turn_type == "revision":
             result = judge.check_revision(turn)
+            _print_result(result)
 
         elif turn_type == "judge_decision":
             result = judge.check_judge_decision(turn)
+            _print_result(result)
         else:
             print(f"No check for turn type {turn_type}")
-
-        if result:
-            passed = result.verdict in [ProposalConsistencyVerdict.CONSISTENT, DebateConsistencyVerdict.CONSISTENT]
-            status = "✅ PASS" if passed else "❌ FAIL"
-            print(f"  Result: {status} ({result.verdict}) (Conf: {result.confidence})")
-            print(f"  Explanation: {result.explanation}")
 
 
 if __name__ == "__main__":

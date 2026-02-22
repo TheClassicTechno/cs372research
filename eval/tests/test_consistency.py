@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, mock_open
 import json
-from eval.consistency import ConsistencyJudge, ProposalConsistencyVerdict, DebateConsistencyVerdict
+from eval.consistency import ConsistencyJudge, ProposalConsistencyVerdict, DebateConsistencyVerdict, analyze_trace_file
 
 class TestConsistencyJudge(unittest.TestCase):
     def setUp(self):
@@ -146,6 +146,57 @@ class TestConsistencyJudge(unittest.TestCase):
         arg_str = str(arg)
         self.assertIn("Balanced approach", arg_str)
         self.assertIn("Critiques...", arg_str)
+
+    @patch('eval.consistency.ConsistencyJudge')
+    @patch('builtins.open', new_callable=mock_open, read_data='{}')
+    @patch('json.load')
+    def test_analyze_trace_file_multiple_agents(self, mock_json_load, mock_file, MockJudgeClass):
+        # Setup mock judge instance
+        mock_judge_instance = MockJudgeClass.return_value
+        
+        # Setup mock trace data with 3 agents (MACRO, RISK, TECHNICAL)
+        # Turn sequence: 
+        # 0: Proposal (MACRO)
+        # 1: Critique (MACRO critiques RISK and TECHNICAL) -> 2 critiques!
+        
+        mock_trace_data = {
+            "debate_turns": [
+                {
+                    "type": "proposal",
+                    "role": "macro",
+                    "agent_id": "macro_1",
+                    "content": {},
+                    "input_params": {}
+                },
+                {
+                    "type": "critique",
+                    "role": "macro",
+                    "agent_id": "macro_1",
+                    "content": {
+                        "critiques": [
+                            {"target_role": "RISK", "objection": "Obj1"},
+                            {"target_role": "TECHNICAL", "objection": "Obj2"}
+                        ]
+                    },
+                    "input_params": {
+                        "all_proposals_for_critique": [
+                            {"role": "RISK", "proposal": "..."},
+                            {"role": "TECHNICAL", "proposal": "..."}
+                        ],
+                        "context": "foo"
+                    }
+                }
+            ]
+        }
+        mock_json_load.return_value = mock_trace_data
+        
+        analyze_trace_file("dummy_path.json")
+        
+        # Verify check_proposal called once
+        mock_judge_instance.check_proposal.assert_called_once()
+        
+        # Verify check_critique called TWICE (once for RISK, once for TECHNICAL)
+        self.assertEqual(mock_judge_instance.check_critique.call_count, 2)
 
 if __name__ == '__main__':
     unittest.main()
