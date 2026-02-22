@@ -3,18 +3,18 @@ Schema validation tests for evaluation/schemas/eval.schema.json.
 
 Coverage:
   - Positive: all 3 provided example files pass Draft 2020-12 validation
+  - Positive: extra properties are allowed (additionalProperties: true)
   - Negative / adversarial: inline JSON objects that must be rejected
     * Missing required top-level fields
-    * Invalid enum values (evaluation_mode, overall_verdict, rca verdict, t3 rung)
+    * Invalid enum values (evaluation_mode, rca verdict, t3 rung)
     * Wrong schema_version
-    * Extra unexpected properties at multiple levels
     * Missing experiment_config.label
     * Invalid control.policy.type
     * Invalid signal structure (missing required fields)
     * Invalid actuator structure (missing fields, invalid enum)
     * Wrong data types for various fields
     * Numeric range violations (crit gamma, pid retry_count)
-    * turnEval missing turn_id / extra properties
+    * turnEval missing turn_id
 """
 
 import json
@@ -132,10 +132,10 @@ class TestMissingRequiredFields:
         doc["eval_metadata"] = {}
         _assert_fails(validator, doc)
 
-    def test_missing_overall_verdict(self, validator):
+    def test_missing_overall_verdict_allowed(self, validator):
         doc = _minimal_valid()
         doc["run_summary"] = {}
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
@@ -150,10 +150,10 @@ class TestInvalidEnums:
         doc["evaluation_mode"] = "realtime"
         _assert_fails(validator, doc)
 
-    def test_invalid_overall_verdict(self, validator):
+    def test_invalid_overall_verdict_allowed(self, validator):
         doc = _minimal_valid()
         doc["run_summary"]["overall_verdict"] = "maybe"
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
     def test_invalid_rca_verdict(self, validator):
         doc = _minimal_valid()
@@ -196,30 +196,30 @@ class TestSchemaVersion:
 
 class TestAdditionalProperties:
 
-    def test_extra_toplevel_property(self, validator):
+    def test_extra_toplevel_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["unexpected_field"] = "surprise"
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
-    def test_extra_eval_metadata_property(self, validator):
+    def test_extra_eval_metadata_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["eval_metadata"]["unknown_key"] = True
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
-    def test_extra_run_summary_property(self, validator):
+    def test_extra_run_summary_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["run_summary"]["extra"] = 42
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
-    def test_extra_crit_summary_property(self, validator):
+    def test_extra_crit_summary_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["run_summary"]["crit_summary"] = {"gamma_mean": 0.5, "extra": True}
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
-    def test_extra_turn_eval_property(self, validator):
+    def test_extra_turn_eval_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["turn_evaluations"] = [{"turn_id": "t1", "unknown": True}]
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
@@ -251,13 +251,13 @@ class TestExperimentConfig:
         }
         _assert_passes(validator, doc)
 
-    def test_extra_interventions_property(self, validator):
+    def test_extra_interventions_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["experiment_config"] = {
             "label": "test",
             "interventions": {"crit_in_loop": False, "unknown_flag": True},
         }
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
@@ -306,13 +306,13 @@ class TestControlBlock:
         }
         _assert_passes(validator, doc)
 
-    def test_extra_control_property(self, validator):
+    def test_extra_control_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["experiment_config"] = {
             "label": "test",
             "control": {"enabled": False, "unknown_key": 42},
         }
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
@@ -381,7 +381,7 @@ class TestSignalStructure:
         }
         _assert_fails(validator, doc)
 
-    def test_signal_extra_property(self, validator):
+    def test_signal_extra_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["experiment_config"] = {
             "label": "test",
@@ -392,7 +392,7 @@ class TestSignalStructure:
                 ],
             },
         }
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
@@ -516,10 +516,10 @@ class TestTurnEvaluations:
         doc["turn_evaluations"] = None
         _assert_passes(validator, doc)
 
-    def test_turn_eval_extra_property_rejected(self, validator):
+    def test_turn_eval_extra_property_allowed(self, validator):
         doc = _minimal_valid()
         doc["turn_evaluations"] = [{"turn_id": "t1", "unknown_field": True}]
-        _assert_fails(validator, doc)
+        _assert_passes(validator, doc)
 
 
 # ===================================================================
