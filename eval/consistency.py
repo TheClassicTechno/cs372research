@@ -104,8 +104,8 @@ Evaluate trace-output consistency."""
             ("user", user_prompt),
         ])
 
-        chain = prompt | self.llm.with_structured_output(ProposalConsistencyJudgement)
-        
+        chain = (prompt | self.llm.with_structured_output(ProposalConsistencyJudgement)).with_retry(stop_after_attempt=MAX_RETRIES)
+
         assert "content" in turn
         content = turn['content']
         input_params = turn['input_params']
@@ -117,7 +117,7 @@ Evaluate trace-output consistency."""
             "claims": json.dumps(getl(content, "claims", []), indent=2),
             "orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        }).with_retry(stop_after_attempt=MAX_RETRIES)
+        })
 
     def check_critique(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
         """
@@ -156,7 +156,7 @@ Evaluate the critique."""
             ("user", user_prompt),
         ])
 
-        chain = prompt | self.llm.with_structured_output(DebateConsistencyJudgement)
+        chain = (prompt | self.llm.with_structured_output(DebateConsistencyJudgement)).with_retry(stop_after_attempt=MAX_RETRIES)
 
         critique_content = getl(turn, "content", {})
         input_params = turn['input_params']
@@ -164,13 +164,13 @@ Evaluate the critique."""
         assert len(proposal_to_critique) == 1
         critiques = getl(critique_content, "critiques", [])
         assert len(critiques) == 1
-        
+
         return chain.invoke({
             "context": getl(input_params, "context", "N/A"),
             "target_text": getl(proposal_to_critique[0], "proposal", "N/A"),
             "own_proposal": getl(input_params, "my_proposal", ""),
             "critique": json.dumps(critiques[0], indent=2),
-        }).with_retry(stop_after_attempt=MAX_RETRIES)
+        })
 
     def check_revision(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
         """
@@ -212,11 +212,11 @@ Evaluate trace-output consistency. Did the agent actually do what they said they
             ("user", user_prompt),
         ])
 
-        chain = prompt | self.llm.with_structured_output(DebateConsistencyJudgement)
+        chain = (prompt | self.llm.with_structured_output(DebateConsistencyJudgement)).with_retry(stop_after_attempt=MAX_RETRIES)
 
         content = getl(turn, "content", {})
         input_params = getl(turn, "input_params", {})
-        
+
         return chain.invoke({
             "context": getl(input_params, "context", "N/A"),
             "previous_proposal": json.dumps(getl(input_params, "my_proposal", {}), indent=2),
@@ -225,7 +225,7 @@ Evaluate trace-output consistency. Did the agent actually do what they said they
             "new_justification": getl(content, "justification", "N/A"),
             "new_orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        }).with_retry(stop_after_attempt=MAX_RETRIES)
+        })
 
 
     def check_judge_decision(self, turn: Dict[str, Any]) -> DebateConsistencyJudgement:
@@ -268,12 +268,12 @@ Evaluate trace-output consistency. Did the judge effectively synthesize the deba
             ("user", user_prompt),
         ])
 
-        chain = prompt | self.llm.with_structured_output(DebateConsistencyJudgement)
+        chain = (prompt | self.llm.with_structured_output(DebateConsistencyJudgement)).with_retry(stop_after_attempt=MAX_RETRIES)
 
         content = getl(turn, "content", {})
         input_params = getl(turn, "input_params", {})
         revisions = getl(input_params, "revisions_for_judge", [])
-        
+
         return chain.invoke({
             "context": getl(input_params, "context", "N/A"),
             "critiques_text": getl(input_params, "critiques_text", "N/A"),
@@ -282,7 +282,7 @@ Evaluate trace-output consistency. Did the judge effectively synthesize the deba
             "strongest_objection": getl(content, "strongest_objection", "N/A"),
             "final_orders": json.dumps(getl(content, "orders", []), indent=2),
             "confidence": getl(content, "confidence", "N/A"),
-        }).with_retry(stop_after_attempt=MAX_RETRIES)
+        })
 
 
 def _print_result(result):
