@@ -52,7 +52,10 @@ class AsyncSimulationRunner:
         self._sim_logger.init_run(self._config_yaml_path)
 
         # Load case templates once (shared across episodes).
-        templates = load_case_templates(self._config.dataset_path)
+        templates = load_case_templates(
+            self._config.dataset_path,
+            top_n_news=self._config.top_n_news,
+        )
         num_cases = len(templates)
         logger.info(
             "Starting simulation '%s': %d episode(s), %d case(s) each.",

@@ -7,15 +7,11 @@ from pydantic import BaseModel
 from models.portfolio import PortfolioSnapshot
 
 
-class PricePoint(BaseModel):
-    """One day's price bar (OHLCV) within the interval between decision points."""
+class ClosePricePoint(BaseModel):
+    """One day's close price within the interval between decision points."""
 
     timestamp: str  # Date/datetime for this bar (e.g. YYYY-MM-DD or ISO8601)
-    open: float
-    high: float
-    low: float
     close: float
-    volume: float = 0.0
 
 
 class IntervalPriceSummary(BaseModel):
@@ -27,16 +23,18 @@ class IntervalPriceSummary(BaseModel):
 
     open: float
     close: float
-    high: float
-    low: float
-    volume: float = 0.0
 
 
 class CaseDataItem(BaseModel):
-    """Single item in case information (e.g. earnings report, news headline)."""
+    """Single item in case information (e.g. earnings report, news headline).
+
+    impact_score is used for top-N filtering at load time; it is never passed
+    to the agent (excluded in for_agent).
+    """
 
     kind: Literal["earnings", "news", "other"] = "other"
     content: str
+    impact_score: float | None = None
 
 
 class CaseData(BaseModel):
@@ -55,7 +53,7 @@ class StockData(BaseModel):
 
     ticker: str
     current_price: float
-    daily_bars: list[PricePoint]  # One bar per day in the interval
+    daily_bars: list[ClosePricePoint]  # One bar per day in the interval
     interval_summary: IntervalPriceSummary | None = None  # Optional summary for agent
 
 
@@ -85,8 +83,14 @@ class Case(BaseModel):
         return list(self.stock_data.keys())
 
     def for_agent(self) -> dict:
-        """Payload to send to the agent (excludes metadata)."""
-        return self.model_dump(
-            include={"case_data", "stock_data", "portfolio"},
-            exclude_none=True,
-        )
+        """Payload to send to the agent (excludes metadata and impact_score)."""
+        return {
+            "case_data": {
+                "items": [
+                    {"kind": item.kind, "content": item.content}
+                    for item in self.case_data.items
+                ]
+            },
+            "stock_data": {k: v.model_dump() for k, v in self.stock_data.items()},
+            "portfolio": self.portfolio.model_dump(),
+        }
