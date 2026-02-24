@@ -149,3 +149,165 @@ class TestPIDController:
             errors.append(abs(result.e_t))
         # Errors should generally decrease as rho approaches rho_star
         assert errors[-1] < errors[0]
+
+
+# ---------------------------------------------------------------------------
+# First-step derivative kick
+# ---------------------------------------------------------------------------
+
+class TestFirstStepDerivativeKick:
+    """The D-term uses (e_t - e_prev) where e_prev defaults to 0.0 on round 0.
+
+    This means the very first D-term = Kd * (e_0 - 0.0) = Kd * e_0, which can
+    be a large spike if the initial error is far from zero.  This is a known
+    PID design limitation ("derivative kick").  These tests verify the behavior
+    is predictable and bounded.
+    """
+
+    def _make_config(self, **overrides):
+        defaults = dict(
+            gains=PIDGains(Kp=0.0, Ki=0.0, Kd=1.0),  # D-term only
+            rho_star=0.8,
+            gamma_beta=0.0,   # No momentum so u_t is applied directly
+            mu=0.0,
+            delta_s=0.05,
+            T_max=20,
+            epsilon=0.01,
+        )
+        defaults.update(overrides)
+        return PIDConfig(**defaults)
+
+    def test_first_step_d_term_equals_error(self):
+        """On round 0, D-term = Kd * (e_0 - 0) = Kd * e_0."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        result = ctrl.step(rho_bar=0.5)  # e_0 = 0.8 - 0.5 = 0.3
+        assert result.d_term == pytest.approx(1.0 * 0.3)
+
+    def test_second_step_d_term_uses_real_prev(self):
+        """On round 1, D-term uses real e_prev from round 0."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        ctrl.step(rho_bar=0.5)   # e_0 = 0.3
+        r1 = ctrl.step(rho_bar=0.6)  # e_1 = 0.2, D = Kd * (0.2 - 0.3) = -0.1
+        assert r1.d_term == pytest.approx(-0.1)
+
+    def test_first_step_kick_bounded_by_clamp(self):
+        """Even with a large D-term kick, beta stays in [0, 1]."""
+        cfg = self._make_config(gains=PIDGains(Kp=0.0, Ki=0.0, Kd=10.0))
+        ctrl = PIDController(cfg, initial_beta=0.5)
+        result = ctrl.step(rho_bar=0.0)  # e = 0.8, D = 10*0.8 = 8.0
+        assert 0.0 <= result.beta_new <= 1.0
+
+    def test_zero_initial_error_no_kick(self):
+        """If initial error is zero, no derivative kick."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        result = ctrl.step(rho_bar=0.8)  # e = 0.0
+        assert result.d_term == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# Integral windup behavior
+# ---------------------------------------------------------------------------
+
+class TestIntegralWindup:
+    """The integral accumulates all past errors without bound.  If the error
+    stays positive for many rounds, the integral grows large and the I-term
+    can dominate.  These tests verify the behavior is consistent (not a bug
+    fix — just documenting how the system behaves under sustained error).
+    """
+
+    def _make_config(self, **overrides):
+        defaults = dict(
+            gains=PIDGains(Kp=0.0, Ki=0.1, Kd=0.0),  # I-term only
+            rho_star=0.8,
+            gamma_beta=0.0,
+            mu=0.0,
+            delta_s=0.05,
+            T_max=100,
+            epsilon=0.01,
+        )
+        defaults.update(overrides)
+        return PIDConfig(**defaults)
+
+    def test_integral_grows_under_sustained_error(self):
+        """Integral should equal sum of all past errors."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        for _ in range(10):
+            ctrl.step(rho_bar=0.5)  # e = 0.3 each round
+        assert ctrl.state.integral == pytest.approx(10 * 0.3)
+
+    def test_i_term_proportional_to_integral(self):
+        """I-term = Ki * integral."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        for _ in range(5):
+            ctrl.step(rho_bar=0.5)
+        result = ctrl.step(rho_bar=0.5)
+        # integral = 6 * 0.3 = 1.8, I-term = 0.1 * 1.8 = 0.18
+        assert result.i_term == pytest.approx(0.1 * 6 * 0.3)
+
+    def test_integral_decreases_when_error_reverses(self):
+        """If quality overshoots target, negative errors reduce the integral."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        # 5 rounds below target
+        for _ in range(5):
+            ctrl.step(rho_bar=0.5)  # e = +0.3
+        integral_before = ctrl.state.integral  # 1.5
+        # 5 rounds above target
+        for _ in range(5):
+            ctrl.step(rho_bar=1.0)  # e = -0.2
+        integral_after = ctrl.state.integral
+        assert integral_after < integral_before
+        assert integral_after == pytest.approx(1.5 + 5 * (-0.2))
+
+    def test_beta_clamps_despite_large_integral(self):
+        """Even with a huge accumulated integral, beta stays in [0, 1]."""
+        ctrl = PIDController(self._make_config(), initial_beta=0.5)
+        for _ in range(100):
+            result = ctrl.step(rho_bar=0.0)  # e = 0.8 each round
+        assert 0.0 <= result.beta_new <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# Sycophancy-inflated error exceeding 1.0
+# ---------------------------------------------------------------------------
+
+class TestSycophancyInflatedError:
+    """When sycophancy fires (s_t=1), error = (rho_star - rho_bar) + mu.
+    With default mu=1.0 and rho_bar < rho_star, error can exceed 1.0.
+    These tests verify the controller handles this correctly.
+    """
+
+    def _make_config(self):
+        return PIDConfig(
+            gains=PIDGains(Kp=0.1, Ki=0.01, Kd=0.05),
+            rho_star=0.8,
+            gamma_beta=0.9,
+            mu=1.0,
+            delta_s=0.05,
+            T_max=20,
+            epsilon=0.01,
+        )
+
+    def test_error_exceeds_one(self):
+        """With mu=1.0 and rho_bar=0.5, error = 0.3 + 1.0 = 1.3."""
+        e = compute_error(rho_star=0.8, rho_bar=0.5, mu=1.0, s_t=1)
+        assert e == pytest.approx(1.3)
+        assert e > 1.0
+
+    def test_max_possible_error(self):
+        """Worst case: rho_bar=0, s_t=1 -> error = rho_star + mu."""
+        e = compute_error(rho_star=0.8, rho_bar=0.0, mu=1.0, s_t=1)
+        assert e == pytest.approx(1.8)
+
+    def test_controller_handles_large_error(self):
+        """Controller should still produce finite, clamped beta."""
+        import math
+        cfg = self._make_config()
+        ctrl = PIDController(cfg, initial_beta=0.5)
+        # Round 0: set up JS/ov history
+        ctrl.step(rho_bar=0.5, js_current=0.4, ov_current=0.9)
+        # Round 1: trigger sycophancy (JS drops 0.3 > delta_s, overlap drops)
+        result = ctrl.step(rho_bar=0.5, js_current=0.1, ov_current=0.6)
+        assert result.s_t == 1
+        assert result.e_t > 1.0
+        assert math.isfinite(result.u_t)
+        assert 0.0 <= result.beta_new <= 1.0

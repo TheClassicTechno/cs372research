@@ -26,26 +26,31 @@ THE KEY IDEA
 The PID output u_t is a weighted sum of three terms:
     u_t = Kp * e_t  +  Ki * sum(errors)  +  Kd * (e_t - e_prev)
 
-Each error e_t is between -1 and +1 (since scores are in [0,1]).  So the
-worst case for |u_t| is when every term is at its maximum:
+The error e_t = (rho_star - rho_bar) + mu * s_t can be larger than 1.0
+when the sycophancy penalty fires (s_t=1, mu > 0).  The worst-case
+magnitude of e_t is:
 
-    |u_t|  ≤  Kp * 1  +  Ki * T_max * 1  +  Kd * 2 * 1
-              ─────────   ──────────────    ────────────
-              worst P     worst I           worst D
-              (max error) (max errors for   (error jumps from
-                           T_max rounds)    -1 to +1)
+    e_max = max(rho_star + mu,  1 - rho_star)
+            ───────────────     ─────────────
+            worst positive      worst negative
+            (rho_bar=0, s_t=1)  (rho_bar=1, s_t=0)
 
-This gives us the output bound (Eq 12):
-    |u_t| ≤ Kp + T_max * Ki + 2 * Kd
+The worst case for |u_t| is when every term is at its maximum:
+
+    |u_t|  ≤  e_max * Kp  +  T_max * e_max * Ki  +  2 * e_max * Kd
+           =  e_max * (Kp + T_max * Ki + 2 * Kd)
+
+This gives us the output bound (Eq 12, sycophancy-corrected):
+    |u_t| ≤ e_max * (Kp + T_max * Ki + 2 * Kd)
 
 For β to stay bounded, this worst-case u_t must not overwhelm the
 momentum term.  The stability condition (Eq 17) says:
 
-    Kp + T_max * Ki + 2 * Kd  <  1 / γ_β
+    e_max * (Kp + T_max * Ki + 2 * Kd)  <  1 / γ_β
 
 And the stricter non-oscillation condition (Eq 18) says:
 
-    Kp + T_max * Ki + 2 * Kd  <  1 - γ_β
+    e_max * (Kp + T_max * Ki + 2 * Kd)  <  1 - γ_β
 
 The non-oscillation check is stricter — it guarantees not just that β is
 bounded, but that it converges smoothly without bouncing around.
@@ -57,7 +62,8 @@ WHERE THIS IS USED IN THE PIPELINE
     Before the debate starts:
 
         config = PIDConfig(gains=PIDGains(...), ...)
-        validate_gains(config.gains, config.T_max, config.gamma_beta)
+        validate_gains(config.gains, config.T_max, config.gamma_beta,
+                       rho_star=config.rho_star, mu=config.mu)
           │
           ├── If gains are safe:  proceed to create PIDController
           └── If gains are unsafe: raises GainInstabilityError
@@ -82,35 +88,69 @@ class GainInstabilityError(Exception):
     pass
 
 
-def max_pid_output_bound(gains: PIDGains, T_max: int) -> float:
+def _max_error(rho_star: float, mu: float) -> float:
+    """Worst-case |e_t| given the target score and sycophancy weight.
+
+    The error formula is:  e_t = (rho_star - rho_bar) + mu * s_t
+
+    The most positive error occurs when rho_bar = 0 and s_t = 1:
+        e_max_positive = rho_star + mu
+
+    The most negative error occurs when rho_bar = 1 and s_t = 0:
+        e_max_negative = rho_star - 1   (absolute value = 1 - rho_star)
+
+    Returns the larger of the two magnitudes.
+    """
+    return max(rho_star + mu, 1.0 - rho_star)
+
+
+def max_pid_output_bound(
+    gains: PIDGains,
+    T_max: int,
+    rho_star: float = 1.0,
+    mu: float = 0.0,
+) -> float:
     """Worst-case upper bound on the correction signal |u_t|. (RAudit Eq 12)
 
-    Formula:  |u_t| ≤ Kp + T_max * Ki + 2 * Kd
+    Formula:  |u_t| ≤ e_max * (Kp + T_max * Ki + 2 * Kd)
 
-    This assumes the worst possible error sequence: every round's error is
-    at its maximum magnitude (1.0), and the error can swing from -1 to +1
-    between consecutive rounds.
+    where e_max = max(rho_star + mu, 1 - rho_star) is the worst-case
+    error magnitude accounting for the sycophancy penalty.
+
+    When rho_star and mu are not provided, defaults give e_max = 1.0,
+    which is the conservative bound assuming |e_t| ≤ 1 (no sycophancy).
 
     Used by: check_stability() and check_non_oscillation() to verify that
     the gains are safe before starting a debate.
 
     Args:
-        gains: The Kp, Ki, Kd gain triple.
-        T_max: Maximum number of debate rounds.  Needed because the I-term
-               accumulates errors over all rounds, so more rounds =
-               potentially larger integral = larger u_t.
+        gains:    The Kp, Ki, Kd gain triple.
+        T_max:    Maximum number of debate rounds.  Needed because the I-term
+                  accumulates errors over all rounds, so more rounds =
+                  potentially larger integral = larger u_t.
+        rho_star: Target reasonableness score.  Default 1.0 gives the most
+                  conservative e_max when mu=0.
+        mu:       Sycophancy weight.  Default 0.0 (no sycophancy penalty).
     """
-    return gains.Kp + T_max * gains.Ki + 2.0 * gains.Kd
+    e_max = _max_error(rho_star, mu)
+    return e_max * (gains.Kp + T_max * gains.Ki + 2.0 * gains.Kd)
 
 
-def check_stability(gains: PIDGains, T_max: int, gamma_beta: float) -> bool:
+def check_stability(
+    gains: PIDGains,
+    T_max: int,
+    gamma_beta: float,
+    rho_star: float = 1.0,
+    mu: float = 0.0,
+) -> bool:
     """Check whether β is guaranteed to stay bounded. (RAudit Eq 17)
 
-    Condition:  Kp + T_max * Ki + 2 * Kd  <  1 / γ_β
+    Condition:  e_max * (Kp + T_max * Ki + 2 * Kd)  <  1 / γ_β
 
-    In plain English: "The worst-case correction signal must be smaller
-    than the inverse of the momentum factor."  If this fails, there exist
-    error sequences where β would grow without bound (before clamping).
+    In plain English: "The worst-case correction signal (including
+    sycophancy-inflated errors) must be smaller than the inverse of the
+    momentum factor."  If this fails, there exist error sequences where β
+    would grow without bound (before clamping).
 
     Returns True if the gains are safe.  False if they might cause instability.
 
@@ -120,17 +160,25 @@ def check_stability(gains: PIDGains, T_max: int, gamma_beta: float) -> bool:
         gamma_beta: Momentum factor for β updates.  When gamma_beta ≤ 0
                     there is no momentum to amplify corrections, so the
                     condition is trivially satisfied.
+        rho_star:   Target reasonableness score (for error bound calc).
+        mu:         Sycophancy weight (for error bound calc).
     """
     if gamma_beta <= 0.0:
         return True  # No momentum means no amplification — always safe
-    bound = max_pid_output_bound(gains, T_max)
+    bound = max_pid_output_bound(gains, T_max, rho_star, mu)
     return bound < 1.0 / gamma_beta
 
 
-def check_non_oscillation(gains: PIDGains, T_max: int, gamma_beta: float) -> bool:
+def check_non_oscillation(
+    gains: PIDGains,
+    T_max: int,
+    gamma_beta: float,
+    rho_star: float = 1.0,
+    mu: float = 0.0,
+) -> bool:
     """Stricter check: will β converge smoothly without bouncing? (RAudit Eq 18)
 
-    Condition:  Kp + T_max * Ki + 2 * Kd  <  1 - γ_β
+    Condition:  e_max * (Kp + T_max * Ki + 2 * Kd)  <  1 - γ_β
 
     This is harder to satisfy than check_stability().  A configuration can
     pass stability (β won't blow up) but fail non-oscillation (β might
@@ -142,12 +190,20 @@ def check_non_oscillation(gains: PIDGains, T_max: int, gamma_beta: float) -> boo
         gains:      The Kp, Ki, Kd gain triple.
         T_max:      Maximum debate rounds.
         gamma_beta: Momentum factor for β updates.
+        rho_star:   Target reasonableness score (for error bound calc).
+        mu:         Sycophancy weight (for error bound calc).
     """
-    bound = max_pid_output_bound(gains, T_max)
+    bound = max_pid_output_bound(gains, T_max, rho_star, mu)
     return bound < 1.0 - gamma_beta
 
 
-def validate_gains(gains: PIDGains, T_max: int, gamma_beta: float) -> None:
+def validate_gains(
+    gains: PIDGains,
+    T_max: int,
+    gamma_beta: float,
+    rho_star: float = 1.0,
+    mu: float = 0.0,
+) -> None:
     """Validate PID gains and raise an error if they're unsafe.
 
     Call this once when setting up a PIDController to fail fast if the
@@ -160,16 +216,19 @@ def validate_gains(gains: PIDGains, T_max: int, gamma_beta: float) -> None:
         gains:      The Kp, Ki, Kd gain triple.
         T_max:      Maximum debate rounds.
         gamma_beta: Momentum factor for β updates.
+        rho_star:   Target reasonableness score (for error bound calc).
+        mu:         Sycophancy weight (for error bound calc).
 
     Raises:
         GainInstabilityError: If the stability condition (Eq 17) is violated.
     """
-    if not check_stability(gains, T_max, gamma_beta):
-        bound = max_pid_output_bound(gains, T_max)
+    if not check_stability(gains, T_max, gamma_beta, rho_star, mu):
+        bound = max_pid_output_bound(gains, T_max, rho_star, mu)
         limit = 1.0 / gamma_beta if gamma_beta > 0.0 else float("inf")
         raise GainInstabilityError(
             f"Gains violate stability (Eq 17): "
             f"|u_t| bound = {bound:.4f} >= 1/gamma_beta = {limit:.4f}. "
             f"Gains: Kp={gains.Kp}, Ki={gains.Ki}, Kd={gains.Kd}, "
-            f"T_max={T_max}, gamma_beta={gamma_beta}"
+            f"T_max={T_max}, gamma_beta={gamma_beta}, "
+            f"rho_star={rho_star}, mu={mu}"
         )

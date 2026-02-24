@@ -13,7 +13,7 @@ class TestConvergingSimulation:
 
     def _make_controller(self):
         cfg = PIDConfig(
-            gains=PIDGains(Kp=0.3, Ki=0.02, Kd=0.05),
+            gains=PIDGains(Kp=0.15, Ki=0.01, Kd=0.03),
             rho_star=0.8,
             gamma_beta=0.9,
             mu=1.0,
@@ -21,7 +21,10 @@ class TestConvergingSimulation:
             T_max=20,
             epsilon=0.01,
         )
-        validate_gains(cfg.gains, cfg.T_max, cfg.gamma_beta)
+        # Validate with actual rho_star and mu so the sycophancy-corrected
+        # bound is checked (e_max = max(0.8+1.0, 0.2) = 1.8).
+        validate_gains(cfg.gains, cfg.T_max, cfg.gamma_beta,
+                        rho_star=cfg.rho_star, mu=cfg.mu)
         return PIDController(cfg, initial_beta=0.5)
 
     def test_error_decreases(self):

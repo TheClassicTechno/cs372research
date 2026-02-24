@@ -95,9 +95,6 @@ import math
 from typing import List, Set
 
 
-EPSILON = 1e-10  # Guard against log(0) in entropy calculations
-
-
 def shannon_entropy(p: float) -> float:
     """Binary Shannon entropy for a single probability value.
 
