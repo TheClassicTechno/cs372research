@@ -14,9 +14,10 @@ from .models import (
 )
 from .config import DebateConfig, AgentRole
 from .runner import MultiAgentRunner
+from .majority_vote_runner import MajorityVoteRunner
 
 __all__ = [
     "Observation", "Action", "Order", "Claim", "AgentTrace", "DebateTurn",
     "PearlLevel", "MarketState", "PortfolioState", "PipelineOutput",
-    "DebateConfig", "AgentRole", "MultiAgentRunner",
+    "DebateConfig", "AgentRole", "MultiAgentRunner", "MajorityVoteRunner",
 ]

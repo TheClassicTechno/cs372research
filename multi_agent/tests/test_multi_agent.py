@@ -29,9 +29,14 @@ from multi_agent.graph import (
     _mock_pipeline,
     _mock_proposal,
     _mock_revision,
+    _get_vote_direction,
+    _get_median_size,
+    aggregate_proposals_node,
     build_context_node,
     build_debate_graph,
+    build_majority_vote_graph,
     compile_debate_graph,
+    compile_majority_vote_graph,
     critique_node,
     data_analysis_node,
     judge_node,
@@ -40,6 +45,7 @@ from multi_agent.graph import (
     revise_node,
     should_continue,
     build_trace_node,
+    build_mv_trace_node,
 )
 from multi_agent.models import (
     Action,
@@ -64,6 +70,7 @@ from multi_agent.prompts import (
     get_agreeableness_modifier,
 )
 from multi_agent.runner import MultiAgentRunner
+from multi_agent.majority_vote_runner import MajorityVoteRunner
 
 
 # =============================================================================
@@ -946,3 +953,289 @@ class TestPromptTemplates:
         assert "MACRO" in result
         assert "critique text here" in result
         assert "a strong disagreement" in result
+
+
+# =============================================================================
+# 11. MAJORITY VOTE AGGREGATION TESTS
+# =============================================================================
+
+
+class TestMajorityVoteAggregation:
+    """Unit tests for vote direction, median size, and aggregation node."""
+
+    def _make_proposal(self, role: str, ticker: str, side: str, size: float, confidence: float = 0.6) -> dict:
+        return {
+            "role": role,
+            "action_dict": {
+                "orders": [{"ticker": ticker, "side": side, "size": size}],
+                "justification": f"{role} says {side} {ticker}",
+                "confidence": confidence,
+                "claims": [{"claim_text": f"{role} claim on {ticker}", "pearl_level": "L2", "variables": [ticker]}],
+            },
+        }
+
+    def test_vote_direction_majority_buy(self):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10),
+            self._make_proposal("value", "AAPL", "buy", 15),
+            self._make_proposal("risk", "AAPL", "sell", 5),
+        ]
+        assert _get_vote_direction(proposals, "AAPL") == "buy"
+
+    def test_vote_direction_majority_sell(self):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "sell", 10),
+            self._make_proposal("value", "AAPL", "sell", 15),
+            self._make_proposal("risk", "AAPL", "buy", 5),
+        ]
+        assert _get_vote_direction(proposals, "AAPL") == "sell"
+
+    def test_vote_direction_tie_is_hold(self):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10),
+            self._make_proposal("value", "AAPL", "sell", 15),
+        ]
+        assert _get_vote_direction(proposals, "AAPL") == "hold"
+
+    def test_vote_direction_no_orders(self):
+        proposals = [{"role": "macro", "action_dict": {"orders": [], "confidence": 0.5}}]
+        assert _get_vote_direction(proposals, "AAPL") == "hold"
+
+    def test_median_size_odd(self):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 5),
+            self._make_proposal("value", "AAPL", "buy", 15),
+            self._make_proposal("risk", "AAPL", "buy", 10),
+        ]
+        assert _get_median_size(proposals, "AAPL", "buy") == 10.0
+
+    def test_median_size_even(self):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 5),
+            self._make_proposal("value", "AAPL", "buy", 15),
+        ]
+        assert _get_median_size(proposals, "AAPL", "buy") == 10.0
+
+    def test_median_size_no_matching(self):
+        proposals = [self._make_proposal("macro", "AAPL", "buy", 10)]
+        assert _get_median_size(proposals, "AAPL", "sell") == 0.0
+
+    def test_aggregate_node_majority_buy(self, sample_obs_dict, mock_config_dict):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10),
+            self._make_proposal("value", "AAPL", "buy", 20),
+            self._make_proposal("risk", "AAPL", "sell", 5),
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": proposals,
+        }
+        result = aggregate_proposals_node(state)
+        final = result["final_action"]
+        aapl_orders = [o for o in final["orders"] if o["ticker"] == "AAPL"]
+        assert len(aapl_orders) == 1
+        assert aapl_orders[0]["side"] == "buy"
+        assert aapl_orders[0]["size"] == 15.0  # median of 10,20
+
+    def test_aggregate_node_detects_disagreement(self, sample_obs_dict, mock_config_dict):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10),
+            self._make_proposal("value", "AAPL", "sell", 5),
+            self._make_proposal("risk", "AAPL", "buy", 8),
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": proposals,
+        }
+        result = aggregate_proposals_node(state)
+        assert "Disagreement" in result["audited_memo"]
+
+    def test_aggregate_node_unanimous(self, sample_obs_dict, mock_config_dict):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10),
+            self._make_proposal("value", "AAPL", "buy", 12),
+            self._make_proposal("risk", "AAPL", "buy", 8),
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": proposals,
+        }
+        result = aggregate_proposals_node(state)
+        assert "Unanimous" in result["audited_memo"]
+
+    def test_aggregate_node_claim_deduplication(self, sample_obs_dict, mock_config_dict):
+        p1 = self._make_proposal("macro", "AAPL", "buy", 10)
+        p2 = self._make_proposal("value", "AAPL", "buy", 10)
+        # Give both the same claim text
+        p2["action_dict"]["claims"] = [
+            {"claim_text": "macro claim on AAPL", "pearl_level": "L2", "variables": ["AAPL"]}
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": [p1, p2],
+        }
+        result = aggregate_proposals_node(state)
+        claim_texts = [c["claim_text"] for c in result["final_action"]["claims"]]
+        assert len(claim_texts) == len(set(claim_texts)), "Claims should be deduplicated"
+
+    def test_aggregate_strongest_objection(self, sample_obs_dict, mock_config_dict):
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10, confidence=0.8),
+            self._make_proposal("value", "AAPL", "buy", 12, confidence=0.7),
+            self._make_proposal("risk", "AAPL", "sell", 5, confidence=0.3),
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": proposals,
+        }
+        result = aggregate_proposals_node(state)
+        assert "risk" in result["strongest_objection"]
+        assert "0.30" in result["strongest_objection"]
+
+
+# =============================================================================
+# 12. MAJORITY VOTE RUNNER TESTS
+# =============================================================================
+
+
+class TestMajorityVoteRunner:
+    """End-to-end mock tests for MajorityVoteRunner."""
+
+    def test_basic_execution(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, trace = runner.run(sample_observation)
+        assert isinstance(action, Action)
+        assert isinstance(trace, AgentTrace)
+
+    def test_architecture_is_majority_vote(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        _, trace = runner.run(sample_observation)
+        assert trace.architecture == "majority_vote"
+
+    def test_action_has_valid_structure(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, _ = runner.run(sample_observation)
+        assert 0 <= action.confidence <= 1
+        for order in action.orders:
+            assert order.side in ("buy", "sell")
+            assert order.size > 0
+
+    def test_claims_present(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, _ = runner.run(sample_observation)
+        assert len(action.claims) > 0
+        for claim in action.claims:
+            assert claim.pearl_level in (PearlLevel.L1, PearlLevel.L2, PearlLevel.L3)
+
+    def test_two_agent_config(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.RISK],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, trace = runner.run(sample_observation)
+        assert isinstance(action, Action)
+        assert trace.architecture == "majority_vote"
+
+    def test_five_agent_config(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, trace = runner.run(sample_observation)
+        assert isinstance(action, Action)
+        assert len(action.claims) > 0
+
+    def test_trace_saved_to_disk(self, sample_observation, tmp_path):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=True,
+            trace_dir=str(tmp_path),
+        )
+        runner = MajorityVoteRunner(config)
+        runner.run(sample_observation)
+        traces = list(tmp_path.glob("majority_vote_*.json"))
+        assert len(traces) == 1
+        data = json.loads(traces[0].read_text())
+        assert data["trace"]["architecture"] == "majority_vote"
+
+    def test_no_pipeline(self, sample_observation):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            enable_news_pipeline=False,
+            enable_data_pipeline=False,
+            mock=True,
+            trace_dir="/tmp/test_traces",
+        )
+        runner = MajorityVoteRunner(config)
+        action, trace = runner.run(sample_observation)
+        assert isinstance(action, Action)
+
+
+# =============================================================================
+# 13. MAJORITY VOTE GRAPH STRUCTURE TESTS
+# =============================================================================
+
+
+class TestMajorityVoteGraph:
+    """Test that the majority vote graph is built correctly."""
+
+    def test_graph_compiles(self):
+        config = DebateConfig(mock=True)
+        graph = compile_majority_vote_graph(config)
+        assert graph is not None
+
+    def test_graph_has_correct_nodes(self):
+        config = DebateConfig(mock=True)
+        graph = build_majority_vote_graph(config)
+        node_names = set(graph.nodes.keys())
+        expected = {"news_digest", "data_analysis", "build_context", "propose", "aggregate", "build_mv_trace"}
+        assert expected.issubset(node_names)
+
+    def test_graph_has_no_debate_nodes(self):
+        config = DebateConfig(mock=True)
+        graph = build_majority_vote_graph(config)
+        node_names = set(graph.nodes.keys())
+        assert "critique" not in node_names
+        assert "revise" not in node_names
+        assert "judge" not in node_names
+
+    def test_graph_no_pipeline(self):
+        config = DebateConfig(
+            enable_news_pipeline=False,
+            enable_data_pipeline=False,
+            mock=True,
+        )
+        graph = build_majority_vote_graph(config)
+        node_names = set(graph.nodes.keys())
+        assert "news_digest" not in node_names
+        assert "data_analysis" not in node_names
+        assert "build_context" in node_names
