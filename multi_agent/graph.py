@@ -1,18 +1,88 @@
 """
 LangGraph-based multi-agent debate orchestrator.
 
-Graph structure:
-  [START]
-    -> [news_digest]  (optional, parallel)
-    -> [data_analysis] (optional, parallel)
-    -> [build_context]
-    -> [propose]      (all role agents generate proposals)
-    -> [critique]     (all role agents critique each other)
-    -> [revise]       (all role agents revise based on critiques)
-    -> [should_continue?]  (loop back to critique or proceed to judge)
-    -> [judge]        (synthesize final decision)
-    -> [build_trace]  (construct AgentTrace for eval team)
-  [END]
+This module defines ALL node functions and graph builders for the debate
+system.  It serves two execution paths:
+
+  1. MONOLITHIC GRAPH (original, preserved for backward compatibility):
+       build_debate_graph / compile_debate_graph
+       Runs the full pipeline → propose → critique/revise loop → judge → trace
+       as a single LangGraph invocation.  The internal should_continue edge
+       decides when to stop looping.
+
+  2. DECOMPOSED SUB-GRAPHS (new, used by MultiAgentRunner):
+       build_pipeline_graph   — news → data → build_context → END
+       build_single_round_graph — propose → critique → revise → END
+       build_finalize_graph   — judge → build_trace → END
+       The runner calls each sub-graph separately, owning the iteration
+       loop itself so external controllers (PID, agreeableness tuners)
+       can intervene between rounds.
+
+WHY THIS DECOMPOSITION EXISTS
+------------------------------
+The monolithic graph encapsulates the iteration loop inside LangGraph's
+conditional edge (should_continue).  This makes it impossible for external
+code to inspect or modify state between rounds — there is no seam to hook
+into.  By splitting into sub-graphs, the runner's for-loop becomes that
+seam:
+
+    for t in range(max_rounds):
+        state = runner.run_single_round(state)
+        # <-- future: controller_step(state) goes here
+        if runner.should_terminate(state):
+            break
+
+INVARIANTS PRESERVED
+--------------------
+- All sub-graphs use StateGraph(DebateState), so LangGraph's reducers
+  (Annotated[list, operator.add] for debate_turns) are applied correctly
+  at every phase boundary.  No manual state.update(node(state)) anywhere.
+
+- propose_node has an idempotency guard: if proposals already exist in
+  state, it returns {} (a no-op).  This lets the single-round graph
+  include propose in every round without duplicating proposals.  The guard
+  is harmless for the monolithic graph where propose runs exactly once.
+
+- current_round is KEPT in propose_node and revise_node returns.  The
+  monolithic graph's should_continue edge depends on this.  The runner
+  also sets current_round before each round invocation; the two sources
+  agree because the runner sets t+1 and propose returns 1 (first round
+  only), and revise returns current_round+1 (matching the runner's
+  next iteration value).
+
+- proposals (plain list, no reducer) is set once by propose_node in
+  round 1, then preserved in subsequent rounds because propose returns {}.
+  critiques and revisions are REPLACED each round (plain list, no reducer),
+  matching the monolithic graph's behavior.
+
+- debate_turns (Annotated[list, operator.add]) accumulates correctly:
+  pipeline produces no turns, each round appends that round's turns,
+  finalize appends the judge turn.  Between sub-graph invocations the
+  runner passes the full state dict, so the accumulated list carries over.
+
+- All existing exports (build_debate_graph, compile_debate_graph,
+  should_continue, all node functions, all mock functions) remain
+  unchanged and functional.  Existing tests import them directly.
+
+Graph structures:
+
+  Monolithic (original):
+    [START]
+      -> [news_digest]  (optional, parallel)
+      -> [data_analysis] (optional, parallel)
+      -> [build_context]
+      -> [propose]
+      -> [critique]
+      -> [revise]
+      -> [should_continue?]  (loop back to critique or proceed to judge)
+      -> [judge]
+      -> [build_trace]
+    [END]
+
+  Decomposed (new):
+    Pipeline:      [START] -> [news] -> [data] -> [build_context] -> [END]
+    Single round:  [START] -> [propose] -> [critique] -> [revise] -> [END]
+    Finalize:      [START] -> [judge] -> [build_trace] -> [END]
 """
 
 from __future__ import annotations
@@ -455,7 +525,19 @@ def build_context_node(state: DebateState) -> dict:
 
 
 def propose_node(state: DebateState) -> dict:
-    """All role agents generate their initial proposals."""
+    """All role agents generate their initial proposals.
+
+    Idempotency guard: when the runner calls single_round_graph multiple
+    times, propose is in the graph every round but should only execute
+    once (round 1).  On subsequent rounds proposals already exist in
+    state, so we return {} — a no-op that leaves all state fields
+    untouched.  Uses len(...) > 0 for robustness (handles None, empty
+    list).  This guard is harmless for the monolithic graph where propose
+    runs exactly once.
+    """
+    if len(state.get("proposals", [])) > 0:
+        return {}
+
     config = state["config"]
     context = state["enriched_context"]
     obs = state["observation"]
@@ -1024,6 +1106,126 @@ def compile_debate_graph(config: DebateConfig):
     """Build and compile the debate graph, ready for invocation."""
     graph = build_debate_graph(config)
     return graph.compile()
+
+
+# =============================================================================
+# SINGLE-ROUND SUB-GRAPH CONSTRUCTION
+# =============================================================================
+#
+# These three builders decompose the monolithic debate graph into phases
+# that the runner can invoke independently.  This is the key architectural
+# change: by moving the iteration loop out of LangGraph and into the
+# runner, we create a seam where external controllers can observe and
+# modify state between debate rounds.
+#
+# All three use StateGraph(DebateState) so that LangGraph's reducers
+# (Annotated[list, operator.add] for debate_turns) are properly applied.
+# The runner never does manual state.update(node(state)) — every state
+# transition goes through graph.invoke().
+#
+# Equivalence with the monolithic graph is verified by tests in
+# test_round_exposure.py which run both paths on identical inputs and
+# assert identical outputs (final_action, debate_turns, trace, etc.).
+# =============================================================================
+
+
+def build_pipeline_graph(config: DebateConfig) -> StateGraph:
+    """Pipeline: sequential news → data → build_context → END.
+
+    Runs preprocessing stages that enrich the observation with news
+    signals and data analysis before the debate begins.
+
+    Uses SEQUENTIAL edges (not parallel fan-in) because this graph is
+    invoked as a standalone phase.  The monolithic graph uses parallel
+    fan-in for news+data, but since these nodes don't depend on each
+    other's outputs, the sequential ordering produces identical results.
+    Equivalence tests (with pipelines disabled) confirm this doesn't
+    affect debate output.
+    """
+    graph = StateGraph(DebateState)
+    has_news = config.enable_news_pipeline
+    has_data = config.enable_data_pipeline
+
+    if has_news:
+        graph.add_node("news_digest", news_digest_node)
+    if has_data:
+        graph.add_node("data_analysis", data_analysis_node)
+    graph.add_node("build_context", build_context_node)
+
+    # SEQUENTIAL chain — no parallel fan-in from START
+    if has_news and has_data:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge("news_digest", "data_analysis")
+        graph.add_edge("data_analysis", "build_context")
+    elif has_news:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge("news_digest", "build_context")
+    elif has_data:
+        graph.add_edge(START, "data_analysis")
+        graph.add_edge("data_analysis", "build_context")
+    else:
+        graph.add_edge(START, "build_context")
+
+    graph.add_edge("build_context", END)
+    return graph
+
+
+def build_single_round_graph(config: DebateConfig) -> StateGraph:
+    """One debate round: propose → critique → revise → END.
+
+    The runner calls this once per round.  propose_node is idempotent:
+    on round 1 it generates proposals; on rounds 2+ it detects existing
+    proposals and returns {} (no-op), so critique and revise operate on
+    the latest revisions.
+
+    State flow per round:
+      - debate_turns: appended via operator.add reducer (accumulates)
+      - proposals: set once in round 1, preserved thereafter (plain list)
+      - critiques/revisions: replaced each round (plain list, no reducer)
+      - current_round: set by runner before invocation, updated by
+        revise_node to current_round+1 (kept for monolithic compat)
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("propose", propose_node)
+    graph.add_node("critique", critique_node)
+    graph.add_node("revise", revise_node)
+    graph.add_edge(START, "propose")
+    graph.add_edge("propose", "critique")
+    graph.add_edge("critique", "revise")
+    graph.add_edge("revise", END)
+    return graph
+
+
+def build_finalize_graph(config: DebateConfig) -> StateGraph:
+    """Judge synthesis + trace: judge → build_trace → END.
+
+    Called once after all debate rounds complete.  The judge sees the
+    final revisions and critiques from the last round and produces the
+    final trading decision.  build_trace constructs the auditable trace
+    including all accumulated debate_turns.
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("judge", judge_node)
+    graph.add_node("build_trace", build_trace_node)
+    graph.add_edge(START, "judge")
+    graph.add_edge("judge", "build_trace")
+    graph.add_edge("build_trace", END)
+    return graph
+
+
+def compile_pipeline_graph(config: DebateConfig):
+    """Build and compile the pipeline graph, ready for invocation."""
+    return build_pipeline_graph(config).compile()
+
+
+def compile_single_round_graph(config: DebateConfig):
+    """Build and compile the single-round graph, ready for invocation."""
+    return build_single_round_graph(config).compile()
+
+
+def compile_finalize_graph(config: DebateConfig):
+    """Build and compile the finalize graph, ready for invocation."""
+    return build_finalize_graph(config).compile()
 
 
 # =============================================================================
