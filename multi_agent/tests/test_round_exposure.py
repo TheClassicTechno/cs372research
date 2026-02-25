@@ -51,7 +51,7 @@ No filesystem I/O, no timestamps, no demo scripts.
 import pytest
 
 from multi_agent.config import AgentRole, DebateConfig
-from multi_agent.graph import compile_debate_graph
+from multi_agent.graph import compile_debate_graph, propose_node
 from multi_agent.models import (
     Constraints,
     MarketState,
@@ -315,3 +315,49 @@ def test_should_terminate_false():
     runner = MultiAgentRunner(config)
     assert runner.should_terminate({}) is False
     assert runner.should_terminate({"current_round": 100}) is False
+
+
+# =============================================================================
+# TEST 7: DebateConfig rejects max_rounds < 1
+#
+# Regression test for __post_init__ validation added to DebateConfig.
+# Previously, max_rounds=0 was silently accepted, causing the runner's
+# for-loop to execute zero rounds (range(0) = empty) and skip the debate
+# entirely.  The validation now raises ValueError at construction time.
+# =============================================================================
+
+
+def test_config_rejects_max_rounds_zero():
+    with pytest.raises(ValueError, match="max_rounds must be >= 1"):
+        DebateConfig(max_rounds=0)
+
+
+def test_config_rejects_max_rounds_negative():
+    with pytest.raises(ValueError, match="max_rounds must be >= 1"):
+        DebateConfig(max_rounds=-1)
+
+
+# =============================================================================
+# TEST 8: propose_node guard handles proposals=None
+#
+# Regression test for the propose_node idempotency guard.  Previously,
+# the guard used `state.get("proposals", [])` which returns None when
+# the key exists with value None — causing len(None) to raise TypeError.
+# The fix uses `state.get("proposals") or []` to coalesce None to [].
+# This test proves the guard fires cleanly when proposals is None.
+# =============================================================================
+
+
+def test_propose_node_guard_with_none_proposals():
+    state = {
+        "proposals": None,
+        "config": {"roles": ["macro"], "mock": True},
+        "enriched_context": "",
+        "observation": {},
+    }
+    # Previously len(None) raised TypeError.  After the fix,
+    # None is coalesced to [] so propose_node treats it as
+    # "no proposals yet" and generates them without crashing.
+    result = propose_node(state)
+    assert "proposals" in result
+    assert len(result["proposals"]) == 1  # 1 role = 1 proposal
