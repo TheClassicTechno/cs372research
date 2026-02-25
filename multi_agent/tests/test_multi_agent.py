@@ -1097,6 +1097,40 @@ class TestMajorityVoteAggregation:
         assert "risk" in result["strongest_objection"]
         assert "0.30" in result["strongest_objection"]
 
+    def test_vote_direction_multi_order_same_ticker(self):
+        """BUG-2 regression: an agent with duplicate orders for the same ticker
+        should only count as one vote, not multiple."""
+        proposals = [
+            {
+                "role": "macro",
+                "action_dict": {
+                    "orders": [
+                        {"ticker": "AAPL", "side": "buy", "size": 5},
+                        {"ticker": "AAPL", "side": "buy", "size": 10},
+                    ],
+                    "confidence": 0.7,
+                },
+            },
+            self._make_proposal("risk", "AAPL", "sell", 8),
+        ]
+        # 1 agent buy vs 1 agent sell → tie → hold
+        assert _get_vote_direction(proposals, "AAPL") == "hold"
+
+    def test_aggregate_tie_no_spurious_objection(self, sample_obs_dict, mock_config_dict):
+        """BUG-1 regression: when votes are tied (hold), no agent should be
+        reported as a dissenter since there is no consensus."""
+        proposals = [
+            self._make_proposal("macro", "AAPL", "buy", 10, confidence=0.8),
+            self._make_proposal("risk", "AAPL", "sell", 5, confidence=0.3),
+        ]
+        state = {
+            "observation": sample_obs_dict,
+            "config": mock_config_dict,
+            "proposals": proposals,
+        }
+        result = aggregate_proposals_node(state)
+        assert result["strongest_objection"] == ""
+
 
 # =============================================================================
 # 12. MAJORITY VOTE RUNNER TESTS

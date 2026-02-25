@@ -759,16 +759,22 @@ def judge_node(state: DebateState) -> dict:
 
 
 def _get_vote_direction(proposals: list, ticker: str) -> str:
-    """Count buy/sell votes for a ticker across all proposals. Majority wins; ties = hold."""
+    """Count buy/sell votes for a ticker across all proposals. Majority wins; ties = hold.
+
+    Each agent gets exactly one vote per ticker (first matching order wins)
+    to prevent multi-order double-counting.
+    """
     buy_count = 0
     sell_count = 0
     for p in proposals:
         for o in p.get("action_dict", {}).get("orders", []):
             if o.get("ticker") == ticker:
-                if o.get("side") == "buy":
+                side = o.get("side")
+                if side == "buy":
                     buy_count += 1
-                elif o.get("side") == "sell":
+                elif side == "sell":
                     sell_count += 1
+                break  # one vote per agent per ticker
     if buy_count > sell_count:
         return "buy"
     elif sell_count > buy_count:
@@ -828,6 +834,8 @@ def aggregate_proposals_node(state: DebateState) -> dict:
     min_conf = 1.0
     for ticker in tickers:
         direction = _get_vote_direction(proposals, ticker)
+        if direction == "hold":
+            continue  # no consensus to dissent from
         for p in proposals:
             for o in p.get("action_dict", {}).get("orders", []):
                 if o.get("ticker") == ticker and o.get("side") != direction:
