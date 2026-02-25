@@ -1,0 +1,168 @@
+"""Adapter: plugs the multi-agent debate system into the simulation runner.
+
+The simulation runner speaks ``AgentSystem`` (bind_tools / invoke) with
+``Case`` / ``Decision`` models.  The debate system speaks
+``MultiAgentRunner.run(Observation) → (Action, AgentTrace)``.
+
+This module bridges the two by:
+    1. Converting ``Case`` → ``Observation``  (via feature_engineering)
+    2. Invoking ``MultiAgentRunner.run`` (sync, so we wrap in a thread)
+    3. Converting ``Action`` → ``Decision``
+    4. Returning the Decision — the **runner** calls the broker, not us.
+
+Layer boundary: this adapter must NOT call the broker, compute eval
+metrics, or write eval artifacts.  See documentation/integration_plan.md §2.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import math
+from typing import Any, Callable
+
+from agents.base import AgentSystem
+from agents.registry import register
+from models.agents import AgentInvocation, AgentInvocationResult
+from models.config import AgentConfig
+from models.decision import Decision
+from models.decision import Order as SimOrder
+from multi_agent.config import DebateConfig
+from multi_agent.models import Action
+from multi_agent.runner import MultiAgentRunner
+from simulation.feature_engineering import build_observation
+
+logger = logging.getLogger(__name__)
+
+
+# ------------------------------------------------------------------
+# Action → Decision conversion
+# ------------------------------------------------------------------
+
+
+def action_to_decision(action: Action) -> Decision:
+    """Convert a debate ``Action`` into a simulation ``Decision``.
+
+    Mapping:
+        DebateOrder.ticker  →  SimOrder.ticker
+        DebateOrder.side    →  SimOrder.side   (validated as "buy"/"sell")
+        DebateOrder.size    →  SimOrder.quantity  (float→int, truncated toward zero)
+    """
+    sim_orders: list[SimOrder] = []
+    for order in action.orders:
+        qty = int(math.trunc(order.size))
+        if qty <= 0:
+            logger.warning(
+                "Skipping order with non-positive quantity: %s %s size=%.2f → qty=%d",
+                order.side,
+                order.ticker,
+                order.size,
+                qty,
+            )
+            continue
+
+        side = order.side.lower()
+        if side not in ("buy", "sell"):
+            logger.warning(
+                "Invalid side '%s' for %s — skipping order.", order.side, order.ticker
+            )
+            continue
+
+        sim_orders.append(
+            SimOrder(ticker=order.ticker, side=side, quantity=qty)  # type: ignore[arg-type]
+        )
+
+    return Decision(orders=sim_orders)
+
+
+# ------------------------------------------------------------------
+# Adapter
+# ------------------------------------------------------------------
+
+
+@register("multi_agent_debate")
+class DebateAgentSystem(AgentSystem):
+    """Adapter that wraps ``MultiAgentRunner`` as an ``AgentSystem``.
+
+    Architecture (from integration_plan.md §8 — Debate Flow):
+        1. Agent returns ``Decision``
+        2. Runner calls broker directly
+        3. No tool used
+
+    The adapter does NOT call the broker or the submit_decision tool.
+    It converts Case → Observation, runs the debate, converts Action →
+    Decision, and returns the result.  The simulation runner is
+    responsible for executing the decision through the broker.
+    """
+
+    def __init__(self, config: AgentConfig) -> None:
+        super().__init__(config)
+
+        # Enable mock mode via system_prompt_override containing "mock".
+        use_mock = (
+            config.system_prompt_override is not None
+            and "mock" in config.system_prompt_override.lower()
+        )
+
+        # Build DebateConfig from AgentConfig fields.
+        debate_cfg = DebateConfig(
+            model_name=config.llm_model,
+            temperature=config.temperature,
+            mock=use_mock,
+        )
+        self._debate_runner = MultiAgentRunner(debate_cfg)
+
+    def bind_tools(self, submit_decision_fn: Callable[..., Any]) -> None:
+        """Accept the tool for interface compliance.
+
+        The debate adapter does not use the submit_decision tool — the
+        runner calls the broker directly after receiving our Decision.
+        We store it only to satisfy the AgentSystem contract.
+        """
+        self._submit_decision_tool = submit_decision_fn
+
+    async def invoke(self, invocation: AgentInvocation) -> AgentInvocationResult:
+        """Run the debate system for one decision point.
+
+        Steps:
+            1. Convert ``Case`` → ``Observation`` (via feature_engineering)
+            2. Run ``MultiAgentRunner.run(observation)`` in a thread
+            3. Convert ``Action`` → ``Decision``
+            4. Return ``AgentInvocationResult`` — runner handles broker execution
+        """
+        case = invocation.case
+
+        # 1. Convert Case → Observation (feature engineering layer)
+        observation = build_observation(case)
+        logger.info(
+            "Debate agent: converted case %s → observation (universe=%s, cash=%.2f)",
+            case.case_id,
+            observation.universe,
+            observation.portfolio_state.cash,
+        )
+
+        # 2. Run debate (sync call → offload to thread pool)
+        action, trace = await asyncio.to_thread(self._debate_runner.run, observation)
+        logger.info(
+            "Debate agent: received action with %d order(s), confidence=%.2f",
+            len(action.orders),
+            action.confidence,
+        )
+
+        # 3. Convert Action → Decision
+        decision = action_to_decision(action)
+        logger.info(
+            "Debate agent: converted to %d simulation order(s) for case %s",
+            len(decision.orders),
+            case.case_id,
+        )
+
+        # 4. Build raw output for logging (includes full debate trace)
+        raw_output = {
+            "debate_action": action.model_dump(),
+            "debate_trace": trace.model_dump(),
+            "debate_justification": action.justification,
+            "debate_confidence": action.confidence,
+        }
+
+        return AgentInvocationResult(decision=decision, raw_output=raw_output)
