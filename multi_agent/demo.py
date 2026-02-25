@@ -43,6 +43,7 @@ from multi_agent.models import (
     Observation,
     PortfolioState,
 )
+from multi_agent.majority_vote_runner import MajorityVoteRunner
 from multi_agent.runner import MultiAgentRunner
 
 
@@ -123,17 +124,22 @@ def run_demo_config(
     name: str,
     config: DebateConfig,
     observation: Observation,
+    architecture: str = "debate",
 ) -> None:
     """Run a single demo configuration and print results."""
     print(f"\n{'='*70}")
     print(f"  {name}")
+    print(f"  Architecture: {architecture}")
     print(f"  Roles: {[r.value for r in config.roles]}")
     print(f"  Rounds: {config.max_rounds} | Agreeableness: {config.agreeableness}")
     print(f"  Pipeline: news={config.enable_news_pipeline}, data={config.enable_data_pipeline}")
     print(f"  Adversarial: {config.enable_adversarial}")
     print(f"{'='*70}")
 
-    runner = MultiAgentRunner(config)
+    if architecture == "majority_vote":
+        runner = MajorityVoteRunner(config)
+    else:
+        runner = MultiAgentRunner(config)
     action, trace = runner.run(observation)
 
     print(f"\n  Decision: {trace.decision}")
@@ -188,56 +194,68 @@ def main():
 
     trace_dir = _parse_trace_dir()
 
-    # All configs in order
-    configs: list[tuple[int, str, DebateConfig, Observation]] = [
+    # All configs in order: (num, name, config, observation, architecture)
+    configs: list[tuple[int, str, DebateConfig, Observation, str]] = [
         (1, "Config 1: Default 4-Agent Debate", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
             mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (2, "Config 2: 5 Agents (+ Sentiment)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
             mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (3, "Config 3: Adversarial Mode (Devil's Advocate)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             enable_adversarial=True, mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (4, "Config 4: High Agreeableness (0.9 — sycophantic)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             agreeableness=0.9, mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (5, "Config 5: Low Agreeableness (0.1 — confrontational)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             agreeableness=0.1, mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (6, "Config 6: 3 Debate Rounds", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=3, mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (7, "Config 7: No Pipeline Preprocessing", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             enable_news_pipeline=False, enable_data_pipeline=False,
             mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
         (8, "Config 8: Full System on Risk-Off Scenario", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
             enable_adversarial=True, max_rounds=2, agreeableness=0.3,
             mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs_risk),
+        ), obs_risk, "debate"),
         (9, "Config 9: Minimal 2-agent Debate", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.RISK],
             mock=mock, verbose=verbose, trace_dir=trace_dir,
-        ), obs),
+        ), obs, "debate"),
+        (10, "Config 10: 3-Agent Majority Vote", DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
+        ), obs, "majority_vote"),
+        (11, "Config 11: 5-Agent Majority Vote", DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
+        ), obs, "majority_vote"),
+        (12, "Config 12: Majority Vote on Risk-Off Scenario", DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            mock=mock, verbose=verbose, trace_dir=trace_dir,
+        ), obs_risk, "majority_vote"),
     ]
 
     # Filter to selected configs
-    to_run = [(n, name, cfg, o) for n, name, cfg, o in configs if selected is None or n in selected]
+    to_run = [(n, name, cfg, o, arch) for n, name, cfg, o, arch in configs if selected is None or n in selected]
 
-    for i, (num, name, cfg, observation) in enumerate(to_run):
+    for i, (num, name, cfg, observation, arch) in enumerate(to_run):
         if num == 8 and (selected is None or len(to_run) > 1):
             print("\n\n--- Switching to Risk-Off Scenario ---")
 
-        run_demo_config(name, cfg, observation)
+        run_demo_config(name, cfg, observation, architecture=arch)
 
         # In live mode, wait 5s between configs to avoid rate limits
         if live and i < len(to_run) - 1:

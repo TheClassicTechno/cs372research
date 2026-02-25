@@ -758,6 +758,167 @@ def judge_node(state: DebateState) -> dict:
     }
 
 
+def _get_vote_direction(proposals: list, ticker: str) -> str:
+    """Count buy/sell votes for a ticker across all proposals. Majority wins; ties = hold.
+
+    Each agent gets exactly one vote per ticker (first matching order wins)
+    to prevent multi-order double-counting.
+    """
+    buy_count = 0
+    sell_count = 0
+    for p in proposals:
+        for o in p.get("action_dict", {}).get("orders", []):
+            if o.get("ticker") == ticker:
+                side = o.get("side")
+                if side == "buy":
+                    buy_count += 1
+                elif side == "sell":
+                    sell_count += 1
+                break  # one vote per agent per ticker
+    if buy_count > sell_count:
+        return "buy"
+    elif sell_count > buy_count:
+        return "sell"
+    return "hold"
+
+
+def _get_median_size(proposals: list, ticker: str, side: str) -> float:
+    """Median order size for a ticker+direction across proposals."""
+    sizes = []
+    for p in proposals:
+        for o in p.get("action_dict", {}).get("orders", []):
+            if o.get("ticker") == ticker and o.get("side") == side:
+                sizes.append(o.get("size", 0))
+    if not sizes:
+        return 0.0
+    sizes.sort()
+    n = len(sizes)
+    if n % 2 == 1:
+        return float(sizes[n // 2])
+    return (sizes[n // 2 - 1] + sizes[n // 2]) / 2.0
+
+
+def aggregate_proposals_node(state: DebateState) -> dict:
+    """LangGraph node: aggregate proposals by majority vote + median sizing."""
+    proposals = state.get("proposals", [])
+    obs = state["observation"]
+    tickers = obs.get("universe", [])
+
+    # Build aggregated orders
+    orders = []
+    for ticker in tickers:
+        direction = _get_vote_direction(proposals, ticker)
+        if direction in ("buy", "sell"):
+            size = _get_median_size(proposals, ticker, direction)
+            if size > 0:
+                orders.append({"ticker": ticker, "side": direction, "size": size})
+
+    # Detect disagreements
+    disagreements = []
+    for ticker in tickers:
+        votes = []
+        for p in proposals:
+            for o in p.get("action_dict", {}).get("orders", []):
+                if o.get("ticker") == ticker:
+                    votes.append(f"{p['role']}:{o['side']}{o.get('size', 0)}")
+        sides = set()
+        for p in proposals:
+            for o in p.get("action_dict", {}).get("orders", []):
+                if o.get("ticker") == ticker:
+                    sides.add(o.get("side"))
+        if len(sides) > 1:
+            disagreements.append(f"{ticker}: {' vs '.join(votes)}")
+
+    # Find strongest objection: lowest-confidence agent who disagreed with consensus
+    strongest_objection = ""
+    min_conf = 1.0
+    for ticker in tickers:
+        direction = _get_vote_direction(proposals, ticker)
+        if direction == "hold":
+            continue  # no consensus to dissent from
+        for p in proposals:
+            for o in p.get("action_dict", {}).get("orders", []):
+                if o.get("ticker") == ticker and o.get("side") != direction:
+                    conf = p.get("action_dict", {}).get("confidence", 0.5)
+                    if conf < min_conf:
+                        min_conf = conf
+                        justification = p.get("action_dict", {}).get("justification", "")
+                        strongest_objection = (
+                            f"[{p['role']}] (conf={conf:.2f}) dissented: {justification}"
+                        )
+
+    # Merge justifications
+    merged_justification = " | ".join(
+        f"[{p['role']}] {p.get('action_dict', {}).get('justification', '')}"
+        for p in proposals
+    )
+
+    # Merge claims (deduplicated by claim_text)
+    seen_claims = set()
+    merged_claims = []
+    for p in proposals:
+        for c in p.get("action_dict", {}).get("claims", []):
+            text = c.get("claim_text", "")
+            if text and text not in seen_claims:
+                seen_claims.add(text)
+                merged_claims.append(c)
+
+    # Average confidence
+    confidences = [p.get("action_dict", {}).get("confidence", 0.5) for p in proposals]
+    avg_confidence = sum(confidences) / len(confidences) if confidences else 0.5
+
+    final_action = {
+        "orders": orders,
+        "justification": merged_justification,
+        "confidence": round(avg_confidence, 4),
+        "claims": merged_claims,
+    }
+
+    return {
+        "final_action": final_action,
+        "strongest_objection": strongest_objection,
+        "audited_memo": (
+            f"Majority vote: {len(proposals)} agents. "
+            + (f"Disagreements: {'; '.join(disagreements)}" if disagreements else "Unanimous.")
+        ),
+    }
+
+
+def build_mv_trace_node(state: DebateState) -> dict:
+    """LangGraph node: build AgentTrace for majority_vote architecture."""
+    print("  [Trace] Building majority-vote trace...", flush=True)
+    obs = state["observation"]
+    final = state.get("final_action", {})
+    config = state.get("config", {})
+
+    orders_desc = (
+        "; ".join(
+            f"{o.get('side', '?')} {o.get('size', 0)} {o.get('ticker', '?')}"
+            for o in final.get("orders", [])
+        )
+        or "Hold"
+    )
+
+    roles = config.get("roles", [])
+    trace = {
+        "observation_timestamp": obs.get("timestamp", ""),
+        "architecture": "majority_vote",
+        "what_i_saw": state.get("enriched_context", "")[:500] + "...",
+        "hypothesis": (
+            f"Majority vote: {len(roles)} agents ({', '.join(roles)}) "
+            f"with vote-based aggregation and median sizing"
+        ),
+        "decision": orders_desc,
+        "risks_or_falsifiers": state.get("audited_memo", "")[:500],
+        "strongest_objection": state.get("strongest_objection", ""),
+        "debate_turns": state.get("debate_turns", []),
+        "action": final,
+        "logged_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return {"trace": trace}
+
+
 def build_trace_node(state: DebateState) -> dict:
     """Construct the final AgentTrace from the accumulated debate state."""
     print("  [Trace] Building auditable trace...", flush=True)
@@ -862,4 +1023,61 @@ def build_debate_graph(config: DebateConfig) -> StateGraph:
 def compile_debate_graph(config: DebateConfig):
     """Build and compile the debate graph, ready for invocation."""
     graph = build_debate_graph(config)
+    return graph.compile()
+
+
+# =============================================================================
+# MAJORITY VOTE GRAPH CONSTRUCTION
+# =============================================================================
+
+
+def build_majority_vote_graph(config: DebateConfig) -> StateGraph:
+    """
+    Build a LangGraph majority-vote graph.
+
+    Graph structure (no critique/revise/judge):
+      [START] -> [pipeline nodes] -> [build_context] -> [propose]
+              -> [aggregate] -> [build_mv_trace] -> [END]
+    """
+    graph = StateGraph(DebateState)
+
+    has_news = config.enable_news_pipeline
+    has_data = config.enable_data_pipeline
+
+    if has_news:
+        graph.add_node("news_digest", news_digest_node)
+    if has_data:
+        graph.add_node("data_analysis", data_analysis_node)
+
+    graph.add_node("build_context", build_context_node)
+    graph.add_node("propose", propose_node)
+    graph.add_node("aggregate", aggregate_proposals_node)
+    graph.add_node("build_mv_trace", build_mv_trace_node)
+
+    # --- Edges: START -> pipeline (parallel) -> build_context ---
+    if has_news and has_data:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge(START, "data_analysis")
+        graph.add_edge("news_digest", "build_context")
+        graph.add_edge("data_analysis", "build_context")
+    elif has_news:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge("news_digest", "build_context")
+    elif has_data:
+        graph.add_edge(START, "data_analysis")
+        graph.add_edge("data_analysis", "build_context")
+    else:
+        graph.add_edge(START, "build_context")
+
+    graph.add_edge("build_context", "propose")
+    graph.add_edge("propose", "aggregate")
+    graph.add_edge("aggregate", "build_mv_trace")
+    graph.add_edge("build_mv_trace", END)
+
+    return graph
+
+
+def compile_majority_vote_graph(config: DebateConfig):
+    """Build and compile the majority-vote graph, ready for invocation."""
+    graph = build_majority_vote_graph(config)
     return graph.compile()
