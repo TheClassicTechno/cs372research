@@ -75,6 +75,11 @@ class DebateConfig:
     # --- Output ---
     trace_dir: str = "./traces"
 
+    def __post_init__(self) -> None:
+        """Validate config values after initialization."""
+        if self.max_rounds < 1:
+            raise ValueError(f"max_rounds must be >= 1, got {self.max_rounds}")
+
     def to_dict(self) -> dict:
         """Serialize config to dict for LangGraph state."""
         return {

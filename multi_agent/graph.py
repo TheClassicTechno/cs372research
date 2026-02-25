@@ -535,7 +535,7 @@ def propose_node(state: DebateState) -> dict:
     list).  This guard is harmless for the monolithic graph where propose
     runs exactly once.
     """
-    if len(state.get("proposals", [])) > 0:
+    if len(state.get("proposals") or []) > 0:
         return {}
 
     config = state["config"]

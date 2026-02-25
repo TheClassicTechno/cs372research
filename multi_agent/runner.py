@@ -116,6 +116,27 @@ class MultiAgentRunner:
         Returns:
             (action, trace) -- the final Action and the full AgentTrace
         """
+        state = self._run_pipeline(observation)
+
+        # Parse final action
+        final_dict = state.get("final_action", {})
+        action = self._parse_action(final_dict)
+
+        # Parse trace
+        trace_dict = state.get("trace", {})
+        trace = self._parse_trace(trace_dict, observation, action)
+
+        # Save to disk
+        self._save_trace(trace, state)
+
+        return action, trace
+
+    def _run_pipeline(self, observation: Observation) -> dict:
+        """Execute all three phases and return the raw state dict.
+
+        Shared implementation for run() and run_returning_state() so
+        the pipeline/loop/finalize logic is defined in exactly one place.
+        """
         state = self._initialize_state(observation)
 
         # Phase 1: Pipeline (news digest, data analysis, context building)
@@ -131,18 +152,7 @@ class MultiAgentRunner:
         # Phase 3: Judge + trace
         state = self.finalize_graph.invoke(state)
 
-        # Parse final action
-        final_dict = state.get("final_action", {})
-        action = self._parse_action(final_dict)
-
-        # Parse trace
-        trace_dict = state.get("trace", {})
-        trace = self._parse_trace(trace_dict, observation, action)
-
-        # Save to disk
-        self._save_trace(trace, state)
-
-        return action, trace
+        return state
 
     def _initialize_state(self, observation: Observation) -> dict:
         """Build the initial state dict for the debate.
@@ -201,15 +211,7 @@ class MultiAgentRunner:
         _save_trace.  Used by equivalence tests to compare against the
         old monolithic compile_debate_graph().invoke() path.
         """
-        state = self._initialize_state(observation)
-        state = self.pipeline_graph.invoke(state)
-        for t in range(self.config.max_rounds):
-            state["current_round"] = t + 1
-            state = self.run_single_round(state)
-            if self.should_terminate(state):
-                break
-        state = self.finalize_graph.invoke(state)
-        return state
+        return self._run_pipeline(observation)
 
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
