@@ -29,6 +29,7 @@ class DecisionPointLog(BaseModel):
     execution_result: DecisionResult | None = None
     agent_output: dict | str | None = None
     elapsed_seconds: float = 0.0
+    timestamp: str | None = None  # ISO 8601 timestamp for when this log was created
 
 
 class EpisodeLog(BaseModel):
@@ -44,6 +45,7 @@ class EpisodeLog(BaseModel):
     trades: list[ExecutedTrade] = []
     final_portfolio: PortfolioSnapshot | None = None
     final_prices: dict[str, float] = {}
+    timestamp: str | None = None  # ISO 8601 timestamp for when this episode log was created
 
     @property
     def book_value(self) -> float | None:
