@@ -41,9 +41,11 @@ class AsyncSimulationRunner:
         config: SimulationConfig,
         config_yaml_path: str,
         output_dir: str = "results",
+        num_cases: int | None = None,
     ) -> None:
         self._config = config
         self._config_yaml_path = config_yaml_path
+        self._num_cases = num_cases
         self._run_name = run_name_from_config_path(config_yaml_path)
         self._sim_logger = SimulationLogger(output_dir, config, self._run_name)
 
@@ -56,6 +58,8 @@ class AsyncSimulationRunner:
             self._config.dataset_path,
             top_n_news=self._config.top_n_news,
         )
+        if self._num_cases is not None:
+            templates = templates[: self._num_cases]
         num_cases = len(templates)
         logger.info(
             "Starting simulation '%s': %d episode(s), %d case(s) each.",
