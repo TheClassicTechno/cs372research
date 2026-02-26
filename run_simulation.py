@@ -5,6 +5,7 @@ Usage::
 
     python run_simulation.py --config config/example.yaml
     python run_simulation.py --config config/example.yaml --output-dir results/
+    python run_simulation.py --config config/example.yaml --num-cases 5
 
 The simulation loads a YAML configuration file, instantiates the agent system
 and broker, then runs the async simulation loop.  The run name is derived
@@ -44,6 +45,12 @@ def _parse_args() -> argparse.Namespace:
         help="Directory where simulation results will be written (default: results/).",
     )
     parser.add_argument(
+        "--num-cases",
+        default=None,
+        type=int,
+        help="Max number of cases (decision points) per episode. Defaults to all.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -76,6 +83,7 @@ async def _main() -> None:
         config,
         config_yaml_path=args.config,
         output_dir=args.output_dir,
+        num_cases=args.num_cases,
     )
     await runner.run()
 
