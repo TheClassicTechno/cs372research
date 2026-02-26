@@ -108,6 +108,7 @@ class AsyncSimulationRunner:
 
         logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
 
+        from datetime import datetime, timezone
         for dp_idx, template in enumerate(templates):
             case_id = f"{episode_id}:{dp_idx}"
             steps_remaining = num_cases - dp_idx - 1
@@ -185,12 +186,14 @@ class AsyncSimulationRunner:
                 execution_result=execution_result,
                 agent_output=agent_output,
                 elapsed_seconds=elapsed,
+                timestamp=datetime.now(timezone.utc).isoformat(),
             )
             decision_point_logs.append(dp_log)
 
         # Build the flattened episode log.
         final_portfolio = broker.get_portfolio()
         final_prices = broker.get_last_prices()
+        from datetime import datetime, timezone
         episode_log = EpisodeLog(
             episode_id=episode_id,
             agent_id=agent_id,
@@ -198,6 +201,7 @@ class AsyncSimulationRunner:
             trades=broker.get_trade_history(),
             final_portfolio=final_portfolio,
             final_prices=final_prices,
+            timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
         logger.info(
