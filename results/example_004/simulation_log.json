@@ -1,0 +1,97 @@
+{
+  "run_name": "example_004",
+  "config": {
+    "dataset_path": "data/cases",
+    "top_n_news": null,
+    "agent": {
+      "agent_system": "single_llm",
+      "llm_provider": "openai",
+      "llm_model": "gpt-4o",
+      "temperature": 0.7,
+      "max_retries": 3,
+      "system_prompt_override": null
+    },
+    "broker": {
+      "initial_cash": 100000.0
+    },
+    "tickers": [
+      "NVDA"
+    ],
+    "num_episodes": 1
+  },
+  "episode_logs": [
+    {
+      "episode_id": "ep_000",
+      "agent_id": "single_llm_000",
+      "decision_point_logs": [
+        {
+          "case_id": "ep_000:0",
+          "decision_point_idx": 0,
+          "portfolio_before": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "portfolio_after": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "extracted_decision": {
+            "orders": []
+          },
+          "execution_result": {
+            "status": "accepted",
+            "executed_trades": [],
+            "message": "Hold \u2014 no orders submitted."
+          },
+          "agent_output": "ERROR: Error code: 429 - {'error': {'message': 'Request too large for gpt-4o in organization org-zYNxnoSx3bNKTxHEnRuUbs0M on tokens per min (TPM): Limit 30000, Requested 30096. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}",
+          "elapsed_seconds": 65.69924741698196
+        },
+        {
+          "case_id": "ep_000:1",
+          "decision_point_idx": 1,
+          "portfolio_before": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "portfolio_after": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "extracted_decision": {
+            "orders": []
+          },
+          "execution_result": null,
+          "agent_output": "ERROR: Error code: 429 - {'error': {'message': 'Request too large for gpt-4o in organization org-zYNxnoSx3bNKTxHEnRuUbs0M on tokens per min (TPM): Limit 30000, Requested 69922. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}",
+          "elapsed_seconds": 1.8873099999909755
+        },
+        {
+          "case_id": "ep_000:2",
+          "decision_point_idx": 2,
+          "portfolio_before": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "portfolio_after": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "extracted_decision": {
+            "orders": []
+          },
+          "execution_result": null,
+          "agent_output": "ERROR: Error code: 429 - {'error': {'message': 'Request too large for gpt-4o in organization org-zYNxnoSx3bNKTxHEnRuUbs0M on tokens per min (TPM): Limit 30000, Requested 61612. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}",
+          "elapsed_seconds": 1.6465110410063062
+        }
+      ],
+      "trades": [],
+      "final_portfolio": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "final_prices": {
+        "AAPL": 222.1300048828125
+      }
+    }
+  ],
+  "errors": []
+}
