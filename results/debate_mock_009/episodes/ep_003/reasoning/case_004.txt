@@ -1,0 +1,89 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "AXP",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:06.907427+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:06.907427+00:00\n- Universe: AXP\n- Prices: AXP: $269.05\n- Returns: AXP: -9.84%\n- Volatility: AXP: 0.0174\n- Portfolio: Cash: $94722.90, Positions: {'AAPL': 20.0}\n- News/Context: [NEWS] Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio? Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio?\n[NEWS] American Express Co. stock underperforms Monday when compared to competitors American Express Co. stock underperforms Mo...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 AXP",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "AXP",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:06.922403+00:00",
+    "initial_market_state": {
+      "prices": {
+        "AXP": 269.04998779296875
+      },
+      "returns": {
+        "AXP": -0.09844856617589161
+      },
+      "volatility": {
+        "AXP": 0.017396456997392413
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 94722.90008544922,
+      "positions": {
+        "AAPL": 20.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

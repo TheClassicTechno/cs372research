@@ -299,7 +299,7 @@ def run(
 ) -> list[Path]:
     """Fetch data, build cases, and write JSON files. Returns paths of written files."""
     load_dotenv()
-    api_key = finnhub_key or os.environ.get("FINNHUB_API_KEY", "")
+    api_key = finnhub_key or os.environ.get("FINNHUB_API_KEY", "d480co1r01qk80birj8gd480co1r01qk80birj90")
     if not api_key:
         raise ValueError("FINNHUB_API_KEY not set. Add it to .env or pass --finnhub-key.")
 
