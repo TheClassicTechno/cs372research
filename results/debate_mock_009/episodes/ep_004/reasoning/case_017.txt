@@ -1,0 +1,92 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "KO",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:08.855183+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:08.855183+00:00\n- Universe: KO\n- Prices: KO: $70.75\n- Returns: KO: -1.56%\n- Volatility: KO: 0.0124\n- Portfolio: Cash: $81948.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0}\n- News/Context: [NEWS] Jim Cramer Says Don\u2019t Short Coca-Cola (KO): \u2018It Was a Winner When the Nasdaq Broke\u2019 We recently published a list of Jim Cramer Raises Big Question About Tariffs & Discusses These 11 Stocks. In this article, we are going to take a lo...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 KO",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "KO",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:08.871714+00:00",
+    "initial_market_state": {
+      "prices": {
+        "KO": 70.75
+      },
+      "returns": {
+        "KO": -0.015583730399054366
+      },
+      "volatility": {
+        "KO": 0.012412709553748742
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 81948.6999130249,
+      "positions": {
+        "AAPL": 20.0,
+        "AXP": 30.0,
+        "BAC": 30.0,
+        "KO": 10.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

@@ -56,3 +56,4 @@ def _ensure_builtins_loaded() -> None:
     """Import built-in agent modules so their ``@register`` calls execute."""
     # Each import triggers the @register decorator at module level.
     import agents.single_llm  # noqa: F401
+    import agents.multi_agent_debate  # noqa: F401

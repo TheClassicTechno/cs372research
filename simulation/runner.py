@@ -159,6 +159,16 @@ class AsyncSimulationRunner:
                 getattr(tool, "func", None), "_last_result", None
             )
 
+            # If the agent returned orders but did not call the tool
+            # (e.g. the multi-agent debate adapter), the runner executes
+            # the decision through the broker directly.
+            if execution_result is None and decision.orders:
+                execution_result = broker.execute_decision(decision, case, agent_id)
+                logger.info(
+                    "Runner executed decision for case %s directly (agent did not call tool).",
+                    case_id,
+                )
+
             # Snapshot portfolio *after* the decision has settled.
             portfolio_after = broker.get_portfolio()
 

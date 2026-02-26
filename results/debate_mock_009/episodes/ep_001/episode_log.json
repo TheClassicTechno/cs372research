@@ -1,0 +1,4631 @@
+{
+  "episode_id": "ep_001",
+  "agent_id": "multi_agent_debate_001",
+  "decision_point_logs": [
+    {
+      "case_id": "ep_001:0",
+      "decision_point_idx": 0,
+      "portfolio_before": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "portfolio_after": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of AAPL \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AAPL",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:03.874524+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:03.874524+00:00\n- Universe: AAPL\n- Prices: AAPL: $222.13\n- Returns: AAPL: -8.91%\n- Volatility: AAPL: 0.0182\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [EARNINGS]  Suhasini Chandramouli: Good afternoon, and welcome to the Apple Q1 Fiscal Year 2025 Earnings Conference Call. My name is Suhasini Chandramouli, Director of Investor Relations. Today's call is being recorded. Speaking first today are Apple CEO, Tim Cook, and he will b...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 AAPL",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AAPL",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:03.892231+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 222.1300048828125
+            },
+            "returns": {
+              "AAPL": -0.08907115307384027
+            },
+            "volatility": {
+              "AAPL": 0.018197968375948823
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 100000.0,
+            "positions": {},
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:1",
+      "decision_point_idx": 1,
+      "portfolio_before": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "portfolio_after": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of AAPL \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AAPL",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:03.938910+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:03.938910+00:00\n- Universe: AAPL\n- Prices: AAPL: $205.17\n- Returns: AAPL: -8.07%\n- Volatility: AAPL: 0.0313\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [NEWS] Apple price target lowered to $256 from $259 at Goldman Sachs Goldman Sachs lowered the firm\u2019s price target on Apple (AAPL) to $256 from $259 but keeps a Buy rating on the shares ahead of its Q2 results. Apple should deliver strong fundamental results driven by new produc...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 AAPL",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AAPL",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:03.940919+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 205.1699981689453
+            },
+            "returns": {
+              "AAPL": -0.08073840259575114
+            },
+            "volatility": {
+              "AAPL": 0.03133846209016604
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 100000.0,
+            "positions": {},
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.062000000034458935
+    },
+    {
+      "case_id": "ep_001:2",
+      "decision_point_idx": 2,
+      "portfolio_before": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "portfolio_after": {
+        "cash": 97453.69995117188,
+        "positions": {
+          "AAPL": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "0b204c3dd619",
+            "case_id": "ep_001:2",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 10,
+            "price": 254.6300048828125
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AAPL",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:03.992083+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:03.992083+00:00\n- Universe: AAPL\n- Prices: AAPL: $254.63\n- Returns: AAPL: 22.52%\n- Volatility: AAPL: 0.0155\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [NEWS] Best Stock to Buy Right Now: Apple vs. Amazon Apple and Amazon are two leading consumer stocks, but their distinct approaches to AI could be a deciding factor in their future success.  Apple is taking a conservative approach to AI capital expenditures by leveraging partne...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 AAPL",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AAPL",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:03.992083+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 254.6300048828125
+            },
+            "returns": {
+              "AAPL": 0.22524297906296264
+            },
+            "volatility": {
+              "AAPL": 0.015492964200907244
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 100000.0,
+            "positions": {},
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:3",
+      "decision_point_idx": 3,
+      "portfolio_before": {
+        "cash": 97453.69995117188,
+        "positions": {
+          "AAPL": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 94722.90008544922,
+        "positions": {
+          "AAPL": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "32e5c2c70297",
+            "case_id": "ep_001:3",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 10,
+            "price": 273.0799865722656
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AAPL",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.040983+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.040983+00:00\n- Universe: AAPL\n- Prices: AAPL: $273.08\n- Returns: AAPL: 6.90%\n- Volatility: AAPL: 0.0111\n- Portfolio: Cash: $97453.70, Positions: {'AAPL': 10.0}\n- News/Context: [NEWS] Arm Flexes Muscles; Sees Stock Relative Strength Rating Rise To 82, Setting Up For Fresh Run Arm Holdings designed cores are at the heart of Nvidia's chips, and those of Advanced Micro Devices and Apple \u2014 among others.  ARM technology is in smartphones, computer...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 AAPL",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AAPL",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.040983+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 273.0799865722656
+            },
+            "returns": {
+              "AAPL": 0.06901542311466742
+            },
+            "volatility": {
+              "AAPL": 0.011077986962631176
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 97453.69995117188,
+            "positions": {
+              "AAPL": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:4",
+      "decision_point_idx": 4,
+      "portfolio_before": {
+        "cash": 94722.90008544922,
+        "positions": {
+          "AAPL": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 94722.90008544922,
+        "positions": {
+          "AAPL": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AXP",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of AXP \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AXP",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.089942+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.089942+00:00\n- Universe: AXP\n- Prices: AXP: $269.05\n- Returns: AXP: -9.84%\n- Volatility: AXP: 0.0174\n- Portfolio: Cash: $94722.90, Positions: {'AAPL': 20.0}\n- News/Context: [NEWS] Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio? Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio?\n[NEWS] American Express Co. stock underperforms Monday when compared to competitors American Express Co. stock underperforms Mo...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 AXP",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AXP",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.092150+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AXP": 269.04998779296875
+            },
+            "returns": {
+              "AXP": -0.09844856617589161
+            },
+            "volatility": {
+              "AXP": 0.017396456997392413
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 94722.90008544922,
+            "positions": {
+              "AAPL": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.015999999945051968
+    },
+    {
+      "case_id": "ep_001:5",
+      "decision_point_idx": 5,
+      "portfolio_before": {
+        "cash": 94722.90008544922,
+        "positions": {
+          "AAPL": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 91533.09997558594,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "75390dede74a",
+            "case_id": "ep_001:5",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10,
+            "price": 318.9800109863281
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AXP",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.107498+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.107498+00:00\n- Universe: AXP\n- Prices: AXP: $318.98\n- Returns: AXP: 17.93%\n- Volatility: AXP: 0.0290\n- Portfolio: Cash: $94722.90, Positions: {'AAPL': 20.0}\n- News/Context: [NEWS] 37% of Warren Buffett's $290 Billion Berkshire Hathaway Portfolio Is Invested in These 2 S&P 500 Dividend Stocks In fact, each of the 10 largest stock holdings in Berkshire's portfolio pays a reliable dividend.  Keith Noonan (Apple): Paying a dividend is typically ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 AXP",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AXP",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.107498+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AXP": 318.9800109863281
+            },
+            "returns": {
+              "AXP": 0.17931084749346418
+            },
+            "volatility": {
+              "AXP": 0.02897271365690164
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 94722.90008544922,
+            "positions": {
+              "AAPL": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.045999999972991645
+    },
+    {
+      "case_id": "ep_001:6",
+      "decision_point_idx": 6,
+      "portfolio_before": {
+        "cash": 91533.09997558594,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 88211.49993896484,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "23da451396a2",
+            "case_id": "ep_001:6",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10,
+            "price": 332.1600036621094
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AXP",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.140951+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.140951+00:00\n- Universe: AXP\n- Prices: AXP: $332.16\n- Returns: AXP: 2.99%\n- Volatility: AXP: 0.0137\n- Portfolio: Cash: $91533.10, Positions: {'AAPL': 20.0, 'AXP': 10.0}\n- News/Context: [NEWS] Jim Cramer Considers Visa One of the Best Companies of America Visa Inc. (NYSE:V) is one of the 21 stocks on Jim Cramer\u2019s radar. A caller asked which company Cramer thinks will lead over the next few years out of American Express, Visa, and Mastercard. ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 AXP",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AXP",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.156377+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AXP": 332.1600036621094
+            },
+            "returns": {
+              "AXP": 0.029857702909062384
+            },
+            "volatility": {
+              "AXP": 0.013740338368176707
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 91533.09997558594,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.03200000000651926
+    },
+    {
+      "case_id": "ep_001:7",
+      "decision_point_idx": 7,
+      "portfolio_before": {
+        "cash": 88211.49993896484,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 84477.59979248047,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "101d5ed2f13c",
+            "case_id": "ep_001:7",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "AXP",
+            "side": "buy",
+            "quantity": 10,
+            "price": 373.3900146484375
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "AXP",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.174158+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.174158+00:00\n- Universe: AXP\n- Prices: AXP: $373.39\n- Returns: AXP: 13.64%\n- Volatility: AXP: 0.0164\n- Portfolio: Cash: $88211.50, Positions: {'AAPL': 20.0, 'AXP': 20.0}\n- News/Context: [NEWS] Huge News For Lululemon Stock The company may have just found a unique solution to revive growth in its core North America market.\n[NEWS] Time to Buy Visa Before Its Stablecoin Strategy Redefines Payments? V embraces stablecoins to modernize payments, ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 AXP",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "AXP",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.192451+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AXP": 373.3900146484375
+            },
+            "returns": {
+              "AXP": 0.13644392933698202
+            },
+            "volatility": {
+              "AXP": 0.016438181177168245
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 88211.49993896484,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:8",
+      "decision_point_idx": 8,
+      "portfolio_before": {
+        "cash": 84477.59979248047,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 84477.59979248047,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "BAC",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of BAC \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "BAC",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.224231+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.224231+00:00\n- Universe: BAC\n- Prices: BAC: $41.73\n- Returns: BAC: -5.78%\n- Volatility: BAC: 0.0167\n- Portfolio: Cash: $84477.60, Positions: {'AAPL': 20.0, 'AXP': 30.0}\n- News/Context: [NEWS] Inside Jamie Dimon\u2019s JPMorgan Chase: Restive Employees Amid Record Profits Inside Jamie Dimon\u2019s JPMorgan Chase: Restive Employees Amid Record Profits\n[NEWS] Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio? Warren Buffett Stocks: What...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 BAC",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "BAC",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.224231+00:00",
+          "initial_market_state": {
+            "prices": {
+              "BAC": 41.72999954223633
+            },
+            "returns": {
+              "BAC": -0.05780088779346856
+            },
+            "volatility": {
+              "BAC": 0.016660176768575376
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 84477.59979248047,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.015000000013969839
+    },
+    {
+      "case_id": "ep_001:9",
+      "decision_point_idx": 9,
+      "portfolio_before": {
+        "cash": 84477.59979248047,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 84004.39979553223,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "8c08adcc066e",
+            "case_id": "ep_001:9",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10,
+            "price": 47.31999969482422
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "BAC",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.240302+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.240302+00:00\n- Universe: BAC\n- Prices: BAC: $47.32\n- Returns: BAC: 14.05%\n- Volatility: BAC: 0.0246\n- Portfolio: Cash: $84477.60, Positions: {'AAPL': 20.0, 'AXP': 30.0}\n- News/Context: [NEWS] Jim Cramer on Bank of America (BAC): \u201cThis Is Not 2007 \u2013 Don\u2019t Panic Sell\u201d We recently published a list of Jim Cramer Warns of a 36% Market Drop & Reviews These 9 Key Stocks. In this article, we are going to take a look at where Bank of America Corporat...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 BAC",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "BAC",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.256949+00:00",
+          "initial_market_state": {
+            "prices": {
+              "BAC": 47.31999969482422
+            },
+            "returns": {
+              "BAC": 0.14051573344194815
+            },
+            "volatility": {
+              "BAC": 0.024623507794317153
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 84477.59979248047,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.06299999996554106
+    },
+    {
+      "case_id": "ep_001:10",
+      "decision_point_idx": 10,
+      "portfolio_before": {
+        "cash": 84004.39979553223,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 83488.49979400635,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "4adaa691f54d",
+            "case_id": "ep_001:10",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10,
+            "price": 51.59000015258789
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "BAC",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.307111+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.307111+00:00\n- Universe: BAC\n- Prices: BAC: $51.59\n- Returns: BAC: 7.14%\n- Volatility: BAC: 0.0120\n- Portfolio: Cash: $84004.40, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 10.0}\n- News/Context: [NEWS] Here is What to Know Beyond Why Bank of America Corporation (BAC) is a Trending Stock Bank of America (BAC) has received quite a bit of attention from Zacks.com users lately. Therefore, it is wise to be aware of the facts that can impact the...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 BAC",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "BAC",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.307111+00:00",
+          "initial_market_state": {
+            "prices": {
+              "BAC": 51.59000015258789
+            },
+            "returns": {
+              "BAC": 0.07144337523769564
+            },
+            "volatility": {
+              "BAC": 0.011963347505999204
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 84004.39979553223,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:11",
+      "decision_point_idx": 11,
+      "portfolio_before": {
+        "cash": 83488.49979400635,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 82935.69980621338,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "64b9e0cb6470",
+            "case_id": "ep_001:11",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 10,
+            "price": 55.279998779296875
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "BAC",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.356577+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.356577+00:00\n- Universe: BAC\n- Prices: BAC: $55.28\n- Returns: BAC: 9.08%\n- Volatility: BAC: 0.0128\n- Portfolio: Cash: $83488.50, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 20.0}\n- News/Context: [EARNINGS] Bank earnings: Why Goldman and Citi could outperform the pack Earnings season is about to kick off for Big Banks this week, with JPMorgan (JPM), Wells Fargo (WFC), Goldman Sachs (GS), and Citigroup (C) reporting quarterly results on Tues...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 BAC",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "BAC",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.357034+00:00",
+          "initial_market_state": {
+            "prices": {
+              "BAC": 55.279998779296875
+            },
+            "returns": {
+              "BAC": 0.09076555734849337
+            },
+            "volatility": {
+              "BAC": 0.012788834092684663
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 83488.49979400635,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.045999999972991645
+    },
+    {
+      "case_id": "ep_001:12",
+      "decision_point_idx": 12,
+      "portfolio_before": {
+        "cash": 82935.69980621338,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 81262.79987335205,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "CVX": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "770259fd08df",
+            "case_id": "ep_001:12",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 10,
+            "price": 167.2899932861328
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "CVX",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.392791+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.392791+00:00\n- Universe: CVX\n- Prices: CVX: $167.29\n- Returns: CVX: 14.03%\n- Volatility: CVX: 0.0134\n- Portfolio: Cash: $82935.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0}\n- News/Context: [NEWS] Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio? Warren Buffett Stocks: What's Inside Berkshire Hathaway's Portfolio?\n[NEWS] NVIDIA Corp., Chevron share losses lead Dow's 350-point drop NVIDIA Corp., Chevron share losse...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 CVX",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "CVX",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.407252+00:00",
+          "initial_market_state": {
+            "prices": {
+              "CVX": 167.2899932861328
+            },
+            "returns": {
+              "CVX": 0.14027663847363442
+            },
+            "volatility": {
+              "CVX": 0.013439223159177952
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 82935.69980621338,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.03200000000651926
+    },
+    {
+      "case_id": "ep_001:13",
+      "decision_point_idx": 13,
+      "portfolio_before": {
+        "cash": 81262.79987335205,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "CVX": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 82694.69989776611,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "CVX",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "8a928b754d7a",
+            "case_id": "ep_001:13",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "CVX",
+            "side": "sell",
+            "quantity": 10,
+            "price": 143.19000244140625
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "CVX",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.424201+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.424201+00:00\n- Universe: CVX\n- Prices: CVX: $143.19\n- Returns: CVX: -15.03%\n- Volatility: CVX: 0.0230\n- Portfolio: Cash: $81262.80, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'CVX': 10.0}\n- News/Context: [NEWS] 5 Dividend Bargains Too Good To Ignore The first quarter was rough. Check out the top dividend stocks with strong business models, solid balance sheets, and attractive valuations.\n[NEWS] 3 Warren Buffett Dividend Stocks That ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 CVX",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "CVX",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.424201+00:00",
+          "initial_market_state": {
+            "prices": {
+              "CVX": 143.19000244140625
+            },
+            "returns": {
+              "CVX": -0.1502581027287526
+            },
+            "volatility": {
+              "CVX": 0.022961087030891805
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 81262.79987335205,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "CVX": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:14",
+      "decision_point_idx": 14,
+      "portfolio_before": {
+        "cash": 82694.69989776611,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 81141.79996490479,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "CVX": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "63b7826a9e3d",
+            "case_id": "ep_001:14",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 10,
+            "price": 155.2899932861328
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "CVX",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.473711+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.473711+00:00\n- Universe: CVX\n- Prices: CVX: $155.29\n- Returns: CVX: 6.68%\n- Volatility: CVX: 0.0124\n- Portfolio: Cash: $82694.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0}\n- News/Context: [EARNINGS] Four injured after fire at Chevron Pascagoula, Mississippi refinery Four contract workers were injured after a fire at Chevron's 356,440 barrels-per-day Pascagoula, Mississippi refinery on Monday, the company said in an email statement....",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 CVX",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "CVX",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.473711+00:00",
+          "initial_market_state": {
+            "prices": {
+              "CVX": 155.2899932861328
+            },
+            "returns": {
+              "CVX": 0.06677189993035695
+            },
+            "volatility": {
+              "CVX": 0.012381765022150474
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 82694.69989776611,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.030999999959021807
+    },
+    {
+      "case_id": "ep_001:15",
+      "decision_point_idx": 15,
+      "portfolio_before": {
+        "cash": 81141.79996490479,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "CVX": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 82664.89994049072,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "CVX",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "a0eab31d6135",
+            "case_id": "ep_001:15",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "CVX",
+            "side": "sell",
+            "quantity": 10,
+            "price": 152.30999755859375
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "CVX",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.507045+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.507045+00:00\n- Universe: CVX\n- Prices: CVX: $152.31\n- Returns: CVX: -1.47%\n- Volatility: CVX: 0.0109\n- Portfolio: Cash: $81141.80, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'CVX': 10.0}\n- News/Context: [EARNINGS] How XOM Expects Oil Prices & Refining Margins to Impact Q3 Earnings Exxon Mobil expects Q3 earnings to rise sequentially, boosted by oil and gas price changes and stronger refining margins.\n[NEWS] Chevron Works to Restart ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 CVX",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "CVX",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.523475+00:00",
+          "initial_market_state": {
+            "prices": {
+              "CVX": 152.30999755859375
+            },
+            "returns": {
+              "CVX": -0.014684980240470536
+            },
+            "volatility": {
+              "CVX": 0.010904557768664046
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 81141.79996490479,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "CVX": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:16",
+      "decision_point_idx": 16,
+      "portfolio_before": {
+        "cash": 82664.89994049072,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 81948.6999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "KO",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "df432dc9f711",
+            "case_id": "ep_001:16",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "KO",
+            "side": "buy",
+            "quantity": 10,
+            "price": 71.62000274658203
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "KO",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.557512+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.557512+00:00\n- Universe: KO\n- Prices: KO: $71.62\n- Returns: KO: 15.82%\n- Volatility: KO: 0.0129\n- Portfolio: Cash: $82664.90, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0}\n- News/Context: [NEWS] RFK Jr. and His Allies Target Trump\u2019s Beloved Soda RFK Jr. and His Allies Target Trump\u2019s Beloved Soda\n[NEWS] Why The S&P 500 Is A Hold Ahead Of February Jobs Report The upcoming February non-farm payrolls report is expected to show another incr...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 KO",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "KO",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.573876+00:00",
+          "initial_market_state": {
+            "prices": {
+              "KO": 71.62000274658203
+            },
+            "returns": {
+              "KO": 0.1581501062396887
+            },
+            "volatility": {
+              "KO": 0.012886939868359842
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 82664.89994049072,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.015000000013969839
+    },
+    {
+      "case_id": "ep_001:17",
+      "decision_point_idx": 17,
+      "portfolio_before": {
+        "cash": 81948.6999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 82656.1999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "KO",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "c507b2c80283",
+            "case_id": "ep_001:17",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "KO",
+            "side": "sell",
+            "quantity": 10,
+            "price": 70.75
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "KO",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.573876+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.573876+00:00\n- Universe: KO\n- Prices: KO: $70.75\n- Returns: KO: -1.56%\n- Volatility: KO: 0.0124\n- Portfolio: Cash: $81948.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0}\n- News/Context: [NEWS] Jim Cramer Says Don\u2019t Short Coca-Cola (KO): \u2018It Was a Winner When the Nasdaq Broke\u2019 We recently published a list of Jim Cramer Raises Big Question About Tariffs & Discusses These 11 Stocks. In this article, we are going to take a lo...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 KO",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "KO",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.593119+00:00",
+          "initial_market_state": {
+            "prices": {
+              "KO": 70.75
+            },
+            "returns": {
+              "KO": -0.015583730399054366
+            },
+            "volatility": {
+              "KO": 0.012412709553748742
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 81948.6999130249,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 2. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.06299999996554106
+    },
+    {
+      "case_id": "ep_001:18",
+      "decision_point_idx": 18,
+      "portfolio_before": {
+        "cash": 82656.1999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 82656.1999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "KO",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of KO \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "KO",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.623810+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.623810+00:00\n- Universe: KO\n- Prices: KO: $66.32\n- Returns: KO: -7.46%\n- Volatility: KO: 0.0083\n- Portfolio: Cash: $82656.20, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0}\n- News/Context: [NEWS] Unveiling Coca-Cola (KO) Q2 Outlook: Wall Street Estimates for Key Metrics Besides Wall Street's top-and-bottom-line estimates for Coca-Cola (KO), review projections for some of its key metrics to gain a deeper understanding of how the company ...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 KO",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "KO",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.640129+00:00",
+          "initial_market_state": {
+            "prices": {
+              "KO": 66.31999969482422
+            },
+            "returns": {
+              "KO": -0.07464767142186497
+            },
+            "volatility": {
+              "KO": 0.008272937658494482
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 82656.1999130249,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:19",
+      "decision_point_idx": 19,
+      "portfolio_before": {
+        "cash": 82656.1999130249,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 81955.49991607666,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "KO",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "737def6549db",
+            "case_id": "ep_001:19",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "KO",
+            "side": "buy",
+            "quantity": 10,
+            "price": 70.06999969482422
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "KO",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.674077+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.674077+00:00\n- Universe: KO\n- Prices: KO: $70.07\n- Returns: KO: 4.93%\n- Volatility: KO: 0.0106\n- Portfolio: Cash: $82656.20, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0}\n- News/Context: [NEWS] Max Levchin Elected to Board of Directors of The Coca-Cola Company ATLANTA, October 16, 2025--The Coca-Cola Company today announced that Max Levchin, a PayPal co-founder who went on to found and lead financial technology company Affirm, has been...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 KO",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "KO",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.674077+00:00",
+          "initial_market_state": {
+            "prices": {
+              "KO": 70.06999969482422
+            },
+            "returns": {
+              "KO": 0.04926626198962
+            },
+            "volatility": {
+              "KO": 0.010623901648856937
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 82656.1999130249,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.03100000007543713
+    },
+    {
+      "case_id": "ep_001:20",
+      "decision_point_idx": 20,
+      "portfolio_before": {
+        "cash": 81955.49991607666,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 81955.49991607666,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "MSFT",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of MSFT \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "MSFT",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.707273+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.707273+00:00\n- Universe: MSFT\n- Prices: MSFT: $375.39\n- Returns: MSFT: -10.32%\n- Volatility: MSFT: 0.0164\n- Portfolio: Cash: $81955.50, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0}\n- News/Context: [EARNINGS]  Operator: Greetings and welcome to the Microsoft Fiscal Year 2025 Second Quarter Earnings Conference Call. At this time, all participants are in a listen-only mode. A question-and-answer session will follow the formal...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 MSFT",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "MSFT",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.723233+00:00",
+          "initial_market_state": {
+            "prices": {
+              "MSFT": 375.3900146484375
+            },
+            "returns": {
+              "MSFT": -0.10318212363068058
+            },
+            "volatility": {
+              "MSFT": 0.016369813506127952
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 81955.49991607666,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.030999999959021807
+    },
+    {
+      "case_id": "ep_001:21",
+      "decision_point_idx": 21,
+      "portfolio_before": {
+        "cash": 81955.49991607666,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 76981.39987945557,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "6df9d97fdb8d",
+            "case_id": "ep_001:21",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 10,
+            "price": 497.4100036621094
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "MSFT",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.740696+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.740696+00:00\n- Universe: MSFT\n- Prices: MSFT: $497.41\n- Returns: MSFT: 30.15%\n- Volatility: MSFT: 0.0201\n- Portfolio: Cash: $81955.50, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0}\n- News/Context: [EARNINGS] Microsoft (NasdaqGS:MSFT) Enhances Data Security with Kyndryl's New Services for AI Readiness Microsoft (NasdaqGS:MSFT) experienced a 1.80% increase in its share price over the past week, which aligns with a broader mar...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 MSFT",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "MSFT",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.756744+00:00",
+          "initial_market_state": {
+            "prices": {
+              "MSFT": 497.4100036621094
+            },
+            "returns": {
+              "MSFT": 0.30147309056931065
+            },
+            "volatility": {
+              "MSFT": 0.020090900647771553
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 81955.49991607666,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:22",
+      "decision_point_idx": 22,
+      "portfolio_before": {
+        "cash": 76981.39987945557,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 71801.89975738525,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "8f3ad2b0bc72",
+            "case_id": "ep_001:22",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 10,
+            "price": 517.9500122070312
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "MSFT",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.793331+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.793331+00:00\n- Universe: MSFT\n- Prices: MSFT: $517.95\n- Returns: MSFT: 5.26%\n- Volatility: MSFT: 0.0103\n- Portfolio: Cash: $76981.40, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0}\n- News/Context: [NEWS] S&P 500 stocks: List of additions and removals in 2025 These stocks have been added or removed from the S&P 500 this year.\n[NEWS] Tevogen.AI Applauds U.S. Government\u2019s AI Action Plan; Reaffirms Commitment to Ac...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 MSFT",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "MSFT",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.814245+00:00",
+          "initial_market_state": {
+            "prices": {
+              "MSFT": 517.9500122070312
+            },
+            "returns": {
+              "MSFT": 0.05263697806443194
+            },
+            "volatility": {
+              "MSFT": 0.010278312343159452
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 76981.39987945557,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0779999999795109
+    },
+    {
+      "case_id": "ep_001:23",
+      "decision_point_idx": 23,
+      "portfolio_before": {
+        "cash": 71801.89975738525,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 76676.69986724854,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "MSFT",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "c33f65fc038d",
+            "case_id": "ep_001:23",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "MSFT",
+            "side": "sell",
+            "quantity": 10,
+            "price": 487.4800109863281
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "MSFT",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.857116+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.857116+00:00\n- Universe: MSFT\n- Prices: MSFT: $487.48\n- Returns: MSFT: -6.20%\n- Volatility: MSFT: 0.0121\n- Portfolio: Cash: $71801.90, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 20.0}\n- News/Context: [NEWS] Microsoft Values $135 Billion Stake in OpenAI as Firms Face Legal Pressure The recapitalization gives OpenAI freedom to partner with competitors and release open-weight models, even as both firms face legal pr...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 MSFT",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "MSFT",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.857116+00:00",
+          "initial_market_state": {
+            "prices": {
+              "MSFT": 487.4800109863281
+            },
+            "returns": {
+              "MSFT": -0.06201537323446854
+            },
+            "volatility": {
+              "MSFT": 0.012071133029108816
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 71801.89975738525,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:24",
+      "decision_point_idx": 24,
+      "portfolio_before": {
+        "cash": 76676.69986724854,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 76676.69986724854,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "NVDA",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "rejected",
+        "executed_trades": [],
+        "message": "Cannot sell 10 shares of NVDA \u2014 only 0 held."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "NVDA",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.906116+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.906116+00:00\n- Universe: NVDA\n- Prices: NVDA: $108.38\n- Returns: NVDA: -21.64%\n- Volatility: NVDA: 0.0434\n- Portfolio: Cash: $76676.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0}\n- News/Context: [EARNINGS]  Christa: Good afternoon. My name is Christa, and I will be your conference operator today. At this time, I would like to welcome everyone to NVIDIA Corporation's Fourth Quarter Earnings Call. All lines h...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 NVDA",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "NVDA",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.906646+00:00",
+          "initial_market_state": {
+            "prices": {
+              "NVDA": 108.37999725341797
+            },
+            "returns": {
+              "NVDA": -0.2163979526678555
+            },
+            "volatility": {
+              "NVDA": 0.0434302695226628
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 76676.69986724854,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.015999999945051968
+    },
+    {
+      "case_id": "ep_001:25",
+      "decision_point_idx": 25,
+      "portfolio_before": {
+        "cash": 76676.69986724854,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 75096.7998123169,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "7d96971229a9",
+            "case_id": "ep_001:25",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10,
+            "price": 157.99000549316406
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "NVDA",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.923680+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.923680+00:00\n- Universe: NVDA\n- Prices: NVDA: $157.99\n- Returns: NVDA: 43.43%\n- Volatility: NVDA: 0.0361\n- Portfolio: Cash: $76676.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0}\n- News/Context: [NEWS] NVDY: The Market Has Changed, So Has My Opinion (Upgrade) YieldMax NVDA Option Income Strategy ETF has flaws, but evolving market conditions and structure adjustments improve appeal. See why NVDY is upgraded t...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 NVDA",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "NVDA",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.939934+00:00",
+          "initial_market_state": {
+            "prices": {
+              "NVDA": 157.99000549316406
+            },
+            "returns": {
+              "NVDA": 0.4343168706724485
+            },
+            "volatility": {
+              "NVDA": 0.03614124580582719
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 76676.69986724854,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.0470000000204891
+    },
+    {
+      "case_id": "ep_001:26",
+      "decision_point_idx": 26,
+      "portfolio_before": {
+        "cash": 75096.7998123169,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 73230.99979400635,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "ce017735520e",
+            "case_id": "ep_001:26",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10,
+            "price": 186.5800018310547
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "NVDA",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:04.973910+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:04.973910+00:00\n- Universe: NVDA\n- Prices: NVDA: $186.58\n- Returns: NVDA: 21.71%\n- Volatility: NVDA: 0.0174\n- Portfolio: Cash: $75096.80, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 10.0}\n- News/Context: [NEWS] What's the Best Driverless Vehicle Stock? (Hint: It's Not Tesla or Alphabet) The autonomous vehicle market could reach $4.45 trillion by 2034, which equates to a blistering compound annual growth...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 NVDA",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "NVDA",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:04.989928+00:00",
+          "initial_market_state": {
+            "prices": {
+              "NVDA": 186.5800018310547
+            },
+            "returns": {
+              "NVDA": 0.21709065960070945
+            },
+            "volatility": {
+              "NVDA": 0.017408795376923563
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 75096.7998123169,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.045999999972991645
+    },
+    {
+      "case_id": "ep_001:27",
+      "decision_point_idx": 27,
+      "portfolio_before": {
+        "cash": 73230.99979400635,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 71355.59986114502,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "2b3e12daa849",
+            "case_id": "ep_001:27",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 10,
+            "price": 187.5399932861328
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "NVDA",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 2, Sell votes: 1. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:05.028432+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:05.028432+00:00\n- Universe: NVDA\n- Prices: NVDA: $187.54\n- Returns: NVDA: 0.16%\n- Volatility: NVDA: 0.0234\n- Portfolio: Cash: $73231.00, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 20.0}\n- News/Context: [NEWS] Town Of Vail To Adopt New Agentic Smart City Solution From HPE To Create Sustainable, AI-Powered Smart City Town of Vail will be the first U.S. municipality to implement HPE&#39;s new agentic AI s...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 NVDA",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 2, Sell votes: 1. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "NVDA",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 2, Sell votes: 1. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:05.039984+00:00",
+          "initial_market_state": {
+            "prices": {
+              "NVDA": 187.5399932861328
+            },
+            "returns": {
+              "NVDA": 0.0016021565059166922
+            },
+            "volatility": {
+              "NVDA": 0.02336714214862827
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 73230.99979400635,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 2, Sell votes: 1. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.06300000008195639
+    },
+    {
+      "case_id": "ep_001:28",
+      "decision_point_idx": 28,
+      "portfolio_before": {
+        "cash": 71355.59986114502,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 70626.9998550415,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 10
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "f09da3e18b91",
+            "case_id": "ep_001:28",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10,
+            "price": 72.86000061035156
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "UBER",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:05.084212+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:05.084212+00:00\n- Universe: UBER\n- Prices: UBER: $72.86\n- Returns: UBER: 15.34%\n- Volatility: UBER: 0.0263\n- Portfolio: Cash: $71355.60, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 30.0}\n- News/Context: [NEWS] Uber Technologies, Inc. (UBER) Morgan Stanley Technology, Media & Telecom Conference (Transcript) Uber Technologies, Inc. (NYSE:UBER) Morgan Stanley Technology, Media &amp; Telecom Conference Call...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 UBER",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "UBER",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:05.093775+00:00",
+          "initial_market_state": {
+            "prices": {
+              "UBER": 72.86000061035156
+            },
+            "returns": {
+              "UBER": 0.15339564227136393
+            },
+            "volatility": {
+              "UBER": 0.0263398765223262
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 71355.59986114502,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.015999999945051968
+    },
+    {
+      "case_id": "ep_001:29",
+      "decision_point_idx": 29,
+      "portfolio_before": {
+        "cash": 70626.9998550415,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 10
+        }
+      },
+      "portfolio_after": {
+        "cash": 69693.99982452393,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "3c8a109661d8",
+            "case_id": "ep_001:29",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10,
+            "price": 93.30000305175781
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "UBER",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:05.106757+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:05.106757+00:00\n- Universe: UBER\n- Prices: UBER: $93.30\n- Returns: UBER: 27.83%\n- Volatility: UBER: 0.0293\n- Portfolio: Cash: $70627.00, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 30.0, 'UBER': 10.0}\n- News/Context: [NEWS] Uber and OpenTable team up to enhance dining experience The collaboration combines Uber's ride-hailing and delivery with OpenTable's networks in Australia, Canada, Ireland, Mexico, t...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 UBER",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "UBER",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:05.106757+00:00",
+          "initial_market_state": {
+            "prices": {
+              "UBER": 93.30000305175781
+            },
+            "returns": {
+              "UBER": 0.27825737474188467
+            },
+            "volatility": {
+              "UBER": 0.029275628640576427
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 70626.9998550415,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 30.0,
+              "UBER": 10.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.062000000034458935
+    },
+    {
+      "case_id": "ep_001:30",
+      "decision_point_idx": 30,
+      "portfolio_before": {
+        "cash": 69693.99982452393,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 20
+        }
+      },
+      "portfolio_after": {
+        "cash": 68714.2998123169,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 30
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "4d964162719b",
+            "case_id": "ep_001:30",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "UBER",
+            "side": "buy",
+            "quantity": 10,
+            "price": 97.97000122070312
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "UBER",
+              "side": "buy",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:05.159491+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:05.159491+00:00\n- Universe: UBER\n- Prices: UBER: $97.97\n- Returns: UBER: 6.34%\n- Volatility: UBER: 0.0177\n- Portfolio: Cash: $69694.00, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 30.0, 'UBER': 20.0}\n- News/Context: [NEWS] Mamdani Talks \u2018Intifada\u2019, Taxes in Grilling by Business Leaders (Bloomberg) -- New York City mayoral candidate Zohran Mamdani told business leaders that he would begin to discourage t...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "buy 10 UBER",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "UBER",
+                "side": "buy",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:05.171539+00:00",
+          "initial_market_state": {
+            "prices": {
+              "UBER": 97.97000122070312
+            },
+            "returns": {
+              "UBER": 0.06338873484627718
+            },
+            "volatility": {
+              "UBER": 0.017745737385774007
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 69693.99982452393,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 30.0,
+              "UBER": 20.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.06299999996554106
+    },
+    {
+      "case_id": "ep_001:31",
+      "decision_point_idx": 31,
+      "portfolio_before": {
+        "cash": 68714.2998123169,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 30
+        }
+      },
+      "portfolio_after": {
+        "cash": 69535.49983978271,
+        "positions": {
+          "AAPL": 20,
+          "AXP": 30,
+          "BAC": 30,
+          "KO": 10,
+          "MSFT": 10,
+          "NVDA": 30,
+          "UBER": 20
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "UBER",
+            "side": "sell",
+            "quantity": 10
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "143ca5b33bb8",
+            "case_id": "ep_001:31",
+            "agent_id": "multi_agent_debate_001",
+            "order_index": 0,
+            "ticker": "UBER",
+            "side": "sell",
+            "quantity": 10,
+            "price": 82.12000274658203
+          }
+        ],
+        "message": "Executed 1 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [
+            {
+              "ticker": "UBER",
+              "side": "sell",
+              "size": 10.0,
+              "type": "market",
+              "limit_price": null
+            }
+          ],
+          "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "confidence": 0.55,
+          "claims": [
+            {
+              "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+              "pearl_level": "L2",
+              "variables": [
+                "consensus",
+                "trade_direction"
+              ],
+              "assumptions": [
+                "Multi-agent deliberation reduces individual bias"
+              ],
+              "timestamp_dependency": null,
+              "confidence": 0.6
+            }
+          ]
+        },
+        "debate_trace": {
+          "observation_timestamp": "2026-02-26T07:31:05.223329+00:00",
+          "architecture": "debate",
+          "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:05.223329+00:00\n- Universe: UBER\n- Prices: UBER: $82.12\n- Returns: UBER: -15.00%\n- Volatility: UBER: 0.0211\n- Portfolio: Cash: $68714.30, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0, 'NVDA': 30.0, 'UBER': 30.0}\n- News/Context: [NEWS] Uber Buys Segments.ai To Speed Self-Driving Push Belgian startup adds LiDAR tools and annotation expertise\n[NEWS] Is Instacart Falling Behind As Amazon, Uber, And Walmart Battle For...",
+          "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+          "decision": "sell 10 UBER",
+          "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+          "strongest_objection": "Risk agent raised volatility regime concerns",
+          "debate_turns": null,
+          "action": {
+            "orders": [
+              {
+                "ticker": "UBER",
+                "side": "sell",
+                "size": 10.0,
+                "type": "market",
+                "limit_price": null
+              }
+            ],
+            "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+            "confidence": 0.55,
+            "claims": [
+              {
+                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "pearl_level": "L2",
+                "variables": [
+                  "consensus",
+                  "trade_direction"
+                ],
+                "assumptions": [
+                  "Multi-agent deliberation reduces individual bias"
+                ],
+                "timestamp_dependency": null,
+                "confidence": 0.6
+              }
+            ]
+          },
+          "logged_at": "2026-02-26T07:31:05.223329+00:00",
+          "initial_market_state": {
+            "prices": {
+              "UBER": 82.12000274658203
+            },
+            "returns": {
+              "UBER": -0.14998445059751875
+            },
+            "volatility": {
+              "UBER": 0.021085114411967268
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 68714.2998123169,
+            "positions": {
+              "AAPL": 20.0,
+              "AXP": 30.0,
+              "BAC": 30.0,
+              "KO": 10.0,
+              "MSFT": 10.0,
+              "NVDA": 30.0,
+              "UBER": 30.0
+            },
+            "exposures": null
+          }
+        },
+        "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+        "debate_confidence": 0.55
+      },
+      "elapsed_seconds": 0.045999999972991645
+    }
+  ],
+  "trades": [
+    {
+      "trade_id": "0b204c3dd619",
+      "case_id": "ep_001:2",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "AAPL",
+      "side": "buy",
+      "quantity": 10,
+      "price": 254.6300048828125
+    },
+    {
+      "trade_id": "32e5c2c70297",
+      "case_id": "ep_001:3",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "AAPL",
+      "side": "buy",
+      "quantity": 10,
+      "price": 273.0799865722656
+    },
+    {
+      "trade_id": "75390dede74a",
+      "case_id": "ep_001:5",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "AXP",
+      "side": "buy",
+      "quantity": 10,
+      "price": 318.9800109863281
+    },
+    {
+      "trade_id": "23da451396a2",
+      "case_id": "ep_001:6",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "AXP",
+      "side": "buy",
+      "quantity": 10,
+      "price": 332.1600036621094
+    },
+    {
+      "trade_id": "101d5ed2f13c",
+      "case_id": "ep_001:7",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "AXP",
+      "side": "buy",
+      "quantity": 10,
+      "price": 373.3900146484375
+    },
+    {
+      "trade_id": "8c08adcc066e",
+      "case_id": "ep_001:9",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "BAC",
+      "side": "buy",
+      "quantity": 10,
+      "price": 47.31999969482422
+    },
+    {
+      "trade_id": "4adaa691f54d",
+      "case_id": "ep_001:10",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "BAC",
+      "side": "buy",
+      "quantity": 10,
+      "price": 51.59000015258789
+    },
+    {
+      "trade_id": "64b9e0cb6470",
+      "case_id": "ep_001:11",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "BAC",
+      "side": "buy",
+      "quantity": 10,
+      "price": 55.279998779296875
+    },
+    {
+      "trade_id": "770259fd08df",
+      "case_id": "ep_001:12",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "CVX",
+      "side": "buy",
+      "quantity": 10,
+      "price": 167.2899932861328
+    },
+    {
+      "trade_id": "8a928b754d7a",
+      "case_id": "ep_001:13",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "CVX",
+      "side": "sell",
+      "quantity": 10,
+      "price": 143.19000244140625
+    },
+    {
+      "trade_id": "63b7826a9e3d",
+      "case_id": "ep_001:14",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "CVX",
+      "side": "buy",
+      "quantity": 10,
+      "price": 155.2899932861328
+    },
+    {
+      "trade_id": "a0eab31d6135",
+      "case_id": "ep_001:15",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "CVX",
+      "side": "sell",
+      "quantity": 10,
+      "price": 152.30999755859375
+    },
+    {
+      "trade_id": "df432dc9f711",
+      "case_id": "ep_001:16",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "KO",
+      "side": "buy",
+      "quantity": 10,
+      "price": 71.62000274658203
+    },
+    {
+      "trade_id": "c507b2c80283",
+      "case_id": "ep_001:17",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "KO",
+      "side": "sell",
+      "quantity": 10,
+      "price": 70.75
+    },
+    {
+      "trade_id": "737def6549db",
+      "case_id": "ep_001:19",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "KO",
+      "side": "buy",
+      "quantity": 10,
+      "price": 70.06999969482422
+    },
+    {
+      "trade_id": "6df9d97fdb8d",
+      "case_id": "ep_001:21",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "MSFT",
+      "side": "buy",
+      "quantity": 10,
+      "price": 497.4100036621094
+    },
+    {
+      "trade_id": "8f3ad2b0bc72",
+      "case_id": "ep_001:22",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "MSFT",
+      "side": "buy",
+      "quantity": 10,
+      "price": 517.9500122070312
+    },
+    {
+      "trade_id": "c33f65fc038d",
+      "case_id": "ep_001:23",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "MSFT",
+      "side": "sell",
+      "quantity": 10,
+      "price": 487.4800109863281
+    },
+    {
+      "trade_id": "7d96971229a9",
+      "case_id": "ep_001:25",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "NVDA",
+      "side": "buy",
+      "quantity": 10,
+      "price": 157.99000549316406
+    },
+    {
+      "trade_id": "ce017735520e",
+      "case_id": "ep_001:26",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "NVDA",
+      "side": "buy",
+      "quantity": 10,
+      "price": 186.5800018310547
+    },
+    {
+      "trade_id": "2b3e12daa849",
+      "case_id": "ep_001:27",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "NVDA",
+      "side": "buy",
+      "quantity": 10,
+      "price": 187.5399932861328
+    },
+    {
+      "trade_id": "f09da3e18b91",
+      "case_id": "ep_001:28",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "UBER",
+      "side": "buy",
+      "quantity": 10,
+      "price": 72.86000061035156
+    },
+    {
+      "trade_id": "3c8a109661d8",
+      "case_id": "ep_001:29",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "UBER",
+      "side": "buy",
+      "quantity": 10,
+      "price": 93.30000305175781
+    },
+    {
+      "trade_id": "4d964162719b",
+      "case_id": "ep_001:30",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "UBER",
+      "side": "buy",
+      "quantity": 10,
+      "price": 97.97000122070312
+    },
+    {
+      "trade_id": "143ca5b33bb8",
+      "case_id": "ep_001:31",
+      "agent_id": "multi_agent_debate_001",
+      "order_index": 0,
+      "ticker": "UBER",
+      "side": "sell",
+      "quantity": 10,
+      "price": 82.12000274658203
+    }
+  ],
+  "final_portfolio": {
+    "cash": 69535.49983978271,
+    "positions": {
+      "AAPL": 20,
+      "AXP": 30,
+      "BAC": 30,
+      "KO": 10,
+      "MSFT": 10,
+      "NVDA": 30,
+      "UBER": 20
+    }
+  },
+  "final_prices": {
+    "AAPL": 273.0799865722656,
+    "AXP": 373.3900146484375,
+    "BAC": 55.279998779296875,
+    "CVX": 152.30999755859375,
+    "KO": 70.06999969482422,
+    "MSFT": 487.4800109863281,
+    "NVDA": 187.5399932861328,
+    "UBER": 82.12000274658203
+  }
+}

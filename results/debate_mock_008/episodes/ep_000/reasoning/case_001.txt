@@ -1,0 +1,87 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "AAPL",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T06:33:29.051667+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T06:33:29.051667+00:00\n- Universe: AAPL\n- Prices: AAPL: $205.17\n- Returns: AAPL: -8.07%\n- Volatility: AAPL: 0.0313\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [NEWS] Apple price target lowered to $256 from $259 at Goldman Sachs Goldman Sachs lowered the firm\u2019s price target on Apple (AAPL) to $256 from $259 but keeps a Buy rating on the shares ahead of its Q2 results. Apple should deliver strong fundamental results driven by new produc...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 AAPL",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "AAPL",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T06:33:29.062457+00:00",
+    "initial_market_state": {
+      "prices": {
+        "AAPL": 205.1699981689453
+      },
+      "returns": {
+        "AAPL": -0.08073840259575114
+      },
+      "volatility": {
+        "AAPL": 0.03133846209016604
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 100000.0,
+      "positions": {},
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

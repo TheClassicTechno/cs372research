@@ -1,0 +1,89 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "MSFT",
+        "side": "buy",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T06:29:22.200610+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T06:29:22.200610+00:00\n- Universe: MSFT\n- Prices: MSFT: $497.41\n- Returns: MSFT: 30.15%\n- Volatility: MSFT: 0.0201\n- Portfolio: Cash: $94722.90, Positions: {'AAPL': 20.0}\n- News/Context: [EARNINGS] Microsoft (NasdaqGS:MSFT) Enhances Data Security with Kyndryl's New Services for AI Readiness Microsoft (NasdaqGS:MSFT) experienced a 1.80% increase in its share price over the past week, which aligns with a broader market upswing where major indices, inclu...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "buy 10 MSFT",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "MSFT",
+          "side": "buy",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T06:29:22.215795+00:00",
+    "initial_market_state": {
+      "prices": {
+        "MSFT": 497.4100036621094
+      },
+      "returns": {
+        "MSFT": 0.30147309056931065
+      },
+      "volatility": {
+        "MSFT": 0.020090900647771553
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 94722.90008544922,
+      "positions": {
+        "AAPL": 20.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

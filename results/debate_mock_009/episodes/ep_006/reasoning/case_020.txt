@@ -1,0 +1,92 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "MSFT",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:11.916029+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:11.916029+00:00\n- Universe: MSFT\n- Prices: MSFT: $375.39\n- Returns: MSFT: -10.32%\n- Volatility: MSFT: 0.0164\n- Portfolio: Cash: $81955.50, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0}\n- News/Context: [EARNINGS]  Operator: Greetings and welcome to the Microsoft Fiscal Year 2025 Second Quarter Earnings Conference Call. At this time, all participants are in a listen-only mode. A question-and-answer session will follow the formal...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 MSFT",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "MSFT",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:11.920517+00:00",
+    "initial_market_state": {
+      "prices": {
+        "MSFT": 375.3900146484375
+      },
+      "returns": {
+        "MSFT": -0.10318212363068058
+      },
+      "volatility": {
+        "MSFT": 0.016369813506127952
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 81955.49991607666,
+      "positions": {
+        "AAPL": 20.0,
+        "AXP": 30.0,
+        "BAC": 30.0,
+        "KO": 10.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}
