@@ -51,6 +51,17 @@ def _parse_args() -> argparse.Namespace:
         help="Max number of cases (decision points) per episode. Defaults to all.",
     )
     parser.add_argument(
+        "--ticker",
+        nargs="*",
+        default=None,
+        help="Only include cases containing these tickers (e.g. --ticker NVDA AAPL).",
+    )
+    parser.add_argument(
+        "--list-tickers",
+        action="store_true",
+        help="List all available tickers in the dataset and exit.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -77,6 +88,15 @@ async def _main() -> None:
     logger.info("Loading config from '%s'...", args.config)
 
     config = SimulationConfig.from_yaml(args.config)
+
+    if args.list_tickers:
+        from simulation.case_loader import list_available_tickers
+        tickers = list_available_tickers(config.dataset_path)
+        print("Available tickers:")
+        for t in tickers:
+            print(f"  {t}")
+        return
+
     logger.info("Config loaded: agent='%s'", config.agent.agent_system)
 
     runner = AsyncSimulationRunner(
@@ -84,6 +104,7 @@ async def _main() -> None:
         config_yaml_path=args.config,
         output_dir=args.output_dir,
         num_cases=args.num_cases,
+        ticker_filter=args.ticker,
     )
     await runner.run()
 

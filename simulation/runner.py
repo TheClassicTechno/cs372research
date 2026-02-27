@@ -42,10 +42,12 @@ class AsyncSimulationRunner:
         config_yaml_path: str,
         output_dir: str = "results",
         num_cases: int | None = None,
+        ticker_filter: list[str] | None = None,
     ) -> None:
         self._config = config
         self._config_yaml_path = config_yaml_path
         self._num_cases = num_cases
+        self._ticker_filter = ticker_filter
         self._run_name = run_name_from_config_path(config_yaml_path)
         self._sim_logger = SimulationLogger(output_dir, config, self._run_name)
 
@@ -57,6 +59,7 @@ class AsyncSimulationRunner:
         templates = load_case_templates(
             self._config.dataset_path,
             top_n_news=self._config.top_n_news,
+            ticker_filter=self._ticker_filter,
         )
         if self._num_cases is not None:
             templates = templates[: self._num_cases]

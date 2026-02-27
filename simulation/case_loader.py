@@ -60,12 +60,16 @@ def build_case(
 def load_case_templates(
     dataset_path: str,
     top_n_news: int | None = None,
+    ticker_filter: list[str] | None = None,
 ) -> list[Case]:
     """Load cases from *dataset_path*.
 
     Accepts a directory of ``.json`` files, a single ``.json`` file containing
     a JSON array, or a ``.jsonl`` file (one case per line).  Returns cases in
     decision-point order.
+
+    If *ticker_filter* is set, only cases whose ``stock_data`` contains at
+    least one of the given tickers are included.
 
     If *top_n_news* is set, each case's case_data.items are filtered to the
     top N by abs(impact_score) descending.  Items without impact_score are
@@ -86,11 +90,35 @@ def load_case_templates(
             f"supported file (.json, .jsonl)."
         )
 
+    if ticker_filter is not None:
+        filter_set = set(ticker_filter)
+        before = len(cases)
+        cases = [c for c in cases if filter_set & set(c.stock_data)]
+        logger.info(
+            "Ticker filter %s: %d -> %d case(s).",
+            sorted(filter_set), before, len(cases),
+        )
+
     if top_n_news is not None:
         cases = [_apply_top_n(c, top_n_news) for c in cases]
         logger.info("Applied top_n_news=%d to %d cases.", top_n_news, len(cases))
 
+    for i, case in enumerate(cases):
+        size_kb = len(case.model_dump_json()) / 1024
+        tickers = ", ".join(sorted(case.stock_data.keys()))
+        approx_tokens = int(size_kb * 250)
+        logger.info("  Case %d [%s]: %.1f KB (~%d tokens)", i, tickers, size_kb, approx_tokens)
+
     return cases
+
+
+def list_available_tickers(dataset_path: str) -> list[str]:
+    """Return a sorted list of all tickers found across cases in *dataset_path*."""
+    cases = load_case_templates(dataset_path)
+    all_tickers: set[str] = set()
+    for case in cases:
+        all_tickers.update(case.stock_data.keys())
+    return sorted(all_tickers)
 
 
 def _apply_top_n(case: Case, n: int) -> Case:
