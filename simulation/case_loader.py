@@ -105,9 +105,9 @@ def load_case_templates(
 
     for i, case in enumerate(cases):
         size_kb = len(case.model_dump_json()) / 1024
-        tickers = ", ".join(sorted(case.stock_data.keys()))
         approx_tokens = int(size_kb * 250)
-        logger.info("  Case %d [%s]: %.1f KB (~%d tokens)", i, tickers, size_kb, approx_tokens)
+        label = case.case_id or ", ".join(sorted(case.stock_data.keys()))
+        logger.info("  Case %d [%s]: %.1f KB (~%d tokens)", i, label, size_kb, approx_tokens)
 
     return cases
 
@@ -157,10 +157,15 @@ def _load_from_directory(directory: Path) -> list[Case]:
     )
     if not files:
         raise FileNotFoundError(f"No .json files found under '{directory}'.")
-    cases = [
-        Case.model_validate(json.loads(f.read_text(encoding="utf-8")))
-        for f in files
-    ]
+    cases = []
+    for f in files:
+        case = Case.model_validate(json.loads(f.read_text(encoding="utf-8")))
+        # Stash the source filename (e.g. "AAPL/2025_Q1") for logging.
+        # This is overwritten by build_case() at runtime.
+        case = case.model_copy(
+            update={"case_id": f.relative_to(directory).with_suffix("").as_posix()}
+        )
+        cases.append(case)
     logger.info("Loaded %d cases from directory '%s'.", len(cases), directory)
     return cases
 
