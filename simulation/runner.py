@@ -41,13 +41,9 @@ class AsyncSimulationRunner:
         config: SimulationConfig,
         config_yaml_path: str,
         output_dir: str = "results",
-        num_cases: int | None = None,
-        ticker_filter: list[str] | None = None,
     ) -> None:
         self._config = config
         self._config_yaml_path = config_yaml_path
-        self._num_cases = num_cases
-        self._ticker_filter = ticker_filter
         self._run_name = run_name_from_config_path(config_yaml_path)
         self._sim_logger = SimulationLogger(output_dir, config, self._run_name)
 
@@ -56,13 +52,16 @@ class AsyncSimulationRunner:
         self._sim_logger.init_run(self._config_yaml_path)
 
         # Load case templates once (shared across episodes).
+        # All filtering is controlled via YAML config fields:
+        #   tickers  — which tickers to include
+        #   quarters — which quarters to include (optional)
+        #   top_n_news — cap news items per case (optional)
         templates = load_case_templates(
             self._config.dataset_path,
             top_n_news=self._config.top_n_news,
-            ticker_filter=self._ticker_filter,
+            ticker_filter=self._config.tickers,
+            quarters=self._config.quarters,
         )
-        if self._num_cases is not None:
-            templates = templates[: self._num_cases]
         num_cases = len(templates)
         logger.info(
             "Starting simulation '%s': %d episode(s), %d case(s) each.",

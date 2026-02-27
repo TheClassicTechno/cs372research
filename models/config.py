@@ -71,6 +71,12 @@ class SimulationConfig(BaseModel):
         description="Broker / execution configuration.",
     )
     tickers: list[str] = Field(description="Universe of ticker symbols for this run.")
+    quarters: list[str] | None = Field(
+        default=None,
+        description="If set, only load cases matching these quarters (e.g. ['Q1', 'Q3']). "
+        "Matched against the case filename (e.g. '2025_Q1.json' matches 'Q1'). "
+        "If omitted, all quarters are loaded.",
+    )
     num_episodes: int = Field(
         default=1,
         ge=1,
