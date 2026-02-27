@@ -1,8 +1,8 @@
-"""Tests for the --num-cases flag.
+"""Tests for config-driven case filtering.
 
-Verifies that the CLI flag is parsed correctly and that
-AsyncSimulationRunner truncates the templates list when num_cases
-is provided, while leaving it unchanged when omitted.
+Verifies that AsyncSimulationRunner passes the config's tickers, quarters,
+and top_n_news to load_case_templates, and that the CLI no longer accepts
+the removed --ticker / --num-cases flags.
 """
 
 from __future__ import annotations
@@ -42,11 +42,14 @@ def _make_fake_templates(n: int) -> list:
     return [MagicMock(name=f"case_{i}") for i in range(n)]
 
 
-def _run_and_get_templates(runner) -> list:
-    """Run the runner with mocked internals and return the templates passed to _run_episode."""
+def _run_and_capture_load_call(runner, templates):
+    """Run the runner with mocked internals and return the kwargs passed to load_case_templates."""
+    mock_load = MagicMock(return_value=templates)
     mock_episode = AsyncMock(return_value=MagicMock())
 
-    with patch.object(
+    with patch(
+        "simulation.runner.load_case_templates", mock_load
+    ), patch.object(
         runner._sim_logger, "init_run"
     ), patch.object(
         runner, "_run_episode", mock_episode
@@ -59,140 +62,138 @@ def _run_and_get_templates(runner) -> list:
     ):
         asyncio.run(runner.run())
 
-    call_kwargs = mock_episode.call_args
-    return call_kwargs.kwargs.get(
-        "templates", call_kwargs.args[2] if len(call_kwargs.args) > 2 else None
-    )
+    return mock_load.call_args
 
 
 # =============================================================================
-# TEST 1: num_cases=None preserves all templates (default behavior)
+# TEST 1: Runner passes config tickers to load_case_templates
 # =============================================================================
 
 
-def test_num_cases_none_uses_all_templates(sim_config, tmp_path):
-    """When num_cases is not set, all loaded templates are used."""
-    templates = _make_fake_templates(10)
-
-    runner = AsyncSimulationRunner(
-        sim_config,
-        config_yaml_path=str(tmp_path / "test.yaml"),
-        num_cases=None,
-    )
-
-    with patch("simulation.runner.load_case_templates", return_value=templates):
-        passed = _run_and_get_templates(runner)
-
-    assert len(passed) == 10
-
-
-# =============================================================================
-# TEST 2: num_cases truncates templates to the specified count
-# =============================================================================
-
-
-def test_num_cases_truncates_templates(sim_config, tmp_path):
-    """When num_cases=3, only the first 3 templates are used."""
-    templates = _make_fake_templates(10)
-
-    runner = AsyncSimulationRunner(
-        sim_config,
-        config_yaml_path=str(tmp_path / "test.yaml"),
-        num_cases=3,
-    )
-
-    with patch("simulation.runner.load_case_templates", return_value=templates):
-        passed = _run_and_get_templates(runner)
-
-    assert len(passed) == 3
-    assert passed == templates[:3]
-
-
-# =============================================================================
-# TEST 3: num_cases larger than dataset uses all templates
-# =============================================================================
-
-
-def test_num_cases_larger_than_dataset(sim_config, tmp_path):
-    """When num_cases exceeds the dataset size, all templates are used."""
+def test_runner_passes_config_tickers(sim_config, tmp_path):
+    """Runner should pass config.tickers as ticker_filter."""
     templates = _make_fake_templates(5)
 
     runner = AsyncSimulationRunner(
         sim_config,
         config_yaml_path=str(tmp_path / "test.yaml"),
-        num_cases=100,
     )
 
-    with patch("simulation.runner.load_case_templates", return_value=templates):
-        passed = _run_and_get_templates(runner)
-
-    assert len(passed) == 5
+    call_args = _run_and_capture_load_call(runner, templates)
+    assert call_args.kwargs["ticker_filter"] == ["AAPL"]
 
 
 # =============================================================================
-# TEST 4: num_cases=1 runs exactly one case
+# TEST 2: Runner passes config quarters to load_case_templates
 # =============================================================================
 
 
-def test_num_cases_one(sim_config, tmp_path):
-    """num_cases=1 should pass exactly one template to the episode."""
-    templates = _make_fake_templates(10)
+def test_runner_passes_config_quarters(tmp_path):
+    """Runner should pass config.quarters to load_case_templates."""
+    config = SimulationConfig(
+        dataset_path=str(tmp_path),
+        agent=AgentConfig(
+            agent_system="single_llm",
+            llm_provider="openai",
+            llm_model="gpt-4o-mini",
+        ),
+        broker=BrokerConfig(initial_cash=100_000.0),
+        tickers=["NVDA"],
+        quarters=["Q1", "Q3"],
+        num_episodes=1,
+    )
+    templates = _make_fake_templates(3)
+
+    runner = AsyncSimulationRunner(
+        config,
+        config_yaml_path=str(tmp_path / "test.yaml"),
+    )
+
+    call_args = _run_and_capture_load_call(runner, templates)
+    assert call_args.kwargs["quarters"] == ["Q1", "Q3"]
+
+
+# =============================================================================
+# TEST 3: Runner passes None quarters when not set in config
+# =============================================================================
+
+
+def test_runner_passes_none_quarters_when_omitted(sim_config, tmp_path):
+    """When quarters is not set in config, None should be passed."""
+    templates = _make_fake_templates(5)
 
     runner = AsyncSimulationRunner(
         sim_config,
         config_yaml_path=str(tmp_path / "test.yaml"),
-        num_cases=1,
     )
 
-    with patch("simulation.runner.load_case_templates", return_value=templates):
-        passed = _run_and_get_templates(runner)
-
-    assert len(passed) == 1
-    assert passed[0] is templates[0]
+    call_args = _run_and_capture_load_call(runner, templates)
+    assert call_args.kwargs["quarters"] is None
 
 
 # =============================================================================
-# TEST 5: CLI argparse parses --num-cases correctly
+# TEST 4: Runner no longer accepts num_cases or ticker_filter params
 # =============================================================================
 
 
-def test_cli_parses_num_cases_flag():
-    """The --num-cases flag is parsed as an int."""
+def test_runner_rejects_removed_params(sim_config, tmp_path):
+    """AsyncSimulationRunner should not accept num_cases or ticker_filter."""
+    with pytest.raises(TypeError):
+        AsyncSimulationRunner(
+            sim_config,
+            config_yaml_path=str(tmp_path / "test.yaml"),
+            num_cases=3,
+        )
+
+    with pytest.raises(TypeError):
+        AsyncSimulationRunner(
+            sim_config,
+            config_yaml_path=str(tmp_path / "test.yaml"),
+            ticker_filter=["NVDA"],
+        )
+
+
+# =============================================================================
+# TEST 5: CLI no longer accepts --num-cases or --ticker
+# =============================================================================
+
+
+def test_cli_rejects_num_cases_flag():
+    """The --num-cases flag should no longer be accepted."""
     from run_simulation import _parse_args
 
     with patch("sys.argv", ["run_simulation.py", "--config", "test.yaml", "--num-cases", "5"]):
-        args = _parse_args()
-    assert args.num_cases == 5
+        with pytest.raises(SystemExit):
+            _parse_args()
 
 
-def test_cli_num_cases_defaults_to_none():
-    """When --num-cases is omitted, it defaults to None."""
+def test_cli_rejects_ticker_flag():
+    """The --ticker flag should no longer be accepted."""
     from run_simulation import _parse_args
 
-    with patch("sys.argv", ["run_simulation.py", "--config", "test.yaml"]):
+    with patch("sys.argv", ["run_simulation.py", "--config", "test.yaml", "--ticker", "NVDA"]):
+        with pytest.raises(SystemExit):
+            _parse_args()
+
+
+# =============================================================================
+# TEST 6: CLI still accepts --config, --output-dir, --list-tickers, --log-level
+# =============================================================================
+
+
+def test_cli_accepts_remaining_flags():
+    """The kept flags should still parse correctly."""
+    from run_simulation import _parse_args
+
+    with patch("sys.argv", [
+        "run_simulation.py",
+        "--config", "test.yaml",
+        "--output-dir", "out",
+        "--log-level", "ERROR",
+    ]):
         args = _parse_args()
-    assert args.num_cases is None
 
-
-# =============================================================================
-# TEST 6: Constructor stores num_cases
-# =============================================================================
-
-
-def test_runner_stores_num_cases(sim_config, tmp_path):
-    """AsyncSimulationRunner stores num_cases on the instance."""
-    runner = AsyncSimulationRunner(
-        sim_config,
-        config_yaml_path=str(tmp_path / "test.yaml"),
-        num_cases=7,
-    )
-    assert runner._num_cases == 7
-
-
-def test_runner_num_cases_defaults_to_none(sim_config, tmp_path):
-    """When num_cases is omitted, it defaults to None."""
-    runner = AsyncSimulationRunner(
-        sim_config,
-        config_yaml_path=str(tmp_path / "test.yaml"),
-    )
-    assert runner._num_cases is None
+    assert args.config == "test.yaml"
+    assert args.output_dir == "out"
+    assert args.log_level == "ERROR"
+    assert args.list_tickers is False

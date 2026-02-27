@@ -4,25 +4,13 @@
 # Run with:
 #   python run_simulation.py --config config/debate.yaml
 #
-# Uses the multi-agent debate system (Propose -> Critique -> Revise -> Judge)
+# Uses the multi-agent debate system (Propose → Critique → Revise → Judge)
 # with 4 specialist agents: MACRO, VALUE, RISK, TECHNICAL.
 #
 # For mock mode (no API calls), use config/debate_mock.yaml instead.
 
 dataset_path: "data/cases"
 
-# Filter case_data items to top N by impact_score at load time.
-# Dramatically reduces case size and token cost (e.g. ~200KB -> ~6KB per case).
-top_n_news: 5
-
-# Optional: only load cases matching these quarters (e.g. [Q1, Q3]).
-# Omit to load all quarters.
-# quarters:
-#   - Q1
-
-# Universe of ticker symbols. Controls two things:
-#   1. Which tickers the broker accepts for trading.
-#   2. Which cases are loaded (only cases containing these tickers).
 tickers:
   - NVDA
 
@@ -32,7 +20,7 @@ num_episodes: 1
 # Agent Configuration — Multi-Agent Debate
 # --------------------------------------------------------------------------
 agent:
-  # Registered as "multi_agent_debate" per integration_plan.md S5.
+  # Registered as "multi_agent_debate" per integration_plan.md §5.
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
