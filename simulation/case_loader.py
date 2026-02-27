@@ -61,6 +61,7 @@ def load_case_templates(
     dataset_path: str,
     top_n_news: int | None = None,
     ticker_filter: list[str] | None = None,
+    quarters: list[str] | None = None,
 ) -> list[Case]:
     """Load cases from *dataset_path*.
 
@@ -99,15 +100,29 @@ def load_case_templates(
             sorted(filter_set), before, len(cases),
         )
 
+    if quarters is not None:
+        quarter_set = set(quarters)
+        before = len(cases)
+        cases = [c for c in cases if any(q in c.case_id for q in quarter_set)]
+        logger.info("Quarter filter %s: %d -> %d case(s).", sorted(quarter_set), before, len(cases))
+
     if top_n_news is not None:
         cases = [_apply_top_n(c, top_n_news) for c in cases]
         logger.info("Applied top_n_news=%d to %d cases.", top_n_news, len(cases))
 
+    total_kb = 0.0
     for i, case in enumerate(cases):
         size_kb = len(case.model_dump_json()) / 1024
         approx_tokens = int(size_kb * 250)
         label = case.case_id or ", ".join(sorted(case.stock_data.keys()))
         logger.info("  Case %d [%s]: %.1f KB (~%d tokens)", i, label, size_kb, approx_tokens)
+        total_kb += size_kb
+
+    total_tokens = int(total_kb * 250)
+    logger.info(
+        "Total: %d case(s), %.1f KB (~%d tokens)",
+        len(cases), total_kb, total_tokens,
+    )
 
     return cases
 
