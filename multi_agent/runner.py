@@ -19,11 +19,16 @@ its own LangGraph sub-graph:
 
 The runner owns the iteration loop (Phase 2), calling single_round_graph
 once per round.  Between rounds, external controllers can observe the
-state and decide whether to continue, adjust agreeableness, etc:
+state and decide whether to continue, adjust agreeableness, etc.
+
+When PID is enabled, Phase 2 decomposes each round into three separate
+sub-graph invocations (propose, critique, revise) so that agreeableness
+can be adjusted per-phase based on the PID controller's output:
 
     for t in range(max_rounds):
-        state = self.run_single_round(state)
-        # <-- FUTURE: controller_step(state) goes here
+        state = self._run_round_with_pid(state, t + 1)
+        crit_result = crit_scorer.score(...)
+        pid_result = controller.step(crit_result.rho_bar, js, ov)
         if self.should_terminate(state):
             break
 
@@ -73,8 +78,11 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from .config import AgentRole, DebateConfig
 from .graph import (
@@ -82,8 +90,26 @@ from .graph import (
     compile_parallel_single_round_graph,
     compile_pipeline_graph,
     compile_single_round_graph,
+    # Per-phase graphs (for PID intervention)
+    compile_propose_graph,
+    compile_critique_graph,
+    compile_revise_graph,
+    compile_parallel_propose_graph,
+    compile_parallel_critique_graph,
+    compile_parallel_revise_graph,
+    _call_llm,
 )
-from .models import Action, AgentTrace, Claim, DebateTurn, Observation, Order
+from .models import (
+    Action,
+    AgentTrace,
+    Claim,
+    ControllerOutput,
+    DebateTurn,
+    Observation,
+    Order,
+    PIDEvent,
+    RoundMetrics,
+)
 
 
 class MultiAgentRunner:
@@ -113,6 +139,62 @@ class MultiAgentRunner:
             self.single_round_graph = compile_single_round_graph(self.config)
         self.finalize_graph = compile_finalize_graph(self.config)
 
+        # --- Per-phase sub-graphs (compiled only when PID enabled) ---
+        self._propose_graph = None
+        self._critique_graph = None
+        self._revise_graph = None
+
+        if self.config.pid_enabled:
+            if self.config.parallel_agents:
+                self._propose_graph = compile_parallel_propose_graph(self.config)
+                self._critique_graph = compile_parallel_critique_graph(self.config)
+                self._revise_graph = compile_parallel_revise_graph(self.config)
+            else:
+                self._propose_graph = compile_propose_graph(self.config)
+                self._critique_graph = compile_critique_graph(self.config)
+                self._revise_graph = compile_revise_graph(self.config)
+
+        # --- CRIT scorer (uses same LLM config as debate agents) ---
+        self._crit_scorer = None
+        if self.config.pid_enabled:
+            from eval.crit import CritScorer
+            self._crit_scorer = CritScorer(
+                llm_fn=lambda sys, usr: _call_llm(self.config.to_dict(), sys, usr)
+            )
+
+        # --- PID controller ---
+        self._pid_controller = None
+        self._pid_events: list[PIDEvent] = []
+        self._original_agreeableness = self.config.agreeableness
+
+        if self.config.pid_config:
+            from eval.PID.controller import PIDController
+            from eval.PID.stability import validate_gains
+
+            pid_cfg = self.config.pid_config
+            validate_gains(
+                pid_cfg.gains,
+                pid_cfg.T_max,
+                pid_cfg.gamma_beta,
+                rho_star=pid_cfg.rho_star,
+                mu=pid_cfg.mu,
+            )
+            self._pid_controller = PIDController(pid_cfg, self.config.initial_beta)
+
+    def _reset_per_invocation_state(self) -> None:
+        """Reset mutable state that must not leak between run() calls.
+
+        A single DebateAgentSystem (and thus MultiAgentRunner) is reused
+        across all decision points within an episode.  PID events and
+        controller state must be fresh for each decision point.
+        """
+        self._pid_events = []
+        if self.config.pid_config:
+            from eval.PID.controller import PIDController
+            self._pid_controller = PIDController(
+                self.config.pid_config, self.config.initial_beta
+            )
+
     def run(self, observation: Observation) -> tuple[Action, AgentTrace]:
         """
         Run the full debate pipeline on an observation.
@@ -120,6 +202,7 @@ class MultiAgentRunner:
         Returns:
             (action, trace) -- the final Action and the full AgentTrace
         """
+        self._reset_per_invocation_state()
         state = self._run_pipeline(observation)
 
         # Parse final action
@@ -156,7 +239,12 @@ class MultiAgentRunner:
             # to see the previous round's revisions as their source.
             if t > 0:
                 state["critiques"] = []
-            state = self.run_single_round(state)
+
+            if self.config.pid_enabled:
+                state = self._run_round_with_pid(state, t + 1)
+            else:
+                state = self.run_single_round(state)
+
             if self.config.parallel_agents:
                 # With operator.add, revisions accumulate (previous round's
                 # entries + this round's entries).  Keep only the latest
@@ -168,6 +256,20 @@ class MultiAgentRunner:
                         seen.add(rev["role"])
                         deduped.append(rev)
                 state["revisions"] = list(reversed(deduped))
+
+            # CRIT + PID step (after full round completes)
+            if self._pid_controller and self._crit_scorer:
+                try:
+                    self._pid_step(state, t + 1)
+                except Exception as exc:
+                    logger.warning(
+                        "CRIT/PID step failed in round %d: %s — "
+                        "continuing with current beta (%.3f)",
+                        t + 1,
+                        exc,
+                        self._pid_controller.beta if self._pid_controller else 0.0,
+                    )
+
             if self.should_terminate(state):
                 break
 
@@ -175,6 +277,92 @@ class MultiAgentRunner:
         state = self.finalize_graph.invoke(state)
 
         return state
+
+    def _run_round_with_pid(self, state: dict, round_num: int) -> dict:
+        """Run one debate round with per-phase agreeableness control.
+
+        When PID is active, each phase (propose, critique, revise) is
+        invoked as a separate sub-graph so agreeableness can be adjusted
+        between them based on per-phase toggle configuration.
+        """
+        beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
+
+        # Propose phase
+        if self.config.pid_propose:
+            state["config"]["agreeableness"] = beta
+        else:
+            state["config"]["agreeableness"] = self._original_agreeableness
+        state = self._propose_graph.invoke(state)
+
+        # Critique phase
+        if self.config.pid_critique:
+            state["config"]["agreeableness"] = beta
+        else:
+            state["config"]["agreeableness"] = self._original_agreeableness
+        state = self._critique_graph.invoke(state)
+
+        # Revise phase
+        if self.config.pid_revise:
+            state["config"]["agreeableness"] = beta
+        else:
+            state["config"]["agreeableness"] = self._original_agreeableness
+        state = self._revise_graph.invoke(state)
+
+        return state
+
+    def _pid_step(self, state: dict, round_num: int) -> None:
+        """Run CRIT scorer + PID controller step after a debate round.
+
+        Computes rho_bar from CRIT, feeds it into the PID controller,
+        and records a PIDEvent for auditing.
+        """
+        from eval.PID.sycophancy import jensen_shannon_divergence
+
+        # Run CRIT audit
+        crit_result = self._crit_scorer.score(
+            case_data=state.get("enriched_context", ""),
+            agent_traces=state.get("debate_turns", []),
+            decisions=state.get("revisions", state.get("proposals", [])),
+        )
+
+        # Compute JS divergence from agent confidences
+        decisions = state.get("revisions", state.get("proposals", []))
+        confidences = [
+            d.get("action_dict", {}).get("confidence", 0.5)
+            for d in decisions
+        ]
+        js = jensen_shannon_divergence(confidences) if len(confidences) >= 2 else 0.0
+
+        # Evidence overlap: average Jaccard across agent pairs
+        # For now, use 0.0 as default (evidence extraction is not yet implemented)
+        ov = 0.0
+
+        # PID step
+        pid_result = self._pid_controller.step(crit_result.rho_bar, js, ov)
+
+        # Record event
+        ctrl_output = ControllerOutput(new_agreeableness=pid_result.beta_new)
+        event = PIDEvent(
+            round_index=round_num,
+            metrics=RoundMetrics(
+                round_index=round_num,
+                rho_bar=crit_result.rho_bar,
+                js_divergence=js,
+                ov_overlap=ov,
+            ),
+            crit_result=crit_result.model_dump(),
+            pid_step={
+                "e_t": pid_result.e_t,
+                "u_t": pid_result.u_t,
+                "beta_new": pid_result.beta_new,
+                "p_term": pid_result.p_term,
+                "i_term": pid_result.i_term,
+                "d_term": pid_result.d_term,
+                "s_t": pid_result.s_t,
+            },
+            controller_output=ctrl_output,
+        )
+        self._pid_events.append(event)
 
     def _initialize_state(self, observation: Observation) -> dict:
         """Build the initial state dict for the debate.
@@ -219,10 +407,14 @@ class MultiAgentRunner:
     def should_terminate(self, state: dict) -> bool:
         """Check if debate should end early.
 
-        Currently always returns False (debates run for max_rounds).
-        Future PRs will implement dynamic termination based on PID
-        controller output, convergence detection, etc.
+        When PID is enabled, checks convergence via JS divergence.
+        When PID is disabled, always returns False (debates run for max_rounds).
         """
+        if self._pid_controller and self._pid_events:
+            from eval.PID.termination import check_convergence
+            last_event = self._pid_events[-1]
+            js = last_event.metrics.js_divergence
+            return check_convergence(js, self._pid_controller.config.epsilon)
         return False
 
     def run_returning_state(self, observation: Observation) -> dict:
@@ -233,6 +425,7 @@ class MultiAgentRunner:
         _save_trace.  Used by equivalence tests to compare against the
         old monolithic compile_debate_graph().invoke() path.
         """
+        self._reset_per_invocation_state()
         return self._run_pipeline(observation)
 
     def _parse_action(self, d: dict) -> Action:
@@ -289,6 +482,7 @@ class MultiAgentRunner:
             logged_at=datetime.now(timezone.utc).isoformat(),
             initial_market_state=observation.market_state,
             initial_portfolio_state=observation.portfolio_state,
+            pid_events=self._pid_events if self._pid_events else None,
         )
 
     def _save_trace(self, trace: AgentTrace, full_state: dict) -> None:
