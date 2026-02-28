@@ -120,6 +120,8 @@ class DebateAgentSystem(AgentSystem):
             pid_propose=config.pid_propose,
             pid_critique=config.pid_critique,
             pid_revise=config.pid_revise,
+            pid_log_metrics=config.pid_log_metrics,
+            pid_log_llm_calls=config.pid_log_llm_calls,
         )
         self._debate_runner = MultiAgentRunner(debate_cfg)
 

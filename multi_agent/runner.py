@@ -84,6 +84,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Dedicated PID loggers.  Levels are NOT mutated here — instance flags
+# gate whether debug() calls are made, so multiple runners with
+# different pid_log_* settings don't conflict on the singleton.
+pid_metrics_logger = logging.getLogger("pid.metrics")
+pid_llm_logger = logging.getLogger("pid.llm")
+
 from .config import AgentRole, DebateConfig
 from .graph import (
     compile_finalize_graph,
@@ -154,13 +160,33 @@ class MultiAgentRunner:
                 self._critique_graph = compile_critique_graph(self.config)
                 self._revise_graph = compile_revise_graph(self.config)
 
+        # --- PID logging flags (instance-level, not mutating global logger) ---
+        self._log_metrics = self.config.pid_log_metrics
+        self._log_llm = self.config.pid_log_llm_calls
+
         # --- CRIT scorer (uses same LLM config as debate agents) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
-            self._crit_scorer = CritScorer(
-                llm_fn=lambda sys, usr: _call_llm(self.config.to_dict(), sys, usr)
-            )
+
+            base_llm_fn = lambda sys, usr: _call_llm(self.config.to_dict(), sys, usr)
+
+            def _logging_llm_fn(system_prompt: str, user_prompt: str) -> str:
+                if self._log_llm:
+                    pid_llm_logger.debug(
+                        "[CRIT LLM REQUEST]\n"
+                        "===== SYSTEM PROMPT =====\n%s\n"
+                        "===== USER PROMPT =====\n%s",
+                        system_prompt, user_prompt,
+                    )
+                response = base_llm_fn(system_prompt, user_prompt)
+                if self._log_llm:
+                    pid_llm_logger.debug(
+                        "[CRIT LLM RESPONSE]\n%s", response,
+                    )
+                return response
+
+            self._crit_scorer = CritScorer(llm_fn=_logging_llm_fn)
 
         # --- PID controller ---
         self._pid_controller = None
@@ -288,25 +314,27 @@ class MultiAgentRunner:
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
 
         # Propose phase
-        if self.config.pid_propose:
-            state["config"]["agreeableness"] = beta
-        else:
-            state["config"]["agreeableness"] = self._original_agreeableness
+        propose_a = beta if self.config.pid_propose else self._original_agreeableness
+        state["config"]["agreeableness"] = propose_a
         state = self._propose_graph.invoke(state)
 
         # Critique phase
-        if self.config.pid_critique:
-            state["config"]["agreeableness"] = beta
-        else:
-            state["config"]["agreeableness"] = self._original_agreeableness
+        critique_a = beta if self.config.pid_critique else self._original_agreeableness
+        state["config"]["agreeableness"] = critique_a
         state = self._critique_graph.invoke(state)
 
         # Revise phase
-        if self.config.pid_revise:
-            state["config"]["agreeableness"] = beta
-        else:
-            state["config"]["agreeableness"] = self._original_agreeableness
+        revise_a = beta if self.config.pid_revise else self._original_agreeableness
+        state["config"]["agreeableness"] = revise_a
         state = self._revise_graph.invoke(state)
+
+        if self._log_metrics:
+            pid_metrics_logger.debug(
+                "[PID Round %d] Per-phase agreeableness: "
+                "propose=%.4f  critique=%.4f  revise=%.4f  (beta=%.4f, original=%.4f)",
+                round_num, propose_a, critique_a, revise_a,
+                beta, self._original_agreeableness,
+            )
 
         return state
 
@@ -363,6 +391,51 @@ class MultiAgentRunner:
             controller_output=ctrl_output,
         )
         self._pid_events.append(event)
+
+        # --- PID metrics logging ---
+        if self._log_metrics:
+            pid_cfg = self._pid_controller.config
+            pid_state = self._pid_controller.state
+            pid_metrics_logger.debug(
+                "[PID Round %d]\n"
+                "  CRIT:     rho_bar=%.4f  rho_star=%.4f\n"
+                "  Pillars:  IC=%.3f  ES=%.3f  TA=%.3f  CI=%.3f\n"
+                "  Error:    e_t=%.6f  integral=%.6f  e_prev=%.6f\n"
+                "  PID:      p_term=%.6f  i_term=%.6f  d_term=%.6f  u_t=%.6f\n"
+                "  Gains:    Kp=%.4f  Ki=%.4f  Kd=%.4f\n"
+                "  Beta:     old=%.4f  new=%.4f  gamma_beta=%.4f\n"
+                "  Syco:     s_t=%d  mu=%.4f  delta_s=%.4f\n"
+                "  Diverg:   JS=%.6f  OV=%.6f\n"
+                "  Config:   T_max=%d  epsilon=%.4f\n"
+                "  Phase toggles: propose=%s  critique=%s  revise=%s",
+                round_num,
+                crit_result.rho_bar, pid_cfg.rho_star,
+                crit_result.pillar_scores.internal_consistency,
+                crit_result.pillar_scores.evidence_support,
+                crit_result.pillar_scores.trace_alignment,
+                crit_result.pillar_scores.causal_integrity,
+                pid_result.e_t, pid_state.integral, pid_state.e_prev,
+                pid_result.p_term, pid_result.i_term, pid_result.d_term, pid_result.u_t,
+                pid_cfg.gains.Kp, pid_cfg.gains.Ki, pid_cfg.gains.Kd,
+                pid_state.beta - pid_result.u_t if round_num > 0 else self.config.initial_beta,
+                pid_result.beta_new, pid_cfg.gamma_beta,
+                pid_result.s_t, pid_cfg.mu, pid_cfg.delta_s,
+                js, ov,
+                pid_cfg.T_max, pid_cfg.epsilon,
+                self.config.pid_propose, self.config.pid_critique, self.config.pid_revise,
+            )
+
+            diag = crit_result.diagnostics
+            pid_metrics_logger.debug(
+                "[PID Round %d] CRIT diagnostics: "
+                "contradictions=%s  unsupported_claims=%s  "
+                "conclusion_drift=%s  causal_overreach=%s",
+                round_num,
+                diag.contradictions_detected,
+                diag.unsupported_claims_detected,
+                diag.conclusion_drift_detected,
+                diag.causal_overreach_detected,
+            )
 
     def _initialize_state(self, observation: Observation) -> dict:
         """Build the initial state dict for the debate.

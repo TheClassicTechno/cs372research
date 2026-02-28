@@ -73,6 +73,16 @@ class AgentConfig(BaseModel):
         description="Whether PID controls agreeableness during revise phase.",
     )
 
+    # --- PID logging ---
+    pid_log_metrics: bool = Field(
+        default=False,
+        description="Log scalar PID metrics (rho_bar, beta, JS, gains, etc.) each round.",
+    )
+    pid_log_llm_calls: bool = Field(
+        default=False,
+        description="Log full CRIT LLM prompts and responses each round.",
+    )
+
 
 class BrokerConfig(BaseModel):
     """Configuration for the in-process broker."""
