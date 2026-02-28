@@ -66,6 +66,9 @@ class DebateConfig:
     model_name: str = "gpt-4o-mini"
     temperature: float = 0.3
 
+    # --- Parallel agents (per-agent LangGraph nodes for concurrent LLM calls) ---
+    parallel_agents: bool = True
+
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
 
@@ -74,6 +77,11 @@ class DebateConfig:
 
     # --- Output ---
     trace_dir: str = "./traces"
+
+    def __post_init__(self) -> None:
+        """Validate config values after initialization."""
+        if self.max_rounds < 1:
+            raise ValueError(f"max_rounds must be >= 1, got {self.max_rounds}")
 
     def to_dict(self) -> dict:
         """Serialize config to dict for LangGraph state."""
@@ -86,6 +94,7 @@ class DebateConfig:
             "enable_data_pipeline": self.enable_data_pipeline,
             "model_name": self.model_name,
             "temperature": self.temperature,
+            "parallel_agents": self.parallel_agents,
             "mock": self.mock,
             "verbose": self.verbose,
             "trace_dir": self.trace_dir,

@@ -1,18 +1,88 @@
 """
 LangGraph-based multi-agent debate orchestrator.
 
-Graph structure:
-  [START]
-    -> [news_digest]  (optional, parallel)
-    -> [data_analysis] (optional, parallel)
-    -> [build_context]
-    -> [propose]      (all role agents generate proposals)
-    -> [critique]     (all role agents critique each other)
-    -> [revise]       (all role agents revise based on critiques)
-    -> [should_continue?]  (loop back to critique or proceed to judge)
-    -> [judge]        (synthesize final decision)
-    -> [build_trace]  (construct AgentTrace for eval team)
-  [END]
+This module defines ALL node functions and graph builders for the debate
+system.  It serves two execution paths:
+
+  1. MONOLITHIC GRAPH (original, preserved for backward compatibility):
+       build_debate_graph / compile_debate_graph
+       Runs the full pipeline → propose → critique/revise loop → judge → trace
+       as a single LangGraph invocation.  The internal should_continue edge
+       decides when to stop looping.
+
+  2. DECOMPOSED SUB-GRAPHS (new, used by MultiAgentRunner):
+       build_pipeline_graph   — news → data → build_context → END
+       build_single_round_graph — propose → critique → revise → END
+       build_finalize_graph   — judge → build_trace → END
+       The runner calls each sub-graph separately, owning the iteration
+       loop itself so external controllers (PID, agreeableness tuners)
+       can intervene between rounds.
+
+WHY THIS DECOMPOSITION EXISTS
+------------------------------
+The monolithic graph encapsulates the iteration loop inside LangGraph's
+conditional edge (should_continue).  This makes it impossible for external
+code to inspect or modify state between rounds — there is no seam to hook
+into.  By splitting into sub-graphs, the runner's for-loop becomes that
+seam:
+
+    for t in range(max_rounds):
+        state = runner.run_single_round(state)
+        # <-- future: controller_step(state) goes here
+        if runner.should_terminate(state):
+            break
+
+INVARIANTS PRESERVED
+--------------------
+- All sub-graphs use StateGraph(DebateState), so LangGraph's reducers
+  (Annotated[list, operator.add] for debate_turns) are applied correctly
+  at every phase boundary.  No manual state.update(node(state)) anywhere.
+
+- propose_node has an idempotency guard: if proposals already exist in
+  state, it returns {} (a no-op).  This lets the single-round graph
+  include propose in every round without duplicating proposals.  The guard
+  is harmless for the monolithic graph where propose runs exactly once.
+
+- current_round is KEPT in propose_node and revise_node returns.  The
+  monolithic graph's should_continue edge depends on this.  The runner
+  also sets current_round before each round invocation; the two sources
+  agree because the runner sets t+1 and propose returns 1 (first round
+  only), and revise returns current_round+1 (matching the runner's
+  next iteration value).
+
+- proposals (plain list, no reducer) is set once by propose_node in
+  round 1, then preserved in subsequent rounds because propose returns {}.
+  critiques and revisions are REPLACED each round (plain list, no reducer),
+  matching the monolithic graph's behavior.
+
+- debate_turns (Annotated[list, operator.add]) accumulates correctly:
+  pipeline produces no turns, each round appends that round's turns,
+  finalize appends the judge turn.  Between sub-graph invocations the
+  runner passes the full state dict, so the accumulated list carries over.
+
+- All existing exports (build_debate_graph, compile_debate_graph,
+  should_continue, all node functions, all mock functions) remain
+  unchanged and functional.  Existing tests import them directly.
+
+Graph structures:
+
+  Monolithic (original):
+    [START]
+      -> [news_digest]  (optional, parallel)
+      -> [data_analysis] (optional, parallel)
+      -> [build_context]
+      -> [propose]
+      -> [critique]
+      -> [revise]
+      -> [should_continue?]  (loop back to critique or proceed to judge)
+      -> [judge]
+      -> [build_trace]
+    [END]
+
+  Decomposed (new):
+    Pipeline:      [START] -> [news] -> [data] -> [build_context] -> [END]
+    Single round:  [START] -> [propose] -> [critique] -> [revise] -> [END]
+    Finalize:      [START] -> [judge] -> [build_trace] -> [END]
 """
 
 from __future__ import annotations
@@ -66,6 +136,43 @@ class DebateState(TypedDict):
     proposals: list  # [{role, action_dict, raw_response}]
     critiques: list  # [{role, critiques: [...], self_critique}]
     revisions: list  # [{role, action_dict, revision_notes}]
+    current_round: int
+
+    # --- Accumulated across all rounds (append-only) ---
+    debate_turns: Annotated[list, operator.add]
+
+    # --- Final outputs ---
+    final_action: dict
+    strongest_objection: str
+    audited_memo: str
+    trace: dict
+
+
+class ParallelRoundState(TypedDict):
+    """State for parallel single-round graph.
+
+    Identical to DebateState but with Annotated[list, operator.add] on
+    proposals, critiques, and revisions.  This is required because
+    LangGraph raises InvalidUpdateError when parallel nodes write to a
+    non-annotated field.  Each per-agent node returns a single-element
+    list, and operator.add merges them at the sync barrier.
+
+    debate_turns already uses operator.add in DebateState — unchanged here.
+    """
+
+    # --- Inputs (set once at invocation) ---
+    observation: dict
+    config: dict
+
+    # --- Pipeline outputs (set by pipeline nodes) ---
+    news_digest: str
+    data_analysis: str
+    enriched_context: str
+
+    # --- Debate state (parallel: accumulated via operator.add) ---
+    proposals: Annotated[list, operator.add]
+    critiques: Annotated[list, operator.add]
+    revisions: Annotated[list, operator.add]
     current_round: int
 
     # --- Accumulated across all rounds (append-only) ---
@@ -455,7 +562,19 @@ def build_context_node(state: DebateState) -> dict:
 
 
 def propose_node(state: DebateState) -> dict:
-    """All role agents generate their initial proposals."""
+    """All role agents generate their initial proposals.
+
+    Idempotency guard: when the runner calls single_round_graph multiple
+    times, propose is in the graph every round but should only execute
+    once (round 1).  On subsequent rounds proposals already exist in
+    state, so we return {} — a no-op that leaves all state fields
+    untouched.  Uses len(...) > 0 for robustness (handles None, empty
+    list).  This guard is harmless for the monolithic graph where propose
+    runs exactly once.
+    """
+    if len(state.get("proposals") or []) > 0:
+        return {}
+
     config = state["config"]
     context = state["enriched_context"]
     obs = state["observation"]
@@ -674,6 +793,342 @@ def revise_node(state: DebateState) -> dict:
         "debate_turns": turns,
         "current_round": current_round + 1,
     }
+
+
+# =============================================================================
+# PER-AGENT NODE FACTORIES (for parallel single-round graph)
+# =============================================================================
+#
+# Each factory returns a closure that handles ONE agent in a fan-out
+# pattern.  The closure returns single-element lists so that
+# ParallelRoundState's operator.add reducers can merge outputs from
+# all parallel nodes at the sync barrier.
+#
+# Key differences from the batch node functions above:
+#   - Per-agent nodes do NOT return current_round (avoids parallel
+#     write conflict on a non-annotated int; the runner manages it).
+#   - Return values are single-element lists, not full lists.
+#   - Each closure captures `role` from the factory argument.
+# =============================================================================
+
+
+def _sync_noop(state: ParallelRoundState) -> dict:
+    """No-op sync barrier node for fan-in.
+
+    LangGraph merges all upstream outputs before running downstream
+    nodes, so this node just passes through without modifying state.
+    """
+    return {}
+
+
+def make_propose_node(role: str):
+    """Factory: create a per-agent propose node for the given role.
+
+    Extracts the loop body from propose_node.  Returns single-element
+    lists for proposals and debate_turns.  Includes the same
+    idempotency guard: if proposals already exist, returns {}.
+    Does NOT return current_round.
+    """
+
+    def _propose(state: ParallelRoundState) -> dict:
+        # Idempotency guard: skip if proposals already exist
+        if len(state.get("proposals") or []) > 0:
+            return {}
+
+        config = state["config"]
+        context = state["enriched_context"]
+        obs = state["observation"]
+        roles = config.get("roles", ["macro", "value", "risk"])
+        is_mock = config.get("mock", False)
+
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
+
+        role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
+        user_prompt = build_proposal_user_prompt(context)
+
+        raw_text = None
+        if is_mock:
+            result = _mock_proposal(role, obs)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, role_system, user_prompt)
+            result = _parse_json(raw_text)
+
+        action_dict = {
+            "orders": result.get("orders", []),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
+
+        if config.get("verbose"):
+            _verbose_proposal(role, result)
+
+        proposal = {
+            "role": role,
+            "action_dict": action_dict,
+            "raw_response": raw_text,
+        }
+
+        turn = {
+            "round": 0,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "proposal",
+            "content": result,
+            "raw_system_prompt": role_system,
+            "raw_user_prompt": user_prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+            },
+        }
+
+        return {
+            "proposals": [proposal],
+            "debate_turns": [turn],
+        }
+
+    _propose.__name__ = f"propose_{role}"
+    return _propose
+
+
+def make_critique_node(role: str):
+    """Factory: create a per-agent critique node for the given role.
+
+    Extracts the loop body from critique_node.  Finds own entry in
+    the source list by role field.  Reads ALL proposals for the
+    critique prompt.  Returns single-element lists.
+    """
+
+    def _critique(state: ParallelRoundState) -> dict:
+        config = state["config"]
+        context = state["enriched_context"]
+        current_round = state.get("current_round", 1)
+        agreeableness = config.get("agreeableness", 0.3)
+        is_mock = config.get("mock", False)
+
+        # After first round, critique the revisions; otherwise the proposals.
+        # Sort by config role order for deterministic behavior (operator.add
+        # merge order is non-deterministic).
+        roles = config.get("roles", ["macro", "value", "risk"])
+        role_order = {r: i for i, r in enumerate(roles)}
+        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
+        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+
+        # Find own entry by role
+        p = next(entry for entry in source if entry["role"] == role)
+
+        all_proposals_for_critique = [
+            {
+                "role": entry["role"],
+                "proposal": json.dumps(entry.get("action_dict", {})),
+            }
+            for entry in source
+        ]
+
+        roles = config.get("roles", ["macro", "value", "risk"])
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        my_proposal = json.dumps(p.get("action_dict", {}))
+
+        prompt = build_critique_prompt(
+            role, context, all_proposals_for_critique, my_proposal, agreeableness,
+        )
+        system_msg = (
+            f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+            + get_agreeableness_modifier(agreeableness)
+        )
+
+        raw_text = None
+        if is_mock:
+            result = _mock_critique(role, source)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
+
+        if config.get("verbose"):
+            _verbose_critique(role, result)
+
+        critique = {
+            "role": role,
+            "critiques": result.get("critiques", []),
+            "self_critique": result.get("self_critique", ""),
+        }
+
+        turn = {
+            "round": current_round,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "critique",
+            "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "all_proposals_for_critique": all_proposals_for_critique,
+                "my_proposal": my_proposal,
+            },
+        }
+
+        return {
+            "critiques": [critique],
+            "debate_turns": [turn],
+        }
+
+    _critique.__name__ = f"critique_{role}"
+    return _critique
+
+
+def make_revise_node(role: str):
+    """Factory: create a per-agent revise node for the given role.
+
+    Extracts the loop body from revise_node.  Collects critiques
+    targeted at this role.  Returns single-element lists.
+    Does NOT return current_round.
+    """
+
+    def _revise(state: ParallelRoundState) -> dict:
+        config = state["config"]
+        context = state["enriched_context"]
+        current_round = state.get("current_round", 1)
+        agreeableness = config.get("agreeableness", 0.3)
+        is_mock = config.get("mock", False)
+        obs = state["observation"]
+        all_critiques = state.get("critiques", [])
+
+        # Sort by config role order for deterministic behavior (operator.add
+        # merge order is non-deterministic).
+        roles = config.get("roles", ["macro", "value", "risk"])
+        role_order = {r: i for i, r in enumerate(roles)}
+        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
+        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+
+        # Find own entry by role
+        p = next(entry for entry in source if entry["role"] == role)
+
+        roles = config.get("roles", ["macro", "value", "risk"])
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        my_proposal = json.dumps(p.get("action_dict", {}))
+
+        # Collect critiques targeted at this role
+        critiques_received = []
+        for c in all_critiques:
+            for crit in c.get("critiques", []):
+                if crit.get("target_role") == role:
+                    critiques_received.append({
+                        "from_role": c["role"],
+                        "objection": crit.get("objection", ""),
+                        "falsifier": crit.get("falsifier"),
+                    })
+
+        prompt = build_revision_prompt(
+            role, context, my_proposal, critiques_received, agreeableness,
+        )
+        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
+        if is_mock:
+            result = _mock_revision(role, p.get("action_dict", {}), obs)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
+
+        action_dict = {
+            "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
+
+        if config.get("verbose"):
+            _verbose_revision(role, result)
+
+        revision = {
+            "role": role,
+            "action_dict": action_dict,
+            "revision_notes": result.get("revision_notes", ""),
+        }
+
+        turn = {
+            "round": current_round,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "revision",
+            "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "my_proposal": my_proposal,
+                "critiques_received": critiques_received,
+            },
+        }
+
+        return {
+            "revisions": [revision],
+            "debate_turns": [turn],
+        }
+
+    _revise.__name__ = f"revise_{role}"
+    return _revise
+
+
+# =============================================================================
+# PARALLEL SINGLE-ROUND GRAPH CONSTRUCTION
+# =============================================================================
+
+
+def build_parallel_single_round_graph(config: DebateConfig) -> StateGraph:
+    """Parallel single round: per-agent fan-out → sync → fan-out → sync → fan-out → END.
+
+    Target topology for 3 agents (macro, value, risk):
+
+        [START] ┬→ [propose_macro]  ┐
+                ├→ [propose_value]  ├→ [sync_propose] ┬→ [critique_macro]  ┐
+                └→ [propose_risk]   ┘                  ├→ [critique_value]  ├→ [sync_critique] ┬→ [revise_macro]  ┐
+                                                       └→ [critique_risk]   ┘                  ├→ [revise_value]  ├→ [END]
+                                                                                               └→ [revise_risk]   ┘
+
+    Uses ParallelRoundState with operator.add reducers on proposals,
+    critiques, and revisions so that parallel nodes can each contribute
+    single-element lists that get merged at the sync barriers.
+
+    The runner resets critiques/revisions to [] between rounds because
+    operator.add would otherwise accumulate across rounds.
+    """
+    roles = [r.value for r in config.roles]
+    graph = StateGraph(ParallelRoundState)
+
+    # Sync barriers (no-op pass-throughs for fan-in)
+    graph.add_node("sync_propose", _sync_noop)
+    graph.add_node("sync_critique", _sync_noop)
+
+    # Per-agent nodes + edges
+    for role in roles:
+        graph.add_node(f"propose_{role}", make_propose_node(role))
+        graph.add_edge(START, f"propose_{role}")
+        graph.add_edge(f"propose_{role}", "sync_propose")
+
+        graph.add_node(f"critique_{role}", make_critique_node(role))
+        graph.add_edge("sync_propose", f"critique_{role}")
+        graph.add_edge(f"critique_{role}", "sync_critique")
+
+        graph.add_node(f"revise_{role}", make_revise_node(role))
+        graph.add_edge("sync_critique", f"revise_{role}")
+        graph.add_edge(f"revise_{role}", END)
+
+    return graph
+
+
+def compile_parallel_single_round_graph(config: DebateConfig):
+    """Build and compile the parallel single-round graph, ready for invocation."""
+    return build_parallel_single_round_graph(config).compile()
 
 
 def should_continue(state: DebateState) -> str:
@@ -1024,6 +1479,126 @@ def compile_debate_graph(config: DebateConfig):
     """Build and compile the debate graph, ready for invocation."""
     graph = build_debate_graph(config)
     return graph.compile()
+
+
+# =============================================================================
+# SINGLE-ROUND SUB-GRAPH CONSTRUCTION
+# =============================================================================
+#
+# These three builders decompose the monolithic debate graph into phases
+# that the runner can invoke independently.  This is the key architectural
+# change: by moving the iteration loop out of LangGraph and into the
+# runner, we create a seam where external controllers can observe and
+# modify state between debate rounds.
+#
+# All three use StateGraph(DebateState) so that LangGraph's reducers
+# (Annotated[list, operator.add] for debate_turns) are properly applied.
+# The runner never does manual state.update(node(state)) — every state
+# transition goes through graph.invoke().
+#
+# Equivalence with the monolithic graph is verified by tests in
+# test_round_exposure.py which run both paths on identical inputs and
+# assert identical outputs (final_action, debate_turns, trace, etc.).
+# =============================================================================
+
+
+def build_pipeline_graph(config: DebateConfig) -> StateGraph:
+    """Pipeline: sequential news → data → build_context → END.
+
+    Runs preprocessing stages that enrich the observation with news
+    signals and data analysis before the debate begins.
+
+    Uses SEQUENTIAL edges (not parallel fan-in) because this graph is
+    invoked as a standalone phase.  The monolithic graph uses parallel
+    fan-in for news+data, but since these nodes don't depend on each
+    other's outputs, the sequential ordering produces identical results.
+    Equivalence tests (with pipelines disabled) confirm this doesn't
+    affect debate output.
+    """
+    graph = StateGraph(DebateState)
+    has_news = config.enable_news_pipeline
+    has_data = config.enable_data_pipeline
+
+    if has_news:
+        graph.add_node("news_digest", news_digest_node)
+    if has_data:
+        graph.add_node("data_analysis", data_analysis_node)
+    graph.add_node("build_context", build_context_node)
+
+    # SEQUENTIAL chain — no parallel fan-in from START
+    if has_news and has_data:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge("news_digest", "data_analysis")
+        graph.add_edge("data_analysis", "build_context")
+    elif has_news:
+        graph.add_edge(START, "news_digest")
+        graph.add_edge("news_digest", "build_context")
+    elif has_data:
+        graph.add_edge(START, "data_analysis")
+        graph.add_edge("data_analysis", "build_context")
+    else:
+        graph.add_edge(START, "build_context")
+
+    graph.add_edge("build_context", END)
+    return graph
+
+
+def build_single_round_graph(config: DebateConfig) -> StateGraph:
+    """One debate round: propose → critique → revise → END.
+
+    The runner calls this once per round.  propose_node is idempotent:
+    on round 1 it generates proposals; on rounds 2+ it detects existing
+    proposals and returns {} (no-op), so critique and revise operate on
+    the latest revisions.
+
+    State flow per round:
+      - debate_turns: appended via operator.add reducer (accumulates)
+      - proposals: set once in round 1, preserved thereafter (plain list)
+      - critiques/revisions: replaced each round (plain list, no reducer)
+      - current_round: set by runner before invocation, updated by
+        revise_node to current_round+1 (kept for monolithic compat)
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("propose", propose_node)
+    graph.add_node("critique", critique_node)
+    graph.add_node("revise", revise_node)
+    graph.add_edge(START, "propose")
+    graph.add_edge("propose", "critique")
+    graph.add_edge("critique", "revise")
+    graph.add_edge("revise", END)
+    return graph
+
+
+def build_finalize_graph(config: DebateConfig) -> StateGraph:
+    """Judge synthesis + trace: judge → build_trace → END.
+
+    Called once after all debate rounds complete.  The judge sees the
+    final revisions and critiques from the last round and produces the
+    final trading decision.  build_trace constructs the auditable trace
+    including all accumulated debate_turns.
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("judge", judge_node)
+    graph.add_node("build_trace", build_trace_node)
+    graph.add_edge(START, "judge")
+    graph.add_edge("judge", "build_trace")
+    graph.add_edge("build_trace", END)
+    return graph
+
+
+def compile_pipeline_graph(config: DebateConfig):
+    """Build and compile the pipeline graph, ready for invocation."""
+    return build_pipeline_graph(config).compile()
+
+
+def compile_single_round_graph(config: DebateConfig):
+    """Build and compile the single-round graph, ready for invocation."""
+    return build_single_round_graph(config).compile()
+
+
+def compile_finalize_graph(config: DebateConfig):
+    """Build and compile the finalize graph, ready for invocation."""
+    return build_finalize_graph(config).compile()
 
 
 # =============================================================================

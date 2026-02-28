@@ -1,6 +1,61 @@
 """
 High-level runner for the multi-agent debate system.
 
+WHAT CHANGED AND WHY
+---------------------
+Previously, the runner compiled a single monolithic LangGraph and called
+graph.invoke() once.  The debate loop (propose → critique → revise →
+repeat → judge) was managed entirely inside the graph via a conditional
+edge (should_continue).  This made it impossible for external code to
+inspect or modify state between rounds — there was no seam to hook into.
+
+This module now decomposes execution into three phases, each backed by
+its own LangGraph sub-graph:
+
+    Phase 1 — Pipeline:      news → data → build_context
+    Phase 2 — Debate rounds:  for t in range(max_rounds):
+                                  propose → critique → revise
+    Phase 3 — Finalize:       judge → build_trace
+
+The runner owns the iteration loop (Phase 2), calling single_round_graph
+once per round.  Between rounds, external controllers can observe the
+state and decide whether to continue, adjust agreeableness, etc:
+
+    for t in range(max_rounds):
+        state = self.run_single_round(state)
+        # <-- FUTURE: controller_step(state) goes here
+        if self.should_terminate(state):
+            break
+
+HOW INVARIANTS ARE PRESERVED
+-----------------------------
+1. All three phases use graph.invoke() — never manual state.update().
+   This ensures LangGraph's reducers (Annotated[list, operator.add]
+   for debate_turns) are applied correctly at every phase boundary.
+
+2. Between sub-graph invocations the runner passes the full state dict.
+   LangGraph treats the input dict as starting state and applies each
+   node's returned dict through the reducer.  So debate_turns accumulates
+   across pipeline → rounds → finalize seamlessly.
+
+3. propose_node has an idempotency guard: if proposals already exist,
+   it returns {} (no-op).  This means the single_round_graph can include
+   propose in every round, but proposals are only generated once (round 1).
+
+4. current_round is set by the runner to t+1 before each round AND is
+   returned by the node functions (for monolithic graph compatibility).
+   The two sources agree: runner sets t+1, propose returns 1 (round 1 only),
+   revise returns current_round+1 (same as the next iteration's t+1).
+
+5. proposals (plain list, no reducer) — set once, preserved by guard.
+   critiques/revisions (plain list, no reducer) — replaced each round.
+   debate_turns (Annotated[list, operator.add]) — appended each round.
+   These behaviors match the monolithic graph exactly.
+
+6. run_returning_state() duplicates run()'s logic but returns raw state
+   instead of (Action, AgentTrace), without disk I/O.  This enables
+   equivalence testing against the old monolithic path.
+
 Usage:
     from multi_agent import MultiAgentRunner, DebateConfig, Observation, AgentRole
 
@@ -22,7 +77,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import AgentRole, DebateConfig
-from .graph import compile_debate_graph
+from .graph import (
+    compile_finalize_graph,
+    compile_parallel_single_round_graph,
+    compile_pipeline_graph,
+    compile_single_round_graph,
+)
 from .models import Action, AgentTrace, Claim, DebateTurn, Observation, Order
 
 
@@ -30,8 +90,12 @@ class MultiAgentRunner:
     """
     Orchestrates multi-agent debate for trading decisions.
 
-    Wraps the LangGraph debate graph with a clean interface matching
-    Deveen's SingleAgentRunner / MajorityVoteRunner / DebateRunner pattern.
+    Wraps three LangGraph sub-graphs (pipeline, single-round, finalize)
+    with a clean interface matching Deveen's SingleAgentRunner /
+    MajorityVoteRunner / DebateRunner pattern.
+
+    The iteration loop lives in the runner so that external controllers
+    (e.g. PID) can intervene between rounds.
     """
 
     def __init__(self, config: DebateConfig | None = None):
@@ -42,7 +106,12 @@ class MultiAgentRunner:
             if AgentRole.DEVILS_ADVOCATE not in self.config.roles:
                 self.config.roles.append(AgentRole.DEVILS_ADVOCATE)
 
-        self.graph = compile_debate_graph(self.config)
+        self.pipeline_graph = compile_pipeline_graph(self.config)
+        if self.config.parallel_agents:
+            self.single_round_graph = compile_parallel_single_round_graph(self.config)
+        else:
+            self.single_round_graph = compile_single_round_graph(self.config)
+        self.finalize_graph = compile_finalize_graph(self.config)
 
     def run(self, observation: Observation) -> tuple[Action, AgentTrace]:
         """
@@ -51,7 +120,72 @@ class MultiAgentRunner:
         Returns:
             (action, trace) -- the final Action and the full AgentTrace
         """
-        initial_state = {
+        state = self._run_pipeline(observation)
+
+        # Parse final action
+        final_dict = state.get("final_action", {})
+        action = self._parse_action(final_dict)
+
+        # Parse trace
+        trace_dict = state.get("trace", {})
+        trace = self._parse_trace(trace_dict, observation, action)
+
+        # Save to disk
+        self._save_trace(trace, state)
+
+        return action, trace
+
+    def _run_pipeline(self, observation: Observation) -> dict:
+        """Execute all three phases and return the raw state dict.
+
+        Shared implementation for run() and run_returning_state() so
+        the pipeline/loop/finalize logic is defined in exactly one place.
+        """
+        state = self._initialize_state(observation)
+
+        # Phase 1: Pipeline (news digest, data analysis, context building)
+        state = self.pipeline_graph.invoke(state)
+
+        # Phase 2: Debate rounds
+        for t in range(self.config.max_rounds):
+            state["current_round"] = t + 1
+            # Reset critiques so operator.add (parallel graph) doesn't
+            # accumulate across rounds.  Harmless for the sequential graph
+            # (batch nodes replace lists entirely).
+            # NOTE: revisions are NOT reset here because critique nodes need
+            # to see the previous round's revisions as their source.
+            if t > 0:
+                state["critiques"] = []
+            state = self.run_single_round(state)
+            if self.config.parallel_agents:
+                # With operator.add, revisions accumulate (previous round's
+                # entries + this round's entries).  Keep only the latest
+                # entry per role so the next round and judge see clean state.
+                seen = set()
+                deduped = []
+                for rev in reversed(state.get("revisions", [])):
+                    if rev["role"] not in seen:
+                        seen.add(rev["role"])
+                        deduped.append(rev)
+                state["revisions"] = list(reversed(deduped))
+            if self.should_terminate(state):
+                break
+
+        # Phase 3: Judge + trace
+        state = self.finalize_graph.invoke(state)
+
+        return state
+
+    def _initialize_state(self, observation: Observation) -> dict:
+        """Build the initial state dict for the debate.
+
+        This dict matches the DebateState TypedDict schema exactly.
+        Every field is initialized to its zero-value so that nodes can
+        safely read from state without KeyError, and so that LangGraph's
+        reducers have a valid starting point (e.g. debate_turns starts
+        as [] so operator.add can append to it).
+        """
+        return {
             "observation": observation.model_dump(),
             "config": self.config.to_dict(),
             "news_digest": "",
@@ -68,21 +202,38 @@ class MultiAgentRunner:
             "trace": {},
         }
 
-        # Run the LangGraph
-        result = self.graph.invoke(initial_state)
+    def run_single_round(self, state: dict) -> dict:
+        """Execute one debate round via LangGraph: propose → critique → revise.
 
-        # Parse final action
-        final_dict = result.get("final_action", {})
-        action = self._parse_action(final_dict)
+        This is the primitive that external controllers will call.  The
+        caller sets state["current_round"] before invoking, then inspects
+        the returned state to decide whether to continue.
 
-        # Parse trace
-        trace_dict = result.get("trace", {})
-        trace = self._parse_trace(trace_dict, observation, action)
+        Invariants:
+          - propose is idempotent (no-op if proposals exist)
+          - debate_turns accumulates via LangGraph's operator.add reducer
+          - critiques/revisions are replaced (plain list, no reducer)
+        """
+        return self.single_round_graph.invoke(state)
 
-        # Save to disk
-        self._save_trace(trace, result)
+    def should_terminate(self, state: dict) -> bool:
+        """Check if debate should end early.
 
-        return action, trace
+        Currently always returns False (debates run for max_rounds).
+        Future PRs will implement dynamic termination based on PID
+        controller output, convergence detection, etc.
+        """
+        return False
+
+    def run_returning_state(self, observation: Observation) -> dict:
+        """Run full pipeline and return raw LangGraph state dict.
+
+        Same three-phase logic as run() but returns the raw state dict
+        instead of (Action, AgentTrace).  No disk I/O — does NOT call
+        _save_trace.  Used by equivalence tests to compare against the
+        old monolithic compile_debate_graph().invoke() path.
+        """
+        return self._run_pipeline(observation)
 
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
