@@ -79,6 +79,7 @@ from pathlib import Path
 from .config import AgentRole, DebateConfig
 from .graph import (
     compile_finalize_graph,
+    compile_parallel_single_round_graph,
     compile_pipeline_graph,
     compile_single_round_graph,
 )
@@ -106,7 +107,10 @@ class MultiAgentRunner:
                 self.config.roles.append(AgentRole.DEVILS_ADVOCATE)
 
         self.pipeline_graph = compile_pipeline_graph(self.config)
-        self.single_round_graph = compile_single_round_graph(self.config)
+        if self.config.parallel_agents:
+            self.single_round_graph = compile_parallel_single_round_graph(self.config)
+        else:
+            self.single_round_graph = compile_single_round_graph(self.config)
         self.finalize_graph = compile_finalize_graph(self.config)
 
     def run(self, observation: Observation) -> tuple[Action, AgentTrace]:
@@ -145,7 +149,25 @@ class MultiAgentRunner:
         # Phase 2: Debate rounds
         for t in range(self.config.max_rounds):
             state["current_round"] = t + 1
+            # Reset critiques so operator.add (parallel graph) doesn't
+            # accumulate across rounds.  Harmless for the sequential graph
+            # (batch nodes replace lists entirely).
+            # NOTE: revisions are NOT reset here because critique nodes need
+            # to see the previous round's revisions as their source.
+            if t > 0:
+                state["critiques"] = []
             state = self.run_single_round(state)
+            if self.config.parallel_agents:
+                # With operator.add, revisions accumulate (previous round's
+                # entries + this round's entries).  Keep only the latest
+                # entry per role so the next round and judge see clean state.
+                seen = set()
+                deduped = []
+                for rev in reversed(state.get("revisions", [])):
+                    if rev["role"] not in seen:
+                        seen.add(rev["role"])
+                        deduped.append(rev)
+                state["revisions"] = list(reversed(deduped))
             if self.should_terminate(state):
                 break
 

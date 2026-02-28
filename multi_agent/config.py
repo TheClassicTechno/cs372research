@@ -66,6 +66,9 @@ class DebateConfig:
     model_name: str = "gpt-4o-mini"
     temperature: float = 0.3
 
+    # --- Parallel agents (per-agent LangGraph nodes for concurrent LLM calls) ---
+    parallel_agents: bool = True
+
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
 
@@ -91,6 +94,7 @@ class DebateConfig:
             "enable_data_pipeline": self.enable_data_pipeline,
             "model_name": self.model_name,
             "temperature": self.temperature,
+            "parallel_agents": self.parallel_agents,
             "mock": self.mock,
             "verbose": self.verbose,
             "trace_dir": self.trace_dir,

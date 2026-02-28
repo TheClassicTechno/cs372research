@@ -148,6 +148,43 @@ class DebateState(TypedDict):
     trace: dict
 
 
+class ParallelRoundState(TypedDict):
+    """State for parallel single-round graph.
+
+    Identical to DebateState but with Annotated[list, operator.add] on
+    proposals, critiques, and revisions.  This is required because
+    LangGraph raises InvalidUpdateError when parallel nodes write to a
+    non-annotated field.  Each per-agent node returns a single-element
+    list, and operator.add merges them at the sync barrier.
+
+    debate_turns already uses operator.add in DebateState — unchanged here.
+    """
+
+    # --- Inputs (set once at invocation) ---
+    observation: dict
+    config: dict
+
+    # --- Pipeline outputs (set by pipeline nodes) ---
+    news_digest: str
+    data_analysis: str
+    enriched_context: str
+
+    # --- Debate state (parallel: accumulated via operator.add) ---
+    proposals: Annotated[list, operator.add]
+    critiques: Annotated[list, operator.add]
+    revisions: Annotated[list, operator.add]
+    current_round: int
+
+    # --- Accumulated across all rounds (append-only) ---
+    debate_turns: Annotated[list, operator.add]
+
+    # --- Final outputs ---
+    final_action: dict
+    strongest_objection: str
+    audited_memo: str
+    trace: dict
+
+
 # =============================================================================
 # LLM CALL HELPER
 # =============================================================================
@@ -756,6 +793,342 @@ def revise_node(state: DebateState) -> dict:
         "debate_turns": turns,
         "current_round": current_round + 1,
     }
+
+
+# =============================================================================
+# PER-AGENT NODE FACTORIES (for parallel single-round graph)
+# =============================================================================
+#
+# Each factory returns a closure that handles ONE agent in a fan-out
+# pattern.  The closure returns single-element lists so that
+# ParallelRoundState's operator.add reducers can merge outputs from
+# all parallel nodes at the sync barrier.
+#
+# Key differences from the batch node functions above:
+#   - Per-agent nodes do NOT return current_round (avoids parallel
+#     write conflict on a non-annotated int; the runner manages it).
+#   - Return values are single-element lists, not full lists.
+#   - Each closure captures `role` from the factory argument.
+# =============================================================================
+
+
+def _sync_noop(state: ParallelRoundState) -> dict:
+    """No-op sync barrier node for fan-in.
+
+    LangGraph merges all upstream outputs before running downstream
+    nodes, so this node just passes through without modifying state.
+    """
+    return {}
+
+
+def make_propose_node(role: str):
+    """Factory: create a per-agent propose node for the given role.
+
+    Extracts the loop body from propose_node.  Returns single-element
+    lists for proposals and debate_turns.  Includes the same
+    idempotency guard: if proposals already exist, returns {}.
+    Does NOT return current_round.
+    """
+
+    def _propose(state: ParallelRoundState) -> dict:
+        # Idempotency guard: skip if proposals already exist
+        if len(state.get("proposals") or []) > 0:
+            return {}
+
+        config = state["config"]
+        context = state["enriched_context"]
+        obs = state["observation"]
+        roles = config.get("roles", ["macro", "value", "risk"])
+        is_mock = config.get("mock", False)
+
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
+
+        role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
+        user_prompt = build_proposal_user_prompt(context)
+
+        raw_text = None
+        if is_mock:
+            result = _mock_proposal(role, obs)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, role_system, user_prompt)
+            result = _parse_json(raw_text)
+
+        action_dict = {
+            "orders": result.get("orders", []),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
+
+        if config.get("verbose"):
+            _verbose_proposal(role, result)
+
+        proposal = {
+            "role": role,
+            "action_dict": action_dict,
+            "raw_response": raw_text,
+        }
+
+        turn = {
+            "round": 0,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "proposal",
+            "content": result,
+            "raw_system_prompt": role_system,
+            "raw_user_prompt": user_prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+            },
+        }
+
+        return {
+            "proposals": [proposal],
+            "debate_turns": [turn],
+        }
+
+    _propose.__name__ = f"propose_{role}"
+    return _propose
+
+
+def make_critique_node(role: str):
+    """Factory: create a per-agent critique node for the given role.
+
+    Extracts the loop body from critique_node.  Finds own entry in
+    the source list by role field.  Reads ALL proposals for the
+    critique prompt.  Returns single-element lists.
+    """
+
+    def _critique(state: ParallelRoundState) -> dict:
+        config = state["config"]
+        context = state["enriched_context"]
+        current_round = state.get("current_round", 1)
+        agreeableness = config.get("agreeableness", 0.3)
+        is_mock = config.get("mock", False)
+
+        # After first round, critique the revisions; otherwise the proposals.
+        # Sort by config role order for deterministic behavior (operator.add
+        # merge order is non-deterministic).
+        roles = config.get("roles", ["macro", "value", "risk"])
+        role_order = {r: i for i, r in enumerate(roles)}
+        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
+        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+
+        # Find own entry by role
+        p = next(entry for entry in source if entry["role"] == role)
+
+        all_proposals_for_critique = [
+            {
+                "role": entry["role"],
+                "proposal": json.dumps(entry.get("action_dict", {})),
+            }
+            for entry in source
+        ]
+
+        roles = config.get("roles", ["macro", "value", "risk"])
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        my_proposal = json.dumps(p.get("action_dict", {}))
+
+        prompt = build_critique_prompt(
+            role, context, all_proposals_for_critique, my_proposal, agreeableness,
+        )
+        system_msg = (
+            f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+            + get_agreeableness_modifier(agreeableness)
+        )
+
+        raw_text = None
+        if is_mock:
+            result = _mock_critique(role, source)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
+
+        if config.get("verbose"):
+            _verbose_critique(role, result)
+
+        critique = {
+            "role": role,
+            "critiques": result.get("critiques", []),
+            "self_critique": result.get("self_critique", ""),
+        }
+
+        turn = {
+            "round": current_round,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "critique",
+            "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "all_proposals_for_critique": all_proposals_for_critique,
+                "my_proposal": my_proposal,
+            },
+        }
+
+        return {
+            "critiques": [critique],
+            "debate_turns": [turn],
+        }
+
+    _critique.__name__ = f"critique_{role}"
+    return _critique
+
+
+def make_revise_node(role: str):
+    """Factory: create a per-agent revise node for the given role.
+
+    Extracts the loop body from revise_node.  Collects critiques
+    targeted at this role.  Returns single-element lists.
+    Does NOT return current_round.
+    """
+
+    def _revise(state: ParallelRoundState) -> dict:
+        config = state["config"]
+        context = state["enriched_context"]
+        current_round = state.get("current_round", 1)
+        agreeableness = config.get("agreeableness", 0.3)
+        is_mock = config.get("mock", False)
+        obs = state["observation"]
+        all_critiques = state.get("critiques", [])
+
+        # Sort by config role order for deterministic behavior (operator.add
+        # merge order is non-deterministic).
+        roles = config.get("roles", ["macro", "value", "risk"])
+        role_order = {r: i for i, r in enumerate(roles)}
+        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
+        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+
+        # Find own entry by role
+        p = next(entry for entry in source if entry["role"] == role)
+
+        roles = config.get("roles", ["macro", "value", "risk"])
+        i = roles.index(role) if role in roles else 0
+        print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        my_proposal = json.dumps(p.get("action_dict", {}))
+
+        # Collect critiques targeted at this role
+        critiques_received = []
+        for c in all_critiques:
+            for crit in c.get("critiques", []):
+                if crit.get("target_role") == role:
+                    critiques_received.append({
+                        "from_role": c["role"],
+                        "objection": crit.get("objection", ""),
+                        "falsifier": crit.get("falsifier"),
+                    })
+
+        prompt = build_revision_prompt(
+            role, context, my_proposal, critiques_received, agreeableness,
+        )
+        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
+        if is_mock:
+            result = _mock_revision(role, p.get("action_dict", {}), obs)
+            raw_text = json.dumps(result, indent=2)
+        else:
+            raw_text = _call_llm(config, system_msg, prompt)
+            result = _parse_json(raw_text)
+
+        action_dict = {
+            "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
+
+        if config.get("verbose"):
+            _verbose_revision(role, result)
+
+        revision = {
+            "role": role,
+            "action_dict": action_dict,
+            "revision_notes": result.get("revision_notes", ""),
+        }
+
+        turn = {
+            "round": current_round,
+            "agent_id": f"agent_{role}",
+            "role": role,
+            "type": "revision",
+            "content": result,
+            "raw_system_prompt": system_msg,
+            "raw_user_prompt": prompt,
+            "raw_response": raw_text,
+            "input_params": {
+                "context": context,
+                "my_proposal": my_proposal,
+                "critiques_received": critiques_received,
+            },
+        }
+
+        return {
+            "revisions": [revision],
+            "debate_turns": [turn],
+        }
+
+    _revise.__name__ = f"revise_{role}"
+    return _revise
+
+
+# =============================================================================
+# PARALLEL SINGLE-ROUND GRAPH CONSTRUCTION
+# =============================================================================
+
+
+def build_parallel_single_round_graph(config: DebateConfig) -> StateGraph:
+    """Parallel single round: per-agent fan-out → sync → fan-out → sync → fan-out → END.
+
+    Target topology for 3 agents (macro, value, risk):
+
+        [START] ┬→ [propose_macro]  ┐
+                ├→ [propose_value]  ├→ [sync_propose] ┬→ [critique_macro]  ┐
+                └→ [propose_risk]   ┘                  ├→ [critique_value]  ├→ [sync_critique] ┬→ [revise_macro]  ┐
+                                                       └→ [critique_risk]   ┘                  ├→ [revise_value]  ├→ [END]
+                                                                                               └→ [revise_risk]   ┘
+
+    Uses ParallelRoundState with operator.add reducers on proposals,
+    critiques, and revisions so that parallel nodes can each contribute
+    single-element lists that get merged at the sync barriers.
+
+    The runner resets critiques/revisions to [] between rounds because
+    operator.add would otherwise accumulate across rounds.
+    """
+    roles = [r.value for r in config.roles]
+    graph = StateGraph(ParallelRoundState)
+
+    # Sync barriers (no-op pass-throughs for fan-in)
+    graph.add_node("sync_propose", _sync_noop)
+    graph.add_node("sync_critique", _sync_noop)
+
+    # Per-agent nodes + edges
+    for role in roles:
+        graph.add_node(f"propose_{role}", make_propose_node(role))
+        graph.add_edge(START, f"propose_{role}")
+        graph.add_edge(f"propose_{role}", "sync_propose")
+
+        graph.add_node(f"critique_{role}", make_critique_node(role))
+        graph.add_edge("sync_propose", f"critique_{role}")
+        graph.add_edge(f"critique_{role}", "sync_critique")
+
+        graph.add_node(f"revise_{role}", make_revise_node(role))
+        graph.add_edge("sync_critique", f"revise_{role}")
+        graph.add_edge(f"revise_{role}", END)
+
+    return graph
+
+
+def compile_parallel_single_round_graph(config: DebateConfig):
+    """Build and compile the parallel single-round graph, ready for invocation."""
+    return build_parallel_single_round_graph(config).compile()
 
 
 def should_continue(state: DebateState) -> str:

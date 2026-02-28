@@ -128,6 +128,7 @@ def test_equivalence_1_round(sample_observation):
         mock=True,
         enable_news_pipeline=False,
         enable_data_pipeline=False,
+        parallel_agents=False,
     )
 
     # OLD PATH
@@ -167,6 +168,7 @@ def test_equivalence_2_rounds(sample_observation):
         mock=True,
         enable_news_pipeline=False,
         enable_data_pipeline=False,
+        parallel_agents=False,
     )
 
     old_graph = compile_debate_graph(config)
@@ -202,6 +204,7 @@ def test_max_rounds_counting(sample_observation):
         mock=True,
         enable_news_pipeline=False,
         enable_data_pipeline=False,
+        parallel_agents=False,
     )
 
     runner = MultiAgentRunner(config)
@@ -243,6 +246,7 @@ def test_single_round_primitive(sample_observation):
         mock=True,
         enable_news_pipeline=False,
         enable_data_pipeline=False,
+        parallel_agents=False,
     )
 
     runner = MultiAgentRunner(config)
@@ -285,6 +289,7 @@ def test_final_critiques_revisions_match_old(sample_observation):
         mock=True,
         enable_news_pipeline=False,
         enable_data_pipeline=False,
+        parallel_agents=False,
     )
 
     old_graph = compile_debate_graph(config)
@@ -361,3 +366,245 @@ def test_propose_node_guard_with_none_proposals():
     result = propose_node(state)
     assert "proposals" in result
     assert len(result["proposals"]) == 1  # 1 role = 1 proposal
+
+
+# =============================================================================
+# PARALLEL GRAPH TESTS
+#
+# These tests verify the parallel per-agent fan-out/fan-in graph
+# (ParallelRoundState + make_propose_node/make_critique_node/make_revise_node)
+# produces equivalent results to the sequential batch-node graph.
+#
+# All comparisons use (type, role) keys — never list position — because
+# parallel node output order is non-deterministic.
+# =============================================================================
+
+
+def _turns_by_key(turns: list) -> dict:
+    """Index debate turns by (type, role) for order-independent comparison."""
+    result = {}
+    for t in turns:
+        key = (t["type"], t["role"])
+        result.setdefault(key, []).append(t)
+    return result
+
+
+def _compare_debate_content(seq_turns: list, par_turns: list) -> None:
+    """Assert debate turns match by (type, role), ignoring list order."""
+    seq_by_key = _turns_by_key(seq_turns)
+    par_by_key = _turns_by_key(par_turns)
+    assert set(seq_by_key.keys()) == set(par_by_key.keys()), (
+        f"Turn keys differ: seq={set(seq_by_key.keys())} par={set(par_by_key.keys())}"
+    )
+    for key in seq_by_key:
+        seq_entries = seq_by_key[key]
+        par_entries = par_by_key[key]
+        assert len(seq_entries) == len(par_entries), (
+            f"Count mismatch for {key}: seq={len(seq_entries)} par={len(par_entries)}"
+        )
+        # Compare content (sort by round for multi-round)
+        seq_sorted = sorted(seq_entries, key=lambda t: t.get("round", 0))
+        par_sorted = sorted(par_entries, key=lambda t: t.get("round", 0))
+        for s, p in zip(seq_sorted, par_sorted):
+            assert s["content"] == p["content"], f"Content mismatch for {key}"
+
+
+# =============================================================================
+# TEST 9: Parallel ↔ Sequential Equivalence (max_rounds=1)
+#
+# The simplest parallel case: one round means each agent proposes,
+# critiques, and revises exactly once.  Verifies that the parallel
+# graph produces the same final_action and debate content as the
+# sequential graph.
+# =============================================================================
+
+
+def test_parallel_equivalence_1_round(sample_observation):
+    seq_config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=1,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=False,
+    )
+    par_config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=1,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=True,
+    )
+
+    seq_runner = MultiAgentRunner(seq_config)
+    par_runner = MultiAgentRunner(par_config)
+
+    seq_state = seq_runner.run_returning_state(sample_observation)
+    par_state = par_runner.run_returning_state(sample_observation)
+
+    assert seq_state["final_action"] == par_state["final_action"]
+    _compare_debate_content(seq_state["debate_turns"], par_state["debate_turns"])
+
+
+# =============================================================================
+# TEST 10: Parallel ↔ Sequential Equivalence (max_rounds=2)
+#
+# Two rounds exercises cross-round state management: critiques/revisions
+# must be reset between rounds so operator.add doesn't accumulate.
+# =============================================================================
+
+
+def test_parallel_equivalence_2_rounds(sample_observation):
+    seq_config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=2,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=False,
+    )
+    par_config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=2,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=True,
+    )
+
+    seq_runner = MultiAgentRunner(seq_config)
+    par_runner = MultiAgentRunner(par_config)
+
+    seq_state = seq_runner.run_returning_state(sample_observation)
+    par_state = par_runner.run_returning_state(sample_observation)
+
+    assert seq_state["final_action"] == par_state["final_action"]
+    _compare_debate_content(seq_state["debate_turns"], par_state["debate_turns"])
+
+
+# =============================================================================
+# TEST 11: Parallel Turn Counting (max_rounds=3)
+#
+# 3 rounds × 3 agents should produce:
+#   - 3 proposals  (generated once, idempotency guard)
+#   - 9 critiques  (3 agents × 3 rounds)
+#   - 9 revisions  (3 agents × 3 rounds)
+#   - 1 judge decision
+# =============================================================================
+
+
+def test_parallel_turn_counting(sample_observation):
+    config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=3,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=True,
+    )
+
+    runner = MultiAgentRunner(config)
+    state = runner.run_returning_state(sample_observation)
+    turns = state["debate_turns"]
+
+    proposal_turns = [t for t in turns if t["type"] == "proposal"]
+    critique_turns = [t for t in turns if t["type"] == "critique"]
+    revise_turns = [t for t in turns if t["type"] == "revision"]
+    judge_turns = [t for t in turns if t["type"] == "judge_decision"]
+
+    num_agents = len(config.roles)
+    assert len(proposal_turns) == num_agents * 1
+    assert len(critique_turns) == num_agents * 3
+    assert len(revise_turns) == num_agents * 3
+    assert len(judge_turns) == 1
+
+
+# =============================================================================
+# TEST 12: Parallel Proposals Not Duplicated
+#
+# After 2 rounds, exactly 3 proposals should exist (not 6).  The
+# idempotency guard + operator.add must cooperate: round 1 produces
+# [p1, p2, p3], round 2 returns {} from each propose node.
+# =============================================================================
+
+
+def test_parallel_proposals_not_duplicated(sample_observation):
+    config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=2,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=True,
+    )
+
+    runner = MultiAgentRunner(config)
+    state = runner.run_returning_state(sample_observation)
+
+    assert len(state["proposals"]) == 3
+    roles_found = {p["role"] for p in state["proposals"]}
+    assert roles_found == {"macro", "value", "risk"}
+
+
+# =============================================================================
+# TEST 13: Parallel Critiques Reset Between Rounds
+#
+# With operator.add, critiques would accumulate to 6 (3+3) after
+# 2 rounds without the runner's reset.  With the reset, the final
+# state should have exactly 3 critiques (last round only).
+# =============================================================================
+
+
+def test_parallel_critiques_reset(sample_observation):
+    config = DebateConfig(
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=2,
+        mock=True,
+        enable_news_pipeline=False,
+        enable_data_pipeline=False,
+        parallel_agents=True,
+    )
+
+    runner = MultiAgentRunner(config)
+    state = runner.run_returning_state(sample_observation)
+
+    num_agents = len(config.roles)
+    assert len(state["critiques"]) == num_agents
+    assert len(state["revisions"]) == num_agents
+
+
+# =============================================================================
+# TEST 14: Config Toggle
+#
+# parallel_agents=False should use the sequential single-round graph,
+# parallel_agents=True should use the parallel single-round graph.
+# Both should produce valid outputs.
+# =============================================================================
+
+
+def test_parallel_config_toggle(sample_observation):
+    for parallel in (False, True):
+        config = DebateConfig(
+            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+            max_rounds=1,
+            mock=True,
+            enable_news_pipeline=False,
+            enable_data_pipeline=False,
+            parallel_agents=parallel,
+        )
+        runner = MultiAgentRunner(config)
+        state = runner.run_returning_state(sample_observation)
+
+        # Both modes should produce a valid final_action
+        assert "orders" in state["final_action"]
+        assert "confidence" in state["final_action"]
+
+        # Both modes should produce the right number of turns
+        turns = state["debate_turns"]
+        proposals = [t for t in turns if t["type"] == "proposal"]
+        critiques = [t for t in turns if t["type"] == "critique"]
+        revisions = [t for t in turns if t["type"] == "revision"]
+        assert len(proposals) == 3
+        assert len(critiques) == 3
+        assert len(revisions) == 3
