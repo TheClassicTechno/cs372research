@@ -15,7 +15,12 @@ dataset_path: "data/cases"
 # Optional: filter case_data items to top N by impact_score at load time.
 # Items are sorted by abs(impact_score) descending; agent never sees the score.
 # Omit or set to null for no filtering (include all items).
-# top_n_news: 20
+top_n_news: 5
+
+# Optional: only load cases matching these quarters (e.g. [Q1, Q3]).
+# Omit to load all quarters.
+# quarters:
+#   - Q1
 
 # Universe of ticker symbols available in this simulation.
 tickers:

@@ -1,0 +1,358 @@
+--- SYSTEM ---
+You are a quantitative trading agent. You will be given market data, news, and your current portfolio. Analyse the information and decide whether to buy, sell, or hold.
+
+Use the submit_decision tool to execute your decision. You may submit an empty orders list to hold. If your decision is rejected, read the rejection message carefully, revise your orders, and resubmit.
+
+Guidelines:
+- Only trade tickers present in the case data.
+- Ensure you have sufficient cash for buys and sufficient shares for sells.
+- You may submit multiple orders in a single decision (portfolio rebalancing).
+- Reason step-by-step before submitting.
+
+--- HUMAN ---
+Here is the current market case and your portfolio:
+
+```json
+{
+  "case_data": {
+    "items": [
+      {
+        "kind": "news",
+        "content": "Apple Inc. (AAPL): I Will Support It Until It Loses To Samsung, Says Jim Cramer Apple Inc. (NASDAQ:AAPL) is one of the Jim Cramer Warns Viewers About FOMO & Discusses These 19 Stocks. Apple Inc. (NASDAQ:AAPL) is one of Cramer\u2019s favorite companies, a position that he\u2019s held despite the shares having lost 17.5% year-to-date. The firm has struggled due to investors\u2019 disappointment with its AI strategy, troubles with Chinese manufacturing, [\u2026]"
+      },
+      {
+        "kind": "news",
+        "content": "3 Artificial Intelligence (AI) Stocks That Still Look Like Long-Term Winners It's time to tackle the burning questions surrounding three prominent stocks and their long-term outlooks."
+      },
+      {
+        "kind": "news",
+        "content": "5 Artificial Intelligence (AI) Stocks Are Worth Over $2 Trillion. Here Are the 2 Most Likely to Join the Club Next. Nvidia, Microsoft, Apple, Amazon, and Alphabet make up the $2 trillion club right now.  Meta Platforms and Broadcom could be the next to join the club.  To be a member, a company must have a market cap of at least $2 trillion."
+      },
+      {
+        "kind": "news",
+        "content": "Calamos Long/Short Equity & Dynamic Income Trust Q1 2025 Commentary For the quarter ending March 31, 2025, Calamos Long/Short Equity & Dynamic Income Trust\u00e2\u0080\u0099s total return was 1.69% on NAV and 6.82% on market price. Read more here."
+      },
+      {
+        "kind": "news",
+        "content": "Trump tells Fox News he has group of wealthy people to buy TikTok U.S. President DonaldTrump said in a Fox News interview broadcast on Sunday that hehad found a buyer for the TikTok short-video app, which hedescribed as a group of very wealthy people whose..."
+      }
+    ]
+  },
+  "stock_data": {
+    "AAPL": {
+      "ticker": "AAPL",
+      "current_price": 205.1699981689453,
+      "daily_bars": [
+        {
+          "timestamp": "2025-04-01",
+          "close": 223.19000244140625
+        },
+        {
+          "timestamp": "2025-04-02",
+          "close": 223.88999938964844
+        },
+        {
+          "timestamp": "2025-04-03",
+          "close": 203.19000244140625
+        },
+        {
+          "timestamp": "2025-04-04",
+          "close": 188.3800048828125
+        },
+        {
+          "timestamp": "2025-04-07",
+          "close": 181.4600067138672
+        },
+        {
+          "timestamp": "2025-04-08",
+          "close": 172.4199981689453
+        },
+        {
+          "timestamp": "2025-04-09",
+          "close": 198.85000610351562
+        },
+        {
+          "timestamp": "2025-04-10",
+          "close": 190.4199981689453
+        },
+        {
+          "timestamp": "2025-04-11",
+          "close": 198.14999389648438
+        },
+        {
+          "timestamp": "2025-04-14",
+          "close": 202.52000427246094
+        },
+        {
+          "timestamp": "2025-04-15",
+          "close": 202.13999938964844
+        },
+        {
+          "timestamp": "2025-04-16",
+          "close": 194.27000427246094
+        },
+        {
+          "timestamp": "2025-04-17",
+          "close": 196.97999572753906
+        },
+        {
+          "timestamp": "2025-04-21",
+          "close": 193.16000366210938
+        },
+        {
+          "timestamp": "2025-04-22",
+          "close": 199.74000549316406
+        },
+        {
+          "timestamp": "2025-04-23",
+          "close": 204.60000610351562
+        },
+        {
+          "timestamp": "2025-04-24",
+          "close": 208.3699951171875
+        },
+        {
+          "timestamp": "2025-04-25",
+          "close": 209.27999877929688
+        },
+        {
+          "timestamp": "2025-04-28",
+          "close": 210.13999938964844
+        },
+        {
+          "timestamp": "2025-04-29",
+          "close": 211.2100067138672
+        },
+        {
+          "timestamp": "2025-04-30",
+          "close": 212.5
+        },
+        {
+          "timestamp": "2025-05-01",
+          "close": 213.32000732421875
+        },
+        {
+          "timestamp": "2025-05-02",
+          "close": 205.35000610351562
+        },
+        {
+          "timestamp": "2025-05-05",
+          "close": 198.88999938964844
+        },
+        {
+          "timestamp": "2025-05-06",
+          "close": 198.50999450683594
+        },
+        {
+          "timestamp": "2025-05-07",
+          "close": 196.25
+        },
+        {
+          "timestamp": "2025-05-08",
+          "close": 197.49000549316406
+        },
+        {
+          "timestamp": "2025-05-09",
+          "close": 198.52999877929688
+        },
+        {
+          "timestamp": "2025-05-12",
+          "close": 210.7899932861328
+        },
+        {
+          "timestamp": "2025-05-13",
+          "close": 212.92999267578125
+        },
+        {
+          "timestamp": "2025-05-14",
+          "close": 212.3300018310547
+        },
+        {
+          "timestamp": "2025-05-15",
+          "close": 211.4499969482422
+        },
+        {
+          "timestamp": "2025-05-16",
+          "close": 211.25999450683594
+        },
+        {
+          "timestamp": "2025-05-19",
+          "close": 208.77999877929688
+        },
+        {
+          "timestamp": "2025-05-20",
+          "close": 206.86000061035156
+        },
+        {
+          "timestamp": "2025-05-21",
+          "close": 202.08999633789062
+        },
+        {
+          "timestamp": "2025-05-22",
+          "close": 201.36000061035156
+        },
+        {
+          "timestamp": "2025-05-23",
+          "close": 195.27000427246094
+        },
+        {
+          "timestamp": "2025-05-27",
+          "close": 200.2100067138672
+        },
+        {
+          "timestamp": "2025-05-28",
+          "close": 200.4199981689453
+        },
+        {
+          "timestamp": "2025-05-29",
+          "close": 199.9499969482422
+        },
+        {
+          "timestamp": "2025-05-30",
+          "close": 200.85000610351562
+        },
+        {
+          "timestamp": "2025-06-02",
+          "close": 201.6999969482422
+        },
+        {
+          "timestamp": "2025-06-03",
+          "close": 203.27000427246094
+        },
+        {
+          "timestamp": "2025-06-04",
+          "close": 202.82000732421875
+        },
+        {
+          "timestamp": "2025-06-05",
+          "close": 200.6300048828125
+        },
+        {
+          "timestamp": "2025-06-06",
+          "close": 203.9199981689453
+        },
+        {
+          "timestamp": "2025-06-09",
+          "close": 201.4499969482422
+        },
+        {
+          "timestamp": "2025-06-10",
+          "close": 202.6699981689453
+        },
+        {
+          "timestamp": "2025-06-11",
+          "close": 198.77999877929688
+        },
+        {
+          "timestamp": "2025-06-12",
+          "close": 199.1999969482422
+        },
+        {
+          "timestamp": "2025-06-13",
+          "close": 196.4499969482422
+        },
+        {
+          "timestamp": "2025-06-16",
+          "close": 198.4199981689453
+        },
+        {
+          "timestamp": "2025-06-17",
+          "close": 195.63999938964844
+        },
+        {
+          "timestamp": "2025-06-18",
+          "close": 196.5800018310547
+        },
+        {
+          "timestamp": "2025-06-20",
+          "close": 201.0
+        },
+        {
+          "timestamp": "2025-06-23",
+          "close": 201.5
+        },
+        {
+          "timestamp": "2025-06-24",
+          "close": 200.3000030517578
+        },
+        {
+          "timestamp": "2025-06-25",
+          "close": 201.55999755859375
+        },
+        {
+          "timestamp": "2025-06-26",
+          "close": 201.0
+        },
+        {
+          "timestamp": "2025-06-27",
+          "close": 201.0800018310547
+        },
+        {
+          "timestamp": "2025-06-30",
+          "close": 205.1699981689453
+        }
+      ],
+      "interval_summary": null
+    }
+  },
+  "portfolio": {
+    "cash": 100000.0,
+    "positions": {}
+  }
+}
+```
+
+Decision steps remaining after this one: 0
+
+Analyse the data and submit your trading decision.
+--- AI ---
+To make a decision, let's analyze the provided information step-by-step:
+
+1. **Current Portfolio and Cash Position:**
+   - We have $100,000 in cash and no current positions in any stocks.
+
+2. **Apple Inc. (AAPL) Market Analysis:**
+   - Current Price: $205.17
+   - Recent Trend: The price has fluctuated but appears to have stabilized around the $200 mark after a dip below it earlier in June.
+   - Historical Highs: The price was above $210 multiple times in May, indicating potential for recovery to those levels.
+
+3. **News Analysis:**
+   - Jim Cramer, a well-known financial analyst, still supports Apple despite its challenges, suggesting potential investor confidence.
+   - Apple is part of the $2 trillion market cap club, alongside major tech companies like Nvidia, Microsoft, Amazon, and Alphabet. This suggests Apple's strong market position.
+   - The focus on AI stocks suggests that despite current challenges, there may be long-term growth potential.
+
+4. **Market Sentiment:**
+   - There is mixed sentiment due to Apple's AI strategy and manufacturing issues in China. However, being part of the $2 trillion club and analyst support indicates underlying strength.
+
+5. **Investment Strategy:**
+   - Short-Term: Given the current price stability around $200 and potential for growth, we can consider investing a portion of our cash in AAPL as a short-term speculative buy.
+   - Long-Term: The potential for recovery and strong market position makes AAPL a viable candidate for long-term holding.
+
+**Decision:**
+Allocate a portion of the cash to purchase AAPL shares, considering the potential for growth and recovery. A prudent approach is to invest around 20% of the cash available, which is $20,000, into AAPL stock.
+
+\[ \text{Number of Shares to Buy} = \frac{\text{Investment Amount}}{\text{Current Price}} = \frac{20000}{205.17} \approx 97 \text{ shares} \]
+
+Let's submit this trading decision.
+[tool_call: submit_decision({
+  "orders": [
+    {
+      "ticker": "AAPL",
+      "side": "buy",
+      "quantity": 97
+    }
+  ]
+})]
+--- TOOL ---
+{"status":"rejected","executed_trades":[],"message":"Ticker(s) not in broker universe: AAPL."}
+--- AI ---
+It seems that the ticker "AAPL" is not available for trading in the current broker universe for this exercise. Since AAPL is the only stock provided in the market data and we don't have any other tickers to consider, we will hold the position and make no trades at this time. 
+
+Let's submit a hold decision.
+[tool_call: submit_decision({
+  "orders": []
+})]
+--- TOOL ---
+{"status":"accepted","executed_trades":[],"message":"Hold — no orders submitted."}
+--- AI ---
+The decision to hold was accepted. No trades were executed due to the limitations of the broker universe in this scenario. We maintained our cash position of $100,000.

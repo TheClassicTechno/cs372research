@@ -52,9 +52,15 @@ class AsyncSimulationRunner:
         self._sim_logger.init_run(self._config_yaml_path)
 
         # Load case templates once (shared across episodes).
+        # All filtering is controlled via YAML config fields:
+        #   tickers  — which tickers to include
+        #   quarters — which quarters to include (optional)
+        #   top_n_news — cap news items per case (optional)
         templates = load_case_templates(
             self._config.dataset_path,
             top_n_news=self._config.top_n_news,
+            ticker_filter=self._config.tickers,
+            quarters=self._config.quarters,
         )
         num_cases = len(templates)
         logger.info(
@@ -104,6 +110,7 @@ class AsyncSimulationRunner:
 
         logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
 
+        from datetime import datetime, timezone
         for dp_idx, template in enumerate(templates):
             case_id = f"{episode_id}:{dp_idx}"
             steps_remaining = num_cases - dp_idx - 1
@@ -159,6 +166,16 @@ class AsyncSimulationRunner:
                 getattr(tool, "func", None), "_last_result", None
             )
 
+            # If the agent returned orders but did not call the tool
+            # (e.g. the multi-agent debate adapter), the runner executes
+            # the decision through the broker directly.
+            if execution_result is None and decision.orders:
+                execution_result = broker.execute_decision(decision, case, agent_id)
+                logger.info(
+                    "Runner executed decision for case %s directly (agent did not call tool).",
+                    case_id,
+                )
+
             # Snapshot portfolio *after* the decision has settled.
             portfolio_after = broker.get_portfolio()
 
@@ -171,12 +188,14 @@ class AsyncSimulationRunner:
                 execution_result=execution_result,
                 agent_output=agent_output,
                 elapsed_seconds=elapsed,
+                timestamp=datetime.now(timezone.utc).isoformat(),
             )
             decision_point_logs.append(dp_log)
 
         # Build the flattened episode log.
         final_portfolio = broker.get_portfolio()
         final_prices = broker.get_last_prices()
+        from datetime import datetime, timezone
         episode_log = EpisodeLog(
             episode_id=episode_id,
             agent_id=agent_id,
@@ -184,6 +203,7 @@ class AsyncSimulationRunner:
             trades=broker.get_trade_history(),
             final_portfolio=final_portfolio,
             final_prices=final_prices,
+            timestamp=datetime.now(timezone.utc).isoformat(),
         )
 
         logger.info(

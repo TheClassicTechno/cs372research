@@ -1,0 +1,91 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "BAC",
+        "side": "buy",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:28.528472+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:28.528472+00:00\n- Universe: BAC\n- Prices: BAC: $51.59\n- Returns: BAC: 7.14%\n- Volatility: BAC: 0.0120\n- Portfolio: Cash: $84004.40, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 10.0}\n- News/Context: [NEWS] Here is What to Know Beyond Why Bank of America Corporation (BAC) is a Trending Stock Bank of America (BAC) has received quite a bit of attention from Zacks.com users lately. Therefore, it is wise to be aware of the facts that can impact the...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "buy 10 BAC",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "BAC",
+          "side": "buy",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:28.546694+00:00",
+    "initial_market_state": {
+      "prices": {
+        "BAC": 51.59000015258789
+      },
+      "returns": {
+        "BAC": 0.07144337523769564
+      },
+      "volatility": {
+        "BAC": 0.011963347505999204
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 84004.39979553223,
+      "positions": {
+        "AAPL": 20.0,
+        "AXP": 30.0,
+        "BAC": 10.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 4, Sell votes: 0. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

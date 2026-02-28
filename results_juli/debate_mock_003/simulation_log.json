@@ -1,0 +1,179 @@
+{
+  "run_name": "debate_mock_003",
+  "config": {
+    "dataset_path": "data/cases",
+    "top_n_news": null,
+    "agent": {
+      "agent_system": "multi_agent_debate",
+      "llm_provider": "openai",
+      "llm_model": "gpt-4o-mini",
+      "temperature": 0.3,
+      "max_retries": 3,
+      "system_prompt_override": "mock"
+    },
+    "broker": {
+      "initial_cash": 100000.0
+    },
+    "tickers": [
+      "NVDA"
+    ],
+    "num_episodes": 1
+  },
+  "episode_logs": [
+    {
+      "episode_id": "ep_000",
+      "agent_id": "multi_agent_debate_000",
+      "decision_point_logs": [
+        {
+          "case_id": "ep_000:0",
+          "decision_point_idx": 0,
+          "portfolio_before": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "portfolio_after": {
+            "cash": 91247.0,
+            "positions": {
+              "NVDA": 10
+            }
+          },
+          "extracted_decision": {
+            "orders": [
+              {
+                "ticker": "NVDA",
+                "side": "buy",
+                "quantity": 10
+              }
+            ]
+          },
+          "execution_result": {
+            "status": "accepted",
+            "executed_trades": [
+              {
+                "trade_id": "8ebd4017d041",
+                "case_id": "ep_000:0",
+                "agent_id": "multi_agent_debate_000",
+                "order_index": 0,
+                "ticker": "NVDA",
+                "side": "buy",
+                "quantity": 10,
+                "price": 875.3
+              }
+            ],
+            "message": "Executed 1 trade(s)."
+          },
+          "agent_output": {
+            "debate_action": {
+              "orders": [
+                {
+                  "ticker": "NVDA",
+                  "side": "buy",
+                  "size": 10.0,
+                  "type": "market",
+                  "limit_price": null
+                }
+              ],
+              "justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+              "confidence": 0.55,
+              "claims": [
+                {
+                  "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                  "pearl_level": "L2",
+                  "variables": [
+                    "consensus",
+                    "trade_direction"
+                  ],
+                  "assumptions": [
+                    "Multi-agent deliberation reduces individual bias"
+                  ],
+                  "timestamp_dependency": null,
+                  "confidence": 0.6
+                }
+              ]
+            },
+            "debate_trace": {
+              "observation_timestamp": "2025-03-14T16:00:00Z",
+              "architecture": "debate",
+              "what_i_saw": "## Market Observation\n- Timestamp: 2025-03-14T16:00:00Z\n- Universe: NVDA\n- Prices: NVDA: $875.30\n- Returns: NVDA: 3.89%\n- Volatility: NVDA: 0.0126\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [EARNINGS] NVDA reported Q1 2025 revenue of $26.0B, beating estimates of $24.6B. Data center revenue surged 427% YoY to $22.6B driven by AI infrastructure demand.\n[NEWS] Jensen Huang announced next-gen Blackwell GPU architecture at GTC 2025, with major cloud providers committing to large-sca...",
+              "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+              "decision": "buy 10 NVDA",
+              "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+              "strongest_objection": "Risk agent raised volatility regime concerns",
+              "debate_turns": null,
+              "action": {
+                "orders": [
+                  {
+                    "ticker": "NVDA",
+                    "side": "buy",
+                    "size": 10.0,
+                    "type": "market",
+                    "limit_price": null
+                  }
+                ],
+                "justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+                "confidence": 0.55,
+                "claims": [
+                  {
+                    "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                    "pearl_level": "L2",
+                    "variables": [
+                      "consensus",
+                      "trade_direction"
+                    ],
+                    "assumptions": [
+                      "Multi-agent deliberation reduces individual bias"
+                    ],
+                    "timestamp_dependency": null,
+                    "confidence": 0.6
+                  }
+                ]
+              },
+              "logged_at": "2026-02-25T09:11:06.043534+00:00",
+              "initial_market_state": {
+                "prices": {
+                  "NVDA": 875.3
+                },
+                "returns": {
+                  "NVDA": 0.03893175074183971
+                },
+                "volatility": {
+                  "NVDA": 0.012569407197206173
+                }
+              },
+              "initial_portfolio_state": {
+                "cash": 100000.0,
+                "positions": {},
+                "exposures": null
+              }
+            },
+            "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 3, Sell votes: 0. Decision based on majority direction.",
+            "debate_confidence": 0.55
+          },
+          "elapsed_seconds": 0.006475541740655899
+        }
+      ],
+      "trades": [
+        {
+          "trade_id": "8ebd4017d041",
+          "case_id": "ep_000:0",
+          "agent_id": "multi_agent_debate_000",
+          "order_index": 0,
+          "ticker": "NVDA",
+          "side": "buy",
+          "quantity": 10,
+          "price": 875.3
+        }
+      ],
+      "final_portfolio": {
+        "cash": 91247.0,
+        "positions": {
+          "NVDA": 10
+        }
+      },
+      "final_prices": {
+        "NVDA": 875.3
+      }
+    }
+  ],
+  "errors": []
+}

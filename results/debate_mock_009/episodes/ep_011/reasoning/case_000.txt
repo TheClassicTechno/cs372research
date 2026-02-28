@@ -1,0 +1,87 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "AAPL",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:18.284283+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:18.284283+00:00\n- Universe: AAPL\n- Prices: AAPL: $222.13\n- Returns: AAPL: -8.91%\n- Volatility: AAPL: 0.0182\n- Portfolio: Cash: $100000.00, Positions: {}\n- News/Context: [EARNINGS]  Suhasini Chandramouli: Good afternoon, and welcome to the Apple Q1 Fiscal Year 2025 Earnings Conference Call. My name is Suhasini Chandramouli, Director of Investor Relations. Today's call is being recorded. Speaking first today are Apple CEO, Tim Cook, and he will b...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 AAPL",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "AAPL",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:18.301276+00:00",
+    "initial_market_state": {
+      "prices": {
+        "AAPL": 222.1300048828125
+      },
+      "returns": {
+        "AAPL": -0.08907115307384027
+      },
+      "volatility": {
+        "AAPL": 0.018197968375948823
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 100000.0,
+      "positions": {},
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

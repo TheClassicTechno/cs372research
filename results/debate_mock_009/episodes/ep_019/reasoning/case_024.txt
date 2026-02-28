@@ -1,0 +1,93 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "NVDA",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T07:31:45.733067+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T07:31:45.733067+00:00\n- Universe: NVDA\n- Prices: NVDA: $108.38\n- Returns: NVDA: -21.64%\n- Volatility: NVDA: 0.0434\n- Portfolio: Cash: $76676.70, Positions: {'AAPL': 20.0, 'AXP': 30.0, 'BAC': 30.0, 'KO': 10.0, 'MSFT': 10.0}\n- News/Context: [EARNINGS]  Christa: Good afternoon. My name is Christa, and I will be your conference operator today. At this time, I would like to welcome everyone to NVIDIA Corporation's Fourth Quarter Earnings Call. All lines h...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 NVDA",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "NVDA",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T07:31:45.739826+00:00",
+    "initial_market_state": {
+      "prices": {
+        "NVDA": 108.37999725341797
+      },
+      "returns": {
+        "NVDA": -0.2163979526678555
+      },
+      "volatility": {
+        "NVDA": 0.0434302695226628
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 76676.69986724854,
+      "positions": {
+        "AAPL": 20.0,
+        "AXP": 30.0,
+        "BAC": 30.0,
+        "KO": 10.0,
+        "MSFT": 10.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}

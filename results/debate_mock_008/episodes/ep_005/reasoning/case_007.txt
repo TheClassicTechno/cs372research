@@ -1,0 +1,90 @@
+{
+  "debate_action": {
+    "orders": [
+      {
+        "ticker": "MSFT",
+        "side": "sell",
+        "size": 10.0,
+        "type": "market",
+        "limit_price": null
+      }
+    ],
+    "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "confidence": 0.55,
+    "claims": [
+      {
+        "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+        "pearl_level": "L2",
+        "variables": [
+          "consensus",
+          "trade_direction"
+        ],
+        "assumptions": [
+          "Multi-agent deliberation reduces individual bias"
+        ],
+        "timestamp_dependency": null,
+        "confidence": 0.6
+      }
+    ]
+  },
+  "debate_trace": {
+    "observation_timestamp": "2026-02-26T06:33:32.531403+00:00",
+    "architecture": "debate",
+    "what_i_saw": "## Market Observation\n- Timestamp: 2026-02-26T06:33:32.531403+00:00\n- Universe: MSFT\n- Prices: MSFT: $487.48\n- Returns: MSFT: -6.20%\n- Volatility: MSFT: 0.0121\n- Portfolio: Cash: $84569.30, Positions: {'AAPL': 20.0, 'MSFT': 20.0}\n- News/Context: [NEWS] Microsoft Values $135 Billion Stake in OpenAI as Firms Face Legal Pressure The recapitalization gives OpenAI freedom to partner with competitors and release open-weight models, even as both firms face legal pressure.\n[NEWS] Asia Market Open: Crypt...",
+    "hypothesis": "Multi-agent debate: 4 agents (macro, value, risk, technical), agreeableness=0.3, rounds=1",
+    "decision": "sell 10 MSFT",
+    "risks_or_falsifiers": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+    "strongest_objection": "Risk agent raised volatility regime concerns",
+    "debate_turns": null,
+    "action": {
+      "orders": [
+        {
+          "ticker": "MSFT",
+          "side": "sell",
+          "size": 10.0,
+          "type": "market",
+          "limit_price": null
+        }
+      ],
+      "justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+      "confidence": 0.55,
+      "claims": [
+        {
+          "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+          "pearl_level": "L2",
+          "variables": [
+            "consensus",
+            "trade_direction"
+          ],
+          "assumptions": [
+            "Multi-agent deliberation reduces individual bias"
+          ],
+          "timestamp_dependency": null,
+          "confidence": 0.6
+        }
+      ]
+    },
+    "logged_at": "2026-02-26T06:33:32.541782+00:00",
+    "initial_market_state": {
+      "prices": {
+        "MSFT": 487.4800109863281
+      },
+      "returns": {
+        "MSFT": -0.06201537323446854
+      },
+      "volatility": {
+        "MSFT": 0.012071133029108816
+      }
+    },
+    "initial_portfolio_state": {
+      "cash": 84569.29992675781,
+      "positions": {
+        "AAPL": 20.0,
+        "MSFT": 20.0
+      },
+      "exposures": null
+    }
+  },
+  "debate_justification": "[Judge mock] 4 agents debated. Buy votes: 0, Sell votes: 4. Decision based on majority direction.",
+  "debate_confidence": 0.55
+}
