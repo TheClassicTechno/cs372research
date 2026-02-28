@@ -109,6 +109,9 @@ class DebateAgentSystem(AgentSystem):
             model_name=config.llm_model,
             temperature=config.temperature,
             mock=use_mock,
+            log_system_prompts=config.log_system_prompts,
+            log_user_prompts=config.log_user_prompts,
+            log_llm_responses=config.log_llm_responses,
         )
         self._debate_runner = MultiAgentRunner(debate_cfg)
 
