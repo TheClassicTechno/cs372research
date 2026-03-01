@@ -7,7 +7,7 @@
 #
 # The run name is derived from the config file name (e.g. "example").
 
-# Path to the case dataset.
+# Path to the case dataset
 # Accepts a directory of .json files (one per case), a single .json file
 # containing a JSON array, or a .jsonl file (one case template per line).
 dataset_path: "data/cases"
@@ -16,6 +16,11 @@ dataset_path: "data/cases"
 # Items are sorted by abs(impact_score) descending; agent never sees the score.
 # Omit or set to null for no filtering (include all items).
 top_n_news: 5
+
+# Optional: only load cases matching these quarters (e.g. [Q1, Q3]).
+# Omit to load all quarters.
+# quarters:
+#   - Q1
 
 # Universe of ticker symbols available in this simulation.
 tickers:

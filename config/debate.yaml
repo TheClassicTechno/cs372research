@@ -4,13 +4,25 @@
 # Run with:
 #   python run_simulation.py --config config/debate.yaml
 #
-# Uses the multi-agent debate system (Propose → Critique → Revise → Judge)
+# Uses the multi-agent debate system (Propose -> Critique -> Revise -> Judge)
 # with 4 specialist agents: MACRO, VALUE, RISK, TECHNICAL.
 #
 # For mock mode (no API calls), use config/debate_mock.yaml instead.
 
 dataset_path: "data/cases"
 
+# Filter case_data items to top N by impact_score at load time.
+# Dramatically reduces case size and token cost (e.g. ~200KB -> ~6KB per case).
+top_n_news: 5
+
+# Optional: only load cases matching these quarters (e.g. [Q1, Q3]).
+# Omit to load all quarters.
+# quarters:
+#   - Q1
+
+# Universe of ticker symbols. Controls two things:
+#   1. Which tickers the broker accepts for trading.
+#   2. Which cases are loaded (only cases containing these tickers).
 tickers:
   - NVDA
 
@@ -20,12 +32,34 @@ num_episodes: 1
 # Agent Configuration — Multi-Agent Debate
 # --------------------------------------------------------------------------
 agent:
-  # Registered as "multi_agent_debate" per integration_plan.md §5.
+  # Registered as "multi_agent_debate" per integration_plan.md S5.
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
+  # Logging — set to true to print LLM call details
+  log_system_prompts: false   # role instructions per agent
+  log_user_prompts: false     # full rendered prompt (includes case data)
+  log_llm_responses: false    # raw LLM response text
+
+  # PID controller for debate quality regulation (disabled by default).
+  # When enabled, CRIT scores each round and PID adjusts agreeableness.
+  pid_enabled: false
+  # pid_kp: 0.15
+  # pid_ki: 0.01
+  # pid_kd: 0.03
+  # pid_rho_star: 0.8
+  # pid_initial_beta: 0.5
+  # pid_propose: false
+  # pid_critique: true
+  # pid_revise: true
+
+  # PID logging (only relevant when pid_enabled: true).
+  # pid_log_metrics: log scalar PID stats each round (rho_bar, beta, JS, gains, etc.)
+  # pid_log_llm_calls: log full CRIT LLM prompts and responses each round
+  # pid_log_metrics: false
+  # pid_log_llm_calls: false
 
 # --------------------------------------------------------------------------
 # Broker Configuration

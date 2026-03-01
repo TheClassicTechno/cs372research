@@ -1,15 +1,75 @@
 #!/usr/bin/env python3
 """CLI entrypoint for the market simulation harness.
 
-Usage::
+Overview
+--------
+This script loads a YAML config, reads case data from disk, and runs an
+agent-based trading simulation.  Each "case" is a decision point: the agent
+sees market data (prices, news, earnings) and its current portfolio, then
+decides whether to buy, sell, or hold.
 
+The pipeline is:
+
+    YAML config
+        -> load case JSON files from data/cases/
+        -> filter by tickers (from config)
+        -> filter by quarters (from config, optional)
+        -> filter news items by top_n_news (from config, optional)
+        -> for each episode:
+            for each case (decision point):
+                send case data to LLM via agent system
+                agent returns trading decision
+                broker validates and executes trades
+                portfolio carries forward to next case
+
+What gets sent to the LLM
+--------------------------
+Each case's full JSON payload (stock prices, daily bars, news items, portfolio
+state) is sent to the LLM at every decision point.  Unfiltered cases can be
+100-300 KB each (~25K-75K tokens).  Use top_n_news in the YAML config to
+reduce this dramatically (e.g. top_n_news: 5 reduces cases to ~5-6 KB each).
+
+Case selection (config-driven)
+------------------------------
+All case selection is controlled via the YAML config file:
+
+- ``tickers``: Universe of ticker symbols. Only cases containing these
+  tickers are loaded, and these are the only tickers the broker can trade.
+- ``quarters`` (optional): If set, only cases whose filename matches one of
+  the specified quarters are loaded (e.g. ``['Q1', 'Q3']``).
+- ``top_n_news`` (optional): Cap news items per case to the top N by
+  abs(impact_score).
+
+Example configs::
+
+    # NVDA only, Q1 and Q2, top 5 news:
+    tickers: [NVDA]
+    quarters: [Q1, Q2]
+    top_n_news: 5
+
+    # All tickers, all quarters:
+    tickers: [NVDA, AAPL, MSFT]
+    # quarters omitted = all quarters loaded
+
+Example commands
+----------------
+# Run with default config (single LLM agent, NVDA only, 1 episode):
     python run_simulation.py --config config/example.yaml
-    python run_simulation.py --config config/example.yaml --output-dir results/
-    python run_simulation.py --config config/example.yaml --num-cases 5
 
-The simulation loads a YAML configuration file, instantiates the agent system
-and broker, then runs the async simulation loop.  The run name is derived
-automatically from the config file name (e.g. ``example.yaml`` -> ``example``).
+# Run the multi-agent debate (4 specialists + judge, real API calls):
+    python run_simulation.py --config config/debate.yaml
+
+# Run the debate in mock mode (no API calls, deterministic):
+    python run_simulation.py --config config/debate_mock.yaml
+
+# List all available tickers in the dataset:
+    python run_simulation.py --config config/example.yaml --list-tickers
+
+# Save results to a custom directory:
+    python run_simulation.py --config config/debate.yaml --output-dir results/experiment_1
+
+# Quiet mode — only show errors:
+    python run_simulation.py --config config/debate.yaml --log-level ERROR
 """
 
 from __future__ import annotations
@@ -44,18 +104,10 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         help="Directory where simulation results will be written (default: results/).",
     )
-    parser.add_argument(
-        "--num-cases",
-        default=None,
-        type=int,
-        help="Max number of cases (decision points) per episode. Defaults to all.",
-    )
-    parser.add_argument(
-        "--ticker",
-        nargs="*",
-        default=None,
-        help="Only include cases containing these tickers (e.g. --ticker NVDA AAPL).",
-    )
+
+    # ------------------------------------------------------------------
+    # Utility flags
+    # ------------------------------------------------------------------
     parser.add_argument(
         "--list-tickers",
         action="store_true",
@@ -89,6 +141,7 @@ async def _main() -> None:
 
     config = SimulationConfig.from_yaml(args.config)
 
+    # --list-tickers: print available tickers and exit (no simulation).
     if args.list_tickers:
         from simulation.case_loader import list_available_tickers
         tickers = list_available_tickers(config.dataset_path)
@@ -103,8 +156,6 @@ async def _main() -> None:
         config,
         config_yaml_path=args.config,
         output_dir=args.output_dir,
-        num_cases=args.num_cases,
-        ticker_filter=args.ticker,
     )
     await runner.run()
 

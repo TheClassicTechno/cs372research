@@ -39,6 +39,68 @@ class AgentConfig(BaseModel):
         default=None,
         description="Optional override for the agent's system prompt.",
     )
+    log_system_prompts: bool = Field(
+        default=False,
+        description="Log the system prompt sent to each agent.",
+    )
+    log_user_prompts: bool = Field(
+        default=False,
+        description="Log the full rendered user prompt (includes case data).",
+    )
+    log_llm_responses: bool = Field(
+        default=False,
+        description="Log the raw LLM response text.",
+    )
+
+    # --- PID controller settings (flat YAML fields) ---
+    pid_enabled: bool = Field(
+        default=False,
+        description="Enable PID controller for debate quality regulation.",
+    )
+    pid_kp: float = Field(default=0.15, description="PID proportional gain.")
+    pid_ki: float = Field(default=0.01, description="PID integral gain.")
+    pid_kd: float = Field(default=0.03, description="PID derivative gain.")
+    pid_rho_star: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Target reasonableness score for PID controller.",
+    )
+    pid_initial_beta: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Initial agreeableness value for PID controller.",
+    )
+    pid_propose: bool = Field(
+        default=False,
+        description="Whether PID controls agreeableness during propose phase.",
+    )
+    pid_critique: bool = Field(
+        default=True,
+        description="Whether PID controls agreeableness during critique phase.",
+    )
+    pid_revise: bool = Field(
+        default=True,
+        description="Whether PID controls agreeableness during revise phase.",
+    )
+
+    # --- PID logging ---
+    pid_log_metrics: bool = Field(
+        default=False,
+        description="Log scalar PID metrics (rho_bar, beta, JS, gains, etc.) each round.",
+    )
+    pid_log_llm_calls: bool = Field(
+        default=False,
+        description="Log full CRIT LLM prompts and responses each round.",
+    )
+
+    # --- Prompt logging (modular prompt path) ---
+    prompt_logging: dict = Field(
+        default_factory=dict,
+        description="Prompt build logging config. Keys: enabled, log_rendered_prompt, "
+        "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
+    )
 
 
 class BrokerConfig(BaseModel):
@@ -71,6 +133,12 @@ class SimulationConfig(BaseModel):
         description="Broker / execution configuration.",
     )
     tickers: list[str] = Field(description="Universe of ticker symbols for this run.")
+    quarters: list[str] | None = Field(
+        default=None,
+        description="If set, only load cases matching these quarters (e.g. ['Q1', 'Q3']). "
+        "Matched against the case filename (e.g. '2025_Q1.json' matches 'Q1'). "
+        "If omitted, all quarters are loaded.",
+    )
     num_episodes: int = Field(
         default=1,
         ge=1,

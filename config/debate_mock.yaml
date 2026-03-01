@@ -9,6 +9,14 @@
 
 dataset_path: "data/cases"
 
+# Optional: filter case_data items to top N by impact_score at load time.
+top_n_news: 5
+
+# Optional: only load cases matching these quarters (e.g. [Q1, Q3]).
+# Omit to load all quarters.
+# quarters:
+#   - Q1
+
 tickers:
   - NVDA
   - AAPL
