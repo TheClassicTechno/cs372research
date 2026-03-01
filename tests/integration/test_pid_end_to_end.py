@@ -159,7 +159,7 @@ agent:
     def test_agent_config_to_debate_config(self, pid_agent_config: AgentConfig):
         """AgentConfig with PID fields creates DebateAgentSystem with PID enabled."""
         agent = DebateAgentSystem(pid_agent_config)
-        debate_cfg = agent._debate_runner.config
+        debate_cfg = agent._debate_cfg
         assert debate_cfg.pid_enabled is True
         assert debate_cfg.pid_config is not None
         assert debate_cfg.pid_config.gains.Kp == 0.05
