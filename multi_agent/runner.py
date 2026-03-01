@@ -91,6 +91,7 @@ pid_metrics_logger = logging.getLogger("pid.metrics")
 pid_llm_logger = logging.getLogger("pid.llm")
 
 from .config import AgentRole, DebateConfig
+from .prompts.registry import beta_to_bucket, reset_registry_cache
 from .graph import (
     compile_finalize_graph,
     compile_parallel_single_round_graph,
@@ -215,6 +216,7 @@ class MultiAgentRunner:
         controller state must be fresh for each decision point.
         """
         self._pid_events = []
+        reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
             self._pid_controller = PIDController(
@@ -316,22 +318,28 @@ class MultiAgentRunner:
         When PID is active, each phase (propose, critique, revise) is
         invoked as a separate sub-graph so agreeableness can be adjusted
         between them based on per-phase toggle configuration.
+
+        Also injects ``_current_beta`` into config so the modular prompt
+        registry can map β → tone bucket without seeing the numeric value.
         """
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
 
-        # Propose phase
+        # Propose phase — no tone injection (beta=None for propose)
         propose_a = beta if self.config.pid_propose else self._original_agreeableness
         state["config"]["agreeableness"] = propose_a
+        state["config"]["_current_beta"] = None  # No tone for propose
         state = self._propose_graph.invoke(state)
 
         # Critique phase
         critique_a = beta if self.config.pid_critique else self._original_agreeableness
         state["config"]["agreeableness"] = critique_a
+        state["config"]["_current_beta"] = beta if self.config.pid_critique else None
         state = self._critique_graph.invoke(state)
 
         # Revise phase
         revise_a = beta if self.config.pid_revise else self._original_agreeableness
         state["config"]["agreeableness"] = revise_a
+        state["config"]["_current_beta"] = beta if self.config.pid_revise else None
         state = self._revise_graph.invoke(state)
 
         if self._log_metrics:
@@ -393,6 +401,9 @@ class MultiAgentRunner:
                 "i_term": pid_result.i_term,
                 "d_term": pid_result.d_term,
                 "s_t": pid_result.s_t,
+                "quadrant": pid_result.quadrant,
+                "div_signal": pid_result.div_signal,
+                "qual_signal": pid_result.qual_signal,
             },
             controller_output=ctrl_output,
         )
@@ -415,6 +426,16 @@ class MultiAgentRunner:
                     f"CI={ps.causal_integrity:.3f}"
                 )
             agent_rho_str = "\n".join(agent_rho_lines)
+
+            pid_metrics_logger.debug(
+                "[PID Round %d] Quadrant: %s  div=%s  qual=%s  "
+                "beta: %.4f -> %.4f  bucket: %s",
+                round_num, pid_result.quadrant,
+                pid_result.div_signal, pid_result.qual_signal,
+                self._pid_controller.state.beta,
+                pid_result.beta_new,
+                beta_to_bucket(pid_result.beta_new),
+            )
 
             pid_metrics_logger.debug(
                 "[PID Round %d]\n"

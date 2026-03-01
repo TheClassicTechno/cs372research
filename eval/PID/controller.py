@@ -50,9 +50,40 @@ WHERE THIS SITS IN THE PIPELINE
 =================================================================================
 """
 
-from eval.PID.types import PIDGains, PIDConfig, PIDState, PIDStepResult
+from eval.PID.types import PIDGains, PIDConfig, PIDState, PIDStepResult, Quadrant
 from eval.PID.beta_dynamics import update_beta_clipped
 from eval.PID.sycophancy import compute_sycophancy_signal
+
+
+def classify_quadrant(
+    js: float, rho_bar: float, delta_js: float, rho_star: float
+) -> Quadrant:
+    """Classify debate state into one of 4 quadrants for actuator routing.
+
+    RAudit paper references:
+        - Eq 7 (p.4): div(t) = 1[JS(t) >= delta_JS], qual(t) = 1[rho_bar(t) >= rho*]
+        - Table 1 (p.4): Quadrant-based control table
+        - Algorithm 1, line 13 (p.19, Appendix E): div/qual signal computation
+
+    Args:
+        js: Current Jensen-Shannon divergence between agent beliefs.
+        rho_bar: Current mean CRIT reasoning quality score.
+        delta_js: Diversity threshold (delta_JS from Eq 7, p.4).
+                  NOT the same as delta_s (sycophancy threshold, Eq 4).
+        rho_star: Target quality threshold (rho* from Eq 5, p.4).
+
+    Returns:
+        Quadrant enum value: STUCK, CHAOTIC, CONVERGED, or HEALTHY.
+    """
+    div = js >= delta_js
+    qual = rho_bar >= rho_star
+    if not div and not qual:
+        return Quadrant.STUCK
+    if div and not qual:
+        return Quadrant.CHAOTIC
+    if not div and qual:
+        return Quadrant.CONVERGED
+    return Quadrant.HEALTHY
 
 
 def compute_error(rho_star: float, rho_bar: float, mu: float, s_t: int) -> float:
@@ -211,10 +242,13 @@ class PIDController:
         js_current: float = 0.0,
         ov_current: float = 0.0,
     ) -> PIDStepResult:
-        """Run one round of the PID loop and return the updated control signal.
+        """Run one PID control step with quadrant-based actuator routing.
 
-        This is the method you call after each debate round.  Feed it the
-        scores from CRIT and it will tell you what β should be next.
+        RAudit paper references:
+            - Algorithm 1 (p.19, Appendix E): Full control loop pseudocode
+            - Table 1 (p.4): Quadrant-based control table
+            - Section 3.5 (p.4): Regulated Search Architecture
+            - Eq 5-6 (p.4): Error and PID output formulas
 
         Args:
             rho_bar:    Mean reasonableness score from the CRIT scorer for
@@ -225,9 +259,9 @@ class PIDController:
             js_current: Jensen-Shannon divergence across agent scores for
                         this round.  Measures how much agents disagree.
                         High JS = lots of disagreement.  Low JS = agents
-                        are converging.  Used by the sycophancy detector.
-                        Default 0.0 (skips sycophancy detection if not
-                        provided).
+                        are converging.  Used by the sycophancy detector
+                        and quadrant classification.
+                        Default 0.0.
 
             ov_current: Evidence overlap (Jaccard index) for this round.
                         Measures how much the agents cited the same evidence.
@@ -236,11 +270,14 @@ class PIDController:
 
         Returns:
             PIDStepResult containing:
-                e_t       — the error for this round
-                u_t       — the correction signal
-                beta_new  — the new behavior dial value
+                e_t        — the error for this round
+                u_t        — the correction signal
+                beta_new   — the new behavior dial value
                 p/i/d_term — breakdown of the correction signal
-                s_t       — whether sycophancy was detected (0 or 1)
+                s_t        — whether sycophancy was detected (0 or 1)
+                quadrant   — which of the 4 quadrants ("stuck"/"chaotic"/"converged"/"healthy")
+                div_signal — True if JS >= δ_JS
+                qual_signal — True if ρ̄ >= ρ*
         """
         cfg = self.config
         st = self.state
@@ -294,13 +331,52 @@ class PIDController:
         )
 
         # ---------------------------------------------------------------
-        # Step 6: Update the behavior dial β (Eq 14).
-        # Formula: β_new = clip(gamma_beta * β_old + u_t,  0,  1)
-        # The gamma_beta term provides momentum: β doesn't jump around
-        # wildly, it carries over from last round and gets nudged by u_t.
-        # The clip ensures β always stays in [0, 1].
+        # Step 6: Quadrant classification.
+        # RAudit Eq 7 (p.4): div(t) = 1[JS >= δ_JS], qual(t) = 1[ρ̄ >= ρ*]
+        # Algorithm 1, line 13 (p.19): div/qual signal computation
+        # Uses δ_JS (diversity threshold), NOT δ_s (sycophancy threshold)
         # ---------------------------------------------------------------
-        beta_new = update_beta_clipped(st.beta, cfg.gamma_beta, u_t)
+        quadrant = classify_quadrant(
+            js_current, rho_bar, cfg.delta_js, cfg.rho_star
+        )
+
+        # ---------------------------------------------------------------
+        # Step 7: Quadrant-routed β update.
+        # RAudit Algorithm 1 lines 19-29 (p.19, Appendix E)
+        # Table 1 (p.4): Stuck=β↑, Chaotic=Hold β, Converged=β↓, Healthy=Natural decay
+        # ---------------------------------------------------------------
+        if quadrant == Quadrant.STUCK:
+            # EXPLORE: force β up by Δβ increment (not PID-driven).
+            # Algorithm 1 L22 (p.19): β ← min(β + Δβ, 1)
+            # Table 1 (p.4): "β↑ + EXPLORE"
+            # NOTE: Δβ increment is FINAL — no natural decay applied after.
+            # Algorithm 1 L29 applies decay unconditionally in pseudocode,
+            # but we treat the Stuck increment as final to match Table 1's
+            # clear "β↑" directive. Applying decay after would partially
+            # negate the forced exploration intent.
+            beta_new = min(st.beta + cfg.delta_beta, 1.0)
+
+        elif quadrant == Quadrant.CHAOTIC:
+            # REFINE: PID-directed β adjustment without γ_β decay.
+            # Algorithm 1 L24 (p.19): "Apply REFINE" — no explicit β formula
+            # Table 1 (p.4): "Hold β + REFINE"
+            # We interpret REFINE as PID-directed: β ← clip(β + u_t, 0, 1)
+            # This makes each quadrant behaviorally distinct — Chaotic gets
+            # direct PID control without the γ_β momentum that
+            # Converged/Healthy use.
+            beta_new = update_beta_clipped(st.beta, 1.0, u_t)  # γ_β=1.0 → just β + u_t
+
+        elif quadrant == Quadrant.CONVERGED:
+            # CONSOLIDATE: gentle decay.
+            # Algorithm 1 L29 (p.19): β ← clip(β · γ_β, 0, 1)
+            # Table 1 (p.4): "β↓ + CONSOLIDATE"
+            beta_new = max(0.0, min(1.0, st.beta * cfg.gamma_beta))
+
+        else:  # HEALTHY
+            # Natural decay.
+            # Algorithm 1 L29 (p.19): β ← clip(β · γ_β, 0, 1)
+            # Table 1 (p.4): "Natural decay"
+            beta_new = max(0.0, min(1.0, st.beta * cfg.gamma_beta))
 
         # ---------------------------------------------------------------
         # Package up the results.
@@ -313,10 +389,13 @@ class PIDController:
             i_term=i_term,
             d_term=d_term,
             s_t=s_t,
+            quadrant=quadrant.value,
+            div_signal=js_current >= cfg.delta_js,
+            qual_signal=rho_bar >= cfg.rho_star,
         )
 
         # ---------------------------------------------------------------
-        # Step 7: Advance state for the next round.
+        # Step 8: Advance state for the next round.
         # Save current error as "previous error" (for the D-term next round).
         # Update β and round counter.
         # ---------------------------------------------------------------
