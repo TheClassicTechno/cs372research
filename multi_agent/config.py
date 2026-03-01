@@ -118,6 +118,10 @@ class DebateConfig:
     pid_critique: bool = True
     pid_revise: bool = True
 
+    # --- PID logging ---
+    pid_log_metrics: bool = False
+    pid_log_llm_calls: bool = False
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
