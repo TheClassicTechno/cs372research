@@ -122,6 +122,12 @@ class DebateConfig:
     pid_log_metrics: bool = False
     pid_log_llm_calls: bool = False
 
+    # --- Prompt logging (modular prompt path only) ---
+    # Controls logging of prompt build details when PID modular prompts are active.
+    # Keys: enabled, log_rendered_prompt, log_selected_blocks,
+    #        log_beta_bucket, max_prompt_log_chars
+    prompt_logging: dict = field(default_factory=dict)
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -184,4 +190,5 @@ class DebateConfig:
             "pid_propose": self.pid_propose,
             "pid_critique": self.pid_critique,
             "pid_revise": self.pid_revise,
+            "prompt_logging": self.prompt_logging,
         }

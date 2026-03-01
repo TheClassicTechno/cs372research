@@ -116,6 +116,7 @@ from .prompts import (
     build_revision_prompt,
     get_agreeableness_modifier,
 )
+from .prompts.registry import is_modular_mode, get_registry
 
 
 # =============================================================================
@@ -681,14 +682,24 @@ def critique_node(state: DebateState) -> dict:
         print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
-        # Build prompts unconditionally so eval module can inspect them even in mock mode
+        # Build prompts — modular path uses registry with β-driven tone;
+        # legacy path uses the original agreeableness-based builders.
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
         )
-        system_msg = (
-            f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
-            + get_agreeableness_modifier(agreeableness)
-        )
+        if is_modular_mode(config):
+            registry = get_registry(config)
+            build_result = registry.build(
+                role=role, phase="critique",
+                beta=config.get("_current_beta"),
+                user_prompt=prompt,
+            )
+            system_msg = build_result.system_prompt
+        else:
+            system_msg = (
+                f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+                + get_agreeableness_modifier(agreeableness)
+            )
 
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
@@ -761,11 +772,21 @@ def revise_node(state: DebateState) -> dict:
                         "falsifier": crit.get("falsifier"),
                     })
 
-        # Build prompts unconditionally so eval module can inspect them even in mock mode
+        # Build prompts — modular path uses registry with β-driven tone;
+        # legacy path uses the original builders.
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
         )
-        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+        if is_modular_mode(config):
+            registry = get_registry(config)
+            build_result = registry.build(
+                role=role, phase="revise",
+                beta=config.get("_current_beta"),
+                user_prompt=prompt,
+            )
+            system_msg = build_result.system_prompt
+        else:
+            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs)
@@ -963,10 +984,19 @@ def make_critique_node(role: str):
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
         )
-        system_msg = (
-            f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
-            + get_agreeableness_modifier(agreeableness)
-        )
+        if is_modular_mode(config):
+            registry = get_registry(config)
+            build_result = registry.build(
+                role=role, phase="critique",
+                beta=config.get("_current_beta"),
+                user_prompt=prompt,
+            )
+            system_msg = build_result.system_prompt
+        else:
+            system_msg = (
+                f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+                + get_agreeableness_modifier(agreeableness)
+            )
 
         raw_text = None
         if is_mock:
@@ -1056,7 +1086,16 @@ def make_revise_node(role: str):
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
         )
-        system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+        if is_modular_mode(config):
+            registry = get_registry(config)
+            build_result = registry.build(
+                role=role, phase="revise",
+                beta=config.get("_current_beta"),
+                user_prompt=prompt,
+            )
+            system_msg = build_result.system_prompt
+        else:
+            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs)
@@ -1325,9 +1364,19 @@ def judge_node(state: DebateState) -> dict:
         for r in revisions
     ]
 
-    # Build prompts unconditionally so eval module can inspect them even in mock mode
+    # Build prompts — modular path routes through registry for consistent logging;
+    # judge gets no tone injection in either path.
     prompt = build_judge_prompt(context, revisions_for_judge, critiques_text)
-    system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+    if is_modular_mode(config):
+        registry = get_registry(config)
+        build_result = registry.build(
+            role="judge", phase="judge",
+            beta=None,  # No tone injection for judge
+            user_prompt=prompt,
+        )
+        system_msg = build_result.system_prompt
+    else:
+        system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
 
     raw_text = None  # Raw LLM output for eval module
     if is_mock:

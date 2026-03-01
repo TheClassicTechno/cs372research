@@ -39,6 +39,29 @@ class AgentConfig(BaseModel):
         default=None,
         description="Optional override for the agent's system prompt.",
     )
+
+    # --- Debate structure (only used by multi_agent_debate agent) ---
+    max_rounds: int = Field(
+        default=1,
+        ge=1,
+        description="Number of critique-revision cycles. PID needs >= 2 to intervene between rounds.",
+    )
+    debate_roles: list[str] | None = Field(
+        default=None,
+        description="Agent roles for debate, e.g. ['macro', 'value', 'risk']. "
+        "If omitted, defaults to ['macro', 'value', 'risk', 'technical'].",
+    )
+    agreeableness: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Sycophancy knob: 0.0 = confrontational, 1.0 = agreeable.",
+    )
+    enable_adversarial: bool = Field(
+        default=False,
+        description="Add an explicit devil's advocate agent to the debate.",
+    )
+
     log_system_prompts: bool = Field(
         default=False,
         description="Log the system prompt sent to each agent.",
@@ -95,6 +118,13 @@ class AgentConfig(BaseModel):
         description="Log full CRIT LLM prompts and responses each round.",
     )
 
+    # --- Prompt logging (modular prompt path) ---
+    prompt_logging: dict = Field(
+        default_factory=dict,
+        description="Prompt build logging config. Keys: enabled, log_rendered_prompt, "
+        "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
+    )
+
 
 class BrokerConfig(BaseModel):
     """Configuration for the in-process broker."""
@@ -131,6 +161,11 @@ class SimulationConfig(BaseModel):
         description="If set, only load cases matching these quarters (e.g. ['Q1', 'Q3']). "
         "Matched against the case filename (e.g. '2025_Q1.json' matches 'Q1'). "
         "If omitted, all quarters are loaded.",
+    )
+    merge_tickers: bool = Field(
+        default=False,
+        description="If true, merge single-ticker cases from the same quarter into "
+        "one multi-ticker case. Requires tickers to have matching quarter files.",
     )
     num_episodes: int = Field(
         default=1,
