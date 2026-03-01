@@ -39,6 +39,18 @@ class AgentConfig(BaseModel):
         default=None,
         description="Optional override for the agent's system prompt.",
     )
+    log_system_prompts: bool = Field(
+        default=False,
+        description="Log the system prompt sent to each agent.",
+    )
+    log_user_prompts: bool = Field(
+        default=False,
+        description="Log the full rendered user prompt (includes case data).",
+    )
+    log_llm_responses: bool = Field(
+        default=False,
+        description="Log the raw LLM response text.",
+    )
 
     # --- PID controller settings (flat YAML fields) ---
     pid_enabled: bool = Field(
