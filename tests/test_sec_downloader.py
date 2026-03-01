@@ -49,12 +49,6 @@ class TestQuarterMapping:
         with pytest.raises(ValueError):
             sec.quarter_from_month(13)
 
-    @pytest.mark.parametrize("quarter,expected", [
-        ("Q1", "10-Q"), ("Q2", "10-Q"), ("Q3", "10-Q"), ("Q4", "10-K"),
-    ])
-    def test_form_type_for_quarter(self, quarter, expected):
-        assert sec.form_type_for_quarter(quarter) == expected
-
 
 # ==========================
 # TestAmendmentFiltering
@@ -77,8 +71,8 @@ class TestAmendmentFiltering:
             accessionNumber=["acc1", "acc2"],
             primaryDocument=["d1.htm", "d2.htm"],
         )
-        targets = [(2024, None, "10-K")]
-        result = sec.filter_filings(filings, targets, include_amendments=False)
+        targets = [(2024, None)]
+        result = sec.filter_filings(filings, targets, {"10-K"}, include_amendments=False)
         assert len(result) == 1
         assert result[0]["form"] == "10-K"
 
@@ -89,8 +83,8 @@ class TestAmendmentFiltering:
             accessionNumber=["acc1", "acc2"],
             primaryDocument=["d1.htm", "d2.htm"],
         )
-        targets = [(2024, None, "10-K")]
-        result = sec.filter_filings(filings, targets, include_amendments=True)
+        targets = [(2024, None)]
+        result = sec.filter_filings(filings, targets, {"10-K"}, include_amendments=True)
         assert len(result) == 2
         forms = [r["form"] for r in result]
         assert "10-K" in forms
@@ -103,8 +97,8 @@ class TestAmendmentFiltering:
             accessionNumber=["acc1"],
             primaryDocument=["d1.htm"],
         )
-        targets = [(2024, None, "10-K")]
-        result = sec.filter_filings(filings, targets, include_amendments=True)
+        targets = [(2024, None)]
+        result = sec.filter_filings(filings, targets, {"10-K"}, include_amendments=True)
         assert len(result) == 1
         assert result[0]["form"] == "10-K/A"
 
@@ -151,27 +145,39 @@ class TestComputeLastNQuarters:
 
 
 # ==========================
-# TestBuildOutputPath
+# TestBuildHtmlPath
 # ==========================
 
-class TestBuildOutputPath:
-    def test_basic_10q(self):
-        p = sec.build_output_path("/out", "AAPL", 2024, "Q2", "10-Q", "2024-05-15")
-        assert p == Path("/out/AAPL/2024/Q2/10-Q_2024-05-15")
+class TestBuildHtmlPath:
+    def test_basic(self):
+        p = sec.build_html_path(Path("/out"), "AAPL", "0001234567-24-000001")
+        assert p == Path("/out/raw_html/AAPL/0001234567-24-000001.html")
 
-    def test_basic_10k(self):
-        p = sec.build_output_path("/out", "MSFT", 2023, "Q4", "10-K", "2023-11-01")
-        assert p == Path("/out/MSFT/2023/Q4/10-K_2023-11-01")
+    def test_different_ticker(self):
+        p = sec.build_html_path(Path("/data"), "NVDA", "0001234567-24-999999")
+        assert p == Path("/data/raw_html/NVDA/0001234567-24-999999.html")
 
-    def test_amendment_form_sanitization(self):
-        p = sec.build_output_path("/out", "GOOG", 2024, "Q4", "10-K/A", "2024-12-01")
-        assert "10-K-A" in p.name
-        assert "/" not in p.name
-
-    def test_cross_platform_path(self):
-        p = sec.build_output_path("/base", "T", 2024, "Q1", "10-Q", "2024-04-01")
+    def test_returns_path(self):
+        p = sec.build_html_path(Path("/base"), "T", "acc-123")
         assert isinstance(p, Path)
 
+
+# ==========================
+# TestBuildTextPath
+# ==========================
+
+class TestBuildTextPath:
+    def test_basic(self):
+        p = sec.build_text_path(Path("/out"), "AAPL", "0001234567-24-000001")
+        assert p == Path("/out/clean_text/AAPL/0001234567-24-000001.txt")
+
+    def test_different_ticker(self):
+        p = sec.build_text_path(Path("/data"), "MSFT", "0001234567-24-999999")
+        assert p == Path("/data/clean_text/MSFT/0001234567-24-999999.txt")
+
+    def test_returns_path(self):
+        p = sec.build_text_path(Path("/base"), "T", "acc-123")
+        assert isinstance(p, Path)
 
 
 # ==========================
@@ -179,41 +185,62 @@ class TestBuildOutputPath:
 # ==========================
 
 class TestFilterFilings:
-    def test_manual_q4_is_10q(self):
-        """In manual mode, Q4 target uses 10-Q form type."""
+    def test_matches_10q_in_q2(self):
         filings = _make_filings(
             form=["10-Q"],
-            filingDate=["2024-11-15"],
+            filingDate=["2024-05-15"],
             accessionNumber=["acc1"],
             primaryDocument=["d.htm"],
         )
-        targets = [(2024, "Q4", "10-Q")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q"})
         assert len(result) == 1
 
-    def test_last_n_q4_is_10k(self):
-        """In --last-n mode, Q4 maps to 10-K."""
+    def test_matches_10k_in_q4(self):
         filings = _make_filings(
             form=["10-K"],
             filingDate=["2024-11-15"],
             accessionNumber=["acc1"],
             primaryDocument=["d.htm"],
         )
-        targets = [(2024, "Q4", "10-K")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, "Q4")]
+        result = sec.filter_filings(filings, targets, {"10-K"})
         assert len(result) == 1
 
     def test_annual_matches_any_quarter(self):
-        """ANNUAL target (quarter=None) matches 10-K filed in any quarter."""
+        """ANNUAL target (quarter=None) matches filings in any quarter."""
         filings = _make_filings(
             form=["10-K", "10-K"],
             filingDate=["2024-02-15", "2024-11-15"],
             accessionNumber=["acc1", "acc2"],
             primaryDocument=["d1.htm", "d2.htm"],
         )
-        targets = [(2024, None, "10-K")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, None)]
+        result = sec.filter_filings(filings, targets, {"10-K"})
         assert len(result) == 2
+
+    def test_form_filter_independent_of_time(self):
+        """All allowed forms in the time window should match."""
+        filings = _make_filings(
+            form=["10-Q", "8-K", "10-K"],
+            filingDate=["2024-05-15", "2024-05-20", "2024-05-25"],
+            accessionNumber=["acc1", "acc2", "acc3"],
+            primaryDocument=["d1.htm", "d2.htm", "d3.htm"],
+        )
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q", "8-K", "10-K"})
+        assert len(result) == 3
+
+    def test_form_not_in_allowed_excluded(self):
+        filings = _make_filings(
+            form=["SC 13G", "4"],
+            filingDate=["2024-05-15", "2024-05-20"],
+            accessionNumber=["acc1", "acc2"],
+            primaryDocument=["d1.htm", "d2.htm"],
+        )
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, sec.DEFAULT_FORMS)
+        assert len(result) == 0
 
     def test_amendments_excluded_by_default(self):
         filings = _make_filings(
@@ -222,8 +249,8 @@ class TestFilterFilings:
             accessionNumber=["acc1", "acc2"],
             primaryDocument=["d1.htm", "d2.htm"],
         )
-        targets = [(2024, "Q2", "10-Q")]
-        result = sec.filter_filings(filings, targets, include_amendments=False)
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q"}, include_amendments=False)
         assert len(result) == 1
         assert result[0]["form"] == "10-Q"
 
@@ -234,8 +261,8 @@ class TestFilterFilings:
             accessionNumber=["acc1", "acc2"],
             primaryDocument=["d1.htm", "d2.htm"],
         )
-        targets = [(2024, "Q2", "10-Q")]
-        result = sec.filter_filings(filings, targets, include_amendments=True)
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q"}, include_amendments=True)
         assert len(result) == 2
 
     def test_multiple_targets(self):
@@ -245,27 +272,16 @@ class TestFilterFilings:
             accessionNumber=["acc1", "acc2", "acc3"],
             primaryDocument=["d1.htm", "d2.htm", "d3.htm"],
         )
-        targets = [(2024, "Q1", "10-Q"), (2024, "Q4", "10-K")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, "Q1"), (2024, "Q4")]
+        result = sec.filter_filings(filings, targets, {"10-Q", "10-K"})
         assert len(result) == 2
-
-    def test_unrelated_forms_excluded(self):
-        filings = _make_filings(
-            form=["8-K", "SC 13G"],
-            filingDate=["2024-05-15", "2024-05-20"],
-            accessionNumber=["acc1", "acc2"],
-            primaryDocument=["d1.htm", "d2.htm"],
-        )
-        targets = [(2024, "Q2", "10-Q")]
-        result = sec.filter_filings(filings, targets)
-        assert len(result) == 0
 
     def test_empty_filings(self):
         filings = {"filings": {"recent": {
             "form": [], "filingDate": [], "accessionNumber": [], "primaryDocument": [],
         }}}
-        targets = [(2024, "Q2", "10-Q")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, sec.DEFAULT_FORMS)
         assert result == []
 
     def test_matched_quarter_field(self):
@@ -275,10 +291,24 @@ class TestFilterFilings:
             accessionNumber=["acc1"],
             primaryDocument=["d.htm"],
         )
-        targets = [(2024, "Q2", "10-Q")]
-        result = sec.filter_filings(filings, targets)
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q"})
         assert result[0]["matched_quarter"] == "Q2"
         assert result[0]["matched_year"] == 2024
+
+    def test_custom_forms_override(self):
+        """--forms override: only specified forms should match."""
+        filings = _make_filings(
+            form=["10-Q", "8-K", "DEF 14A"],
+            filingDate=["2024-05-15", "2024-05-20", "2024-05-25"],
+            accessionNumber=["acc1", "acc2", "acc3"],
+            primaryDocument=["d1.htm", "d2.htm", "d3.htm"],
+        )
+        targets = [(2024, "Q2")]
+        # Only allow DEF 14A
+        result = sec.filter_filings(filings, targets, {"DEF 14A"})
+        assert len(result) == 1
+        assert result[0]["form"] == "DEF 14A"
 
 
 # ==========================
@@ -289,151 +319,26 @@ class TestBuildTargetsFromArgs:
     def test_manual_cross_product(self):
         targets = sec.build_targets_from_args(years=[2023, 2024], quarters=["Q1", "Q2"])
         assert len(targets) == 4
-        assert (2023, "Q1", "10-Q") in targets
-        assert (2024, "Q2", "10-Q") in targets
+        assert (2023, "Q1") in targets
+        assert (2024, "Q2") in targets
 
     def test_annual_produces_none_quarter(self):
         targets = sec.build_targets_from_args(years=[2024], quarters=["ANNUAL"])
-        assert targets == [(2024, None, "10-K")]
+        assert targets == [(2024, None)]
 
     def test_last_n_delegation(self):
         targets = sec.build_targets_from_args(last_n=4)
         assert len(targets) == 4
-        # Q4 entry should map to 10-K
-        for y, q, f in targets:
-            if q == "Q4":
-                assert f == "10-K"
-            else:
-                assert f == "10-Q"
+        # All entries are (year, quarter) 2-tuples
+        for entry in targets:
+            assert len(entry) == 2
 
-    def test_manual_with_form_types(self):
-        targets = sec.build_targets_from_args(
-            years=[2024], quarters=["Q1"], form_types=["10-Q", "8-K"],
-        )
+    def test_last_n_returns_year_quarter_pairs(self):
+        targets = sec.build_targets_from_args(last_n=2)
         assert len(targets) == 2
-        assert (2024, "Q1", "10-Q") in targets
-        assert (2024, "Q1", "8-K") in targets
-
-    def test_annual_with_form_types(self):
-        targets = sec.build_targets_from_args(
-            years=[2024], quarters=["ANNUAL"], form_types=["10-K", "8-K"],
-        )
-        assert len(targets) == 2
-        assert (2024, None, "10-K") in targets
-        assert (2024, None, "8-K") in targets
-
-    def test_last_n_with_form_types_ignores_quarter_mapping(self):
-        targets = sec.build_targets_from_args(last_n=2, form_types=["8-K", "4"])
-        assert len(targets) == 4  # 2 quarters x 2 forms
-        forms = {f for _, _, f in targets}
-        assert forms == {"8-K", "4"}
-
-    def test_form_types_none_preserves_default(self):
-        targets = sec.build_targets_from_args(
-            years=[2024], quarters=["Q1"], form_types=None,
-        )
-        assert targets == [(2024, "Q1", "10-Q")]
-
-
-# ==========================
-# TestMatchesForm
-# ==========================
-
-class TestMatchesForm:
-    def test_exact_match(self):
-        assert sec.matches_form("10-K", ["10-K"]) is True
-
-    def test_exact_mismatch(self):
-        assert sec.matches_form("10-Q", ["10-K"]) is False
-
-    def test_prefix_match(self):
-        assert sec.matches_form("424B2", ["424B*"]) is True
-        assert sec.matches_form("424B3", ["424B*"]) is True
-        assert sec.matches_form("424B5", ["424B*"]) is True
-
-    def test_prefix_no_match(self):
-        assert sec.matches_form("10-K", ["424B*"]) is False
-
-    def test_case_insensitive(self):
-        assert sec.matches_form("10-k", ["10-K"]) is True
-        assert sec.matches_form("sc 13d", ["SC 13D"]) is True
-
-    def test_whitespace_trimmed(self):
-        assert sec.matches_form("  10-K  ", ["10-K"]) is True
-        assert sec.matches_form("10-K", ["  10-K  "]) is True
-
-    def test_multiple_patterns(self):
-        patterns = ["10-K", "10-Q", "8-K"]
-        assert sec.matches_form("8-K", patterns) is True
-        assert sec.matches_form("SC 13D", patterns) is False
-
-    def test_prefix_with_multiple_patterns(self):
-        patterns = ["10-K", "424B*"]
-        assert sec.matches_form("424B2", patterns) is True
-        assert sec.matches_form("10-K", patterns) is True
-        assert sec.matches_form("8-K", patterns) is False
-
-
-# ==========================
-# TestResolveFormTypes
-# ==========================
-
-class TestResolveFormTypes:
-    def test_forms_arg_takes_precedence(self):
-        result = sec.resolve_form_types(forms_arg=["10-Q", "8-K"], bundle="core")
-        assert result == ["10-Q", "8-K"]
-
-    def test_bundle_core(self):
-        result = sec.resolve_form_types(bundle="core")
-        assert result == sec.CORE_FORMS
-
-    def test_neither_returns_none(self):
-        result = sec.resolve_form_types()
-        assert result is None
-
-    def test_core_forms_has_expected_entries(self):
-        assert "10-K" in sec.CORE_FORMS
-        assert "10-Q" in sec.CORE_FORMS
-        assert "8-K" in sec.CORE_FORMS
-        assert "424B*" in sec.CORE_FORMS
-
-    def test_core_bundle_is_copy(self):
-        """resolve_form_types returns a copy, not the original list."""
-        result = sec.resolve_form_types(bundle="core")
-        result.append("EXTRA")
-        assert "EXTRA" not in sec.CORE_FORMS
-
-
-# ==========================
-# TestFilterWithFormMatching
-# ==========================
-
-class TestFilterWithFormMatching:
-    def test_prefix_wildcard_in_target(self):
-        """424B* target should match 424B2 filings."""
-        filings = _make_filings(
-            form=["424B2", "424B5", "10-K"],
-            filingDate=["2024-05-15", "2024-06-01", "2024-11-15"],
-            accessionNumber=["acc1", "acc2", "acc3"],
-            primaryDocument=["d1.htm", "d2.htm", "d3.htm"],
-        )
-        targets = [(2024, "Q2", "424B*")]
-        result = sec.filter_filings(filings, targets)
-        assert len(result) == 2
-        forms = [r["form"] for r in result]
-        assert "424B2" in forms
-        assert "424B5" in forms
-
-    def test_case_insensitive_matching(self):
-        filings = _make_filings(
-            form=["sc 13d"],
-            filingDate=["2024-05-15"],
-            accessionNumber=["acc1"],
-            primaryDocument=["d.htm"],
-        )
-        targets = [(2024, "Q2", "SC 13D")]
-        result = sec.filter_filings(filings, targets)
-        assert len(result) == 1
+        for y, q in targets:
+            assert isinstance(y, int)
+            assert q.startswith("Q")
 
 
 # ==========================
@@ -745,7 +650,7 @@ class TestCleanHtmlToText:
         assert "\n\n\n" not in result
 
     def test_html_entities_decoded(self):
-        html = "<p>AT&amp;T &lt;10&gt; &#x27;quoted&#x27;</p>"
+        html = "<p>AT&amp;T &lt;10&gt;</p>"
         result = sec.clean_html_to_text(html)
         assert "AT&T" in result
         assert "<10>" in result
@@ -753,9 +658,7 @@ class TestCleanHtmlToText:
     def test_empty_html(self):
         assert sec.clean_html_to_text("") == ""
 
-    def test_nested_skip_tags(self):
-        """HTMLParser treats <script> as CDATA — inner tags aren't parsed.
-        Only the first </script> closes the block, matching browser behavior."""
+    def test_script_content_stripped(self):
         html = "<script>var x = 1;</script><p>visible</p>"
         result = sec.clean_html_to_text(html)
         assert "visible" in result
@@ -769,124 +672,11 @@ class TestCleanHtmlToText:
 
 
 # ==========================
-# TestExtractSections
-# ==========================
-
-class TestExtractSections:
-    def test_10k_mda_extraction(self):
-        text = (
-            "Blah blah\n"
-            "Item 7. Management's Discussion and Analysis\n"
-            "This is the MD&A section content.\n"
-            "Item 8. Financial Statements\n"
-            "Numbers here."
-        )
-        sections = sec.extract_sections("10-K", text)
-        assert "MDA" in sections
-        assert sections["MDA"] is not None
-        assert "MD&A section content" in sections["MDA"]
-        assert "Numbers here" not in sections["MDA"]
-
-    def test_10q_mda_uses_item_2(self):
-        text = (
-            "Item 2. Management's Discussion and Analysis\n"
-            "Quarterly discussion content.\n"
-            "Item 3. Quantitative Disclosures\n"
-        )
-        sections = sec.extract_sections("10-Q", text)
-        assert sections["MDA"] is not None
-        assert "Quarterly discussion" in sections["MDA"]
-
-    def test_risk_factors_extraction(self):
-        text = (
-            "Item 1A. Risk Factors\n"
-            "We face significant risks.\n"
-            "Item 2. Properties\n"
-        )
-        sections = sec.extract_sections("10-K", text)
-        assert "RISK_FACTORS" in sections
-        assert sections["RISK_FACTORS"] is not None
-        assert "significant risks" in sections["RISK_FACTORS"]
-
-    def test_8k_returns_full_body(self):
-        text = "Full 8-K filing body text here."
-        sections = sec.extract_sections("8-K", text)
-        assert "BODY" in sections
-        assert sections["BODY"] == text
-
-    def test_8k_amendment_returns_body(self):
-        text = "Amended 8-K body."
-        sections = sec.extract_sections("8-K/A", text)
-        assert "BODY" in sections
-        assert sections["BODY"] == text
-
-    def test_missing_section_returns_none(self):
-        text = "This filing has no item headings at all."
-        sections = sec.extract_sections("10-K", text)
-        assert sections["MDA"] is None
-        assert sections["RISK_FACTORS"] is None
-
-    def test_section_at_end_of_text(self):
-        """Section at the very end (no following Item heading) should still be captured."""
-        text = (
-            "Item 1A. Risk Factors\n"
-            "Risks discussed here without a following item heading."
-        )
-        sections = sec.extract_sections("10-K", text)
-        assert sections["RISK_FACTORS"] is not None
-        assert "Risks discussed here" in sections["RISK_FACTORS"]
-
-    def test_case_insensitive_headings(self):
-        text = (
-            "ITEM 1A. RISK FACTORS\n"
-            "Risks in uppercase heading.\n"
-            "ITEM 2. PROPERTIES\n"
-        )
-        sections = sec.extract_sections("10-K", text)
-        assert sections["RISK_FACTORS"] is not None
-
-
-# ==========================
-# TestFormatTextOutput
-# ==========================
-
-class TestFormatTextOutput:
-    def test_basic_format(self):
-        sections = {"MDA": "Discussion content.", "RISK_FACTORS": "Risk content."}
-        result = sec.format_text_output("10-K", "2024-11-01", "acc123", sections)
-        assert "FORM: 10-K" in result
-        assert "FILING_DATE: 2024-11-01" in result
-        assert "ACCESSION: acc123" in result
-        assert "==== SECTION: MDA ====" in result
-        assert "Discussion content." in result
-        assert "==== SECTION: RISK_FACTORS ====" in result
-        assert "Risk content." in result
-
-    def test_missing_section_placeholder(self):
-        sections = {"MDA": None, "RISK_FACTORS": "Has content."}
-        result = sec.format_text_output("10-K", "2024-11-01", "acc123", sections)
-        assert "[SECTION NOT FOUND]" in result
-        assert "Has content." in result
-
-    def test_8k_body_section(self):
-        sections = {"BODY": "Full 8-K text."}
-        result = sec.format_text_output("8-K", "2024-06-15", "acc456", sections)
-        assert "FORM: 8-K" in result
-        assert "==== SECTION: BODY ====" in result
-        assert "Full 8-K text." in result
-
-    def test_all_sections_missing(self):
-        sections = {"MDA": None, "RISK_FACTORS": None}
-        result = sec.format_text_output("10-K", "2024-11-01", "acc123", sections)
-        assert result.count("[SECTION NOT FOUND]") == 2
-
-
-# ==========================
 # TestDownloadFiling
 # ==========================
 
 class TestDownloadFiling:
-    """Tests for the download_filing text extraction pipeline.
+    """Tests for the download_filing pipeline.
     Uses monkeypatch to mock download_html — no SEC API calls."""
 
     def _sample_filing(self):
@@ -900,7 +690,7 @@ class TestDownloadFiling:
         }
 
     def test_successful_extraction(self, tmp_path, monkeypatch):
-        html = "<p>Item 1A. Risk Factors</p><p>We face risks.</p><p>Item 2. Properties</p>"
+        html = "<p>We face significant risks in our business.</p>"
         monkeypatch.setattr(sec, "download_html", lambda url: html)
         monkeypatch.setattr(sec, "rate_limit", lambda: None)
 
@@ -909,12 +699,18 @@ class TestDownloadFiling:
         assert success is True
         assert accession == filing["accession"]
 
-        # Verify .txt file was created
+        # Verify both HTML and TXT files were created
+        html_files = list(tmp_path.rglob("*.html"))
         txt_files = list(tmp_path.rglob("*.txt"))
+        assert len(html_files) == 1
         assert len(txt_files) == 1
+
+        # Verify text content has metadata header and full text
         content = txt_files[0].read_text()
         assert "FORM: 10-K" in content
-        assert "We face risks" in content
+        assert "FILING_DATE: 2024-11-01" in content
+        assert "ACCESSION: 0001234567-24-000001" in content
+        assert "significant risks" in content
 
     def test_failed_download_returns_false(self, tmp_path, monkeypatch):
         monkeypatch.setattr(sec, "download_html", lambda url: None)
@@ -933,8 +729,21 @@ class TestDownloadFiling:
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
 
-        expected = tmp_path / "AAPL" / "2024" / "Q4" / "10-K_2024-11-01.txt"
-        assert expected.exists()
+        expected_html = tmp_path / "raw_html" / "AAPL" / "0001234567-24-000001.html"
+        expected_txt = tmp_path / "clean_text" / "AAPL" / "0001234567-24-000001.txt"
+        assert expected_html.exists()
+        assert expected_txt.exists()
+
+    def test_html_saved_unchanged(self, tmp_path, monkeypatch):
+        original_html = "<html><body><p>Original content</p></body></html>"
+        monkeypatch.setattr(sec, "download_html", lambda url: original_html)
+        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+
+        filing = self._sample_filing()
+        sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+
+        html_path = tmp_path / "raw_html" / "AAPL" / "0001234567-24-000001.html"
+        assert html_path.read_text() == original_html
 
     def test_no_tmp_file_leftover(self, tmp_path, monkeypatch):
         html = "<p>Content</p>"
@@ -946,3 +755,17 @@ class TestDownloadFiling:
 
         tmp_files = list(tmp_path.rglob("*.tmp"))
         assert len(tmp_files) == 0
+
+    def test_no_section_markers_in_output(self, tmp_path, monkeypatch):
+        """Output should be full text, no ==== SECTION ==== markers."""
+        html = "<p>Item 1A. Risk Factors</p><p>Risks here.</p>"
+        monkeypatch.setattr(sec, "download_html", lambda url: html)
+        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+
+        filing = self._sample_filing()
+        sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+
+        txt_files = list(tmp_path.rglob("*.txt"))
+        content = txt_files[0].read_text()
+        assert "====" not in content
+        assert "SECTION" not in content

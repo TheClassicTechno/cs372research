@@ -1,36 +1,41 @@
 #!/usr/bin/env python3
 """
-SEC Filing Text Extractor — Download filings from EDGAR and extract narrative text.
+SEC Filing Downloader — Pure ingestion layer for EDGAR filings.
+
+Downloads raw HTML filings and converts them to clean plain text.
+No section parsing, no metadata formatting — that belongs in the
+summarization pipeline.
+
+Output structure:
+  {base_dir}/raw_html/{TICKER}/{ACCESSION}.html
+  {base_dir}/clean_text/{TICKER}/{ACCESSION}.txt
 
 Examples:
-  # 1. Last 4 completed quarters for a few tickers (auto-maps Q4 to 10-K)
+  # 1. Last 4 completed quarters for a few tickers
   python get_sec_data.py --tickers AAPL,NVDA,MSFT --last-n 4
 
-  # 2. Specific year + quarters (10-Q filings)
+  # 2. Specific year + quarters
   python get_sec_data.py --tickers AAPL --years 2024 --quarters Q1,Q2,Q3
 
-  # 3. Annual filings only (10-K, matches any quarter in the year)
+  # 3. Annual filings only (matches any quarter in the year)
   python get_sec_data.py --tickers AAPL,GOOG --years 2023,2024 --quarters ANNUAL
 
   # 4. Multiple years, all quarters
   python get_sec_data.py --tickers JPM,GS --years 2023,2024,2025 --quarters Q1,Q2,Q3,Q4
 
-  # 5. Custom form types (8-K and Form 4)
-  python get_sec_data.py --tickers AAPL --last-n 4 --forms 8-K,4
+  # 5. Custom form types (override defaults)
+  python get_sec_data.py --tickers AAPL --last-n 4 --forms 10-K,10-Q
 
-  # 6. Full institutional bundle (10-K, 10-Q, 8-K, Form 4, SC 13D/G, etc.)
-  python get_sec_data.py --tickers AAPL --last-n 8 --bundle core
-
-  # 7. Include amendment filings (10-K/A, 10-Q/A, etc.)
+  # 6. Include amendment filings (10-K/A, 10-Q/A, etc.)
   python get_sec_data.py --tickers NVDA --years 2024 --quarters Q1,Q2,Q3,Q4 --include-amendments
 
-  # 8. Parallel download with 3 workers
+  # 7. Parallel download with 3 workers
   python get_sec_data.py --tickers AAPL,NVDA,MSFT --last-n 4 --parallel --workers 3
 
-  # 9. Force re-extract everything (overwrite existing)
+  # 8. Force re-extract everything (overwrite existing)
   python get_sec_data.py --tickers AAPL --last-n 2 --force-refresh
 
-  # 10. Stateless run — ignore index, don't write cache
+  # 9. Stateless run — ignore index, don't write cache
   python get_sec_data.py --tickers AAPL --last-n 2 --no-cache --output /tmp/sec_filings
 """
 
@@ -43,19 +48,18 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
-from html import unescape as html_unescape
-from html.parser import HTMLParser
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Set
+
+from bs4 import BeautifulSoup
 
 # ==========================
 # CONFIG
 # ==========================
 
 SEC_HEADERS = {
-    "User-Agent": "Your Name your.email@example.com",
+    "User-Agent": "Veljko Skarich vskarich@stanford.edu",
     "Accept-Encoding": "gzip, deflate",
-    "Host": "www.edgar.gov"
 }
 
 BASE_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
@@ -63,11 +67,7 @@ BASE_ARCHIVES_URL = "https://www.sec.gov/Archives/edgar/data"
 
 RATE_LIMIT_SECONDS = 0.2  # 5 requests/second max (SEC compliant)
 
-# Default institutional form bundle for --bundle core
-CORE_FORMS = [
-    "10-K", "10-Q", "8-K", "4", "SC 13D", "SC 13G",
-    "NT 10-Q", "NT 10-K", "S-3", "6-K", "424B*",
-]
+DEFAULT_FORMS: Set[str] = {"10-K", "10-Q", "8-K", "424B2"}
 
 MAX_WORKERS = 5  # Cap parallel threads for SEC politeness
 
@@ -92,51 +92,15 @@ def normalize_cik(cik: str) -> str:
 
 
 def quarter_from_month(month: int) -> str:
-    """1-12 → 'Q1'-'Q4'."""
+    """1-12 -> 'Q1'-'Q4'."""
     if not 1 <= month <= 12:
         raise ValueError(f"month must be 1-12, got {month}")
     return f"Q{(month - 1) // 3 + 1}"
 
 
-def form_type_for_quarter(quarter: str) -> str:
-    """'Q4' → '10-K', else '10-Q'."""
-    return "10-K" if quarter == "Q4" else "10-Q"
-
-
 def is_amendment(form: str) -> bool:
     """True if form ends with '/A'."""
     return form.endswith("/A")
-
-
-def matches_form(form: str, allowed_forms: List[str]) -> bool:
-    """Check if a filing form matches any allowed form pattern.
-
-    Supports exact match and prefix match (trailing '*').
-    Case-insensitive, whitespace-trimmed.
-    """
-    form_normalized = form.strip().upper()
-    for pattern in allowed_forms:
-        p = pattern.strip().upper()
-        if p.endswith("*"):
-            if form_normalized.startswith(p[:-1]):
-                return True
-        else:
-            if form_normalized == p:
-                return True
-    return False
-
-
-def resolve_form_types(forms_arg=None, bundle=None):
-    """Resolve form types from --forms or --bundle.
-
-    Returns None to signal default 10-K/10-Q behavior.
-    --forms takes precedence over --bundle.
-    """
-    if forms_arg:
-        return forms_arg
-    if bundle == "core":
-        return list(CORE_FORMS)
-    return None
 
 
 def compute_last_n_quarters(n: int, today: date | None = None) -> list[tuple[int, str]]:
@@ -159,11 +123,14 @@ def compute_last_n_quarters(n: int, today: date | None = None) -> list[tuple[int
     return result
 
 
-def build_output_path(base_dir, ticker, year, quarter, form, filing_date) -> Path:
-    """base/TICKER/YEAR/QUARTER/FORM_DATE (no extension — caller adds .txt).
-    Sanitize '/' in form to '-' for filesystem safety."""
-    safe_form = form.replace("/", "-")
-    return Path(base_dir) / ticker / str(year) / quarter / f"{safe_form}_{filing_date}"
+def build_html_path(base_dir: Path, ticker: str, accession: str) -> Path:
+    """base_dir/raw_html/TICKER/ACCESSION.html"""
+    return base_dir / "raw_html" / ticker / f"{accession}.html"
+
+
+def build_text_path(base_dir: Path, ticker: str, accession: str) -> Path:
+    """base_dir/clean_text/TICKER/ACCESSION.txt"""
+    return base_dir / "clean_text" / ticker / f"{accession}.txt"
 
 
 def load_index(index_path: Path) -> dict:
@@ -181,7 +148,7 @@ def load_index(index_path: Path) -> dict:
 
 
 def save_index(index_path: Path, index_data: dict) -> None:
-    """Atomically write _index.json (temp file → rename)."""
+    """Atomically write _index.json (temp file -> rename)."""
     index_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = index_path.with_suffix(".json.tmp")
     with open(tmp, "w") as f:
@@ -299,118 +266,27 @@ def download_html(url: str) -> str | None:
 # should come from structured APIs (e.g., SEC company_facts endpoint).
 
 
-class _TextExtractor(HTMLParser):
-    """Extract visible text from HTML.  Strips <script>, <style>, etc."""
-
-    _SKIP_TAGS = frozenset({"script", "style", "noscript"})
-    _BLOCK_TAGS = frozenset({
-        "p", "div", "br", "h1", "h2", "h3", "h4", "h5", "h6",
-        "li", "tr", "td", "th", "section", "article", "blockquote",
-    })
-
-    def __init__(self):
-        super().__init__()
-        self._parts: list[str] = []
-        self._skip_depth = 0
-
-    def handle_starttag(self, tag, attrs):
-        tag = tag.lower()
-        if tag in self._SKIP_TAGS:
-            self._skip_depth += 1
-        elif tag in self._BLOCK_TAGS:
-            self._parts.append("\n")
-
-    def handle_endtag(self, tag):
-        tag = tag.lower()
-        if tag in self._SKIP_TAGS:
-            self._skip_depth = max(0, self._skip_depth - 1)
-        elif tag in self._BLOCK_TAGS:
-            self._parts.append("\n")
-
-    def handle_data(self, data):
-        if self._skip_depth == 0:
-            self._parts.append(data)
-
-    def get_text(self) -> str:
-        raw = "".join(self._parts)
-        lines = [" ".join(line.split()) for line in raw.splitlines()]
-        text = "\n".join(lines)
-        return re.sub(r"\n{3,}", "\n\n", text).strip()
+def _normalize_whitespace(text: str) -> str:
+    """Collapse runs of whitespace within lines and excessive blank lines."""
+    lines = [" ".join(line.split()) for line in text.splitlines()]
+    text = "\n".join(lines)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def clean_html_to_text(raw_html: str) -> str:
-    """Convert HTML filing to clean plain text.
+    """Convert HTML filing to clean plain text using BeautifulSoup.
 
-    Strips script/style tags, converts block elements to line breaks,
-    normalizes whitespace.  Uses stdlib html.parser — no external deps.
+    Strips script/style/noscript tags, extracts visible text with newline
+    separators, normalizes whitespace.  Uses lxml parser for robust handling
+    of broken HTML common in SEC filings.
     """
-    extractor = _TextExtractor()
-    extractor.feed(raw_html)
-    return html_unescape(extractor.get_text())
-
-
-# Section heading patterns — case-insensitive.
-# 10-K uses Item 7 for MD&A; 10-Q uses Item 2.  Both use Item 1A for risks.
-_SECTION_HEADINGS = {
-    "MDA": [
-        r"item\s+7[.\s\-\u2014:]*management.{0,5}s\s+discussion",
-        r"item\s+2[.\s\-\u2014:]*management.{0,5}s\s+discussion",
-    ],
-    "RISK_FACTORS": [
-        r"item\s+1a[.\s\-\u2014:]*risk\s+factors",
-    ],
-}
-
-_NEXT_ITEM_RE = re.compile(r"\n\s*item\s+\d+[a-z]?[.\s\-\u2014:]", re.IGNORECASE)
-
-
-def _extract_one_section(text: str, patterns: list[str]) -> str | None:
-    """Find section by heading pattern, extract until next Item heading."""
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            start = match.end()
-            next_item = _NEXT_ITEM_RE.search(text, start)
-            end = next_item.start() if next_item else len(text)
-            section_text = text[start:end].strip()
-            if section_text:
-                return section_text
-    return None
-
-
-def extract_sections(form: str, text: str) -> dict:
-    """Extract narrative sections from cleaned filing text.
-
-    10-K/10-Q: MD&A and Risk Factors.
-    8-K:       entire body (no item-level parsing).
-
-    NOTE: No table parsing. No XBRL. No numeric extraction.
-    """
-    base_form = form.upper().rstrip("/A").rstrip("/")
-
-    if base_form == "8-K":
-        return {"BODY": text}
-
-    sections = {}
-    for section_name, patterns in _SECTION_HEADINGS.items():
-        sections[section_name] = _extract_one_section(text, patterns)
-    return sections
-
-
-def format_text_output(form: str, filing_date: str, accession: str,
-                       sections: dict) -> str:
-    """Build structured plain-text output for a single filing."""
-    lines = [
-        f"FORM: {form}",
-        f"FILING_DATE: {filing_date}",
-        f"ACCESSION: {accession}",
-        "",
-    ]
-    for name, content in sections.items():
-        lines.append(f"==== SECTION: {name} ====")
-        lines.append(content if content else "[SECTION NOT FOUND]")
-        lines.append("")
-    return "\n".join(lines)
+    if not raw_html:
+        return ""
+    soup = BeautifulSoup(raw_html, "lxml")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    text = soup.get_text(separator="\n")
+    return _normalize_whitespace(text)
 
 
 # ==========================
@@ -419,10 +295,20 @@ def format_text_output(form: str, filing_date: str, accession: str,
 
 def filter_filings(
     filings: Dict,
-    targets: list[tuple[int, str | None, str]],
+    targets: list[tuple[int, str | None]],
+    allowed_forms: Set[str],
     include_amendments: bool = False,
 ) -> List[Dict]:
+    """Filter SEC filings by time window and form type.
 
+    Time filtering (targets) and form filtering (allowed_forms) are independent.
+
+    Args:
+        filings: Raw submissions JSON from SEC.
+        targets: List of (year, quarter_or_None) time windows.
+        allowed_forms: Set of form types to include (e.g. {"10-K", "10-Q"}).
+        include_amendments: Whether to include /A amendment filings.
+    """
     results = []
 
     recent = filings.get("filings", {}).get("recent", {})
@@ -438,13 +324,16 @@ def filter_filings(
 
         base_form = form.rstrip("/A").rstrip("/") if is_amendment(form) else form
 
+        # Form filter — independent of time
+        if base_form not in allowed_forms:
+            continue
+
         parsed = datetime.strptime(filing_date, "%Y-%m-%d")
         filing_year = parsed.year
         filing_quarter = quarter_from_month(parsed.month)
 
-        for target_year, target_quarter, target_form in targets:
-            if not matches_form(base_form, [target_form]):
-                continue
+        # Time filter — independent of form
+        for target_year, target_quarter in targets:
             if filing_year != target_year:
                 continue
             if target_quarter is not None and filing_quarter != target_quarter:
@@ -465,110 +354,107 @@ def filter_filings(
     return results
 
 
-def build_targets_from_args(years=None, quarters=None, last_n=None, form_types=None):
-    """Convert CLI args into 3-tuple targets: [(year, quarter_or_None, form_type), ...].
+def build_targets_from_args(years=None, quarters=None, last_n=None):
+    """Convert CLI args into 2-tuple time targets: [(year, quarter_or_None), ...].
 
-    When form_types is provided (via --forms or --bundle), all specified forms
-    are matched for every year/quarter combination. When None, the original
-    10-K/10-Q auto-mapping is preserved for backward compatibility.
+    Form filtering is handled independently by the allowed_forms set.
     """
     if last_n:
-        quarter_pairs = compute_last_n_quarters(last_n)
-        if form_types:
-            return [(y, q, f) for y, q in quarter_pairs for f in form_types]
-        return [(y, q, form_type_for_quarter(q)) for y, q in quarter_pairs]
+        return compute_last_n_quarters(last_n)
     if quarters == ["ANNUAL"]:
-        forms = form_types or ["10-K"]
-        return [(y, None, f) for y in years for f in forms]
-    forms = form_types or ["10-Q"]
-    return [(y, q, f) for y in years for q in quarters for f in forms]
+        return [(y, None) for y in years]
+    return [(y, q) for y in years for q in quarters]
 
 
 def download_filing(
-    ticker: str, cik: str, filing: dict, output_dir: Path,
+    ticker: str, cik: str, filing: dict, base_dir: Path,
 ) -> tuple[str, bool]:
-    """Download HTML filing, extract text, and save structured .txt. Thread-safe.
+    """Download HTML filing, save raw HTML + clean text. Thread-safe.
 
-    Pipeline: download_html → clean_html_to_text → extract_sections →
-              format_text_output → atomic write .txt
-
-    Skip/overwrite decisions are made by the main thread via schedule_downloads().
-    This function unconditionally attempts the download.
+    Pipeline: download_html -> save raw HTML -> clean_html_to_text -> save clean text
 
     Returns (accession, success). Index mutation happens in the main thread.
-    Rate limiting is enforced per-request via rate_limit() inside download_html().
     """
-    out_base = build_output_path(
-        output_dir, ticker,
-        filing["matched_year"], filing["matched_quarter"],
-        filing["form"], filing["filing_date"],
-    )
-    out_base.parent.mkdir(parents=True, exist_ok=True)
+    accession = filing["accession"]
+    html_path = build_html_path(base_dir, ticker, accession)
+    text_path = build_text_path(base_dir, ticker, accession)
 
-    filing_url = build_filing_url(cik, filing["accession"], filing["primary_doc"])
+    html_path.parent.mkdir(parents=True, exist_ok=True)
+    text_path.parent.mkdir(parents=True, exist_ok=True)
+
+    filing_url = build_filing_url(cik, accession, filing["primary_doc"])
 
     raw_html = download_html(filing_url)
     if raw_html is None:
         print(f"  FAILED {filing['form']} {filing['filing_date']}")
-        return (filing["accession"], False)
+        return (accession, False)
 
+    # Save raw HTML (atomic write)
+    tmp_html = html_path.with_suffix(".html.tmp")
+    with open(tmp_html, "w", encoding="utf-8") as f:
+        f.write(raw_html)
+    tmp_html.rename(html_path)
+
+    # Convert to clean text (full document, no slicing)
     plain_text = clean_html_to_text(raw_html)
-    sections = extract_sections(filing["form"], plain_text)
-    output_text = format_text_output(
-        filing["form"], filing["filing_date"], filing["accession"], sections,
+
+    # Save clean text with minimal metadata header
+    output_text = (
+        f"FORM: {filing['form']}\n"
+        f"FILING_DATE: {filing['filing_date']}\n"
+        f"ACCESSION: {accession}\n"
+        f"\n"
+        f"{plain_text}"
     )
 
-    output_path = out_base.parent / (out_base.name + ".txt")
-    tmp_path = output_path.with_suffix(".txt.tmp")
-    with open(tmp_path, "w", encoding="utf-8") as f:
+    tmp_text = text_path.with_suffix(".txt.tmp")
+    with open(tmp_text, "w", encoding="utf-8") as f:
         f.write(output_text)
-    tmp_path.rename(output_path)
+    tmp_text.rename(text_path)
 
-    print(f"  Extracted {filing['form']} {filing['filing_date']}")
-    return (filing["accession"], True)
+    print(f"  Saved {filing['form']} {filing['filing_date']} ({accession})")
+    return (accession, True)
 
 
 def process_ticker(
     ticker: str,
     cik: str,
-    targets: list[tuple[int, str | None, str]],
-    output_dir: Path,
+    targets: list[tuple[int, str | None]],
+    allowed_forms: Set[str],
+    base_dir: Path,
     include_amendments: bool = False,
     parallel: bool = False,
     workers: int = 1,
     force_refresh: bool = False,
     no_cache: bool = False,
 ):
-    """Download and extract text from filings for a single ticker.
+    """Download and save filings for a single ticker.
 
     Cache modes (main thread controls all skip/download decisions):
       Default:          Skip filings already in _index.json with text_saved=True.
       --force-refresh:  Re-extract all matching filings. Update index.
       --no-cache:       Ignore _index.json entirely. Stateless run.
-
-    Workers only download files and return (accession, success). Index
-    mutation happens exclusively in the main thread after workers complete.
-
-    When parallel=True and workers>1, filings are downloaded concurrently
-    using a ThreadPoolExecutor. Rate limiting is enforced per-request
-    via a global threading lock. Parallelism is per-ticker only.
     """
     print(f"\nProcessing {ticker} (CIK: {cik})")
 
-    ticker_dir = output_dir / ticker
-    ticker_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir = base_dir / "_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Pre-create output directories
+    (base_dir / "raw_html" / ticker).mkdir(parents=True, exist_ok=True)
+    (base_dir / "clean_text" / ticker).mkdir(parents=True, exist_ok=True)
 
     # --- Load submissions JSON (respect cache policy) ---
-    submissions_cache_path = ticker_dir / "_submissions.json"
+    submissions_cache_path = cache_dir / f"{ticker}_submissions.json"
     filings_data = get_company_filings_cached(
         cik, submissions_cache_path,
         force_refresh=force_refresh, no_cache=no_cache,
     )
 
-    filtered = filter_filings(filings_data, targets, include_amendments)
+    filtered = filter_filings(filings_data, targets, allowed_forms, include_amendments)
 
     # --- Load index (skip entirely in --no-cache mode) ---
-    index_path = ticker_dir / "_index.json"
+    index_path = cache_dir / f"{ticker}_index.json"
     if no_cache:
         index = {"cik": cik, "last_updated": "", "filings": {}}
     else:
@@ -588,21 +474,12 @@ def process_ticker(
         print(f"  Nothing to download for {ticker}")
         return
 
-    # Pre-create all output directories before spawning threads
-    for filing in filings_to_download:
-        out_base = build_output_path(
-            output_dir, ticker,
-            filing["matched_year"], filing["matched_quarter"],
-            filing["form"], filing["filing_date"],
-        )
-        out_base.parent.mkdir(parents=True, exist_ok=True)
-
     # --- Download filings (workers return results, no index mutation) ---
     results = []
     if parallel and workers > 1:
         with ThreadPoolExecutor(max_workers=workers) as executor:
             future_to_filing = {
-                executor.submit(download_filing, ticker, cik, f, output_dir): f
+                executor.submit(download_filing, ticker, cik, f, base_dir): f
                 for f in filings_to_download
             }
             for future in future_to_filing:
@@ -611,7 +488,7 @@ def process_ticker(
                 results.append((filing, accession, success))
     else:
         for filing in filings_to_download:
-            accession, success = download_filing(ticker, cik, filing, output_dir)
+            accession, success = download_filing(ticker, cik, filing, base_dir)
             results.append((filing, accession, success))
 
     # --- Update index in main thread (skip in --no-cache mode) ---
@@ -622,6 +499,7 @@ def process_ticker(
                     "form": filing["form"],
                     "filing_date": filing["filing_date"],
                     "text_saved": True,
+                    "html_saved": True,
                     "last_extracted": datetime.now(timezone.utc).isoformat(),
                 }
         index["last_updated"] = datetime.now(timezone.utc).isoformat()
@@ -634,7 +512,7 @@ def process_ticker(
 
 def main():
 
-    parser = argparse.ArgumentParser(description="SEC Filing Text Extractor")
+    parser = argparse.ArgumentParser(description="SEC Filing Downloader — pure ingestion layer")
 
     parser.add_argument("--tickers", required=True,
                         help="Comma-separated list of tickers")
@@ -649,10 +527,8 @@ def main():
                         help="Download last N completed quarters (rolling window)")
 
     parser.add_argument("--forms",
-                        help="Comma-separated form types (e.g. 10-Q,8-K,4)")
-
-    parser.add_argument("--bundle", choices=["core"],
-                        help="Use a predefined form bundle (core: institutional set)")
+                        help="Comma-separated form types to download "
+                             f"(default: {','.join(sorted(DEFAULT_FORMS))})")
 
     parser.add_argument("--include-amendments", action="store_true", default=False,
                         help="Include amendment filings (e.g. 10-K/A)")
@@ -669,8 +545,9 @@ def main():
     parser.add_argument("--no-cache", action="store_true", default=False,
                         help="Ignore _index.json entirely — fully stateless run")
 
-    parser.add_argument("--output", default="./sec_filings",
-                        help="Output directory")
+    parser.add_argument("--output",
+                        default=str(Path(__file__).resolve().parent),
+                        help="Output base directory (default: EDGAR/ dir next to this script)")
 
     args = parser.parse_args()
 
@@ -695,16 +572,18 @@ def main():
     years = [int(y.strip()) for y in args.years.split(",")] if args.years else None
     quarters = [q.strip().upper() for q in args.quarters.split(",")] if args.quarters else None
 
-    # --forms takes precedence over --bundle; None preserves default 10-K/10-Q behavior
-    forms_arg = [f.strip() for f in args.forms.split(",")] if args.forms else None
-    form_types = resolve_form_types(forms_arg=forms_arg, bundle=args.bundle)
+    # --forms overrides default set; otherwise use DEFAULT_FORMS
+    if args.forms:
+        allowed_forms = {f.strip() for f in args.forms.split(",")}
+    else:
+        allowed_forms = set(DEFAULT_FORMS)
 
     targets = build_targets_from_args(
-        years=years, quarters=quarters, last_n=args.last_n, form_types=form_types,
+        years=years, quarters=quarters, last_n=args.last_n,
     )
 
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    base_dir = Path(args.output)
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     ticker_map = get_ticker_cik_map()
 
@@ -715,7 +594,7 @@ def main():
 
         cik = ticker_map[ticker]
         process_ticker(
-            ticker, cik, targets, output_dir,
+            ticker, cik, targets, allowed_forms, base_dir,
             include_amendments=args.include_amendments,
             parallel=args.parallel,
             workers=workers,

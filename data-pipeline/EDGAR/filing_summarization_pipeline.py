@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Filing Summarization Pipeline — EDGAR raw text -> structured JSON summaries.
+Filing Summarization Pipeline — EDGAR clean text -> structured JSON summaries.
 
-Reads raw filing .txt files produced by get_sec_data.py, sends narrative
-sections to Claude for structured extraction, and saves validated JSON
-summaries to finished_summaries/.
+Reads clean text files produced by get_sec_data.py, sends full filing text
+to Claude for structured extraction, and saves validated JSON summaries
+to finished_summaries/.
 
 Architecture:
-  raw_filings/{TICKER}/{YEAR}/{QUARTER}/{FORM_DATE}.txt
+  clean_text/{TICKER}/{ACCESSION}.txt
     -> Claude API (structured extraction, no hallucinated numbers)
     -> finished_summaries/{TICKER}/{YEAR}/{QUARTER}/{FORM}_summary.json
 
 Examples:
-  # 1. Summarize all tickers (reads from default raw_filings/ next to script)
+  # 1. Summarize all tickers (reads from default clean_text/ next to script)
   python filing_summarization_pipeline.py
 
   # 2. Specific tickers with API key from env
@@ -26,7 +26,7 @@ Examples:
 
   # 4. Custom input/output directories
   python filing_summarization_pipeline.py \\
-      --raw-dir /data/edgar/raw_filings \\
+      --raw-dir /data/edgar \\
       --out-dir /data/edgar/finished_summaries \\
       --tickers AAPL,NVDA
 
@@ -42,7 +42,7 @@ Examples:
 
   # 7. Full 8-ticker universe
   python filing_summarization_pipeline.py \\
-      --raw-dir ./raw_filings \\
+      --raw-dir ./EDGAR \\
       --out-dir ./finished_summaries \\
       --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
 
@@ -61,6 +61,7 @@ import os
 import re
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -171,7 +172,7 @@ def validate_summary_schema(summary: dict) -> List[str]:
 def parse_filing_header(text: str) -> Dict[str, str]:
     """Extract FORM, FILING_DATE, ACCESSION from the structured text header.
 
-    These headers are written by get_sec_data.py's format_text_output().
+    These headers are written by get_sec_data.py (3-line metadata header).
     """
     header: Dict[str, str] = {}
     for line in text.splitlines()[:10]:
@@ -185,32 +186,22 @@ def parse_filing_header(text: str) -> Dict[str, str]:
     return header
 
 
-def extract_sections(text: str) -> Dict[str, str]:
-    """Split structured text into named sections.
+def extract_body(text: str) -> str:
+    """Extract the filing body text (everything after the metadata header).
 
-    Returns dict of {section_name: section_text}.
-    Sections are delimited by ==== SECTION: NAME ==== markers
-    as written by get_sec_data.py.
+    The header is the first 3 lines (FORM, FILING_DATE, ACCESSION) followed
+    by a blank line. The body is everything after that blank line.
     """
-    sections: Dict[str, str] = {}
-    current_name: Optional[str] = None
-    current_lines: List[str] = []
-    section_re = re.compile(r"^====\s*SECTION:\s*(\S+)\s*====$")
-
-    for line in text.splitlines():
-        m = section_re.match(line.strip())
-        if m:
-            if current_name is not None:
-                sections[current_name] = "\n".join(current_lines).strip()
-            current_name = m.group(1)
-            current_lines = []
-        elif current_name is not None:
-            current_lines.append(line)
-
-    if current_name is not None:
-        sections[current_name] = "\n".join(current_lines).strip()
-
-    return sections
+    lines = text.splitlines()
+    # Find the first blank line after header lines
+    for i, line in enumerate(lines):
+        if i > 0 and line.strip() == "":
+            # Check if we've passed the header lines
+            body = "\n".join(lines[i + 1:])
+            if body.strip():
+                return body.strip()
+    # Fallback: return everything
+    return text.strip()
 
 
 def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
@@ -483,22 +474,23 @@ def merge_chunk_summaries(summaries: List[dict]) -> dict:
 # ==========================
 
 def discover_filings(raw_dir: Path, tickers: Optional[List[str]] = None) -> List[Tuple[Path, str]]:
-    """Walk raw_filings directory and return (filepath, ticker) pairs.
+    """Walk clean_text/ directory and return (filepath, ticker) pairs.
 
     If tickers is provided, only return filings for those tickers.
     Files must end with .txt.
     """
+    clean_text_dir = raw_dir / "clean_text"
     results: List[Tuple[Path, str]] = []
-    if not raw_dir.exists():
+    if not clean_text_dir.exists():
         return results
 
-    for ticker_dir in sorted(raw_dir.iterdir()):
+    for ticker_dir in sorted(clean_text_dir.iterdir()):
         if not ticker_dir.is_dir():
             continue
         ticker = ticker_dir.name
         if tickers and ticker not in tickers:
             continue
-        for txt_file in sorted(ticker_dir.rglob("*.txt")):
+        for txt_file in sorted(ticker_dir.glob("*.txt")):
             results.append((txt_file, ticker))
 
     return results
@@ -531,7 +523,7 @@ def process_filing(
     model: str = DEFAULT_MODEL,
     force: bool = False,
 ) -> Optional[Path]:
-    """Process a single raw filing text file into a structured summary.
+    """Process a single clean text filing into a structured summary.
 
     Returns the output path on success, None on skip or failure.
     """
@@ -546,10 +538,11 @@ def process_filing(
         print(f"  SKIP {filepath}: missing FORM or FILING_DATE header")
         return None
 
-    # Derive year/quarter from the directory structure
-    # Expected: raw_dir/TICKER/YEAR/QUARTER/filename.txt
-    quarter = filepath.parent.name       # e.g. Q1
-    year = filepath.parent.parent.name   # e.g. 2024
+    # Derive year/quarter from filing_date header
+    parsed_date = datetime.strptime(filing_date, "%Y-%m-%d")
+    year = str(parsed_date.year)
+    quarter_num = (parsed_date.month - 1) // 3 + 1
+    quarter = f"Q{quarter_num}"
 
     out_path = output_path_for(out_dir, ticker, year, quarter, form)
 
@@ -557,21 +550,17 @@ def process_filing(
         print(f"  SKIP {ticker} {form} {filing_date} (already exists)")
         return None
 
-    # Extract sections
-    sections = extract_sections(text)
-    section_text = "\n\n".join(
-        f"[{name}]\n{content}" for name, content in sections.items()
-        if content and content != "[SECTION NOT FOUND]"
-    )
+    # Extract full body text (everything after the metadata header)
+    body_text = extract_body(text)
 
-    if not section_text.strip():
-        print(f"  SKIP {ticker} {form} {filing_date}: no extractable sections")
+    if not body_text.strip():
+        print(f"  SKIP {ticker} {form} {filing_date}: no extractable text")
         return None
 
-    print(f"  Summarizing {ticker} {form} {filing_date} ({len(section_text)} chars)")
+    print(f"  Summarizing {ticker} {form} {filing_date} ({len(body_text)} chars)")
 
     try:
-        raw_summary = summarize_filing(api_key, form, section_text, model=model)
+        raw_summary = summarize_filing(api_key, form, body_text, model=model)
     except Exception as e:
         print(f"  FAILED {ticker} {form} {filing_date}: {type(e).__name__}: {e}")
         return None
@@ -644,8 +633,8 @@ def main():
     )
     parser.add_argument(
         "--raw-dir", type=str,
-        default=str(Path(__file__).resolve().parent / "raw_filings"),
-        help="Directory containing raw filing .txt files",
+        default=str(Path(__file__).resolve().parent),
+        help="Base directory containing clean_text/ (default: EDGAR/ dir next to this script)",
     )
     parser.add_argument(
         "--out-dir", type=str,
