@@ -44,6 +44,24 @@ agent:
   log_user_prompts: false     # full rendered prompt (includes case data)
   log_llm_responses: false    # raw LLM response text
 
+  # PID controller for debate quality regulation (disabled by default).
+  # When enabled, CRIT scores each round and PID adjusts agreeableness.
+  pid_enabled: false
+  # pid_kp: 0.15
+  # pid_ki: 0.01
+  # pid_kd: 0.03
+  # pid_rho_star: 0.8
+  # pid_initial_beta: 0.5
+  # pid_propose: false
+  # pid_critique: true
+  # pid_revise: true
+
+  # PID logging (only relevant when pid_enabled: true).
+  # pid_log_metrics: log scalar PID stats each round (rho_bar, beta, JS, gains, etc.)
+  # pid_log_llm_calls: log full CRIT LLM prompts and responses each round
+  # pid_log_metrics: false
+  # pid_log_llm_calls: false
+
 # --------------------------------------------------------------------------
 # Broker Configuration
 # --------------------------------------------------------------------------

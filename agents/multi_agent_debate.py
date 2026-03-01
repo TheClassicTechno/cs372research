@@ -104,14 +104,28 @@ class DebateAgentSystem(AgentSystem):
             and "mock" in config.system_prompt_override.lower()
         )
 
-        # Build DebateConfig from AgentConfig fields.
+        # Build DebateConfig with flat PID fields.
+        # PID object construction is handled inside DebateConfig.__post_init__
+        # so this adapter stays decoupled and has no direct dependency on PID.
         debate_cfg = DebateConfig(
             model_name=config.llm_model,
             temperature=config.temperature,
             mock=use_mock,
+            _pid_enabled_flag=config.pid_enabled,
+            pid_kp=config.pid_kp,
+            pid_ki=config.pid_ki,
+            pid_kd=config.pid_kd,
+            pid_rho_star=config.pid_rho_star,
+            initial_beta=config.pid_initial_beta,
+            pid_propose=config.pid_propose,
+            pid_critique=config.pid_critique,
+            pid_revise=config.pid_revise,
+            pid_log_metrics=config.pid_log_metrics,
+            pid_log_llm_calls=config.pid_log_llm_calls,
             log_system_prompts=config.log_system_prompts,
             log_user_prompts=config.log_user_prompts,
-            log_llm_responses=config.log_llm_responses,
+            log_llm_responses=config.log_llm_responses
+
         )
         self._debate_runner = MultiAgentRunner(debate_cfg)
 
