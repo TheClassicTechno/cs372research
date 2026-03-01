@@ -25,6 +25,210 @@ Low reasoning quality → push harder, make agents more critical.
 
 ---
 
+## Code walkthrough
+
+This section traces exactly what happens in the code when PID is enabled, so you can follow along file-by-file.
+
+### File map
+
+**Configuration layer** — how PID gets turned on:
+
+| File | What it does |
+|------|-------------|
+| `config/debate.yaml` | YAML config where `pid_enabled: true` and gain values live |
+| `models/config.py` → `AgentConfig` | Pydantic model that receives YAML fields (`pid_kp`, `pid_ki`, etc.) |
+| `agents/multi_agent_debate.py` → `DebateAgentSystem.__init__` | Adapter that passes `AgentConfig` PID fields into `DebateConfig` |
+| `multi_agent/config.py` → `DebateConfig` | Dataclass that constructs a `PIDConfig` object in `__post_init__` |
+
+**Debate runner** — the main execution loop:
+
+| File | What it does |
+|------|-------------|
+| `multi_agent/runner.py` → `MultiAgentRunner.__init__` | Creates `PIDController`, `CritScorer`, and per-phase sub-graphs |
+| `multi_agent/runner.py` → `_run_round_with_pid()` | Runs propose/critique/revise as 3 separate sub-graph invocations, setting agreeableness between each |
+| `multi_agent/runner.py` → `_pid_step()` | Calls CRIT scorer, computes divergence, runs PID controller, records events |
+
+**CRIT scorer** — the blind reasoning auditor:
+
+| File | What it does |
+|------|-------------|
+| `eval/crit/scorer.py` → `CritScorer.score()` | Iterates over agents, makes one LLM call per agent, aggregates scores |
+| `eval/crit/prompts.py` → `CRIT_SYSTEM_PROMPT` | System prompt telling the LLM how to evaluate reasoning quality |
+| `eval/crit/prompts.py` → `build_crit_single_agent_prompt()` | Builds per-agent user prompt with that agent's traces and decision |
+| `eval/crit/schema.py` | `CritResult`, `RoundCritResult`, `PillarScores`, `Diagnostics` data models |
+
+**PID controller** — the feedback math:
+
+| File | What it does |
+|------|-------------|
+| `eval/PID/types.py` | `PIDGains`, `PIDConfig`, `PIDState`, `PIDStepResult` dataclasses |
+| `eval/PID/controller.py` → `PIDController.step()` | Runs one full PID iteration: sycophancy → error → PID output → beta update |
+| `eval/PID/controller.py` → `compute_error()` | `e_t = (rho_star - rho_bar) + mu * s_t` |
+| `eval/PID/controller.py` → `compute_pid_output()` | `u_t = Kp*e_t + Ki*integral + Kd*(e_t - e_prev)` |
+| `eval/PID/beta_dynamics.py` → `update_beta_clipped()` | `beta_new = clip(gamma_beta * beta + u_t, 0, 1)` |
+| `eval/PID/sycophancy.py` → `compute_sycophancy_signal()` | Detects fake convergence: JS drops but evidence overlap also drops |
+| `eval/PID/stability.py` → `validate_gains()` | Checks that gains won't cause instability before the debate starts |
+| `eval/PID/termination.py` → `check_convergence()` | Returns true if JS divergence drops below epsilon (early stop) |
+
+**Prompts that PID controls** — the text that changes as beta changes:
+
+| File | What it does |
+|------|-------------|
+| `multi_agent/prompts/agreeableness_confrontational.txt` | Injected when agreeableness < 0.2: "CHALLENGE every assumption" |
+| `multi_agent/prompts/agreeableness_skeptical.txt` | Injected when 0.2 ≤ agreeableness < 0.4: "Default to skepticism" |
+| `multi_agent/prompts/agreeableness_balanced.txt` | Injected when 0.4 ≤ agreeableness < 0.6: "Evaluate on merits" |
+| `multi_agent/prompts/agreeableness_collaborative.txt` | Injected when 0.6 ≤ agreeableness < 0.8: "Look for common ground" |
+| `multi_agent/prompts/agreeableness_agreeable.txt` | Injected when agreeableness ≥ 0.8: "Find merit in other proposals" |
+| `multi_agent/prompts/__init__.py` → `get_agreeableness_modifier()` | Maps the float agreeableness value to one of the 5 templates above |
+
+**Data models for PID events** — what gets stored in the trace:
+
+| File | What it does |
+|------|-------------|
+| `multi_agent/models.py` → `PIDEvent` | One event per round: metrics, CRIT result, PID step details, controller output |
+| `multi_agent/models.py` → `RoundMetrics` | `rho_bar`, `js_divergence`, `ov_overlap` for one round |
+| `multi_agent/models.py` → `ControllerOutput` | `new_agreeableness` value to use in the next round |
+| `multi_agent/models.py` → `AgentTrace.pid_events` | Optional list of `PIDEvent` on the trace (null when PID disabled) |
+
+### Step-by-step: what happens during one PID-enabled debate round
+
+Here's the exact sequence of function calls for round `t` of a PID-enabled debate:
+
+**Step 1 — Config flows in.**
+`config/debate.yaml` sets `pid_enabled: true` with gain values. `SimulationConfig.from_yaml()` parses this into `AgentConfig`. The adapter (`DebateAgentSystem.__init__`) passes the fields to `DebateConfig`, whose `__post_init__` constructs a `PIDConfig` object from the flat YAML fields.
+
+**Step 2 — Runner initializes PID components.**
+`MultiAgentRunner.__init__` sees `config.pid_enabled == True` and:
+- Compiles 3 per-phase sub-graphs (propose, critique, revise) — one per debate phase, so agreeableness can differ between them
+- Creates a `CritScorer` instance with the debate LLM as its backend
+- Creates a `PIDController(config, initial_beta)` with initial state
+- Calls `validate_gains()` to ensure the gains won't cause instability
+
+**Step 3 — Round starts: `_run_round_with_pid(state, round_num)`.**
+The runner reads the current `beta` from the controller's state:
+```
+beta = self._pid_controller.beta
+```
+
+**Step 4 — Propose phase.**
+The runner checks `config.pid_propose`. If true, sets `state["config"]["agreeableness"] = beta`. If false, uses the original static agreeableness. Then invokes `self._propose_graph.invoke(state)`.
+
+Inside the propose graph, each agent gets a role-specific system prompt from `ROLE_SYSTEM_PROMPTS` (e.g., `role_macro.txt`) plus a user prompt built by `build_proposal_user_prompt()`. Agreeableness doesn't strongly affect proposals (which is why `pid_propose` defaults to false).
+
+**Step 5 — Critique phase.**
+Same toggle check with `config.pid_critique` (defaults to true, so beta IS used). Invokes `self._critique_graph.invoke(state)`.
+
+Inside the critique graph, each agent's system message includes `get_agreeableness_modifier(agreeableness)` — this is where PID has its main effect. A low beta (e.g. 0.2) injects the "confrontational" modifier telling agents to challenge everything. A high beta (e.g. 0.7) injects the "collaborative" modifier telling agents to find common ground.
+
+**Step 6 — Revise phase.**
+Same toggle check with `config.pid_revise` (defaults to true). Invokes `self._revise_graph.invoke(state)`. The agreeableness modifier also affects revision prompts via `build_revision_prompt()`.
+
+**Step 7 — CRIT scores the round: `_pid_step(state, round_num)`.**
+The runner calls `self._crit_scorer.score()` with:
+- `case_data`: the enriched market context (what agents saw)
+- `agent_traces`: all debate turns from `state["debate_turns"]`
+- `decisions`: the revisions (or proposals if no revisions yet)
+
+`CritScorer.score()` iterates over each agent role, makes a separate LLM call per agent using `CRIT_SYSTEM_PROMPT` + `build_crit_single_agent_prompt()`, and aggregates into `rho_bar = mean(all agent rho_i)`.
+
+**Step 8 — Divergence signals.**
+The runner computes Jensen-Shannon divergence from agent confidence values:
+```
+js = jensen_shannon_divergence(confidences)
+```
+This measures how much agents disagree — it drops as agents converge.
+
+**Step 9 — PID controller step: `self._pid_controller.step(rho_bar, js, ov)`.**
+Inside `PIDController.step()`, the following happens in order:
+
+1. **Sycophancy check**: `compute_sycophancy_signal()` — fires (`s_t = 1`) if JS dropped sharply AND evidence overlap also dropped (agents agreeing without sharing evidence = groupthink).
+2. **Error**: `compute_error()` — `e_t = (rho_star - rho_bar) + mu * s_t`. Positive = below target.
+3. **Integral accumulation**: `integral += e_t` (running sum for I-term).
+4. **PID output**: `compute_pid_output()` — `u_t = Kp*e_t + Ki*integral + Kd*(e_t - e_prev)`.
+5. **Beta update**: `update_beta_clipped()` — `beta_new = clip(gamma_beta * beta + u_t, 0, 1)`.
+6. **State advance**: saves `e_prev = e_t`, `beta = beta_new`, increments round counter.
+
+**Step 10 — Event recording.**
+The runner packages everything into a `PIDEvent` and appends it to `self._pid_events`. This list ends up in `AgentTrace.pid_events` in the final output.
+
+**Step 11 — Feedback loop.**
+On the next round, Step 3 reads `self._pid_controller.beta` — which is now the updated `beta_new` from Step 9. The cycle repeats.
+
+**Step 12 — Termination check.**
+`should_terminate()` calls `check_convergence(js, epsilon)`. If JS divergence dropped below epsilon (default 0.01), the debate stops early — agents have genuinely converged.
+
+### The CRIT prompts
+
+CRIT is the LLM-based reasoning auditor. It makes one LLM call per agent per round. Here's what those calls look like:
+
+**System prompt** (`eval/crit/prompts.py:CRIT_SYSTEM_PROMPT`):
+Tells the LLM to evaluate reasoning quality across 4 pillars, score each 0.0–1.0, and return JSON. The LLM is explicitly told it must NOT evaluate whether the agent's prediction was correct — only whether the reasoning is internally sound.
+
+**User prompt** (`eval/crit/prompts.py:build_crit_single_agent_prompt()`):
+Built per-agent with these sections:
+- `## Case Context` — what the agents saw (market data, news, portfolio)
+- `## Agent Under Evaluation: {ROLE}` — identifies which agent
+- `### Reasoning Trace` — that agent's proposal, critiques, and revision from the round
+- `### Trading Decision` — the agent's final action (orders, confidence, justification)
+- `## Instructions` — evaluate the 4 pillars, return JSON
+
+**CRIT output format** (what the LLM returns):
+```json
+{
+  "pillar_scores": {
+    "internal_consistency": 0.85,
+    "evidence_support": 0.75,
+    "trace_alignment": 0.90,
+    "causal_integrity": 0.70
+  },
+  "diagnostics": {
+    "contradictions_detected": false,
+    "unsupported_claims_detected": false,
+    "conclusion_drift_detected": false,
+    "causal_overreach_detected": false
+  },
+  "explanations": {
+    "internal_consistency": "Claims are logically consistent...",
+    "evidence_support": "Most claims cite case data...",
+    "trace_alignment": "Decision follows from reasoning...",
+    "causal_integrity": "L2 claims are properly scoped..."
+  }
+}
+```
+
+The per-agent `rho_i` is the mean of the 4 pillar scores. The round-level `rho_bar` is the mean of all agents' `rho_i`. This `rho_bar` feeds the PID controller's error signal.
+
+### How agreeableness changes the prompts
+
+When PID adjusts beta (the agreeableness dial), it changes which modifier text gets injected into critique and revise system messages. Here's the mapping:
+
+| Beta range | Modifier | Effect on agent behavior |
+|-----------|----------|-------------------------|
+| < 0.2 | `agreeableness_confrontational.txt` | "CHALLENGE every assumption. Do NOT agree easily." |
+| 0.2–0.4 | `agreeableness_skeptical.txt` | "Default to skepticism. Point out at least 2 weaknesses." |
+| 0.4–0.6 | `agreeableness_balanced.txt` | "Agree when reasoning is sound, disagree when not." |
+| 0.6–0.8 | `agreeableness_collaborative.txt` | "Look for common ground. Only push back on significant gaps." |
+| ≥ 0.8 | `agreeableness_agreeable.txt` | "Find merit in other proposals. Only disagree on clear errors." |
+
+The function `get_agreeableness_modifier()` in `multi_agent/prompts/__init__.py` does this mapping. The modifier text is appended to the critique/revise system message in `graph.py` (`critique_node` and `make_critique_node`).
+
+So when CRIT reports low reasoning quality → PID computes a lower beta → agents get the confrontational/skeptical modifier → they push back harder → reasoning quality (hopefully) improves → CRIT reports higher quality → PID eases off.
+
+### Key data structures
+
+| Type | File | What it holds |
+|------|------|--------------|
+| `PIDGains` | `eval/PID/types.py` | `Kp`, `Ki`, `Kd` — the three tuning knobs |
+| `PIDConfig` | `eval/PID/types.py` | Gains + `rho_star`, `gamma_beta`, `mu`, `delta_s`, `T_max`, `epsilon` |
+| `PIDState` | `eval/PID/types.py` | Mutable state: `beta`, `integral`, `e_prev`, `t`, JS/OV history |
+| `PIDStepResult` | `eval/PID/types.py` | One step's output: `e_t`, `u_t`, `beta_new`, P/I/D terms, `s_t` |
+| `CritResult` | `eval/crit/schema.py` | Per-agent: pillar scores, diagnostics, explanations, `rho_bar` |
+| `RoundCritResult` | `eval/crit/schema.py` | All agents: `agent_scores` dict + aggregated `rho_bar` |
+| `PIDEvent` | `multi_agent/models.py` | Full event: round metrics + CRIT result + PID step + controller output |
+| `AgentTrace` | `multi_agent/models.py` | Debate trace with optional `pid_events: list[PIDEvent]` |
+
+---
+
 ## Architecture
 
 ```
