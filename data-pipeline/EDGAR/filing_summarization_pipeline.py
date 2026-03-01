@@ -11,14 +11,40 @@ Architecture:
     -> Claude API (structured extraction, no hallucinated numbers)
     -> finished_summaries/{TICKER}/{YEAR}/{QUARTER}/{FORM}_summary.json
 
-Usage:
+Examples:
+  # 1. Summarize all tickers (reads from default raw_filings/ next to script)
+  python filing_summarization_pipeline.py
+
+  # 2. Specific tickers with API key from env
+  ANTHROPIC_API_KEY=sk-ant-... python filing_summarization_pipeline.py \\
+      --tickers AAPL,NVDA,MSFT
+
+  # 3. Pass API key on command line
+  python filing_summarization_pipeline.py \\
+      --tickers AAPL \\
+      --api-key sk-ant-...
+
+  # 4. Custom input/output directories
+  python filing_summarization_pipeline.py \\
+      --raw-dir /data/edgar/raw_filings \\
+      --out-dir /data/edgar/finished_summaries \\
+      --tickers AAPL,NVDA
+
+  # 5. Force re-summarize (overwrite existing summaries)
+  python filing_summarization_pipeline.py \\
+      --tickers AAPL \\
+      --force
+
+  # 6. Use a different Claude model
+  python filing_summarization_pipeline.py \\
+      --tickers AAPL \\
+      --model claude-sonnet-4-20250514
+
+  # 7. Full 8-ticker universe
   python filing_summarization_pipeline.py \\
       --raw-dir ./raw_filings \\
       --out-dir ./finished_summaries \\
-      --tickers AAPL,NVDA \\
-      --api-key sk-ant-...
-
-  # Or set ANTHROPIC_API_KEY env var and omit --api-key.
+      --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
 
 Design constraints:
   - No numeric extraction from filing text.

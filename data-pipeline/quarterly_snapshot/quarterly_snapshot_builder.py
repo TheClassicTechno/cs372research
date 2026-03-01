@@ -15,10 +15,45 @@ Inputs:
 Output:
   quarterly_snapshot/data/{YEAR}{QUARTER}/{TICKER}.json
 
-Usage:
+Examples:
+  # 1. Build snapshots for 3 tickers at end of Q1 and Q2
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL,NVDA,MSFT \\
+      --rebalance-dates 2025-03-31,2025-06-30
+
+  # 2. Full year of quarterly snapshots for the 8-ticker universe
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \\
+      --rebalance-dates 2025-03-31,2025-06-30,2025-09-30,2025-12-31
+
+  # 3. Single ticker, single date (useful for debugging)
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL \\
+      --rebalance-dates 2025-03-31
+
+  # 4. Custom data directories (non-default layout)
   python quarterly_snapshot_builder.py \\
       --tickers AAPL,NVDA \\
-      --rebalance-dates 2025-03-31,2025-06-30
+      --rebalance-dates 2025-06-30 \\
+      --summaries-dir /data/edgar/finished_summaries \\
+      --sentiment-dir /data/sentiment \\
+      --macro-dir /data/macro
+
+  # 5. Custom output directory
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL,NVDA,MSFT \\
+      --rebalance-dates 2025-03-31 \\
+      --output-dir /tmp/snapshots
+
+  # 6. Mid-quarter rebalance date (still maps to that quarter)
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL \\
+      --rebalance-dates 2025-02-15
+
+  # 7. Multi-year backtest dates
+  python quarterly_snapshot_builder.py \\
+      --tickers AAPL,NVDA \\
+      --rebalance-dates 2024-03-31,2024-06-30,2024-09-30,2024-12-31,2025-03-31,2025-06-30
 
 Point-in-time safety:
   Every data source is filtered to only include information that was

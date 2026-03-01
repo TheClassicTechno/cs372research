@@ -1,4 +1,38 @@
 #!/usr/bin/env python3
+"""
+SEC Filing Text Extractor — Download filings from EDGAR and extract narrative text.
+
+Examples:
+  # 1. Last 4 completed quarters for a few tickers (auto-maps Q4 to 10-K)
+  python get_sec_data.py --tickers AAPL,NVDA,MSFT --last-n 4
+
+  # 2. Specific year + quarters (10-Q filings)
+  python get_sec_data.py --tickers AAPL --years 2024 --quarters Q1,Q2,Q3
+
+  # 3. Annual filings only (10-K, matches any quarter in the year)
+  python get_sec_data.py --tickers AAPL,GOOG --years 2023,2024 --quarters ANNUAL
+
+  # 4. Multiple years, all quarters
+  python get_sec_data.py --tickers JPM,GS --years 2023,2024,2025 --quarters Q1,Q2,Q3,Q4
+
+  # 5. Custom form types (8-K and Form 4)
+  python get_sec_data.py --tickers AAPL --last-n 4 --forms 8-K,4
+
+  # 6. Full institutional bundle (10-K, 10-Q, 8-K, Form 4, SC 13D/G, etc.)
+  python get_sec_data.py --tickers AAPL --last-n 8 --bundle core
+
+  # 7. Include amendment filings (10-K/A, 10-Q/A, etc.)
+  python get_sec_data.py --tickers NVDA --years 2024 --quarters Q1,Q2,Q3,Q4 --include-amendments
+
+  # 8. Parallel download with 3 workers
+  python get_sec_data.py --tickers AAPL,NVDA,MSFT --last-n 4 --parallel --workers 3
+
+  # 9. Force re-extract everything (overwrite existing)
+  python get_sec_data.py --tickers AAPL --last-n 2 --force-refresh
+
+  # 10. Stateless run — ignore index, don't write cache
+  python get_sec_data.py --tickers AAPL --last-n 2 --no-cache --output /tmp/sec_filings
+"""
 
 import argparse
 import json

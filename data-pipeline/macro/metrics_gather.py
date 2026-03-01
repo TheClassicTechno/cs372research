@@ -15,13 +15,37 @@ What you need
 - yfinance must be installed (pip install yfinance).
 - requests, pandas, numpy are standard in most DS envs.
 
-Example
-  python augmented_market_state_v3.py --year 2025 --tickers AAPL,MSFT,NVDA --out out_2025.json
+Examples:
+  # 1. Basic run for a single year with default tickers
+  python metrics_gather.py --year 2025 --tickers AAPL,MSFT,NVDA
+
+  # 2. Full 8-ticker universe with FRED key from env
+  FRED_API_KEY=abc123 python metrics_gather.py --year 2025 --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
+
+  # 3. Pass FRED key on command line, custom output path
+  python metrics_gather.py --year 2025 --tickers AAPL --fred-key abc123 --out data/macro_2025.json
+
+  # 4. Fast run — fewer S&P 500 tickers for breadth/concentration (Layer 5)
+  python metrics_gather.py --year 2025 --tickers AAPL --breadth-sample 50 --breadth-max 60
+
+  # 5. Extended historical lookback (5 years before target year)
+  python metrics_gather.py --year 2025 --tickers AAPL,NVDA --back-years 5
+
+  # 6. Minimal run — single ticker, no breadth overhead
+  python metrics_gather.py --year 2025 --tickers SPY --breadth-sample 10 --breadth-max 10
+
+  # 7. Multiple years (run once per year, cache accumulates)
+  python metrics_gather.py --year 2024 --tickers AAPL,NVDA --out data/macro_2024.json
+  python metrics_gather.py --year 2025 --tickers AAPL,NVDA --out data/macro_2025.json
+
+  # 8. Large ticker universe for Layer 6 price summary
+  python metrics_gather.py --year 2025 --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,TSLA,JPM,GS,BAC,WMT,JNJ
 
 Notes
 - Some series are fetched from FRED; if a series is unavailable, we record an error for that metric.
 - Breadth and concentration use S&P 500 constituents from Wikipedia + yfinance. This is inherently approximate and can be slow.
   Use --breadth-sample to reduce runtime (e.g., 150). Use --breadth-max to cap.
+- FRED data is incrementally cached as CSV files next to this script. Re-runs only fetch missing date ranges.
 """
 
 import argparse
