@@ -16,8 +16,8 @@ The name comes from control theory: **P**roportional-**I**ntegral-**D**erivative
 Each debate round:
 
 1. Agents produce proposals, critiques, and revisions (the normal debate flow).
-2. **CRIT**, a blind reasoning auditor, scores the round's reasoning quality across four pillars.
-3. The **PID controller** compares that quality score against a target and computes a correction signal.
+2. **CRIT**, a blind reasoning auditor, scores **each agent individually** across four pillars of reasoning quality (`ρ_i`), then averages into `ρ̄ = 1/n Σ ρ_i`.
+3. The **PID controller** compares `ρ̄` against a target and computes a correction signal.
 4. That correction adjusts `agreeableness` — the dial that controls how confrontational vs. deferential agents are in the next round.
 
 High reasoning quality → ease off, let agents converge naturally.
@@ -28,36 +28,65 @@ Low reasoning quality → push harder, make agents more critical.
 ## Architecture
 
 ```
- ┌──────────────────────────────────────────────────────────┐
- │                   Debate Round t                         │
- │                                                         │
- │   ┌──────────┐   ┌───────────┐   ┌──────────┐          │
- │   │ Propose  │──▶│ Critique  │──▶│  Revise  │          │
- │   │ (β_prop) │   │ (β_crit)  │   │ (β_rev)  │          │
- │   └──────────┘   └───────────┘   └──────────┘          │
- │                                                         │
- └────────────────────────┬────────────────────────────────┘
-                          │
-                          ▼
-                  ┌───────────────┐
-                  │  CRIT Scorer  │  ← Blind reasoning audit
-                  │  (4 pillars)  │     No ground truth access
-                  └───────┬───────┘
-                          │ rho_bar = mean(IC, ES, TA, CI)
-                          ▼
-                  ┌───────────────┐
-                  │PID Controller │  ← Compare rho_bar vs target
-                  │  step()       │     Compute correction u_t
-                  └───────┬───────┘
-                          │ beta_new
-                          ▼
-                  Adjust agreeableness
-                  for round t+1
+                            Debate Round t
+                            ══════════════
+
+    beta_new from                           Each phase is a separate
+    previous round                          sub-graph invocation so
+          │                                 agreeableness can differ
+          ▼                                 between them.
+
+    ┌─────────────┐   pid_propose toggle
+    │   Propose   │   ──────────────────▶  if true:  agreeableness = beta
+    │ (all agents)│                        if false: agreeableness = original
+    └──────┬──────┘
+           ▼
+    ┌─────────────┐   pid_critique toggle
+    │  Critique   │   ──────────────────▶  if true:  agreeableness = beta
+    │ (all agents)│                        if false: agreeableness = original
+    └──────┬──────┘
+           ▼
+    ┌─────────────┐   pid_revise toggle
+    │   Revise    │   ──────────────────▶  if true:  agreeableness = beta
+    │ (all agents)│                        if false: agreeableness = original
+    └──────┬──────┘
+           │
+           ▼
+    ┌──────────────────────────────────────────────────────────┐
+    │                     CRIT Scorer                          │
+    │              (per-agent, blind audit)                     │
+    │                                                          │
+    │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+    │  │  MACRO   │  │  VALUE   │  │   RISK   │  │TECHNICAL│ │
+    │  │ IC ES TA │  │ IC ES TA │  │ IC ES TA │  │IC ES TA │ │
+    │  │ CI → ρ_m │  │ CI → ρ_v │  │ CI → ρ_r │  │CI → ρ_t│ │
+    │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬─────┘ │
+    │       │              │              │             │       │
+    │       └──────┬───────┴──────┬───────┘             │       │
+    │              │              │                      │       │
+    │              ▼              ▼                      │       │
+    │        ρ̄ = (ρ_m + ρ_v + ρ_r + ρ_t) / 4 ◀────────┘       │
+    └────────────────────────┬─────────────────────────────────┘
+                             │ ρ̄
+                             ▼
+    ┌──────────────────────────────────────────┐
+    │              PID Controller               │
+    │                                          │
+    │  e_t = (ρ* − ρ̄) + μ · s_t              │
+    │  u_t = Kp·e_t + Ki·∫e + Kd·Δe           │
+    │  β_new = clip(γ·β + u_t,  0,  1)        │
+    └────────────────────┬─────────────────────┘
+                         │ β_new
+                         ▼
+    Feed into round t+1
+    (each phase reads its toggle
+     to decide whether to use
+     β_new or original)
 ```
 
 ### Per-phase decomposition
 
-Without PID, each debate round runs as a single graph invocation (propose → critique → revise). With PID enabled, each round is decomposed into **three separate sub-graph invocations** so that agreeableness can be set independently for each phase:
+Without PID, each debate round runs as a single graph invocation (propose → critique → revise atomically). With PID enabled, each round is decomposed into **three separate sub-graph invocations**. Between each invocation, the runner sets `agreeableness` based on that phase's toggle:
 
 | Phase     | Config toggle   | Default | Why |
 |-----------|----------------|---------|-----|
@@ -65,13 +94,39 @@ Without PID, each debate round runs as a single graph invocation (propose → cr
 | Critique  | `pid_critique` | `true`  | Critique tone is most sensitive to agreeableness |
 | Revise    | `pid_revise`   | `true`  | Revision deference is also sensitive |
 
-When a phase's toggle is `true`, PID's computed `beta` is used as agreeableness for that phase. When `false`, the original static `agreeableness` value (from `DebateConfig`) is used.
+When a phase's toggle is `true`, PID's computed `beta` is used as agreeableness for that phase. When `false`, the original static `agreeableness` value (from `DebateConfig`) is used. All agents within a phase share the same agreeableness — the per-phase granularity is at the phase level, not the individual agent level.
 
 ---
 
 ## CRIT: The Blind Reasoning Auditor
 
 CRIT (Critique of Reasoning Integrity and Traceability) is an LLM-based scorer that evaluates reasoning quality **without access to ground truth**. It never sees market outcomes, impact scores, or whether the agents' predictions were correct. It evaluates only logical integrity.
+
+### Per-agent scoring (RAudit Section 3.3)
+
+Per the RAudit paper, CRIT scores **each agent individually**. In a 4-agent debate, CRIT makes 4 separate LLM calls — one per agent. Each call receives only that agent's reasoning trace and decision (plus the shared case context). This ensures one agent's weak reasoning cannot inflate another's score.
+
+```
+Round t completes → CRIT evaluates each agent:
+
+   MACRO  agent → ρ_macro  = mean(IC, ES, TA, CI)
+   VALUE  agent → ρ_value  = mean(IC, ES, TA, CI)
+   RISK   agent → ρ_risk   = mean(IC, ES, TA, CI)
+   TECHNICAL    → ρ_tech   = mean(IC, ES, TA, CI)
+
+   ρ̄ = (ρ_macro + ρ_value + ρ_risk + ρ_tech) / 4  →  PID controller
+```
+
+The aggregate `ρ̄` feeds the PID controller. Per-agent `ρ_i` scores are preserved in the `RoundCritResult` for diagnostics and logging.
+
+### What is per-agent vs. global?
+
+| Scope | What | Paper reference |
+|-------|------|-----------------|
+| **Per-agent** | CRIT scores (ρ_i), reasoning traces, belief distributions, evidence spans | Section 3.3, Algorithm 1 lines 7-8 |
+| **Global** | β (agreeableness), ρ* (target), PID controller, sycophancy signal s_t | Section 3.5, Algorithm 1 line 5 |
+
+All agents share the same β within a phase. The per-phase toggles (propose/critique/revise) control which phases use PID's β vs. the original agreeableness — but within a phase, all agents get the same value.
 
 ### Four pillars
 
@@ -82,26 +137,26 @@ CRIT (Critique of Reasoning Integrity and Traceability) is an LLM-based scorer t
 | **Trace Alignment** | Does the final trading decision follow from the reasoning presented? | Conclusion drifts from argument |
 | **Causal Integrity** | Are causal claims properly scoped (Pearl L1/L2/L3)? | Causal overreach |
 
-Each pillar is scored 0.0–1.0. The composite score **rho_bar** is the mean of all four pillars. This is the signal that feeds the PID controller.
+Each pillar is scored 0.0–1.0. The per-agent composite `ρ_i` is the mean of all four pillars. The round-level `ρ̄` is the mean of all per-agent `ρ_i` scores.
 
 ### Diagnostics
 
-CRIT also produces binary diagnostic flags:
+CRIT produces binary diagnostic flags **per agent**:
 - `contradictions_detected`
 - `unsupported_claims_detected`
 - `conclusion_drift_detected`
 - `causal_overreach_detected`
 
-These are logged when PID metrics logging is enabled and appear in the trace output.
+These are logged per-agent when PID metrics logging is enabled and appear in the trace output.
 
 ### Source files
 
 ```
 eval/crit/
-    __init__.py     # Public API: CritScorer, CritResult
-    scorer.py       # CritScorer class (dependency-injected LLM function)
-    prompts.py      # System prompt + user prompt template
-    schema.py       # PillarScores, Diagnostics, Explanations, CritResult
+    __init__.py     # Public API: CritScorer, RoundCritResult, CritResult
+    scorer.py       # CritScorer class (per-agent iteration + aggregation)
+    prompts.py      # System prompt + single-agent user prompt template
+    schema.py       # RoundCritResult, CritResult, PillarScores, Diagnostics
 ```
 
 ---
@@ -115,7 +170,7 @@ e_t = (rho_star - rho_bar) + mu * s_t
 ```
 
 - `rho_star` — target quality score (default 0.8)
-- `rho_bar` — actual quality from CRIT this round
+- `rho_bar` — actual quality from CRIT this round (mean of per-agent ρ_i)
 - `mu` — sycophancy penalty weight (default 1.0)
 - `s_t` — binary sycophancy indicator (0 or 1)
 
@@ -279,8 +334,12 @@ Logs per-round stats to the `pid.metrics` logger at DEBUG level:
 
 ```
 [PID Round 1]
-  CRIT:     rho_bar=0.7500  rho_star=0.8000
-  Pillars:  IC=0.800  ES=0.700  TA=0.900  CI=0.600
+  CRIT:     rho_bar=0.7500  rho_star=0.8000  (mean of 4 agents)
+  Per-agent scores:
+    macro       : rho_i=0.8000  IC=0.850  ES=0.750  TA=0.900  CI=0.700
+    value       : rho_i=0.7250  IC=0.800  ES=0.700  TA=0.800  CI=0.600
+    risk        : rho_i=0.7000  IC=0.750  ES=0.650  TA=0.800  CI=0.600
+    technical   : rho_i=0.7750  IC=0.800  ES=0.700  TA=0.900  CI=0.700
   Error:    e_t=0.050000  integral=0.050000  e_prev=0.000000
   PID:      p_term=0.007500  i_term=0.000500  d_term=0.001500  u_t=0.009500
   Gains:    Kp=0.1500  Ki=0.0100  Kd=0.0300
@@ -292,9 +351,10 @@ Logs per-round stats to the `pid.metrics` logger at DEBUG level:
 [PID Round 1] Per-phase agreeableness:
   propose=0.3000  critique=0.4595  revise=0.4595  (beta=0.4595, original=0.3000)
 
-[PID Round 1] CRIT diagnostics:
-  contradictions=False  unsupported_claims=False
-  conclusion_drift=False  causal_overreach=False
+[PID Round 1] CRIT diagnostics [macro]:
+  contradictions=False  unsupported_claims=False  ...
+[PID Round 1] CRIT diagnostics [value]:
+  contradictions=False  unsupported_claims=False  ...
 ```
 
 ### LLM call logging (`pid_log_llm_calls: true`)
@@ -356,9 +416,17 @@ When PID is enabled, every output artifact includes PID events.
             "ov_overlap": 0.0
           },
           "crit_result": {
-            "pillar_scores": { ... },
-            "diagnostics": { ... },
-            "explanations": { ... },
+            "agent_scores": {
+              "macro": {
+                "pillar_scores": { "internal_consistency": 0.85, ... },
+                "diagnostics": { ... },
+                "explanations": { ... },
+                "rho_bar": 0.80
+              },
+              "value": { ... },
+              "risk": { ... },
+              "technical": { ... }
+            },
             "rho_bar": 0.75
           },
           "pid_step": {
@@ -402,9 +470,9 @@ All artifacts have `"pid_events": null`.
 | File | Purpose |
 |------|---------|
 | `eval/crit/__init__.py` | Public API exports |
-| `eval/crit/scorer.py` | CRIT scorer (blind reasoning auditor) |
-| `eval/crit/prompts.py` | CRIT system and user prompt templates |
-| `eval/crit/schema.py` | CritResult, PillarScores, Diagnostics, Explanations |
+| `eval/crit/scorer.py` | CRIT scorer — per-agent scoring with aggregation |
+| `eval/crit/prompts.py` | CRIT system prompt + single-agent user prompt template |
+| `eval/crit/schema.py` | RoundCritResult, CritResult, PillarScores, Diagnostics |
 
 ### Modified files
 
