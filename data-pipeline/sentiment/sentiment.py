@@ -73,7 +73,7 @@ For each ticker and quarter:
 
 Deduplication steps:
     - Remove duplicate headlines.
-    - Drop rows with missing summaries.
+    - Drop rows with missing finished_summaries.
     - Construct article text as:
           headline + ". " + summary
 

@@ -31,6 +31,7 @@ import math
 import os
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -42,6 +43,9 @@ try:
 except Exception as e:
     print("ERROR: yfinance is required. Install with: pip install yfinance", file=sys.stderr)
     raise
+
+# Cache directory: same directory as this script
+_SCRIPT_DIR = Path(__file__).resolve().parent
 
 # ----------------------------
 # Utilities
@@ -130,7 +134,7 @@ class FredClient:
         self.api_key = api_key
         self.base = "https://api.stlouisfed.org/fred/series/observations"
 
-    def fetch_series(
+    def _fetch_from_api(
         self,
         series_id: str,
         start: dt.date,
@@ -165,6 +169,80 @@ class FredClient:
             vals.append(val)
         s = pd.Series(vals, index=pd.DatetimeIndex(dates)).sort_index()
         return s
+
+    def fetch_series(
+        self,
+        series_id: str,
+        start: dt.date,
+        end: dt.date,
+        frequency: Optional[str] = None,
+    ) -> pd.Series:
+        # Incremental CSV cache next to script
+        fname = f"{series_id}_fred_cache.csv" if not frequency else f"{series_id}_{frequency}_fred_cache.csv"
+        cache_path = _SCRIPT_DIR / fname
+
+        # Load existing cache
+        cached = pd.Series(dtype=float)
+        if cache_path.exists():
+            try:
+                cache_df = pd.read_csv(cache_path, parse_dates=["date"])
+                cache_df = cache_df.dropna(subset=["date"])
+                cached = pd.Series(
+                    cache_df["value"].values,
+                    index=pd.DatetimeIndex(cache_df["date"]),
+                ).sort_index()
+            except Exception:
+                cached = pd.Series(dtype=float)
+
+        # Check coverage and determine what to fetch
+        parts_to_fetch = []
+        if cached.empty:
+            parts_to_fetch.append((start, end))
+        else:
+            cached_start = cached.index.min().date()
+            cached_end = cached.index.max().date()
+            if start < cached_start:
+                parts_to_fetch.append((start, cached_start - dt.timedelta(days=1)))
+            if end > cached_end:
+                parts_to_fetch.append((cached_end + dt.timedelta(days=1), end))
+
+        # If cache fully covers range, return slice
+        if not parts_to_fetch:
+            mask = (cached.index >= pd.to_datetime(start)) & (cached.index <= pd.to_datetime(end))
+            return cached[mask]
+
+        # Fetch missing parts from API
+        new_parts = []
+        for fetch_start, fetch_end in parts_to_fetch:
+            s = self._fetch_from_api(series_id, fetch_start, fetch_end, frequency)
+            if not s.empty:
+                new_parts.append(s)
+
+        # Merge cached + new
+        all_parts = ([cached] if not cached.empty else []) + new_parts
+        if all_parts:
+            merged = pd.concat(all_parts)
+            merged = merged[~merged.index.duplicated(keep="last")]
+            merged = merged.sort_index()
+        else:
+            merged = pd.Series(dtype=float)
+
+        # Save updated cache
+        if not merged.empty:
+            try:
+                out_df = pd.DataFrame({
+                    "date": merged.index.strftime("%Y-%m-%d"),
+                    "value": merged.values,
+                })
+                out_df.to_csv(cache_path, index=False)
+            except Exception:
+                pass  # Cache write failure is non-fatal
+
+        # Return only requested slice
+        if merged.empty:
+            return merged
+        mask = (merged.index >= pd.to_datetime(start)) & (merged.index <= pd.to_datetime(end))
+        return merged[mask]
 
     def value_on_or_before(self, series: pd.Series, date: dt.date) -> Optional[float]:
         if series is None or series.empty:
@@ -239,7 +317,7 @@ def fetch_sp500_tickers() -> List[str]:
 # Layer builders
 # ----------------------------
 
-def build_layer1_macro(fred: FredClient, year: int) -> Dict[str, Any]:
+def build_layer1_macro(fred: FredClient, year: int, start_date: dt.date, end_date: dt.date) -> Dict[str, Any]:
     """
     Layer 1: Macro regime (levels + QoQ/YoY deltas)
     We compute per-quarter levels at quarter-end and QoQ/YoY deltas.
@@ -295,10 +373,6 @@ def build_layer1_macro(fred: FredClient, year: int) -> Dict[str, Any]:
         "L1-COM-WTI": FredSeries("DCOILWTICO", "WTI Oil", "USD/bbl"),
     }
 
-    # determine pull window: include prior-year Q4 for QoQ, and prior-year same quarter for YoY
-    start = dt.date(year - 1, 1, 1)
-    end = dt.date(year, 12, 31)
-
     pulled: Dict[str, pd.Series] = {}
     errors: Dict[str, str] = {}
 
@@ -307,7 +381,7 @@ def build_layer1_macro(fred: FredClient, year: int) -> Dict[str, Any]:
             # internal series, still fetched
             pass
         try:
-            pulled[key] = fred.fetch_series(sdef.id, start=start, end=end)
+            pulled[key] = fred.fetch_series(sdef.id, start=start_date, end=end_date)
         except Exception as e:
             pulled[key] = pd.Series(dtype=float)
             errors[key] = f"fetch_failed: {type(e).__name__}: {e}"
@@ -443,7 +517,7 @@ def build_layer1_macro(fred: FredClient, year: int) -> Dict[str, Any]:
 
     return out
 
-def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
+def build_layer4_vol(fred: FredClient, year: int, start_date: dt.date, end_date: dt.date) -> Dict[str, Any]:
     """
     Layer 4: Vol surface & risk pricing
       - VIX (VIXCLS)
@@ -452,8 +526,6 @@ def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
       - Equity-bond correlation (computed from SPY and TLT daily returns over last ~60 trading days of each quarter)
     """
     q_ends = q_end_dates(year)
-    start = dt.date(year - 1, 1, 1)
-    end = dt.date(year, 12, 31)
 
     series_defs = {
         "L4-VIX": FredSeries("VIXCLS", "VIX", "index"),
@@ -465,7 +537,7 @@ def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
 
     for key, sdef in series_defs.items():
         try:
-            pulled[key] = fred.fetch_series(sdef.id, start=start, end=end)
+            pulled[key] = fred.fetch_series(sdef.id, start=start_date, end=end_date)
         except Exception as e:
             pulled[key] = pd.Series(dtype=float)
             errors[key] = f"fetch_failed: {type(e).__name__}: {e}"
@@ -484,10 +556,10 @@ def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
     }
 
     for q in ["Q1", "Q2", "Q3", "Q4"]:
-        end_date = q_ends[q]
-        start_date = end_date - dt.timedelta(days=120)  # enough to get ~60 trading days
-        spy = yf_history("SPY", start_date, end_date)
-        tlt = yf_history("TLT", start_date, end_date)
+        q_end = q_ends[q]
+        corr_start = q_end - dt.timedelta(days=120)  # enough to get ~60 trading days
+        spy = yf_history("SPY", corr_start, q_end)
+        tlt = yf_history("TLT", corr_start, q_end)
         corr = None
         if not spy.empty and not tlt.empty:
             sret = np.log(spy["Adj Close"].astype(float)).diff()
@@ -497,7 +569,7 @@ def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
             if len(df) >= 30:
                 corr = float(df["spy"].corr(df["tlt"]))
         out["quarters"][q] = {
-            "asof": iso(end_date),
+            "asof": iso(q_end),
             "metrics": {
                 "L4-VIX": {"value": level("L4-VIX", q), "units": "index"},
                 "L4-MOVE": {"value": level("L4-MOVE", q), "units": "index"},
@@ -508,7 +580,8 @@ def build_layer4_vol(fred: FredClient, year: int) -> Dict[str, Any]:
 
     return out
 
-def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int) -> Dict[str, Any]:
+def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int,
+                           start_date: dt.date, end_date: dt.date) -> Dict[str, Any]:
     """
     Layer 5: Market internals (approx, public-data)
       - % of S&P 500 constituents above 200DMA at each quarter end
@@ -554,15 +627,15 @@ def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int) -> 
 
     # Pre-fetch daily history for sampled tickers per quarter (needs at least 220 trading days lookback)
     for q in ["Q1", "Q2", "Q3", "Q4"]:
-        end_date = q_ends[q]
-        start_date = end_date - dt.timedelta(days=420)  # ~1.6 years calendar to ensure 200DMA
+        q_end = q_ends[q]
+        breadth_start = q_end - dt.timedelta(days=420)  # ~1.6 years calendar to ensure 200DMA
         above = 0
         total = 0
 
         # breadth: compute for sampled tickers
         for tkr in sampled:
             try:
-                df = yf_history(tkr, start_date, end_date)
+                df = yf_history(tkr, breadth_start, q_end)
                 if df.empty or "Adj Close" not in df.columns:
                     continue
                 px = df["Adj Close"].astype(float).dropna()
@@ -593,8 +666,8 @@ def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int) -> 
         # equal-weight vs cap-weight (RSP vs SPY) quarterly return
         q_start = prev_q_end(q, year) + dt.timedelta(days=1)
         try:
-            rsp = yf_history("RSP", q_start - dt.timedelta(days=5), end_date)
-            spy = yf_history("SPY", q_start - dt.timedelta(days=5), end_date)
+            rsp = yf_history("RSP", q_start - dt.timedelta(days=5), q_end)
+            spy = yf_history("SPY", q_start - dt.timedelta(days=5), q_end)
             rsp_ret = None
             spy_ret = None
             diff = None
@@ -610,7 +683,7 @@ def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int) -> 
             rsp_ret = spy_ret = diff = None
 
         out["quarters"][q] = {
-            "asof": iso(end_date),
+            "asof": iso(q_end),
             "metrics": {
                 "L5-200DMA": {"value": pct_above, "units": "%"},
                 "L5-CONC": {"value": top10_share, "units": "% (top10 mcap share, approx)"},
@@ -625,7 +698,7 @@ def build_layer5_internals(year: int, breadth_sample: int, breadth_max: int) -> 
 
     return out
 
-def build_layer6_prices(year: int, tickers: List[str]) -> Dict[str, Any]:
+def build_layer6_prices(year: int, tickers: List[str], start_date: dt.date, end_date: dt.date) -> Dict[str, Any]:
     """
     Layer 6: Daily price data summary + compact bars per quarter for each ticker
       - current price (quarter end close)
@@ -634,6 +707,9 @@ def build_layer6_prices(year: int, tickers: List[str]) -> Dict[str, Any]:
       - max drawdown over 60D
       - SMA20, SMA50 at quarter end
       - daily bars for the quarter (date, close)
+
+    Downloads price history ONCE per ticker (start_date to end_date),
+    then slices per-quarter from the preloaded dataframe.
     """
     q_ends = q_end_dates(year)
     out = {
@@ -651,29 +727,44 @@ def build_layer6_prices(year: int, tickers: List[str]) -> Dict[str, Any]:
 
     for tkr in tickers:
         out["tickers"][tkr] = {"quarters": {}}
+
+        # Download ONCE for the entire window
+        try:
+            df = yf_history(tkr, start_date, end_date)
+        except Exception as e:
+            for q in ["Q1", "Q2", "Q3", "Q4"]:
+                out["errors"][f"{tkr}:{q}"] = f"calc_failed: {type(e).__name__}: {e}"
+                out["tickers"][tkr]["quarters"][q] = {"error": f"{type(e).__name__}: {e}"}
+            continue
+
+        if df.empty or "Adj Close" not in df.columns:
+            for q in ["Q1", "Q2", "Q3", "Q4"]:
+                out["tickers"][tkr]["quarters"][q] = {"error": "no_price_data"}
+            continue
+
+        # Slice per-quarter from preloaded dataframe
         for q in ["Q1", "Q2", "Q3", "Q4"]:
-            end_date = q_ends[q]
+            q_end = q_ends[q]
             q_start = prev_q_end(q, year) + dt.timedelta(days=1)
-            # fetch quarter bars plus some lookback for 60D stats
-            lookback_start = q_start - dt.timedelta(days=120)
             try:
-                df = yf_history(tkr, lookback_start, end_date)
-                if df.empty or "Adj Close" not in df.columns:
+                px = df["Adj Close"].dropna().astype(float)
+                px = px[px.index <= pd.to_datetime(q_end)]
+                if px.empty:
                     out["tickers"][tkr]["quarters"][q] = {"error": "no_price_data"}
                     continue
-                px = df["Adj Close"].dropna().astype(float)
-                # quarter-only bars (from q_start)
-                qdf = df[df.index >= pd.to_datetime(q_start)]
+
+                # quarter-only bars (from q_start to q_end)
+                qdf = df[(df.index >= pd.to_datetime(q_start)) & (df.index <= pd.to_datetime(q_end))]
                 bars = []
                 if not qdf.empty:
                     closes = qdf["Adj Close"].dropna().astype(float)
                     for d, c in closes.items():
                         bars.append({"timestamp": d.date().isoformat(), "close": float(c)})
 
-                current = float(px.loc[px.index <= pd.to_datetime(end_date)].iloc[-1]) if not px.empty else None
+                current = float(px.iloc[-1]) if not px.empty else None
 
-                # 60D stats: use last ~60 trading days up to end_date
-                px60 = px.loc[px.index <= pd.to_datetime(end_date)].iloc[-61:]
+                # 60D stats: use last ~60 trading days up to q_end
+                px60 = px.iloc[-61:]
                 ret60 = None
                 vol60 = None
                 dd60 = None
@@ -685,12 +776,12 @@ def build_layer6_prices(year: int, tickers: List[str]) -> Dict[str, Any]:
                     r = np.log(px60).diff()
                     vol60 = annualized_vol(r)
                     dd60 = max_drawdown(px60)
-                # SMA at quarter end using full available history in df
-                sma20v = sma(px.loc[px.index <= pd.to_datetime(end_date)], 20)
-                sma50v = sma(px.loc[px.index <= pd.to_datetime(end_date)], 50)
+                # SMA at quarter end using full available history up to q_end
+                sma20v = sma(px, 20)
+                sma50v = sma(px, 50)
 
                 out["tickers"][tkr]["quarters"][q] = {
-                    "asof": iso(end_date),
+                    "asof": iso(q_end),
                     "metrics": {
                         "CURRENT_PRICE": {"value": current, "units": "USD"},
                         "PX-RET60": {"value": ret60, "units": "%"},
@@ -712,7 +803,10 @@ def build_layer6_prices(year: int, tickers: List[str]) -> Dict[str, Any]:
 # ----------------------------
 
 def build_augmented_market_state(year: int, tickers: List[str], fred_key: Optional[str],
-                                 breadth_sample: int, breadth_max: int) -> Dict[str, Any]:
+                                 breadth_sample: int, breadth_max: int,
+                                 back_years: int = 2) -> Dict[str, Any]:
+    start_date = dt.date(year - back_years, 1, 1)
+    end_date = dt.date(year, 12, 31)
     fred = FredClient(api_key=fred_key)
     doc = {
         "schema_version": "augmented_market_state_v3",
@@ -723,16 +817,17 @@ def build_augmented_market_state(year: int, tickers: List[str], fred_key: Option
     }
 
     # Layer 1
-    doc["layers"]["L1"] = build_layer1_macro(fred, year)
+    doc["layers"]["L1"] = build_layer1_macro(fred, year, start_date, end_date)
 
     # Layer 4
-    doc["layers"]["L4"] = build_layer4_vol(fred, year)
+    doc["layers"]["L4"] = build_layer4_vol(fred, year, start_date, end_date)
 
     # Layer 5
-    doc["layers"]["L5"] = build_layer5_internals(year, breadth_sample=breadth_sample, breadth_max=breadth_max)
+    doc["layers"]["L5"] = build_layer5_internals(year, breadth_sample=breadth_sample, breadth_max=breadth_max,
+                                                  start_date=start_date, end_date=end_date)
 
     # Layer 6
-    doc["layers"]["L6"] = build_layer6_prices(year, tickers=tickers)
+    doc["layers"]["L6"] = build_layer6_prices(year, tickers=tickers, start_date=start_date, end_date=end_date)
 
     # Basic coverage report (counts)
     # We count metric keys present (not None) for quick debugging.
@@ -798,6 +893,7 @@ def parse_args():
     p.add_argument("--out", type=str, default="augmented_market_state_v3.json", help="Output JSON path")
     p.add_argument("--breadth-sample", type=int, default=150, help="How many SP500 tickers to sample for breadth/concentration")
     p.add_argument("--breadth-max", type=int, default=200, help="Hard cap for sampled tickers")
+    p.add_argument("--back-years", type=int, default=2, help="Years of historical lookback before --year (default: 2)")
     return p.parse_args()
 
 def main():
@@ -812,6 +908,7 @@ def main():
         fred_key=fred_key,
         breadth_sample=args.breadth_sample,
         breadth_max=args.breadth_max,
+        back_years=args.back_years,
     )
 
     with open(args.out, "w", encoding="utf-8") as f:
