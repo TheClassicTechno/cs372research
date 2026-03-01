@@ -56,6 +56,12 @@ agent:
   # pid_critique: true
   # pid_revise: true
 
+  # PID logging (only relevant when pid_enabled: true).
+  # pid_log_metrics: log scalar PID stats each round (rho_bar, beta, JS, gains, etc.)
+  # pid_log_llm_calls: log full CRIT LLM prompts and responses each round
+  # pid_log_metrics: false
+  # pid_log_llm_calls: false
+
 # --------------------------------------------------------------------------
 # Broker Configuration
 # --------------------------------------------------------------------------
