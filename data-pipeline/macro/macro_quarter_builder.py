@@ -1,26 +1,31 @@
 #!/usr/bin/env python3
 """
-AUGMENTED MARKET STATE — Builder v4 (Quarter-Aware, No-Leak)
+Macro Market State Builder — Quarter-Aware, No-Leak.
 
-This version is QUARTER-AWARE.
+Builds general macro economic state (rates, inflation, vol) as-of a
+specific quarter end. No ticker-specific data. Backtest safe.
 
-Key changes:
-- Requires --year and --quarter
-- Builds state ONLY as-of that quarter end
-- No future-quarter leakage
-- Backtest safe
+Output:
+  data-pipeline/macro/data/macro_{YEAR}_{QUARTER}.json
 
-Example:
+Examples:
 
-  python macro_quarter_builder.py --year 2025 --quarter Q2 --tickers AAPL,NVDA
+  # Single quarter
+  python macro_quarter_builder.py --year 2025 --quarter Q2
+
+  # Quarter range (Q4 2024 through Q3 2025)
+  python macro_quarter_builder.py --start 2024Q4 --end 2025Q3
+
+  # Custom output path (single quarter only)
+  python macro_quarter_builder.py --year 2025 --quarter Q2 --out /tmp/macro.json
 """
 
 import argparse
 import datetime as dt
 import json
-import math
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -28,6 +33,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import requests
+from tqdm import tqdm
 
 try:
     import yfinance as yf
@@ -36,6 +42,7 @@ except Exception:
     raise
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
+_DEFAULT_DATA_DIR = _SCRIPT_DIR / "data"
 
 # ----------------------------
 # Utilities
@@ -57,23 +64,6 @@ def bps(a: Optional[float], b: Optional[float]) -> Optional[float]:
         return None
     return (b - a) * 100.0
 
-def annualized_vol(daily_returns: pd.Series, trading_days: int = 252) -> Optional[float]:
-    if len(daily_returns.dropna()) < 10:
-        return None
-    return float(daily_returns.std(ddof=1) * math.sqrt(trading_days))
-
-def max_drawdown(prices: pd.Series) -> Optional[float]:
-    if len(prices.dropna()) < 10:
-        return None
-    peak = prices.cummax()
-    dd = prices / peak - 1.0
-    return float(dd.min())
-
-def sma(series: pd.Series, window: int) -> Optional[float]:
-    if len(series.dropna()) < window:
-        return None
-    return float(series.rolling(window).mean().iloc[-1])
-
 def q_end_dates(year: int) -> Dict[str, dt.date]:
     return {
         "Q1": dt.date(year, 3, 31),
@@ -92,6 +82,33 @@ def prev_q_end(q: str, year: int) -> dt.date:
     if q == "Q4":
         return dt.date(year, 9, 30)
     raise ValueError("Invalid quarter")
+
+def next_quarter(year: int, quarter: str) -> Tuple[int, str]:
+    order = ["Q1", "Q2", "Q3", "Q4"]
+    idx = order.index(quarter)
+    if idx < 3:
+        return year, order[idx + 1]
+    return year + 1, "Q1"
+
+def parse_quarter_string(qstr: str) -> Tuple[int, str]:
+    """'2025Q2' -> (2025, 'Q2')"""
+    year = int(qstr[:4])
+    quarter = qstr[4:]
+    if quarter not in ["Q1", "Q2", "Q3", "Q4"]:
+        raise ValueError(f"Invalid quarter: {quarter}")
+    return year, quarter
+
+def quarter_range(start: str, end: str) -> List[Tuple[int, str]]:
+    """Generate list of (year, quarter) from start to end inclusive."""
+    y, q = parse_quarter_string(start)
+    end_y, end_q = parse_quarter_string(end)
+    result = []
+    while True:
+        result.append((y, q))
+        if y == end_y and q == end_q:
+            break
+        y, q = next_quarter(y, q)
+    return result
 
 # ----------------------------
 # FRED
@@ -116,11 +133,23 @@ class FredClient:
             "observation_start": iso(start),
             "observation_end": iso(end),
         }
-        r = requests.get(self.base, params=params, timeout=30)
-        r.raise_for_status()
+        try:
+            r = requests.get(self.base, params=params, timeout=30)
+            r.raise_for_status()
+        except requests.Timeout:
+            tqdm.write(f"    FAIL FRED {series_id} — timeout (30s)")
+            return pd.Series(dtype=float)
+        except requests.ConnectionError as e:
+            tqdm.write(f"    FAIL FRED {series_id} — connection error: {e}")
+            return pd.Series(dtype=float)
+        except requests.HTTPError as e:
+            status = e.response.status_code if e.response else "unknown"
+            tqdm.write(f"    FAIL FRED {series_id} — HTTP {status}")
+            return pd.Series(dtype=float)
         js = r.json()
         obs = js.get("observations", [])
         if not obs:
+            tqdm.write(f"    WARN FRED {series_id} — no observations returned")
             return pd.Series(dtype=float)
         dates = []
         vals = []
@@ -185,12 +214,21 @@ def build_layer1_macro(fred: FredClient,
         "WTI": "DCOILWTICO",
     }
 
+    tqdm.write(f"  [L1] Fetching {len(series_ids)} FRED series in parallel...")
     pulled = {}
-    for k, sid in series_ids.items():
-        try:
-            pulled[k] = fred.fetch(sid, start_date, end_date)
-        except Exception:
-            pulled[k] = pd.Series(dtype=float)
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        futures = {
+            pool.submit(fred.fetch, sid, start_date, end_date): k
+            for k, sid in series_ids.items()
+        }
+        for future in as_completed(futures):
+            k = futures[future]
+            try:
+                pulled[k] = future.result()
+            except Exception as e:
+                tqdm.write(f"    FAIL FRED {k} — {type(e).__name__}: {e}")
+                pulled[k] = pd.Series(dtype=float)
+    tqdm.write(f"  [L1] FRED fetch complete ({len(pulled)} series)")
 
     def val(k, d):
         return fred.value_on_or_before(pulled[k], d)
@@ -235,16 +273,39 @@ def build_layer4_vol(fred: FredClient,
 
     q_end = q_end_dates(year)[quarter]
 
-    vix = fred.fetch("VIXCLS", start_date, end_date)
-    move = fred.fetch("MOVE", start_date, end_date)
+    tqdm.write(f"  [L4] Fetching VIX, MOVE, SPY, TLT in parallel...")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        f_vix = pool.submit(fred.fetch, "VIXCLS", start_date, end_date)
+        f_move = pool.submit(fred.fetch, "MOVE", start_date, end_date)
+        f_spy = pool.submit(yf_history, "SPY", q_end - dt.timedelta(days=120), q_end)
+        f_tlt = pool.submit(yf_history, "TLT", q_end - dt.timedelta(days=120), q_end)
 
-    spy = yf_history("SPY", q_end - dt.timedelta(days=120), q_end)
-    tlt = yf_history("TLT", q_end - dt.timedelta(days=120), q_end)
+    try:
+        vix = f_vix.result()
+    except Exception as e:
+        tqdm.write(f"    FAIL FRED VIXCLS — {type(e).__name__}: {e}")
+        vix = pd.Series(dtype=float)
+    try:
+        move = f_move.result()
+    except Exception as e:
+        tqdm.write(f"    FAIL FRED MOVE — {type(e).__name__}: {e}")
+        move = pd.Series(dtype=float)
+    try:
+        spy = f_spy.result()
+    except Exception as e:
+        tqdm.write(f"    FAIL Yahoo SPY — {type(e).__name__}: {e}")
+        spy = pd.DataFrame()
+    try:
+        tlt = f_tlt.result()
+    except Exception as e:
+        tqdm.write(f"    FAIL Yahoo TLT — {type(e).__name__}: {e}")
+        tlt = pd.DataFrame()
+    tqdm.write(f"  [L4] Vol data fetched")
 
     corr = None
     if not spy.empty and not tlt.empty:
-        sret = np.log(spy["Adj Close"]).diff()
-        tret = np.log(tlt["Adj Close"]).diff()
+        sret = np.log(spy["Close"]).diff()
+        tret = np.log(tlt["Close"]).diff()
         df = pd.concat([sret, tret], axis=1).dropna()
         if len(df) >= 30:
             corr = float(df.iloc[:,0].corr(df.iloc[:,1]))
@@ -262,55 +323,13 @@ def build_layer4_vol(fred: FredClient,
     }
 
 # ----------------------------
-# Layer 6 (Ticker prices)
-# ----------------------------
-
-def build_layer6_prices(year: int,
-                        quarter: str,
-                        tickers: List[str],
-                        start_date: dt.date,
-                        end_date: dt.date):
-
-    q_end = q_end_dates(year)[quarter]
-    out = {"layer": "L6", "year": year, "quarter": quarter, "tickers": {}}
-
-    for t in tickers:
-        df = yf_history(t, start_date, end_date)
-        if df.empty:
-            out["tickers"][t] = {"error": "no_data"}
-            continue
-
-        px = df["Adj Close"].dropna()
-        px = px[px.index <= pd.to_datetime(q_end)]
-        if len(px) < 10:
-            out["tickers"][t] = {"error": "insufficient_data"}
-            continue
-
-        px60 = px.iloc[-61:]
-
-        out["tickers"][t] = {
-            "asof": iso(q_end),
-            "metrics": {
-                "PRICE": float(px.iloc[-1]),
-                "RET60": float(px60.iloc[-1]/px60.iloc[0]-1)*100 if len(px60)>=2 else None,
-                "VOL60": annualized_vol(np.log(px60).diff()),
-                "DD60": max_drawdown(px60),
-                "SMA20": sma(px,20),
-                "SMA50": sma(px,50),
-            }
-        }
-
-    return out
-
-# ----------------------------
 # Orchestrator
 # ----------------------------
 
-def build_augmented_market_state(year: int,
-                                 quarter: str,
-                                 tickers: List[str],
-                                 fred_key: Optional[str],
-                                 back_years: int = 2):
+def build_macro_state(year: int,
+                      quarter: str,
+                      fred_key: Optional[str],
+                      back_years: int = 2):
 
     q_end = q_end_dates(year)[quarter]
     start_date = dt.date(q_end.year - back_years, 1, 1)
@@ -319,19 +338,30 @@ def build_augmented_market_state(year: int,
     fred = FredClient(api_key=fred_key)
 
     doc = {
-        "schema_version": "augmented_market_state_v4_quarter_aware",
+        "schema_version": "macro_state_v4_quarter_aware",
         "generated_at_utc": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "year": year,
         "quarter": quarter,
         "as_of": iso(q_end),
-        "tickers": tickers,
         "layers": {}
     }
 
-    doc["layers"]["L1"] = build_layer1_macro(fred, year, quarter, start_date, end_date)
-    doc["layers"]["L4"] = build_layer4_vol(fred, year, quarter, start_date, end_date)
-    doc["layers"]["L6"] = build_layer6_prices(year, quarter, tickers, start_date, end_date)
+    print(f"Building macro state for {year} {quarter} (as-of {iso(q_end)})", flush=True)
+    print(f"  Lookback: {iso(start_date)} → {iso(end_date)}", flush=True)
 
+    # Both layers are independent — run in parallel
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_l1 = pool.submit(build_layer1_macro, fred, year, quarter, start_date, end_date)
+        f_l4 = pool.submit(build_layer4_vol, fred, year, quarter, start_date, end_date)
+
+        for name, future in [("L1", f_l1), ("L4", f_l4)]:
+            try:
+                doc["layers"][name] = future.result()
+            except Exception as e:
+                tqdm.write(f"  FAIL layer {name} — {type(e).__name__}: {e}")
+                doc["layers"][name] = {"error": str(e)}
+
+    print(f"All layers complete.")
     return doc
 
 # ----------------------------
@@ -339,32 +369,57 @@ def build_augmented_market_state(year: int,
 # ----------------------------
 
 def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--year", type=int, required=True)
-    p.add_argument("--quarter", type=str, required=True, choices=["Q1","Q2","Q3","Q4"])
-    p.add_argument("--tickers", type=str, default="SPY")
+    p = argparse.ArgumentParser(description="Build macro economic state for one or more quarters")
+    # Single quarter mode
+    p.add_argument("--year", type=int, default=None, help="Year (single quarter mode)")
+    p.add_argument("--quarter", type=str, default=None, choices=["Q1","Q2","Q3","Q4"],
+                   help="Quarter (single quarter mode)")
+    # Range mode
+    p.add_argument("--start", type=str, default=None, help="Start quarter, e.g. 2024Q4")
+    p.add_argument("--end", type=str, default=None, help="End quarter, e.g. 2025Q3")
     p.add_argument("--fred-key", type=str, default=None)
-    p.add_argument("--out", type=str, default="macro_quarter.json")
+    p.add_argument("--out", type=str, default=None,
+                   help="Output path (single quarter only; default: macro/data/macro_YEAR_QUARTER.json)")
     p.add_argument("--back-years", type=int, default=2)
     return p.parse_args()
 
 def main():
     args = parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
     fred_key = args.fred_key or os.environ.get("FRED_API_KEY")
 
-    doc = build_augmented_market_state(
-        year=args.year,
-        quarter=args.quarter,
-        tickers=tickers,
-        fred_key=fred_key,
-        back_years=args.back_years
-    )
+    if not fred_key:
+        print("WARNING: No FRED API key. Set FRED_API_KEY or use --fred-key.", file=sys.stderr)
 
-    with open(args.out, "w") as f:
-        json.dump(doc, f, indent=2)
+    # Determine quarters to build
+    if args.start and args.end:
+        quarters = quarter_range(args.start, args.end)
+    elif args.year and args.quarter:
+        quarters = [(args.year, args.quarter)]
+    else:
+        print("ERROR: specify --year/--quarter or --start/--end", file=sys.stderr)
+        sys.exit(1)
 
-    print(f"Wrote: {args.out}")
+    print(f"Building macro state for {len(quarters)} quarter(s)", flush=True)
+
+    for year, quarter in tqdm(quarters, desc="Quarters", unit="quarter"):
+        doc = build_macro_state(
+            year=year,
+            quarter=quarter,
+            fred_key=fred_key,
+            back_years=args.back_years,
+        )
+
+        if args.out and len(quarters) == 1:
+            out_path = Path(args.out)
+        else:
+            out_path = _DEFAULT_DATA_DIR / f"macro_{year}_{quarter}.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as f:
+            json.dump(doc, f, indent=2)
+
+        tqdm.write(f"Wrote: {out_path}")
+
+    print(f"Done: {len(quarters)} quarter(s) complete.")
 
 if __name__ == "__main__":
     main()

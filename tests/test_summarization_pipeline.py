@@ -469,7 +469,7 @@ class TestDeriveMetadata:
     def test_10q_quarterly(self, tmp_path):
         f = tmp_path / "filing.txt"
         f.write_text("FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 123\n\nBody")
-        form, date, fp, pt = fsp._derive_metadata([f])
+        form, date, fp, pt = fsp._derive_metadata([f], 2026, "Q1")
         assert form == "10-Q"
         assert date == "2026-01-30"
         assert fp == "2026-Q1"
@@ -477,18 +477,18 @@ class TestDeriveMetadata:
 
     def test_10k_annual(self, tmp_path):
         f = tmp_path / "filing.txt"
-        f.write_text("FORM: 10-K\nFILING_DATE: 2025-10-31\nACCESSION: 456\n\nBody")
-        form, date, fp, pt = fsp._derive_metadata([f])
+        f.write_text("FORM: 10-K\nFILING_DATE: 2025-02-14\nACCESSION: 456\n\nBody")
+        form, date, fp, pt = fsp._derive_metadata([f], 2024, "Q4")
         assert form == "10-K"
-        assert fp == "FY2025"
+        assert fp == "FY2024"
         assert pt == "annual"
 
     def test_10k_takes_priority_over_8k(self, tmp_path):
         f1 = tmp_path / "a.txt"
         f1.write_text("FORM: 8-K\nFILING_DATE: 2025-11-15\nACCESSION: 789\n\nBody")
         f2 = tmp_path / "b.txt"
-        f2.write_text("FORM: 10-K\nFILING_DATE: 2025-10-31\nACCESSION: 456\n\nBody")
-        form, date, fp, pt = fsp._derive_metadata([f1, f2])
+        f2.write_text("FORM: 10-K\nFILING_DATE: 2025-02-14\nACCESSION: 456\n\nBody")
+        form, date, fp, pt = fsp._derive_metadata([f1, f2], 2024, "Q4")
         assert form == "10-K"
         assert pt == "annual"
 
@@ -497,7 +497,7 @@ class TestDeriveMetadata:
         f1.write_text("FORM: 8-K\nFILING_DATE: 2026-02-24\nACCESSION: 789\n\nBody")
         f2 = tmp_path / "b.txt"
         f2.write_text("FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 456\n\nBody")
-        form, date, fp, pt = fsp._derive_metadata([f1, f2])
+        form, date, fp, pt = fsp._derive_metadata([f1, f2], 2026, "Q1")
         assert form == "10-Q"
         assert pt == "quarterly"
 
@@ -517,8 +517,8 @@ class TestDiscoverQuarterlyGroups:
 
     def test_groups_by_quarter(self, tmp_path):
         base = self._setup_clean_text(tmp_path, [
-            ("a.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
-            ("b.txt", "FORM: 8-K\nFILING_DATE: 2026-02-24\nACCESSION: 2"),
+            ("AAPL_2026_Q1_10-Q_2026-01-30.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
+            ("AAPL_2026_Q1_8-K_2026-02-24.txt", "FORM: 8-K\nFILING_DATE: 2026-02-24\nACCESSION: 2"),
         ])
         groups = fsp.discover_quarterly_groups(base)
         assert ("AAPL", 2026, "Q1") in groups
@@ -526,21 +526,21 @@ class TestDiscoverQuarterlyGroups:
 
     def test_filters_by_ticker(self, tmp_path):
         base = self._setup_clean_text(tmp_path, [
-            ("a.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
+            ("AAPL_2026_Q1_10-Q_2026-01-30.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
         ])
         groups = fsp.discover_quarterly_groups(base, tickers=["NVDA"])
         assert len(groups) == 0
 
     def test_filters_by_year(self, tmp_path):
         base = self._setup_clean_text(tmp_path, [
-            ("a.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
+            ("AAPL_2026_Q1_10-Q_2026-01-30.txt", "FORM: 10-Q\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
         ])
         groups = fsp.discover_quarterly_groups(base, years=[2025])
         assert len(groups) == 0
 
     def test_excludes_non_target_forms(self, tmp_path):
         base = self._setup_clean_text(tmp_path, [
-            ("a.txt", "FORM: 4\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
+            ("AAPL_2026_Q1_4_2026-01-30.txt", "FORM: 4\nFILING_DATE: 2026-01-30\nACCESSION: 1"),
         ])
         groups = fsp.discover_quarterly_groups(base)
         assert len(groups) == 0

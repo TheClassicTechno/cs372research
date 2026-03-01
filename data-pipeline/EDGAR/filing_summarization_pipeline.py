@@ -31,14 +31,17 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 import yaml
+from tqdm import tqdm
 
 _SUPPORTED_TICKERS_PATH = Path(__file__).resolve().parent.parent / "supported_tickers.yaml"
 
@@ -62,6 +65,9 @@ RATE_LIMIT_SECONDS = 1.0
 MAX_CHUNK_CHARS = 60_000
 MAX_RETRIES = 2
 RETRY_DELAYS = [2, 5]
+MAX_WORKERS = 4
+
+_rate_limit_lock = threading.Lock()
 
 TARGET_FORMS = {"10-Q", "10-K", "8-K"}
 
@@ -328,6 +334,28 @@ def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
 # FILE DISCOVERY
 # ==========================
 
+# Matches filenames like AAPL_2024_Q4_10-K_2024-11-01.txt
+_FILENAME_RE = re.compile(
+    r"^[A-Z]+_(\d{4})_(Q[1-4])_[^_]+_\d{4}-\d{2}-\d{2}\.txt$"
+)
+
+
+def _parse_fiscal_quarter_from_filename(
+    filepath: Path,
+) -> Optional[Tuple[int, str]]:
+    """Extract (year, quarter) from the fiscal-aligned filename.
+
+    Filenames are written by get_sec_data.py using reportDate-based
+    fiscal alignment: TICKER_YEAR_QUARTER_FORM_FILINGDATE.txt
+    The YEAR and QUARTER in the filename represent the fiscal period,
+    NOT the filing date.
+    """
+    m = _FILENAME_RE.match(filepath.name)
+    if m:
+        return int(m.group(1)), m.group(2)
+    return None
+
+
 def discover_quarterly_groups(
     base_dir: Path,
     tickers: Optional[List[str]] = None,
@@ -335,6 +363,8 @@ def discover_quarterly_groups(
 ) -> Dict[Tuple[str, int, str], List[Path]]:
     """Walk clean_text/ and group filing .txt files by (ticker, year, quarter).
 
+    Year/quarter are derived from the fiscal-aligned filename (set by
+    get_sec_data.py using reportDate), NOT from the filing date.
     Only includes filings where base form is in TARGET_FORMS.
     """
     clean_dir = base_dir / "clean_text"
@@ -351,6 +381,14 @@ def discover_quarterly_groups(
             continue
 
         for txt_file in sorted(ticker_dir.glob("*.txt")):
+            # Extract fiscal year/quarter from filename
+            fiscal = _parse_fiscal_quarter_from_filename(txt_file)
+            if fiscal is None:
+                # Skip old accession-based filenames
+                continue
+
+            year, quarter = fiscal
+
             try:
                 with open(txt_file, "r", encoding="utf-8") as f:
                     head = f.read(500)
@@ -359,22 +397,10 @@ def discover_quarterly_groups(
 
             header = parse_filing_header(head)
             form = header.get("form", "")
-            filing_date = header.get("filing_date", "")
 
             base_form = form.rstrip("/A").rstrip("/") if "/" in form else form
             if base_form not in TARGET_FORMS:
                 continue
-
-            if not filing_date:
-                continue
-
-            try:
-                parsed = datetime.strptime(filing_date, "%Y-%m-%d")
-            except ValueError:
-                continue
-
-            year = parsed.year
-            quarter = f"Q{(parsed.month - 1) // 3 + 1}"
 
             if years and year not in years:
                 continue
@@ -588,19 +614,20 @@ def call_claude_json(
     last_error = None
     for attempt in range(MAX_RETRIES + 1):
         try:
-            time.sleep(RATE_LIMIT_SECONDS)
+            with _rate_limit_lock:
+                time.sleep(RATE_LIMIT_SECONDS)
             raw = call_claude(api_key, system, user_prompt, model=model)
             return parse_json_response(raw)
         except json.JSONDecodeError as e:
             last_error = e
             if attempt < MAX_RETRIES:
-                print(f"      JSON parse error, retrying ({attempt + 1}/{MAX_RETRIES})...")
+                tqdm.write(f"      JSON parse error, retrying ({attempt + 1}/{MAX_RETRIES})...")
                 time.sleep(RETRY_DELAYS[attempt])
         except requests.HTTPError as e:
             last_error = e
             status = e.response.status_code if e.response else 0
             if attempt < MAX_RETRIES and status in (429, 500, 502, 503):
-                print(f"      HTTP {status}, retrying ({attempt + 1}/{MAX_RETRIES})...")
+                tqdm.write(f"      HTTP {status}, retrying ({attempt + 1}/{MAX_RETRIES})...")
                 time.sleep(RETRY_DELAYS[attempt])
             else:
                 raise
@@ -621,9 +648,13 @@ def _base_form(form: str) -> str:
 
 def _derive_metadata(
     filings: List[Path],
+    year: int,
+    quarter: str,
 ) -> Tuple[str, str, str, str]:
     """Derive (form, filing_date, fiscal_period, period_type) from filings.
 
+    Uses the fiscal year/quarter from the caller (originally parsed from
+    the filename, which reflects reportDate-based fiscal alignment).
     Picks the primary filing by priority: 10-K > 10-Q > 8-K.
     """
     candidates = []
@@ -639,15 +670,11 @@ def _derive_metadata(
     candidates.sort(key=lambda x: _FORM_PRIORITY.get(x[0], 99))
     bf, form, filing_date = candidates[0]
 
-    parsed = datetime.strptime(filing_date, "%Y-%m-%d")
-    year = parsed.year
-    quarter_num = (parsed.month - 1) // 3 + 1
-
     if bf == "10-K":
         fiscal_period = f"FY{year}"
         period_type = "annual"
     else:
-        fiscal_period = f"{year}-Q{quarter_num}"
+        fiscal_period = f"{year}-{quarter}"
         period_type = "quarterly"
 
     return form, filing_date, fiscal_period, period_type
@@ -694,7 +721,7 @@ def summarize_quarter(
 ) -> dict:
     """Compress all filings for one quarter into a single state vector."""
 
-    form, filing_date, fiscal_period, period_type = _derive_metadata(filings)
+    form, filing_date, fiscal_period, period_type = _derive_metadata(filings, year, quarter)
 
     # Resolve form-specific word limits
     bf = _base_form(form)
@@ -729,29 +756,40 @@ def summarize_quarter(
         combined_parts.append(f"=== {filing_form} FILING ===\n{text}")
     combined = "\n\n".join(combined_parts)
 
-    print(f"    Combined text: {len(combined)} chars from {len(prepared)} filing(s)")
+    tqdm.write(f"    [{ticker}] Combined text: {len(combined)} chars from {len(prepared)} filing(s)")
 
     chunks = chunk_text(combined)
 
     if len(chunks) == 1:
+        tqdm.write(f"    [{ticker}] Compressing {len(combined)} chars via Claude...")
         prompt = _EXTRACTION_PROMPT.format(
             ticker=ticker, fiscal_period=fiscal_period,
             word_target=word_target, word_max=word_max, text=chunks[0],
         )
         result = call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
     else:
-        chunk_results = []
+        tqdm.write(f"    [{ticker}] Compressing {len(chunks)} chunks in parallel...")
+        chunk_prompts = []
         for i, chunk in enumerate(chunks):
-            print(f"    Chunk {i + 1}/{len(chunks)} ({len(chunk)} chars)")
             prompt = _EXTRACTION_PROMPT.format(
                 ticker=ticker, fiscal_period=fiscal_period,
                 word_target=word_target, word_max=word_max, text=chunk,
             )
-            chunk_results.append(
-                call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
-            )
+            chunk_prompts.append((i, prompt))
 
-        print(f"    Merging {len(chunk_results)} chunk compressions...")
+        chunk_results = [None] * len(chunks)
+        with ThreadPoolExecutor(max_workers=len(chunks)) as pool:
+            futures = {
+                pool.submit(call_claude_json, api_key, _SYSTEM_PROMPT, prompt, model):
+                    idx
+                for idx, prompt in chunk_prompts
+            }
+            for future in as_completed(futures):
+                idx = futures[future]
+                chunk_results[idx] = future.result()
+                tqdm.write(f"    [{ticker}] Chunk {idx + 1}/{len(chunks)} done ({len(chunks[idx])} chars)")
+
+        tqdm.write(f"    [{ticker}] Merging {len(chunk_results)} chunk compressions...")
         partials_json = json.dumps(chunk_results, indent=2)
         merge_prompt = _MERGE_PROMPT.format(
             ticker=ticker, fiscal_period=fiscal_period,
@@ -778,7 +816,7 @@ def summarize_quarter(
     for recompress_pass in range(2):
         if total <= word_max:
             break
-        print(f"    Word count {total} exceeds {word_max}, recompressing (pass {recompress_pass + 1})...")
+        tqdm.write(f"    [{ticker}] Word count {total} exceeds {word_max}, recompressing (pass {recompress_pass + 1})...")
         recompress_prompt = _RECOMPRESS_PROMPT.format(
             ticker=ticker, fiscal_period=fiscal_period,
             current_words=total, target=word_max,
@@ -809,6 +847,62 @@ def summarize_quarter(
 # PIPELINE
 # ==========================
 
+def _process_one_quarter(
+    ticker: str,
+    year: int,
+    quarter: str,
+    filings: List[Path],
+    out_dir: Path,
+    api_key: str,
+    model: str,
+    force: bool,
+) -> str:
+    """Process a single quarter. Returns 'processed', 'skipped', or 'failed'."""
+    out_path = output_path_for(out_dir, ticker, year, quarter)
+
+    if out_path.exists() and not force:
+        tqdm.write(f"  [{ticker}] SKIP {year} {quarter} (already exists)")
+        return "skipped"
+
+    forms = []
+    for f in filings:
+        with open(f, "r", encoding="utf-8") as fh:
+            h = parse_filing_header(fh.read(500))
+        forms.append(h.get("form", "?"))
+
+    tqdm.write(f"  [{ticker}] {year} {quarter}: {len(filings)} filing(s) [{', '.join(forms)}]")
+
+    try:
+        summary = summarize_quarter(
+            api_key, ticker, year, quarter, filings, model=model,
+        )
+    except requests.Timeout:
+        tqdm.write(f"  [{ticker}] FAIL {year} {quarter} — API timeout (120s)")
+        return "failed"
+    except requests.ConnectionError as e:
+        tqdm.write(f"  [{ticker}] FAIL {year} {quarter} — connection error: {e}")
+        return "failed"
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response else "unknown"
+        tqdm.write(f"  [{ticker}] FAIL {year} {quarter} — HTTP {status}: {e}")
+        return "failed"
+    except json.JSONDecodeError as e:
+        tqdm.write(f"  [{ticker}] FAIL {year} {quarter} — invalid JSON from Claude: {e}")
+        return "failed"
+    except Exception as e:
+        tqdm.write(f"  [{ticker}] FAIL {year} {quarter} — {type(e).__name__}: {e}")
+        return "failed"
+
+    errors = validate_summary(summary)
+    if errors:
+        tqdm.write(f"  [{ticker}] WARNING {year} {quarter}: {errors}")
+
+    save_summary(out_path, summary)
+    wc = summary.get("word_count", "?")
+    tqdm.write(f"  [{ticker}] Saved {year} {quarter} ({wc} words)")
+    return "processed"
+
+
 def run_pipeline(
     base_dir: Path,
     out_dir: Path,
@@ -817,53 +911,58 @@ def run_pipeline(
     years: Optional[List[int]] = None,
     model: str = DEFAULT_MODEL,
     force: bool = False,
+    workers: int = 1,
 ) -> Dict[str, Any]:
     """Run the quarterly summarization pipeline."""
     groups = discover_quarterly_groups(base_dir, tickers, years)
-    print(f"Found {len(groups)} quarterly group(s)")
+    print(f"Found {len(groups)} quarterly group(s)", flush=True)
 
     if not groups:
         print("No filings found to process.")
-        return {"total": 0, "processed": 0, "skipped": 0}
+        return {"total": 0, "processed": 0, "skipped": 0, "failed": 0}
 
     processed = 0
     skipped = 0
+    failed = 0
 
-    for (ticker, year, quarter), filings in sorted(groups.items()):
-        out_path = output_path_for(out_dir, ticker, year, quarter)
+    sorted_groups = sorted(groups.items())
+    label = f"Summarizing ({workers} worker{'s' if workers > 1 else ''})"
 
-        if out_path.exists() and not force:
-            print(f"  SKIP {ticker} {year} {quarter} (already exists)")
-            skipped += 1
-            continue
-
-        forms = []
-        for f in filings:
-            with open(f, "r", encoding="utf-8") as fh:
-                h = parse_filing_header(fh.read(500))
-            forms.append(h.get("form", "?"))
-
-        print(f"  {ticker} {year} {quarter}: {len(filings)} filing(s) [{', '.join(forms)}]")
-
-        try:
-            summary = summarize_quarter(
-                api_key, ticker, year, quarter, filings, model=model,
+    if workers == 1:
+        pbar = tqdm(sorted_groups, desc=label, unit="quarter")
+        for (ticker, year, quarter), filings in pbar:
+            pbar.set_postfix_str(f"{ticker} {year} {quarter}")
+            result = _process_one_quarter(
+                ticker, year, quarter, filings, out_dir, api_key, model, force,
             )
-        except Exception as e:
-            print(f"  FAILED {ticker} {year} {quarter}: {type(e).__name__}: {e}")
-            skipped += 1
-            continue
+            if result == "processed":
+                processed += 1
+            elif result == "skipped":
+                skipped += 1
+            else:
+                failed += 1
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(
+                    _process_one_quarter,
+                    ticker, year, quarter, filings,
+                    out_dir, api_key, model, force,
+                ): (ticker, year, quarter)
+                for (ticker, year, quarter), filings in sorted_groups
+            }
+            for future in tqdm(
+                as_completed(futures), desc=label, unit="quarter", total=len(futures),
+            ):
+                result = future.result()
+                if result == "processed":
+                    processed += 1
+                elif result == "skipped":
+                    skipped += 1
+                else:
+                    failed += 1
 
-        errors = validate_summary(summary)
-        if errors:
-            print(f"  WARNING: {errors}")
-
-        save_summary(out_path, summary)
-        wc = summary.get("word_count", "?")
-        print(f"  Saved {out_path} ({wc} words)")
-        processed += 1
-
-    report = {"total": len(groups), "processed": processed, "skipped": skipped}
+    report = {"total": len(groups), "processed": processed, "skipped": skipped, "failed": failed}
     print(f"\nPipeline complete: {report}")
     return report
 
@@ -914,6 +1013,14 @@ def main():
         "--model", type=str, default=DEFAULT_MODEL,
         help=f"Claude model (default: {DEFAULT_MODEL})",
     )
+    parser.add_argument(
+        "--parallel", action="store_true",
+        help="Process quarters in parallel",
+    )
+    parser.add_argument(
+        "--workers", type=int, default=3,
+        help=f"Number of parallel workers (default: 3, max: {MAX_WORKERS})",
+    )
     args = parser.parse_args()
 
     api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
@@ -934,6 +1041,8 @@ def main():
     if args.year:
         years = [int(y.strip()) for y in args.year.split(",") if y.strip()]
 
+    workers = min(args.workers, MAX_WORKERS) if args.parallel else 1
+
     run_pipeline(
         base_dir=Path(args.base_dir),
         out_dir=Path(args.out_dir),
@@ -942,6 +1051,7 @@ def main():
         years=years,
         model=args.model,
         force=args.force,
+        workers=workers,
     )
 
 

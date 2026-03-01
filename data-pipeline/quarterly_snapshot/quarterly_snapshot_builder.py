@@ -67,10 +67,12 @@ import json
 import math
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+from tqdm import tqdm
 
 # ==========================
 # CONFIG — default paths relative to this script
@@ -638,6 +640,41 @@ def save_snapshot(snapshot: dict, output_dir: Path) -> Path:
 # PIPELINE
 # ==========================
 
+def _build_one_snapshot(
+    ticker: str,
+    rebal_date: dt.date,
+    summaries_dir: Path,
+    sentiment_dir: Path,
+    macro_dir: Path,
+    output_dir: Path,
+) -> Dict[str, Any]:
+    """Build and save a single snapshot. Returns a result dict."""
+    try:
+        snapshot = build_snapshot(
+            ticker, rebal_date,
+            summaries_dir=summaries_dir,
+            sentiment_dir=sentiment_dir,
+            macro_dir=macro_dir,
+        )
+
+        schema_errors = validate_snapshot_schema(snapshot)
+        if schema_errors:
+            tqdm.write(f"  [{ticker}] WARNING {rebal_date}: {schema_errors}")
+
+        leaks = ensure_no_future_leakage(snapshot, rebal_date)
+        if leaks:
+            tqdm.write(f"  [{ticker}] LEAKAGE {rebal_date}: {leaks}")
+
+        out_path = save_snapshot(snapshot, output_dir)
+        tqdm.write(f"  [{ticker}] Saved {rebal_date} → {out_path}")
+        return {"status": "built", "leaks": leaks}
+
+    except Exception as e:
+        msg = f"{type(e).__name__}: {e}"
+        tqdm.write(f"  [{ticker}] FAIL {rebal_date} — {msg}")
+        return {"status": "failed", "error": f"{ticker} {rebal_date}: {msg}", "leaks": []}
+
+
 def run_pipeline(
     tickers: List[str],
     rebalance_dates: List[dt.date],
@@ -645,47 +682,55 @@ def run_pipeline(
     sentiment_dir: Path = DEFAULT_SENTIMENT_DIR,
     macro_dir: Path = DEFAULT_MACRO_DIR,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
+    workers: int = 1,
 ) -> Dict[str, Any]:
     """Build and save snapshots for all tickers at all rebalance dates.
 
     Returns a report dict.
     """
-    total = len(tickers) * len(rebalance_dates)
+    # Collect all (ticker, date) tasks
+    all_tasks = [
+        (ticker, rebal_date)
+        for rebal_date in sorted(rebalance_dates)
+        for ticker in tickers
+    ]
+    total = len(all_tasks)
     built = 0
     errors: List[str] = []
     leakage_warnings: List[str] = []
 
-    print(f"Building {total} snapshot(s): {len(tickers)} ticker(s) x {len(rebalance_dates)} date(s)")
+    print(f"Building {total} snapshot(s): {len(tickers)} ticker(s) x {len(rebalance_dates)} date(s)", flush=True)
 
-    for rebal_date in sorted(rebalance_dates):
-        for ticker in tickers:
-            try:
-                snapshot = build_snapshot(
-                    ticker, rebal_date,
-                    summaries_dir=summaries_dir,
-                    sentiment_dir=sentiment_dir,
-                    macro_dir=macro_dir,
-                )
+    label = f"Snapshots ({workers} worker{'s' if workers > 1 else ''})"
 
-                # Validate schema
-                schema_errors = validate_snapshot_schema(snapshot)
-                if schema_errors:
-                    print(f"  WARNING {ticker} {rebal_date}: {schema_errors}")
-
-                # Check for future leakage
-                leaks = ensure_no_future_leakage(snapshot, rebal_date)
-                if leaks:
-                    leakage_warnings.extend(leaks)
-                    print(f"  LEAKAGE {ticker} {rebal_date}: {leaks}")
-
-                out_path = save_snapshot(snapshot, output_dir)
-                print(f"  Saved {out_path}")
+    if workers == 1:
+        for ticker, rebal_date in tqdm(all_tasks, desc=label, unit="snap"):
+            result = _build_one_snapshot(
+                ticker, rebal_date, summaries_dir, sentiment_dir, macro_dir, output_dir,
+            )
+            if result["status"] == "built":
                 built += 1
-
-            except Exception as e:
-                msg = f"{ticker} {rebal_date}: {type(e).__name__}: {e}"
-                errors.append(msg)
-                print(f"  FAILED {msg}")
+            else:
+                errors.append(result.get("error", ""))
+            leakage_warnings.extend(result.get("leaks", []))
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(
+                    _build_one_snapshot,
+                    ticker, rebal_date, summaries_dir, sentiment_dir, macro_dir, output_dir,
+                ): (ticker, rebal_date)
+                for ticker, rebal_date in all_tasks
+            }
+            for future in tqdm(
+                as_completed(futures), desc=label, unit="snap", total=len(futures),
+            ):
+                result = future.result()
+                if result["status"] == "built":
+                    built += 1
+                else:
+                    errors.append(result.get("error", ""))
+                leakage_warnings.extend(result.get("leaks", []))
 
     report = {
         "total_planned": total,
@@ -742,6 +787,14 @@ def main():
         "--output-dir", type=str, default=str(DEFAULT_OUTPUT_DIR),
         help="Output directory for snapshot JSON files",
     )
+    parser.add_argument(
+        "--parallel", action="store_true",
+        help="Build snapshots in parallel",
+    )
+    parser.add_argument(
+        "--workers", type=int, default=4,
+        help="Number of parallel workers (default: 4)",
+    )
     args = parser.parse_args()
 
     if args.supported:
@@ -759,6 +812,8 @@ def main():
         print("ERROR: at least one rebalance date required", file=sys.stderr)
         sys.exit(1)
 
+    workers = args.workers if args.parallel else 1
+
     run_pipeline(
         tickers=tickers,
         rebalance_dates=rebalance_dates,
@@ -766,6 +821,7 @@ def main():
         sentiment_dir=Path(args.sentiment_dir),
         macro_dir=Path(args.macro_dir),
         output_dir=Path(args.output_dir),
+        workers=workers,
     )
 
 

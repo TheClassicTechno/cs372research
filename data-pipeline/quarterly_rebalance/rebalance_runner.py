@@ -33,10 +33,12 @@ import argparse
 import datetime as dt
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, Tuple
 
 import yaml
+from tqdm import tqdm
 
 from macro_quarter_builder import build_macro_state
 from asset_quarter_builder import build_asset_state
@@ -84,6 +86,54 @@ def quarter_range(start: str, end: str):
 # Runner
 # ----------------------------
 
+def _build_quarter(
+    year: int,
+    quarter: str,
+    tickers: List[str],
+    output_dir: Path,
+    fred_key: str = None,
+    back_years: int = 2,
+) -> str:
+    """Build macro + asset state for one quarter. Returns 'ok' or 'failed'."""
+    qdir = output_dir / f"{year}_{quarter}"
+    qdir.mkdir(parents=True, exist_ok=True)
+
+    tqdm.write(f"  [{year} {quarter}] Building macro + asset state in parallel...")
+
+    # Macro and asset builds are independent — run in parallel
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_macro = pool.submit(
+            build_macro_state, year=year, quarter=quarter,
+            fred_key=fred_key, back_years=back_years,
+        )
+        f_asset = pool.submit(
+            build_asset_state, year=year, quarter=quarter, tickers=tickers,
+        )
+
+    # Collect results
+    failed = False
+    try:
+        macro_doc = f_macro.result()
+        with open(qdir / "macro.json", "w") as f:
+            json.dump(macro_doc, f, indent=2)
+        tqdm.write(f"  [{year} {quarter}] Saved macro.json")
+    except Exception as e:
+        tqdm.write(f"  [{year} {quarter}] FAIL macro — {type(e).__name__}: {e}")
+        failed = True
+
+    try:
+        asset_doc = f_asset.result()
+        with open(qdir / "assets.json", "w") as f:
+            json.dump(asset_doc, f, indent=2)
+        ok = sum(1 for v in asset_doc.get("tickers", {}).values() if "error" not in v)
+        tqdm.write(f"  [{year} {quarter}] Saved assets.json ({ok}/{len(tickers)} tickers OK)")
+    except Exception as e:
+        tqdm.write(f"  [{year} {quarter}] FAIL assets — {type(e).__name__}: {e}")
+        failed = True
+
+    return "failed" if failed else "ok"
+
+
 def run_rebalance(
     start: str,
     end: str,
@@ -95,36 +145,25 @@ def run_rebalance(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for year, quarter in quarter_range(start, end):
+    quarters = list(quarter_range(start, end))
 
-        print(f"\n=== Building {year} {quarter} ===")
+    print(f"Rebalance: {len(quarters)} quarter(s), {len(tickers)} ticker(s)", flush=True)
+    print(f"  Range: {start} → {end}", flush=True)
+    print(f"  Tickers: {', '.join(tickers)}", flush=True)
 
-        # Directory per quarter
-        qdir = output_dir / f"{year}_{quarter}"
-        qdir.mkdir(parents=True, exist_ok=True)
+    built = 0
+    failed = 0
 
-        # Build Macro
-        macro_doc = build_macro_state(
-            year=year,
-            quarter=quarter,
-            fred_key=fred_key,
-            back_years=back_years,
-        )
+    for year, quarter in tqdm(quarters, desc="Quarters", unit="quarter"):
+        result = _build_quarter(year, quarter, tickers, output_dir, fred_key, back_years)
+        if result == "ok":
+            built += 1
+        else:
+            failed += 1
 
-        with open(qdir / "macro.json", "w") as f:
-            json.dump(macro_doc, f, indent=2)
-
-        # Build Asset State
-        asset_doc = build_asset_state(
-            year=year,
-            quarter=quarter,
-            tickers=tickers,
-        )
-
-        with open(qdir / "assets.json", "w") as f:
-            json.dump(asset_doc, f, indent=2)
-
-        print(f"Saved: {qdir}")
+    print(f"\nRebalance complete: {built}/{len(quarters)} quarters built", flush=True)
+    if failed:
+        print(f"  {failed} quarter(s) had errors")
 
 
 _SUPPORTED_TICKERS_PATH = Path(__file__).resolve().parent.parent / "supported_tickers.yaml"
