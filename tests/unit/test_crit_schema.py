@@ -8,6 +8,8 @@ from eval.crit.schema import (
     Diagnostics,
     Explanations,
     PillarScores,
+    RoundCritResult,
+    aggregate_agent_scores,
     validate_raw_response,
 )
 
@@ -41,6 +43,11 @@ def _make_raw(
             "causal_integrity": "Some causal leaps noted.",
         },
     }
+
+
+def _make_crit_result(ic=0.8, es=0.7, ta=0.9, ci=0.6) -> CritResult:
+    """Build a CritResult directly for aggregation tests."""
+    return validate_raw_response(_make_raw(ic=ic, es=es, ta=ta, ci=ci))
 
 
 # ---------------------------------------------------------------------------
@@ -189,3 +196,59 @@ class TestValidateRawResponse:
         raw["diagnostics"]["contradictions_detected"] = True
         result = validate_raw_response(raw)
         assert result.diagnostics.contradictions_detected is True
+
+
+# ---------------------------------------------------------------------------
+# RoundCritResult / aggregate_agent_scores tests
+# ---------------------------------------------------------------------------
+
+class TestRoundCritResult:
+    def test_aggregate_two_agents(self):
+        """ρ̄ = mean of per-agent ρ_i scores."""
+        macro = _make_crit_result(ic=0.8, es=0.6, ta=1.0, ci=0.6)  # ρ_i = 0.75
+        value = _make_crit_result(ic=0.4, es=0.4, ta=0.4, ci=0.4)  # ρ_i = 0.40
+        result = aggregate_agent_scores({"macro": macro, "value": value})
+        assert isinstance(result, RoundCritResult)
+        expected_rho_bar = (0.75 + 0.40) / 2.0
+        assert abs(result.rho_bar - expected_rho_bar) < 1e-9
+
+    def test_aggregate_preserves_per_agent_scores(self):
+        """Per-agent CritResults are accessible by role name."""
+        macro = _make_crit_result(ic=1.0, es=1.0, ta=1.0, ci=1.0)
+        value = _make_crit_result(ic=0.0, es=0.0, ta=0.0, ci=0.0)
+        result = aggregate_agent_scores({"macro": macro, "value": value})
+        assert result.agent_scores["macro"].rho_bar == 1.0
+        assert result.agent_scores["value"].rho_bar == 0.0
+        assert result.rho_bar == 0.5
+
+    def test_aggregate_single_agent(self):
+        """With one agent, ρ̄ = ρ_i."""
+        solo = _make_crit_result(ic=0.7, es=0.7, ta=0.7, ci=0.7)
+        result = aggregate_agent_scores({"solo": solo})
+        assert abs(result.rho_bar - 0.7) < 1e-9
+
+    def test_aggregate_four_agents(self):
+        """Standard 4-agent debate: ρ̄ = 1/4 Σ ρ_i."""
+        agents = {
+            "macro": _make_crit_result(ic=0.9, es=0.9, ta=0.9, ci=0.9),    # 0.9
+            "value": _make_crit_result(ic=0.7, es=0.7, ta=0.7, ci=0.7),    # 0.7
+            "risk": _make_crit_result(ic=0.5, es=0.5, ta=0.5, ci=0.5),     # 0.5
+            "technical": _make_crit_result(ic=0.3, es=0.3, ta=0.3, ci=0.3),# 0.3
+        }
+        result = aggregate_agent_scores(agents)
+        expected = (0.9 + 0.7 + 0.5 + 0.3) / 4.0
+        assert abs(result.rho_bar - expected) < 1e-9
+
+    def test_aggregate_empty_raises(self):
+        """Empty agent_scores is invalid."""
+        with pytest.raises(ValueError, match="must not be empty"):
+            aggregate_agent_scores({})
+
+    def test_round_crit_result_model_dump(self):
+        """RoundCritResult serializes correctly for PID event logging."""
+        macro = _make_crit_result(ic=0.8, es=0.8, ta=0.8, ci=0.8)
+        result = aggregate_agent_scores({"macro": macro})
+        dumped = result.model_dump()
+        assert "agent_scores" in dumped
+        assert "macro" in dumped["agent_scores"]
+        assert "rho_bar" in dumped

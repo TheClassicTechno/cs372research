@@ -341,13 +341,13 @@ class MultiAgentRunner:
     def _pid_step(self, state: dict, round_num: int) -> None:
         """Run CRIT scorer + PID controller step after a debate round.
 
-        Computes rho_bar from CRIT, feeds it into the PID controller,
-        and records a PIDEvent for auditing.
+        Per the RAudit paper (Algorithm 1 lines 7-8), CRIT scores each
+        agent individually (ρ_i), then ρ̄ = 1/n Σ_i ρ_i feeds into PID.
         """
         from eval.PID.sycophancy import jensen_shannon_divergence
 
-        # Run CRIT audit
-        crit_result = self._crit_scorer.score(
+        # Run CRIT audit (per-agent scoring → RoundCritResult)
+        round_crit = self._crit_scorer.score(
             case_data=state.get("enriched_context", ""),
             agent_traces=state.get("debate_turns", []),
             decisions=state.get("revisions", state.get("proposals", [])),
@@ -365,8 +365,8 @@ class MultiAgentRunner:
         # For now, use 0.0 as default (evidence extraction is not yet implemented)
         ov = 0.0
 
-        # PID step
-        pid_result = self._pid_controller.step(crit_result.rho_bar, js, ov)
+        # PID step (uses aggregated rho_bar)
+        pid_result = self._pid_controller.step(round_crit.rho_bar, js, ov)
 
         # Record event
         ctrl_output = ControllerOutput(new_agreeableness=pid_result.beta_new)
@@ -374,11 +374,11 @@ class MultiAgentRunner:
             round_index=round_num,
             metrics=RoundMetrics(
                 round_index=round_num,
-                rho_bar=crit_result.rho_bar,
+                rho_bar=round_crit.rho_bar,
                 js_divergence=js,
                 ov_overlap=ov,
             ),
-            crit_result=crit_result.model_dump(),
+            crit_result=round_crit.model_dump(),
             pid_step={
                 "e_t": pid_result.e_t,
                 "u_t": pid_result.u_t,
@@ -396,10 +396,24 @@ class MultiAgentRunner:
         if self._log_metrics:
             pid_cfg = self._pid_controller.config
             pid_state = self._pid_controller.state
+
+            # Per-agent ρ_i scores
+            agent_rho_lines = []
+            for role, agent_cr in round_crit.agent_scores.items():
+                ps = agent_cr.pillar_scores
+                agent_rho_lines.append(
+                    f"    {role:12s}: rho_i={agent_cr.rho_bar:.4f}  "
+                    f"IC={ps.internal_consistency:.3f}  "
+                    f"ES={ps.evidence_support:.3f}  "
+                    f"TA={ps.trace_alignment:.3f}  "
+                    f"CI={ps.causal_integrity:.3f}"
+                )
+            agent_rho_str = "\n".join(agent_rho_lines)
+
             pid_metrics_logger.debug(
                 "[PID Round %d]\n"
-                "  CRIT:     rho_bar=%.4f  rho_star=%.4f\n"
-                "  Pillars:  IC=%.3f  ES=%.3f  TA=%.3f  CI=%.3f\n"
+                "  CRIT:     rho_bar=%.4f  rho_star=%.4f  (mean of %d agents)\n"
+                "  Per-agent scores:\n%s\n"
                 "  Error:    e_t=%.6f  integral=%.6f  e_prev=%.6f\n"
                 "  PID:      p_term=%.6f  i_term=%.6f  d_term=%.6f  u_t=%.6f\n"
                 "  Gains:    Kp=%.4f  Ki=%.4f  Kd=%.4f\n"
@@ -409,11 +423,9 @@ class MultiAgentRunner:
                 "  Config:   T_max=%d  epsilon=%.4f\n"
                 "  Phase toggles: propose=%s  critique=%s  revise=%s",
                 round_num,
-                crit_result.rho_bar, pid_cfg.rho_star,
-                crit_result.pillar_scores.internal_consistency,
-                crit_result.pillar_scores.evidence_support,
-                crit_result.pillar_scores.trace_alignment,
-                crit_result.pillar_scores.causal_integrity,
+                round_crit.rho_bar, pid_cfg.rho_star,
+                len(round_crit.agent_scores),
+                agent_rho_str,
                 pid_result.e_t, pid_state.integral, pid_state.e_prev,
                 pid_result.p_term, pid_result.i_term, pid_result.d_term, pid_result.u_t,
                 pid_cfg.gains.Kp, pid_cfg.gains.Ki, pid_cfg.gains.Kd,
@@ -425,17 +437,19 @@ class MultiAgentRunner:
                 self.config.pid_propose, self.config.pid_critique, self.config.pid_revise,
             )
 
-            diag = crit_result.diagnostics
-            pid_metrics_logger.debug(
-                "[PID Round %d] CRIT diagnostics: "
-                "contradictions=%s  unsupported_claims=%s  "
-                "conclusion_drift=%s  causal_overreach=%s",
-                round_num,
-                diag.contradictions_detected,
-                diag.unsupported_claims_detected,
-                diag.conclusion_drift_detected,
-                diag.causal_overreach_detected,
-            )
+            # Per-agent diagnostics
+            for role, agent_cr in round_crit.agent_scores.items():
+                diag = agent_cr.diagnostics
+                pid_metrics_logger.debug(
+                    "[PID Round %d] CRIT diagnostics [%s]: "
+                    "contradictions=%s  unsupported_claims=%s  "
+                    "conclusion_drift=%s  causal_overreach=%s",
+                    round_num, role,
+                    diag.contradictions_detected,
+                    diag.unsupported_claims_detected,
+                    diag.conclusion_drift_detected,
+                    diag.causal_overreach_detected,
+                )
 
     def _initialize_state(self, observation: Observation) -> dict:
         """Build the initial state dict for the debate.
