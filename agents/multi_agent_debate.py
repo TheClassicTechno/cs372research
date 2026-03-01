@@ -124,7 +124,8 @@ class DebateAgentSystem(AgentSystem):
             pid_log_llm_calls=config.pid_log_llm_calls,
             log_system_prompts=config.log_system_prompts,
             log_user_prompts=config.log_user_prompts,
-            log_llm_responses=config.log_llm_responses
+            log_llm_responses=config.log_llm_responses,
+            prompt_logging=config.prompt_logging
         )
         self._debate_runner = MultiAgentRunner(self._debate_cfg)
 
