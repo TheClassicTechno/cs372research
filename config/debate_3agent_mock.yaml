@@ -1,0 +1,46 @@
+# ============================================================================
+# Debate Agent Simulation — 3-Agent Mock Mode
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/debate_3agent_mock.yaml
+#
+# Per Prof Chang's recommendation: 2-3 agents is more reasonable than 4-6.
+# This config uses MACRO + VALUE + RISK — adds a contrarian/risk perspective
+# to the macro-value debate, which Prof Chang's meeting notes emphasized.
+
+dataset_path: "data/cases"
+
+top_n_news: 5
+
+tickers:
+  - NVDA
+
+quarters:
+  - Q1
+
+num_episodes: 1
+
+# --------------------------------------------------------------------------
+# Agent Configuration — 3-Agent Debate
+# --------------------------------------------------------------------------
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+  system_prompt_override: "mock"
+
+  # 3 agents: macro strategist + value analyst + risk manager
+  debate_roles:
+    - macro
+    - value
+    - risk
+
+  max_rounds: 2
+
+# --------------------------------------------------------------------------
+# Broker Configuration
+# --------------------------------------------------------------------------
+broker:
+  initial_cash: 100000.0
