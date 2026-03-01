@@ -26,6 +26,7 @@ _utc = _utc_mod.utc
 from typing import Dict, List, Optional
 
 import requests
+import yaml
 
 # Import ingestion layer functions
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -293,6 +294,16 @@ def build_snapshot(
     return snapshot
 
 
+_SUPPORTED_TICKERS_PATH = Path(__file__).resolve().parent.parent / "supported_tickers.yaml"
+
+
+def load_supported_tickers(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> list:
+    """Load ticker symbols from supported_tickers.yaml."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return [entry["symbol"] for entry in data["supported_tickers"]]
+
+
 # ==========================
 # CLI
 # ==========================
@@ -301,7 +312,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build combined ticker snapshot (filings + XBRL fundamentals)"
     )
-    parser.add_argument("--ticker", required=True, help="Ticker symbol (e.g. AAPL)")
+    parser.add_argument("--ticker", default=None, help="Ticker symbol (e.g. AAPL)")
+    parser.add_argument(
+        "--supported", action="store_true", default=False,
+        help="Use all tickers from supported_tickers.yaml",
+    )
     parser.add_argument(
         "--output",
         default=str(Path(__file__).resolve().parent),
@@ -309,25 +324,29 @@ def main():
     )
     args = parser.parse_args()
 
-    ticker = args.ticker.strip().upper()
+    if args.supported:
+        tickers = load_supported_tickers()
+    elif args.ticker:
+        tickers = [args.ticker.strip().upper()]
+    else:
+        parser.error("either --ticker or --supported is required")
+
     base_dir = Path(args.output)
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    snapshot = build_snapshot(ticker, base_dir)
-
-    # Save snapshot JSON
     snapshot_dir = base_dir / "snapshots"
     snapshot_dir.mkdir(parents=True, exist_ok=True)
-    snapshot_path = snapshot_dir / f"{ticker}_snapshot.json"
-    tmp = snapshot_path.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(snapshot, f, indent=2)
-    tmp.rename(snapshot_path)
 
-    print(f"\n{'=' * 50}")
-    print(f"Snapshot saved: {snapshot_path}")
-    print(f"{'=' * 50}")
-    print(json.dumps(snapshot, indent=2))
+    for ticker in tickers:
+        print(f"\nBuilding snapshot for {ticker}...")
+        snapshot = build_snapshot(ticker, base_dir)
+
+        snapshot_path = snapshot_dir / f"{ticker}_snapshot.json"
+        tmp = snapshot_path.with_suffix(".json.tmp")
+        with open(tmp, "w") as f:
+            json.dump(snapshot, f, indent=2)
+        tmp.rename(snapshot_path)
+        print(f"Saved: {snapshot_path}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,118 @@
+# supported_tickers.yaml
+#
+# Canonical supported ticker universe for quarterly snapshot pipeline.
+#
+# Universe size: 19 tickers
+#
+# Design rationale:
+# - Mix of cyclical + defensive + financial + energy + healthcare
+# - Includes Mega-cap Tech leaders
+# - Includes Financial systemically important banks
+# - Includes Consumer, Industrial, Energy, and REIT exposure
+# - Provides macro regime sensitivity diversity for CS372 experiments
+#
+# This file is the single source of truth for allowed tickers in:
+#   - quarterly_snapshot_builder.py
+#   - rebalance_runner.py
+#   - simulation pipeline
+#
+# DO NOT modify without versioning the universe in research logs.
+
+supported_tickers:
+
+  # --------------------------
+  # Industrials / Cyclical
+  # --------------------------
+  - symbol: CAT
+    sector: Industrials
+    description: Caterpillar — Global heavy machinery / cyclical capex proxy
+
+  - symbol: DAL
+    sector: Industrials
+    description: Delta Air Lines — Travel demand and consumer cycle proxy
+
+  # --------------------------
+  # Financials
+  # --------------------------
+  - symbol: JPM
+    sector: Financials
+    description: JPMorgan Chase — Large-cap diversified bank
+
+  - symbol: GS
+    sector: Financials
+    description: Goldman Sachs — Investment banking and trading exposure
+
+  - symbol: BAC
+    sector: Financials
+    description: Bank of America — Consumer and commercial banking exposure
+
+  # --------------------------
+  # Healthcare
+  # --------------------------
+  - symbol: UNH
+    sector: Healthcare
+    description: UnitedHealth Group — Managed care defensive exposure
+
+  - symbol: LLY
+    sector: Healthcare
+    description: Eli Lilly — Pharma growth and biotech innovation exposure
+
+  - symbol: JNJ
+    sector: Healthcare
+    description: Johnson & Johnson — Diversified healthcare defensive
+
+  # --------------------------
+  # Real Estate
+  # --------------------------
+  - symbol: AMT
+    sector: Real Estate
+    description: American Tower — REIT / infrastructure proxy
+
+  # --------------------------
+  # Energy
+  # --------------------------
+  - symbol: XOM
+    sector: Energy
+    description: ExxonMobil — Oil / energy macro sensitivity
+
+  # --------------------------
+  # Consumer
+  # --------------------------
+  - symbol: COST
+    sector: Consumer Defensive
+    description: Costco — Consumer resilience / retail proxy
+
+  - symbol: WMT
+    sector: Consumer Defensive
+    description: Walmart — Consumer staple / inflation sensitivity
+
+  # --------------------------
+  # Mega-Cap Technology
+  # --------------------------
+  - symbol: AAPL
+    sector: Technology
+    description: Apple — Consumer tech / ecosystem exposure
+
+  - symbol: NVDA
+    sector: Technology
+    description: NVIDIA — AI / semiconductor growth proxy
+
+  - symbol: MSFT
+    sector: Technology
+    description: Microsoft — Enterprise software and cloud
+
+  - symbol: GOOG
+    sector: Communication Services
+    description: Alphabet — Advertising and cloud exposure
+
+  - symbol: AMZN
+    sector: Consumer Discretionary
+    description: Amazon — E-commerce and cloud
+
+  - symbol: META
+    sector: Communication Services
+    description: Meta Platforms — Social media and advertising
+
+  - symbol: TSLA
+    sector: Consumer Discretionary
+    description: Tesla — EV growth and high-beta exposure

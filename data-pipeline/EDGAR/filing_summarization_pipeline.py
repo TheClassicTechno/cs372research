@@ -2,33 +2,27 @@
 """
 Quarterly SEC Filing Summarization Pipeline.
 
-Reads clean text files produced by get_sec_data.py, groups filings by
-ticker/year/quarter, extracts high-signal sections, sends text to Claude
-for structured factual extraction, and produces one summary JSON per quarter.
+Compresses clean SEC filing text into dense quarterly economic state
+representations — structured JSON optimized for downstream agent consumption.
 
 Input:  clean_text/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{DATE}.txt
 Output: finished_summaries/{TICKER}/{YEAR}/{QUARTER}.json
 
+Each output is a 200-375 word compressed state vector: six dense paragraphs
+covering operating state, cost structure, material events, macro exposures,
+forward outlook, and uncertainty profile.
+
 Examples:
-  # Summarize AAPL with API key from env
   ANTHROPIC_API_KEY=sk-ant-... python filing_summarization_pipeline.py --ticker AAPL
-
-  # Specific tickers and years
   python filing_summarization_pipeline.py --ticker AAPL,NVDA --year 2025,2026
-
-  # All tickers, force overwrite
   python filing_summarization_pipeline.py --all --force
 
-  # Custom directories
-  python filing_summarization_pipeline.py --ticker AAPL \
-      --base-dir /data/edgar --out-dir /data/summaries
-
 Design constraints:
-  - No numeric extraction from filing text.
-  - All financial numbers come from structured APIs (XBRL), not this pipeline.
   - Deterministic: temperature=0, same input -> same output.
+  - Compressed: 200-375 words per quarter, no bullet lists.
+  - No numeric extraction from filing text.
   - Atomic writes (tmp file -> rename).
-  - No Form 4. No enums. No sentiment scoring.
+  - Stable JSON key ordering.
   - No dependency on other pipeline modules.
 """
 
@@ -44,6 +38,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+import yaml
+
+_SUPPORTED_TICKERS_PATH = Path(__file__).resolve().parent.parent / "supported_tickers.yaml"
+
+
+def load_supported_tickers(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> list:
+    """Load ticker symbols from supported_tickers.yaml."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return [entry["symbol"] for entry in data["supported_tickers"]]
+
 
 # ==========================
 # CONFIG
@@ -60,48 +65,113 @@ RETRY_DELAYS = [2, 5]
 
 TARGET_FORMS = {"10-Q", "10-K", "8-K"}
 
-SUMMARY_LIST_KEYS = [
-    "financial_performance",
-    "guidance_and_forward_outlook",
+MAX_SUMMARY_WORDS = 375
+MIN_SUMMARY_WORDS = 150
+
+# Form-specific word limits
+WORD_LIMITS = {
+    "10-K": {"target": 300, "max": 375},
+    "10-Q": {"target": 275, "max": 350},
+    "8-K": {"target": 225, "max": 350},
+}
+DEFAULT_WORD_LIMIT = {"target": 275, "max": 375}
+
+PARAGRAPH_KEYS = [
+    "operating_state",
+    "cost_structure",
     "material_events",
-    "risk_factors_emphasized",
-    "explicit_uncertainties",
-    "notable_causal_statements",
+    "macro_exposures",
+    "forward_outlook",
+    "uncertainty_profile",
 ]
+
+META_KEYS = ["ticker", "form", "filing_date", "fiscal_period", "period_type"]
+
+REQUIRED_KEYS = META_KEYS + PARAGRAPH_KEYS + ["word_count"]
+
+# Stable key ordering for output JSON
+KEY_ORDER = [
+    "ticker", "form", "filing_date", "fiscal_period", "period_type",
+    "operating_state", "cost_structure", "material_events",
+    "macro_exposures", "forward_outlook", "uncertainty_profile",
+    "word_count",
+]
+
+
+# ==========================
+# HELPERS
+# ==========================
+
+def count_words(text: str) -> int:
+    """Count words in a string."""
+    return len(text.split())
+
+
+def compute_total_words(summary: dict) -> int:
+    """Sum word counts across all paragraph fields."""
+    total = 0
+    for key in PARAGRAPH_KEYS:
+        val = summary.get(key, "")
+        if isinstance(val, str):
+            total += count_words(val)
+    return total
+
+
+def normalize_whitespace(text: str) -> str:
+    """Collapse runs of whitespace, strip leading/trailing."""
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{2,}", "\n", text)
+    return text.strip()
 
 
 # ==========================
 # SCHEMA VALIDATION
 # ==========================
 
+_BULLET_RE = re.compile(r"^\s*[-*•]\s", re.MULTILINE)
+
+
 def validate_summary(summary: dict) -> List[str]:
-    """Validate summary matches expected schema. Returns list of error strings."""
+    """Validate summary matches the compressed state vector schema.
+
+    Returns list of error strings. Empty means valid.
+    """
     errors = []
 
-    if not isinstance(summary.get("ticker"), str):
-        errors.append("ticker must be str")
-    if not isinstance(summary.get("year"), int):
-        errors.append("year must be int")
-    if not isinstance(summary.get("quarter"), str):
-        errors.append("quarter must be str")
-
-    for key in SUMMARY_LIST_KEYS:
+    # Required keys
+    for key in REQUIRED_KEYS:
         if key not in summary:
             errors.append(f"missing key: {key}")
-            continue
-        val = summary[key]
-        if not isinstance(val, list):
-            errors.append(f"{key} must be list")
-            continue
-        for i, item in enumerate(val):
-            if not isinstance(item, str):
-                errors.append(f"{key}[{i}] must be str")
-            elif len(item.split()) > 45:
-                errors.append(f"{key}[{i}] exceeds 40 words ({len(item.split())} words)")
 
-    expected = {"ticker", "year", "quarter"} | set(SUMMARY_LIST_KEYS)
+    # Metadata types
+    for key in ("ticker", "form", "filing_date", "fiscal_period", "period_type"):
+        val = summary.get(key)
+        if val is not None and not isinstance(val, str):
+            errors.append(f"{key} must be str")
+
+    if "word_count" in summary and not isinstance(summary["word_count"], int):
+        errors.append("word_count must be int")
+
+    # Paragraph fields: must be str, no bullet chars
+    for key in PARAGRAPH_KEYS:
+        val = summary.get(key)
+        if val is None:
+            continue
+        if not isinstance(val, str):
+            errors.append(f"{key} must be str, got {type(val).__name__}")
+            continue
+        if _BULLET_RE.search(val):
+            errors.append(f"{key} contains bullet characters")
+
+    # Word count bounds
+    wc = summary.get("word_count", 0)
+    if isinstance(wc, int) and wc > MAX_SUMMARY_WORDS:
+        errors.append(f"word_count {wc} exceeds {MAX_SUMMARY_WORDS}")
+
+    # No extra keys
+    expected = set(REQUIRED_KEYS)
     extra = set(summary.keys()) - expected
-    for k in extra:
+    for k in sorted(extra):
         errors.append(f"unexpected key: {k}")
 
     return errors
@@ -136,12 +206,8 @@ def extract_body(text: str) -> str:
     return text.strip()
 
 
-# Item header regex — matches "Item 1.", "Item 1A.", "Item 7.", etc. at line start
 _ITEM_HEADER_RE = re.compile(r"^\s*Item\s+\d", re.IGNORECASE)
 
-# Section target patterns by form type.
-# These require the full "Item N. Section Name" on a single line,
-# which naturally skips TOC entries (split across two lines).
 _10K_SECTIONS = [
     re.compile(r"Item\s+1A\.\s*Risk\s+Factors", re.IGNORECASE),
     re.compile(r"Item\s+7\.\s*Management.s\s+Discussion", re.IGNORECASE),
@@ -156,12 +222,7 @@ _10Q_SECTIONS = [
 def extract_sections(text: str, form: str) -> str:
     """Extract high-signal sections from 10-Q/10-K filing text.
 
-    For 8-K, returns full text (small filings).
-    If no target sections found, returns full text as fallback.
-
-    Strategy: find target section headers that start with "Item N." on a
-    single line, pick the occurrence with the most content following it
-    (body section vs TOC entry), extract from header to the next Item header.
+    For 8-K, returns full text. If no sections found, returns full text.
     """
     base_form = form.rstrip("/A").rstrip("/") if "/" in form else form
 
@@ -185,7 +246,6 @@ def extract_sections(text: str, form: str) -> str:
 
         for i, line in enumerate(lines):
             if target_pat.search(line) and _ITEM_HEADER_RE.match(line.strip()):
-                # Found potential section start. Find end: next Item header.
                 end = len(lines)
                 for j in range(i + 2, len(lines)):
                     if _ITEM_HEADER_RE.match(lines[j].strip()):
@@ -205,19 +265,13 @@ def extract_sections(text: str, form: str) -> str:
     if extracted:
         return "\n\n---\n\n".join(extracted)
 
-    return text  # Fallback: full text
+    return text
 
 
 def strip_boilerplate(text: str) -> str:
-    """Strip SEC header boilerplate and signature blocks.
-
-    Removes:
-    - SEC filing header (UNITED STATES, SECURITIES AND EXCHANGE COMMISSION...)
-    - Signature blocks at the end
-    """
+    """Strip SEC header boilerplate and signature blocks."""
     lines = text.splitlines()
 
-    # Find start: first substantive section marker
     start = 0
     for i, line in enumerate(lines):
         stripped = line.strip().upper()
@@ -228,7 +282,6 @@ def strip_boilerplate(text: str) -> str:
             start = i
             break
 
-    # Find end: signature block (search backward from end, floor at midpoint)
     end = len(lines)
     floor = max(start, len(lines) // 2)
     for i in range(len(lines) - 1, floor, -1):
@@ -243,10 +296,7 @@ def strip_boilerplate(text: str) -> str:
 
 
 def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
-    """Split text into chunks on paragraph boundaries.
-
-    Falls back to hard split if a single paragraph exceeds max_chars.
-    """
+    """Split text into chunks on paragraph boundaries."""
     if len(text) <= max_chars:
         return [text]
 
@@ -256,7 +306,7 @@ def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
     current_len = 0
 
     for para in paragraphs:
-        para_len = len(para) + 2  # account for \n\n separator
+        para_len = len(para) + 2
         if current_len + para_len > max_chars and current:
             chunks.append("\n\n".join(current))
             current = []
@@ -285,8 +335,7 @@ def discover_quarterly_groups(
 ) -> Dict[Tuple[str, int, str], List[Path]]:
     """Walk clean_text/ and group filing .txt files by (ticker, year, quarter).
 
-    Only includes filings where base form is in TARGET_FORMS (10-Q, 10-K, 8-K).
-    Reads the metadata header from each file to determine form and filing date.
+    Only includes filings where base form is in TARGET_FORMS.
     """
     clean_dir = base_dir / "clean_text"
     groups: Dict[Tuple[str, int, str], List[Path]] = defaultdict(list)
@@ -341,11 +390,19 @@ def output_path_for(out_dir: Path, ticker: str, year: int, quarter: str) -> Path
 
 
 def save_summary(path: Path, summary: dict) -> None:
-    """Atomically write summary JSON (tmp -> rename)."""
+    """Atomically write summary JSON with stable key ordering."""
+    ordered = {}
+    for k in KEY_ORDER:
+        if k in summary:
+            ordered[k] = summary[k]
+    for k in summary:
+        if k not in ordered:
+            ordered[k] = summary[k]
+
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
+        json.dump(ordered, f, indent=2)
     tmp.rename(path)
 
 
@@ -354,72 +411,122 @@ def save_summary(path: Path, summary: dict) -> None:
 # ==========================
 
 _SYSTEM_PROMPT = """\
-You are a factual extractor for SEC filings. You extract specific \
-statements and facts from filing text into structured JSON.
+You compress SEC filing text into structured quarterly economic state \
+representations. You write dense institutional language suitable for a \
+90-second portfolio manager briefing.
 
-STRICT RULES:
-1. Return ONLY valid JSON. No prose, no markdown fences, no explanation.
-2. Each list contains short factual bullet statements.
-3. Each bullet MUST be 40 words or fewer.
-4. NO interpretation, opinion, or sentiment language.
-5. NO prediction or speculation beyond what management explicitly states.
-6. Extract ONLY what is explicitly stated in the text.
-7. If a category has no relevant content, return an empty list [].
-8. Do NOT invent or hallucinate any information.
-9. Do NOT extract or cite specific financial numbers."""
+RULES:
+1. Return ONLY valid JSON. No prose outside the JSON object.
+2. Each field is a dense paragraph of 2-5 sentences. NO bullet lists. \
+NO dashes. NO numbered items. Prose paragraphs only.
+3. NEVER exceed the specified word maximum across all six fields.
+4. Compress aggressively: merge similar statements, eliminate repetition.
+5. Focus on DELTA: what changed this period, what shifted materially.
+6. Preserve causal chains: "X increased driven by Y and Z."
+7. Remove generic boilerplate risk language UNLESS it reflects a NEW or \
+materially CHANGED exposure this period.
+8. NO per-region percentage breakdowns. Merge regional performance into \
+one sentence using directional language ("broadly positive with \
+double-digit growth in Europe and Japan").
+9. NO per-line-item dollar amounts. Anchor numbers ONLY at consolidated \
+total level (total company revenue, total gross margin percentage). NO \
+segment revenue dollars, NO operating expense line-item dollars, NO \
+purchase obligation breakdowns. Describe components directionally.
+10. NO accounting standard code enumeration (ASU numbers). Reference \
+pending accounting changes generically unless a standard has material \
+near-term impact.
+11. NO redundant risk stacking. If risks share a common mechanism, \
+state the mechanism once with its variants.
+12. No interpretation. No sentiment. No editorializing. Neutral factual tone.
+13. No "may/could/might" hedging unless reflecting a specific new \
+material disclosure."""
 
 _EXTRACTION_PROMPT = """\
-Extract factual information from the following SEC filing text for \
-{ticker} ({year} {quarter}).
+Compress the following SEC filing text for {ticker} ({fiscal_period}) \
+into a quarterly economic state representation.
 
 Return a JSON object with EXACTLY this structure:
 
 {{
-  "financial_performance": ["<bullet>", ...],
-  "guidance_and_forward_outlook": ["<bullet>", ...],
-  "material_events": ["<bullet>", ...],
-  "risk_factors_emphasized": ["<bullet>", ...],
-  "explicit_uncertainties": ["<bullet>", ...],
-  "notable_causal_statements": ["<bullet>", ...]
+  "operating_state": "<2-5 sentences>",
+  "cost_structure": "<2-5 sentences>",
+  "material_events": "<2-5 sentences>",
+  "macro_exposures": "<2-5 sentences>",
+  "forward_outlook": "<2-5 sentences>",
+  "uncertainty_profile": "<2-5 sentences>"
 }}
 
+WORD BUDGET: {word_target} words ideal, {word_max} maximum across all fields.
+
 Field definitions:
-- financial_performance: Revenue trends, margin direction, segment \
-results, earnings characterization. Qualitative statements only.
-- guidance_and_forward_outlook: Management guidance, forward estimates, \
-planned investments, strategic direction stated by management.
-- material_events: Acquisitions, restructurings, leadership changes, \
-legal actions, regulatory events, offerings, shareholder votes.
-- risk_factors_emphasized: Specific risks highlighted, newly added \
-risks, or risks given increased emphasis.
-- explicit_uncertainties: Direct quotes or paraphrases where management \
-explicitly acknowledges uncertainty or unpredictability.
-- notable_causal_statements: Cause-and-effect statements by management \
-(e.g., "revenue increased due to higher services demand").
+- operating_state: Revenue direction and primary growth drivers. Segment \
+performance as aggregate patterns ("broadly positive across regions with \
+particular strength in..."). Key causal chains. Anchor numbers at total \
+revenue level only.
+- cost_structure: Gross margin direction and mix dynamics (products vs \
+services). Operating expense trend directionally with primary drivers. \
+No per-line-item dollar amounts.
+- material_events: Capital actions (buybacks, dividends), regulatory \
+developments, product launches, leadership changes. Only events that \
+actually occurred. One sentence per distinct event.
+- macro_exposures: ONLY new or materially escalated macro risks this \
+period. Merge related trade/tariff risks into one statement. Skip \
+standard boilerplate carried forward unchanged.
+- forward_outlook: Management guidance, strategic direction, capital \
+allocation plans. What management committed to or signaled about the future.
+- uncertainty_profile: Unresolved contingencies, pending regulatory or \
+legal matters. Reference accounting standard changes generically without \
+enumerating codes. Merge related uncertainties.
 
 Constraints:
-- Each bullet <= 40 words.
-- No interpretation. No sentiment. No opinion.
-- Factual extraction only.
+- Dense prose paragraphs. No bullets. No lists.
+- If a field has no relevant content, write one sentence noting the absence.
 
 FILING TEXT:
 {text}"""
 
 _MERGE_PROMPT = """\
-You have {n} partial extractions from SEC filings for {ticker} ({year} \
-{quarter}). Merge them into ONE consolidated JSON object.
+You have {n} partial compressions from SEC filings for {ticker} \
+({fiscal_period}). Merge into ONE consolidated JSON object.
 
 Rules:
-- Deduplicate similar statements. Keep the most specific version.
-- Each bullet <= 40 words.
-- Return ONLY the merged JSON. No explanation.
-- Same schema: financial_performance, guidance_and_forward_outlook, \
-material_events, risk_factors_emphasized, explicit_uncertainties, \
-notable_causal_statements.
-- Each field is a list of strings. Empty list [] if nothing found.
+- Deduplicate: keep the most specific version of each signal.
+- Merge aggressively. No repeated information across fields.
+- Same six-field JSON structure (operating_state, cost_structure, \
+material_events, macro_exposures, forward_outlook, uncertainty_profile).
+- Each field: 2-5 dense prose sentences. No bullets.
+- Word budget: {word_target} words ideal, {word_max} maximum.
+- No per-region percentage breakdowns. No per-line-item dollar amounts. \
+No accounting standard code enumeration.
+- Return ONLY the merged JSON.
 
-PARTIAL EXTRACTIONS:
+PARTIAL COMPRESSIONS:
 {partials}"""
+
+_RECOMPRESS_PROMPT = """\
+The following quarterly summary for {ticker} ({fiscal_period}) has \
+{current_words} words, exceeding the {target} word maximum. You MUST \
+reduce to {word_target} words or fewer.
+
+CUT THESE AGGRESSIVELY:
+- Remove ALL per-segment dollar amounts (keep only total company revenue).
+- Remove ALL per-region percentages. Use directional language instead.
+- Remove ALL operating expense line-item dollar amounts.
+- Merge sentences describing similar risks or trends into one.
+- Drop purchase obligation specifics beyond one summary sentence.
+- Reference accounting changes in one generic sentence without codes.
+- Remove market share commentary and generic competitive language.
+
+KEEP:
+- Causal chains explaining why key metrics moved.
+- Total/headline numbers (total revenue, total gross margin percentage).
+- Material capital actions at aggregate level (total buybacks, dividend changes).
+
+Return ONLY the compressed JSON. Same six-field structure. Dense prose, \
+no bullets. Maximum {target} words.
+
+CURRENT SUMMARY:
+{current_json}"""
 
 
 # ==========================
@@ -477,10 +584,7 @@ def call_claude_json(
     user_prompt: str,
     model: str = DEFAULT_MODEL,
 ) -> dict:
-    """Call Claude and parse JSON response with retries.
-
-    Retries on JSON parse errors and transient HTTP errors (429, 5xx).
-    """
+    """Call Claude and parse JSON response with retries."""
     last_error = None
     for attempt in range(MAX_RETRIES + 1):
         try:
@@ -507,6 +611,48 @@ def call_claude_json(
 # SUMMARIZATION
 # ==========================
 
+# Form priority for picking primary filing metadata: 10-K > 10-Q > 8-K
+_FORM_PRIORITY = {"10-K": 0, "10-Q": 1, "8-K": 2}
+
+
+def _base_form(form: str) -> str:
+    return form.rstrip("/A").rstrip("/") if "/" in form else form
+
+
+def _derive_metadata(
+    filings: List[Path],
+) -> Tuple[str, str, str, str]:
+    """Derive (form, filing_date, fiscal_period, period_type) from filings.
+
+    Picks the primary filing by priority: 10-K > 10-Q > 8-K.
+    """
+    candidates = []
+    for fp in filings:
+        with open(fp, "r", encoding="utf-8") as f:
+            head = f.read(500)
+        header = parse_filing_header(head)
+        form = header.get("form", "")
+        filing_date = header.get("filing_date", "")
+        bf = _base_form(form)
+        candidates.append((bf, form, filing_date))
+
+    candidates.sort(key=lambda x: _FORM_PRIORITY.get(x[0], 99))
+    bf, form, filing_date = candidates[0]
+
+    parsed = datetime.strptime(filing_date, "%Y-%m-%d")
+    year = parsed.year
+    quarter_num = (parsed.month - 1) // 3 + 1
+
+    if bf == "10-K":
+        fiscal_period = f"FY{year}"
+        period_type = "annual"
+    else:
+        fiscal_period = f"{year}-Q{quarter_num}"
+        period_type = "quarterly"
+
+    return form, filing_date, fiscal_period, period_type
+
+
 def prepare_filing_text(filepath: Path) -> Optional[Tuple[str, str]]:
     """Read a filing, extract and clean high-signal text.
 
@@ -529,6 +675,15 @@ def prepare_filing_text(filepath: Path) -> Optional[Tuple[str, str]]:
     return (form, cleaned.strip())
 
 
+def _normalize_paragraphs(result: dict) -> dict:
+    """Apply whitespace normalization to all paragraph fields."""
+    for key in PARAGRAPH_KEYS:
+        val = result.get(key, "")
+        if isinstance(val, str):
+            result[key] = normalize_whitespace(val)
+    return result
+
+
 def summarize_quarter(
     api_key: str,
     ticker: str,
@@ -537,7 +692,15 @@ def summarize_quarter(
     filings: List[Path],
     model: str = DEFAULT_MODEL,
 ) -> dict:
-    """Summarize all filings for one quarter into a single structured JSON."""
+    """Compress all filings for one quarter into a single state vector."""
+
+    form, filing_date, fiscal_period, period_type = _derive_metadata(filings)
+
+    # Resolve form-specific word limits
+    bf = _base_form(form)
+    limits = WORD_LIMITS.get(bf, DEFAULT_WORD_LIMIT)
+    word_target = limits["target"]
+    word_max = limits["max"]
 
     # Prepare text from each filing
     prepared = []
@@ -548,18 +711,22 @@ def summarize_quarter(
 
     empty_result = {
         "ticker": ticker,
-        "year": year,
-        "quarter": quarter,
-        **{k: [] for k in SUMMARY_LIST_KEYS},
+        "form": form,
+        "filing_date": filing_date,
+        "fiscal_period": fiscal_period,
+        "period_type": period_type,
+        **{k: "No relevant content in filing text." for k in PARAGRAPH_KEYS},
+        "word_count": 0,
     }
+    empty_result["word_count"] = compute_total_words(empty_result)
 
     if not prepared:
         return empty_result
 
-    # Combine all filing texts with form-type separators
+    # Combine filing texts with separators
     combined_parts = []
-    for form, text in prepared:
-        combined_parts.append(f"=== {form} FILING ===\n{text}")
+    for filing_form, text in prepared:
+        combined_parts.append(f"=== {filing_form} FILING ===\n{text}")
     combined = "\n\n".join(combined_parts)
 
     print(f"    Combined text: {len(combined)} chars from {len(prepared)} filing(s)")
@@ -568,43 +735,72 @@ def summarize_quarter(
 
     if len(chunks) == 1:
         prompt = _EXTRACTION_PROMPT.format(
-            ticker=ticker, year=year, quarter=quarter, text=chunks[0],
+            ticker=ticker, fiscal_period=fiscal_period,
+            word_target=word_target, word_max=word_max, text=chunks[0],
         )
         result = call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
     else:
-        # Multi-chunk: extract from each, then merge
         chunk_results = []
         for i, chunk in enumerate(chunks):
             print(f"    Chunk {i + 1}/{len(chunks)} ({len(chunk)} chars)")
             prompt = _EXTRACTION_PROMPT.format(
-                ticker=ticker, year=year, quarter=quarter, text=chunk,
+                ticker=ticker, fiscal_period=fiscal_period,
+                word_target=word_target, word_max=word_max, text=chunk,
             )
             chunk_results.append(
                 call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
             )
 
-        print(f"    Merging {len(chunk_results)} chunk extractions...")
+        print(f"    Merging {len(chunk_results)} chunk compressions...")
         partials_json = json.dumps(chunk_results, indent=2)
         merge_prompt = _MERGE_PROMPT.format(
-            ticker=ticker, year=year, quarter=quarter,
+            ticker=ticker, fiscal_period=fiscal_period,
             n=len(chunk_results), partials=partials_json,
+            word_target=word_target, word_max=word_max,
         )
         result = call_claude_json(api_key, _SYSTEM_PROMPT, merge_prompt, model=model)
 
+    # Normalize whitespace
+    result = _normalize_paragraphs(result)
+
+    # Ensure all paragraph keys exist
+    for key in PARAGRAPH_KEYS:
+        result.setdefault(key, "No relevant content in filing text.")
+
+    # Strip unexpected keys from LLM output
+    allowed_llm = set(PARAGRAPH_KEYS)
+    for key in list(result.keys()):
+        if key not in allowed_llm:
+            del result[key]
+
+    # Check word count — recompress if over limit (up to 2 passes)
+    total = compute_total_words(result)
+    for recompress_pass in range(2):
+        if total <= word_max:
+            break
+        print(f"    Word count {total} exceeds {word_max}, recompressing (pass {recompress_pass + 1})...")
+        recompress_prompt = _RECOMPRESS_PROMPT.format(
+            ticker=ticker, fiscal_period=fiscal_period,
+            current_words=total, target=word_max,
+            word_target=word_target,
+            current_json=json.dumps(result, indent=2),
+        )
+        result = call_claude_json(api_key, _SYSTEM_PROMPT, recompress_prompt, model=model)
+        result = _normalize_paragraphs(result)
+        for key in PARAGRAPH_KEYS:
+            result.setdefault(key, "No relevant content in filing text.")
+        for key in list(result.keys()):
+            if key not in allowed_llm:
+                del result[key]
+        total = compute_total_words(result)
+
     # Attach metadata
     result["ticker"] = ticker
-    result["year"] = year
-    result["quarter"] = quarter
-
-    # Ensure all list keys exist
-    for key in SUMMARY_LIST_KEYS:
-        result.setdefault(key, [])
-
-    # Strip any unexpected keys the LLM may have added
-    allowed = {"ticker", "year", "quarter"} | set(SUMMARY_LIST_KEYS)
-    for key in list(result.keys()):
-        if key not in allowed:
-            del result[key]
+    result["form"] = form
+    result["filing_date"] = filing_date
+    result["fiscal_period"] = fiscal_period
+    result["period_type"] = period_type
+    result["word_count"] = total
 
     return result
 
@@ -641,7 +837,6 @@ def run_pipeline(
             skipped += 1
             continue
 
-        # Show what filings are in this group
         forms = []
         for f in filings:
             with open(f, "r", encoding="utf-8") as fh:
@@ -664,7 +859,8 @@ def run_pipeline(
             print(f"  WARNING: {errors}")
 
         save_summary(out_path, summary)
-        print(f"  Saved {out_path}")
+        wc = summary.get("word_count", "?")
+        print(f"  Saved {out_path} ({wc} words)")
         processed += 1
 
     report = {"total": len(groups), "processed": processed, "skipped": skipped}
@@ -703,6 +899,10 @@ def main():
         help="Process all tickers found in clean_text/",
     )
     parser.add_argument(
+        "--supported", action="store_true", default=False,
+        help="Use all tickers from supported_tickers.yaml",
+    )
+    parser.add_argument(
         "--force", action="store_true", default=False,
         help="Overwrite existing summaries",
     )
@@ -725,7 +925,9 @@ def main():
         sys.exit(1)
 
     tickers = None
-    if args.ticker:
+    if args.supported:
+        tickers = load_supported_tickers()
+    elif args.ticker:
         tickers = [t.strip().upper() for t in args.ticker.split(",") if t.strip()]
 
     years = None

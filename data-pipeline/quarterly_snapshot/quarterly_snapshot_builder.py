@@ -70,12 +70,22 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import yaml
+
 # ==========================
 # CONFIG — default paths relative to this script
 # ==========================
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _PIPELINE_DIR = _SCRIPT_DIR.parent  # data-pipeline/
+_SUPPORTED_TICKERS_PATH = _PIPELINE_DIR / "supported_tickers.yaml"
+
+
+def load_supported_tickers(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> list:
+    """Load ticker symbols from supported_tickers.yaml."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return [entry["symbol"] for entry in data["supported_tickers"]]
 
 DEFAULT_SUMMARIES_DIR = _PIPELINE_DIR / "EDGAR" / "finished_summaries"
 DEFAULT_SENTIMENT_DIR = _PIPELINE_DIR / "sentiment" / "data"
@@ -705,8 +715,12 @@ def main():
         description="Build quarterly snapshots for multi-agent trading research"
     )
     parser.add_argument(
-        "--tickers", type=str, required=True,
+        "--tickers", type=str, default=None,
         help="Comma-separated tickers (e.g. AAPL,NVDA,MSFT)",
+    )
+    parser.add_argument(
+        "--supported", action="store_true", default=False,
+        help="Use all tickers from supported_tickers.yaml",
     )
     parser.add_argument(
         "--rebalance-dates", type=str, required=True,
@@ -730,7 +744,12 @@ def main():
     )
     args = parser.parse_args()
 
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    if args.supported:
+        tickers = load_supported_tickers()
+    elif args.tickers:
+        tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    else:
+        tickers = []
     rebalance_dates = [parse_date(d) for d in args.rebalance_dates.split(",") if d.strip()]
 
     if not tickers:

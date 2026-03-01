@@ -105,7 +105,7 @@ python EDGAR/filing_summarization_pipeline.py \
 ## Stage 3: Build Macro Snapshot
 
 ```bash
-python macro/metrics_gather.py \
+python macro/macro_quarter_builder.py \
     --year 2025 \
     --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
     --out macro/data/augmented_market_state_v3.json
@@ -121,10 +121,10 @@ python macro/metrics_gather.py \
 
 ```bash
 # Faster run (fewer S&P 500 tickers for breadth calc)
-python macro/metrics_gather.py --year 2025 --tickers AAPL --breadth-sample 50
+python macro/macro_quarter_builder.py --year 2025 --tickers AAPL --breadth-sample 50
 
 # Deeper history for YoY comparisons
-python macro/metrics_gather.py --year 2025 --tickers AAPL --back-years 5
+python macro/macro_quarter_builder.py --year 2025 --tickers AAPL --back-years 5
 ```
 
 ---
@@ -171,7 +171,7 @@ python EDGAR/filing_summarization_pipeline.py \
     --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
 
 # 3. Build macro snapshot (independent of steps 1-2)
-python macro/metrics_gather.py \
+python macro/macro_quarter_builder.py \
     --year 2025 \
     --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
     --out macro/data/augmented_market_state_v3.json

@@ -263,19 +263,19 @@ The `coverage` section counts total metric slots and non-null values for quick q
 
 ```bash
 # Basic run for 2025 with default settings
-python metrics_gather.py --year 2025 --tickers AAPL,NVDA,MSFT
+python macro_quarter_builder.py --year 2025 --tickers AAPL,NVDA,MSFT
 
 # With FRED API key and custom output
-FRED_API_KEY=your_key python metrics_gather.py \
+FRED_API_KEY=your_key python macro_quarter_builder.py \
     --year 2025 \
     --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
     --out data/augmented_market_state_v3.json
 
 # Fast run: skip breadth computation (fewer S&P 500 tickers)
-python metrics_gather.py --year 2025 --tickers AAPL --breadth-sample 50 --breadth-max 60
+python macro_quarter_builder.py --year 2025 --tickers AAPL --breadth-sample 50 --breadth-max 60
 
 # Extended lookback for deeper history
-python metrics_gather.py --year 2025 --tickers AAPL --back-years 5
+python macro_quarter_builder.py --year 2025 --tickers AAPL --back-years 5
 ```
 
 ---

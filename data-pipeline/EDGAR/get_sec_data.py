@@ -55,6 +55,8 @@ import warnings
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
+import yaml
+
 # ==========================
 # CONFIG
 # ==========================
@@ -73,7 +75,7 @@ DEFAULT_FORMS: Set[str] = {"10-K", "10-Q", "8-K", "424B2"}
 
 MAX_WORKERS = 5  # Cap parallel threads for SEC politeness
 
-SUBMISSIONS_CACHE_TTL = 86400  # 24 hours — how long cached submissions JSON stays fresh
+SUBMISSIONS_CACHE_TTL = 8640000  # 2400 hours — how long cached submissions JSON stays fresh
 
 # ==========================
 # UTILITIES
@@ -533,6 +535,16 @@ def process_ticker(
         save_index(index_path, index)
 
 
+_SUPPORTED_TICKERS_PATH = Path(__file__).resolve().parent.parent / "supported_tickers.yaml"
+
+
+def load_supported_tickers(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> list:
+    """Load ticker symbols from supported_tickers.yaml."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return [entry["symbol"] for entry in data["supported_tickers"]]
+
+
 # ==========================
 # MAIN
 # ==========================
@@ -541,8 +553,11 @@ def main():
 
     parser = argparse.ArgumentParser(description="SEC Filing Downloader — pure ingestion layer")
 
-    parser.add_argument("--tickers", required=True,
+    parser.add_argument("--tickers", default=None,
                         help="Comma-separated list of tickers")
+
+    parser.add_argument("--supported", action="store_true", default=False,
+                        help="Use all tickers from supported_tickers.yaml")
 
     parser.add_argument("--years",
                         help="Comma-separated list of years (e.g. 2023,2024)")
@@ -594,7 +609,12 @@ def main():
         print(f"Warning: capping --workers from {workers} to {MAX_WORKERS} for SEC compliance")
         workers = MAX_WORKERS
 
-    tickers = [t.strip().upper() for t in args.tickers.split(",")]
+    if args.supported:
+        tickers = load_supported_tickers()
+    elif args.tickers:
+        tickers = [t.strip().upper() for t in args.tickers.split(",")]
+    else:
+        parser.error("either --tickers or --supported is required")
 
     years = [int(y.strip()) for y in args.years.split(",")] if args.years else None
     quarters = [q.strip().upper() for q in args.quarters.split(",")] if args.quarters else None
