@@ -25,6 +25,8 @@ import datetime as dt
 import json
 import os
 import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,6 +36,9 @@ import numpy as np
 import pandas as pd
 import requests
 from tqdm import tqdm
+
+FRED_RATE_LIMIT = 0.25  # seconds between FRED API requests
+_fred_lock = threading.Lock()
 
 try:
     import yfinance as yf
@@ -134,6 +139,8 @@ class FredClient:
             "observation_end": iso(end),
         }
         try:
+            with _fred_lock:
+                time.sleep(FRED_RATE_LIMIT)
             r = requests.get(self.base, params=params, timeout=30)
             r.raise_for_status()
         except requests.Timeout:
@@ -143,8 +150,8 @@ class FredClient:
             tqdm.write(f"    FAIL FRED {series_id} — connection error: {e}")
             return pd.Series(dtype=float)
         except requests.HTTPError as e:
-            status = e.response.status_code if e.response else "unknown"
-            tqdm.write(f"    FAIL FRED {series_id} — HTTP {status}")
+            status = getattr(e.response, 'status_code', None) or 'unknown'
+            tqdm.write(f"    FAIL FRED {series_id} — HTTP {status} (check API key?)")
             return pd.Series(dtype=float)
         js = r.json()
         obs = js.get("observations", [])
@@ -183,6 +190,8 @@ def yf_history(ticker: str, start: dt.date, end: dt.date) -> pd.DataFrame:
     )
     if df is None or df.empty:
         return pd.DataFrame()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
     return df
 
 # ----------------------------
@@ -207,7 +216,7 @@ def build_layer1_macro(fred: FredClient,
         "REAL10": "DFII10",
         "CPI": "CPIAUCSL",
         "CORE": "CPILFESL",
-        "ISM": "NAPM",
+        "INDPRO": "INDPRO",
         "HY": "BAMLH0A0HYM2",
         "UNRATE": "UNRATE",
         "DXY": "DTWEXBGS",
@@ -251,7 +260,7 @@ def build_layer1_macro(fred: FredClient,
             "REAL10": {"value": val("REAL10", q_end)},
             "CPI_YOY": {"value": None if val("CPI", yoy_date) is None else (val("CPI", q_end)/val("CPI", yoy_date)-1)*100},
             "CORE_YOY": {"value": None if val("CORE", yoy_date) is None else (val("CORE", q_end)/val("CORE", yoy_date)-1)*100},
-            "ISM": {"value": val("ISM", q_end)},
+            "INDPRO": {"value": val("INDPRO", q_end)},
             "HY_OAS": {"value": val("HY", q_end)},
             "UNRATE": {"value": val("UNRATE", q_end)},
             "DXY": {"value": val("DXY", q_end)},
@@ -273,10 +282,9 @@ def build_layer4_vol(fred: FredClient,
 
     q_end = q_end_dates(year)[quarter]
 
-    tqdm.write(f"  [L4] Fetching VIX, MOVE, SPY, TLT in parallel...")
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    tqdm.write(f"  [L4] Fetching VIX, SPY, TLT in parallel...")
+    with ThreadPoolExecutor(max_workers=3) as pool:
         f_vix = pool.submit(fred.fetch, "VIXCLS", start_date, end_date)
-        f_move = pool.submit(fred.fetch, "MOVE", start_date, end_date)
         f_spy = pool.submit(yf_history, "SPY", q_end - dt.timedelta(days=120), q_end)
         f_tlt = pool.submit(yf_history, "TLT", q_end - dt.timedelta(days=120), q_end)
 
@@ -285,11 +293,6 @@ def build_layer4_vol(fred: FredClient,
     except Exception as e:
         tqdm.write(f"    FAIL FRED VIXCLS — {type(e).__name__}: {e}")
         vix = pd.Series(dtype=float)
-    try:
-        move = f_move.result()
-    except Exception as e:
-        tqdm.write(f"    FAIL FRED MOVE — {type(e).__name__}: {e}")
-        move = pd.Series(dtype=float)
     try:
         spy = f_spy.result()
     except Exception as e:
@@ -317,7 +320,6 @@ def build_layer4_vol(fred: FredClient,
         "asof": iso(q_end),
         "metrics": {
             "VIX": {"value": fred.value_on_or_before(vix, q_end)},
-            "MOVE": {"value": fred.value_on_or_before(move, q_end)},
             "EQ_BOND_CORR": {"value": corr},
         },
     }
@@ -339,7 +341,7 @@ def build_macro_state(year: int,
 
     doc = {
         "schema_version": "macro_state_v4_quarter_aware",
-        "generated_at_utc": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "generated_at_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "year": year,
         "quarter": quarter,
         "as_of": iso(q_end),

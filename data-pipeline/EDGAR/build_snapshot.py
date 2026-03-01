@@ -12,7 +12,7 @@ ARCHITECTURAL RULE:
 
 Usage:
   python build_snapshot.py --ticker AAPL
-  python build_snapshot.py --ticker AAPL --output /tmp/snapshots
+  python build_snapshot.py --ticker AAPL --output /tmp/final_snapshots
 """
 
 import argparse
@@ -334,7 +334,7 @@ def main():
     base_dir = Path(args.output)
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    snapshot_dir = base_dir / "snapshots"
+    snapshot_dir = base_dir / "final_snapshots"
     snapshot_dir.mkdir(parents=True, exist_ok=True)
 
     for ticker in tickers:

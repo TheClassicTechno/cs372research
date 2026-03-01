@@ -1,155 +1,225 @@
 # Data Pipeline — End-to-End Guide
 
-This document describes how to run the full data pipeline from scratch, producing quarterly snapshots that trading agents consume.
+This document describes how to run the full data pipeline from scratch, producing quarterly snapshot JSON and agent-readable memos in `final_snapshots/`.
 
 ---
 
-## Prerequisites
+## Adding a New Ticker
 
-**Python packages:**
+To add a new ticker to the universe, just add an entry to `supported_tickers.yaml`:
 
-```bash
-pip install requests pandas numpy yfinance
+```yaml
+  - symbol: NFLX
+    sector: Communication Services
+    description: Netflix — Streaming media and entertainment
 ```
 
-**API keys:**
+That's it. Every script in the pipeline reads from `supported_tickers.yaml` via the `--supported` flag, so the new ticker will automatically be picked up by all stages — EDGAR downloads, filing summarization, asset features, sentiment scoring, snapshot building, and memo generation. No other code changes needed.
+
+---
+
+## API Keys
 
 | Key | Required By | How to Set |
 |-----|-------------|------------|
-| FRED API key | `metrics_gather.py` | `export FRED_API_KEY=your_key` or `--fred-key` |
+| Finnhub API key | `sentiment.py` | `--api-key $FINNHUB_KEY` |
 | Anthropic API key | `filing_summarization_pipeline.py` | `export ANTHROPIC_API_KEY=sk-ant-...` or `--api-key` |
+| FRED API key | `macro_quarter_builder.py` | `export FRED_API_KEY=your_key` or `--fred-key` |
 
-The FRED key is free — register at https://fred.stlouisfed.org/docs/api/api_key.html.
+- **Finnhub** — Free tier: 60 req/min. Register at https://finnhub.io. Only ~1 year of news history available on the free plan.
+- **Anthropic** — Required for Claude-based filing summarization. Each filing = 1 API call.
+- **FRED** — Free. Register at https://fred.stlouisfed.org/docs/api/api_key.html. Script warns but still runs if missing (some series will be null).
 
-**SEC compliance:** `get_sec_data.py` requires a valid User-Agent header. Edit the `SEC_HEADERS` dict at the top of the file with your name and email before running.
+**No API key needed:** `get_sec_data.py` (SEC public API), `asset_quarter_builder.py` (yfinance public API), `quarterly_quarterly_json.py`, `generate_quarterly_memo.py`.
+
+**SEC compliance:** `get_sec_data.py` requires a valid User-Agent header. Edit `SEC_HEADERS` at the top of the file with your name and email before running.
 
 ---
 
 ## Pipeline Stages
 
 ```
-Stage 1: get_sec_data.py                 (SEC EDGAR -> raw .txt)
-Stage 2: filing_summarization_pipeline.py (raw .txt -> summary .json)
-Stage 3: metrics_gather.py               (FRED + Yahoo -> macro .json)
-Stage 4: quarterly_snapshot_builder.py    (merge all -> per-ticker snapshots)
+Stage 1: EDGAR/get_sec_data.py                      SEC EDGAR -> raw HTML + clean text
+Stage 2: EDGAR/filing_summarization_pipeline.py      clean text -> summary JSON (Claude)
+Stage 3: macro/macro_quarter_builder.py              FRED + yfinance -> macro JSON
+Stage 4: quarterly_asset_details/asset_quarter_builder.py   yfinance -> asset JSON
+Stage 5: sentiment/sentiment.py                      Finnhub + FinBERT -> sentiment JSON
+Stage 6: final_snapshots/quarterly_quarterly_json.py  merge all -> snapshot JSON
+Stage 7: final_snapshots/generate_quarterly_memo.py   snapshot JSON -> agent memo
 ```
 
-Stages 1+2 (EDGAR) and Stage 3 (macro) are **independent** — run them in parallel if you want. Stage 4 depends on all prior stages being complete.
+**Dependency graph:**
 
-The sentiment pipeline is assumed to have already run and produced `sentiment/data/sentiment_output.json`. See `sentiment/documentation.md` for details.
+```
+Stages 1→2  (EDGAR download then summarize)
+Stage 3     (macro — independent)
+Stage 4     (assets — independent)
+Stage 5     (sentiment — independent)
+Stage 6     (merge — requires 2, 3, 4, 5 complete)
+Stage 7     (memo — requires 6 complete)
+```
+
+Stages 1→2, 3, 4, and 5 are **independent** — run them in parallel.
 
 ---
 
-## Stage 1: Download & Extract Filing Text
+## Stage 1: Download Filing Text from SEC EDGAR
 
 ```bash
 cd data-pipeline
 
-# Option A: Last N completed quarters (recommended for first run)
-python EDGAR/get_sec_data.py \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --last-n 4 \
-    --output EDGAR/raw_filings
+# All 19 supported tickers, last 4 quarters
+python EDGAR/get_sec_data.py --supported --last-n 4
 
-# Option B: Specific year + quarters
-python EDGAR/get_sec_data.py \
-    --tickers AAPL,NVDA,MSFT \
-    --years 2024,2025 \
-    --quarters Q1,Q2,Q3,Q4 \
-    --output EDGAR/raw_filings
+# Specific tickers, specific quarters
+python EDGAR/get_sec_data.py --tickers AAPL,NVDA,MSFT --years 2024,2025 --quarters Q1,Q2,Q3,Q4
 
-# Option C: Annual filings only (10-K)
-python EDGAR/get_sec_data.py \
-    --tickers AAPL,NVDA,MSFT \
-    --years 2024 \
-    --quarters ANNUAL \
-    --output EDGAR/raw_filings
-
-# Option D: Full institutional bundle (10-K, 10-Q, 8-K, Form 4, etc.)
-python EDGAR/get_sec_data.py \
-    --tickers AAPL \
-    --last-n 4 \
-    --bundle core \
-    --include-amendments \
-    --parallel --workers 3 \
-    --output EDGAR/raw_filings
+# With parallel downloads
+python EDGAR/get_sec_data.py --supported --last-n 4 --parallel --workers 3
 ```
 
-**What it does:** Downloads HTML filings from SEC EDGAR, strips tags, extracts narrative sections (MD&A, Risk Factors), saves structured `.txt` files.
+**What it does:** Downloads HTML filings from SEC EDGAR, saves raw HTML, converts to clean plain text.
 
-**Output:** `EDGAR/raw_filings/{TICKER}/{YEAR}/{QUARTER}/{FORM}_{DATE}.txt`
+**Output:**
+```
+EDGAR/raw_html/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{FILINGDATE}.html
+EDGAR/clean_text/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{FILINGDATE}.txt
+```
 
-**Re-runs:** Skips already-extracted filings by default. Use `--force-refresh` to re-extract everything.
+**Re-runs:** Skips already-downloaded filings by default. Use `--force-refresh` to re-download.
 
 ---
 
 ## Stage 2: Summarize Filings via Claude
 
 ```bash
-python EDGAR/filing_summarization_pipeline.py \
-    --raw-dir EDGAR/raw_filings \
-    --out-dir EDGAR/finished_summaries \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
+# All supported tickers
+python EDGAR/filing_summarization_pipeline.py --supported
+
+# Specific tickers
+python EDGAR/filing_summarization_pipeline.py --ticker AAPL,NVDA,MSFT
+
+# Re-summarize everything
+python EDGAR/filing_summarization_pipeline.py --supported --force
 ```
 
-**What it does:** Sends each filing's narrative text to Claude for structured extraction. Produces JSON summaries with qualitative signals (demand outlook, margin trends, risk factor changes, material events).
+**What it does:** Sends each filing's full text to Claude for structured extraction. Produces JSON summaries with: operating_state, cost_structure, material_events, macro_exposures, forward_outlook, uncertainty_profile.
 
-**Output:** `EDGAR/finished_summaries/{TICKER}/{YEAR}/{QUARTER}/{FORM}_summary.json`
+**Output:** `EDGAR/finished_summaries/{TICKER}/{YEAR}/Q{#}.json`
 
 **Re-runs:** Skips existing summaries by default. Use `--force` to re-summarize.
 
-**Cost note:** Each filing = 1-3 Claude API calls depending on length. Budget accordingly for large universes.
+**Cost:** Each filing = 1 Claude API call. Model default: `claude-sonnet-4-20250514`.
 
 ---
 
-## Stage 3: Build Macro Snapshot
+## Stage 3: Build Macro Data
 
 ```bash
-python macro/macro_quarter_builder.py \
-    --year 2025 \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --out macro/data/augmented_market_state_v3.json
+# Quarter range (recommended)
+python macro/macro_quarter_builder.py --start 2024Q4 --end 2025Q3
+
+# Single quarter
+python macro/macro_quarter_builder.py --year 2025 --quarter Q1
+
+# With explicit FRED key
+python macro/macro_quarter_builder.py --start 2024Q4 --end 2025Q3 --fred-key $FRED_API_KEY
 ```
 
-**What it does:** Fetches macro data (rates, inflation, credit, liquidity) from FRED, volatility/risk pricing from FRED + Yahoo Finance, market internals (breadth, concentration) from S&P 500 constituents, and per-ticker price summaries from Yahoo Finance.
+**What it does:** Fetches macro data from FRED (rates, inflation, credit, employment, industrial production) and yfinance (VIX, equity-bond correlation, dollar index, WTI). Computes QoQ deltas. No ticker-specific data.
 
-**Output:** `macro/data/augmented_market_state_v3.json`
+**Output:** `macro/data/macro_{YEAR}_{QUARTER}.json`
 
-**Re-runs:** FRED data is incrementally cached in CSV files next to the script. Only missing date ranges are fetched on subsequent runs.
-
-**Options:**
-
-```bash
-# Faster run (fewer S&P 500 tickers for breadth calc)
-python macro/macro_quarter_builder.py --year 2025 --tickers AAPL --breadth-sample 50
-
-# Deeper history for YoY comparisons
-python macro/macro_quarter_builder.py --year 2025 --tickers AAPL --back-years 5
-```
+**Re-runs:** FRED data is cached in CSV files next to the script. Only missing date ranges are fetched.
 
 ---
 
-## Stage 4: Build Quarterly Snapshots
+## Stage 4: Build Asset Features
 
 ```bash
-python quarterly_snapshot/quarterly_snapshot_builder.py \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --rebalance-dates 2025-03-31,2025-06-30,2025-09-30,2025-12-31
+# All supported tickers, quarter range
+python quarterly_asset_details/asset_quarter_builder.py --start 2024Q4 --end 2025Q3 --supported
+
+# Specific tickers
+python quarterly_asset_details/asset_quarter_builder.py --start 2025Q1 --end 2025Q3 --tickers AAPL,NVDA,MSFT
 ```
 
-**What it does:** Merges all upstream data into one JSON per ticker per quarter. Enforces point-in-time safety (no data after the rebalance date). Validates schema and checks for future leakage.
+**What it does:** Fetches price history from yfinance and computes ~28 metrics per ticker: returns (20d/60d/120d/252d), volatility, beta, Sharpe, drawdowns, SMA crossovers, momentum, fundamentals (gross margin, ROE, FCF yield, debt/equity, book-to-market, earnings surprise), and cross-sectional features.
 
-**Output:** `quarterly_snapshot/data/{YEAR}{QUARTER}/{TICKER}.json`
+**Output:** `quarterly_asset_details/data/assets_{YEAR}_{QUARTER}.json`
 
-**Data sources read (all must exist before running):**
+**Re-runs:** Overwrites existing output for the quarter.
 
-| Source | Default Path |
-|--------|-------------|
-| Filing summaries | `EDGAR/finished_summaries/` |
-| Sentiment | `sentiment/data/sentiment_output.json` |
-| Macro | `macro/data/augmented_market_state_v3.json` |
+---
 
-Custom paths can be passed via `--summaries-dir`, `--sentiment-dir`, `--macro-dir`.
+## Stage 5: Build Sentiment Features
+
+```bash
+# All supported tickers, quarter range
+python sentiment/sentiment.py --start 2025Q1 --end 2025Q3 --supported --api-key $FINNHUB_KEY
+
+# With parallel news fetching
+python sentiment/sentiment.py --start 2025Q1 --end 2025Q3 --supported --api-key $FINNHUB_KEY --workers 4
+
+# Re-score everything (ignore cache)
+python sentiment/sentiment.py --start 2025Q1 --end 2025Q3 --supported --api-key $FINNHUB_KEY --force
+```
+
+**What it does:** Fetches news articles from Finnhub, scores with FinBERT (local model), computes 5 features per ticker: article_count, mean_sentiment, sentiment_volatility, surprise_sentiment, cross_sectional_z.
+
+**Output:** `sentiment/data/sentiment_{YEAR}_Q{#}.json`
+
+**Re-runs:** Skips quarters with existing output (if all requested tickers present). Use `--force` to re-score. News responses are cached in `sentiment/news_cache/`.
+
+**Note:** Finnhub free tier only returns ~1 year of history. Older quarters will have null sentiment.
+
+---
+
+## Stage 6: Build Quarterly Snapshots
+
+```bash
+# All supported tickers, full range
+python final_snapshots/quarterly_quarterly_json.py --start 2024Q4 --end 2025Q3 --supported
+
+# Specific tickers, single quarter
+python final_snapshots/quarterly_quarterly_json.py --year 2025 --quarter Q1 --tickers AAPL,NVDA,MSFT
+```
+
+**What it does:** Merges all upstream data (filings, macro, assets, sentiment) into a single JSON per quarter. Enforces point-in-time safety — no data after the quarter end date. Runs leakage checks.
+
+**Output:** `final_snapshots/json_data/snapshot_{YEAR}_{QUARTER}.json`
+
+**Inputs required (all must exist):**
+
+| Source | Path |
+|--------|------|
+| Filing summaries | `EDGAR/finished_summaries/{TICKER}/{YEAR}/Q{#}.json` |
+| Macro data | `macro/data/macro_{YEAR}_{QUARTER}.json` |
+| Asset features | `quarterly_asset_details/data/assets_{YEAR}_{QUARTER}.json` |
+| Sentiment | `sentiment/data/sentiment_{YEAR}_Q{#}.json` |
+
+Any missing source → that section is `null` in the snapshot (not fatal).
+
+---
+
+## Stage 7: Generate Agent Memos
+
+```bash
+# All tickers in snapshot
+python final_snapshots/generate_quarterly_memo.py --start 2024Q4 --end 2025Q3
+
+# Specific tickers only
+python final_snapshots/generate_quarterly_memo.py --start 2025Q1 --end 2025Q3 --tickers AAPL,NVDA,MSFT
+
+# All 19 supported tickers
+python final_snapshots/generate_quarterly_memo.py --start 2024Q4 --end 2025Q3 --supported
+```
+
+**What it does:** Converts snapshot JSON into structured plain-text memos with tagged evidence IDs (`[L1-10Y]`, `[AAPL-RET60]`, etc.) that agents can cite in their reasoning.
+
+**Output:** `final_snapshots/memo_data/memo_{YEAR}_{QUARTER}.txt`
+
+**Input:** `final_snapshots/json_data/snapshot_{YEAR}_{QUARTER}.json`
 
 ---
 
@@ -158,72 +228,83 @@ Custom paths can be passed via `--summaries-dir`, `--sentiment-dir`, `--macro-di
 ```bash
 cd data-pipeline
 
-# 1. Download and extract filing text
-python EDGAR/get_sec_data.py \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --last-n 4 \
-    --output EDGAR/raw_filings
+# --- Independent stages (run in parallel or sequence) ---
+
+# 1. Download filings from SEC EDGAR
+python EDGAR/get_sec_data.py --supported --last-n 4 --parallel --workers 3
 
 # 2. Summarize filings via Claude
-python EDGAR/filing_summarization_pipeline.py \
-    --raw-dir EDGAR/raw_filings \
-    --out-dir EDGAR/finished_summaries \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
+python EDGAR/filing_summarization_pipeline.py --supported
 
-# 3. Build macro snapshot (independent of steps 1-2)
-python macro/macro_quarter_builder.py \
-    --year 2025 \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --out macro/data/augmented_market_state_v3.json
+# 3. Build macro data
+python macro/macro_quarter_builder.py --start 2024Q4 --end 2025Q3
 
-# 4. Build quarterly snapshots (requires 2 + 3 + sentiment to be done)
-python quarterly_snapshot/quarterly_snapshot_builder.py \
-    --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS \
-    --rebalance-dates 2025-03-31,2025-06-30,2025-09-30,2025-12-31
+# 4. Build asset features
+python quarterly_asset_details/asset_quarter_builder.py --start 2024Q4 --end 2025Q3 --supported
+
+# 5. Build sentiment features
+python sentiment/sentiment.py --start 2025Q1 --end 2025Q3 --supported --api-key $FINNHUB_KEY --workers 4
+
+# --- Merge stage (requires 2-5 complete) ---
+
+# 6. Build quarterly snapshots
+python final_snapshots/quarterly_quarterly_json.py --start 2024Q4 --end 2025Q3 --supported
+
+# 7. Generate agent memos
+python final_snapshots/generate_quarterly_memo.py --start 2024Q4 --end 2025Q3 --supported
 ```
+
+---
+
+## Final Output
+
+After a full run, the agent-consumable files live in:
+
+```
+data-pipeline/final_snapshots/
+  json_data/
+    snapshot_2024_Q4.json       <- full data payload (JSON)
+    snapshot_2025_Q1.json
+    snapshot_2025_Q2.json
+    snapshot_2025_Q3.json
+  memo_data/
+    memo_2024_Q4.txt            <- agent-readable memo (plain text)
+    memo_2025_Q1.txt
+    memo_2025_Q2.txt
+    memo_2025_Q3.txt
+```
+
+Each snapshot JSON contains: macro regime, per-ticker asset features (~28 metrics), sentiment (5 features), and filing summaries — all point-in-time safe. See `final_snapshots/documentation.md` for the full schema.
 
 ---
 
 ## Output Directory Structure
 
-After a full run, `data-pipeline/` looks like:
-
 ```
 data-pipeline/
+  supported_tickers.yaml                <- 19-ticker universe (single source of truth)
   EDGAR/
     get_sec_data.py
     filing_summarization_pipeline.py
-    documentation.md
-    raw_filings/
-      AAPL/
-        2025/Q1/10-Q_2025-05-02.txt
-        2025/Q4/10-K_2025-10-31.txt
-    finished_summaries/
-      AAPL/
-        2025/Q1/10-Q_summary.json
-        2025/Q4/10-K_summary.json
+    raw_html/{TICKER}/*.html            <- raw SEC HTML
+    clean_text/{TICKER}/*.txt           <- full plain text
+    finished_summaries/{TICKER}/{YEAR}/Q{#}.json
   macro/
-    metrics_gather.py
-    documentation.md
-    data/
-      augmented_market_state_v3.json
-    DFF_fred_cache.csv          (auto-generated FRED cache)
-    DGS10_fred_cache.csv
-    ...
+    macro_quarter_builder.py
+    data/macro_{YEAR}_{QUARTER}.json
+  quarterly_asset_details/
+    asset_quarter_builder.py
+    data/assets_{YEAR}_{QUARTER}.json
   sentiment/
+    sentiment.py
+    data/sentiment_{YEAR}_Q{#}.json
+    news_cache/                         <- Finnhub response cache
+  final_snapshots/
+    quarterly_quarterly_json.py         <- snapshot builder
+    generate_quarterly_memo.py          <- memo generator
     documentation.md
-    data/
-      sentiment_output.json
-  quarterly_snapshot/
-    quarterly_snapshot_builder.py
-    documentation.md
-    data/
-      2025Q1/
-        AAPL.json
-        NVDA.json
-      2025Q2/
-        AAPL.json
-        NVDA.json
+    json_data/snapshot_{YEAR}_{QUARTER}.json
+    memo_data/memo_{YEAR}_{QUARTER}.txt
 ```
 
 ---
@@ -232,21 +313,23 @@ data-pipeline/
 
 **"Ticker not found"** — The ticker isn't in SEC's company_tickers.json mapping. Check spelling and that the company is SEC-registered.
 
-**FRED fetch errors** — Verify your FRED API key. Some series (MOVE, SKEW) may not be available without a key. Errors are logged per-metric in the output JSON, not fatal.
+**FRED fetch errors** — Verify your FRED API key. Some series may return null without a key. Errors are logged per-metric, not fatal.
 
-**Empty filing sections** — Some filings don't have standard Item 7/Item 2 headings (especially older filings or non-standard formats). The text extractor logs these as `[SECTION NOT FOUND]`.
+**Finnhub null sentiment** — Free tier only has ~1 year of news history. Older quarters will have null sentiment. Not a bug.
 
-**Claude API rate limits** — The summarization pipeline sleeps 1 second between calls by default. For large batches, this is conservative. Adjust if you have a higher rate limit.
+**Claude API rate limits** — The summarization pipeline sleeps 1 second between calls by default. Adjust `RATE_LIMIT_SECONDS` for higher-tier plans.
 
-**Missing sentiment data** — The snapshot builder sets `news_sentiment: null` for any ticker/quarter not found in `sentiment_output.json`. This is expected for tickers or quarters not covered by the sentiment pipeline.
+**yfinance MultiIndex errors** — If yfinance returns garbled data, retry. This is a known intermittent issue with the yfinance library.
+
+**Missing sections in snapshot** — Any upstream data not found → that section is `null` in the snapshot. Run the relevant upstream stage first.
 
 ---
 
 ## Per-Component Documentation
 
-Each subdirectory has its own detailed `documentation.md`:
+Each subdirectory has its own `documentation.md`:
 
-* `EDGAR/documentation.md` — Filing download, text extraction, summarization schema
-* `macro/documentation.md` — FRED series map, layer definitions, caching logic
-* `sentiment/documentation.md` — Sentiment feature derivation methodology
-* `quarterly_snapshot/documentation.md` — Snapshot schema, point-in-time rules, integration diagram
+- `EDGAR/documentation.md` — Filing download, text extraction, summarization schema
+- `macro/documentation.md` — FRED series map, layer definitions, caching
+- `sentiment/documentation.md` — Sentiment features, FinBERT pipeline, rate limiting
+- `final_snapshots/documentation.md` — Snapshot schema, memo format, evidence IDs, point-in-time safety
