@@ -107,7 +107,7 @@ class DebateAgentSystem(AgentSystem):
         # Build DebateConfig with flat PID fields.
         # PID object construction is handled inside DebateConfig.__post_init__
         # so this adapter stays decoupled and has no direct dependency on PID.
-        debate_cfg = DebateConfig(
+        self._debate_cfg = DebateConfig(
             model_name=config.llm_model,
             temperature=config.temperature,
             mock=use_mock,
@@ -125,9 +125,8 @@ class DebateAgentSystem(AgentSystem):
             log_system_prompts=config.log_system_prompts,
             log_user_prompts=config.log_user_prompts,
             log_llm_responses=config.log_llm_responses
-
         )
-        self._debate_runner = MultiAgentRunner(debate_cfg)
+        self._debate_runner = MultiAgentRunner(self._debate_cfg)
 
     def bind_tools(self, submit_decision_fn: Callable[..., Any]) -> None:
         """Accept the tool for interface compliance.

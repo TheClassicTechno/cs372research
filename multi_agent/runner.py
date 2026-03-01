@@ -281,7 +281,13 @@ class MultiAgentRunner:
                     if rev["role"] not in seen:
                         seen.add(rev["role"])
                         deduped.append(rev)
-                state["revisions"] = list(reversed(deduped))
+                state["revisions"] = sorted(reversed(deduped), key=lambda r: r["role"])
+
+                # Sort proposals and critiques by role for deterministic
+                # ordering — parallel fan-out merges via operator.add in
+                # thread-completion order, which is non-deterministic.
+                state["proposals"] = sorted(state.get("proposals", []), key=lambda p: p["role"])
+                state["critiques"] = sorted(state.get("critiques", []), key=lambda c: c["role"])
 
             # CRIT + PID step (after full round completes)
             if self._pid_controller and self._crit_scorer:

@@ -33,7 +33,6 @@ from eval.crit.schema import (
     validate_raw_response,
 )
 
-
 class CritScorer:
     """Blind reasoning quality auditor for multi-agent debate.
 
