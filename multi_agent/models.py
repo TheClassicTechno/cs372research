@@ -141,6 +141,38 @@ class DebateTurn(BaseModel):
     input_params: Dict[str, str]
 
 
+# =============================================================================
+# PID CONTROLLER DATA MODELS
+# =============================================================================
+
+
+class RoundMetrics(BaseModel):
+    """Metrics collected after each debate round for PID control."""
+
+    round_index: int
+    rho_bar: float              # from CRIT scorer (mean of 4 pillars)
+    js_divergence: float        # JS divergence across agent scores
+    ov_overlap: float           # evidence overlap
+
+
+class ControllerOutput(BaseModel):
+    """What the PID controller decided for the next round."""
+
+    new_agreeableness: Optional[float] = None
+    force_extra_round: bool = False
+    inject_prompt_modifier: Optional[str] = None
+
+
+class PIDEvent(BaseModel):
+    """Full record of one PID control step (one per debate round)."""
+
+    round_index: int
+    metrics: RoundMetrics
+    crit_result: dict           # full CritResult as dict
+    pid_step: dict              # PIDStepResult fields
+    controller_output: ControllerOutput
+
+
 class AgentTrace(BaseModel):
     """
     Full auditable trace of an agent decision.
@@ -159,6 +191,7 @@ class AgentTrace(BaseModel):
     logged_at: str
     initial_market_state: Optional[MarketState] = None
     initial_portfolio_state: Optional[PortfolioState] = None
+    pid_events: Optional[list[PIDEvent]] = None
 
 
 # =============================================================================
