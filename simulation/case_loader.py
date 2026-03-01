@@ -62,6 +62,7 @@ def load_case_templates(
     top_n_news: int | None = None,
     ticker_filter: list[str] | None = None,
     quarters: list[str] | None = None,
+    merge_tickers: bool = False,
 ) -> list[Case]:
     """Load cases from *dataset_path*.
 
@@ -105,6 +106,11 @@ def load_case_templates(
         before = len(cases)
         cases = [c for c in cases if any(q in c.case_id for q in quarter_set)]
         logger.info("Quarter filter %s: %d -> %d case(s).", sorted(quarter_set), before, len(cases))
+
+    if merge_tickers:
+        before = len(cases)
+        cases = _merge_by_quarter(cases)
+        logger.info("Merged tickers by quarter: %d -> %d case(s).", before, len(cases))
 
     if top_n_news is not None:
         cases = [_apply_top_n(c, top_n_news) for c in cases]
@@ -153,6 +159,81 @@ def _apply_top_n(case: Case, n: int) -> Case:
     return case.model_copy(
         update={"case_data": case.case_data.model_copy(update={"items": filtered})}
     )
+
+
+# ------------------------------------------------------------------
+# Multi-ticker merging
+# ------------------------------------------------------------------
+
+def _extract_quarter(case_id: str) -> str:
+    """Extract the quarter portion from a case_id like 'NVDA/2025_Q1'.
+
+    Returns e.g. '2025_Q1'.  If the case_id doesn't follow the
+    TICKER/YEAR_QUARTER pattern, returns the full case_id as the key.
+    """
+    # case_id is like "NVDA/2025_Q1" or "NVDA/2025_Q1_bk"
+    parts = case_id.split("/")
+    if len(parts) >= 2:
+        return parts[-1]  # "2025_Q1" or "2025_Q1_bk"
+    return case_id
+
+
+def _merge_by_quarter(cases: list[Case]) -> list[Case]:
+    """Merge single-ticker cases from the same quarter into multi-ticker cases.
+
+    Groups cases by their quarter label (extracted from case_id), then
+    merges each group's stock_data and case_data.items into a single case.
+    The merged case_id is like 'AAPL+NVDA/2025_Q1'.
+    """
+    from collections import defaultdict
+
+    groups: dict[str, list[Case]] = defaultdict(list)
+    for case in cases:
+        quarter = _extract_quarter(case.case_id)
+        groups[quarter].append(case)
+
+    merged: list[Case] = []
+    for quarter, group in sorted(groups.items()):
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+
+        # Merge stock_data from all cases in the group
+        merged_stock_data = {}
+        merged_items = []
+        merged_tickers = []
+        timestamp = None
+
+        for case in group:
+            merged_stock_data.update(case.stock_data)
+            merged_items.extend(case.case_data.items)
+            merged_tickers.extend(case.tickers)
+            if case.information_cutoff_timestamp:
+                timestamp = case.information_cutoff_timestamp
+
+        # Use the first case as the base and merge in the rest
+        merged_case_id = "+".join(sorted(set(merged_tickers))) + "/" + quarter
+        base = group[0]
+        merged_case = base.model_copy(
+            update={
+                "stock_data": merged_stock_data,
+                "case_data": base.case_data.model_copy(
+                    update={"items": merged_items}
+                ),
+                "case_id": merged_case_id,
+                "information_cutoff_timestamp": timestamp,
+            }
+        )
+        merged.append(merged_case)
+        logger.info(
+            "Merged %d cases into '%s' (%d tickers, %d items).",
+            len(group),
+            merged_case_id,
+            len(merged_stock_data),
+            len(merged_items),
+        )
+
+    return merged
 
 
 # ------------------------------------------------------------------
