@@ -600,6 +600,11 @@ def propose_node(state: DebateState) -> dict:
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        if config.get("log_system_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
+        if config.get("log_user_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_proposal(role, obs)
@@ -607,6 +612,9 @@ def propose_node(state: DebateState) -> dict:
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
+
+        if config.get("log_llm_responses"):
+            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         action_dict = {
             "orders": result.get("orders", []),
@@ -858,6 +866,11 @@ def make_propose_node(role: str):
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        if config.get("log_system_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
+        if config.get("log_user_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+
         raw_text = None
         if is_mock:
             result = _mock_proposal(role, obs)
@@ -865,6 +878,9 @@ def make_propose_node(role: str):
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
+
+        if config.get("log_llm_responses"):
+            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         action_dict = {
             "orders": result.get("orders", []),

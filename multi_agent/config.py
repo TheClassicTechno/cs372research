@@ -83,6 +83,14 @@ class DebateConfig:
     # --- Verbose mode (print full debate content to terminal) ---
     verbose: bool = False
 
+    # --- Logging levels for LLM calls ---
+    # log_system_prompts: print the system prompt sent to each agent
+    log_system_prompts: bool = False
+    # log_user_prompts: print the full rendered user prompt (includes case data)
+    log_user_prompts: bool = False
+    # log_llm_responses: print the raw LLM response text
+    log_llm_responses: bool = False
+
     # --- Output ---
     trace_dir: str = "./traces"
 
@@ -164,6 +172,9 @@ class DebateConfig:
             "parallel_agents": self.parallel_agents,
             "mock": self.mock,
             "verbose": self.verbose,
+            "log_system_prompts": self.log_system_prompts,
+            "log_user_prompts": self.log_user_prompts,
+            "log_llm_responses": self.log_llm_responses,
             "trace_dir": self.trace_dir,
             "pid_enabled": self.pid_enabled,
             "pid_propose": self.pid_propose,

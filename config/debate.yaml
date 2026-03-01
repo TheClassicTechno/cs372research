@@ -25,6 +25,7 @@ top_n_news: 5
 #   2. Which cases are loaded (only cases containing these tickers).
 tickers:
   - NVDA
+  - KO
 
 num_episodes: 1
 
@@ -38,6 +39,10 @@ agent:
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
+  # Logging — set to true to print LLM call details
+  log_system_prompts: false   # role instructions per agent
+  log_user_prompts: false     # full rendered prompt (includes case data)
+  log_llm_responses: false    # raw LLM response text
 
   # PID controller for debate quality regulation (disabled by default).
   # When enabled, CRIT scores each round and PID adjusts agreeableness.
