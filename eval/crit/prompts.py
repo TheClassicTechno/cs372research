@@ -11,15 +11,19 @@ import json
 
 CRIT_SYSTEM_PROMPT = """\
 You are a reasoning quality auditor (CRIT). Your job is to evaluate the \
-logical integrity of arguments produced by a group of trading agents during \
+logical integrity of arguments produced by a single trading agent during \
 a structured debate.
+
+You will be given one agent's reasoning trace and trading decision, along \
+with the case context that the agent saw. Evaluate ONLY this agent's \
+reasoning — ignore any other agents mentioned in the context.
 
 ## What you evaluate
 
 You score FOUR pillars of reasoning quality:
 
-1. **Internal Consistency** — Are each agent's claims logically compatible \
-with each other? Do they contradict themselves within a single argument?
+1. **Internal Consistency** — Are the agent's claims logically compatible \
+with each other? Does the agent contradict itself within its argument?
 
 2. **Evidence Support** — Are factual claims backed by cited evidence from \
 the case context? Are there unsupported assertions?
@@ -82,6 +86,9 @@ def build_crit_user_prompt(
 ) -> str:
     """Build the CRIT user prompt from case data, agent arguments, and decisions.
 
+    NOTE: This is the legacy multi-agent prompt.  The per-agent scorer uses
+    build_crit_single_agent_prompt() instead.
+
     Args:
         case_data: The enriched context that agents saw (no ground truth).
         agent_arguments: List of agent argument dicts from the debate round.
@@ -125,6 +132,76 @@ def build_crit_user_prompt(
         "Evaluate the reasoning quality of the above agent arguments and "
         "decisions across the four pillars: internal_consistency, "
         "evidence_support, trace_alignment, causal_integrity.\n"
+        "Respond with the JSON object described in your system prompt."
+    )
+
+    return "\n".join(sections)
+
+
+def build_crit_single_agent_prompt(
+    case_data: str,
+    role: str,
+    agent_traces: list[dict],
+    decision: dict | None,
+) -> str:
+    """Build a CRIT user prompt for a single agent (per-agent ρ_i scoring).
+
+    Per the RAudit paper (Section 3.3), CRIT evaluates each agent's
+    reasoning quality individually.  This prompt presents only one
+    agent's traces and decision against the shared case context.
+
+    Args:
+        case_data: The enriched context that agents saw (no ground truth).
+        role: The agent's role name (e.g. "macro", "value").
+        agent_traces: List of debate turn dicts for this agent only.
+            Each dict should have 'type' (proposal/critique/revision)
+            and 'content' with the agent's reasoning.
+        decision: The agent's final decision dict (proposal or revision),
+            or None if the agent has no decision this round.
+
+    Returns:
+        Formatted user prompt string for scoring this single agent.
+    """
+    sections = []
+
+    sections.append("## Case Context\n")
+    sections.append(case_data)
+    sections.append("")
+
+    sections.append(f"## Agent Under Evaluation: {role.upper()}\n")
+
+    sections.append("### Reasoning Trace\n")
+    if agent_traces:
+        for trace in agent_traces:
+            trace_type = trace.get("type", "unknown")
+            content = trace.get("content", trace)
+            sections.append(f"**{trace_type.capitalize()}:**")
+            if isinstance(content, dict):
+                sections.append(json.dumps(content, indent=2))
+            else:
+                sections.append(str(content))
+            sections.append("")
+    else:
+        sections.append("(No reasoning traces available for this agent.)")
+        sections.append("")
+
+    sections.append("### Trading Decision\n")
+    if decision:
+        action = decision.get("action_dict", decision)
+        if isinstance(action, dict):
+            sections.append(json.dumps(action, indent=2))
+        else:
+            sections.append(str(action))
+    else:
+        sections.append("(No decision available for this agent.)")
+    sections.append("")
+
+    sections.append(
+        "## Instructions\n"
+        f"Evaluate the reasoning quality of the {role.upper()} agent's "
+        "arguments and decision across the four pillars: "
+        "internal_consistency, evidence_support, trace_alignment, "
+        "causal_integrity.\n"
         "Respond with the JSON object described in your system prompt."
     )
 
