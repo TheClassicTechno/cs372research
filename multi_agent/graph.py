@@ -88,12 +88,15 @@ Graph structures:
 from __future__ import annotations
 
 import json
+import logging
 import operator
 import os
 import re
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()  # auto-load .env file if present
 from typing import Annotated, TypedDict
@@ -223,9 +226,17 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
             wait = 2 ** attempt  # 1s, 2s, 4s
             if attempt < max_retries - 1:
                 print(f"  [LLM RETRY] {type(e).__name__} — retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", flush=True)
+                logger.warning(
+                    "_call_llm retry %d/%d: %s: %s",
+                    attempt + 1, max_retries, type(e).__name__, e,
+                )
                 time.sleep(wait)
             else:
                 print(f"  [LLM ERROR] {type(e).__name__}: {e} (all {max_retries} attempts failed)", flush=True)
+                logger.error(
+                    "_call_llm failed after %d attempts: %s: %s — returning empty JSON",
+                    max_retries, type(e).__name__, e,
+                )
                 return "{}"
     return "{}"
 
@@ -589,6 +600,11 @@ def propose_node(state: DebateState) -> dict:
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        if config.get("log_system_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
+        if config.get("log_user_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_proposal(role, obs)
@@ -596,6 +612,9 @@ def propose_node(state: DebateState) -> dict:
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
+
+        if config.get("log_llm_responses"):
+            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         action_dict = {
             "orders": result.get("orders", []),
@@ -847,6 +866,11 @@ def make_propose_node(role: str):
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context)
 
+        if config.get("log_system_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
+        if config.get("log_user_prompts"):
+            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+
         raw_text = None
         if is_mock:
             result = _mock_proposal(role, obs)
@@ -854,6 +878,9 @@ def make_propose_node(role: str):
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
+
+        if config.get("log_llm_responses"):
+            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         action_dict = {
             "orders": result.get("orders", []),
@@ -917,8 +944,8 @@ def make_critique_node(role: str):
         raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
         source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
 
-        # Find own entry by role
-        p = next(entry for entry in source if entry["role"] == role)
+        # Find own entry by role (safe lookup — missing role returns empty dict)
+        p = next((entry for entry in source if entry["role"] == role), {})
 
         all_proposals_for_critique = [
             {
@@ -1007,8 +1034,8 @@ def make_revise_node(role: str):
         raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
         source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
 
-        # Find own entry by role
-        p = next(entry for entry in source if entry["role"] == role)
+        # Find own entry by role (safe lookup — missing role returns empty dict)
+        p = next((entry for entry in source if entry["role"] == role), {})
 
         roles = config.get("roles", ["macro", "value", "risk"])
         i = roles.index(role) if role in roles else 0
@@ -1129,6 +1156,139 @@ def build_parallel_single_round_graph(config: DebateConfig) -> StateGraph:
 def compile_parallel_single_round_graph(config: DebateConfig):
     """Build and compile the parallel single-round graph, ready for invocation."""
     return build_parallel_single_round_graph(config).compile()
+
+
+# =============================================================================
+# PER-PHASE SUB-GRAPHS (used by PID controller for per-phase intervention)
+# =============================================================================
+#
+# When the PID controller is active, it needs to adjust agreeableness
+# BETWEEN propose, critique, and revise phases within a single round.
+# The existing single-round graphs run all three atomically, so we
+# provide per-phase graphs that the runner can invoke individually.
+#
+# Sequential (for parallel_agents=False):
+#   build_propose_graph   — START → propose → END
+#   build_critique_graph  — START → critique → END
+#   build_revise_graph    — START → revise → END
+#
+# Parallel (for parallel_agents=True):
+#   build_parallel_propose_graph   — START → propose_* → END
+#   build_parallel_critique_graph  — START → critique_* → END
+#   build_parallel_revise_graph    — START → revise_* → END
+# =============================================================================
+
+
+def build_propose_graph(config: DebateConfig) -> StateGraph:
+    """Single-phase graph: propose only.
+
+    START → propose → END.  Uses DebateState (sequential, batch node).
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("propose", propose_node)
+    graph.add_edge(START, "propose")
+    graph.add_edge("propose", END)
+    return graph
+
+
+def build_critique_graph(config: DebateConfig) -> StateGraph:
+    """Single-phase graph: critique only.
+
+    START → critique → END.  Uses DebateState (sequential, batch node).
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("critique", critique_node)
+    graph.add_edge(START, "critique")
+    graph.add_edge("critique", END)
+    return graph
+
+
+def build_revise_graph(config: DebateConfig) -> StateGraph:
+    """Single-phase graph: revise only.
+
+    START → revise → END.  Uses DebateState (sequential, batch node).
+    """
+    graph = StateGraph(DebateState)
+    graph.add_node("revise", revise_node)
+    graph.add_edge(START, "revise")
+    graph.add_edge("revise", END)
+    return graph
+
+
+def build_parallel_propose_graph(config: DebateConfig) -> StateGraph:
+    """Parallel propose: per-agent fan-out → END.
+
+    START ┬→ propose_macro ┐
+          ├→ propose_value ├→ END
+          └→ propose_risk  ┘
+
+    Uses ParallelRoundState for operator.add on proposals.
+    """
+    roles = [r.value for r in config.roles]
+    graph = StateGraph(ParallelRoundState)
+    for role in roles:
+        graph.add_node(f"propose_{role}", make_propose_node(role))
+        graph.add_edge(START, f"propose_{role}")
+        graph.add_edge(f"propose_{role}", END)
+    return graph
+
+
+def build_parallel_critique_graph(config: DebateConfig) -> StateGraph:
+    """Parallel critique: per-agent fan-out → END.
+
+    Uses ParallelRoundState for operator.add on critiques.
+    """
+    roles = [r.value for r in config.roles]
+    graph = StateGraph(ParallelRoundState)
+    for role in roles:
+        graph.add_node(f"critique_{role}", make_critique_node(role))
+        graph.add_edge(START, f"critique_{role}")
+        graph.add_edge(f"critique_{role}", END)
+    return graph
+
+
+def build_parallel_revise_graph(config: DebateConfig) -> StateGraph:
+    """Parallel revise: per-agent fan-out → END.
+
+    Uses ParallelRoundState for operator.add on revisions.
+    """
+    roles = [r.value for r in config.roles]
+    graph = StateGraph(ParallelRoundState)
+    for role in roles:
+        graph.add_node(f"revise_{role}", make_revise_node(role))
+        graph.add_edge(START, f"revise_{role}")
+        graph.add_edge(f"revise_{role}", END)
+    return graph
+
+
+def compile_propose_graph(config: DebateConfig):
+    """Build and compile the sequential propose graph."""
+    return build_propose_graph(config).compile()
+
+
+def compile_critique_graph(config: DebateConfig):
+    """Build and compile the sequential critique graph."""
+    return build_critique_graph(config).compile()
+
+
+def compile_revise_graph(config: DebateConfig):
+    """Build and compile the sequential revise graph."""
+    return build_revise_graph(config).compile()
+
+
+def compile_parallel_propose_graph(config: DebateConfig):
+    """Build and compile the parallel propose graph."""
+    return build_parallel_propose_graph(config).compile()
+
+
+def compile_parallel_critique_graph(config: DebateConfig):
+    """Build and compile the parallel critique graph."""
+    return build_parallel_critique_graph(config).compile()
+
+
+def compile_parallel_revise_graph(config: DebateConfig):
+    """Build and compile the parallel revise graph."""
+    return build_parallel_revise_graph(config).compile()
 
 
 def should_continue(state: DebateState) -> str:
