@@ -52,6 +52,39 @@ class AgentConfig(BaseModel):
         description="Log the raw LLM response text.",
     )
 
+    # --- PID controller settings (flat YAML fields) ---
+    pid_enabled: bool = Field(
+        default=False,
+        description="Enable PID controller for debate quality regulation.",
+    )
+    pid_kp: float = Field(default=0.15, description="PID proportional gain.")
+    pid_ki: float = Field(default=0.01, description="PID integral gain.")
+    pid_kd: float = Field(default=0.03, description="PID derivative gain.")
+    pid_rho_star: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Target reasonableness score for PID controller.",
+    )
+    pid_initial_beta: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description="Initial agreeableness value for PID controller.",
+    )
+    pid_propose: bool = Field(
+        default=False,
+        description="Whether PID controls agreeableness during propose phase.",
+    )
+    pid_critique: bool = Field(
+        default=True,
+        description="Whether PID controls agreeableness during critique phase.",
+    )
+    pid_revise: bool = Field(
+        default=True,
+        description="Whether PID controls agreeableness during revise phase.",
+    )
+
 
 class BrokerConfig(BaseModel):
     """Configuration for the in-process broker."""
