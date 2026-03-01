@@ -1,58 +1,35 @@
 #!/usr/bin/env python3
 """
-Filing Summarization Pipeline — EDGAR clean text -> structured JSON summaries.
+Quarterly SEC Filing Summarization Pipeline.
 
-Reads clean text files produced by get_sec_data.py, sends full filing text
-to Claude for structured extraction, and saves validated JSON summaries
-to finished_summaries/.
+Reads clean text files produced by get_sec_data.py, groups filings by
+ticker/year/quarter, extracts high-signal sections, sends text to Claude
+for structured factual extraction, and produces one summary JSON per quarter.
 
-Architecture:
-  clean_text/{TICKER}/{ACCESSION}.txt
-    -> Claude API (structured extraction, no hallucinated numbers)
-    -> finished_summaries/{TICKER}/{YEAR}/{QUARTER}/{FORM}_summary.json
+Input:  clean_text/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{DATE}.txt
+Output: finished_summaries/{TICKER}/{YEAR}/{QUARTER}.json
 
 Examples:
-  # 1. Summarize all tickers (reads from default clean_text/ next to script)
-  python filing_summarization_pipeline.py
+  # Summarize AAPL with API key from env
+  ANTHROPIC_API_KEY=sk-ant-... python filing_summarization_pipeline.py --ticker AAPL
 
-  # 2. Specific tickers with API key from env
-  ANTHROPIC_API_KEY=sk-ant-... python filing_summarization_pipeline.py \\
-      --tickers AAPL,NVDA,MSFT
+  # Specific tickers and years
+  python filing_summarization_pipeline.py --ticker AAPL,NVDA --year 2025,2026
 
-  # 3. Pass API key on command line
-  python filing_summarization_pipeline.py \\
-      --tickers AAPL \\
-      --api-key sk-ant-...
+  # All tickers, force overwrite
+  python filing_summarization_pipeline.py --all --force
 
-  # 4. Custom input/output directories
-  python filing_summarization_pipeline.py \\
-      --raw-dir /data/edgar \\
-      --out-dir /data/edgar/finished_summaries \\
-      --tickers AAPL,NVDA
-
-  # 5. Force re-summarize (overwrite existing summaries)
-  python filing_summarization_pipeline.py \\
-      --tickers AAPL \\
-      --force
-
-  # 6. Use a different Claude model
-  python filing_summarization_pipeline.py \\
-      --tickers AAPL \\
-      --model claude-sonnet-4-20250514
-
-  # 7. Full 8-ticker universe
-  python filing_summarization_pipeline.py \\
-      --raw-dir ./EDGAR \\
-      --out-dir ./finished_summaries \\
-      --tickers AAPL,NVDA,MSFT,GOOG,AMZN,META,JPM,GS
+  # Custom directories
+  python filing_summarization_pipeline.py --ticker AAPL \
+      --base-dir /data/edgar --out-dir /data/summaries
 
 Design constraints:
   - No numeric extraction from filing text.
-  - No table parsing.
-  - All financial numbers come from structured APIs.
-  - Deterministic: same input text -> same summary (temperature=0).
+  - All financial numbers come from structured APIs (XBRL), not this pipeline.
+  - Deterministic: temperature=0, same input -> same output.
   - Atomic writes (tmp file -> rename).
-  - Validated output schema.
+  - No Form 4. No enums. No sentiment scoring.
+  - No dependency on other pipeline modules.
 """
 
 import argparse
@@ -61,6 +38,7 @@ import os
 import re
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -74,93 +52,57 @@ import requests
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-4-20250514"
 MAX_TOKENS = 4096
-TEMPERATURE = 0.0  # deterministic
-
-# Claude API rate limit: conservative default
+TEMPERATURE = 0.0
 RATE_LIMIT_SECONDS = 1.0
-
-# Maximum characters per chunk sent to Claude.  10-K filings can be
-# 80k+ chars; we split into chunks and summarize each, then merge.
 MAX_CHUNK_CHARS = 60_000
+MAX_RETRIES = 2
+RETRY_DELAYS = [2, 5]
+
+TARGET_FORMS = {"10-Q", "10-K", "8-K"}
+
+SUMMARY_LIST_KEYS = [
+    "financial_performance",
+    "guidance_and_forward_outlook",
+    "material_events",
+    "risk_factors_emphasized",
+    "explicit_uncertainties",
+    "notable_causal_statements",
+]
+
 
 # ==========================
-# SCHEMA
+# SCHEMA VALIDATION
 # ==========================
 
-SUMMARY_SCHEMA = {
-    "form": str,
-    "filing_date": str,
-    "accession": str,
-    "mda": {
-        "demand_signal": str,
-        "margin_trend": str,
-        "inventory_signal": str,
-        "liquidity_commentary": str,
-        "capex_trend": str,
-        "tone_shift_score": (int, float, type(None)),
-    },
-    "risk_factors": {
-        "new_risks_added": (bool, type(None)),
-        "refinancing_risk": str,
-        "customer_concentration_change": str,
-    },
-    "events": list,
-}
+def validate_summary(summary: dict) -> List[str]:
+    """Validate summary matches expected schema. Returns list of error strings."""
+    errors = []
 
-EVENT_SCHEMA = {
-    "type": str,
-    "direction": str,
-    "severity": (int, float, type(None)),
-}
+    if not isinstance(summary.get("ticker"), str):
+        errors.append("ticker must be str")
+    if not isinstance(summary.get("year"), int):
+        errors.append("year must be int")
+    if not isinstance(summary.get("quarter"), str):
+        errors.append("quarter must be str")
 
+    for key in SUMMARY_LIST_KEYS:
+        if key not in summary:
+            errors.append(f"missing key: {key}")
+            continue
+        val = summary[key]
+        if not isinstance(val, list):
+            errors.append(f"{key} must be list")
+            continue
+        for i, item in enumerate(val):
+            if not isinstance(item, str):
+                errors.append(f"{key}[{i}] must be str")
+            elif len(item.split()) > 45:
+                errors.append(f"{key}[{i}] exceeds 40 words ({len(item.split())} words)")
 
-def validate_summary_schema(summary: dict) -> List[str]:
-    """Validate a summary dict against the expected schema.
-
-    Returns a list of error strings.  Empty list means valid.
-    """
-    errors: List[str] = []
-
-    def _check(obj, schema, path=""):
-        for key, expected in schema.items():
-            full = f"{path}.{key}" if path else key
-            if key not in obj:
-                errors.append(f"missing key: {full}")
-                continue
-            val = obj[key]
-            if isinstance(expected, dict):
-                if not isinstance(val, dict):
-                    errors.append(f"{full}: expected dict, got {type(val).__name__}")
-                else:
-                    _check(val, expected, full)
-            elif isinstance(expected, tuple):
-                if not isinstance(val, expected):
-                    names = "/".join(t.__name__ for t in expected)
-                    errors.append(f"{full}: expected {names}, got {type(val).__name__}")
-            elif expected is list:
-                if not isinstance(val, list):
-                    errors.append(f"{full}: expected list, got {type(val).__name__}")
-            elif not isinstance(val, expected):
-                errors.append(f"{full}: expected {expected.__name__}, got {type(val).__name__}")
-
-    _check(summary, SUMMARY_SCHEMA)
-
-    # Validate events list entries
-    if isinstance(summary.get("events"), list):
-        for i, ev in enumerate(summary["events"]):
-            if not isinstance(ev, dict):
-                errors.append(f"events[{i}]: expected dict, got {type(ev).__name__}")
-                continue
-            for key, expected in EVENT_SCHEMA.items():
-                full = f"events[{i}].{key}"
-                if key not in ev:
-                    errors.append(f"missing key: {full}")
-                elif isinstance(expected, tuple):
-                    if not isinstance(ev[key], expected):
-                        names = "/".join(t.__name__ for t in expected)
-                        errors.append(f"{full}: expected {names}, got {type(ev[key]).__name__}")
-                elif not isinstance(ev[key], expected):
-                    errors.append(f"{full}: expected {expected.__name__}, got {type(ev[key]).__name__}")
+    expected = {"ticker", "year", "quarter"} | set(SUMMARY_LIST_KEYS)
+    extra = set(summary.keys()) - expected
+    for k in extra:
+        errors.append(f"unexpected key: {k}")
 
     return errors
 
@@ -170,11 +112,8 @@ def validate_summary_schema(summary: dict) -> List[str]:
 # ==========================
 
 def parse_filing_header(text: str) -> Dict[str, str]:
-    """Extract FORM, FILING_DATE, ACCESSION from the structured text header.
-
-    These headers are written by get_sec_data.py (3-line metadata header).
-    """
-    header: Dict[str, str] = {}
+    """Extract FORM, FILING_DATE, ACCESSION from the 3-line metadata header."""
+    header = {}
     for line in text.splitlines()[:10]:
         line = line.strip()
         if line.startswith("FORM:"):
@@ -187,36 +126,133 @@ def parse_filing_header(text: str) -> Dict[str, str]:
 
 
 def extract_body(text: str) -> str:
-    """Extract the filing body text (everything after the metadata header).
-
-    The header is the first 3 lines (FORM, FILING_DATE, ACCESSION) followed
-    by a blank line. The body is everything after that blank line.
-    """
+    """Extract body text after the metadata header (first blank line)."""
     lines = text.splitlines()
-    # Find the first blank line after header lines
     for i, line in enumerate(lines):
         if i > 0 and line.strip() == "":
-            # Check if we've passed the header lines
             body = "\n".join(lines[i + 1:])
             if body.strip():
                 return body.strip()
-    # Fallback: return everything
     return text.strip()
 
 
-def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
-    """Split text into chunks that fit within the API character limit.
+# Item header regex — matches "Item 1.", "Item 1A.", "Item 7.", etc. at line start
+_ITEM_HEADER_RE = re.compile(r"^\s*Item\s+\d", re.IGNORECASE)
 
-    Splits on paragraph boundaries (double newlines) to avoid cutting
-    mid-sentence.  Falls back to hard split if a single paragraph
-    exceeds max_chars.
+# Section target patterns by form type.
+# These require the full "Item N. Section Name" on a single line,
+# which naturally skips TOC entries (split across two lines).
+_10K_SECTIONS = [
+    re.compile(r"Item\s+1A\.\s*Risk\s+Factors", re.IGNORECASE),
+    re.compile(r"Item\s+7\.\s*Management.s\s+Discussion", re.IGNORECASE),
+]
+
+_10Q_SECTIONS = [
+    re.compile(r"Item\s+2\.\s*Management.s\s+Discussion", re.IGNORECASE),
+    re.compile(r"Item\s+1A\.\s*Risk\s+Factors", re.IGNORECASE),
+]
+
+
+def extract_sections(text: str, form: str) -> str:
+    """Extract high-signal sections from 10-Q/10-K filing text.
+
+    For 8-K, returns full text (small filings).
+    If no target sections found, returns full text as fallback.
+
+    Strategy: find target section headers that start with "Item N." on a
+    single line, pick the occurrence with the most content following it
+    (body section vs TOC entry), extract from header to the next Item header.
+    """
+    base_form = form.rstrip("/A").rstrip("/") if "/" in form else form
+
+    if base_form == "8-K":
+        return text
+
+    if base_form == "10-K":
+        target_patterns = _10K_SECTIONS
+    elif base_form == "10-Q":
+        target_patterns = _10Q_SECTIONS
+    else:
+        return text
+
+    lines = text.splitlines()
+    extracted = []
+
+    for target_pat in target_patterns:
+        best_start = -1
+        best_end = len(lines)
+        best_content_len = 0
+
+        for i, line in enumerate(lines):
+            if target_pat.search(line) and _ITEM_HEADER_RE.match(line.strip()):
+                # Found potential section start. Find end: next Item header.
+                end = len(lines)
+                for j in range(i + 2, len(lines)):
+                    if _ITEM_HEADER_RE.match(lines[j].strip()):
+                        end = j
+                        break
+
+                content_len = sum(len(lines[k]) for k in range(i + 1, end))
+                if content_len > best_content_len:
+                    best_start = i
+                    best_end = end
+                    best_content_len = content_len
+
+        if best_start >= 0 and best_content_len > 100:
+            section = "\n".join(lines[best_start:best_end]).strip()
+            extracted.append(section)
+
+    if extracted:
+        return "\n\n---\n\n".join(extracted)
+
+    return text  # Fallback: full text
+
+
+def strip_boilerplate(text: str) -> str:
+    """Strip SEC header boilerplate and signature blocks.
+
+    Removes:
+    - SEC filing header (UNITED STATES, SECURITIES AND EXCHANGE COMMISSION...)
+    - Signature blocks at the end
+    """
+    lines = text.splitlines()
+
+    # Find start: first substantive section marker
+    start = 0
+    for i, line in enumerate(lines):
+        stripped = line.strip().upper()
+        if any(kw in stripped for kw in [
+            "PART I", "PART II", "ITEM 1", "ITEM 2",
+            "MANAGEMENT", "RISK FACTOR", "CURRENT REPORT",
+        ]):
+            start = i
+            break
+
+    # Find end: signature block (search backward from end, floor at midpoint)
+    end = len(lines)
+    floor = max(start, len(lines) // 2)
+    for i in range(len(lines) - 1, floor, -1):
+        stripped = lines[i].strip().upper()
+        if stripped.startswith("SIGNATURE"):
+            end = i
+            break
+
+    if start > 0 or end < len(lines):
+        return "\n".join(lines[start:end]).strip()
+    return text
+
+
+def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
+    """Split text into chunks on paragraph boundaries.
+
+    Falls back to hard split if a single paragraph exceeds max_chars.
     """
     if len(text) <= max_chars:
         return [text]
 
     paragraphs = re.split(r"\n\n+", text)
-    chunks: List[str] = []
-    current: List[str] = []
+    chunks = []
+    current = []
     current_len = 0
 
     for para in paragraphs:
@@ -226,7 +262,6 @@ def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
             current = []
             current_len = 0
         if para_len > max_chars:
-            # Hard split oversized paragraph
             for i in range(0, len(para), max_chars):
                 chunks.append(para[i:i + max_chars])
         else:
@@ -240,93 +275,151 @@ def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> List[str]:
 
 
 # ==========================
+# FILE DISCOVERY
+# ==========================
+
+def discover_quarterly_groups(
+    base_dir: Path,
+    tickers: Optional[List[str]] = None,
+    years: Optional[List[int]] = None,
+) -> Dict[Tuple[str, int, str], List[Path]]:
+    """Walk clean_text/ and group filing .txt files by (ticker, year, quarter).
+
+    Only includes filings where base form is in TARGET_FORMS (10-Q, 10-K, 8-K).
+    Reads the metadata header from each file to determine form and filing date.
+    """
+    clean_dir = base_dir / "clean_text"
+    groups: Dict[Tuple[str, int, str], List[Path]] = defaultdict(list)
+
+    if not clean_dir.exists():
+        return dict(groups)
+
+    for ticker_dir in sorted(clean_dir.iterdir()):
+        if not ticker_dir.is_dir():
+            continue
+        ticker = ticker_dir.name
+        if tickers and ticker not in tickers:
+            continue
+
+        for txt_file in sorted(ticker_dir.glob("*.txt")):
+            try:
+                with open(txt_file, "r", encoding="utf-8") as f:
+                    head = f.read(500)
+            except OSError:
+                continue
+
+            header = parse_filing_header(head)
+            form = header.get("form", "")
+            filing_date = header.get("filing_date", "")
+
+            base_form = form.rstrip("/A").rstrip("/") if "/" in form else form
+            if base_form not in TARGET_FORMS:
+                continue
+
+            if not filing_date:
+                continue
+
+            try:
+                parsed = datetime.strptime(filing_date, "%Y-%m-%d")
+            except ValueError:
+                continue
+
+            year = parsed.year
+            quarter = f"Q{(parsed.month - 1) // 3 + 1}"
+
+            if years and year not in years:
+                continue
+
+            groups[(ticker, year, quarter)].append(txt_file)
+
+    return dict(groups)
+
+
+def output_path_for(out_dir: Path, ticker: str, year: int, quarter: str) -> Path:
+    """Build output path: out_dir/TICKER/YEAR/QUARTER.json"""
+    return out_dir / ticker / str(year) / f"{quarter}.json"
+
+
+def save_summary(path: Path, summary: dict) -> None:
+    """Atomically write summary JSON (tmp -> rename)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+    tmp.rename(path)
+
+
+# ==========================
 # PROMPTS
 # ==========================
 
 _SYSTEM_PROMPT = """\
-You are a financial filing analyst. You extract structured signals from \
-SEC filing text. You MUST follow these rules:
+You are a factual extractor for SEC filings. You extract specific \
+statements and facts from filing text into structured JSON.
 
-1. Return ONLY valid JSON. No prose, no markdown, no explanation outside the JSON.
-2. NEVER hallucinate or invent financial numbers. If the text does not \
-   contain information for a field, use null or "not discussed".
-3. Use ONLY the provided filing text as your source.
-4. All string fields should be brief qualitative assessments (1-2 sentences max).
-5. tone_shift_score: float from -1.0 (much more negative vs prior) to \
-   +1.0 (much more positive). Use 0.0 if neutral or insufficient context. \
-   Use null if the section is missing entirely.
-6. severity: float from 0.0 (negligible) to 1.0 (critical). null if unknown.
-7. events: list material events mentioned. Empty list [] if none found."""
+STRICT RULES:
+1. Return ONLY valid JSON. No prose, no markdown fences, no explanation.
+2. Each list contains short factual bullet statements.
+3. Each bullet MUST be 40 words or fewer.
+4. NO interpretation, opinion, or sentiment language.
+5. NO prediction or speculation beyond what management explicitly states.
+6. Extract ONLY what is explicitly stated in the text.
+7. If a category has no relevant content, return an empty list [].
+8. Do NOT invent or hallucinate any information.
+9. Do NOT extract or cite specific financial numbers."""
 
-_10K_10Q_USER_PROMPT = """\
-Analyze this SEC {form} filing text and return a JSON object with exactly \
-this structure:
+_EXTRACTION_PROMPT = """\
+Extract factual information from the following SEC filing text for \
+{ticker} ({year} {quarter}).
+
+Return a JSON object with EXACTLY this structure:
 
 {{
-  "mda": {{
-    "demand_signal": "<qualitative demand outlook from MD&A>",
-    "margin_trend": "<margin direction and drivers>",
-    "inventory_signal": "<inventory buildup/drawdown if discussed>",
-    "liquidity_commentary": "<cash position and liquidity outlook>",
-    "capex_trend": "<capital expenditure direction>",
-    "tone_shift_score": <float -1.0 to 1.0 or null>
-  }},
-  "risk_factors": {{
-    "new_risks_added": <true/false/null>,
-    "refinancing_risk": "<refinancing or debt maturity risk if discussed>",
-    "customer_concentration_change": "<customer concentration changes>"
-  }},
-  "events": [
-    {{
-      "type": "<event category: guidance, restructuring, acquisition, divestiture, legal, regulatory, leadership, other>",
-      "direction": "<positive/negative/neutral>",
-      "severity": <float 0.0-1.0 or null>
-    }}
-  ]
+  "financial_performance": ["<bullet>", ...],
+  "guidance_and_forward_outlook": ["<bullet>", ...],
+  "material_events": ["<bullet>", ...],
+  "risk_factors_emphasized": ["<bullet>", ...],
+  "explicit_uncertainties": ["<bullet>", ...],
+  "notable_causal_statements": ["<bullet>", ...]
 }}
+
+Field definitions:
+- financial_performance: Revenue trends, margin direction, segment \
+results, earnings characterization. Qualitative statements only.
+- guidance_and_forward_outlook: Management guidance, forward estimates, \
+planned investments, strategic direction stated by management.
+- material_events: Acquisitions, restructurings, leadership changes, \
+legal actions, regulatory events, offerings, shareholder votes.
+- risk_factors_emphasized: Specific risks highlighted, newly added \
+risks, or risks given increased emphasis.
+- explicit_uncertainties: Direct quotes or paraphrases where management \
+explicitly acknowledges uncertainty or unpredictability.
+- notable_causal_statements: Cause-and-effect statements by management \
+(e.g., "revenue increased due to higher services demand").
+
+Constraints:
+- Each bullet <= 40 words.
+- No interpretation. No sentiment. No opinion.
+- Factual extraction only.
 
 FILING TEXT:
 {text}"""
 
-_8K_USER_PROMPT = """\
-Analyze this SEC 8-K filing text and return a JSON object with exactly \
-this structure:
+_MERGE_PROMPT = """\
+You have {n} partial extractions from SEC filings for {ticker} ({year} \
+{quarter}). Merge them into ONE consolidated JSON object.
 
-{{
-  "mda": {{
-    "demand_signal": "not applicable",
-    "margin_trend": "not applicable",
-    "inventory_signal": "not applicable",
-    "liquidity_commentary": "not applicable",
-    "capex_trend": "not applicable",
-    "tone_shift_score": null
-  }},
-  "risk_factors": {{
-    "new_risks_added": null,
-    "refinancing_risk": "not applicable",
-    "customer_concentration_change": "not applicable"
-  }},
-  "events": [
-    {{
-      "type": "<event category: earnings, guidance, restructuring, acquisition, divestiture, legal, regulatory, leadership, offering, other>",
-      "direction": "<positive/negative/neutral>",
-      "severity": <float 0.0-1.0 or null>
-    }}
-  ]
-}}
+Rules:
+- Deduplicate similar statements. Keep the most specific version.
+- Each bullet <= 40 words.
+- Return ONLY the merged JSON. No explanation.
+- Same schema: financial_performance, guidance_and_forward_outlook, \
+material_events, risk_factors_emphasized, explicit_uncertainties, \
+notable_causal_statements.
+- Each field is a list of strings. Empty list [] if nothing found.
 
-Focus on identifying the material event(s) reported in this 8-K.
-
-FILING TEXT:
-{text}"""
-
-
-def build_prompt(form: str, text: str) -> str:
-    """Build the user prompt for a given form type and filing text."""
-    base_form = form.upper().rstrip("/A").rstrip("/")
-    if base_form == "8-K":
-        return _8K_USER_PROMPT.format(text=text)
-    return _10K_10Q_USER_PROMPT.format(form=form, text=text)
+PARTIAL EXTRACTIONS:
+{partials}"""
 
 
 # ==========================
@@ -341,10 +434,7 @@ def call_claude(
     max_tokens: int = MAX_TOKENS,
     temperature: float = TEMPERATURE,
 ) -> str:
-    """Send a single message to the Claude API and return the text response.
-
-    Raises on HTTP errors or missing content.
-    """
+    """Send a message to Claude API and return text response."""
     headers = {
         "x-api-key": api_key,
         "anthropic-version": "2023-06-01",
@@ -357,22 +447,20 @@ def call_claude(
         "system": system,
         "messages": [{"role": "user", "content": user_prompt}],
     }
-    resp = requests.post(ANTHROPIC_API_URL, headers=headers, json=body, timeout=120)
+    resp = requests.post(
+        ANTHROPIC_API_URL, headers=headers, json=body, timeout=120,
+    )
     resp.raise_for_status()
     data = resp.json()
-    content_blocks = data.get("content", [])
-    if not content_blocks:
+    content = data.get("content", [])
+    if not content:
         raise ValueError("Claude returned empty content")
-    return content_blocks[0].get("text", "")
+    return content[0].get("text", "")
 
 
 def parse_json_response(raw: str) -> dict:
-    """Extract and parse JSON from Claude's response.
-
-    Handles responses that may include markdown code fences.
-    """
+    """Extract JSON from Claude's response, handling markdown code fences."""
     text = raw.strip()
-    # Strip markdown code fences if present
     if text.startswith("```"):
         lines = text.splitlines()
         if lines[-1].strip() == "```":
@@ -383,242 +471,203 @@ def parse_json_response(raw: str) -> dict:
     return json.loads(text)
 
 
-# ==========================
-# SUMMARIZATION LOGIC
-# ==========================
-
-def summarize_filing(
+def call_claude_json(
     api_key: str,
-    form: str,
-    text: str,
+    system: str,
+    user_prompt: str,
     model: str = DEFAULT_MODEL,
-    rate_limit: float = RATE_LIMIT_SECONDS,
 ) -> dict:
-    """Summarize a single filing's text via Claude.
+    """Call Claude and parse JSON response with retries.
 
-    For long filings, chunks the text and merges chunk summaries.
-    Returns the raw parsed summary dict (events merged, mda/risk
-    from the first chunk that has substantive content).
+    Retries on JSON parse errors and transient HTTP errors (429, 5xx).
     """
-    chunks = chunk_text(text)
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            time.sleep(RATE_LIMIT_SECONDS)
+            raw = call_claude(api_key, system, user_prompt, model=model)
+            return parse_json_response(raw)
+        except json.JSONDecodeError as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                print(f"      JSON parse error, retrying ({attempt + 1}/{MAX_RETRIES})...")
+                time.sleep(RETRY_DELAYS[attempt])
+        except requests.HTTPError as e:
+            last_error = e
+            status = e.response.status_code if e.response else 0
+            if attempt < MAX_RETRIES and status in (429, 500, 502, 503):
+                print(f"      HTTP {status}, retrying ({attempt + 1}/{MAX_RETRIES})...")
+                time.sleep(RETRY_DELAYS[attempt])
+            else:
+                raise
+    raise last_error
 
-    if len(chunks) == 1:
-        prompt = build_prompt(form, chunks[0])
-        time.sleep(rate_limit)
-        raw = call_claude(api_key, _SYSTEM_PROMPT, prompt, model=model)
-        return parse_json_response(raw)
 
-    # Multi-chunk: summarize each, then merge
-    chunk_summaries: List[dict] = []
-    for i, chunk in enumerate(chunks):
-        prompt = build_prompt(form, chunk)
-        time.sleep(rate_limit)
-        print(f"    Chunk {i + 1}/{len(chunks)} ({len(chunk)} chars)")
-        raw = call_claude(api_key, _SYSTEM_PROMPT, prompt, model=model)
-        chunk_summaries.append(parse_json_response(raw))
+# ==========================
+# SUMMARIZATION
+# ==========================
 
-    return merge_chunk_summaries(chunk_summaries)
+def prepare_filing_text(filepath: Path) -> Optional[Tuple[str, str]]:
+    """Read a filing, extract and clean high-signal text.
 
-
-def merge_chunk_summaries(summaries: List[dict]) -> dict:
-    """Merge summaries from multiple chunks of the same filing.
-
-    Strategy:
-    - mda: take first chunk with substantive content (not "not discussed")
-    - risk_factors: take first chunk with substantive content
-    - events: concatenate all events, deduplicate by type+direction
+    Returns (form, cleaned_text) or None if no usable text.
     """
-    merged_mda = None
-    merged_risk = None
-    all_events: List[dict] = []
+    text = filepath.read_text(encoding="utf-8")
+    header = parse_filing_header(text)
+    form = header.get("form", "unknown")
+    body = extract_body(text)
 
-    for s in summaries:
-        if merged_mda is None and "mda" in s:
-            mda = s["mda"]
-            if any(v not in (None, "not discussed", "not applicable")
-                   for v in mda.values() if isinstance(v, str)):
-                merged_mda = mda
+    if not body.strip():
+        return None
 
-        if merged_risk is None and "risk_factors" in s:
-            rf = s["risk_factors"]
-            if any(v not in (None, "not discussed", "not applicable")
-                   for v in rf.values() if isinstance(v, str)):
-                merged_risk = rf
+    stripped = strip_boilerplate(body)
+    cleaned = extract_sections(stripped, form)
 
-        if "events" in s and isinstance(s["events"], list):
-            all_events.extend(s["events"])
+    if not cleaned.strip():
+        return None
 
-    # Deduplicate events by (type, direction)
-    seen = set()
-    unique_events: List[dict] = []
-    for ev in all_events:
-        key = (ev.get("type", ""), ev.get("direction", ""))
-        if key not in seen:
-            seen.add(key)
-            unique_events.append(ev)
+    return (form, cleaned.strip())
 
-    if merged_mda is None and summaries:
-        merged_mda = summaries[0].get("mda", {})
-    if merged_risk is None and summaries:
-        merged_risk = summaries[0].get("risk_factors", {})
 
-    return {
-        "mda": merged_mda or {},
-        "risk_factors": merged_risk or {},
-        "events": unique_events,
+def summarize_quarter(
+    api_key: str,
+    ticker: str,
+    year: int,
+    quarter: str,
+    filings: List[Path],
+    model: str = DEFAULT_MODEL,
+) -> dict:
+    """Summarize all filings for one quarter into a single structured JSON."""
+
+    # Prepare text from each filing
+    prepared = []
+    for fp in sorted(filings):
+        result = prepare_filing_text(fp)
+        if result:
+            prepared.append(result)
+
+    empty_result = {
+        "ticker": ticker,
+        "year": year,
+        "quarter": quarter,
+        **{k: [] for k in SUMMARY_LIST_KEYS},
     }
 
+    if not prepared:
+        return empty_result
 
-# ==========================
-# FILE I/O
-# ==========================
+    # Combine all filing texts with form-type separators
+    combined_parts = []
+    for form, text in prepared:
+        combined_parts.append(f"=== {form} FILING ===\n{text}")
+    combined = "\n\n".join(combined_parts)
 
-def discover_filings(raw_dir: Path, tickers: Optional[List[str]] = None) -> List[Tuple[Path, str]]:
-    """Walk clean_text/ directory and return (filepath, ticker) pairs.
+    print(f"    Combined text: {len(combined)} chars from {len(prepared)} filing(s)")
 
-    If tickers is provided, only return filings for those tickers.
-    Files must end with .txt.
-    """
-    clean_text_dir = raw_dir / "clean_text"
-    results: List[Tuple[Path, str]] = []
-    if not clean_text_dir.exists():
-        return results
+    chunks = chunk_text(combined)
 
-    for ticker_dir in sorted(clean_text_dir.iterdir()):
-        if not ticker_dir.is_dir():
-            continue
-        ticker = ticker_dir.name
-        if tickers and ticker not in tickers:
-            continue
-        for txt_file in sorted(ticker_dir.glob("*.txt")):
-            results.append((txt_file, ticker))
+    if len(chunks) == 1:
+        prompt = _EXTRACTION_PROMPT.format(
+            ticker=ticker, year=year, quarter=quarter, text=chunks[0],
+        )
+        result = call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
+    else:
+        # Multi-chunk: extract from each, then merge
+        chunk_results = []
+        for i, chunk in enumerate(chunks):
+            print(f"    Chunk {i + 1}/{len(chunks)} ({len(chunk)} chars)")
+            prompt = _EXTRACTION_PROMPT.format(
+                ticker=ticker, year=year, quarter=quarter, text=chunk,
+            )
+            chunk_results.append(
+                call_claude_json(api_key, _SYSTEM_PROMPT, prompt, model=model)
+            )
 
-    return results
+        print(f"    Merging {len(chunk_results)} chunk extractions...")
+        partials_json = json.dumps(chunk_results, indent=2)
+        merge_prompt = _MERGE_PROMPT.format(
+            ticker=ticker, year=year, quarter=quarter,
+            n=len(chunk_results), partials=partials_json,
+        )
+        result = call_claude_json(api_key, _SYSTEM_PROMPT, merge_prompt, model=model)
 
+    # Attach metadata
+    result["ticker"] = ticker
+    result["year"] = year
+    result["quarter"] = quarter
 
-def output_path_for(out_dir: Path, ticker: str, year: str, quarter: str, form: str) -> Path:
-    """Build output path: out_dir/TICKER/YEAR/QUARTER/FORM_summary.json"""
-    safe_form = form.replace("/", "-")
-    return out_dir / ticker / year / quarter / f"{safe_form}_summary.json"
+    # Ensure all list keys exist
+    for key in SUMMARY_LIST_KEYS:
+        result.setdefault(key, [])
 
+    # Strip any unexpected keys the LLM may have added
+    allowed = {"ticker", "year", "quarter"} | set(SUMMARY_LIST_KEYS)
+    for key in list(result.keys()):
+        if key not in allowed:
+            del result[key]
 
-def save_summary(path: Path, summary: dict) -> None:
-    """Atomically write summary JSON (tmp file -> rename)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".json.tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
-    tmp.rename(path)
+    return result
 
 
 # ==========================
 # PIPELINE
 # ==========================
 
-def process_filing(
-    filepath: Path,
-    ticker: str,
-    out_dir: Path,
-    api_key: str,
-    model: str = DEFAULT_MODEL,
-    force: bool = False,
-) -> Optional[Path]:
-    """Process a single clean text filing into a structured summary.
-
-    Returns the output path on success, None on skip or failure.
-    """
-    text = filepath.read_text(encoding="utf-8")
-
-    header = parse_filing_header(text)
-    form = header.get("form")
-    filing_date = header.get("filing_date")
-    accession = header.get("accession")
-
-    if not form or not filing_date:
-        print(f"  SKIP {filepath}: missing FORM or FILING_DATE header")
-        return None
-
-    # Derive year/quarter from filing_date header
-    parsed_date = datetime.strptime(filing_date, "%Y-%m-%d")
-    year = str(parsed_date.year)
-    quarter_num = (parsed_date.month - 1) // 3 + 1
-    quarter = f"Q{quarter_num}"
-
-    out_path = output_path_for(out_dir, ticker, year, quarter, form)
-
-    if out_path.exists() and not force:
-        print(f"  SKIP {ticker} {form} {filing_date} (already exists)")
-        return None
-
-    # Extract full body text (everything after the metadata header)
-    body_text = extract_body(text)
-
-    if not body_text.strip():
-        print(f"  SKIP {ticker} {form} {filing_date}: no extractable text")
-        return None
-
-    print(f"  Summarizing {ticker} {form} {filing_date} ({len(body_text)} chars)")
-
-    try:
-        raw_summary = summarize_filing(api_key, form, body_text, model=model)
-    except Exception as e:
-        print(f"  FAILED {ticker} {form} {filing_date}: {type(e).__name__}: {e}")
-        return None
-
-    # Attach metadata
-    summary = {
-        "form": form,
-        "filing_date": filing_date,
-        "accession": accession or "",
-        **raw_summary,
-    }
-
-    # Ensure required keys exist with defaults
-    summary.setdefault("mda", {})
-    summary.setdefault("risk_factors", {})
-    summary.setdefault("events", [])
-
-    # Validate
-    validation_errors = validate_summary_schema(summary)
-    if validation_errors:
-        print(f"  WARNING {ticker} {form}: schema issues: {validation_errors}")
-
-    save_summary(out_path, summary)
-    print(f"  Saved {out_path}")
-    return out_path
-
-
 def run_pipeline(
-    raw_dir: Path,
+    base_dir: Path,
     out_dir: Path,
     api_key: str,
     tickers: Optional[List[str]] = None,
+    years: Optional[List[int]] = None,
     model: str = DEFAULT_MODEL,
     force: bool = False,
 ) -> Dict[str, Any]:
-    """Run the full summarization pipeline.
+    """Run the quarterly summarization pipeline."""
+    groups = discover_quarterly_groups(base_dir, tickers, years)
+    print(f"Found {len(groups)} quarterly group(s)")
 
-    Returns a report dict with counts.
-    """
-    filings = discover_filings(raw_dir, tickers)
-    print(f"Found {len(filings)} filing(s) to process")
+    if not groups:
+        print("No filings found to process.")
+        return {"total": 0, "processed": 0, "skipped": 0}
 
     processed = 0
     skipped = 0
 
-    for filepath, ticker in filings:
-        result = process_filing(filepath, ticker, out_dir, api_key,
-                                model=model, force=force)
-        if result is None:
-            skipped += 1
-        else:
-            processed += 1
+    for (ticker, year, quarter), filings in sorted(groups.items()):
+        out_path = output_path_for(out_dir, ticker, year, quarter)
 
-    report = {
-        "total_found": len(filings),
-        "processed": processed,
-        "skipped": skipped,
-    }
+        if out_path.exists() and not force:
+            print(f"  SKIP {ticker} {year} {quarter} (already exists)")
+            skipped += 1
+            continue
+
+        # Show what filings are in this group
+        forms = []
+        for f in filings:
+            with open(f, "r", encoding="utf-8") as fh:
+                h = parse_filing_header(fh.read(500))
+            forms.append(h.get("form", "?"))
+
+        print(f"  {ticker} {year} {quarter}: {len(filings)} filing(s) [{', '.join(forms)}]")
+
+        try:
+            summary = summarize_quarter(
+                api_key, ticker, year, quarter, filings, model=model,
+            )
+        except Exception as e:
+            print(f"  FAILED {ticker} {year} {quarter}: {type(e).__name__}: {e}")
+            skipped += 1
+            continue
+
+        errors = validate_summary(summary)
+        if errors:
+            print(f"  WARNING: {errors}")
+
+        save_summary(out_path, summary)
+        print(f"  Saved {out_path}")
+        processed += 1
+
+    report = {"total": len(groups), "processed": processed, "skipped": skipped}
     print(f"\nPipeline complete: {report}")
     return report
 
@@ -629,21 +678,33 @@ def run_pipeline(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Summarize SEC filing text via Claude API"
+        description="Quarterly SEC filing summarization via Claude API",
     )
     parser.add_argument(
-        "--raw-dir", type=str,
+        "--base-dir", type=str,
         default=str(Path(__file__).resolve().parent),
-        help="Base directory containing clean_text/ (default: EDGAR/ dir next to this script)",
+        help="Base directory containing clean_text/ (default: EDGAR/)",
     )
     parser.add_argument(
         "--out-dir", type=str,
         default=str(Path(__file__).resolve().parent / "finished_summaries"),
-        help="Output directory for summary JSON files",
+        help="Output directory for quarterly JSON summaries",
     )
     parser.add_argument(
-        "--tickers", type=str, default=None,
-        help="Comma-separated tickers to process (default: all)",
+        "--ticker", type=str, default=None,
+        help="Comma-separated tickers (e.g. AAPL,NVDA)",
+    )
+    parser.add_argument(
+        "--year", type=str, default=None,
+        help="Comma-separated years (e.g. 2025,2026)",
+    )
+    parser.add_argument(
+        "--all", action="store_true", default=False,
+        help="Process all tickers found in clean_text/",
+    )
+    parser.add_argument(
+        "--force", action="store_true", default=False,
+        help="Overwrite existing summaries",
     )
     parser.add_argument(
         "--api-key", type=str, default=None,
@@ -651,29 +712,32 @@ def main():
     )
     parser.add_argument(
         "--model", type=str, default=DEFAULT_MODEL,
-        help=f"Claude model to use (default: {DEFAULT_MODEL})",
-    )
-    parser.add_argument(
-        "--force", action="store_true", default=False,
-        help="Overwrite existing summaries",
+        help=f"Claude model (default: {DEFAULT_MODEL})",
     )
     args = parser.parse_args()
 
     api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("ERROR: Anthropic API key required. Set ANTHROPIC_API_KEY or use --api-key.",
-              file=sys.stderr)
+        print(
+            "ERROR: Set ANTHROPIC_API_KEY or use --api-key.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     tickers = None
-    if args.tickers:
-        tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    if args.ticker:
+        tickers = [t.strip().upper() for t in args.ticker.split(",") if t.strip()]
+
+    years = None
+    if args.year:
+        years = [int(y.strip()) for y in args.year.split(",") if y.strip()]
 
     run_pipeline(
-        raw_dir=Path(args.raw_dir),
+        base_dir=Path(args.base_dir),
         out_dir=Path(args.out_dir),
         api_key=api_key,
         tickers=tickers,
+        years=years,
         model=args.model,
         force=args.force,
     )

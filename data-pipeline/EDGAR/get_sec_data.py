@@ -7,8 +7,8 @@ No section parsing, no metadata formatting — that belongs in the
 summarization pipeline.
 
 Output structure:
-  {base_dir}/raw_html/{TICKER}/{ACCESSION}.html
-  {base_dir}/clean_text/{TICKER}/{ACCESSION}.txt
+  {base_dir}/raw_html/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{FILINGDATE}.html
+  {base_dir}/clean_text/{TICKER}/{TICKER}_{YEAR}_{QUARTER}_{FORM}_{FILINGDATE}.txt
 
 Examples:
   # 1. Last 4 completed quarters for a few tickers
@@ -51,7 +51,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Set
 
-from bs4 import BeautifulSoup
+import warnings
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 # ==========================
 # CONFIG
@@ -123,14 +125,24 @@ def compute_last_n_quarters(n: int, today: date | None = None) -> list[tuple[int
     return result
 
 
-def build_html_path(base_dir: Path, ticker: str, accession: str) -> Path:
-    """base_dir/raw_html/TICKER/ACCESSION.html"""
-    return base_dir / "raw_html" / ticker / f"{accession}.html"
+def _filing_stem(ticker: str, year: int, quarter: str, form: str, filing_date: str) -> str:
+    """Build human-readable filename stem: TICKER_YEAR_QUARTER_FORM_FILINGDATE."""
+    safe_form = form.replace("/", "-")
+    return f"{ticker}_{year}_{quarter}_{safe_form}_{filing_date}"
 
 
-def build_text_path(base_dir: Path, ticker: str, accession: str) -> Path:
-    """base_dir/clean_text/TICKER/ACCESSION.txt"""
-    return base_dir / "clean_text" / ticker / f"{accession}.txt"
+def build_html_path(base_dir: Path, ticker: str, year: int, quarter: str,
+                    form: str, filing_date: str) -> Path:
+    """base_dir/raw_html/TICKER/TICKER_YEAR_QUARTER_FORM_FILINGDATE.html"""
+    stem = _filing_stem(ticker, year, quarter, form, filing_date)
+    return base_dir / "raw_html" / ticker / f"{stem}.html"
+
+
+def build_text_path(base_dir: Path, ticker: str, year: int, quarter: str,
+                    form: str, filing_date: str) -> Path:
+    """base_dir/clean_text/TICKER/TICKER_YEAR_QUARTER_FORM_FILINGDATE.txt"""
+    stem = _filing_stem(ticker, year, quarter, form, filing_date)
+    return base_dir / "clean_text" / ticker / f"{stem}.txt"
 
 
 def load_index(index_path: Path) -> dict:
@@ -276,15 +288,25 @@ def _normalize_whitespace(text: str) -> str:
 def clean_html_to_text(raw_html: str) -> str:
     """Convert HTML filing to clean plain text using BeautifulSoup.
 
-    Strips script/style/noscript tags, extracts visible text with newline
-    separators, normalizes whitespace.  Uses lxml parser for robust handling
-    of broken HTML common in SEC filings.
+    Strips script/style/noscript tags and inline XBRL (iXBRL) metadata,
+    extracts visible text with newline separators, normalizes whitespace.
+    Uses lxml parser for robust handling of broken HTML common in SEC filings.
     """
     if not raw_html:
         return ""
     soup = BeautifulSoup(raw_html, "lxml")
+
+    # Strip script/style/noscript
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
+
+    # Strip inline XBRL (iXBRL) hidden metadata blocks.
+    # SEC filings use ix:header and ix:hidden to embed XBRL taxonomy data
+    # that produces noise like "xbrli:shares", "iso4217:USD", etc.
+    for tag in soup.find_all(re.compile(r"^ix:", re.IGNORECASE)):
+        if tag.name and tag.name.lower() in ("ix:header", "ix:hidden", "ix:references"):
+            tag.decompose()
+
     text = soup.get_text(separator="\n")
     return _normalize_whitespace(text)
 
@@ -376,8 +398,13 @@ def download_filing(
     Returns (accession, success). Index mutation happens in the main thread.
     """
     accession = filing["accession"]
-    html_path = build_html_path(base_dir, ticker, accession)
-    text_path = build_text_path(base_dir, ticker, accession)
+    year = filing["matched_year"]
+    quarter = filing["matched_quarter"]
+    form = filing["form"]
+    filing_date = filing["filing_date"]
+
+    html_path = build_html_path(base_dir, ticker, year, quarter, form, filing_date)
+    text_path = build_text_path(base_dir, ticker, year, quarter, form, filing_date)
 
     html_path.parent.mkdir(parents=True, exist_ok=True)
     text_path.parent.mkdir(parents=True, exist_ok=True)

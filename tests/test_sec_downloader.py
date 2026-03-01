@@ -150,15 +150,16 @@ class TestComputeLastNQuarters:
 
 class TestBuildHtmlPath:
     def test_basic(self):
-        p = sec.build_html_path(Path("/out"), "AAPL", "0001234567-24-000001")
-        assert p == Path("/out/raw_html/AAPL/0001234567-24-000001.html")
+        p = sec.build_html_path(Path("/out"), "AAPL", 2024, "Q2", "10-Q", "2024-05-02")
+        assert p == Path("/out/raw_html/AAPL/AAPL_2024_Q2_10-Q_2024-05-02.html")
 
-    def test_different_ticker(self):
-        p = sec.build_html_path(Path("/data"), "NVDA", "0001234567-24-999999")
-        assert p == Path("/data/raw_html/NVDA/0001234567-24-999999.html")
+    def test_amendment_sanitized(self):
+        p = sec.build_html_path(Path("/out"), "NVDA", 2024, "Q4", "10-K/A", "2024-11-15")
+        assert "10-K-A" in p.name
+        assert "/" not in p.name
 
     def test_returns_path(self):
-        p = sec.build_html_path(Path("/base"), "T", "acc-123")
+        p = sec.build_html_path(Path("/base"), "T", 2024, "Q1", "8-K", "2024-03-01")
         assert isinstance(p, Path)
 
 
@@ -168,15 +169,15 @@ class TestBuildHtmlPath:
 
 class TestBuildTextPath:
     def test_basic(self):
-        p = sec.build_text_path(Path("/out"), "AAPL", "0001234567-24-000001")
-        assert p == Path("/out/clean_text/AAPL/0001234567-24-000001.txt")
+        p = sec.build_text_path(Path("/out"), "AAPL", 2024, "Q2", "10-Q", "2024-05-02")
+        assert p == Path("/out/clean_text/AAPL/AAPL_2024_Q2_10-Q_2024-05-02.txt")
 
     def test_different_ticker(self):
-        p = sec.build_text_path(Path("/data"), "MSFT", "0001234567-24-999999")
-        assert p == Path("/data/clean_text/MSFT/0001234567-24-999999.txt")
+        p = sec.build_text_path(Path("/data"), "MSFT", 2023, "Q4", "10-K", "2023-11-01")
+        assert p == Path("/data/clean_text/MSFT/MSFT_2023_Q4_10-K_2023-11-01.txt")
 
     def test_returns_path(self):
-        p = sec.build_text_path(Path("/base"), "T", "acc-123")
+        p = sec.build_text_path(Path("/base"), "T", 2024, "Q1", "8-K", "2024-03-01")
         assert isinstance(p, Path)
 
 
@@ -729,8 +730,8 @@ class TestDownloadFiling:
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
 
-        expected_html = tmp_path / "raw_html" / "AAPL" / "0001234567-24-000001.html"
-        expected_txt = tmp_path / "clean_text" / "AAPL" / "0001234567-24-000001.txt"
+        expected_html = tmp_path / "raw_html" / "AAPL" / "AAPL_2024_Q4_10-K_2024-11-01.html"
+        expected_txt = tmp_path / "clean_text" / "AAPL" / "AAPL_2024_Q4_10-K_2024-11-01.txt"
         assert expected_html.exists()
         assert expected_txt.exists()
 
@@ -742,7 +743,7 @@ class TestDownloadFiling:
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
 
-        html_path = tmp_path / "raw_html" / "AAPL" / "0001234567-24-000001.html"
+        html_path = tmp_path / "raw_html" / "AAPL" / "AAPL_2024_Q4_10-K_2024-11-01.html"
         assert html_path.read_text() == original_html
 
     def test_no_tmp_file_leftover(self, tmp_path, monkeypatch):
