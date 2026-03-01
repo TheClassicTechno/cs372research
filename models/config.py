@@ -95,6 +95,13 @@ class AgentConfig(BaseModel):
         description="Log full CRIT LLM prompts and responses each round.",
     )
 
+    # --- Prompt logging (modular prompt path) ---
+    prompt_logging: dict = Field(
+        default_factory=dict,
+        description="Prompt build logging config. Keys: enabled, log_rendered_prompt, "
+        "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
+    )
+
 
 class BrokerConfig(BaseModel):
     """Configuration for the in-process broker."""

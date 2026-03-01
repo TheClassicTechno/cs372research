@@ -35,7 +35,30 @@ and PIDStepResult.u_t to decide what happens next round.
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import List
+
+
+class Quadrant(str, Enum):
+    """4-quadrant actuator classification for RAudit PID control.
+
+    RAudit paper references:
+        - Table 1 (p.4): Quadrant-based control table
+        - Algorithm 1, lines 13-29 (p.19, Appendix E): div/qual signal
+          computation and quadrant-routed actuator logic
+        - Eq 7 (p.4): div(t) = 1[JS(t) >= δ_JS], qual(t) = 1[ρ̄(t) >= ρ*]
+
+    Two binary signals (div, qual) yield four regimes:
+
+        ¬div ∧ ¬qual  →  STUCK       (low diversity, low quality)  → EXPLORE
+         div ∧ ¬qual  →  CHAOTIC     (high diversity, low quality) → REFINE
+        ¬div ∧  qual  →  CONVERGED   (low diversity, high quality) → CONSOLIDATE
+         div ∧  qual  →  HEALTHY     (high diversity, high quality)→ NATURAL DECAY
+    """
+    STUCK = "stuck"
+    CHAOTIC = "chaotic"
+    CONVERGED = "converged"
+    HEALTHY = "healthy"
 
 
 @dataclass
@@ -109,6 +132,20 @@ class PIDConfig:
         epsilon:    Convergence tolerance.  When JS divergence (the measure
                     of how much agents disagree) drops below epsilon, the
                     debate is considered converged and can stop.  Default 0.01.
+
+        delta_js:   Diversity threshold for quadrant classification.
+                    RAudit Eq 7 (p.4): div(t) = 1[JS(t) >= δ_JS].
+                    Algorithm 1, line 13 (p.19): div ← 1[JS >= δ_JS].
+                    IMPORTANT: This is a SEPARATE threshold from delta_s
+                    (sycophancy sensitivity, Eq 4, p.4). delta_js gates
+                    quadrant routing; delta_s gates sycophancy detection.
+                    Default 0.05.
+
+        delta_beta: Forced contentiousness increment for the Stuck/EXPLORE
+                    regime.  RAudit Algorithm 1, line 22 (p.19):
+                    β ← min(β + Δβ, 1).  Table 1 (p.4): Stuck state →
+                    "β↑ + EXPLORE".  Only used when quadrant == STUCK.
+                    Not PID-driven.  Default 0.1.
     """
     gains: PIDGains
     rho_star: float = 0.8
@@ -117,6 +154,8 @@ class PIDConfig:
     delta_s: float = 0.05
     T_max: int = 20
     epsilon: float = 0.01
+    delta_js: float = 0.05
+    delta_beta: float = 0.1
 
 
 @dataclass
@@ -208,6 +247,17 @@ class PIDStepResult:
                   as suspicious (agents converging without good reason),
                   0 otherwise.  When s_t=1, the error e_t gets a bonus
                   penalty of +μ, which makes the controller push harder.
+
+        quadrant: Which of the 4 RAudit quadrants this round fell into.
+                  One of "stuck", "chaotic", "converged", "healthy".
+                  Empty string on legacy code paths that don't classify.
+                  (RAudit Table 1, p.4)
+
+        div_signal:  True if JS divergence >= δ_JS (high diversity).
+                     RAudit Eq 7 (p.4): div(t) = 1[JS(t) >= δ_JS].
+
+        qual_signal: True if ρ̄ >= ρ* (quality acceptable).
+                     RAudit Eq 7 (p.4): qual(t) = 1[ρ̄(t) >= ρ*].
     """
     e_t: float
     u_t: float
@@ -216,3 +266,6 @@ class PIDStepResult:
     i_term: float
     d_term: float
     s_t: int
+    quadrant: str = ""
+    div_signal: bool = False
+    qual_signal: bool = False
