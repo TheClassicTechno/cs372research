@@ -35,13 +35,26 @@ def make_submit_decision_tool(
 
     def _submit_decision(orders: list[dict[str, Any]]) -> str:
         """Validate and execute the submitted orders, returning JSON result."""
+        # After a decision has been accepted, reject further submissions to
+        # prevent the ReAct loop from executing multiple trades against the
+        # broker within a single decision point.
+        if _submit_decision._last_decision is not None:  # type: ignore[attr-defined]
+            return DecisionResult(
+                status="rejected",
+                executed_trades=[],
+                message="A decision has already been accepted for this decision point.",
+            ).model_dump_json()
+
         parsed_orders = [Order(**o) for o in orders]
         decision = Decision(orders=parsed_orders)
         result: DecisionResult = broker.execute_decision(decision, case, agent_id)
 
-        # Store the last decision on the tool for extraction after invoke.
-        _submit_decision._last_decision = decision  # type: ignore[attr-defined]
-        _submit_decision._last_result = result  # type: ignore[attr-defined]
+        # Only store the decision when the broker accepted it — this
+        # prevents _extract_decision from returning a rejected decision
+        # if the ReAct loop ends after a rejection without resubmitting.
+        if result.status == "accepted":
+            _submit_decision._last_decision = decision  # type: ignore[attr-defined]
+            _submit_decision._last_result = result  # type: ignore[attr-defined]
 
         return result.model_dump_json()
 

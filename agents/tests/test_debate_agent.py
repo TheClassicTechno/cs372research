@@ -396,7 +396,7 @@ class TestDebateAgentEndToEnd:
                 agent_id="debate_000",
                 steps_remaining=5,
             )
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 agent.invoke(invocation)
             )
 
@@ -434,7 +434,7 @@ class TestDebateAgentEndToEnd:
                 episode_id="ep_000",
                 agent_id="debate_000",
             )
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 agent.invoke(invocation)
             )
 
@@ -463,7 +463,7 @@ class TestDebateAgentEndToEnd:
                 episode_id="ep_000",
                 agent_id="debate_000",
             )
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 agent.invoke(invocation)
             )
 
