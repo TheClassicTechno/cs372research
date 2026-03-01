@@ -1,22 +1,22 @@
-# Final Snapshots — Quarterly Snapshot Builder
+# Final Snapshots — Quarterly Snapshot Builder & Memo Generator
 
 ## Purpose
 
-`quarterly_snapshot_builder.py` is the last stage of the data pipeline. It merges all upstream data sources into a single, self-contained JSON file per quarter. Each snapshot file is the **full data payload** that gets injected into an agent prompt for a selected set of tickers at a specific rebalance date.
+`generate_quarterly_json.py` is the merge stage of the data pipeline. It combines all upstream data sources into a single, self-contained JSON file per quarter. Each snapshot file is the **full data payload** that gets injected into an agent prompt for all tickers at a specific rebalance date.
 
 An agent receiving this file has everything it needs to reason about portfolio allocation for that quarter: macro regime, per-ticker price/fundamental metrics, SEC filing summaries, and news sentiment — all in one document, with no future data leakage.
 
 ## Usage
 
 ```bash
-# All 19 supported tickers, Q4 2024 through Q3 2025
-python quarterly_quarterly_json.py --start 2024Q4 --end 2025Q3 --supported
+# All supported tickers, Q4 2024 through Q3 2025
+python generate_quarterly_json.py --start 2024Q4 --end 2025Q3 --supported
 
 # Specific tickers, single quarter
-python quarterly_quarterly_json.py --year 2025 --quarter Q1 --tickers AAPL,NVDA,MSFT
+python generate_quarterly_json.py --year 2025 --quarter Q1 --tickers AAPL,NVDA,MSFT
 
 # Custom output directory
-python quarterly_quarterly_json.py --start 2025Q1 --end 2025Q3 --supported --output-dir /tmp/snapshots
+python generate_quarterly_json.py --start 2025Q1 --end 2025Q3 --supported --output-dir /tmp/snapshots
 ```
 
 ## CLI Arguments
@@ -28,7 +28,7 @@ python quarterly_quarterly_json.py --start 2025Q1 --end 2025Q3 --supported --out
 | `--year` | Year (single quarter mode) |
 | `--quarter` | Quarter: Q1, Q2, Q3, Q4 (single quarter mode) |
 | `--tickers` | Comma-separated tickers |
-| `--supported` | Use all 19 tickers from `supported_tickers.yaml` |
+| `--supported` | Use all tickers from `supported_tickers.yaml` |
 | `--summaries-dir` | Override EDGAR summaries path |
 | `--sentiment-dir` | Override sentiment data path |
 | `--macro-dir` | Override macro data path |
@@ -98,6 +98,7 @@ Each file contains all requested tickers for that quarter in a single JSON docum
         "vol_60d": 0.2878,
         "beta_1y": 0.9742,
         "gross_margin": 0.4705,
+        "relative_strength_60d": -0.0369,
         "..."
       }
     },
@@ -130,15 +131,37 @@ Any section is `null` if its upstream data is unavailable for that ticker/quarte
 
 ## Data Sources
 
-The script reads from four upstream pipelines:
+The script reads from four upstream pipelines, all using per-ticker file layouts:
 
 ```
 data-pipeline/
   EDGAR/finished_summaries/{TICKER}/{YEAR}/Q{#}.json    <- filing summaries
-  sentiment/data/sentiment_{YEAR}_Q{#}.json              <- sentiment features
-  macro/data/macro_{YEAR}_Q{#}.json                      <- macro regime
-  quarterly_asset_details/data/assets_{YEAR}_Q{#}.json   <- asset features
+  sentiment/data/{TICKER}/{YEAR}_Q{#}.json              <- sentiment features
+  macro/data/macro_{YEAR}_Q{#}.json                     <- macro regime
+  quarterly_asset_details/data/{TICKER}/{YEAR}_Q{#}.json <- asset features
 ```
+
+## Cross-Sectional Features
+
+Two cross-sectional features are computed at this stage (not in upstream pipelines) because they require all tickers to be present:
+
+### `relative_strength_60d`
+
+```
+relative_strength_60d = ret_60d - median(all ret_60d in quarter)
+```
+
+Added to `asset_features` for each ticker. The sum of deviations from the median is approximately zero.
+
+### `cross_sectional_z`
+
+```
+mu    = mean(mean_sentiment across tickers)
+sigma = std(mean_sentiment across tickers)  # population std
+z     = (mean_sentiment - mu) / sigma
+```
+
+Added to `news_sentiment` for each ticker. Z-scores sum to zero and have population standard deviation of 1.
 
 ## Point-in-Time Safety
 
@@ -150,7 +173,7 @@ Every data source is filtered so that only information publicly available on or 
 - **Macro**: matched by year/quarter (FRED/yfinance data as-of quarter end)
 - **Asset features**: matched by year/quarter (all rolling windows end on quarter end)
 
-The script runs a leakage check on every ticker and warns if any filing dates exceed the rebalance date.
+The script runs a leakage check on every ticker via `check_leakage()` and warns if any filing dates exceed the rebalance date.
 
 ## Design Decisions
 
@@ -159,6 +182,8 @@ The script runs a leakage check on every ticker and warns if any filing dates ex
 **Macro at top level**: Macro regime is the same for all tickers in a quarter, so it lives at the document root rather than being duplicated inside each ticker.
 
 **Null propagation**: If an upstream pipeline hasn't been run for a given quarter/ticker, the corresponding section is `null` rather than being omitted. This makes it explicit what data is missing.
+
+**Cross-sectional features at merge time**: `relative_strength_60d` and `cross_sectional_z` require data from all tickers simultaneously. Computing them here (not in upstream scripts) keeps upstream files independent and allows adding a single ticker without reprocessing all others.
 
 ---
 
@@ -174,7 +199,7 @@ Converts snapshot JSON files into structured plain-text memos designed for direc
 # All tickers in snapshot, single quarter
 python generate_quarterly_memo.py --year 2025 --quarter Q1
 
-# Quarter range, all 19 supported tickers
+# Quarter range, all supported tickers
 python generate_quarterly_memo.py --start 2024Q4 --end 2025Q3 --supported
 
 # Specific tickers only
@@ -193,7 +218,7 @@ python generate_quarterly_memo.py --year 2025 --quarter Q1 --input-dir /tmp/json
 | `--year` | Year (single quarter mode) |
 | `--quarter` | Quarter: Q1, Q2, Q3, Q4 (single quarter mode) |
 | `--tickers` | Comma-separated tickers to include (default: all in snapshot) |
-| `--supported` | Use all 19 tickers from `supported_tickers.yaml` |
+| `--supported` | Use all tickers from `supported_tickers.yaml` |
 | `--input-dir` | Override snapshot JSON input path (default: `json_data/`) |
 | `--output-dir` | Override memo output path (default: `memo_data/`) |
 

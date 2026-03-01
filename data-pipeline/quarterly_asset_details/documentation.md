@@ -1,352 +1,229 @@
 
-# Quarterly Snapshot Builder — Data Flow & Methodology
+# Asset Feature Builder — Data Flow & Methodology
 
-This document describes the quarterly snapshot builder (`quarterly_snapshot_builder.py`), which merges all upstream pipeline outputs into a single canonical per-ticker per-quarter JSON snapshot for trading agent consumption.
+This document describes the asset quarter builder (`asset_quarter_builder.py`), which produces per-ticker per-quarter JSON files containing ~28 price, volatility, momentum, and fundamental metrics.
 
 The goal is:
 
-* Single source of truth per ticker per quarter
+* Reproducibility
 * Strict point-in-time safety (no future leakage)
-* Clear data provenance
-* Deterministic, auditable output
+* Per-ticker output for incremental processing
+* Clear separation of per-ticker features from cross-sectional features
 
 ---
 
 # 1. Pipeline Overview
 
 ```
-EDGAR/finished_summaries/     (filing summaries)
-sentiment/data/               (sentiment_output.json)
-macro/data/                   (augmented_market_state_v3.json)
-Fundamentals API              (stub)
-Price History                 (stub)
-Ownership / Exposure          (stub)
-  |
-  v
-quarterly_snapshot_builder.py
-  |
-  v
-quarterly_snapshot/data/{YEAR}{QUARTER}/{TICKER}.json
+Yahoo Finance (yfinance)
+  -> asset_quarter_builder.py
+  -> data/{TICKER}/{YEAR}_Q{#}.json   (one file per ticker per quarter)
 ```
 
-The builder is a **read-only consumer** of all upstream pipelines. It does not modify or re-fetch any source data.
+The script fetches price history and quarterly financial statements from yfinance, computes ~28 metrics per ticker, and writes one JSON file per ticker per quarter.
+
+Cross-sectional features (relative_strength_60d) are computed at snapshot build time (Stage 6), not here. This keeps each file independent and allows adding a single ticker without reprocessing all others.
 
 ---
 
-# 2. Snapshot Schema
+# 2. Output
 
-Each snapshot JSON has this top-level structure:
+## 2.1 Location
+
+```
+data-pipeline/quarterly_asset_details/data/{TICKER}/{YEAR}_Q{#}.json
+```
+
+Example: `data/AAPL/2025_Q1.json`
+
+## 2.2 Schema
 
 ```json
 {
+  "schema_version": "asset_state_v2",
   "ticker": "AAPL",
-  "as_of_date": "2025-03-31",
   "year": 2025,
   "quarter": "Q1",
-  "fundamentals": { ... },
-  "filing_summary": {
-    "periodic": { ... },
-    "event_filings": [ ... ]
-  },
-  "news_sentiment": { ... },
-  "macro_regime": { ... },
-  "price_features": { ... },
-  "ownership_signals": { ... },
-  "exposure_profile": { ... }
-}
-```
-
-### Required Top-Level Keys
-
-All seven data sections are required. Missing data is represented as `null` values within the section, never as missing keys.
-
-| Key | Source | Description |
-|-----|--------|-------------|
-| `ticker` | CLI input | Uppercase ticker symbol |
-| `as_of_date` | CLI input | Rebalance date (ISO 8601) |
-| `year` | Derived | Calendar year from rebalance date |
-| `quarter` | Derived | Quarter label (Q1-Q4) from rebalance date |
-| `fundamentals` | Structured API (stub) | Revenue, EPS, debt, ratios |
-| `filing_summary` | EDGAR summarization pipeline | Periodic filing + recent 8-Ks |
-| `news_sentiment` | Sentiment pipeline | Article count, mean, volatility, surprise, z-score |
-| `macro_regime` | Macro pipeline | L1 macro, L4 vol, L5 internals |
-| `price_features` | Price history (stub) | Returns, vol, drawdown, SMAs |
-| `ownership_signals` | SEC Form 4/13F (stub) | Insider activity, institutional % |
-| `exposure_profile` | Factor model (stub) | Sector, industry, beta |
-
----
-
-# 3. Data Loading Details
-
-## 3.1 Filing Summaries (`load_filing_summaries`)
-
-Reads from `EDGAR/finished_summaries/{TICKER}/` directory.
-
-**Periodic filing** (most recent 10-Q or 10-K):
-* Scans all `*_summary.json` files under the ticker directory
-* Filters by `filing_date <= rebalance_date`
-* Returns the most recent by filing date
-* Includes 10-Q/A and 10-K/A amendments
-
-**Event filings** (recent 8-Ks):
-* Same scan, filtered to 8-K and 8-K/A forms
-* Additional filter: `filing_date >= rebalance_date - 90 days`
-* Sorted by filing date, most recent first
-
-Returns:
-```json
-{
-  "periodic": { "form": "10-Q", "filing_date": "2025-02-15", "mda": {...}, ... },
-  "event_filings": [
-    { "form": "8-K", "filing_date": "2025-03-10", "events": [...] }
-  ]
-}
-```
-
-## 3.2 Sentiment (`load_sentiment`)
-
-Reads from `sentiment/data/sentiment_output.json`.
-
-* Looks up `results.{TICKER}.{YEAR}{QUARTER}` (e.g., `results.AAPL.2025Q1`)
-* Returns the per-quarter sentiment dict directly:
-  ```json
-  {
-    "article_count": 45,
-    "mean_sentiment": 0.23,
-    "sentiment_volatility": 0.15,
-    "surprise_sentiment": 0.05,
-    "cross_sectional_z": 1.2
+  "as_of": "2025-03-31",
+  "features": {
+    "close": 216.95,
+    "ret_20d": -0.099,
+    "ret_60d": -0.1351,
+    "ret_120d": -0.0234,
+    "ret_252d": 0.1823,
+    "vol_20d": 0.2878,
+    "vol_60d": 0.2747,
+    "vol_120d": 0.2345,
+    "downside_vol_60d": 0.1895,
+    "drawdown_60d": -0.1984,
+    "max_drawdown_1y": -0.2133,
+    "sma_20d": 220.5,
+    "sma_50d": 225.3,
+    "sma_200d": 218.7,
+    "momentum_200d": 0.9919,
+    "momentum_12_1": 0.0812,
+    "idiosyncratic_momentum": 0.023,
+    "trend_consistency": 0.5667,
+    "sharpe_60d": -1.4159,
+    "beta_1y": 0.9742,
+    "size_log_mcap": 26.12,
+    "value_book_to_market": 0.0543,
+    "avg_dollar_volume_20d": 12345678.90,
+    "gross_margin": 0.4705,
+    "roe": 0.3821,
+    "free_cash_flow_yield": 0.0312,
+    "debt_to_equity": 1.8721,
+    "earnings_surprise_pct": 0.0219
   }
-  ```
-* Returns `null` if ticker or quarter not found
-
-## 3.3 Macro Regime (`load_macro`)
-
-Reads from `macro/data/augmented_market_state_v3.json`.
-
-* Extracts Layer 1 (macro_metrics), Layer 4 (vol_metrics), and Layer 5 (internals_metrics) for the given quarter
-* Returns:
-  ```json
-  {
-    "macro_metrics": { "L1-MON-FF": {"value": 4.33, "units": "%"}, ... },
-    "vol_metrics": { "L4-VIX": {"value": 18.5, "units": "index"}, ... },
-    "internals_metrics": { "L5-200DMA": {"value": 65.0, "units": "%"}, ... }
-  }
-  ```
-* Returns `null` if macro file not found or quarter not present
-
-## 3.4 Stub Data Sources
-
-The following are currently stubbed with placeholder values. Each returns a dict with `"source": "STUB"` to indicate non-live data.
-
-| Function | Future Integration |
-|----------|--------------------|
-| `fetch_fundamentals_api(ticker, as_of)` | SEC XBRL company-facts endpoint or financial data vendor |
-| `fetch_price_history(ticker, end_date)` | Yahoo Finance or vendor API |
-| `compute_price_features(history, as_of)` | Internal computation from price history |
-| `fetch_ownership_signals(ticker, as_of)` | SEC Form 4 / 13F data |
-| `fetch_exposure_profile(ticker, as_of)` | Factor model or sector classification |
-
-When stubs are replaced with real integrations, each must enforce `as_of <= rebalance_date` filtering.
-
----
-
-# 4. Point-in-Time Safety
-
-This is the most critical property of the snapshot builder. Every data source is filtered so that **only information publicly available on or before the rebalance date** is included.
-
-## 4.1 Rules by Data Source
-
-| Source | Point-in-Time Rule |
-|--------|-------------------|
-| Filing summaries | `filing_date <= rebalance_date` |
-| 8-K events | `filing_date` within 90 days before `rebalance_date` |
-| Sentiment | Matched by year/quarter (articles within quarter boundaries) |
-| Macro | Matched by year/quarter (quarter-end values only) |
-| Fundamentals (future) | API must return data from filings with `filing_date <= as_of` |
-| Price features (future) | All prices `<= rebalance_date` only |
-| Ownership (future) | Filing or reporting date `<= as_of` |
-
-## 4.2 Leakage Detection
-
-`ensure_no_future_leakage(snapshot, rebalance_date)` checks:
-
-1. **Filing dates**: Every `filing_date` in `filing_summary.periodic` and `filing_summary.event_filings` must be `<= rebalance_date`
-2. **Price feature end date**: `price_features.as_of_date` must be `<= rebalance_date`
-
-If violations are detected, they are logged as warnings in the pipeline report. Snapshots with leakage are still saved (for debugging) but flagged.
-
-## 4.3 Why This Matters
-
-In backtesting and multi-agent research:
-* Using data that wasn't yet available on the decision date creates **lookahead bias**
-* This inflates backtested returns and invalidates research conclusions
-* Point-in-time snapshots ensure every agent decision is based only on information available at that moment
-
----
-
-# 5. Quarter Resolution
-
-## 5.1 Rebalance Date to Quarter Mapping
-
-`quarter_from_date(d)` assigns a date to the quarter whose end date it falls on or before:
-
-| Date Range | Quarter |
-|-----------|---------|
-| Jan 1 - Mar 31 | Q1 |
-| Apr 1 - Jun 30 | Q2 |
-| Jul 1 - Sep 30 | Q3 |
-| Oct 1 - Dec 31 | Q4 |
-
-Typical rebalance dates are quarter-end dates (Mar 31, Jun 30, Sep 30, Dec 31), but any date within the quarter is valid.
-
-## 5.2 Quarter End Dates
-
-Used for boundary calculations:
-
-| Quarter | End Date |
-|---------|----------|
-| Q1 | March 31 |
-| Q2 | June 30 |
-| Q3 | September 30 |
-| Q4 | December 31 |
-
----
-
-# 6. Output Structure
-
-```
-quarterly_snapshot/data/
-  2025Q1/
-    AAPL.json
-    NVDA.json
-    MSFT.json
-  2025Q2/
-    AAPL.json
-    NVDA.json
-    MSFT.json
-```
-
-Each file is one complete snapshot. All writes are atomic (tmp file -> rename).
-
----
-
-# 7. Validation
-
-## 7.1 Schema Validation
-
-`validate_snapshot_schema()` checks:
-* All required top-level keys present (`ticker`, `as_of_date`, `year`, `quarter`, `fundamentals`, `filing_summary`, `news_sentiment`, `macro_regime`, `price_features`, `ownership_signals`, `exposure_profile`)
-* `ticker` is a string
-* `as_of_date` is an ISO date string
-
-## 7.2 Pipeline Report
-
-`run_pipeline()` returns a summary:
-```json
-{
-  "total_planned": 16,
-  "built": 16,
-  "errors": [],
-  "leakage_warnings": []
 }
 ```
 
 ---
 
-# 8. Example Commands
+# 3. Feature Reference
+
+## 3.1 Price & Returns
+
+| Feature | Definition | Units |
+|---|---|---|
+| `close` | Last closing price on or before quarter end | USD |
+| `ret_20d` | 20-trading-day total return | decimal |
+| `ret_60d` | 60-trading-day total return | decimal |
+| `ret_120d` | 120-trading-day total return | decimal |
+| `ret_252d` | 252-trading-day total return (1 year) | decimal |
+
+## 3.2 Volatility & Risk
+
+| Feature | Definition | Units |
+|---|---|---|
+| `vol_20d` | 20-day annualized volatility (daily log returns * sqrt(252)) | decimal |
+| `vol_60d` | 60-day annualized volatility | decimal |
+| `vol_120d` | 120-day annualized volatility | decimal |
+| `downside_vol_60d` | 60-day downside volatility (negative returns only) | decimal |
+| `drawdown_60d` | Max drawdown over last 60 trading days | decimal (negative) |
+| `max_drawdown_1y` | Max drawdown over last 252 trading days | decimal (negative) |
+| `sharpe_60d` | 60-day Sharpe ratio (annualized return / annualized vol) | ratio |
+
+## 3.3 Trend & Momentum
+
+| Feature | Definition | Units |
+|---|---|---|
+| `sma_20d` | 20-day simple moving average | USD |
+| `sma_50d` | 50-day simple moving average | USD |
+| `sma_200d` | 200-day simple moving average | USD |
+| `momentum_200d` | close / sma_200d (price relative to long-term trend) | ratio |
+| `momentum_12_1` | 12-month return excluding last month (skip-month momentum) | decimal |
+| `idiosyncratic_momentum` | Residual momentum after removing market beta (OLS residual cumulative return) | decimal |
+| `trend_consistency` | Fraction of trailing monthly returns that are positive | decimal [0, 1] |
+
+## 3.4 Market Structure
+
+| Feature | Definition | Units |
+|---|---|---|
+| `beta_1y` | 1-year beta vs SPY (covariance / variance of SPY returns) | ratio |
+| `size_log_mcap` | log(market cap) = log(close * shares_outstanding) | log USD |
+| `value_book_to_market` | book_value_per_share / close | ratio |
+| `avg_dollar_volume_20d` | Mean of (close * volume) over last 20 days | USD |
+
+## 3.5 Fundamentals
+
+All fundamental data is derived from quarterly financial statements via yfinance, filtered to fiscal periods <= quarter end for point-in-time safety.
+
+| Feature | Source | Definition |
+|---|---|---|
+| `gross_margin` | Income statement | Gross Profit / Total Revenue |
+| `roe` | Income + Balance sheet | Net Income / Stockholders Equity |
+| `free_cash_flow_yield` | Cashflow + Balance sheet | FCF / Market Cap |
+| `debt_to_equity` | Balance sheet | Total Debt / Stockholders Equity |
+| `earnings_surprise_pct` | Earnings dates | (Actual EPS - Estimated EPS) / \|Estimated EPS\| |
+
+**Point-in-time safety for fundamentals:**
+
+- `shares_outstanding` and `book_value_per_share` are derived from the quarterly balance sheet (not from `yt.info`, which returns live data)
+- `_latest_valid_col(df, cutoff)` selects the most recent financial statement column with date <= quarter end
+- `_safe_get(df, col, row_names)` extracts values with multiple fallback row names for cross-company compatibility
+
+## 3.6 Cross-Sectional (computed at snapshot build time)
+
+| Feature | Definition | Computed In |
+|---|---|---|
+| `relative_strength_60d` | ret_60d - median(all ret_60d in quarter) | `generate_quarterly_json.py` |
+
+This feature requires all tickers to be present, so it is computed in the snapshot builder, not here.
+
+---
+
+# 4. Computation Details
+
+## 4.1 Price History
+
+A single yfinance download covers a 600-calendar-day lookback from the quarter end date. This ensures sufficient history for 252-trading-day windows plus the 21-day skip for `momentum_12_1`.
+
+## 4.2 Beta Computation
+
+```python
+# Covariance matrix of asset returns vs SPY returns
+cov = np.cov(asset_returns, spy_returns)
+beta = cov[0, 1] / cov[1, 1]
+```
+
+Requires >= 60 overlapping daily returns. SPY is downloaded once per quarter and reused for all tickers.
+
+## 4.3 Idiosyncratic Momentum
+
+OLS regression of asset returns on SPY returns over 252 trading days, excluding the most recent 21 days:
+
+```python
+# alpha + beta * SPY_ret = asset_ret
+# residuals = asset_ret - (alpha + beta * SPY_ret)
+# idiosyncratic_momentum = cumulative product of (1 + residuals) - 1
+```
+
+## 4.4 Rounding
+
+All output values are rounded at serialization time via `_round_or_none(val, decimals)`, which also maps NaN and Inf to None.
+
+---
+
+# 5. Usage
 
 ```bash
-# Build final_snapshots for 3 tickers at 2 rebalance dates
-python quarterly_quarterly_json.py \
-    --tickers AAPL,NVDA,MSFT \
-    --rebalance-dates 2025-03-31,2025-06-30
+# All supported tickers, quarter range
+python asset_quarter_builder.py --start 2024Q4 --end 2025Q3 --supported
 
-# Build with custom data directories
-python quarterly_quarterly_json.py \
-    --tickers AAPL,NVDA \
-    --rebalance-dates 2025-03-31,2025-06-30,2025-09-30,2025-12-31 \
-    --summaries-dir ./EDGAR/finished_summaries \
-    --sentiment-dir ./sentiment/data \
-    --macro-dir ./macro/data \
-    --output-dir ./quarterly_asset_details/data
+# Specific tickers (e.g. adding a new one)
+python asset_quarter_builder.py --start 2024Q4 --end 2025Q3 --tickers NFLX
 
-# Single ticker, single date (debugging)
-python quarterly_quarterly_json.py \
-    --tickers AAPL \
-    --rebalance-dates 2025-03-31
+# Single quarter
+python asset_quarter_builder.py --year 2025 --quarter Q1 --supported
 ```
+
+## CLI Arguments
+
+| Argument | Description |
+|---|---|
+| `--start` | Start quarter, e.g. `2024Q4` |
+| `--end` | End quarter, e.g. `2025Q3` |
+| `--year` | Year (single quarter mode) |
+| `--quarter` | Quarter: Q1, Q2, Q3, Q4 (single quarter mode) |
+| `--tickers` | Comma-separated tickers |
+| `--supported` | Use all tickers from `supported_tickers.yaml` |
 
 ---
 
-# 9. Future API Integration Points
+# 6. Point-in-Time Safety
 
-When replacing stubs with real data sources:
-
-### Fundamentals (`fetch_fundamentals_api`)
-* **Recommended**: SEC XBRL company-facts endpoint (`data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json`)
-* Returns structured financial data with filing dates for point-in-time filtering
-* Expected fields: revenue_ttm, net_income_ttm, eps_diluted_ttm, total_debt, cash, book_value, shares_outstanding, pe_ratio, price_to_book, debt_to_equity, current_ratio, roe
-
-### Price History (`fetch_price_history`)
-* **Recommended**: Yahoo Finance (`yfinance`) or financial data vendor
-* Must return daily OHLCV data with dates
-* `compute_price_features()` already contains full implementation logic; it just needs non-empty input data
-
-### Ownership Signals (`fetch_ownership_signals`)
-* **Recommended**: SEC Form 4 (insider transactions) and 13F (institutional holdings)
-* Expected fields: insider_net_shares_90d, institutional_ownership_pct
-
-### Exposure Profile (`fetch_exposure_profile`)
-* **Recommended**: Factor model or sector classification provider
-* Expected fields: sector, industry, market_cap_bucket, beta
-
-Each integration must:
-1. Accept an `as_of` date parameter
-2. Return only data available on or before that date
-3. Include a `"source"` field identifying the data provider
-4. Include an `"as_of_date"` field for audit trail
+* **Price data**: yfinance download uses `end = quarter_end + 1 day` (exclusive), so no data after quarter end is included
+* **Financial statements**: `_latest_valid_col()` filters to columns with dates <= quarter end. This means only reported (not future) fiscal periods are used
+* **Shares outstanding**: Derived from quarterly balance sheet (`Ordinary Shares Number` / `Share Issued`), not from the live `yt.info` snapshot
+* **Book value per share**: Computed as `equity / shares` from the same balance sheet column — point-in-time safe
+* **Earnings surprise**: `earnings_dates` filtered to dates <= quarter end cutoff
 
 ---
 
-# 10. Component Integration Diagram
+# 7. Limitations
 
-```
-                    +-----------------------+
-                    |   Trading Agents      |
-                    |  (read snapshots)     |
-                    +-----------+-----------+
-                                |
-                    +-----------v-----------+
-                    | quarterly_snapshot/    |
-                    | data/2025Q1/AAPL.json |
-                    +-----------+-----------+
-                                |
-              +-----------------+------------------+
-              |                 |                   |
-   +----------v------+  +------v--------+  +-------v-------+
-   | EDGAR/           |  | sentiment/    |  | macro/        |
-   | finished_        |  | data/         |  | data/         |
-   | summaries/       |  | sentiment_    |  | augmented_    |
-   |                  |  | output.json   |  | market_state_ |
-   +--------+---------+  +------+--------+  | v3.json       |
-            |                    |           +-------+-------+
-   +--------v---------+         |                   |
-   | EDGAR/            |  Sentiment         Macro Pipeline
-   | raw_filings/      |  Pipeline          (metrics_gather.py)
-   | (Stage 1 .txt)    |                       |
-   +--------+----------+               FRED + Yahoo Finance
-            |                            + Wikipedia
-   SEC EDGAR API
-   (get_sec_data.py)
-```
-
----
-
-# 11. Limitations
-
-* **Stub data**: Fundamentals, price features, ownership, and exposure are currently placeholder values. Snapshots are structurally complete but lack these live data sources.
-* **Single-file sentiment**: Sentiment is loaded from a single `sentiment_output.json` file. If the sentiment pipeline produces per-quarter files, the loader will need updating.
-* **Macro granularity**: Macro data is matched by quarter label, not by exact date. Intra-quarter rebalance dates use the same quarter's macro data.
-* **No retry logic**: If an upstream file is missing or corrupt, the corresponding section is null. The pipeline does not retry or fall back to alternative sources.
-* **Sequential processing**: Snapshots are built sequentially (no parallelism). For large universes, this may be slow but ensures deterministic output.
+* **yfinance reliability**: Rate limits and MultiIndex errors can cause intermittent failures. Retry typically resolves.
+* **Financial statement row names**: Different companies use different row names (e.g., "Total Revenue" vs "Revenue"). The `_safe_get()` function handles this with fallback lists, but novel names may return None.
+* **Earnings dates**: yfinance `earnings_dates` may not include estimates for all companies, resulting in null `earnings_surprise_pct`.
+* **No parallel mode**: The script processes tickers sequentially within each quarter.

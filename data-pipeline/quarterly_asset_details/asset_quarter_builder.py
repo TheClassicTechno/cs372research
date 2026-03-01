@@ -286,14 +286,6 @@ def _fetch_fundamentals(ticker_symbol: str, q_end: dt.date) -> dict:
     except Exception:
         return result
 
-    # --- Shares + book value from .info (current snapshot) ---
-    try:
-        info = yt.info or {}
-        result["shares_outstanding"] = info.get("sharesOutstanding")
-        result["book_value_per_share"] = info.get("bookValue")
-    except Exception:
-        pass
-
     # --- Financial statements (quarterly, dated columns) ---
     try:
         income = yt.quarterly_income_stmt
@@ -310,6 +302,23 @@ def _fetch_fundamentals(ticker_symbol: str, q_end: dt.date) -> dict:
 
     inc_col = _latest_valid_col(income, cutoff)
     bal_col = _latest_valid_col(balance, cutoff)
+
+    # --- Shares + book value from balance sheet (point-in-time safe) ---
+    shares = _safe_get(balance, bal_col, [
+        "Ordinary Shares Number", "Share Issued",
+        "Common Stock Shares Outstanding",
+    ])
+    result["shares_outstanding"] = shares
+
+    equity = _safe_get(balance, bal_col, [
+        "Stockholders Equity", "Common Stock Equity",
+        "Total Equity Gross Minority Interest",
+    ])
+    if equity is not None and shares is not None and shares > 0:
+        result["book_value_per_share"] = equity / shares
+    else:
+        result["book_value_per_share"] = None
+
     cf_col = _latest_valid_col(cashflow, cutoff)
 
     # Gross margin = gross_profit / revenue
@@ -322,17 +331,13 @@ def _fetch_fundamentals(ticker_symbol: str, q_end: dt.date) -> dict:
     ni = _safe_get(income, inc_col, [
         "Net Income", "Net Income Common Stockholders",
     ])
-    eq = _safe_get(balance, bal_col, [
-        "Stockholders Equity", "Common Stock Equity",
-        "Total Equity Gross Minority Interest",
-    ])
-    if ni is not None and eq is not None and eq != 0:
-        result["roe"] = ni / eq
+    if ni is not None and equity is not None and equity != 0:
+        result["roe"] = ni / equity
 
     # Debt to equity = total_debt / stockholder_equity
     debt = _safe_get(balance, bal_col, ["Total Debt", "Long Term Debt"])
-    if debt is not None and eq is not None and eq != 0:
-        result["debt_to_equity"] = debt / eq
+    if debt is not None and equity is not None and equity != 0:
+        result["debt_to_equity"] = debt / equity
 
     # Free cash flow (try direct row, fall back to operating - capex)
     fcf = _safe_get(cashflow, cf_col, ["Free Cash Flow"])
@@ -569,29 +574,12 @@ def build_asset_state(year, quarter, tickers):
                 "earnings_surprise_pct": _round_or_none(
                     funds.get("earnings_surprise_pct"), 4,
                 ),
-                # Cross-sectional (filled in post-processing below)
-                "relative_strength_60d": None,
-            }
+                }
             tqdm.write(f"  [{t}] OK — ${close:.2f}")
 
         except Exception as e:
             tqdm.write(f"  [{t}] FAIL — {type(e).__name__}: {e}")
             out["tickers"][t] = {"error": str(e)}
-
-    # ── Cross-sectional: relative_strength_60d ────────────────────────
-    # Computed AFTER all tickers so we have the full ret_60d distribution.
-    # relative_strength_60d = ticker_ret_60d - median(all_ret_60d)
-    ret_60d_vals = [
-        v["ret_60d"] for v in out["tickers"].values()
-        if "error" not in v and v.get("ret_60d") is not None
-    ]
-    if ret_60d_vals:
-        median_ret = float(np.median(ret_60d_vals))
-        for v in out["tickers"].values():
-            if "error" not in v and v.get("ret_60d") is not None:
-                v["relative_strength_60d"] = _round_or_none(
-                    v["ret_60d"] - median_ret, 4,
-                )
 
     ok = sum(1 for v in out["tickers"].values() if "error" not in v)
     print(f"Asset state complete: {ok}/{len(tickers)} tickers OK")
@@ -621,9 +609,6 @@ def main():
                    help="Comma-separated tickers")
     p.add_argument("--supported", action="store_true", default=False,
                    help="Use all tickers from supported_tickers.yaml")
-    p.add_argument("--out", default=None,
-                   help="Output path (single quarter only; "
-                        "default: data/assets_YEAR_QUARTER.json)")
     args = p.parse_args()
 
     # Resolve quarters
@@ -647,16 +632,26 @@ def main():
 
     for year, quarter in tqdm(quarters, desc="Quarters", unit="quarter"):
         doc = build_asset_state(year, quarter, tickers)
+        as_of = doc["as_of"]
 
-        if args.out and len(quarters) == 1:
-            out_path = Path(args.out)
-        else:
-            out_path = _DEFAULT_DATA_DIR / f"assets_{year}_{quarter}.json"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w") as f:
-            json.dump(doc, f, indent=2)
+        for t in tickers:
+            ticker_dir = _DEFAULT_DATA_DIR / t
+            ticker_dir.mkdir(parents=True, exist_ok=True)
+            out_path = ticker_dir / f"{year}_{quarter}.json"
 
-        tqdm.write(f"Wrote: {out_path}")
+            ticker_data = doc["tickers"].get(t)
+            wrapped = {
+                "schema_version": "asset_state_v2",
+                "ticker": t,
+                "year": year,
+                "quarter": quarter,
+                "as_of": as_of,
+                "features": ticker_data,
+            }
+            with open(out_path, "w") as f:
+                json.dump(wrapped, f, indent=2)
+
+        tqdm.write(f"  Wrote {len(tickers)} ticker file(s) for {year} {quarter}")
 
     print(f"Done: {len(quarters)} quarter(s) complete.")
 

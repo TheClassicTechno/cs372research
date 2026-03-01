@@ -2,27 +2,27 @@
 
 ## Overview
 
-`sentiment.py` builds quarterly sentiment features for a configurable ticker universe using Finnhub news data scored by FinBERT. Output is one JSON file per quarter.
+`sentiment.py` builds quarterly sentiment features for a configurable ticker universe using Finnhub news data scored by FinBERT. Output is one JSON file per ticker per quarter.
 
 ## Pipeline Flow
 
 ```
 Finnhub company-news API
-        ↓
+        |
 Deduplication + text construction (headline + summary)
-        ↓
+        |
 FinBERT sentiment scoring (batched, MPS/GPU or CPU)
-        ↓
+        |
 Optional exponential time-decay weighting
-        ↓
+        |
 Quarterly aggregation (mean, std)
-        ↓
+        |
 Surprise sentiment (QoQ delta)
-        ↓
-Cross-sectional z-score (per quarter)
-        ↓
-Per-quarter JSON output
+        |
+Per-ticker per-quarter JSON output
 ```
+
+Cross-sectional z-score is computed at snapshot build time (Stage 6), not in this pipeline.
 
 ## Usage
 
@@ -52,52 +52,45 @@ python sentiment.py --start 2025Q1 --end 2025Q3 --supported --api-key $FINNHUB_K
 | `--year` | Year (single quarter mode) |
 | `--quarter` | Quarter number 1-4 (single quarter mode) |
 | `--tickers` | Comma-separated tickers |
-| `--supported` | Use all 19 tickers from `supported_tickers.yaml` |
+| `--supported` | Use all tickers from `supported_tickers.yaml` |
 | `--api-key` | Finnhub API key (required) |
 | `--batch-size` | FinBERT batch size (default: 16) |
 | `--half-life-days` | Exponential decay half-life in days; omit for uniform weights |
 | `--workers` | Parallel news fetch workers; 0 = sequential (default: 0) |
 | `--force` | Re-score even if output file already exists |
-| `--out` | Custom output path (single quarter only) |
 
 ## Output
 
 ### Location
 
 ```
-data-pipeline/sentiment/data/sentiment_{YEAR}_Q{#}.json
+data-pipeline/sentiment/data/{TICKER}/{YEAR}_Q{#}.json
 ```
+
+One file per ticker per quarter. This matches the per-ticker layout used by `quarterly_asset_details/` and `EDGAR/finished_summaries/`.
 
 ### Schema
 
 ```json
 {
-  "meta": {
-    "year": 2025,
-    "quarter": "Q1",
-    "quarter_key": "2025Q1",
-    "tickers": ["CAT", "DAL", "..."],
-    "half_life_days": null
-  },
-  "results": {
-    "AAPL": {
-      "article_count": 227,
-      "mean_sentiment": 0.228929,
-      "sentiment_volatility": 0.530728,
-      "surprise_sentiment": null,
-      "cross_sectional_z": 0.777615
-    },
-    "NVDA": { ... },
-    "...": null
+  "schema_version": "sentiment_v1",
+  "ticker": "AAPL",
+  "year": 2025,
+  "quarter": "Q1",
+  "features": {
+    "article_count": 227,
+    "mean_sentiment": 0.228929,
+    "sentiment_volatility": 0.530728,
+    "surprise_sentiment": null
   }
 }
 ```
 
-A ticker's value is `null` if no articles were found for that quarter.
+A ticker's features are `null` if no articles were found for that quarter.
 
 ## Output Features
 
-Five features per ticker per quarter:
+Four features per ticker per quarter (a fifth, `cross_sectional_z`, is added at snapshot build time):
 
 | Feature | Definition | Interpretation |
 |---|---|---|
@@ -105,6 +98,11 @@ Five features per ticker per quarter:
 | `mean_sentiment` | Mean of FinBERT scores across articles | Aggregate tone, bounded ~[-1, 1] |
 | `sentiment_volatility` | Std dev of article-level scores | Disagreement / narrative uncertainty |
 | `surprise_sentiment` | `mean_t - mean_{t-1}` (QoQ delta) | Narrative momentum; `null` for first quarter |
+
+The fifth feature, `cross_sectional_z`, is computed in the snapshot builder (`generate_quarterly_json.py`) across all tickers in a quarter:
+
+| Feature | Definition | Interpretation |
+|---|---|---|
 | `cross_sectional_z` | `(mean - mu) / sigma` across tickers in same quarter | Relative strength vs peers |
 
 ## Feature Derivation
@@ -139,18 +137,6 @@ surprise_t = mean_t - mean_{t-1}
 
 First quarter in the range has `surprise = null`. Captures narrative shift between consecutive quarters.
 
-### Cross-Sectional Z-Score
-
-For each quarter, computed across all tickers with data:
-
-```
-mu_t    = mean(mean_sentiment across tickers)
-sigma_t = std(mean_sentiment across tickers)
-z_i,t   = (mean_sentiment_i,t - mu_t) / sigma_t
-```
-
-Removes time-level drift. Enables relative ranking across tickers.
-
 ## Architecture
 
 ### Two-Stage Processing
@@ -172,7 +158,7 @@ Finnhub free tier allows 60 requests/minute. The script enforces 1.1 seconds bet
 
 Two cache layers:
 1. **News cache** (`news_cache/`): raw Finnhub responses cached by `{TICKER}_{START}_{END}.json`. Persists across runs — delete manually to re-fetch.
-2. **Output cache**: if a quarter's output file exists and contains all requested tickers, it is loaded instead of re-scoring. Use `--force` to bypass.
+2. **Output cache**: if a ticker's per-quarter output file already exists, it is skipped. Use `--force` to bypass.
 
 FinBERT is only loaded if at least one quarter needs scoring.
 
@@ -184,25 +170,13 @@ FinBERT is only loaded if at least one quarter needs scoring.
 
 ## Ticker Universe
 
-When using `--supported`, tickers are loaded from `data-pipeline/supported_tickers.yaml` (19 tickers). The SECTOR_MAP in the script covers all 19:
-
-| Sector | Tickers |
-|---|---|
-| Technology | AAPL, NVDA, MSFT |
-| Financials | JPM, GS, BAC |
-| Healthcare | UNH, LLY, JNJ |
-| Industrials | CAT, DAL |
-| Consumer Defensive | COST, WMT |
-| Consumer Discretionary | AMZN, TSLA |
-| Communication Services | GOOG, META |
-| Energy | XOM |
-| Real Estate | AMT |
+When using `--supported`, tickers are loaded from `data-pipeline/supported_tickers.yaml` (20 tickers across 9 sectors).
 
 ## Limitations
 
 - Finnhub free tier only returns ~1 year of news history. Older quarters will return null.
 - FinBERT max token length is 512; longer articles are truncated.
-- Cross-sectional z-score requires >= 2 tickers with data in a quarter.
+- Cross-sectional z-score requires >= 2 tickers with data in a quarter (computed at snapshot build time, not here).
 - Sentiment may already be priced in by the time of the rebalance date.
 
 ## How Agents Should Use These Features

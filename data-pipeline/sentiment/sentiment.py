@@ -498,9 +498,6 @@ def main():
                    help="Parallel news fetch workers. 0 = sequential. (default: 0)")
     p.add_argument("--force", action="store_true", default=False,
                    help="Re-score even if output file already exists")
-    p.add_argument("--out", default=None,
-                   help="Output path (single quarter only; "
-                        "default: data/sentiment_YEAR_Q#.json)")
     args = p.parse_args()
 
     # -- Resolve quarters --
@@ -528,22 +525,28 @@ def main():
 
     for year, q in quarters:
         qname = quarter_key(year, q)
-        out_path = _DEFAULT_DATA_DIR / f"sentiment_{year}_Q{q}.json"
 
-        if not args.force and out_path.exists():
-            # Load existing data
-            with open(out_path, "r") as f:
-                existing = json.load(f)
-            existing_results = existing.get("results", {})
-            # Check all requested tickers are present
-            missing = [t for t in tickers if t not in existing_results]
+        if not args.force:
+            # Check per-ticker cache files
+            missing = []
+            cached = []
+            for t in tickers:
+                ticker_file = _DEFAULT_DATA_DIR / t / f"{year}_Q{q}.json"
+                if ticker_file.exists():
+                    try:
+                        with open(ticker_file, "r") as f:
+                            data = json.load(f)
+                        all_results[t][qname] = data.get("features")
+                        cached.append(t)
+                    except (json.JSONDecodeError, OSError):
+                        missing.append(t)
+                else:
+                    missing.append(t)
             if not missing:
-                tqdm.write(f"  {qname}: loaded from cache ({out_path.name})")
-                for t in tickers:
-                    all_results[t][qname] = existing_results.get(t)
+                tqdm.write(f"  {qname}: loaded from cache ({len(cached)} tickers)")
                 continue
-            else:
-                tqdm.write(f"  {qname}: missing {len(missing)} ticker(s), will re-score")
+            elif cached:
+                tqdm.write(f"  {qname}: {len(missing)} ticker(s) missing, will re-score all")
 
         quarters_to_score.append((year, q))
 
@@ -574,23 +577,29 @@ def main():
     # -- Post-processing (needs all quarters) --
     print("Post-processing...", flush=True)
     add_surprise_sentiment(all_results)
-    add_cross_sectional_z(all_results, tickers, quarters)
 
-    # -- Save per-quarter files --
-    for year, q in quarters:
-        doc = build_quarter_doc(year, q, tickers, all_results, args.half_life_days)
+    # -- Save per-ticker files --
+    count = 0
+    for t in tickers:
+        ticker_dir = _DEFAULT_DATA_DIR / t
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        for year, q in quarters:
+            qname = quarter_key(year, q)
+            rec = all_results[t].get(qname)
+            wrapped = {
+                "schema_version": "sentiment_v1",
+                "ticker": t,
+                "year": year,
+                "quarter": f"Q{q}",
+                "features": rec,
+            }
+            out_path = ticker_dir / f"{year}_Q{q}.json"
+            with open(out_path, "w") as f:
+                json.dump(wrapped, f, indent=2)
+            count += 1
 
-        if args.out and len(quarters) == 1:
-            out_path = Path(args.out)
-        else:
-            out_path = _DEFAULT_DATA_DIR / f"sentiment_{year}_Q{q}.json"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(out_path, "w") as f:
-            json.dump(doc, f, indent=2)
-        tqdm.write(f"  Wrote: {out_path}")
-
-    print(f"Done: {len(quarters)} quarter(s) complete.", flush=True)
+    print(f"Done: wrote {count} file(s) for {len(tickers)} ticker(s), "
+          f"{len(quarters)} quarter(s).", flush=True)
 
 
 if __name__ == "__main__":

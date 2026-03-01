@@ -305,6 +305,13 @@ def build_layer4_vol(fred: FredClient,
         tlt = pd.DataFrame()
     tqdm.write(f"  [L4] Vol data fetched")
 
+    # Guard against yfinance returning rows beyond q_end
+    q_end_ts = pd.Timestamp(q_end)
+    if not spy.empty:
+        spy = spy[spy.index <= q_end_ts]
+    if not tlt.empty:
+        tlt = tlt[tlt.index <= q_end_ts]
+
     corr = None
     if not spy.empty and not tlt.empty:
         sret = np.log(spy["Close"]).diff()

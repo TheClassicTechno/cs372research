@@ -297,7 +297,7 @@ The EDGAR pipeline enforces point-in-time correctness:
 
 ## 6.1 Downstream: Quarterly Snapshot Builder
 
-`quarterly_snapshot_builder.py` reads from `finished_summaries/` via `load_filing_summaries()`:
+`generate_quarterly_json.py` reads from `finished_summaries/` via `load_filing_summaries()`:
 * Most recent 10-Q or 10-K with `filing_date <= rebalance_date`
 * All 8-K filings with `filing_date` within 90 days of `rebalance_date`
 
