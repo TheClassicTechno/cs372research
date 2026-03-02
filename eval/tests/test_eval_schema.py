@@ -29,7 +29,7 @@ from jsonschema import Draft202012Validator
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 SCHEMA_PATH = SCHEMA_DIR / "eval.schema.json"
-EXAMPLES_DIR = SCHEMA_DIR / "examples"
+EXAMPLES_DIR = SCHEMA_DIR / "test_examples"
 
 EXAMPLE_FILES = [
     "eval_schema_post_hoc_example_1.json",
@@ -83,12 +83,12 @@ def _assert_passes(validator, doc):
 
 
 # ===================================================================
-# POSITIVE — provided examples pass schema validation
+# POSITIVE — provided test_examples pass schema validation
 # ===================================================================
 
 
 class TestExampleSchemaValidation:
-    """Every example file in evaluation/schemas/examples/ must pass."""
+    """Every example file in evaluation/schemas/test_examples/ must pass."""
 
     @pytest.mark.parametrize("filename", EXAMPLE_FILES)
     def test_example_passes_schema(self, validator, filename):
