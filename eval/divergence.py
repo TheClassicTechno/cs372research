@@ -178,150 +178,151 @@ def generalized_active_share(portfolios: List[Dict[str, float]], consensus_portf
         
     return total_active_share / n
 
+@dataclass
+class DivergenceResult:
+    """Structured result from divergence analysis."""
+
+    js_divergence_by_round: Dict[int, float]
+    active_share_by_round: Dict[int, float]
+    judge_active_share: float | None = None
+    judge_js_divergence: float | None = None
+
+
+def analyze_divergence(data: dict) -> DivergenceResult:
+    """Compute divergence metrics from an in-memory trace dict.
+
+    This is the core analysis logic used by both the CLI entry point
+    and the ``EvalPipeline``.
+    """
+    trace = data.get("trace")
+    if trace is None:
+        raise ValueError("JSON missing required 'trace' key")
+    debate_turns = data.get("debate_turns")
+    if debate_turns is None:
+        raise ValueError("JSON missing required 'debate_turns' key")
+
+    market_state = trace.get("initial_market_state")
+    portfolio_state = trace.get("initial_portfolio_state")
+    if market_state is None:
+        raise ValueError("Trace missing 'initial_market_state'")
+    if portfolio_state is None:
+        raise ValueError("Trace missing 'initial_portfolio_state'")
+
+    prices = market_state["prices"]
+    initial_positions = portfolio_state["positions"]
+    initial_cash = portfolio_state["cash"]
+
+    proposals_by_round: Dict[int, List[Tuple[str, list]]] = defaultdict(list)
+    for turn in debate_turns:
+        turn_type = turn.get("type", "")
+        agent_id = turn.get("agent_id", "")
+        if agent_id == "judge" or turn_type == "judge_decision":
+            continue
+        if turn_type in ("proposal", "revision"):
+            content = turn.get("content", {})
+            orders = content.get("orders")
+            if orders is None:
+                continue
+            round_num = turn.get("round", 0)
+            proposals_by_round[round_num].append((agent_id, orders))
+
+    js_by_round: Dict[int, float] = {}
+    as_by_round: Dict[int, float] = {}
+
+    for round_num in sorted(proposals_by_round.keys()):
+        agent_orders = proposals_by_round[round_num]
+        states = []
+        any_shorts = False
+        for agent_id, orders in agent_orders:
+            try:
+                state = get_portfolio_state(agent_id, initial_positions, initial_cash, prices, orders)
+                states.append(state)
+                if state.has_shorts:
+                    any_shorts = True
+            except (AssertionError, ValueError):
+                continue
+
+        if len(states) < 2:
+            continue
+
+        dists = [s.distribution for s in states]
+        as_by_round[round_num] = generalized_active_share(dists)
+        if not any_shorts:
+            js_by_round[round_num] = generalized_js_divergence(dists)
+
+    judge_as: float | None = None
+    judge_js: float | None = None
+
+    judge_turns = [t for t in debate_turns if t.get("type") == "judge_decision"]
+    if len(judge_turns) == 1 and proposals_by_round:
+        last_round = max(proposals_by_round.keys())
+        agent_states = []
+        for agent_id, orders in proposals_by_round[last_round]:
+            try:
+                agent_states.append(
+                    get_portfolio_state(agent_id, initial_positions, initial_cash, prices, orders)
+                )
+            except (AssertionError, ValueError):
+                pass
+
+        if agent_states:
+            mean_agent = get_mean_portfolio([s.distribution for s in agent_states])
+            judge_content = judge_turns[0].get("content", {})
+            judge_orders = judge_content.get("orders")
+            if judge_orders is not None:
+                try:
+                    judge_state = get_portfolio_state("judge", initial_positions, initial_cash, prices, judge_orders)
+                    judge_as = generalized_active_share([judge_state.distribution], consensus_portfolio=mean_agent)
+                    if not judge_state.has_shorts and not any(w < -1e-5 for w in mean_agent.values()):
+                        judge_js = generalized_js_divergence([judge_state.distribution], consensus_portfolio=mean_agent)
+                except (AssertionError, ValueError):
+                    pass
+
+    return DivergenceResult(
+        js_divergence_by_round=js_by_round,
+        active_share_by_round=as_by_round,
+        judge_active_share=judge_as,
+        judge_js_divergence=judge_js,
+    )
+
+
 class DebateDivergenceAnalyzer:
     def __init__(self, trace_file: str):
         with open(trace_file, 'r') as f:
             self.data = json.load(f)
 
-        if "trace" not in self.data:
-            raise ValueError("JSON missing required 'trace' key")
-        self.trace = self.data["trace"]
-        
-        if "debate_turns" not in self.data:
-            raise ValueError("JSON missing required 'debate_turns' key")
-        self.debate_turns = self.data["debate_turns"]
-        
-        if "initial_market_state" not in self.trace:
-            raise ValueError("Trace missing 'initial_market_state'")
-        self.initial_market_state = self.trace["initial_market_state"]
-        
-        if "initial_portfolio_state" not in self.trace:
-            raise ValueError("Trace missing 'initial_portfolio_state'")
-        self.initial_portfolio_state = self.trace["initial_portfolio_state"]
-
     def analyze(self):
-        prices = self.initial_market_state["prices"]
-        initial_positions = self.initial_portfolio_state["positions"]
-        initial_cash = self.initial_portfolio_state["cash"]
+        """Run divergence analysis and print results to stdout."""
+        trace = self.data.get("trace", {})
+        market_state = trace.get("initial_market_state", {})
+        portfolio_state = trace.get("initial_portfolio_state", {})
+        print(f"Initial portfolio: Positions={portfolio_state.get('positions', {})}, Cash=${portfolio_state.get('cash', 0):.2f}")
+        print(f"Initial market prices: {market_state.get('prices', {})}")
 
-        print(f"Initial portfolio: Positions={initial_positions}, Cash=${initial_cash:.2f}")
-        print(f"Initial market prices: {prices}")
-
-        # Separate proposals by round
-        proposals_by_round = defaultdict(list)
-
-        for turn in self.debate_turns:
-            turn_type = turn["type"]
-            round_num = turn["round"]
-            agent_id = turn["agent_id"]
-            
-            if agent_id == "judge" or turn_type == "judge_decision":
-                continue
-
-            if turn_type in ["proposal", "revision"]:
-                content = turn["content"]
-                if "orders" not in content:
-                    print(f"Warning: 'orders' missing in {turn_type} turn for {agent_id}. Skipping.")
-                    continue
-                    
-                orders = content["orders"]
-                
-                if round_num not in proposals_by_round:
-                    proposals_by_round[round_num] = []
-                    
-                proposals_by_round[round_num].append((agent_id, orders))
+        result = analyze_divergence(self.data)
 
         print(f"\n--- Divergence Analysis ---\n")
-        for round_num in sorted(proposals_by_round.keys()):
+        for round_num in sorted(set(result.js_divergence_by_round) | set(result.active_share_by_round)):
             stage = "Proposals" if round_num == 0 else f"Revisions (Round {round_num})"
             print(f"==== Round {round_num} {stage} ====")
-            agent_orders = proposals_by_round[round_num]
-            if not agent_orders: continue
 
-            # Calculate portfolio states for each agent 
-            states = []
-            any_shorts = False
-            for agent_id, orders in agent_orders:
-                try:
-                    state = get_portfolio_state(agent_id, initial_positions, initial_cash, prices, orders)
-                    print(state)
-                    states.append(state)
-                    if state.has_shorts: any_shorts = True
-                except (AssertionError, ValueError) as e:
-                    print(f"Skipping {agent_id} due to invalid state: {e}")
-            
-            if len(states) < 2:
-                print(f"Round {round_num} - Not enough valid portfolios to compare.")
-                continue
-
-            # Extract distributions for metrics
-            dists = [s.distribution for s in states]
-
-            # Compute Metrics
-            l1_score = generalized_active_share(dists)
-            
-            
-            if any_shorts:
-                print("  [Shorts Detected -> Skipping JS Divergence]")
+            if round_num in result.active_share_by_round:
+                print(f"  Active Share Divergence (L1):  {result.active_share_by_round[round_num]:.4f}")
+            if round_num in result.js_divergence_by_round:
+                print(f"  JS Divergence:      {result.js_divergence_by_round[round_num]:.4f} bits")
             else:
-                js_score = generalized_js_divergence(dists)
-                print(f"  JS Divergence:      {js_score:.4f} bits")
-            
-            print(f"  Active Share Divergence (L1):  {l1_score:.4f}")
-            
+                print("  [Shorts Detected -> Skipping JS Divergence]")
             print()
 
-        # --- Judge Analysis ---
-        judge_turns = [t for t in self.debate_turns if t["type"] == "judge_decision"]
-        if not judge_turns:
-            print("No judge decision found in debate turns.")
-            return
-        assert len(judge_turns) == 1, "Expected at most one judge decision turn."
-        judge_turn = judge_turns[0]
-        if judge_turn and proposals_by_round:
+        if result.judge_active_share is not None:
             print("==== Judge vs. Final round mean ====")
-            # Get last round's agent portfolios
-            last_round = max(proposals_by_round.keys())
-            last_agent_orders = proposals_by_round[last_round]
-            
-            agent_states = []
-            for agent_id, orders in last_agent_orders:
-                try:
-                    s = get_portfolio_state(agent_id, initial_positions, initial_cash, prices, orders)
-                    agent_states.append(s)
-                except: pass
-            
-            if not agent_states:
-                print("No valid agent portfolios in final round.")
-                return
-
-            mean_agent_portfolio = get_mean_portfolio([s.distribution for s in agent_states])
-            
-            # Get judge portfolio
-            judge_content = judge_turn["content"]
-            if "orders" in judge_content:
-                try:
-                    judge_state = get_portfolio_state("judge", initial_positions, initial_cash, prices, judge_content["orders"])
-                    print(judge_state)
-                    
-                    judge_dist = judge_state.distribution
-                    
-                    # Compare Judge to Mean Agent Portfolio
-                    # We treat the Judge as a single "agent" comparing against the Consensus
-                    
-                    judge_l1 = generalized_active_share([judge_dist], consensus_portfolio=mean_agent_portfolio)
-                    print(f"  Judge Active Share vs Mean: {judge_l1:.4f}")
-
-                    if not judge_state.has_shorts and not any(w < -1e-5 for w in mean_agent_portfolio.values()):
-                         judge_js = generalized_js_divergence([judge_dist], consensus_portfolio=mean_agent_portfolio)
-                         print(f"  Judge JS Divergence vs Mean: {judge_js:.4f} bits")
-                    else:
-                        print("  [Judge has shorts -> Skipping JS Divergence]")
-
-                except Exception as e:
-                    print(f"Failed to process judge portfolio: {e}")
+            print(f"  Judge Active Share vs Mean: {result.judge_active_share:.4f}")
+            if result.judge_js_divergence is not None:
+                print(f"  Judge JS Divergence vs Mean: {result.judge_js_divergence:.4f} bits")
             else:
-                print("Judge decision missing 'orders'.")
+                print("  [Judge has shorts -> Skipping JS Divergence]")
+        elif not result.js_divergence_by_round and not result.active_share_by_round:
+            print("No judge decision found in debate turns.")
 
 
 def main():

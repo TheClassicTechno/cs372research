@@ -21,6 +21,7 @@ from typing import Any
 
 from agents.registry import create_agent_system
 from agents.tools import make_submit_decision_tool
+from eval.financial import compute_financial_metrics
 from models.agents import AgentInvocation
 from models.case import Case
 from models.config import SimulationConfig
@@ -90,6 +91,10 @@ class AsyncSimulationRunner:
         # Finalize with a lightweight summary.
         summary = self._build_summary()
         self._sim_logger.finalize(summary)
+
+        # Post-hoc evaluation on all completed episodes.
+        self._run_posthoc_eval()
+
         logger.info("Simulation '%s' complete. Output: %s", self._run_name, self._sim_logger.run_dir)
 
     # ------------------------------------------------------------------
@@ -190,6 +195,9 @@ class AsyncSimulationRunner:
                 agent_output=agent_output,
                 elapsed_seconds=elapsed,
                 timestamp=datetime.now(timezone.utc).isoformat(),
+                case_prices={
+                    t: sd.current_price for t, sd in case.stock_data.items()
+                },
             )
             decision_point_logs.append(dp_log)
 
@@ -214,7 +222,64 @@ class AsyncSimulationRunner:
             final_portfolio.positions,
             episode_log.book_value or 0.0,
         )
+
         return episode_log
+
+    # ------------------------------------------------------------------
+    # Post-hoc evaluation
+    # ------------------------------------------------------------------
+
+    def _run_posthoc_eval(self) -> None:
+        """Run the post-hoc eval pipeline on all completed episodes."""
+        import json
+
+        from eval.pipeline import EvalPipeline
+        from multi_agent.graph import _call_llm
+
+        episodes = self._sim_logger.simulation_log.episode_logs
+        if not episodes:
+            return
+
+        llm_config = {
+            "model_name": self._config.agent.llm_model,
+            "temperature": self._config.agent.temperature,
+        }
+        llm_fn = lambda sys_prompt, usr_prompt: _call_llm(llm_config, sys_prompt, usr_prompt)
+
+        pipeline = EvalPipeline(
+            llm_fn=llm_fn,
+            run_crit=True,
+            run_consistency=True,
+            run_divergence=True,
+            run_financials=True,
+        )
+        initial_cash = self._config.broker.initial_cash
+
+        for episode_log in episodes:
+            eval_artifacts = []
+            for dp_log in episode_log.decision_point_logs:
+                trace_data = dp_log.agent_output
+                if not isinstance(trace_data, dict):
+                    continue
+
+                artifact = pipeline.evaluate_trace(
+                    trace_data=trace_data,
+                    episode_log=episode_log,
+                    initial_cash=initial_cash,
+                    debate_id=dp_log.case_id,
+                    run_id=self._run_name,
+                )
+                eval_artifacts.append(artifact.model_dump())
+
+            if eval_artifacts:
+                ep_dir = self._sim_logger.run_dir / "episodes" / episode_log.episode_id
+                ep_dir.mkdir(parents=True, exist_ok=True)
+                eval_path = ep_dir / "eval.json"
+                eval_path.write_text(
+                    json.dumps(eval_artifacts, indent=2, default=str),
+                    encoding="utf-8",
+                )
+                logger.info("Post-hoc eval written to %s", eval_path)
 
     # ------------------------------------------------------------------
     # Summary
@@ -236,6 +301,8 @@ class AsyncSimulationRunner:
             }
             book_value = ep.book_value or 0.0
 
+            fin = compute_financial_metrics(ep, initial_cash)
+
             summaries.append(
                 {
                     "episode_id": ep.episode_id,
@@ -247,6 +314,11 @@ class AsyncSimulationRunner:
                     "book_value": book_value,
                     "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
                     "total_trades": len(ep.trades),
+                    "sharpe_ratio": fin.sharpe_ratio,
+                    "sortino_ratio": fin.sortino_ratio,
+                    "max_drawdown": fin.max_drawdown,
+                    "max_drawdown_pct": fin.max_drawdown_pct,
+                    "calmar_ratio": fin.calmar_ratio,
                 }
             )
         return {

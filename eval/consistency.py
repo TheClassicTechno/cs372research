@@ -8,6 +8,7 @@ Usage:
 
 import json
 import sys
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -285,6 +286,140 @@ Evaluate trace-output consistency. Did the judge effectively synthesize the deba
         })
 
 
+@dataclass
+class TurnConsistencyResult:
+    """Result of a single turn's consistency check."""
+
+    turn_index: int
+    turn_type: str
+    role: str
+    verdict: str
+    explanation: str
+    confidence: float
+
+
+@dataclass
+class ConsistencyResult:
+    """Structured result from consistency analysis across all turns."""
+
+    turn_results: List[TurnConsistencyResult]
+    total_checked: int
+    consistent_count: int
+    sycophantic_count: int
+    stubborn_count: int
+
+    @property
+    def consistency_rate(self) -> float:
+        return self.consistent_count / self.total_checked if self.total_checked > 0 else 0.0
+
+    @property
+    def sycophantic_rate(self) -> float:
+        return self.sycophantic_count / self.total_checked if self.total_checked > 0 else 0.0
+
+    @property
+    def stubborn_rate(self) -> float:
+        return self.stubborn_count / self.total_checked if self.total_checked > 0 else 0.0
+
+
+def analyze_trace(data: dict, judge: ConsistencyJudge | None = None) -> ConsistencyResult | None:
+    """Run consistency checks on an in-memory trace dict.
+
+    This is the core analysis logic used by both the CLI entry point
+    and the ``EvalPipeline``.
+
+    Args:
+        data: Loaded trace JSON dict (must have ``debate_turns``).
+        judge: Optional pre-constructed ``ConsistencyJudge``.
+            If None, a default one is created.
+
+    Returns:
+        ``ConsistencyResult`` with per-turn verdicts and aggregate counts,
+        or None if no debate turns are found.
+    """
+    turns = data.get("debate_turns", [])
+    if not turns:
+        return None
+
+    if judge is None:
+        judge = ConsistencyJudge()
+
+    turn_results: List[TurnConsistencyResult] = []
+    consistent_count = 0
+    sycophantic_count = 0
+    stubborn_count = 0
+    total_checked = 0
+
+    for i, turn in enumerate(turns):
+        turn_type = turn.get("type", "unknown")
+        role = turn.get("role", turn.get("agent_id", "unknown"))
+
+        if "content" not in turn or "input_params" not in turn:
+            continue
+
+        result = None
+
+        try:
+            if turn_type == "proposal":
+                result = judge.check_proposal(turn)
+            elif turn_type == "critique":
+                content = turn.get("content", {})
+                input_params = turn.get("input_params", {})
+                critiques_by_role = {
+                    crit["target_role"].upper(): crit
+                    for crit in content.get("critiques", [])
+                }
+                proposals_by_role = {
+                    prop["role"].upper(): prop
+                    for prop in input_params.get("all_proposals_for_critique", [])
+                }
+                for crit_role, crit in critiques_by_role.items():
+                    if crit_role not in proposals_by_role:
+                        continue
+                    turn_for_judge = copy.deepcopy(turn)
+                    turn_for_judge["content"]["critiques"] = [crit]
+                    turn_for_judge["input_params"]["all_proposals_for_critique"] = [proposals_by_role[crit_role]]
+                    result = judge.check_critique(turn_for_judge)
+            elif turn_type == "revision":
+                result = judge.check_revision(turn)
+            elif turn_type == "judge_decision":
+                result = judge.check_judge_decision(turn)
+        except Exception:
+            continue
+
+        if result is None:
+            continue
+
+        verdict_str = result.verdict.value
+        total_checked += 1
+
+        if verdict_str == "CONSISTENT":
+            consistent_count += 1
+        elif verdict_str == "INCONSISTENT_SYCOPHANTIC":
+            sycophantic_count += 1
+        elif verdict_str == "INCONSISTENT_STUBBORN":
+            stubborn_count += 1
+
+        turn_results.append(TurnConsistencyResult(
+            turn_index=i,
+            turn_type=turn_type,
+            role=role,
+            verdict=verdict_str,
+            explanation=result.explanation,
+            confidence=result.confidence,
+        ))
+
+    if total_checked == 0:
+        return None
+
+    return ConsistencyResult(
+        turn_results=turn_results,
+        total_checked=total_checked,
+        consistent_count=consistent_count,
+        sycophantic_count=sycophantic_count,
+        stubborn_count=stubborn_count,
+    )
+
+
 def _print_result(result):
     if not result:
         return
@@ -309,49 +444,22 @@ def analyze_trace_file(file_path: str):
         print("No debate turns found in trace.")
         return
 
-    judge = ConsistencyJudge()
-
     print(f"\nAnalyzing {len(turns)} turns for Trace-Output Consistency...\n")
 
-    for i, turn in enumerate(turns):
-        turn_type = getl(turn, "type", "unknown")
-        agent_id = getl(turn, "agent_id", "unknown")
-        role = getl(turn, "role", "unknown")
-        
-        print(f"--- Turn {i}: {role} ({turn_type}) ---")
-        assert "content" in turn
-        assert "input_params" in turn
-        
-        result = None
-        
-        if turn_type == "proposal":
-            result = judge.check_proposal(turn)
-            _print_result(result)
-            
-        elif turn_type == "critique":
-            content = getl(turn, "content", {})
-            input_params = getl(turn, "input_params", {})
-            critiques_by_role = {crit["target_role"].upper(): crit for crit in getl(content, "critiques", [])}
-            proposals_by_role = {prop["role"].upper(): prop for prop in getl(input_params, "all_proposals_for_critique", [])}
-            for role, crit in critiques_by_role.items():
-                assert role in proposals_by_role, turn
-                turn_for_judge = copy.deepcopy(turn)
-                # TODO maybe remove target role
-                turn_for_judge["content"]["critiques"] = [crit] 
-                turn_for_judge["input_params"]["all_proposals_for_critique"] = [proposals_by_role[role]]
-                print(f"  > Checking critique against {role}...")
-                result = judge.check_critique(turn_for_judge)
-                _print_result(result)
+    result = analyze_trace(data)
+    if result is None:
+        print("No turns could be checked.")
+        return
 
-        elif turn_type == "revision":
-            result = judge.check_revision(turn)
-            _print_result(result)
+    for tr in result.turn_results:
+        passed = tr.verdict == "CONSISTENT"
+        status = "✅ PASS" if passed else "❌ FAIL"
+        print(f"--- Turn {tr.turn_index}: {tr.role} ({tr.turn_type}) ---")
+        print(f"  Result: {status} ({tr.verdict}) (Conf: {tr.confidence})")
+        print(f"  Explanation: {tr.explanation}")
 
-        elif turn_type == "judge_decision":
-            result = judge.check_judge_decision(turn)
-            _print_result(result)
-        else:
-            print(f"No check for turn type {turn_type}")
+    print(f"\nSummary: {result.consistent_count}/{result.total_checked} consistent "
+          f"({result.consistency_rate:.0%})")
 
 
 if __name__ == "__main__":
