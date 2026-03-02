@@ -648,6 +648,11 @@ def main():
                 "as_of": as_of,
                 "features": ticker_data,
             }
+            try:
+                from provenance import inline_provenance
+                wrapped.update(inline_provenance())
+            except ImportError:
+                pass
             with open(out_path, "w") as f:
                 json.dump(wrapped, f, indent=2)
 

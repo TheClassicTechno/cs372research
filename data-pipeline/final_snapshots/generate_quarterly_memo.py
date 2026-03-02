@@ -44,6 +44,24 @@ def load_supported_tickers() -> List[str]:
     return [t["symbol"] for t in data["supported_tickers"]]
 
 
+def load_fiscal_year_ends() -> Dict[str, str]:
+    """Return {ticker: fiscal_year_end} map, e.g. {"AAPL": "09-27", "NVDA": "01-26"}."""
+    with open(_SUPPORTED_TICKERS_PATH, "r") as f:
+        data = yaml.safe_load(f)
+    return {
+        t["symbol"]: t.get("fiscal_year_end", "12-31")
+        for t in data["supported_tickers"]
+    }
+
+
+# Month names for FYE display
+_MONTH_NAMES = {
+    "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr",
+    "05": "May", "06": "Jun", "07": "Jul", "08": "Aug",
+    "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec",
+}
+
+
 # ==========================
 # Quarter utilities
 # ==========================
@@ -238,7 +256,7 @@ def write_macro(lines: list, macro: Optional[dict]) -> None:
         lines.append(f"  [L1-EQBC]  Equity-Bond Correlation: {_f(eqbc['value'])}")
 
 
-def write_ticker(lines: list, ticker: str, data: dict) -> None:
+def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "12-31") -> None:
     lines.append("")
     lines.append("=" * 70)
     lines.append(f"TICKER: {ticker}")
@@ -321,7 +339,16 @@ def write_ticker(lines: list, ticker: str, data: dict) -> None:
     if periodic:
         form = periodic.get("form", "?")
         fdate = periodic.get("filing_date", "?")
-        lines.append(f"  Filing Summary ({form}, filed {fdate}):")
+        fiscal = periodic.get("fiscal_period", "")
+        # Annotate non-standard fiscal year-end companies
+        if fiscal and fiscal_year_end != "12-31":
+            month_str = _MONTH_NAMES.get(fiscal_year_end[:2], fiscal_year_end[:2])
+            day_str = fiscal_year_end[3:]
+            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal} [FYE: {month_str} {day_str}]):")
+        elif fiscal:
+            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal}):")
+        else:
+            lines.append(f"  Filing Summary ({form}, filed {fdate}):")
 
         fields = [
             ("operating_state", "Operations"),
@@ -397,6 +424,12 @@ def write_ticker_summary_table(lines: list, tickers: list, ticker_data: dict) ->
 def build_memo(doc: dict, filter_tickers: Optional[List[str]] = None) -> str:
     lines: list = []
 
+    # Load fiscal year-end data for annotations
+    try:
+        fye_map = load_fiscal_year_ends()
+    except (FileNotFoundError, KeyError):
+        fye_map = {}
+
     # If filter specified, only include those tickers (preserving order)
     all_tickers = doc.get("tickers", [])
     if filter_tickers:
@@ -421,7 +454,8 @@ def build_memo(doc: dict, filter_tickers: Optional[List[str]] = None) -> str:
     for t in tickers:
         td = ticker_data.get(t, {})
         if td:
-            write_ticker(lines, t, td)
+            fye = td.get("fiscal_year_end") or fye_map.get(t, "12-31")
+            write_ticker(lines, t, td, fiscal_year_end=fye)
 
     lines.append("")
     lines.append("=" * 70)

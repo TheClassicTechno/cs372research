@@ -201,42 +201,44 @@ def filter_filings(
         fiscal_year = parsed.year
         fiscal_quarter = quarter_from_month(parsed.month)
 
-        for target_year, target_quarter in targets:
+        # Two-pass matching: direct match always wins over spillover.
+        # This prevents 10-K filings from companies with non-calendar
+        # fiscal year-ends (e.g., WMT Jan 31) from being matched to the
+        # wrong quarter via spillover when a direct match also exists.
+        matched = None
 
+        # Pass 1: direct match
+        for target_year, target_quarter in targets:
             if target_quarter is None:
                 if fiscal_year == target_year:
-                    matched_quarter = fiscal_quarter
-                else:
-                    continue
-            else:
-                # Direct fiscal match
-                if fiscal_year == target_year and fiscal_quarter == target_quarter:
-                    matched_quarter = target_quarter
-                else:
-                    # Spillover logic only applies to 10-K because Q4 annual
-                    # filings are typically filed in Q1 of the following
-                    # calendar year. We intentionally do NOT apply spillover
-                    # to 10-Q to prevent cross-quarter contamination (e.g.,
-                    # Q1 2025 10-Q being included when requesting Q4 2024).
-                    next_year_, next_q = next_quarter(target_year, target_quarter)
-                    if (base_form == "10-K"
-                            and fiscal_year == next_year_
-                            and fiscal_quarter == next_q):
-                        matched_quarter = target_quarter
-                    else:
-                        continue
+                    matched = (target_year, fiscal_quarter)
+                    break
+            elif fiscal_year == target_year and fiscal_quarter == target_quarter:
+                matched = (target_year, target_quarter)
+                break
 
-            if accession not in seen_accessions:
-                seen_accessions.add(accession)
-                results.append({
-                    "form": form,
-                    "filing_date": filing_date,
-                    "accession": accession,
-                    "primary_doc": primary_doc,
-                    "matched_year": target_year,
-                    "matched_quarter": matched_quarter,
-                })
-            break
+        # Pass 2: spillover (10-K only) — only if no direct match found
+        if matched is None:
+            for target_year, target_quarter in targets:
+                if target_quarter is None:
+                    continue
+                next_year_, next_q = next_quarter(target_year, target_quarter)
+                if (base_form == "10-K"
+                        and fiscal_year == next_year_
+                        and fiscal_quarter == next_q):
+                    matched = (target_year, target_quarter)
+                    break
+
+        if matched is not None and accession not in seen_accessions:
+            seen_accessions.add(accession)
+            results.append({
+                "form": form,
+                "filing_date": filing_date,
+                "accession": accession,
+                "primary_doc": primary_doc,
+                "matched_year": matched[0],
+                "matched_quarter": matched[1],
+            })
 
     return results
 
@@ -268,6 +270,13 @@ def download_filing(ticker, cik, filing, base_dir):
 
     if text_path.exists() and html_path.exists():
         tqdm.write(f"    [{ticker}] SKIP {form} {filing_date} (already exists)")
+        return (accession, True)
+
+    # Cross-run dedup: check if same filing exists under a different quarter
+    form_sanitized = form.replace("/", "-")
+    existing = list(txt_dir.glob(f"{ticker}_*_{form_sanitized}_{filing_date}.txt"))
+    if existing:
+        tqdm.write(f"    [{ticker}] SKIP {form} {filing_date} (exists as {existing[0].name})")
         return (accession, True)
 
     url = build_filing_url(cik, accession, filing["primary_doc"])

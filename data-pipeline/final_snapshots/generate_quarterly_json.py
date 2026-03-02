@@ -51,13 +51,23 @@ DEFAULT_SUMMARIES_DIR = _PIPELINE_DIR / "EDGAR" / "finished_summaries"
 DEFAULT_SENTIMENT_DIR = _PIPELINE_DIR / "sentiment" / "data"
 DEFAULT_MACRO_DIR = _PIPELINE_DIR / "macro" / "data"
 DEFAULT_ASSETS_DIR = _PIPELINE_DIR / "quarterly_asset_details" / "data"
-DEFAULT_OUTPUT_DIR = _SCRIPT_DIR
+DEFAULT_OUTPUT_DIR = _SCRIPT_DIR / "json_data"
 
 
 def load_supported_tickers(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> list:
     with open(yaml_path, "r") as f:
         data = yaml.safe_load(f)
     return [entry["symbol"] for entry in data["supported_tickers"]]
+
+
+def load_fiscal_year_ends(yaml_path: Path = _SUPPORTED_TICKERS_PATH) -> Dict[str, str]:
+    """Return {ticker: fiscal_year_end} map, e.g. {"AAPL": "09-27", "NVDA": "01-26"}."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return {
+        entry["symbol"]: entry.get("fiscal_year_end", "12-31")
+        for entry in data["supported_tickers"]
+    }
 
 
 # ==========================
@@ -327,9 +337,11 @@ def build_quarter_snapshot(
     sentiment_dir: Path,
     macro_dir: Path,
     assets_dir: Path,
+    fiscal_year_ends: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Build a single quarterly snapshot JSON with all tickers."""
     rebal_date = quarter_end_date(year, quarter)
+    fye_map = fiscal_year_ends or {}
 
     # Macro is shared across tickers
     macro = load_macro(macro_dir, year, quarter)
@@ -341,11 +353,16 @@ def build_quarter_snapshot(
         sentiment = load_sentiment(sentiment_dir, t, year, quarter)
         asset_features = load_asset_data(assets_dir, t, year, quarter)
 
-        ticker_data[t] = {
+        entry: Dict[str, Any] = {
             "filing_summary": filing_summary,
             "news_sentiment": sentiment,
             "asset_features": asset_features,
         }
+        fye = fye_map.get(t)
+        if fye and fye != "12-31":
+            entry["fiscal_year_end"] = fye
+
+        ticker_data[t] = entry
 
         leaks = check_leakage(ticker_data[t], rebal_date)
         if leaks:
@@ -355,7 +372,7 @@ def build_quarter_snapshot(
     _add_relative_strength(ticker_data)
     _add_sentiment_z(ticker_data)
 
-    return {
+    snapshot = {
         "year": year,
         "quarter": quarter,
         "as_of_date": rebal_date.isoformat(),
@@ -363,6 +380,14 @@ def build_quarter_snapshot(
         "macro_regime": macro,
         "ticker_data": ticker_data,
     }
+
+    try:
+        from provenance import inline_provenance
+        snapshot.update(inline_provenance())
+    except ImportError:
+        pass
+
+    return snapshot
 
 
 # ==========================
@@ -381,10 +406,13 @@ def run_pipeline(
     print(f"Building {len(quarters)} snapshot(s) with {len(tickers)} ticker(s)",
           flush=True)
 
+    fiscal_year_ends = load_fiscal_year_ends()
+
     for year, quarter in tqdm(quarters, desc="Quarters", unit="qtr"):
         doc = build_quarter_snapshot(
             year, quarter, tickers,
             summaries_dir, sentiment_dir, macro_dir, assets_dir,
+            fiscal_year_ends=fiscal_year_ends,
         )
 
         out_path = output_dir / f"snapshot_{year}_{quarter}.json"

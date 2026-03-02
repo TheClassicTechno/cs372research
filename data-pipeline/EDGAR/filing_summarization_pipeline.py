@@ -101,6 +101,7 @@ KEY_ORDER = [
     "operating_state", "cost_structure", "material_events",
     "macro_exposures", "forward_outlook", "uncertainty_profile",
     "word_count",
+    "pipeline_run_id", "generated_at_utc",
 ]
 
 
@@ -174,8 +175,8 @@ def validate_summary(summary: dict) -> List[str]:
     if isinstance(wc, int) and wc > MAX_SUMMARY_WORDS:
         errors.append(f"word_count {wc} exceeds {MAX_SUMMARY_WORDS}")
 
-    # No extra keys
-    expected = set(REQUIRED_KEYS)
+    # No extra keys (provenance fields are allowed)
+    expected = set(REQUIRED_KEYS) | {"pipeline_run_id", "generated_at_utc"}
     extra = set(summary.keys()) - expected
     for k in sorted(extra):
         errors.append(f"unexpected key: {k}")
@@ -417,6 +418,12 @@ def output_path_for(out_dir: Path, ticker: str, year: int, quarter: str) -> Path
 
 def save_summary(path: Path, summary: dict) -> None:
     """Atomically write summary JSON with stable key ordering."""
+    try:
+        from provenance import inline_provenance
+        summary.update(inline_provenance())
+    except ImportError:
+        pass
+
     ordered = {}
     for k in KEY_ORDER:
         if k in summary:

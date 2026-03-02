@@ -593,6 +593,11 @@ def main():
                 "quarter": f"Q{q}",
                 "features": rec,
             }
+            try:
+                from provenance import inline_provenance
+                wrapped.update(inline_provenance())
+            except ImportError:
+                pass
             out_path = ticker_dir / f"{year}_Q{q}.json"
             with open(out_path, "w") as f:
                 json.dump(wrapped, f, indent=2)

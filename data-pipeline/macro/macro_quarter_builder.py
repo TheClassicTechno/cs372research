@@ -355,6 +355,14 @@ def build_macro_state(year: int,
         "layers": {}
     }
 
+    try:
+        from provenance import get_run_id
+        run_id = get_run_id()
+        if run_id:
+            doc["pipeline_run_id"] = run_id
+    except ImportError:
+        pass
+
     print(f"Building macro state for {year} {quarter} (as-of {iso(q_end)})", flush=True)
     print(f"  Lookback: {iso(start_date)} → {iso(end_date)}", flush=True)
 

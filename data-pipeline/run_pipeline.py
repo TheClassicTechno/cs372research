@@ -24,6 +24,8 @@ from pathlib import Path
 
 import yaml
 
+from provenance import PipelineRun
+
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
@@ -266,7 +268,7 @@ def format_duration(seconds: float) -> str:
     return f"{m}m {s}s"
 
 
-def run_stages(stages, dry_run: bool) -> list[tuple[int, str, str, float]]:
+def run_stages(stages, dry_run: bool, pipeline_run=None) -> list[tuple[int, str, str, float]]:
     """Execute stages sequentially. Returns results list."""
     results: list[tuple[int, str, str, float]] = []  # (stage, name, status, elapsed)
 
@@ -275,6 +277,11 @@ def run_stages(stages, dry_run: bool) -> list[tuple[int, str, str, float]]:
             print(f"\nStage {stage_num}: {name}")
             print("  Skipped — all output files already exist")
             results.append((stage_num, name, "SKIP", 0.0))
+            if pipeline_run:
+                pipeline_run.record_stage(
+                    f"{stage_num}_{name.lower().replace(' ', '_')}",
+                    {"script": STAGE_NAMES.get(stage_num, name), "status": "skipped"},
+                )
             continue
 
         print(f"\nStage {stage_num}: {name}")
@@ -290,13 +297,22 @@ def run_stages(stages, dry_run: bool) -> list[tuple[int, str, str, float]]:
         result = subprocess.run(cmd, cwd=str(PIPELINE_DIR))
         elapsed = time.time() - t0
 
+        status = "OK" if result.returncode == 0 else "FAIL"
+        results.append((stage_num, name, status, elapsed))
+
+        if pipeline_run:
+            stage_key = f"{stage_num}_{name.lower().replace(' ', '_')}"
+            script_rel = str(STAGE_SCRIPTS.get(stage_num, "")).replace(str(PIPELINE_DIR) + "/", "")
+            pipeline_run.record_stage(stage_key, {
+                "script": script_rel,
+                "status": "completed" if status == "OK" else "failed",
+                "duration_seconds": round(elapsed, 1),
+            })
+
         if result.returncode != 0:
-            results.append((stage_num, name, "FAIL", elapsed))
             print(f"\n  Stage {stage_num} failed (exit code {result.returncode})")
             print("  Pipeline stopped.")
             return results
-
-        results.append((stage_num, name, "OK", elapsed))
 
     return results
 
@@ -373,13 +389,41 @@ def main():
     # 3. Build and run stages
     stages = build_commands(args, keys, quarters)
 
+    # Resolve tickers for provenance
+    if args.ticker:
+        resolved_tickers = [args.ticker]
+    else:
+        data = load_yaml()
+        resolved_tickers = [t["symbol"] for t in data.get("supported_tickers", [])]
+
+    pipeline_run = PipelineRun(
+        args=args,
+        tickers=resolved_tickers,
+        quarters=quarters,
+        pipeline_dir=PIPELINE_DIR,
+    )
+
+    if not args.dry_run:
+        pipeline_run.start()
+        print(f"Provenance: run_id={pipeline_run.run_id}")
+        print(f"  Manifest: {pipeline_run.manifest_path.relative_to(PIPELINE_DIR)}")
+        print()
+
     try:
-        results = run_stages(stages, args.dry_run)
+        results = run_stages(stages, args.dry_run, pipeline_run)
     except KeyboardInterrupt:
         print("\n\nPipeline interrupted by user.")
+        if not args.dry_run:
+            pipeline_run.finalize("interrupted")
         sys.exit(1)
 
-    # 4. Print summary
+    # 4. Finalize provenance
+    if not args.dry_run:
+        final_status = "failed" if any(r[2] == "FAIL" for r in results) else "completed"
+        manifest_path = pipeline_run.finalize(final_status)
+        print(f"\nProvenance manifest: {manifest_path.relative_to(PIPELINE_DIR)}")
+
+    # 5. Print summary
     print_summary(results)
 
     # Exit with failure if any stage failed

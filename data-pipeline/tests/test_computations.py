@@ -24,6 +24,7 @@ _PIPELINE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PIPELINE_DIR / "quarterly_asset_details"))
 sys.path.insert(0, str(_PIPELINE_DIR / "sentiment"))
 sys.path.insert(0, str(_PIPELINE_DIR / "final_snapshots"))
+sys.path.insert(0, str(_PIPELINE_DIR / "EDGAR"))
 
 from asset_quarter_builder import (
     _ann_vol,
@@ -42,6 +43,7 @@ from asset_quarter_builder import (
     _trend_consistency,
 )
 from generate_quarterly_json import _add_relative_strength, _add_sentiment_z
+from get_sec_data import filter_filings, next_quarter, quarter_from_month
 from sentiment import (
     add_cross_sectional_z,
     add_surprise_sentiment,
@@ -771,3 +773,165 @@ class TestBalanceSheetDerivedFundamentals:
         else:
             bvps = None
         assert bvps is None
+
+
+# ===================================================================
+# filter_filings — direct-match-over-spillover & dedup tests
+# ===================================================================
+
+def _make_filings(entries):
+    """Build a mock SEC filings dict from a list of filing dicts.
+
+    Each entry: {form, filingDate, accessionNumber, primaryDocument, reportDate}
+    """
+    recent = {
+        "form": [],
+        "filingDate": [],
+        "accessionNumber": [],
+        "primaryDocument": [],
+        "reportDate": [],
+    }
+    for e in entries:
+        recent["form"].append(e["form"])
+        recent["filingDate"].append(e["filingDate"])
+        recent["accessionNumber"].append(e["accessionNumber"])
+        recent["primaryDocument"].append(e["primaryDocument"])
+        recent["reportDate"].append(e.get("reportDate", e["filingDate"]))
+    return {"filings": {"recent": recent}}
+
+
+class TestFilterFilings:
+    """Tests for filter_filings() in get_sec_data.py."""
+
+    def test_direct_match_wins_over_spillover_10k(self):
+        """WMT-style bug: 10-K with fiscal Q1 should direct-match Q1,
+        not spillover to prior Q4, when both targets exist."""
+        filings = _make_filings([{
+            "form": "10-K",
+            "filingDate": "2025-03-14",
+            "accessionNumber": "0000104169-25-000021",
+            "primaryDocument": "wmt-20250131.htm",
+            "reportDate": "2025-01-31",  # fiscal Q1 2025
+        }])
+        targets = [
+            (2024, "Q4"),
+            (2025, "Q1"),
+        ]
+        results = filter_filings(filings, targets, {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2025
+        assert results[0]["matched_quarter"] == "Q1"
+
+    def test_spillover_fires_when_no_direct_match(self):
+        """When only Q4 target exists, spillover should still work
+        for 10-K with fiscal Q1."""
+        filings = _make_filings([{
+            "form": "10-K",
+            "filingDate": "2025-03-14",
+            "accessionNumber": "0000104169-25-000021",
+            "primaryDocument": "wmt-20250131.htm",
+            "reportDate": "2025-01-31",
+        }])
+        targets = [(2024, "Q4")]  # No Q1 2025 target
+        results = filter_filings(filings, targets, {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2024
+        assert results[0]["matched_quarter"] == "Q4"
+
+    def test_no_spillover_for_10q(self):
+        """Spillover must NOT fire for 10-Q filings."""
+        filings = _make_filings([{
+            "form": "10-Q",
+            "filingDate": "2025-05-02",
+            "accessionNumber": "0001018724-25-000036",
+            "primaryDocument": "amzn-20250331.htm",
+            "reportDate": "2025-03-31",  # fiscal Q1 2025
+        }])
+        targets = [(2024, "Q4")]  # 10-Q should NOT spillover
+        results = filter_filings(filings, targets, {"10-Q"})
+        assert len(results) == 0
+
+    def test_accession_dedup_within_single_call(self):
+        """Same accession should only appear once even with multiple targets."""
+        filings = _make_filings([{
+            "form": "10-K",
+            "filingDate": "2025-02-26",
+            "accessionNumber": "0001045810-25-000023",
+            "primaryDocument": "nvda-20250126.htm",
+            "reportDate": "2025-01-26",
+        }])
+        # Cross-product targets that both could match
+        targets = [
+            (2024, "Q1"), (2024, "Q2"), (2024, "Q3"), (2024, "Q4"),
+            (2025, "Q1"), (2025, "Q2"), (2025, "Q3"), (2025, "Q4"),
+        ]
+        results = filter_filings(filings, targets, {"10-K"})
+        assert len(results) == 1
+        # Direct match Q1 2025 should win
+        assert results[0]["matched_year"] == 2025
+        assert results[0]["matched_quarter"] == "Q1"
+
+    def test_multiple_filings_different_quarters(self):
+        """Multiple distinct filings should each match their own quarter."""
+        filings = _make_filings([
+            {
+                "form": "10-Q",
+                "filingDate": "2025-05-02",
+                "accessionNumber": "acc-001",
+                "primaryDocument": "q1.htm",
+                "reportDate": "2025-03-31",
+            },
+            {
+                "form": "10-Q",
+                "filingDate": "2025-08-01",
+                "accessionNumber": "acc-002",
+                "primaryDocument": "q2.htm",
+                "reportDate": "2025-06-30",
+            },
+        ])
+        targets = [(2025, "Q1"), (2025, "Q2")]
+        results = filter_filings(filings, targets, {"10-Q"})
+        assert len(results) == 2
+        quarters = {r["matched_quarter"] for r in results}
+        assert quarters == {"Q1", "Q2"}
+
+    def test_amendment_excluded_by_default(self):
+        """10-K/A should be excluded unless include_amendments=True."""
+        filings = _make_filings([{
+            "form": "10-K/A",
+            "filingDate": "2025-04-01",
+            "accessionNumber": "acc-amend",
+            "primaryDocument": "amend.htm",
+            "reportDate": "2024-12-31",
+        }])
+        targets = [(2024, "Q4")]
+        assert len(filter_filings(filings, targets, {"10-K"})) == 0
+        assert len(filter_filings(filings, targets, {"10-K"},
+                                  include_amendments=True)) == 1
+
+    def test_none_quarter_matches_any_fiscal_quarter(self):
+        """Target with quarter=None should match any fiscal quarter in that year."""
+        filings = _make_filings([{
+            "form": "10-Q",
+            "filingDate": "2025-05-02",
+            "accessionNumber": "acc-003",
+            "primaryDocument": "q.htm",
+            "reportDate": "2025-03-31",
+        }])
+        targets = [(2025, None)]
+        results = filter_filings(filings, targets, {"10-Q"})
+        assert len(results) == 1
+        assert results[0]["matched_quarter"] == "Q1"
+
+    def test_no_match_when_targets_dont_overlap(self):
+        """Filing with fiscal Q3 shouldn't match Q1 or Q2 targets."""
+        filings = _make_filings([{
+            "form": "10-Q",
+            "filingDate": "2025-11-01",
+            "accessionNumber": "acc-004",
+            "primaryDocument": "q3.htm",
+            "reportDate": "2025-09-30",
+        }])
+        targets = [(2025, "Q1"), (2025, "Q2")]
+        results = filter_filings(filings, targets, {"10-Q"})
+        assert len(results) == 0
