@@ -100,6 +100,36 @@ def validate_raw_response(raw: dict) -> CritResult:
     )
 
 
+def validate_batch_response(raw: dict, expected_roles: set[str]) -> dict[str, CritResult]:
+    """Parse and validate a batch CRIT LLM response into per-agent CritResults.
+
+    The batch response is a dict keyed by role name, where each value is
+    the standard single-agent response structure (pillar_scores, diagnostics,
+    explanations).
+
+    Args:
+        raw: The parsed JSON dict from the LLM batch response.
+        expected_roles: Set of role names that must be present.
+
+    Returns:
+        dict mapping role name → CritResult.
+
+    Raises:
+        ValueError: If any expected role is missing from the response.
+        KeyError/ValidationError: Propagated from validate_raw_response()
+            for malformed per-agent sub-dicts.
+    """
+    missing = expected_roles - set(raw.keys())
+    if missing:
+        raise ValueError(
+            f"Batch CRIT response missing roles: {sorted(missing)}"
+        )
+    results: dict[str, CritResult] = {}
+    for role in sorted(expected_roles):
+        results[role] = validate_raw_response(raw[role])
+    return results
+
+
 def aggregate_agent_scores(agent_scores: dict[str, CritResult]) -> RoundCritResult:
     """Aggregate per-agent CritResults into a RoundCritResult.
 

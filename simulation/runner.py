@@ -74,12 +74,23 @@ class AsyncSimulationRunner:
                 merge_tickers=self._config.merge_tickers,
             )
         num_cases = len(templates)
-        logger.info(
-            "Starting simulation '%s': %d episode(s), %d case(s) each.",
-            self._run_name,
-            self._config.num_episodes,
-            num_cases,
-        )
+        num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
+        num_mtm = num_cases - num_decision
+        if num_mtm:
+            logger.info(
+                "Starting simulation '%s': %d episode(s), %d decision case(s) + %d MTM (mark-to-market) each.",
+                self._run_name,
+                self._config.num_episodes,
+                num_decision,
+                num_mtm,
+            )
+        else:
+            logger.info(
+                "Starting simulation '%s': %d episode(s), %d case(s) each.",
+                self._run_name,
+                self._config.num_episodes,
+                num_cases,
+            )
 
         for ep_idx in range(self._config.num_episodes):
             episode_id = f"ep_{ep_idx:03d}"
@@ -119,7 +130,15 @@ class AsyncSimulationRunner:
         decision_point_logs: list[DecisionPointLog] = []
         num_cases = len(templates)
 
-        logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
+        num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
+        num_mtm = num_cases - num_decision
+        if num_mtm:
+            logger.info(
+                "Episode '%s' starting: %d decision case(s) + %d MTM price update(s).",
+                episode_id, num_decision, num_mtm,
+            )
+        else:
+            logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
 
         from datetime import datetime, timezone
         for dp_idx, template in enumerate(templates):

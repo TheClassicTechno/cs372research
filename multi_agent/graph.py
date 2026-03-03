@@ -120,12 +120,14 @@ from .prompts import (
     DATA_ANALYSIS_SYSTEM_PROMPT,
     NEWS_DIGEST_SYSTEM_PROMPT,
     ROLE_SYSTEM_PROMPTS,
+    SYSTEM_CAUSAL_CONTRACT,
     build_critique_prompt,
     build_judge_prompt,
     build_observation_context,
     build_proposal_user_prompt,
     build_revision_prompt,
     get_agreeableness_modifier,
+    get_role_prompts,
 )
 from .prompts.registry import is_modular_mode, get_registry
 
@@ -261,6 +263,66 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
     return "{}"
 
 
+def _compact_user_prompt(user_prompt: str, config: dict) -> str:
+    """Replace the memo body in the user prompt with a compact placeholder.
+
+    Keeps everything before and after the memo (allocation instructions,
+    causal scaffolding, JSON schema) but swaps the large memo text for a
+    one-line summary with tickers and quarter.
+    """
+    # Detect memo start marker
+    memo_start = user_prompt.find("[INFO] QUARTERLY SNAPSHOT MEMO")
+    if memo_start == -1:
+        # Non-memo mode or no memo marker — return as-is
+        return user_prompt
+
+    # Everything before the memo (header: cash, universe, as-of)
+    before = user_prompt[:memo_start]
+
+    # Find the end of the memo: the next section that starts with a known
+    # template block.  These follow the {{ context }} variable.
+    candidates = [
+        "CRITICAL — Evidence citation rules:",
+        "Using the data above",
+        "## Causal Claim Requirements",
+        "## Mandatory Uncertainty Disclosure",
+        "## Causal Reasoning Traps",
+        "## Your Task",
+        "## Financial Context",
+        "Respond with valid JSON",
+    ]
+    memo_end = len(user_prompt)
+    for marker in candidates:
+        idx = user_prompt.find(marker, memo_start)
+        if idx != -1 and idx < memo_end:
+            memo_end = idx
+
+    after = user_prompt[memo_end:]
+
+    # Build compact placeholder
+    roles = config.get("roles", [])
+    universe = ", ".join(t.upper() for t in config.get("_universe", []))
+    if not universe:
+        # Extract universe from the header if not in config
+        import re as _re
+        m = _re.search(r"Allocation universe:\s*(.+)", before)
+        if m:
+            universe = m.group(1).strip()
+
+    quarter = config.get("_invest_quarter", "")
+    if not quarter:
+        m2 = re.search(r"As-of:\s*(\S+)", before)
+        if m2:
+            quarter = m2.group(1)
+
+    placeholder = (
+        f"[MEMO CONTENT — {universe or 'N/A'}, as-of {quarter or 'N/A'}]\n"
+        f"(Full memo omitted from log — {len(user_prompt[memo_start:memo_end]):,} chars)\n\n"
+    )
+
+    return before + placeholder + after
+
+
 def _log_prompt(
     config: dict,
     role: str,
@@ -269,22 +331,26 @@ def _log_prompt(
     system_prompt: str,
     user_prompt: str,
 ) -> None:
-    """Log the full rendered system + user prompt via the debate.prompts logger.
+    """Log the rendered system + user prompt via the debate.prompts logger.
 
     Activated by config["log_rendered_prompts"] = True.  Emits at INFO level
     so it's visible with default logging.  The dedicated logger name
     ("debate.prompts") lets users filter prompt output separately from
     debate progress and PID metrics.
+
+    The memo body in user prompts is replaced with a compact placeholder
+    (tickers + quarter) to avoid flooding the log with 80K+ chars.
     """
     if not config.get("log_rendered_prompts"):
         return
+    display_prompt = _compact_user_prompt(user_prompt, config)
     prompt_logger.info(
         "\n%s\n"
         "  %s | Round %d | %s\n"
         "%s\n"
         "--- SYSTEM PROMPT ---\n"
         "%s\n"
-        "--- USER PROMPT ---\n"
+        "--- USER PROMPT (%d chars, showing compact) ---\n"
         "%s\n"
         "%s",
         "=" * 72,
@@ -293,7 +359,8 @@ def _log_prompt(
         role.upper(),
         "-" * 72,
         system_prompt,
-        user_prompt,
+        len(user_prompt),
+        display_prompt,
         "=" * 72,
     )
 
@@ -873,11 +940,20 @@ def propose_node(state: DebateState) -> dict:
     turns = []
 
     allocation_mode = config.get("allocation_mode", False)
+    use_cc = config.get("use_system_causal_contract", False)
 
     for i, role in enumerate(roles):
         print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
-        role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
-        user_prompt = build_proposal_user_prompt(context, allocation_mode=allocation_mode)
+        role_prompts = get_role_prompts(use_cc)
+        role_system = role_prompts.get(role, role_prompts.get(AgentRole.MACRO, ""))
+        if use_cc:
+            role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
+        user_prompt = build_proposal_user_prompt(
+            context, allocation_mode=allocation_mode,
+            use_system_causal_contract=use_cc,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
+        )
 
         _log_prompt(config, role, "propose", 0, role_system, user_prompt)
 
@@ -962,6 +1038,7 @@ def critique_node(state: DebateState) -> dict:
 
     critiques = []
     turns = []
+    use_cc = config.get("use_system_causal_contract", False)
 
     for i, p in enumerate(source):
         role = p["role"]
@@ -973,6 +1050,8 @@ def critique_node(state: DebateState) -> dict:
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
             allocation_mode=allocation_mode,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         if is_modular_mode(config):
             registry = get_registry(config)
@@ -980,11 +1059,19 @@ def critique_node(state: DebateState) -> dict:
                 role=role, phase="critique",
                 beta=config.get("_current_beta"),
                 user_prompt=prompt,
+                use_system_causal_contract=use_cc,
+                block_order=config.get("system_prompt_block_order"),
+                prompt_file_overrides=config.get("prompt_file_overrides"),
             )
             system_msg = build_result.system_prompt
         else:
+            rp = get_role_prompts(use_cc)
+            role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+            if use_cc:
+                role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
             system_msg = (
-                f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+                role_system
+                + "\n\nProvide explicit, substantive critiques."
                 + get_agreeableness_modifier(agreeableness)
             )
 
@@ -1067,9 +1154,13 @@ def revise_node(state: DebateState) -> dict:
 
         # Build prompts — modular path uses registry with β-driven tone;
         # legacy path uses the original builders.
+        use_cc = config.get("use_system_causal_contract", False)
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
             allocation_mode=allocation_mode,
+            use_system_causal_contract=use_cc,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         if is_modular_mode(config):
             registry = get_registry(config)
@@ -1077,10 +1168,17 @@ def revise_node(state: DebateState) -> dict:
                 role=role, phase="revise",
                 beta=config.get("_current_beta"),
                 user_prompt=prompt,
+                use_system_causal_contract=use_cc,
+                block_order=config.get("system_prompt_block_order"),
+                prompt_file_overrides=config.get("prompt_file_overrides"),
             )
             system_msg = build_result.system_prompt
         else:
-            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+            rp = get_role_prompts(use_cc)
+            role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+            if use_cc:
+                role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
+            system_msg = role_system + "\n\nRevise your proposal based on critiques."
 
         _log_prompt(config, role, "revise", current_round, system_msg, prompt)
 
@@ -1194,8 +1292,17 @@ def make_propose_node(role: str):
         print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
 
         allocation_mode = config.get("allocation_mode", False)
-        role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
-        user_prompt = build_proposal_user_prompt(context, allocation_mode=allocation_mode)
+        use_cc = config.get("use_system_causal_contract", False)
+        rp = get_role_prompts(use_cc)
+        role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+        if use_cc:
+            role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
+        user_prompt = build_proposal_user_prompt(
+            context, allocation_mode=allocation_mode,
+            use_system_causal_contract=use_cc,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
+        )
 
         _log_prompt(config, role, "propose", 0, role_system, user_prompt)
 
@@ -1299,9 +1406,12 @@ def make_critique_node(role: str):
         print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
+        use_cc = config.get("use_system_causal_contract", False)
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
             allocation_mode=allocation_mode,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         if is_modular_mode(config):
             registry = get_registry(config)
@@ -1309,11 +1419,19 @@ def make_critique_node(role: str):
                 role=role, phase="critique",
                 beta=config.get("_current_beta"),
                 user_prompt=prompt,
+                use_system_causal_contract=use_cc,
+                block_order=config.get("system_prompt_block_order"),
+                prompt_file_overrides=config.get("prompt_file_overrides"),
             )
             system_msg = build_result.system_prompt
         else:
+            rp = get_role_prompts(use_cc)
+            role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+            if use_cc:
+                role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
             system_msg = (
-                f"You are the {role.upper()} agent. Provide explicit, substantive critiques."
+                role_system
+                + "\n\nProvide explicit, substantive critiques."
                 + get_agreeableness_modifier(agreeableness)
             )
 
@@ -1408,9 +1526,13 @@ def make_revise_node(role: str):
                         "falsifier": crit.get("falsifier"),
                     })
 
+        use_cc = config.get("use_system_causal_contract", False)
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
             allocation_mode=allocation_mode,
+            use_system_causal_contract=use_cc,
+            section_order=config.get("user_prompt_section_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         if is_modular_mode(config):
             registry = get_registry(config)
@@ -1418,10 +1540,17 @@ def make_revise_node(role: str):
                 role=role, phase="revise",
                 beta=config.get("_current_beta"),
                 user_prompt=prompt,
+                use_system_causal_contract=use_cc,
+                block_order=config.get("system_prompt_block_order"),
+                prompt_file_overrides=config.get("prompt_file_overrides"),
             )
             system_msg = build_result.system_prompt
         else:
-            system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+            rp = get_role_prompts(use_cc)
+            role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+            if use_cc:
+                role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
+            system_msg = role_system + "\n\nRevise your proposal based on critiques."
 
         _log_prompt(config, role, "revise", current_round, system_msg, prompt)
 
@@ -1708,9 +1837,13 @@ def judge_node(state: DebateState) -> dict:
 
     # Build prompts — modular path routes through registry for consistent logging;
     # judge gets no tone injection in either path.
+    use_cc = config.get("use_system_causal_contract", False)
     prompt = build_judge_prompt(
         context, revisions_for_judge, critiques_text,
         allocation_mode=allocation_mode,
+        use_system_causal_contract=use_cc,
+        section_order=config.get("user_prompt_section_order"),
+        prompt_file_overrides=config.get("prompt_file_overrides"),
     )
     if is_modular_mode(config):
         registry = get_registry(config)
@@ -1718,6 +1851,9 @@ def judge_node(state: DebateState) -> dict:
             role="judge", phase="judge",
             beta=None,  # No tone injection for judge
             user_prompt=prompt,
+            use_system_causal_contract=use_cc,
+            block_order=config.get("system_prompt_block_order"),
+            prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         system_msg = build_result.system_prompt
     else:
@@ -1725,6 +1861,8 @@ def judge_node(state: DebateState) -> dict:
             system_msg = "You are the Judge. Synthesize the debate and produce a final portfolio allocation with an audited memo."
         else:
             system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+        if use_cc:
+            system_msg = SYSTEM_CAUSAL_CONTRACT + "\n\n" + system_msg
 
     _log_prompt(config, "judge", "judge", 0, system_msg, prompt)
 

@@ -207,13 +207,13 @@ class TestPidMetricsSourceGuards:
         source = inspect.getsource(runner_module)
         assert "pid_metrics_logger.info" in source
 
-    def test_no_scattered_format_strings_in_pid_step(self):
-        """_pid_step must not contain old-style format string logging."""
+    def test_no_scattered_format_strings_in_pid_phase_step(self):
+        """_pid_phase_step must not contain old-style format string logging."""
         import inspect
 
-        source = inspect.getsource(MultiAgentRunner._pid_step)
+        source = inspect.getsource(MultiAgentRunner._pid_phase_step)
         assert "[PID Round %d]" not in source, (
-            "Old-style format string found in _pid_step — "
+            "Old-style format string found in _pid_phase_step — "
             "PID metrics must be JSON, not printf"
         )
 
@@ -237,81 +237,83 @@ class TestPidMetricsSourceGuards:
 # ── JSON round structure ─────────────────────────────────────────────────────
 
 
-class TestPidJsonRoundStructure:
-    """Run a mock PID debate and validate per-round JSON objects."""
+class TestPidJsonPhaseStructure:
+    """Run a mock PID debate and validate per-phase JSON objects."""
 
     @pytest.fixture(autouse=True)
     def _run_debate(self):
         runner = _make_pid_runner(max_rounds=2)
         self.logs = _capture_pid_logs(runner)
-        self.rounds = [l for l in self.logs if l.get("type") == "pid_round"]
+        self.phases = [l for l in self.logs if l.get("type") == "pid_phase"]
         self.summaries = [l for l in self.logs if l.get("type") == "pid_summary"]
 
-    def test_at_least_one_round_logged(self):
-        assert len(self.rounds) >= 1
+    def test_at_least_three_phases_logged(self):
+        # 3 phases per round (propose, critique, revise)
+        assert len(self.phases) >= 3
 
-    def test_round_has_type_field(self):
-        assert all(r["type"] == "pid_round" for r in self.rounds)
+    def test_phase_has_type_field(self):
+        assert all(p["type"] == "pid_phase" for p in self.phases)
 
-    def test_round_has_debate_id(self):
-        for r in self.rounds:
-            assert "debate_id" in r
-            uuid.UUID(r["debate_id"])
+    def test_phase_has_debate_id(self):
+        for p in self.phases:
+            assert "debate_id" in p
+            uuid.UUID(p["debate_id"])
 
-    def test_round_has_round_id(self):
-        for r in self.rounds:
-            assert "round_id" in r
-            uuid.UUID(r["round_id"])
+    def test_phase_has_phase_id(self):
+        for p in self.phases:
+            assert "phase_id" in p
+            uuid.UUID(p["phase_id"])
 
-    def test_round_ids_are_unique(self):
-        ids = [r["round_id"] for r in self.rounds]
+    def test_phase_ids_are_unique(self):
+        ids = [p["phase_id"] for p in self.phases]
         assert len(ids) == len(set(ids))
 
-    def test_all_rounds_share_debate_id(self):
-        ids = {r["debate_id"] for r in self.rounds}
+    def test_all_phases_share_debate_id(self):
+        ids = {p["debate_id"] for p in self.phases}
         assert len(ids) == 1
 
-    def test_round_has_round_number(self):
-        for r in self.rounds:
-            assert isinstance(r["round"], int)
-            assert r["round"] >= 1
+    def test_phase_has_round_number(self):
+        for p in self.phases:
+            assert isinstance(p["round"], int)
+            assert p["round"] >= 1
 
-    def test_round_has_phase_agreeableness(self):
-        for r in self.rounds:
-            pa = r["phase_agreeableness"]
-            assert "propose" in pa
-            assert "critique" in pa
-            assert "revise" in pa
+    def test_phase_has_phase_name(self):
+        for p in self.phases:
+            assert p["phase"] in ("propose", "critique", "revise")
 
-    def test_round_has_tone_bucket(self):
-        for r in self.rounds:
-            assert r["tone_bucket"] in ("collaborative", "balanced", "adversarial")
+    def test_phase_has_beta_in(self):
+        for p in self.phases:
+            assert isinstance(p["beta_in"], (int, float))
+
+    def test_phase_has_tone_bucket(self):
+        for p in self.phases:
+            assert p["tone_bucket"] in ("collaborative", "balanced", "adversarial")
 
     # ── crit section ──
 
     def test_crit_has_rho_bar(self):
-        for r in self.rounds:
-            assert isinstance(r["crit"]["rho_bar"], float)
+        for p in self.phases:
+            assert isinstance(p["crit"]["rho_bar"], float)
 
     def test_crit_has_per_agent_scores(self):
-        for r in self.rounds:
-            agents = r["crit"]["agents"]
+        for p in self.phases:
+            agents = p["crit"]["agents"]
             assert len(agents) >= 1
             for role, data in agents.items():
                 assert "rho_i" in data
                 assert isinstance(data["rho_i"], float)
 
     def test_crit_has_pillar_scores(self):
-        for r in self.rounds:
-            for role, data in r["crit"]["agents"].items():
+        for p in self.phases:
+            for role, data in p["crit"]["agents"].items():
                 pillars = data["pillars"]
                 for key in ("IC", "ES", "TA", "CI"):
                     assert key in pillars, f"Missing pillar {key} for {role}"
                     assert isinstance(pillars[key], float)
 
     def test_crit_has_diagnostics(self):
-        for r in self.rounds:
-            for role, data in r["crit"]["agents"].items():
+        for p in self.phases:
+            for role, data in p["crit"]["agents"].items():
                 diag = data["diagnostics"]
                 for key in ("contradictions", "unsupported_claims",
                             "conclusion_drift", "causal_overreach"):
@@ -321,34 +323,34 @@ class TestPidJsonRoundStructure:
     # ── pid section ──
 
     def test_pid_has_control_terms(self):
-        for r in self.rounds:
-            pid = r["pid"]
+        for p in self.phases:
+            pid = p["pid"]
             for key in ("e_t", "p_term", "i_term", "d_term", "u_t"):
                 assert key in pid, f"Missing PID term {key}"
                 assert isinstance(pid[key], (int, float))
 
     def test_pid_has_beta_transition(self):
-        for r in self.rounds:
-            pid = r["pid"]
+        for p in self.phases:
+            pid = p["pid"]
             assert "beta_old" in pid
             assert "beta_new" in pid
             assert 0.0 <= pid["beta_new"] <= 1.0
 
     def test_pid_has_state(self):
-        for r in self.rounds:
-            pid = r["pid"]
+        for p in self.phases:
+            pid = p["pid"]
             assert "integral" in pid
             assert "e_prev" in pid
 
     def test_pid_has_quadrant(self):
-        for r in self.rounds:
-            assert r["pid"]["quadrant"] in (
+        for p in self.phases:
+            assert p["pid"]["quadrant"] in (
                 "stuck", "chaotic", "converged", "healthy", ""
             )
 
     def test_pid_has_signals(self):
-        for r in self.rounds:
-            pid = r["pid"]
+        for p in self.phases:
+            pid = p["pid"]
             assert isinstance(pid["div_signal"], bool)
             assert isinstance(pid["qual_signal"], bool)
             assert isinstance(pid["sycophancy"], int)
@@ -356,22 +358,22 @@ class TestPidJsonRoundStructure:
     # ── divergence section ──
 
     def test_divergence_has_js_and_ov(self):
-        for r in self.rounds:
-            div = r["divergence"]
+        for p in self.phases:
+            div = p["divergence"]
             assert isinstance(div["js"], float)
             assert isinstance(div["ov"], (int, float))
 
     def test_divergence_has_agent_confidences(self):
-        for r in self.rounds:
-            confs = r["divergence"]["agent_confidences"]
+        for p in self.phases:
+            confs = p["divergence"]["agent_confidences"]
             assert isinstance(confs, dict)
             assert len(confs) >= 1
             for role, val in confs.items():
                 assert isinstance(val, (int, float))
 
     def test_divergence_has_agent_evidence_ids(self):
-        for r in self.rounds:
-            ev = r["divergence"]["agent_evidence_ids"]
+        for p in self.phases:
+            ev = p["divergence"]["agent_evidence_ids"]
             assert isinstance(ev, dict)
 
 
@@ -385,7 +387,7 @@ class TestPidJsonSummaryStructure:
     def _run_debate(self):
         runner = _make_pid_runner(max_rounds=2)
         self.logs = _capture_pid_logs(runner)
-        self.rounds = [l for l in self.logs if l.get("type") == "pid_round"]
+        self.phases = [l for l in self.logs if l.get("type") == "pid_phase"]
         self.summaries = [l for l in self.logs if l.get("type") == "pid_summary"]
 
     def test_exactly_one_summary(self):
@@ -395,10 +397,10 @@ class TestPidJsonSummaryStructure:
         s = self.summaries[0]
         uuid.UUID(s["debate_id"])
 
-    def test_summary_debate_id_matches_rounds(self):
+    def test_summary_debate_id_matches_phases(self):
         s = self.summaries[0]
-        for r in self.rounds:
-            assert r["debate_id"] == s["debate_id"]
+        for p in self.phases:
+            assert p["debate_id"] == s["debate_id"]
 
     def test_summary_has_timestamp(self):
         s = self.summaries[0]
@@ -426,24 +428,29 @@ class TestPidJsonSummaryStructure:
     def test_summary_config_has_initial_beta(self):
         assert self.summaries[0]["config"]["initial_beta"] == pytest.approx(0.5)
 
-    def test_summary_rounds_are_round_ids(self):
+    def test_summary_phases_are_phase_ids(self):
         s = self.summaries[0]
-        round_ids_from_rounds = [r["round_id"] for r in self.rounds]
-        assert s["rounds"] == round_ids_from_rounds
+        phase_ids_from_phases = [p["phase_id"] for p in self.phases]
+        assert s["phases"] == phase_ids_from_phases
 
     def test_outcome_has_required_fields(self):
         outcome = self.summaries[0]["outcome"]
-        for key in ("total_rounds", "terminated_early", "termination_reason",
-                     "final_beta", "final_rho_bar", "final_js"):
+        for key in ("total_rounds", "total_phase_steps", "terminated_early",
+                     "termination_reason", "final_beta", "final_rho_bar", "final_js"):
             assert key in outcome
 
     def test_outcome_total_rounds_matches(self):
         outcome = self.summaries[0]["outcome"]
-        assert outcome["total_rounds"] == len(self.rounds)
+        unique_rounds = len({p["round"] for p in self.phases})
+        assert outcome["total_rounds"] == unique_rounds
+
+    def test_outcome_total_phase_steps_matches(self):
+        outcome = self.summaries[0]["outcome"]
+        assert outcome["total_phase_steps"] == len(self.phases)
 
     def test_outcome_termination_reason_valid(self):
         reason = self.summaries[0]["outcome"]["termination_reason"]
-        assert reason in ("js_converged", "max_rounds")
+        assert reason in ("stable_convergence", "max_rounds")
 
 
 # ── UUID correlation ─────────────────────────────────────────────────────────

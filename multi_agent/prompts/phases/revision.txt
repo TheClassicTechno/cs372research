@@ -1,14 +1,18 @@
+---SECTION: preamble---
 You are the {{ role }} agent. You received critiques on your proposal.
 
+---SECTION: context---
 ## Market Context
 {{ context }}
 
+---SECTION: agent_data---
 ## Your Original Proposal
 {{ my_proposal }}
 
 ## Critiques You Received
 {{ critiques_text }}
 
+---SECTION: task---
 ## Your Task
 Carefully consider each critique. You may:
 - Adjust orders (size, direction) if critiques genuinely changed your view
@@ -20,9 +24,11 @@ Carefully consider each critique. You may:
 IMPORTANT: Do not change your view just to be agreeable. Only revise if the critique
 identifies a genuine flaw in your reasoning.
 
+---SECTION: scaffolding---
 {{ causal_claim_format }}
 {{ forced_uncertainty }}
 
+---SECTION: output_format---
 Respond with valid JSON only:
 {% raw %}{
   "orders": [{"ticker": "...", "side": "buy"|"sell", "size": N}],

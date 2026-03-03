@@ -114,6 +114,12 @@ def _parse_args() -> argparse.Namespace:
         help="List all available tickers in the dataset and exit.",
     )
     parser.add_argument(
+        "--dump-prompts",
+        action="store_true",
+        help="Print the full system + user prompts for one propose round "
+        "(all roles) and exit. No LLM calls are made.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -132,6 +138,107 @@ def _setup_logging(level: str) -> None:
     )
 
 
+def _dump_prompts(config: SimulationConfig) -> None:
+    """Print full system + user prompts for one propose round and exit."""
+    from multi_agent.config import AgentRole, DebateConfig
+    from multi_agent.models import Observation
+    from multi_agent.prompts import (
+        ROLE_SYSTEM_PROMPTS,
+        SYSTEM_CAUSAL_CONTRACT,
+        build_observation_context,
+        build_proposal_user_prompt,
+        get_role_prompts,
+    )
+    from simulation.feature_engineering import build_observation
+
+    # --- Load one case ---
+    if config.case_format == "memo":
+        from simulation.memo_loader import load_memo_cases
+        cases = load_memo_cases(
+            config.dataset_path,
+            invest_quarter=config.invest_quarter,
+            memo_format=config.memo_format,
+            tickers=config.tickers,
+        )
+    else:
+        from simulation.case_loader import load_case_templates
+        cases = load_case_templates(
+            config.dataset_path,
+            top_n_news=config.top_n_news,
+            ticker_filter=config.tickers,
+            quarters=config.quarters,
+            merge_tickers=config.merge_tickers,
+        )
+
+    if not cases:
+        print("ERROR: No cases found for the given config.")
+        return
+
+    case = cases[0]
+    obs = build_observation(case)
+
+    # --- Build enriched context (same logic as build_context_node) ---
+    allocation_mode = config.agent.allocation_mode
+    if allocation_mode:
+        header = (
+            f"## Portfolio Allocation Task\n"
+            f"- Cash to allocate: ${obs.portfolio_state.cash:,.2f}\n"
+            f"- Allocation universe: {', '.join(obs.universe)}\n"
+            f"- As-of: {obs.timestamp}\n"
+        )
+        memo_context = obs.text_context or ""
+        context = header + "\n" + memo_context
+    else:
+        context = build_observation_context(obs)
+
+    # --- Resolve roles ---
+    role_strs = config.agent.debate_roles or ["macro", "value", "risk", "technical"]
+    roles = []
+    for r in role_strs:
+        try:
+            roles.append(AgentRole(r.lower()))
+        except ValueError:
+            pass
+    if not roles:
+        roles = [AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL]
+
+    use_cc = config.agent.use_system_causal_contract
+
+    # --- Build and print prompts ---
+    sep = "=" * 80
+
+    print(f"\n{sep}")
+    print(f"  PROMPT DUMP — {len(roles)} roles, allocation_mode={allocation_mode}, "
+          f"use_system_causal_contract={use_cc}")
+    print(f"{sep}\n")
+
+    rp = get_role_prompts(use_cc)
+    user_prompt = build_proposal_user_prompt(
+        context,
+        allocation_mode=allocation_mode,
+        use_system_causal_contract=use_cc,
+    )
+
+    for role in roles:
+        role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
+        if use_cc:
+            role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
+
+        print(f"\n{'─' * 80}")
+        print(f"  ROLE: {role.value.upper()}")
+        print(f"{'─' * 80}")
+
+        print(f"\n┌── SYSTEM PROMPT ({len(role_system)} chars) ──┐\n")
+        print(role_system)
+
+        print(f"\n┌── USER PROMPT ({len(user_prompt)} chars) ──┐\n")
+        print(user_prompt)
+
+    print(f"\n{sep}")
+    print(f"  END PROMPT DUMP")
+    print(f"{sep}\n")
+
+
 async def _main() -> None:
     args = _parse_args()
     _setup_logging(args.log_level)
@@ -148,6 +255,11 @@ async def _main() -> None:
         print("Available tickers:")
         for t in tickers:
             print(f"  {t}")
+        return
+
+    # --dump-prompts: print full prompts for one propose round and exit.
+    if args.dump_prompts:
+        _dump_prompts(config)
         return
 
     logger.info("Config loaded: agent='%s'", config.agent.agent_system)

@@ -1,4 +1,4 @@
-"""Unit tests for CRIT per-agent scoring logic (CritScorer + rho_bar computation)."""
+"""Unit tests for CRIT batch scoring logic (CritScorer + rho_bar computation)."""
 
 import json
 
@@ -12,9 +12,9 @@ from eval.crit.scorer import CritScorer
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_mock_response(ic=0.8, es=0.7, ta=0.9, ci=0.6):
-    """Build a valid CRIT JSON response string for a single agent."""
-    return json.dumps({
+def _make_single_agent_response(ic=0.8, es=0.7, ta=0.9, ci=0.6):
+    """Build a valid CRIT response dict for a single agent (not JSON-encoded)."""
+    return {
         "pillar_scores": {
             "internal_consistency": ic,
             "evidence_support": es,
@@ -33,28 +33,33 @@ def _make_mock_response(ic=0.8, es=0.7, ta=0.9, ci=0.6):
             "trace_alignment": "Test explanation for TA.",
             "causal_integrity": "Test explanation for CI.",
         },
-    })
+    }
 
 
-def _make_scorer_uniform(response_text: str) -> CritScorer:
-    """Create a CritScorer with a mock LLM that returns the same text for all agents."""
+def _make_batch_response(roles: list[str], **kwargs) -> str:
+    """Build a batch CRIT JSON response string with the same scores for all roles."""
+    agent_data = _make_single_agent_response(**kwargs)
+    return json.dumps({role: agent_data for role in roles})
+
+
+def _make_scorer_uniform(roles: list[str], **kwargs) -> CritScorer:
+    """Create a CritScorer with a mock LLM that returns same scores for all roles."""
+    response_text = _make_batch_response(roles, **kwargs)
     return CritScorer(llm_fn=lambda sys, usr: response_text)
 
 
-def _make_scorer_per_role(role_responses: dict[str, str]) -> CritScorer:
-    """Create a CritScorer that returns different responses per agent role.
+def _make_scorer_per_role(role_scores: dict[str, dict]) -> CritScorer:
+    """Create a CritScorer that returns different scores per agent role.
 
-    The mock LLM inspects the user prompt for 'Agent Under Evaluation: ROLE'
-    to determine which response to return.
+    Args:
+        role_scores: Mapping of role → kwargs for _make_single_agent_response.
     """
-    def _mock_llm(system_prompt: str, user_prompt: str) -> str:
-        for role, response in role_responses.items():
-            if role.upper() in user_prompt:
-                return response
-        # Fallback
-        return list(role_responses.values())[0]
-
-    return CritScorer(llm_fn=_mock_llm)
+    batch = {
+        role: _make_single_agent_response(**scores)
+        for role, scores in role_scores.items()
+    }
+    response_text = json.dumps(batch)
+    return CritScorer(llm_fn=lambda sys, usr: response_text)
 
 
 # Standard multi-agent traces for testing
@@ -76,13 +81,13 @@ MULTI_AGENT_DECISIONS = [
 class TestPerAgentScoring:
     def test_returns_round_crit_result(self):
         """score() returns RoundCritResult, not CritResult."""
-        scorer = _make_scorer_uniform(_make_mock_response(0.8, 0.7, 0.9, 0.6))
+        scorer = _make_scorer_uniform(["macro", "value"], ic=0.8, es=0.7, ta=0.9, ci=0.6)
         result = scorer.score("case", MULTI_AGENT_TRACES, MULTI_AGENT_DECISIONS)
         assert isinstance(result, RoundCritResult)
 
     def test_scores_each_agent_individually(self):
         """Each agent gets its own CritResult in agent_scores."""
-        scorer = _make_scorer_uniform(_make_mock_response(0.8, 0.7, 0.9, 0.6))
+        scorer = _make_scorer_uniform(["macro", "value"], ic=0.8, es=0.7, ta=0.9, ci=0.6)
         result = scorer.score("case", MULTI_AGENT_TRACES, MULTI_AGENT_DECISIONS)
         assert "macro" in result.agent_scores
         assert "value" in result.agent_scores
@@ -91,8 +96,8 @@ class TestPerAgentScoring:
     def test_different_scores_per_agent(self):
         """Different agents can receive different CRIT scores."""
         scorer = _make_scorer_per_role({
-            "macro": _make_mock_response(1.0, 1.0, 1.0, 1.0),  # ρ_i = 1.0
-            "value": _make_mock_response(0.0, 0.0, 0.0, 0.0),  # ρ_i = 0.0
+            "macro": {"ic": 1.0, "es": 1.0, "ta": 1.0, "ci": 1.0},
+            "value": {"ic": 0.0, "es": 0.0, "ta": 0.0, "ci": 0.0},
         })
         result = scorer.score("case", MULTI_AGENT_TRACES, MULTI_AGENT_DECISIONS)
         assert result.agent_scores["macro"].rho_bar == 1.0
@@ -102,8 +107,8 @@ class TestPerAgentScoring:
     def test_rho_bar_is_mean_of_per_agent_rho_bars(self):
         """ρ̄ = 1/n Σ_i ρ_i per RAudit Algorithm 1 line 8."""
         scorer = _make_scorer_per_role({
-            "macro": _make_mock_response(0.8, 0.8, 0.8, 0.8),  # ρ_i = 0.8
-            "value": _make_mock_response(0.4, 0.4, 0.4, 0.4),  # ρ_i = 0.4
+            "macro": {"ic": 0.8, "es": 0.8, "ta": 0.8, "ci": 0.8},
+            "value": {"ic": 0.4, "es": 0.4, "ta": 0.4, "ci": 0.4},
         })
         result = scorer.score("case", MULTI_AGENT_TRACES, MULTI_AGENT_DECISIONS)
         expected = (0.8 + 0.4) / 2.0
@@ -116,23 +121,23 @@ class TestPerAgentScoring:
 
 class TestRhoBarComputation:
     def test_perfect_scores(self):
-        scorer = _make_scorer_uniform(_make_mock_response(1.0, 1.0, 1.0, 1.0))
+        scorer = _make_scorer_uniform(["macro"], ic=1.0, es=1.0, ta=1.0, ci=1.0)
         result = scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
         assert result.rho_bar == 1.0
 
     def test_zero_scores(self):
-        scorer = _make_scorer_uniform(_make_mock_response(0.0, 0.0, 0.0, 0.0))
+        scorer = _make_scorer_uniform(["macro"], ic=0.0, es=0.0, ta=0.0, ci=0.0)
         result = scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
         assert result.rho_bar == 0.0
 
     def test_mixed_scores_correct_mean(self):
-        scorer = _make_scorer_uniform(_make_mock_response(0.8, 0.6, 1.0, 0.4))
+        scorer = _make_scorer_uniform(["macro"], ic=0.8, es=0.6, ta=1.0, ci=0.4)
         result = scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
         expected = (0.8 + 0.6 + 1.0 + 0.4) / 4.0
         assert abs(result.rho_bar - expected) < 1e-9
 
     def test_boundary_values(self):
-        scorer = _make_scorer_uniform(_make_mock_response(0.0, 1.0, 0.0, 1.0))
+        scorer = _make_scorer_uniform(["macro"], ic=0.0, es=1.0, ta=0.0, ci=1.0)
         result = scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
         assert result.rho_bar == 0.5
 
@@ -143,51 +148,61 @@ class TestRhoBarComputation:
 
 class TestCritScorerErrors:
     def test_invalid_json_raises(self):
-        scorer = _make_scorer_uniform("not valid json at all")
+        scorer = CritScorer(llm_fn=lambda sys, usr: "not valid json at all")
         with pytest.raises(json.JSONDecodeError):
             scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
 
     def test_partial_response_missing_pillar_raises(self):
         incomplete = json.dumps({
-            "pillar_scores": {
-                "internal_consistency": 0.8,
-                # missing other pillars
-            },
-            "diagnostics": {
-                "contradictions_detected": False,
-                "unsupported_claims_detected": False,
-                "conclusion_drift_detected": False,
-                "causal_overreach_detected": False,
-            },
-            "explanations": {
-                "internal_consistency": "ok",
-                "evidence_support": "ok",
-                "trace_alignment": "ok",
-                "causal_integrity": "ok",
-            },
+            "macro": {
+                "pillar_scores": {
+                    "internal_consistency": 0.8,
+                    # missing other pillars
+                },
+                "diagnostics": {
+                    "contradictions_detected": False,
+                    "unsupported_claims_detected": False,
+                    "conclusion_drift_detected": False,
+                    "causal_overreach_detected": False,
+                },
+                "explanations": {
+                    "internal_consistency": "ok",
+                    "evidence_support": "ok",
+                    "trace_alignment": "ok",
+                    "causal_integrity": "ok",
+                },
+            }
         })
-        scorer = _make_scorer_uniform(incomplete)
+        scorer = CritScorer(llm_fn=lambda sys, usr: incomplete)
         with pytest.raises(Exception):  # ValidationError from pydantic
             scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
 
     def test_empty_json_object_raises(self):
-        scorer = _make_scorer_uniform("{}")
-        with pytest.raises(KeyError):
+        scorer = CritScorer(llm_fn=lambda sys, usr: "{}")
+        with pytest.raises(ValueError, match="missing roles"):
             scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
 
     def test_markdown_code_fence_stripped(self):
         """CritScorer should handle LLM output wrapped in markdown code fences."""
-        inner = _make_mock_response(0.7, 0.7, 0.7, 0.7)
+        inner = _make_batch_response(["macro"], ic=0.7, es=0.7, ta=0.7, ci=0.7)
         wrapped = f"```json\n{inner}\n```"
-        scorer = _make_scorer_uniform(wrapped)
+        scorer = CritScorer(llm_fn=lambda sys, usr: wrapped)
         result = scorer.score("case", [{"role": "macro"}], [{"role": "macro"}])
         assert abs(result.rho_bar - 0.7) < 1e-9
 
     def test_no_agents_raises(self):
         """Empty traces and decisions should raise ValueError."""
-        scorer = _make_scorer_uniform(_make_mock_response())
+        scorer = _make_scorer_uniform(["macro"])
         with pytest.raises(ValueError, match="No agent roles"):
             scorer.score("case", [], [])
+
+    def test_missing_role_in_batch_raises(self):
+        """Batch response missing a role that traces contain raises ValueError."""
+        # Response only has "macro" but traces include "value" too
+        response = json.dumps({"macro": _make_single_agent_response()})
+        scorer = CritScorer(llm_fn=lambda sys, usr: response)
+        with pytest.raises(ValueError, match="missing roles"):
+            scorer.score("case", MULTI_AGENT_TRACES, MULTI_AGENT_DECISIONS)
 
 
 # ---------------------------------------------------------------------------
@@ -197,8 +212,7 @@ class TestCritScorerErrors:
 class TestCritScorerDeterminism:
     def test_same_inputs_same_outputs(self):
         """Given the same mock LLM, CRIT produces identical results."""
-        response = _make_mock_response(0.75, 0.85, 0.65, 0.55)
-        scorer = _make_scorer_uniform(response)
+        scorer = _make_scorer_uniform(["macro"], ic=0.75, es=0.85, ta=0.65, ci=0.55)
         traces = [{"role": "macro", "content": {"justification": "test"}}]
         decisions = [{"role": "macro", "action_dict": {"orders": []}}]
 

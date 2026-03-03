@@ -22,13 +22,16 @@ once per round.  Between rounds, external controllers can observe the
 state and decide whether to continue, adjust agreeableness, etc.
 
 When PID is enabled, Phase 2 decomposes each round into three separate
-sub-graph invocations (propose, critique, revise) so that agreeableness
-can be adjusted per-phase based on the PID controller's output:
+sub-graph invocations (propose, critique, revise).  CRIT scores and PID
+updates beta after EACH phase, so the updated beta feeds into the next
+phase within the same round:
 
     for t in range(max_rounds):
         state = self._run_round_with_pid(state, t + 1)
-        crit_result = crit_scorer.score(...)
-        pid_result = controller.step(crit_result.rho_bar, js, ov)
+        # Inside _run_round_with_pid:
+        #   propose(β₀) → CRIT → PID.step → β₁
+        #   critique(β₁) → CRIT → PID.step → β₂
+        #   revise(β₂)  → CRIT → PID.step → β₃
         if self.should_terminate(state):
             break
 
@@ -93,6 +96,18 @@ logger = logging.getLogger(__name__)
 pid_metrics_logger = logging.getLogger("pid.metrics")
 pid_metrics_logger.setLevel(logging.INFO)
 pid_llm_logger = logging.getLogger("pid.llm")
+
+
+def _round_floats(obj, ndigits=4):
+    """Recursively round floats in nested dicts/lists for clean JSON output."""
+    if isinstance(obj, float):
+        return round(obj, ndigits)
+    if isinstance(obj, dict):
+        return {k: _round_floats(v, ndigits) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_round_floats(v, ndigits) for v in obj]
+    return obj
+
 
 from .config import AgentRole, DebateConfig
 from .prompts.registry import beta_to_bucket, reset_registry_cache
@@ -198,8 +213,9 @@ class MultiAgentRunner:
         self._pid_controller = None
         self._pid_events: list[PIDEvent] = []
         self._debate_id: str = str(uuid.uuid4())
-        self._pid_round_data: list[dict] = []
-        self._phase_agreeableness: dict = {}
+        self._pid_phase_data: list[dict] = []
+        self._stable_rounds: int = 0
+        self._prev_rho_bar: float | None = None
         self._original_agreeableness = self.config.agreeableness
 
         if self.config.pid_config:
@@ -225,8 +241,9 @@ class MultiAgentRunner:
         """
         self._pid_events = []
         self._debate_id = str(uuid.uuid4())
-        self._pid_round_data = []
-        self._phase_agreeableness = {}
+        self._pid_phase_data = []
+        self._stable_rounds = 0
+        self._prev_rho_bar = None
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -303,25 +320,12 @@ class MultiAgentRunner:
                 state["proposals"] = sorted(state.get("proposals", []), key=lambda p: p["role"])
                 state["critiques"] = sorted(state.get("critiques", []), key=lambda c: c["role"])
 
-            # CRIT + PID step (after full round completes)
-            if self._pid_controller and self._crit_scorer:
-                try:
-                    self._pid_step(state, t + 1)
-                except Exception as exc:
-                    logger.warning(
-                        "CRIT/PID step failed in round %d: %s — "
-                        "continuing with current beta (%.3f)",
-                        t + 1,
-                        exc,
-                        self._pid_controller.beta if self._pid_controller else 0.0,
-                    )
-
             terminated_early = self.should_terminate(state)
             if terminated_early:
                 break
 
         # Emit end-of-debate PID summary
-        if self._pid_controller and self._pid_round_data and self._log_metrics:
+        if self._pid_controller and self._pid_phase_data and self._log_metrics:
             summary = self._build_pid_summary(terminated_early=terminated_early)
             pid_metrics_logger.info(json.dumps(summary, indent=2))
 
@@ -331,88 +335,133 @@ class MultiAgentRunner:
         return state
 
     def _run_round_with_pid(self, state: dict, round_num: int) -> dict:
-        """Run one debate round with per-phase agreeableness control.
+        """Run one debate round with per-phase CRIT scoring and PID control.
 
-        When PID is active, each phase (propose, critique, revise) is
-        invoked as a separate sub-graph so agreeableness can be adjusted
-        between them based on per-phase toggle configuration.
+        Each phase (propose, critique, revise) is invoked as a separate
+        sub-graph.  After each phase, CRIT scores the current state and
+        PID updates beta — so the updated beta feeds into the next phase.
 
         Also injects ``_current_beta`` into config so the modular prompt
-        registry can map β → tone bucket without seeing the numeric value.
+        registry can map beta to tone bucket without seeing the numeric value.
         """
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
 
-        # Propose phase — no tone injection (beta=None for propose)
+        # --- Propose phase (no tone injection) ---
         propose_a = beta if self.config.pid_propose else self._original_agreeableness
         state["config"]["agreeableness"] = propose_a
-        state["config"]["_current_beta"] = None  # No tone for propose
+        state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
 
-        # Critique phase
+        if self._pid_controller and self._crit_scorer:
+            try:
+                self._pid_phase_step(state, round_num, "propose", beta_in=beta)
+                beta = self._pid_controller.beta
+            except Exception as exc:
+                logger.warning(
+                    "CRIT/PID failed in round %d propose: %s — keeping beta %.3f",
+                    round_num, exc, beta,
+                )
+
+        # --- Critique phase ---
         critique_a = beta if self.config.pid_critique else self._original_agreeableness
         state["config"]["agreeableness"] = critique_a
         state["config"]["_current_beta"] = beta if self.config.pid_critique else None
         state = self._critique_graph.invoke(state)
 
-        # Revise phase
+        if self._pid_controller and self._crit_scorer:
+            try:
+                self._pid_phase_step(state, round_num, "critique", beta_in=beta)
+                beta = self._pid_controller.beta
+            except Exception as exc:
+                logger.warning(
+                    "CRIT/PID failed in round %d critique: %s — keeping beta %.3f",
+                    round_num, exc, beta,
+                )
+
+        # --- Revise phase ---
         revise_a = beta if self.config.pid_revise else self._original_agreeableness
         state["config"]["agreeableness"] = revise_a
         state["config"]["_current_beta"] = beta if self.config.pid_revise else None
         state = self._revise_graph.invoke(state)
 
-        # Store for JSON logging in _pid_step
-        self._phase_agreeableness = {
-            "propose": propose_a,
-            "critique": critique_a,
-            "revise": revise_a,
-        }
+        if self._pid_controller and self._crit_scorer:
+            try:
+                self._pid_phase_step(state, round_num, "revise", beta_in=beta)
+            except Exception as exc:
+                logger.warning(
+                    "CRIT/PID failed in round %d revise: %s — keeping beta %.3f",
+                    round_num, exc, self._pid_controller.beta,
+                )
 
         return state
 
-    def _pid_step(self, state: dict, round_num: int) -> None:
-        """Run CRIT scorer + PID controller step after a debate round.
+    # Turn types allowed in CRIT traces for each phase.
+    _PHASE_ALLOWED_TYPES: dict[str, set[str]] = {
+        "propose": {"proposal"},
+        "critique": {"proposal", "critique"},
+        "revise": {"proposal", "critique", "revision"},
+    }
 
-        Per the RAudit paper (Algorithm 1 lines 7-8), CRIT scores each
-        agent individually (ρ_i), then ρ̄ = 1/n Σ_i ρ_i feeds into PID.
+    def _pid_phase_step(
+        self, state: dict, round_num: int, phase: str, *, beta_in: float,
+    ) -> None:
+        """Run CRIT scorer + PID controller step after one debate phase.
+
+        Called after each phase (propose, critique, revise) within a round.
+        Selects appropriate decisions and trace context for the phase:
+          - propose/critique: decisions = proposals
+          - revise: decisions = revisions
+        Traces are filtered to only include turns up to the current phase.
         """
         from eval.PID.sycophancy import jensen_shannon_divergence
+        from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-        # Run CRIT audit (per-agent scoring → RoundCritResult)
+        # --- Select decisions and traces for this phase ---
+        if phase == "revise":
+            decisions = state.get("revisions", state.get("proposals", []))
+        else:
+            decisions = state.get("proposals", [])
+
+        allowed_types = self._PHASE_ALLOWED_TYPES.get(phase, {"proposal", "critique", "revision"})
+        filtered_traces = [
+            t for t in state.get("debate_turns", [])
+            if t.get("type", "") in allowed_types
+        ]
+
+        # --- CRIT audit (per-agent scoring → RoundCritResult) ---
         round_crit = self._crit_scorer.score(
             case_data=state.get("enriched_context", ""),
-            agent_traces=state.get("debate_turns", []),
-            decisions=state.get("revisions", state.get("proposals", [])),
+            agent_traces=filtered_traces,
+            decisions=decisions,
         )
 
-        # Compute JS divergence from agent confidences
-        decisions = state.get("revisions", state.get("proposals", []))
+        # --- JS divergence from agent confidences ---
         confidences = [
             d.get("action_dict", {}).get("confidence", 0.5)
             for d in decisions
         ]
         js = jensen_shannon_divergence(confidences) if len(confidences) >= 2 else 0.0
 
-        # Evidence overlap: average pairwise Jaccard of normalized causal variables
-        from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
-
-        evidence_sets = extract_agent_evidence_spans(decisions)
+        # --- Evidence overlap (average pairwise Jaccard) ---
+        evidence_sets = extract_agent_evidence_spans(
+            decisions, allocation_mode=self.config.allocation_mode,
+        )
         ov = compute_mean_overlap(evidence_sets)
         if ov is None:
             ov = 0.0
 
-        # Guard rho_bar against None/NaN — either would corrupt PID state
+        # Guard rho_bar against None/NaN
         rho_bar = round_crit.rho_bar
         if rho_bar is None or math.isnan(rho_bar):
-            logger.warning("rho_bar is %s — defaulting to 0.0", rho_bar)
+            logger.warning("rho_bar is %s (round %d, %s) — defaulting to 0.0",
+                           rho_bar, round_num, phase)
             rho_bar = 0.0
 
-        # Capture beta BEFORE step() mutates controller state
+        # --- PID controller step ---
         old_beta = self._pid_controller.beta
-
-        # PID step (uses aggregated rho_bar)
         pid_result = self._pid_controller.step(rho_bar, js, ov)
 
-        # Record event
+        # Record PIDEvent
         ctrl_output = ControllerOutput(new_agreeableness=pid_result.beta_new)
         event = PIDEvent(
             round_index=round_num,
@@ -439,25 +488,24 @@ class MultiAgentRunner:
         )
         self._pid_events.append(event)
 
-        # --- Build structured round data & emit JSON ---
+        # --- Structured JSON logging ---
         if self._log_metrics:
-            # Per-agent confidences (used for JS, normally discarded)
             agent_confidences = {}
             for d in decisions:
                 role = d.get("role", "unknown")
                 agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
 
-            # Per-agent evidence IDs (normally aggregated to scalar OV)
             agent_evidence = {
                 role: sorted(spans) for role, spans in evidence_sets.items()
             }
 
-            round_data = {
-                "type": "pid_round",
+            phase_data = {
+                "type": "pid_phase",
                 "debate_id": self._debate_id,
-                "round_id": str(uuid.uuid4()),
+                "phase_id": str(uuid.uuid4()),
                 "round": round_num,
-                "phase_agreeableness": self._phase_agreeableness,
+                "phase": phase,
+                "beta_in": beta_in,
                 "tone_bucket": beta_to_bucket(pid_result.beta_new),
                 "crit": {
                     "rho_bar": round_crit.rho_bar,
@@ -502,13 +550,27 @@ class MultiAgentRunner:
                     "agent_evidence_ids": agent_evidence,
                 },
             }
-            self._pid_round_data.append(round_data)
-            pid_metrics_logger.info(json.dumps(round_data, indent=2))
+
+            # Convergence metrics only meaningful on revise (end-of-round)
+            if phase == "revise":
+                phase_data["convergence"] = {
+                    "stable_rounds": self._stable_rounds,
+                    "delta_rho_actual": (
+                        abs(rho_bar - self._prev_rho_bar)
+                        if self._prev_rho_bar is not None else None
+                    ),
+                    "delta_rho_threshold": self.config.delta_rho,
+                }
+
+            phase_data = _round_floats(phase_data)
+            self._pid_phase_data.append(phase_data)
+            pid_metrics_logger.info(json.dumps(phase_data, indent=2))
 
     def _build_pid_summary(self, *, terminated_early: bool) -> dict:
-        """Assemble end-of-debate JSON summary from accumulated round data."""
+        """Assemble end-of-debate JSON summary from accumulated phase data."""
         pid_cfg = self._pid_controller.config
-        last = self._pid_round_data[-1] if self._pid_round_data else {}
+        last = self._pid_phase_data[-1] if self._pid_phase_data else {}
+        total_rounds = len({d["round"] for d in self._pid_phase_data}) if self._pid_phase_data else 0
         return {
             "type": "pid_summary",
             "debate_id": self._debate_id,
@@ -530,11 +592,12 @@ class MultiAgentRunner:
                 "pid_critique": self.config.pid_critique,
                 "pid_revise": self.config.pid_revise,
             },
-            "rounds": [rd["round_id"] for rd in self._pid_round_data],
+            "phases": [rd["phase_id"] for rd in self._pid_phase_data],
             "outcome": {
-                "total_rounds": len(self._pid_round_data),
+                "total_rounds": total_rounds,
+                "total_phase_steps": len(self._pid_phase_data),
                 "terminated_early": terminated_early,
-                "termination_reason": "js_converged" if terminated_early else "max_rounds",
+                "termination_reason": "stable_convergence" if terminated_early else "max_rounds",
                 "final_beta": last.get("pid", {}).get("beta_new"),
                 "final_rho_bar": last.get("crit", {}).get("rho_bar"),
                 "final_js": last.get("divergence", {}).get("js"),
@@ -582,16 +645,46 @@ class MultiAgentRunner:
         return self.single_round_graph.invoke(state)
 
     def should_terminate(self, state: dict) -> bool:
-        """Check if debate should end early.
+        """Check if debate should end early via stable convergence.
 
-        When PID is enabled, checks convergence via JS divergence.
-        When PID is disabled, always returns False (debates run for max_rounds).
+        Requires ALL of the following for `convergence_window` consecutive
+        rounds:
+          1. quadrant == "converged" (high quality + low diversity)
+          2. JS < epsilon (agents agree)
+          3. |rho_bar(t) - rho_bar(t-1)| < delta_rho (quality plateau)
+
+        Quality alone is insufficient — we require stability over time.
+        When PID is disabled, always returns False.
         """
-        if self._pid_controller and self._pid_events:
-            from eval.PID.termination import check_convergence
-            last_event = self._pid_events[-1]
-            js = last_event.metrics.js_divergence
-            return check_convergence(js, self._pid_controller.config.epsilon)
+        if not (self._pid_controller and self._pid_events):
+            return False
+
+        last = self._pid_events[-1]
+        js = last.metrics.js_divergence
+        rho_bar = last.metrics.rho_bar
+        quadrant = last.pid_step.get("quadrant", "")
+
+        js_ok = js < self._pid_controller.config.epsilon
+        quad_ok = quadrant == "converged"
+        rho_stable = (
+            self._prev_rho_bar is not None
+            and abs(rho_bar - self._prev_rho_bar) < self.config.delta_rho
+        )
+
+        if js_ok and quad_ok and rho_stable:
+            self._stable_rounds += 1
+        else:
+            self._stable_rounds = 0
+
+        self._prev_rho_bar = rho_bar
+
+        if self._stable_rounds >= self.config.convergence_window:
+            logger.info(
+                "Terminating debate: stable convergence for %d consecutive rounds "
+                "(JS=%.5f, rho_bar=%.3f, quadrant=%s)",
+                self._stable_rounds, js, rho_bar, quadrant,
+            )
+            return True
         return False
 
     def run_returning_state(self, observation: Observation) -> dict:

@@ -5,14 +5,13 @@ BLINDNESS: This scorer never sees ground truth, market outcomes, or impact
 scores. It evaluates ONLY the logical structure of the reasoning presented
 in agent traces.
 
-PER-AGENT SCORING: Per the RAudit paper (Section 3.3, Algorithm 1 lines
-7-8), CRIT scores each agent individually (ρ_i), then averages into
-ρ̄ = 1/n Σ_i ρ_i.  Each agent gets its own LLM call so the evaluation
-is independent — one agent's weak reasoning cannot inflate another's score.
+BATCH SCORING: CRIT evaluates all agents in a single LLM call per phase.
+The LLM returns a JSON object keyed by role name, each containing the
+standard pillar/diagnostic/explanation structure. This reduces LLM calls
+from N (one per agent) to 1 per phase — a significant cost/latency win.
 
-WHY THIS FEEDS PID: The PID controller needs a quality signal (rho_bar) to
-determine whether to push agents harder or ease off. CRIT provides this
-signal by measuring reasoning integrity, not outcome correctness.
+The batch response is validated per-agent using the same validate_raw_response()
+logic, then aggregated into ρ̄ = 1/n Σ_i ρ_i for the PID controller.
 """
 
 from __future__ import annotations
@@ -23,20 +22,19 @@ from collections import defaultdict
 from typing import Callable
 
 from eval.crit.prompts import (
-    CRIT_SYSTEM_PROMPT,
-    build_crit_single_agent_prompt,
+    CRIT_BATCH_SYSTEM_PROMPT,
+    build_crit_batch_prompt,
 )
 from eval.crit.schema import (
-    CritResult,
     RoundCritResult,
     aggregate_agent_scores,
-    validate_raw_response,
+    validate_batch_response,
 )
 
 class CritScorer:
     """Blind reasoning quality auditor for multi-agent debate.
 
-    Scores each agent individually (ρ_i), then aggregates into ρ̄.
+    Scores all agents in one LLM call, then aggregates into ρ̄.
 
     Usage:
         scorer = CritScorer(llm_fn=my_llm_caller)
@@ -60,11 +58,10 @@ class CritScorer:
         agent_traces: list[dict],
         decisions: list[dict],
     ) -> RoundCritResult:
-        """Run CRIT audit on one debate round, scoring each agent individually.
+        """Run CRIT audit on one debate round, scoring all agents in one call.
 
-        Per the RAudit paper (Algorithm 1):
-            1. For each agent i, evaluate ρ_i from their traces + decision
-            2. Compute ρ̄ = 1/n Σ_i ρ_i
+        Makes a single LLM call with all agents' traces and decisions,
+        then validates and aggregates the batch response.
 
         Args:
             case_data: Rendered case context (what agents saw).
@@ -86,7 +83,7 @@ class CritScorer:
             role = trace.get("role", "unknown")
             traces_by_role[role].append(trace)
 
-        decisions_by_role: dict[str, dict] = {}
+        decisions_by_role: dict[str, dict | None] = {}
         for dec in decisions:
             role = dec.get("role", "unknown")
             decisions_by_role[role] = dec  # latest decision per role
@@ -96,39 +93,13 @@ class CritScorer:
         if not all_roles:
             raise ValueError("No agent roles found in traces or decisions")
 
-        # Score each agent individually
-        agent_scores: dict[str, CritResult] = {}
-        for role in sorted(all_roles):
-            role_traces = traces_by_role.get(role, [])
-            role_decision = decisions_by_role.get(role)
-            agent_scores[role] = self._score_single_agent(
-                case_data, role, role_traces, role_decision
-            )
-
-        return aggregate_agent_scores(agent_scores)
-
-    def _score_single_agent(
-        self,
-        case_data: str,
-        role: str,
-        agent_traces: list[dict],
-        decision: dict | None,
-    ) -> CritResult:
-        """Run CRIT audit on a single agent's reasoning.
-
-        Args:
-            case_data: Rendered case context.
-            role: Agent role name.
-            agent_traces: This agent's debate turn dicts.
-            decision: This agent's decision dict, or None.
-
-        Returns:
-            CritResult (ρ_i) for this agent.
-        """
-        system_prompt = CRIT_SYSTEM_PROMPT
-        user_prompt = build_crit_single_agent_prompt(
-            case_data, role, agent_traces, decision
+        # Build one batch prompt with all agents
+        system_prompt = CRIT_BATCH_SYSTEM_PROMPT
+        user_prompt = build_crit_batch_prompt(
+            case_data, dict(traces_by_role), decisions_by_role
         )
+
+        # Single LLM call for all agents
         raw_text = self._llm_fn(system_prompt, user_prompt)
 
         # Strip markdown code fences if present
@@ -138,4 +109,8 @@ class CritScorer:
             cleaned = re.sub(r"\n?```\s*$", "", cleaned)
 
         raw_dict = json.loads(cleaned)
-        return validate_raw_response(raw_dict)
+
+        # Validate and parse per-agent results
+        agent_scores = validate_batch_response(raw_dict, all_roles)
+
+        return aggregate_agent_scores(agent_scores)

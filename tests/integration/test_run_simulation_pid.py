@@ -37,7 +37,7 @@ from simulation.runner import AsyncSimulationRunner
 # Mock CRIT response for _call_llm (debate nodes use their own mock helpers)
 # ---------------------------------------------------------------------------
 
-MOCK_CRIT_RESPONSE = json.dumps({
+_CRIT_ENTRY = {
     "pillar_scores": {
         "internal_consistency": 0.8,
         "evidence_support": 0.7,
@@ -56,6 +56,13 @@ MOCK_CRIT_RESPONSE = json.dumps({
         "trace_alignment": "ok",
         "causal_integrity": "ok",
     },
+}
+
+# Batch format: all common roles get the same entry.
+# validate_batch_response only checks expected_roles, so extra roles are fine.
+MOCK_CRIT_RESPONSE = json.dumps({
+    role: _CRIT_ENTRY
+    for role in ["macro", "value", "risk", "technical"]
 })
 
 

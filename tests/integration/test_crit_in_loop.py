@@ -15,9 +15,12 @@ from eval.crit import CritScorer, CritResult, RoundCritResult
 # Mock LLM helper
 # ---------------------------------------------------------------------------
 
-def _mock_crit_llm(ic=0.8, es=0.7, ta=0.9, ci=0.6):
-    """Return a mock LLM function that produces a valid CRIT response."""
-    response = json.dumps({
+ALL_ROLES = ["macro", "value", "risk", "technical"]
+
+
+def _make_crit_entry(ic=0.8, es=0.7, ta=0.9, ci=0.6):
+    """Build a single-agent CRIT response dict."""
+    return {
         "pillar_scores": {
             "internal_consistency": ic,
             "evidence_support": es,
@@ -36,62 +39,27 @@ def _mock_crit_llm(ic=0.8, es=0.7, ta=0.9, ci=0.6):
             "trace_alignment": "Decision follows reasoning.",
             "causal_integrity": "Causal claims are sound.",
         },
-    })
+    }
+
+
+def _mock_crit_llm(ic=0.8, es=0.7, ta=0.9, ci=0.6):
+    """Return a mock LLM function that produces a valid batch CRIT response."""
+    entry = _make_crit_entry(ic, es, ta, ci)
+    response = json.dumps({role: entry for role in ALL_ROLES})
     return lambda sys, usr: response
 
 
 def _mock_crit_llm_per_role(role_scores: dict[str, tuple]):
-    """Return a mock LLM that returns different scores per agent role.
+    """Return a mock LLM that returns different scores per agent role (batch format).
 
     Args:
         role_scores: Mapping of role name → (ic, es, ta, ci) tuple.
     """
-    def _llm_fn(system_prompt: str, user_prompt: str) -> str:
-        for role, (ic, es, ta, ci) in role_scores.items():
-            if role.upper() in user_prompt:
-                return json.dumps({
-                    "pillar_scores": {
-                        "internal_consistency": ic,
-                        "evidence_support": es,
-                        "trace_alignment": ta,
-                        "causal_integrity": ci,
-                    },
-                    "diagnostics": {
-                        "contradictions_detected": False,
-                        "unsupported_claims_detected": False,
-                        "conclusion_drift_detected": False,
-                        "causal_overreach_detected": False,
-                    },
-                    "explanations": {
-                        "internal_consistency": "ok",
-                        "evidence_support": "ok",
-                        "trace_alignment": "ok",
-                        "causal_integrity": "ok",
-                    },
-                })
-        # Fallback — use first role's scores
-        first = list(role_scores.values())[0]
-        return json.dumps({
-            "pillar_scores": {
-                "internal_consistency": first[0],
-                "evidence_support": first[1],
-                "trace_alignment": first[2],
-                "causal_integrity": first[3],
-            },
-            "diagnostics": {
-                "contradictions_detected": False,
-                "unsupported_claims_detected": False,
-                "conclusion_drift_detected": False,
-                "causal_overreach_detected": False,
-            },
-            "explanations": {
-                "internal_consistency": "ok",
-                "evidence_support": "ok",
-                "trace_alignment": "ok",
-                "causal_integrity": "ok",
-            },
-        })
-    return _llm_fn
+    batch = {}
+    for role, (ic, es, ta, ci) in role_scores.items():
+        batch[role] = _make_crit_entry(ic, es, ta, ci)
+    response = json.dumps(batch)
+    return lambda sys, usr: response
 
 
 # ---------------------------------------------------------------------------
@@ -203,37 +171,19 @@ class TestCritInLoop:
         assert r1.rho_bar == r2.rho_bar
         assert r1.agent_scores.keys() == r2.agent_scores.keys()
 
-    def test_llm_called_once_per_agent(self):
-        """The LLM is invoked N times for N agents (not once for all)."""
+    def test_llm_called_once_for_batch(self):
+        """The LLM is invoked once for all agents (batch mode)."""
         call_count = 0
+        entry = _make_crit_entry()
 
         def counting_llm(sys, usr):
             nonlocal call_count
             call_count += 1
-            return json.dumps({
-                "pillar_scores": {
-                    "internal_consistency": 0.8,
-                    "evidence_support": 0.7,
-                    "trace_alignment": 0.9,
-                    "causal_integrity": 0.6,
-                },
-                "diagnostics": {
-                    "contradictions_detected": False,
-                    "unsupported_claims_detected": False,
-                    "conclusion_drift_detected": False,
-                    "causal_overreach_detected": False,
-                },
-                "explanations": {
-                    "internal_consistency": "ok",
-                    "evidence_support": "ok",
-                    "trace_alignment": "ok",
-                    "causal_integrity": "ok",
-                },
-            })
+            return json.dumps({role: entry for role in ALL_ROLES})
 
         scorer = CritScorer(llm_fn=counting_llm)
         scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
-        assert call_count == 2  # one per agent (macro, value)
+        assert call_count == 1  # single batch call for all agents
 
     def test_four_agent_scoring(self):
         """Standard 4-agent debate produces 4 per-agent scores."""

@@ -54,7 +54,7 @@ def normalize_variable(var: str) -> str:
     return s
 
 
-def extract_evidence_spans(decision: dict) -> set[str]:
+def extract_evidence_spans(decision: dict, allocation_mode: bool = False) -> set[str]:
     """Extract evidence identifiers from one agent's decision.
 
     First attempts to extract memo evidence IDs (e.g. [AAPL-RET60], [L1-VIX])
@@ -63,6 +63,8 @@ def extract_evidence_spans(decision: dict) -> set[str]:
 
     Falls back to the legacy path: extracting normalized causal variables from
     ``claims[].variables``, then whitespace-tokenizing ``claim_text`` values.
+    The fallback is skipped in allocation mode — agents must use canonical
+    bracketed IDs; free-text slugs would mask citation failures.
     """
     # --- Try memo evidence IDs first (allocation mode) ---
     action_dict = decision.get("action_dict", {})
@@ -91,6 +93,11 @@ def extract_evidence_spans(decision: dict) -> set[str]:
 
     if ids:
         return ids
+
+    # In allocation mode, don't fall back to normalized slugs —
+    # agents must cite canonical bracketed IDs from the memo.
+    if allocation_mode:
+        return set()
 
     # --- Fallback: legacy claims[].variables path ---
     claims = decision.get("claims", [])
@@ -125,6 +132,7 @@ def extract_evidence_spans(decision: dict) -> set[str]:
 
 def extract_agent_evidence_spans(
     decisions: list[dict],
+    allocation_mode: bool = False,
 ) -> dict[str, set[str]]:
     """Extract per-agent normalized evidence sets from decision dicts.
 
@@ -134,7 +142,7 @@ def extract_agent_evidence_spans(
     result: dict[str, set[str]] = {}
     for dec in decisions:
         role = dec.get("role", "unknown")
-        spans = extract_evidence_spans(dec)
+        spans = extract_evidence_spans(dec, allocation_mode=allocation_mode)
         if role in result:
             result[role] |= spans
         else:

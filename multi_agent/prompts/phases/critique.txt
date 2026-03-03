@@ -1,16 +1,20 @@
+---SECTION: preamble---
 You are the {{ role }} agent in a multi-agent trading debate.
 
 {{ agreeableness_mod }}
 
+---SECTION: context---
 ## Market Context
 {{ context }}
 
+---SECTION: agent_data---
 ## Your Initial Proposal
 {{ my_proposal }}
 
 ## Other Agents' Proposals
 {{ others_text }}
 
+---SECTION: task---
 ## Your Task
 For EACH other agent's proposal:
 1. Identify the core causal claim or assumption you most disagree with
@@ -20,6 +24,7 @@ For EACH other agent's proposal:
 
 Also perform SELF-CRITIQUE: what is the biggest weakness in YOUR OWN proposal?
 
+---SECTION: output_format---
 Respond with valid JSON only:
 {% raw %}{
   "critiques": [

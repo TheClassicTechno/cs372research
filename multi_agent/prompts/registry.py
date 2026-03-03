@@ -31,11 +31,14 @@ from pathlib import Path
 from typing import Any
 
 from ..config import AgentRole
-from . import ROLE_SYSTEM_PROMPTS
+from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts
 
 logger = logging.getLogger("prompt.build")
 
-_TONE_DIR = Path(__file__).resolve().parent / "tone"
+_PROMPT_DIR = Path(__file__).resolve().parent
+_TONE_DIR = _PROMPT_DIR / "tone"
+
+_DEFAULT_BLOCK_ORDER = ["causal_contract", "role_system", "phase_preamble", "tone"]
 
 # Cache for loaded tone files (module-level singleton)
 _tone_cache: dict[str, str] = {}
@@ -44,6 +47,23 @@ _tone_cache: dict[str, str] = {}
 def reset_registry_cache() -> None:
     """Clear the tone file cache. Call at the start of each run()."""
     _tone_cache.clear()
+
+
+def _load_prompt_file(filename: str) -> str:
+    """Load a prompt file by name from the prompts directory.
+
+    Looks first in the main prompts dir, then in tone/ subdirectory.
+    Returns empty string if not found.
+    """
+    path = _PROMPT_DIR / filename
+    if path.exists():
+        return path.read_text()
+    # Fallback: check tone subdirectory
+    tone_path = _TONE_DIR / filename
+    if tone_path.exists():
+        return tone_path.read_text()
+    logger.warning("Prompt file not found: %s", filename)
+    return ""
 
 
 def _load_tone(filename: str) -> str:
@@ -150,6 +170,9 @@ class PromptRegistry:
         phase: str,
         beta: float | None = None,
         user_prompt: str = "",
+        use_system_causal_contract: bool = False,
+        block_order: list[str] | None = None,
+        prompt_file_overrides: dict[str, str] | None = None,
     ) -> PromptBuildResult:
         """Build a modular prompt for a given role and phase.
 
@@ -158,45 +181,89 @@ class PromptRegistry:
             phase: Debate phase ("propose", "critique", "revise", "judge").
             beta: Current PID β value. None = no tone injection.
             user_prompt: The user/task prompt (already rendered by legacy builder).
+            use_system_causal_contract: When True, prepend shared causal contract
+                and use slimmed role prompts.
+            block_order: Custom ordering of system prompt blocks.
+                None → uses _DEFAULT_BLOCK_ORDER.
+            prompt_file_overrides: Override which .txt file to load for a block.
+                Keys like "causal_contract", "role_<rolename>", "phase_preamble_critique".
+                Values are filenames relative to the prompts directory.
 
         Returns:
             PromptBuildResult with assembled system_prompt and forwarded user_prompt.
         """
-        blocks_used = []
-        parts = []
+        overrides = prompt_file_overrides or {}
+        order = block_order if block_order is not None else _DEFAULT_BLOCK_ORDER
 
-        # Block 1: Role system prompt
-        role_system = ROLE_SYSTEM_PROMPTS.get(
-            role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, "")
-        )
-        if phase in ("critique", "revise"):
-            # For critique/revise, use the standard role + phase preamble
-            preamble = _CRITIQUE_PREAMBLE if phase == "critique" else _REVISE_PREAMBLE
-            parts.append(f"You are the {role.upper()} agent. {preamble}")
-            blocks_used.append("role_preamble")
-        elif phase == "judge":
-            parts.append(
-                "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
-            )
-            blocks_used.append("judge_system")
+        # --- Build a dict of block_name → content for all available blocks ---
+        available: dict[str, str] = {}
+
+        # causal_contract (only when enabled)
+        if use_system_causal_contract:
+            override_file = overrides.get("causal_contract")
+            if override_file:
+                available["causal_contract"] = _load_prompt_file(override_file)
+            else:
+                available["causal_contract"] = SYSTEM_CAUSAL_CONTRACT
+
+        # role_system / judge_system
+        if phase == "judge":
+            override_file = overrides.get("judge_system")
+            if override_file:
+                available["judge_system"] = _load_prompt_file(override_file)
+            else:
+                available["judge_system"] = (
+                    "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+                )
+            # Map role_system → judge_system so ordering with "role_system" still works
+            available["role_system"] = available["judge_system"]
         else:
-            # propose: use full role system prompt
-            parts.append(role_system)
-            blocks_used.append("role_system")
+            override_file = overrides.get(f"role_{role}")
+            if override_file:
+                available["role_system"] = _load_prompt_file(override_file)
+            else:
+                rp = get_role_prompts(use_system_causal_contract)
+                available["role_system"] = rp.get(role, rp.get(AgentRole.MACRO, ""))
 
-        # Block 2: Tone injection (critique/revise only, when β is provided)
+        # phase_preamble (critique/revise only)
+        if phase in ("critique", "revise"):
+            override_key = f"phase_preamble_{phase}"
+            override_file = overrides.get(override_key)
+            if override_file:
+                available["phase_preamble"] = _load_prompt_file(override_file)
+            else:
+                available["phase_preamble"] = (
+                    _CRITIQUE_PREAMBLE if phase == "critique" else _REVISE_PREAMBLE
+                )
+
+        # tone (critique/revise only, when β is provided)
         tone_file = ""
         beta_bucket = ""
         if beta is not None and phase in ("critique", "revise"):
             beta_bucket = beta_to_bucket(beta)
             tone_key = (phase, beta_bucket)
-            tone_filename = _TONE_FILES.get(tone_key, "")
-            if tone_filename:
-                tone_text = _load_tone(tone_filename)
-                if tone_text:
-                    parts.append(tone_text)
-                    tone_file = tone_filename
-                    blocks_used.append("tone")
+            override_file = overrides.get(f"tone_{phase}_{beta_bucket}")
+            if override_file:
+                tone_text = _load_prompt_file(override_file)
+            else:
+                tone_filename = _TONE_FILES.get(tone_key, "")
+                tone_text = _load_tone(tone_filename) if tone_filename else ""
+                tone_file = tone_filename
+            if tone_text:
+                available["tone"] = tone_text
+                if not tone_file and not override_file:
+                    pass  # no tone file loaded
+                elif override_file:
+                    tone_file = override_file
+
+        # --- Assemble in specified order, skipping unavailable blocks ---
+        blocks_used = []
+        parts = []
+        for block_name in order:
+            content = available.get(block_name)
+            if content:
+                parts.append(content)
+                blocks_used.append(block_name)
 
         system_prompt = "\n".join(parts)
 

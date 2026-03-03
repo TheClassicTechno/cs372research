@@ -113,6 +113,8 @@ class DebateConfig:
 
     # --- PID convergence ---
     pid_epsilon: float = 0.001  # JS divergence convergence tolerance
+    convergence_window: int = 2  # consecutive stable rounds required for early stop
+    delta_rho: float = 0.02      # rho_bar plateau tolerance for convergence
 
     # --- Per-phase PID intervention toggles ---
     # Controls which debate phases use PID's beta_new as agreeableness.
@@ -136,6 +138,23 @@ class DebateConfig:
     # --- Memo / allocation mode ---
     allocation_mode: bool = False
     skip_pipeline: bool = False
+
+    # --- System-level causal contract ---
+    use_system_causal_contract: bool = False
+
+    # --- Prompt block/section ordering (for ablation experiments) ---
+    system_prompt_block_order: list[str] = field(
+        default_factory=lambda: ["causal_contract", "role_system", "phase_preamble", "tone"]
+    )
+    user_prompt_section_order: list[str] = field(
+        default_factory=lambda: ["preamble", "context", "agent_data", "task", "scaffolding", "output_format"]
+    )
+    # Override which .txt file to load for a given block/section name.
+    # Keys: "causal_contract", "role_<rolename>", "phase_preamble_critique",
+    #        "phase_preamble_revise", "proposal_template", "critique_template",
+    #        "revision_template", "judge_template", etc.
+    # Values: filename relative to multi_agent/prompts/ directory.
+    prompt_file_overrides: dict[str, str] = field(default_factory=dict)
 
     @property
     def evaluation_mode(self) -> str:
@@ -206,6 +225,12 @@ class DebateConfig:
             "pid_critique": self.pid_critique,
             "pid_revise": self.pid_revise,
             "prompt_logging": self.prompt_logging,
+            "convergence_window": self.convergence_window,
+            "delta_rho": self.delta_rho,
             "allocation_mode": self.allocation_mode,
             "skip_pipeline": self.skip_pipeline,
+            "use_system_causal_contract": self.use_system_causal_contract,
+            "system_prompt_block_order": self.system_prompt_block_order,
+            "user_prompt_section_order": self.user_prompt_section_order,
+            "prompt_file_overrides": self.prompt_file_overrides,
         }

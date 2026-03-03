@@ -252,10 +252,10 @@ class TestAdapterInvokeWithPID:
 
     @staticmethod
     def _patch_crit_scorer(agent: DebateAgentSystem) -> None:
-        """Replace CRIT scorer's LLM with a mock that returns valid JSON."""
+        """Replace CRIT scorer's LLM with a mock that returns valid batch JSON."""
         runner = agent._debate_runner
         if runner._crit_scorer:
-            mock_response = json.dumps({
+            entry = {
                 "pillar_scores": {
                     "internal_consistency": 0.8,
                     "evidence_support": 0.7,
@@ -274,7 +274,9 @@ class TestAdapterInvokeWithPID:
                     "trace_alignment": "ok",
                     "causal_integrity": "ok",
                 },
-            })
+            }
+            role_names = [r.value for r in runner.config.roles]
+            mock_response = json.dumps({role: entry for role in role_names})
             runner._crit_scorer._llm_fn = lambda sys, usr: mock_response
 
 

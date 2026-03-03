@@ -170,6 +170,8 @@ class DebateAgentSystem(AgentSystem):
             pid_kd=config.pid_kd,
             pid_rho_star=config.pid_rho_star,
             pid_epsilon=config.pid_epsilon,
+            convergence_window=config.convergence_window,
+            delta_rho=config.delta_rho,
             initial_beta=config.pid_initial_beta,
             pid_propose=config.pid_propose,
             pid_critique=config.pid_critique,
@@ -183,6 +185,7 @@ class DebateAgentSystem(AgentSystem):
             prompt_logging=config.prompt_logging,
             allocation_mode=config.allocation_mode,
             skip_pipeline=config.skip_pipeline,
+            use_system_causal_contract=config.use_system_causal_contract,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

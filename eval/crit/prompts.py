@@ -138,6 +138,148 @@ def build_crit_user_prompt(
     return "\n".join(sections)
 
 
+CRIT_BATCH_SYSTEM_PROMPT = """\
+You are a reasoning quality auditor (CRIT). Your job is to evaluate the \
+logical integrity of arguments produced by multiple trading agents during \
+a structured debate.
+
+You will be given each agent's reasoning trace and trading decision, along \
+with the case context that the agents saw. Evaluate each agent independently \
+— one agent's weak reasoning must not inflate or deflate another's score.
+
+## What you evaluate
+
+You score FOUR pillars of reasoning quality for EACH agent:
+
+1. **Internal Consistency** — Are the agent's claims logically compatible \
+with each other? Does the agent contradict itself within its argument?
+
+2. **Evidence Support** — Are factual claims backed by cited evidence from \
+the case context? Are there unsupported assertions?
+
+3. **Trace Alignment** — Does the final trading decision (buy/sell/hold, \
+sizing, confidence) logically follow from the reasoning presented? Or does \
+the conclusion drift from the argument?
+
+4. **Causal Integrity** — Are causal claims properly scoped? Does the agent \
+distinguish between correlation (L1), intervention (L2), and counterfactual \
+(L3) reasoning? Are causal leaps flagged?
+
+## What you do NOT evaluate
+
+- You do NOT evaluate correctness of predictions or trading outcomes.
+- You do NOT evaluate profitability or market performance.
+- You do NOT reward agreement between agents or penalize disagreement.
+- You do NOT have access to ground truth or actual market outcomes.
+
+## Scoring rubric
+
+Each pillar is scored on a continuous scale [0.0, 1.0]:
+- 0.0 = Severe failure (contradictions, unsupported claims, conclusion drift, causal overreach)
+- 0.5 = Mixed / partial (some issues but also some sound reasoning)
+- 1.0 = Rigorous (internally consistent, well-supported, aligned, causally sound)
+
+## Output format
+
+You MUST respond with a single JSON object (no markdown, no explanation outside the JSON). \
+The object is keyed by agent role name. Each value contains pillar_scores, diagnostics, \
+and explanations:
+
+```json
+{
+  "<role_name>": {
+    "pillar_scores": {
+      "internal_consistency": <float 0.0-1.0>,
+      "evidence_support": <float 0.0-1.0>,
+      "trace_alignment": <float 0.0-1.0>,
+      "causal_integrity": <float 0.0-1.0>
+    },
+    "diagnostics": {
+      "contradictions_detected": <bool>,
+      "unsupported_claims_detected": <bool>,
+      "conclusion_drift_detected": <bool>,
+      "causal_overreach_detected": <bool>
+    },
+    "explanations": {
+      "internal_consistency": "<1-2 sentence explanation>",
+      "evidence_support": "<1-2 sentence explanation>",
+      "trace_alignment": "<1-2 sentence explanation>",
+      "causal_integrity": "<1-2 sentence explanation>"
+    }
+  }
+}
+```
+
+Return one such entry for EVERY agent presented. Do not omit any agent.
+"""
+
+
+def build_crit_batch_prompt(
+    case_data: str,
+    traces_by_role: dict[str, list[dict]],
+    decisions_by_role: dict[str, dict | None],
+) -> str:
+    """Build a CRIT user prompt that evaluates all agents in one call.
+
+    Args:
+        case_data: The enriched context that agents saw (no ground truth).
+        traces_by_role: Mapping of role name → list of debate turn dicts.
+        decisions_by_role: Mapping of role name → decision dict (or None).
+
+    Returns:
+        Formatted user prompt string for batch CRIT scoring.
+    """
+    sections = []
+
+    sections.append("## Case Context\n")
+    sections.append(case_data)
+    sections.append("")
+
+    all_roles = sorted(set(traces_by_role.keys()) | set(decisions_by_role.keys()))
+
+    for role in all_roles:
+        sections.append(f"## Agent: {role.upper()}\n")
+
+        sections.append("### Reasoning Trace\n")
+        role_traces = traces_by_role.get(role, [])
+        if role_traces:
+            for trace in role_traces:
+                trace_type = trace.get("type", "unknown")
+                content = trace.get("content", trace)
+                sections.append(f"**{trace_type.capitalize()}:**")
+                if isinstance(content, dict):
+                    sections.append(json.dumps(content, indent=2))
+                else:
+                    sections.append(str(content))
+                sections.append("")
+        else:
+            sections.append("(No reasoning traces available for this agent.)")
+            sections.append("")
+
+        sections.append("### Trading Decision\n")
+        decision = decisions_by_role.get(role)
+        if decision:
+            action = decision.get("action_dict", decision)
+            if isinstance(action, dict):
+                sections.append(json.dumps(action, indent=2))
+            else:
+                sections.append(str(action))
+        else:
+            sections.append("(No decision available for this agent.)")
+        sections.append("")
+
+    sections.append(
+        "## Instructions\n"
+        "Evaluate the reasoning quality of EACH agent listed above "
+        "across the four pillars: internal_consistency, evidence_support, "
+        "trace_alignment, causal_integrity.\n"
+        "Respond with the JSON object described in your system prompt, "
+        "with one entry per agent keyed by role name."
+    )
+
+    return "\n".join(sections)
+
+
 def build_crit_single_agent_prompt(
     case_data: str,
     role: str,

@@ -185,11 +185,11 @@ class TestPromptTemplatesLoad:
     TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "multi_agent" / "prompts"
 
     @pytest.mark.parametrize("filename", [
-        "proposal_allocation.txt",
-        "critique_allocation.txt",
-        "revision_allocation.txt",
-        "judge_allocation.txt",
-        "allocation_output_instructions.txt",
+        "phases/proposal_allocation.txt",
+        "phases/critique_allocation.txt",
+        "phases/revision_allocation.txt",
+        "phases/judge_allocation.txt",
+        "output_format/allocation_output_instructions.txt",
     ])
     def test_allocation_templates_exist(self, filename):
         assert (self.TEMPLATE_DIR / filename).exists(), f"Missing: {filename}"

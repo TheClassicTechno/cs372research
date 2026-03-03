@@ -29,7 +29,7 @@ def _make_observation() -> Observation:
     )
 
 
-def _make_pid_config(kp=0.05, ki=0.005, kd=0.01, epsilon=0.001) -> PIDConfig:
+def _make_pid_config(kp=0.05, ki=0.005, kd=0.01, epsilon=0.001, rho_star=0.8) -> PIDConfig:
     """Create a PIDConfig with safe (low) gains for testing.
 
     epsilon is set very low (0.001) by default so that convergence
@@ -38,7 +38,7 @@ def _make_pid_config(kp=0.05, ki=0.005, kd=0.01, epsilon=0.001) -> PIDConfig:
     """
     return PIDConfig(
         gains=PIDGains(Kp=kp, Ki=ki, Kd=kd),
-        rho_star=0.8,
+        rho_star=rho_star,
         T_max=20,
         epsilon=epsilon,
     )
@@ -67,34 +67,47 @@ def _make_debate_config(
     )
 
 
+def _make_single_crit_entry():
+    """Build a single-agent CRIT response dict (used inside batch response)."""
+    return {
+        "pillar_scores": {
+            "internal_consistency": 0.8,
+            "evidence_support": 0.7,
+            "trace_alignment": 0.9,
+            "causal_integrity": 0.6,
+        },
+        "diagnostics": {
+            "contradictions_detected": False,
+            "unsupported_claims_detected": False,
+            "conclusion_drift_detected": False,
+            "causal_overreach_detected": False,
+        },
+        "explanations": {
+            "internal_consistency": "No issues.",
+            "evidence_support": "Well supported.",
+            "trace_alignment": "Aligned.",
+            "causal_integrity": "Sound.",
+        },
+    }
+
+
 def _make_runner_with_mock_crit(config: DebateConfig) -> MultiAgentRunner:
     """Create a runner and patch CRIT scorer with a mock LLM.
 
-    The mock CRIT LLM returns fixed pillar scores so tests are deterministic.
+    The mock CRIT LLM returns a batch response (dict keyed by role name)
+    with fixed pillar scores so tests are deterministic. It inspects the
+    user prompt to determine which roles are being evaluated.
     """
     runner = MultiAgentRunner(config)
     if runner._crit_scorer:
-        mock_response = json.dumps({
-            "pillar_scores": {
-                "internal_consistency": 0.8,
-                "evidence_support": 0.7,
-                "trace_alignment": 0.9,
-                "causal_integrity": 0.6,
-            },
-            "diagnostics": {
-                "contradictions_detected": False,
-                "unsupported_claims_detected": False,
-                "conclusion_drift_detected": False,
-                "causal_overreach_detected": False,
-            },
-            "explanations": {
-                "internal_consistency": "No issues.",
-                "evidence_support": "Well supported.",
-                "trace_alignment": "Aligned.",
-                "causal_integrity": "Sound.",
-            },
-        })
-        runner._crit_scorer._llm_fn = lambda sys, usr: mock_response
+        role_names = [r.value for r in config.roles]
+        entry = _make_single_crit_entry()
+
+        def _mock_batch_llm(sys_prompt: str, usr_prompt: str) -> str:
+            # Return batch response with all configured roles
+            return json.dumps({role: entry for role in role_names})
+
+        runner._crit_scorer._llm_fn = _mock_batch_llm
     return runner
 
 
@@ -114,15 +127,15 @@ class TestPIDDisabledByDefault:
 
 
 class TestPIDProducesEvents:
-    def test_pid_events_per_round(self):
-        """With PID config, pid_events has one entry per round."""
+    def test_pid_events_per_phase(self):
+        """With PID config, pid_events has 3 entries per round (one per phase)."""
         pid_config = _make_pid_config()
         config = _make_debate_config(pid_config=pid_config, max_rounds=2)
         runner = _make_runner_with_mock_crit(config)
         obs = _make_observation()
         action, trace = runner.run(obs)
         assert trace.pid_events is not None
-        assert len(trace.pid_events) == 2  # one per round
+        assert len(trace.pid_events) == 6  # 3 phases × 2 rounds
 
 
 class TestPIDAdjustsAgreeableness:
@@ -287,7 +300,7 @@ class TestAllPhaseToggleCombinations:
         obs = _make_observation()
         action, trace = runner.run(obs)
         assert trace.pid_events is not None
-        assert len(trace.pid_events) == 1
+        assert len(trace.pid_events) == 3  # 3 phases × 1 round
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +325,7 @@ class TestPIDWithParallelAgents:
         obs = _make_observation()
         action, trace = runner.run(obs)
         assert trace.pid_events is not None
-        assert len(trace.pid_events) == 1
+        assert len(trace.pid_events) == 3  # 3 phases × 1 round
 
     def test_parallel_pid_multi_round(self):
         """PID works with parallel_agents=True across multiple rounds."""
@@ -331,7 +344,7 @@ class TestPIDWithParallelAgents:
         obs = _make_observation()
         action, trace = runner.run(obs)
         assert trace.pid_events is not None
-        assert len(trace.pid_events) == 2
+        assert len(trace.pid_events) == 6  # 3 phases × 2 rounds
 
 
 # ---------------------------------------------------------------------------
@@ -398,27 +411,54 @@ class TestFlatYAMLPIDConfig:
 
 class TestConvergenceTermination:
     def test_convergence_terminates_early(self):
-        """High epsilon causes early termination when JS is low."""
-        # Mock agents have very similar confidences → near-zero JS.
-        # Setting epsilon high (0.1) should cause termination after round 1.
-        pid_config = _make_pid_config(epsilon=0.1)
-        config = _make_debate_config(pid_config=pid_config, max_rounds=5)
+        """Stable convergence causes early termination.
+
+        Requires: converged quadrant (rho_bar >= rho_star) + JS < epsilon
+        + rho_bar plateau, for convergence_window consecutive rounds.
+
+        Mock CRIT gives rho_bar=0.75 every round. With rho_star=0.7,
+        quadrant is CONVERGED. With epsilon=0.1 and near-zero JS from
+        mock agents, all conditions are met. convergence_window=2 means
+        earliest termination at round 3 (round 2 is first eligible,
+        round 3 completes the window).
+
+        With per-phase PID, each round produces 3 events (propose,
+        critique, revise), so N rounds = N*3 events.
+        """
+        pid_config = _make_pid_config(epsilon=0.1, rho_star=0.7)
+        config = _make_debate_config(pid_config=pid_config, max_rounds=7)
         runner = _make_runner_with_mock_crit(config)
         obs = _make_observation()
         action, trace = runner.run(obs)
-        # Should have terminated before round 5
         assert trace.pid_events is not None
-        assert len(trace.pid_events) < 5
+        # Must terminate before max_rounds (7 rounds × 3 phases = 21 events)
+        assert len(trace.pid_events) < 7 * 3
+        # Terminates by round 3 or 4 → at most 4*3=12 phase events
+        assert len(trace.pid_events) <= 4 * 3
 
     def test_no_convergence_runs_all_rounds(self):
-        """Tiny epsilon prevents early termination."""
+        """Tiny epsilon prevents early termination (JS never drops below it)."""
         pid_config = _make_pid_config(epsilon=0.0001)
         config = _make_debate_config(pid_config=pid_config, max_rounds=3)
         runner = _make_runner_with_mock_crit(config)
         obs = _make_observation()
         action, trace = runner.run(obs)
         assert trace.pid_events is not None
-        assert len(trace.pid_events) == 3
+        assert len(trace.pid_events) == 3 * 3  # 3 rounds × 3 phases
+
+    def test_stuck_quadrant_prevents_termination(self):
+        """When rho_bar < rho_star (STUCK quadrant), no early termination.
+
+        Mock CRIT gives rho_bar=0.75 < rho_star=0.8, so quadrant=STUCK.
+        Even with high epsilon and low JS, termination should not fire.
+        """
+        pid_config = _make_pid_config(epsilon=0.1, rho_star=0.8)
+        config = _make_debate_config(pid_config=pid_config, max_rounds=5)
+        runner = _make_runner_with_mock_crit(config)
+        obs = _make_observation()
+        action, trace = runner.run(obs)
+        assert trace.pid_events is not None
+        assert len(trace.pid_events) == 5 * 3  # all rounds × 3 phases
 
 
 # ---------------------------------------------------------------------------
@@ -452,28 +492,29 @@ class TestInitialBeta:
 # ---------------------------------------------------------------------------
 
 class TestBetaTrajectory:
-    def test_beta_evolves_across_rounds(self):
-        """Beta values in PID events show controller evolution."""
+    def test_beta_evolves_across_phases(self):
+        """Beta values in PID events show controller evolution across phases."""
         pid_config = _make_pid_config()
         config = _make_debate_config(pid_config=pid_config, max_rounds=3)
         runner = _make_runner_with_mock_crit(config)
         obs = _make_observation()
         runner.run(obs)
         betas = [e.pid_step["beta_new"] for e in runner._pid_events]
-        assert len(betas) == 3
+        assert len(betas) == 9  # 3 rounds × 3 phases
         # Each beta should be a valid float in [0, 1]
         for b in betas:
             assert 0.0 <= b <= 1.0
 
     def test_round_indices_sequential(self):
-        """PID events have sequential round indices."""
+        """PID events have sequential round indices (3 per round for 3 phases)."""
         pid_config = _make_pid_config()
         config = _make_debate_config(pid_config=pid_config, max_rounds=3)
         runner = _make_runner_with_mock_crit(config)
         obs = _make_observation()
         runner.run(obs)
         indices = [e.round_index for e in runner._pid_events]
-        assert indices == [1, 2, 3]
+        # Each round index appears 3 times (propose, critique, revise)
+        assert indices == [1, 1, 1, 2, 2, 2, 3, 3, 3]
 
 
 # ---------------------------------------------------------------------------

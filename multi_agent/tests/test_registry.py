@@ -171,6 +171,40 @@ class TestPromptRegistryBuild:
         assert "RISK" in result.system_prompt
         assert "critique" in result.system_prompt.lower() or "Provide" in result.system_prompt
 
+    def test_custom_block_order_reverses_output(self):
+        """Custom block_order changes the assembly order."""
+        result_default = self.registry.build(
+            role="macro", phase="critique", beta=0.9,
+            use_system_causal_contract=True,
+        )
+        result_reversed = self.registry.build(
+            role="macro", phase="critique", beta=0.9,
+            use_system_causal_contract=True,
+            block_order=["tone", "phase_preamble", "role_system", "causal_contract"],
+        )
+        # Both should have same blocks but in different order
+        assert set(result_default.blocks_used) == set(result_reversed.blocks_used)
+        assert result_default.blocks_used != result_reversed.blocks_used
+        assert result_reversed.blocks_used[0] == "tone"
+
+    def test_custom_block_order_subset(self):
+        """Block order with subset of blocks — others excluded."""
+        result = self.registry.build(
+            role="macro", phase="critique", beta=0.9,
+            use_system_causal_contract=True,
+            block_order=["role_system"],
+        )
+        assert result.blocks_used == ["role_system"]
+
+    def test_prompt_file_overrides_role(self):
+        """Override role file via prompt_file_overrides."""
+        result = self.registry.build(
+            role="macro", phase="propose",
+            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+        )
+        assert "role_system" in result.blocks_used
+        # Should load the slim variant
+
 
 # ---------------------------------------------------------------------------
 # get_registry (singleton)

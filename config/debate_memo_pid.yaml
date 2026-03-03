@@ -53,13 +53,16 @@ agent:
   pid_critique: true
   pid_revise: true
 
+  # System-level causal contract (consolidates causal scaffolding)
+  use_system_causal_contract: true
+
   # Logging — see PID metrics and rendered prompts
   pid_log_metrics: true
   pid_log_llm_calls: false
   log_system_prompts: false
   log_user_prompts: false
   log_llm_responses: false
-  log_rendered_prompts: true
+  log_rendered_prompts: false
 
 broker:
   initial_cash: 100000.0

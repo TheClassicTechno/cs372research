@@ -10,6 +10,7 @@ from eval.crit.schema import (
     PillarScores,
     RoundCritResult,
     aggregate_agent_scores,
+    validate_batch_response,
     validate_raw_response,
 )
 
@@ -252,3 +253,76 @@ class TestRoundCritResult:
         assert "agent_scores" in dumped
         assert "macro" in dumped["agent_scores"]
         assert "rho_bar" in dumped
+
+
+# ---------------------------------------------------------------------------
+# validate_batch_response tests
+# ---------------------------------------------------------------------------
+
+class TestValidateBatchResponse:
+    def test_valid_two_agents(self):
+        """Two-agent batch response parses correctly."""
+        raw = {
+            "macro": _make_raw(ic=0.9, es=0.8, ta=0.7, ci=0.6),
+            "value": _make_raw(ic=0.5, es=0.5, ta=0.5, ci=0.5),
+        }
+        result = validate_batch_response(raw, {"macro", "value"})
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"macro", "value"}
+        assert isinstance(result["macro"], CritResult)
+        assert isinstance(result["value"], CritResult)
+        assert result["macro"].rho_bar == (0.9 + 0.8 + 0.7 + 0.6) / 4.0
+        assert result["value"].rho_bar == 0.5
+
+    def test_valid_four_agents(self):
+        """Four-agent batch response parses correctly."""
+        raw = {
+            "macro": _make_raw(ic=0.9, es=0.9, ta=0.9, ci=0.9),
+            "value": _make_raw(ic=0.7, es=0.7, ta=0.7, ci=0.7),
+            "risk": _make_raw(ic=0.5, es=0.5, ta=0.5, ci=0.5),
+            "technical": _make_raw(ic=0.3, es=0.3, ta=0.3, ci=0.3),
+        }
+        roles = {"macro", "value", "risk", "technical"}
+        result = validate_batch_response(raw, roles)
+        assert set(result.keys()) == roles
+
+    def test_missing_role_raises(self):
+        """Missing role in batch response raises ValueError."""
+        raw = {
+            "macro": _make_raw(),
+            # "value" is missing
+        }
+        with pytest.raises(ValueError, match="missing roles"):
+            validate_batch_response(raw, {"macro", "value"})
+
+    def test_extra_roles_ignored(self):
+        """Extra roles in response beyond expected_roles are ignored."""
+        raw = {
+            "macro": _make_raw(),
+            "value": _make_raw(),
+            "extra_agent": _make_raw(),
+        }
+        result = validate_batch_response(raw, {"macro", "value"})
+        assert set(result.keys()) == {"macro", "value"}
+
+    def test_invalid_sub_dict_raises(self):
+        """Invalid pillar scores in one agent propagate as validation error."""
+        raw = {
+            "macro": _make_raw(ic=1.5),  # out of range
+            "value": _make_raw(),
+        }
+        with pytest.raises(ValidationError):
+            validate_batch_response(raw, {"macro", "value"})
+
+    def test_single_agent_batch(self):
+        """Single-agent batch response works."""
+        raw = {"solo": _make_raw(ic=0.6, es=0.6, ta=0.6, ci=0.6)}
+        result = validate_batch_response(raw, {"solo"})
+        assert len(result) == 1
+        assert abs(result["solo"].rho_bar - 0.6) < 1e-9
+
+    def test_empty_expected_roles_raises(self):
+        """Empty expected_roles with non-empty response still returns empty dict."""
+        raw = {"macro": _make_raw()}
+        result = validate_batch_response(raw, set())
+        assert result == {}

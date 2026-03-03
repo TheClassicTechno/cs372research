@@ -108,6 +108,19 @@ class AgentConfig(BaseModel):
         description="JS divergence convergence tolerance. Debate stops early "
         "when JS <= epsilon. Default 0.001 (tight — agents must nearly agree).",
     )
+    convergence_window: int = Field(
+        default=2,
+        ge=1,
+        description="Consecutive stable rounds (converged quadrant + JS < epsilon + "
+        "rho_bar plateau) before early termination.",
+    )
+    delta_rho: float = Field(
+        default=0.02,
+        gt=0.0,
+        le=1.0,
+        description="Rho-bar plateau tolerance for convergence detection. "
+        "Termination requires |rho_bar(t) - rho_bar(t-1)| < delta_rho.",
+    )
     pid_propose: bool = Field(
         default=False,
         description="Whether PID controls agreeableness during propose phase.",
@@ -148,6 +161,31 @@ class AgentConfig(BaseModel):
         default=False,
         description="When True, skip news_digest and data_analysis pipeline nodes. "
         "Auto-set by SimulationConfig when case_format='memo'.",
+    )
+
+    # --- System-level causal contract ---
+    use_system_causal_contract: bool = Field(
+        default=False,
+        description="When True, consolidates causal scaffolding into a shared system contract "
+        "and uses slimmed role prompts. Default False preserves existing prompts.",
+    )
+
+    # --- Prompt block/section ordering (for ablation experiments) ---
+    system_prompt_block_order: list[str] | None = Field(
+        default=None,
+        description="Order of system prompt blocks. "
+        "Default: [causal_contract, role_system, phase_preamble, tone].",
+    )
+    user_prompt_section_order: list[str] | None = Field(
+        default=None,
+        description="Order of user prompt sections. "
+        "Default: [preamble, context, agent_data, task, scaffolding, output_format].",
+    )
+    prompt_file_overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Override which .txt file to load for a given block/section name. "
+        "Keys: 'causal_contract', 'role_<rolename>', 'proposal_template', etc. "
+        "Values: filename relative to multi_agent/prompts/ directory.",
     )
 
 
