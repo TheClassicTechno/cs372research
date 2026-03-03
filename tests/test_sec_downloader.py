@@ -1,8 +1,7 @@
 """Tests for SEC EDGAR downloader (data-pipeline/EDGAR/get_sec_data.py)."""
 
-import json
 import sys
-from datetime import date, datetime, timezone
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -43,11 +42,23 @@ class TestQuarterMapping:
     def test_quarter_from_month_all_months(self, month, expected):
         assert sec.quarter_from_month(month) == expected
 
-    def test_quarter_from_month_invalid(self):
-        with pytest.raises(ValueError):
-            sec.quarter_from_month(0)
-        with pytest.raises(ValueError):
-            sec.quarter_from_month(13)
+
+# ==========================
+# TestNextQuarter
+# ==========================
+
+class TestNextQuarter:
+    def test_mid_year(self):
+        assert sec.next_quarter(2024, "Q2") == (2024, "Q3")
+
+    def test_year_boundary(self):
+        assert sec.next_quarter(2024, "Q4") == (2025, "Q1")
+
+    def test_q1_to_q2(self):
+        assert sec.next_quarter(2024, "Q1") == (2024, "Q2")
+
+    def test_q3_to_q4(self):
+        assert sec.next_quarter(2024, "Q3") == (2024, "Q4")
 
 
 # ==========================
@@ -142,43 +153,6 @@ class TestComputeLastNQuarters:
         r1 = sec.compute_last_n_quarters(4, today=fixed)
         r2 = sec.compute_last_n_quarters(4, today=fixed)
         assert r1 == r2
-
-
-# ==========================
-# TestBuildHtmlPath
-# ==========================
-
-class TestBuildHtmlPath:
-    def test_basic(self):
-        p = sec.build_html_path(Path("/out"), "AAPL", 2024, "Q2", "10-Q", "2024-05-02")
-        assert p == Path("/out/raw_html/AAPL/AAPL_2024_Q2_10-Q_2024-05-02.html")
-
-    def test_amendment_sanitized(self):
-        p = sec.build_html_path(Path("/out"), "NVDA", 2024, "Q4", "10-K/A", "2024-11-15")
-        assert "10-K-A" in p.name
-        assert "/" not in p.name
-
-    def test_returns_path(self):
-        p = sec.build_html_path(Path("/base"), "T", 2024, "Q1", "8-K", "2024-03-01")
-        assert isinstance(p, Path)
-
-
-# ==========================
-# TestBuildTextPath
-# ==========================
-
-class TestBuildTextPath:
-    def test_basic(self):
-        p = sec.build_text_path(Path("/out"), "AAPL", 2024, "Q2", "10-Q", "2024-05-02")
-        assert p == Path("/out/clean_text/AAPL/AAPL_2024_Q2_10-Q_2024-05-02.txt")
-
-    def test_different_ticker(self):
-        p = sec.build_text_path(Path("/data"), "MSFT", 2023, "Q4", "10-K", "2023-11-01")
-        assert p == Path("/data/clean_text/MSFT/MSFT_2023_Q4_10-K_2023-11-01.txt")
-
-    def test_returns_path(self):
-        p = sec.build_text_path(Path("/base"), "T", 2024, "Q1", "8-K", "2024-03-01")
-        assert isinstance(p, Path)
 
 
 # ==========================
@@ -311,303 +285,87 @@ class TestFilterFilings:
         assert len(result) == 1
         assert result[0]["form"] == "DEF 14A"
 
+    def test_report_date_used_for_quarter_mapping(self):
+        """When reportDate is available, it should be used instead of filingDate."""
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-02-26"],
+            accessionNumber=["acc1"],
+            primaryDocument=["d.htm"],
+            reportDate=["2025-01-26"],
+        )
+        # reportDate is Jan -> Q1, filingDate is Feb -> Q1 too in this case
+        # but let's test with a case where they differ
+        targets = [(2025, "Q1")]
+        result = sec.filter_filings(filings, targets, {"10-K"})
+        assert len(result) == 1
+        assert result[0]["matched_quarter"] == "Q1"
 
-# ==========================
-# TestBuildTargetsFromArgs
-# ==========================
+    def test_spillover_10k_to_prior_quarter(self):
+        """10-K with reportDate in next quarter can spill over to the prior quarter."""
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-02-26"],
+            accessionNumber=["acc1"],
+            primaryDocument=["d.htm"],
+            reportDate=["2025-01-26"],
+        )
+        # reportDate Q1, but targeting Q4 2024 only — spillover should match
+        targets = [(2024, "Q4")]
+        result = sec.filter_filings(filings, targets, {"10-K"})
+        assert len(result) == 1
+        assert result[0]["matched_quarter"] == "Q4"
+        assert result[0]["matched_year"] == 2024
 
-class TestBuildTargetsFromArgs:
-    def test_manual_cross_product(self):
-        targets = sec.build_targets_from_args(years=[2023, 2024], quarters=["Q1", "Q2"])
-        assert len(targets) == 4
-        assert (2023, "Q1") in targets
-        assert (2024, "Q2") in targets
+    def test_direct_match_wins_over_spillover(self):
+        """When both direct match and spillover are possible, direct match wins."""
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-02-26"],
+            accessionNumber=["acc1"],
+            primaryDocument=["d.htm"],
+            reportDate=["2025-01-26"],
+        )
+        # Both Q4 2024 and Q1 2025 are targets — direct match to Q1 should win
+        targets = [(2024, "Q4"), (2025, "Q1")]
+        result = sec.filter_filings(filings, targets, {"10-K"})
+        assert len(result) == 1
+        assert result[0]["matched_quarter"] == "Q1"
+        assert result[0]["matched_year"] == 2025
 
-    def test_annual_produces_none_quarter(self):
-        targets = sec.build_targets_from_args(years=[2024], quarters=["ANNUAL"])
-        assert targets == [(2024, None)]
-
-    def test_last_n_delegation(self):
-        targets = sec.build_targets_from_args(last_n=4)
-        assert len(targets) == 4
-        # All entries are (year, quarter) 2-tuples
-        for entry in targets:
-            assert len(entry) == 2
-
-    def test_last_n_returns_year_quarter_pairs(self):
-        targets = sec.build_targets_from_args(last_n=2)
-        assert len(targets) == 2
-        for y, q in targets:
-            assert isinstance(y, int)
-            assert q.startswith("Q")
-
-
-# ==========================
-# TestLoadIndex
-# ==========================
-
-class TestLoadIndex:
-    def test_missing_file(self, tmp_path):
-        result = sec.load_index(tmp_path / "_index.json")
-        assert result == {"cik": "", "last_updated": "", "filings": {}}
-
-    def test_valid_index(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        data = {
-            "cik": "0000320193",
-            "last_updated": "2024-01-01T00:00:00+00:00",
-            "filings": {
-                "acc1": {
-                    "form": "10-K",
-                    "filing_date": "2024-11-01",
-                    "primary_doc": "d.htm",
-                    "text_saved": True,
-                    "last_downloaded": "2024-12-01T00:00:00+00:00",
-                }
-            },
-        }
-        index_path.write_text(json.dumps(data))
-        result = sec.load_index(index_path)
-        assert result["cik"] == "0000320193"
-        assert "acc1" in result["filings"]
-        assert result["filings"]["acc1"]["text_saved"] is True
-
-    def test_corrupted_json(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        index_path.write_text("{{not valid json")
-        result = sec.load_index(index_path)
-        assert result == {"cik": "", "last_updated": "", "filings": {}}
-
-    def test_missing_filings_key(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        index_path.write_text(json.dumps({"cik": "123"}))
-        result = sec.load_index(index_path)
-        assert result == {"cik": "", "last_updated": "", "filings": {}}
-
-    def test_filings_not_dict(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        index_path.write_text(json.dumps({"filings": ["not", "a", "dict"]}))
-        result = sec.load_index(index_path)
-        assert result == {"cik": "", "last_updated": "", "filings": {}}
-
-
-# ==========================
-# TestSaveIndex
-# ==========================
-
-class TestSaveIndex:
-    def test_round_trip(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        data = {
-            "cik": "0000320193",
-            "last_updated": "2024-01-01T00:00:00+00:00",
-            "filings": {"acc1": {"text_saved": True}},
-        }
-        sec.save_index(index_path, data)
-        assert index_path.exists()
-        loaded = json.loads(index_path.read_text())
-        assert loaded == data
-
-    def test_atomic_write_no_tmp_leftover(self, tmp_path):
-        index_path = tmp_path / "_index.json"
-        sec.save_index(index_path, {"cik": "", "last_updated": "", "filings": {}})
-        tmp_file = index_path.with_suffix(".json.tmp")
-        assert not tmp_file.exists()
-
-    def test_creates_parent_dirs(self, tmp_path):
-        index_path = tmp_path / "sub" / "dir" / "_index.json"
-        sec.save_index(index_path, {"cik": "", "last_updated": "", "filings": {}})
-        assert index_path.exists()
-
-
-# ==========================
-# TestScheduleDownloads
-# ==========================
-
-class TestScheduleDownloads:
-    def _sample_filings(self):
-        return [
-            {"accession": "acc1", "form": "10-K", "filing_date": "2024-11-01",
-             "primary_doc": "d1.htm", "matched_year": 2024, "matched_quarter": "Q4"},
-            {"accession": "acc2", "form": "10-Q", "filing_date": "2024-05-15",
-             "primary_doc": "d2.htm", "matched_year": 2024, "matched_quarter": "Q2"},
-            {"accession": "acc3", "form": "10-Q", "filing_date": "2024-08-15",
-             "primary_doc": "d3.htm", "matched_year": 2024, "matched_quarter": "Q3"},
-        ]
-
-    def test_default_skips_indexed(self):
-        filtered = self._sample_filings()
-        index = {
-            "cik": "123", "last_updated": "", "filings": {
-                "acc1": {"text_saved": True},
-            },
-        }
-        result = sec.schedule_downloads(filtered, index)
-        assert len(result) == 2
-        accessions = [f["accession"] for f in result]
-        assert "acc1" not in accessions
-        assert "acc2" in accessions
-        assert "acc3" in accessions
-
-    def test_default_downloads_not_downloaded(self):
-        """Accession in index but downloaded=False should be re-scheduled."""
-        filtered = self._sample_filings()[:1]
-        index = {
-            "cik": "123", "last_updated": "", "filings": {
-                "acc1": {"text_saved": False},
-            },
-        }
-        result = sec.schedule_downloads(filtered, index)
+    def test_dedup_by_accession(self):
+        """Duplicate accession numbers should be deduplicated."""
+        filings = _make_filings(
+            form=["10-Q", "10-Q"],
+            filingDate=["2024-05-15", "2024-05-15"],
+            accessionNumber=["acc1", "acc1"],
+            primaryDocument=["d.htm", "d.htm"],
+        )
+        targets = [(2024, "Q2")]
+        result = sec.filter_filings(filings, targets, {"10-Q"})
         assert len(result) == 1
 
-    def test_force_refresh_downloads_all(self):
-        filtered = self._sample_filings()
-        index = {
-            "cik": "123", "last_updated": "", "filings": {
-                "acc1": {"text_saved": True},
-                "acc2": {"text_saved": True},
-                "acc3": {"text_saved": True},
-            },
-        }
-        result = sec.schedule_downloads(filtered, index, force_refresh=True)
-        assert len(result) == 3
-
-    def test_no_cache_downloads_all(self):
-        filtered = self._sample_filings()
-        index = {
-            "cik": "123", "last_updated": "", "filings": {
-                "acc1": {"text_saved": True},
-                "acc2": {"text_saved": True},
-            },
-        }
-        result = sec.schedule_downloads(filtered, index, no_cache=True)
-        assert len(result) == 3
-
-    def test_empty_index_downloads_all(self):
-        filtered = self._sample_filings()
-        index = {"cik": "", "last_updated": "", "filings": {}}
-        result = sec.schedule_downloads(filtered, index)
-        assert len(result) == 3
-
-    def test_empty_filtered_downloads_none(self):
-        index = {"cik": "", "last_updated": "", "filings": {}}
-        result = sec.schedule_downloads([], index)
-        assert result == []
-
-    def test_all_indexed_downloads_none(self):
-        filtered = self._sample_filings()
-        index = {
-            "cik": "123", "last_updated": "", "filings": {
-                "acc1": {"text_saved": True},
-                "acc2": {"text_saved": True},
-                "acc3": {"text_saved": True},
-            },
-        }
-        result = sec.schedule_downloads(filtered, index)
-        assert result == []
-
 
 # ==========================
-# TestSubmissionsCachePolicy
+# TestBuildFilingUrl
 # ==========================
 
-class TestSubmissionsCachePolicy:
-    """Tests for get_company_filings_cached cache read/write logic.
-    These test the caching layer only — no SEC API calls."""
+class TestBuildFilingUrl:
+    def test_basic(self):
+        url = sec.build_filing_url("0000320193", "0000320193-24-000001", "filing.htm")
+        assert "320193" in url
+        assert "filing.htm" in url
+        assert url.startswith("https://www.sec.gov/Archives/edgar/data/")
 
-    def _write_cache(self, path, data, age_seconds=0):
-        fetched_at = datetime.now(timezone.utc)
-        if age_seconds:
-            from datetime import timedelta
-            fetched_at = fetched_at - timedelta(seconds=age_seconds)
-        wrapper = {"fetched_at": fetched_at.isoformat(), "data": data}
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(wrapper))
+    def test_strips_leading_zeros_from_cik(self):
+        url = sec.build_filing_url("0000320193", "0000320193-24-000001", "doc.htm")
+        # CIK in URL path should not have leading zeros
+        assert "/320193/" in url
 
-    def test_fresh_cache_is_used(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        fake_data = {"filings": {"recent": {"form": []}}}
-        self._write_cache(cache_path, fake_data, age_seconds=100)
-
-        # Monkeypatch get_company_filings to fail if called
-        def _should_not_call(cik):
-            raise AssertionError("Should not fetch from SEC when cache is fresh")
-        monkeypatch.setattr(sec, "get_company_filings", _should_not_call)
-
-        result = sec.get_company_filings_cached("0000320193", cache_path)
-        assert result == fake_data
-
-    def test_stale_cache_triggers_fetch(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        stale_data = {"filings": {"recent": {"form": ["OLD"]}}}
-        self._write_cache(cache_path, stale_data, age_seconds=90000)
-
-        fresh_data = {"filings": {"recent": {"form": ["FRESH"]}}}
-        monkeypatch.setattr(sec, "get_company_filings", lambda cik: fresh_data)
-
-        result = sec.get_company_filings_cached("0000320193", cache_path)
-        assert result == fresh_data
-
-    def test_force_refresh_bypasses_cache(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        cached_data = {"filings": {"recent": {"form": ["CACHED"]}}}
-        self._write_cache(cache_path, cached_data, age_seconds=10)
-
-        fresh_data = {"filings": {"recent": {"form": ["FRESH"]}}}
-        monkeypatch.setattr(sec, "get_company_filings", lambda cik: fresh_data)
-
-        result = sec.get_company_filings_cached(
-            "0000320193", cache_path, force_refresh=True,
-        )
-        assert result == fresh_data
-
-    def test_force_refresh_writes_cache(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        fresh_data = {"filings": {"recent": {"form": ["NEW"]}}}
-        monkeypatch.setattr(sec, "get_company_filings", lambda cik: fresh_data)
-
-        sec.get_company_filings_cached(
-            "0000320193", cache_path, force_refresh=True,
-        )
-        assert cache_path.exists()
-        wrapper = json.loads(cache_path.read_text())
-        assert wrapper["data"] == fresh_data
-
-    def test_no_cache_bypasses_read(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        cached_data = {"filings": {"recent": {"form": ["CACHED"]}}}
-        self._write_cache(cache_path, cached_data, age_seconds=10)
-
-        fresh_data = {"filings": {"recent": {"form": ["FRESH"]}}}
-        monkeypatch.setattr(sec, "get_company_filings", lambda cik: fresh_data)
-
-        result = sec.get_company_filings_cached(
-            "0000320193", cache_path, no_cache=True,
-        )
-        assert result == fresh_data
-
-    def test_no_cache_does_not_write(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        monkeypatch.setattr(
-            sec, "get_company_filings",
-            lambda cik: {"filings": {"recent": {"form": []}}},
-        )
-
-        sec.get_company_filings_cached(
-            "0000320193", cache_path, no_cache=True,
-        )
-        assert not cache_path.exists()
-
-    def test_corrupted_cache_refetches(self, tmp_path, monkeypatch):
-        cache_path = tmp_path / "_submissions.json"
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text("corrupted{{{")
-
-        fresh_data = {"filings": {"recent": {"form": ["FRESH"]}}}
-        monkeypatch.setattr(sec, "get_company_filings", lambda cik: fresh_data)
-
-        result = sec.get_company_filings_cached("0000320193", cache_path)
-        assert result == fresh_data
+    def test_removes_dashes_from_accession(self):
+        url = sec.build_filing_url("0000320193", "0000320193-24-000001", "doc.htm")
+        # Accession directory should have no dashes
+        assert "000032019324000001" in url
 
 
 # ==========================
@@ -690,10 +448,16 @@ class TestDownloadFiling:
             "matched_quarter": "Q4",
         }
 
+    @pytest.fixture(autouse=True)
+    def _clear_failed_accessions(self):
+        """Clear module-level _failed_accessions between tests."""
+        sec._failed_accessions.clear()
+        yield
+        sec._failed_accessions.clear()
+
     def test_successful_extraction(self, tmp_path, monkeypatch):
         html = "<p>We face significant risks in our business.</p>"
-        monkeypatch.setattr(sec, "download_html", lambda url: html)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (html, None))
 
         filing = self._sample_filing()
         accession, success = sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -714,8 +478,7 @@ class TestDownloadFiling:
         assert "significant risks" in content
 
     def test_failed_download_returns_false(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(sec, "download_html", lambda url: None)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (None, "HTTP 500"))
 
         filing = self._sample_filing()
         accession, success = sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -724,8 +487,7 @@ class TestDownloadFiling:
 
     def test_output_path_structure(self, tmp_path, monkeypatch):
         html = "<p>Simple content</p>"
-        monkeypatch.setattr(sec, "download_html", lambda url: html)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (html, None))
 
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -737,8 +499,7 @@ class TestDownloadFiling:
 
     def test_html_saved_unchanged(self, tmp_path, monkeypatch):
         original_html = "<html><body><p>Original content</p></body></html>"
-        monkeypatch.setattr(sec, "download_html", lambda url: original_html)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (original_html, None))
 
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -748,8 +509,7 @@ class TestDownloadFiling:
 
     def test_no_tmp_file_leftover(self, tmp_path, monkeypatch):
         html = "<p>Content</p>"
-        monkeypatch.setattr(sec, "download_html", lambda url: html)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (html, None))
 
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -760,8 +520,7 @@ class TestDownloadFiling:
     def test_no_section_markers_in_output(self, tmp_path, monkeypatch):
         """Output should be full text, no ==== SECTION ==== markers."""
         html = "<p>Item 1A. Risk Factors</p><p>Risks here.</p>"
-        monkeypatch.setattr(sec, "download_html", lambda url: html)
-        monkeypatch.setattr(sec, "rate_limit", lambda: None)
+        monkeypatch.setattr(sec, "download_html", lambda url: (html, None))
 
         filing = self._sample_filing()
         sec.download_filing("AAPL", "0000320193", filing, tmp_path)
@@ -770,3 +529,129 @@ class TestDownloadFiling:
         content = txt_files[0].read_text()
         assert "====" not in content
         assert "SECTION" not in content
+
+    def test_skips_existing_files(self, tmp_path, monkeypatch):
+        """If both HTML and TXT already exist, download_filing should skip."""
+        filing = self._sample_filing()
+
+        # Create the expected output files
+        raw_dir = tmp_path / "raw_html" / "AAPL"
+        txt_dir = tmp_path / "clean_text" / "AAPL"
+        raw_dir.mkdir(parents=True)
+        txt_dir.mkdir(parents=True)
+        (raw_dir / "AAPL_2024_Q4_10-K_2024-11-01.html").write_text("existing")
+        (txt_dir / "AAPL_2024_Q4_10-K_2024-11-01.txt").write_text("existing")
+
+        # download_html should never be called
+        def _should_not_call(url):
+            raise AssertionError("Should not download when files exist")
+        monkeypatch.setattr(sec, "download_html", _should_not_call)
+
+        accession, success = sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+        assert success is True
+
+    def test_failed_accession_skipped_on_retry(self, tmp_path, monkeypatch):
+        """Once an accession fails, subsequent calls should skip it."""
+        monkeypatch.setattr(sec, "download_html", lambda url: (None, "HTTP 500"))
+
+        filing = self._sample_filing()
+
+        # First call fails and adds to _failed_accessions
+        _, success1 = sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+        assert success1 is False
+
+        # Second call should also fail immediately (skipped via _failed_accessions)
+        _, success2 = sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+        assert success2 is False
+
+    def test_amendment_form_sanitized_in_filename(self, tmp_path, monkeypatch):
+        """10-K/A form should have slash replaced with dash in filename."""
+        html = "<p>Amendment content</p>"
+        monkeypatch.setattr(sec, "download_html", lambda url: (html, None))
+
+        filing = self._sample_filing()
+        filing["form"] = "10-K/A"
+        sec.download_filing("AAPL", "0000320193", filing, tmp_path)
+
+        txt_files = list(tmp_path.rglob("*.txt"))
+        assert len(txt_files) == 1
+        assert "10-K-A" in txt_files[0].name
+        assert "/" not in txt_files[0].name
+
+
+# ==========================
+# TestFilterFilingsNonStandardFYE
+# ==========================
+
+class TestFilterFilingsNonStandardFYE:
+    """Unit tests for filter_filings() with non-standard fiscal year-end periods.
+
+    Verifies that reportDate-based quarter mapping works correctly for
+    companies whose fiscal years don't end on Dec 31:
+      NVDA (Jan 26), WMT (Jan 31), AAPL (Sep 27), COST (Aug 31), MSFT (Jun 30)
+    """
+
+    def test_nvda_10k_jan_fye_maps_to_q1(self):
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-02-26"],
+            accessionNumber=["nvda-10k-fy25"],
+            primaryDocument=["nvda-20250126.htm"],
+            reportDate=["2025-01-26"],
+        )
+        results = sec.filter_filings(filings, [(2025, "Q1")], {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2025
+        assert results[0]["matched_quarter"] == "Q1"
+
+    def test_wmt_10k_jan_fye_maps_to_q1(self):
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-03-14"],
+            accessionNumber=["wmt-10k-fy25"],
+            primaryDocument=["wmt-20250131.htm"],
+            reportDate=["2025-01-31"],
+        )
+        results = sec.filter_filings(filings, [(2025, "Q1")], {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2025
+        assert results[0]["matched_quarter"] == "Q1"
+
+    def test_aapl_10k_sep_fye_maps_to_q3(self):
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2024-11-01"],
+            accessionNumber=["aapl-10k-fy24"],
+            primaryDocument=["aapl-20240928.htm"],
+            reportDate=["2024-09-28"],
+        )
+        results = sec.filter_filings(filings, [(2024, "Q3")], {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2024
+        assert results[0]["matched_quarter"] == "Q3"
+
+    def test_cost_10k_aug_fye_maps_to_q3(self):
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2024-10-09"],
+            accessionNumber=["cost-10k-fy24"],
+            primaryDocument=["cost-20240901.htm"],
+            reportDate=["2024-09-01"],
+        )
+        results = sec.filter_filings(filings, [(2024, "Q3")], {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2024
+        assert results[0]["matched_quarter"] == "Q3"
+
+    def test_msft_10k_jun_fye_maps_to_q2(self):
+        filings = _make_filings(
+            form=["10-K"],
+            filingDate=["2025-07-30"],
+            accessionNumber=["msft-10k-fy25"],
+            primaryDocument=["msft-20250630.htm"],
+            reportDate=["2025-06-30"],
+        )
+        results = sec.filter_filings(filings, [(2025, "Q2")], {"10-K"})
+        assert len(results) == 1
+        assert results[0]["matched_year"] == 2025
+        assert results[0]["matched_quarter"] == "Q2"

@@ -22,6 +22,7 @@ import argparse
 import datetime as dt
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -39,6 +40,7 @@ _SENTIMENT_DIR = _SCRIPT_DIR / "sentiment" / "data"
 _MACRO_DIR = _SCRIPT_DIR / "macro" / "data"
 _ASSETS_DIR = _SCRIPT_DIR / "quarterly_asset_details" / "data"
 _SNAPSHOT_DIR = _SCRIPT_DIR / "final_snapshots" / "json_data"
+_MEMO_DIR = _SCRIPT_DIR / "final_snapshots" / "memo_data"
 _PROVENANCE_DIR = _SCRIPT_DIR / "provenance"
 
 
@@ -620,6 +622,36 @@ def check_provenance(
     return r
 
 
+def check_fiscal_config(verbose: bool) -> ValidationResult:
+    """Validate that supported_tickers.yaml has fiscal_year_end for every ticker."""
+    r = ValidationResult()
+    try:
+        with open(_SUPPORTED_TICKERS_PATH, "r") as f:
+            data = yaml.safe_load(f)
+    except (OSError, yaml.YAMLError):
+        r.error("Cannot read supported_tickers.yaml")
+        r.print_section("FISCAL CONFIG", verbose)
+        return r
+
+    entries = data.get("supported_tickers", [])
+    bad = 0
+    for entry in entries:
+        symbol = entry.get("symbol", "?")
+        fye = entry.get("fiscal_year_end")
+        if not fye:
+            r.error(f"{symbol} missing fiscal_year_end")
+            bad += 1
+        elif not re.match(r"^\d{2}-\d{2}$", fye):
+            r.error(f"{symbol} bad FYE format: {fye}")
+            bad += 1
+
+    if bad == 0:
+        r.passed(f"All {len(entries)} tickers have valid fiscal_year_end")
+
+    r.print_section("FISCAL CONFIG", verbose)
+    return r
+
+
 def check_fiscal_alignment(
     doc: dict,
     year: int,
@@ -632,6 +664,8 @@ def check_fiscal_alignment(
     ticker_data = doc.get("ticker_data", {})
 
     non_standard = {t: fye for t, fye in fye_map.items() if fye != "12-31"}
+
+    # --- Non-standard FYE: filing_date and fiscal year-end checks ---
 
     for ticker, fye in non_standard.items():
         td = ticker_data.get(ticker)
@@ -681,7 +715,81 @@ def check_fiscal_alignment(
             except (ValueError, KeyError):
                 r.warning(f"{ticker}: could not parse fiscal year-end from {fiscal_period}")
 
+    # --- Period consistency for all tickers ---
+
+    for ticker, td in ticker_data.items():
+        fs = td.get("filing_summary", {})
+        periodic = fs.get("periodic") if isinstance(fs, dict) else None
+        if not periodic:
+            continue
+
+        form = periodic.get("form", "")
+        pt = periodic.get("period_type", "")
+        fp = periodic.get("fiscal_period", "")
+
+        if not fp:
+            r.warning(f"{ticker}: periodic filing missing fiscal_period")
+        if not pt:
+            r.warning(f"{ticker}: periodic filing missing period_type")
+
+        if form in ("10-K", "10-K/A"):
+            if pt and pt != "annual":
+                r.error(f"{ticker}: 10-K has period_type={pt}, expected annual")
+            if fp and not fp.startswith("FY"):
+                r.error(f"{ticker}: 10-K fiscal_period={fp}, expected FY*")
+        elif form in ("10-Q", "10-Q/A"):
+            if pt and pt != "quarterly":
+                r.error(f"{ticker}: 10-Q has period_type={pt}, expected quarterly")
+            if fp and not re.match(r"^\d{4}-Q[1-4]$", fp):
+                r.error(f"{ticker}: 10-Q fiscal_period={fp}, expected YYYY-Q#")
+
     r.print_section("FISCAL ALIGNMENT", verbose)
+    return r
+
+
+def check_memo_fiscal_annotations(
+    year: int,
+    quarter: str,
+    verbose: bool,
+) -> ValidationResult:
+    """Check that non-standard FYE tickers have FYE annotations in memos."""
+    r = ValidationResult()
+    memo_path = _MEMO_DIR / f"memo_{year}_{quarter}.txt"
+
+    if not memo_path.exists():
+        r.print_section("MEMO FISCAL ANNOTATIONS", verbose)
+        return r
+
+    memo_text = memo_path.read_text()
+    fye_map = load_fiscal_year_ends()
+    non_standard = {t: fye for t, fye in fye_map.items() if fye != "12-31"}
+
+    for ticker, fye in non_standard.items():
+        ticker_pattern = f"TICKER: {ticker}"
+        if ticker_pattern not in memo_text:
+            continue
+
+        # Extract this ticker's section
+        idx = memo_text.index(ticker_pattern)
+        next_ticker = memo_text.find("TICKER:", idx + len(ticker_pattern))
+        end_memo = memo_text.find("END OF MEMO", idx)
+        boundaries = [x for x in [next_ticker, end_memo, len(memo_text)] if x > 0]
+        section = memo_text[idx:min(boundaries)]
+
+        # Check for filing summary presence
+        if "Filing Summary" not in section:
+            continue
+
+        # Check for FYE annotation
+        if "Filing Summary (" in section:
+            filing_line = [l for l in section.splitlines() if "Filing Summary (" in l]
+            if filing_line and "not available" not in filing_line[0]:
+                if "FYE:" in section:
+                    r.passed(f"{ticker}: FYE annotation present in memo")
+                else:
+                    r.warning(f"{ticker}: non-standard FYE ticker missing FYE annotation")
+
+    r.print_section("MEMO FISCAL ANNOTATIONS", verbose)
     return r
 
 
@@ -720,6 +828,7 @@ def validate_quarter(year: int, quarter: str, verbose: bool) -> Tuple[int, int, 
         check_cross_sectional(doc, verbose),
         check_provenance(doc, year, quarter, verbose),
         check_fiscal_alignment(doc, year, quarter, verbose),
+        check_memo_fiscal_annotations(year, quarter, verbose),
     ]
 
     total_ok = sum(c.ok for c in checks)
@@ -752,6 +861,12 @@ def main():
     total_ok = 0
     total_warn = 0
     total_fail = 0
+
+    # Global checks (run once)
+    config_result = check_fiscal_config(args.verbose)
+    total_ok += config_result.ok
+    total_warn += config_result.warn
+    total_fail += config_result.fail
 
     for year, quarter in quarters:
         ok, warn, fail = validate_quarter(year, quarter, args.verbose)
