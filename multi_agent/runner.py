@@ -84,10 +84,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Dedicated PID loggers.  Levels are NOT mutated here — instance flags
-# gate whether debug() calls are made, so multiple runners with
-# different pid_log_* settings don't conflict on the singleton.
+# Dedicated PID loggers.  pid.metrics logs at INFO so PID output is
+# visible by default (pid_log_metrics defaults to True).  Instance flags
+# gate whether info() calls are made, so multiple runners with different
+# pid_log_* settings don't conflict on the singleton.
 pid_metrics_logger = logging.getLogger("pid.metrics")
+pid_metrics_logger.setLevel(logging.INFO)
 pid_llm_logger = logging.getLogger("pid.llm")
 
 from .config import AgentRole, DebateConfig
@@ -305,6 +307,12 @@ class MultiAgentRunner:
                     )
 
             if self.should_terminate(state):
+                last_js = self._pid_events[-1].metrics.js_divergence
+                pid_metrics_logger.info(
+                    "[PID] Early termination after round %d: "
+                    "JS divergence %.6f <= epsilon %.4f",
+                    t + 1, last_js, self._pid_controller.config.epsilon,
+                )
                 break
 
         # Phase 3: Judge + trace
@@ -343,7 +351,7 @@ class MultiAgentRunner:
         state = self._revise_graph.invoke(state)
 
         if self._log_metrics:
-            pid_metrics_logger.debug(
+            pid_metrics_logger.info(
                 "[PID Round %d] Per-phase agreeableness: "
                 "propose=%.4f  critique=%.4f  revise=%.4f  (beta=%.4f, original=%.4f)",
                 round_num, propose_a, critique_a, revise_a,
@@ -429,7 +437,7 @@ class MultiAgentRunner:
                 )
             agent_rho_str = "\n".join(agent_rho_lines)
 
-            pid_metrics_logger.debug(
+            pid_metrics_logger.info(
                 "[PID Round %d] Quadrant: %s  div=%s  qual=%s  "
                 "beta: %.4f -> %.4f  bucket: %s",
                 round_num, pid_result.quadrant,
@@ -439,7 +447,7 @@ class MultiAgentRunner:
                 beta_to_bucket(pid_result.beta_new),
             )
 
-            pid_metrics_logger.debug(
+            pid_metrics_logger.info(
                 "[PID Round %d]\n"
                 "  CRIT:     rho_bar=%.4f  rho_star=%.4f  (mean of %d agents)\n"
                 "  Per-agent scores:\n%s\n"
@@ -469,7 +477,7 @@ class MultiAgentRunner:
             # Per-agent diagnostics
             for role, agent_cr in round_crit.agent_scores.items():
                 diag = agent_cr.diagnostics
-                pid_metrics_logger.debug(
+                pid_metrics_logger.info(
                     "[PID Round %d] CRIT diagnostics [%s]: "
                     "contradictions=%s  unsupported_claims=%s  "
                     "conclusion_drift=%s  causal_overreach=%s",

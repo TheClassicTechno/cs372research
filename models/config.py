@@ -111,7 +111,7 @@ class AgentConfig(BaseModel):
 
     # --- PID logging ---
     pid_log_metrics: bool = Field(
-        default=False,
+        default=True,
         description="Log scalar PID metrics (rho_bar, beta, JS, gains, etc.) each round.",
     )
     pid_log_llm_calls: bool = Field(

@@ -119,7 +119,7 @@ class DebateConfig:
     pid_revise: bool = True
 
     # --- PID logging ---
-    pid_log_metrics: bool = False
+    pid_log_metrics: bool = True
     pid_log_llm_calls: bool = False
 
     # --- Prompt logging (modular prompt path only) ---

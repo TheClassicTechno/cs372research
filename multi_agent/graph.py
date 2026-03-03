@@ -300,19 +300,7 @@ def normalize_allocation(
     alloc = {t: w / total for t, w in alloc.items()}
 
     # Step 6: enforce max_weight (iterative cap-and-redistribute)
-    for _ in range(10):  # converges in 2-3 iterations
-        capped = {t: min(w, max_weight) for t, w in alloc.items()}
-        excess = sum(alloc.values()) - sum(capped.values())
-        if excess < 1e-8:
-            alloc = capped
-            break
-        uncapped = {t: w for t, w in capped.items() if w < max_weight}
-        uncapped_total = sum(uncapped.values())
-        if uncapped_total < 1e-8:
-            break
-        alloc = dict(capped)
-        for t in uncapped:
-            alloc[t] += excess * (uncapped[t] / uncapped_total)
+    alloc = _enforce_max_weight(alloc, max_weight)
 
     # Step 7: enforce min_holdings
     non_zero = sum(1 for w in alloc.values() if w > 1e-8)
@@ -325,11 +313,45 @@ def normalize_allocation(
                 alloc[t] = min_w
                 need -= 1
 
-    # Step 8: re-normalize
+    # Step 8: re-normalize then re-enforce max_weight (min_holdings may
+    # have pushed weights around)
     final_total = sum(alloc.values())
     if final_total > 0:
         alloc = {t: w / final_total for t, w in alloc.items()}
+    alloc = _enforce_max_weight(alloc, max_weight)
 
+    return alloc
+
+
+def _enforce_max_weight(alloc: dict[str, float], max_weight: float) -> dict[str, float]:
+    """Iteratively cap weights at max_weight and redistribute excess.
+
+    If n * max_weight < 1.0 the constraint is infeasible (can't sum to 1.0
+    with all weights <= max_weight). In that case the effective cap is raised
+    to 1/n so equal-weight is the tightest feasible solution.
+    """
+    n = len(alloc)
+    if n == 0:
+        return alloc
+    effective_max = max(max_weight, 1.0 / n)
+
+    for _ in range(10):
+        capped = {t: min(w, effective_max) for t, w in alloc.items()}
+        excess = sum(alloc.values()) - sum(capped.values())
+        if excess < 1e-8:
+            return capped
+        # Redistribute excess proportionally to uncapped tickers
+        uncapped = {t: w for t, w in capped.items() if w < effective_max - 1e-8}
+        uncapped_total = sum(uncapped.values())
+        if uncapped_total < 1e-8:
+            # All at cap — normalize to sum to 1.0
+            total = sum(capped.values())
+            if total > 0:
+                return {t: w / total for t, w in capped.items()}
+            return capped
+        alloc = dict(capped)
+        for t in uncapped:
+            alloc[t] += excess * (uncapped[t] / uncapped_total)
     return alloc
 
 
