@@ -80,6 +80,11 @@ class AgentConfig(BaseModel):
         description="Log the full rendered system + user prompts sent to the LLM "
         "via the debate.prompts logger. Useful for debugging prompt quality.",
     )
+    log_prompt_manifest: bool = Field(
+        default=False,
+        description="Log prompt file names once per round (compact manifest). "
+        "Shows system block files, phase templates, and snapshot identifier.",
+    )
 
     # --- PID controller settings (flat YAML fields) ---
     pid_enabled: bool = Field(

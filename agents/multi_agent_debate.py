@@ -139,6 +139,7 @@ class DebateAgentSystem(AgentSystem):
             log_user_prompts=config.log_user_prompts,
             log_llm_responses=config.log_llm_responses,
             log_rendered_prompts=config.log_rendered_prompts,
+            log_prompt_manifest=config.log_prompt_manifest,
             prompt_logging=config.prompt_logging,
             use_system_causal_contract=config.use_system_causal_contract,
         )

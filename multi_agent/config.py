@@ -92,6 +92,8 @@ class DebateConfig:
     log_llm_responses: bool = False
     # log_rendered_prompts: log full system + user prompts via debate.prompts logger
     log_rendered_prompts: bool = False
+    # log_prompt_manifest: log prompt file names once per round (compact)
+    log_prompt_manifest: bool = False
 
     # --- Output ---
     trace_dir: str = "./traces"
@@ -213,6 +215,7 @@ class DebateConfig:
             "log_user_prompts": self.log_user_prompts,
             "log_llm_responses": self.log_llm_responses,
             "log_rendered_prompts": self.log_rendered_prompts,
+            "log_prompt_manifest": self.log_prompt_manifest,
             "trace_dir": self.trace_dir,
             "pid_enabled": self.pid_enabled,
             "pid_propose": self.pid_propose,

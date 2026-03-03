@@ -48,7 +48,7 @@ class TestPromptsDirectoryStructure:
 
     EXPECTED_SUBDIRS = [
         "roles", "phases", "scaffolding", "output_format",
-        "tone", "agreeableness", "system_contract",
+        "tone", "system_contract",
     ]
 
     def test_all_subdirectories_exist(self):
@@ -87,16 +87,6 @@ class TestPromptsDirectoryStructure:
         "output_format/allocation_output_instructions.txt",
     ])
     def test_output_format_files(self, path):
-        assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
-
-    @pytest.mark.parametrize("path", [
-        "agreeableness/confrontational.txt",
-        "agreeableness/skeptical.txt",
-        "agreeableness/balanced.txt",
-        "agreeableness/collaborative.txt",
-        "agreeableness/agreeable.txt",
-    ])
-    def test_agreeableness_files(self, path):
         assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
 
     def test_system_contract_file(self):

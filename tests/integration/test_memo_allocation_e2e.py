@@ -201,7 +201,6 @@ class TestPromptTemplatesLoad:
             "macro", "Test context",
             [{"role": "value", "proposal": "equal weight"}],
             "my proposal text",
-            agreeableness=0.3,
             allocation_mode=True,
         )
         assert len(result) > 0
@@ -210,7 +209,6 @@ class TestPromptTemplatesLoad:
         result = build_revision_prompt(
             "macro", "Test context", "my proposal",
             [{"from_role": "value", "objection": "too risky"}],
-            agreeableness=0.3,
             allocation_mode=True,
         )
         assert len(result) > 0

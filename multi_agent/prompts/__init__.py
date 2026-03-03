@@ -126,41 +126,6 @@ def get_role_prompts(use_causal_contract: bool = False) -> dict[str, str]:
     return ROLE_SYSTEM_PROMPTS_SLIM if use_causal_contract else ROLE_SYSTEM_PROMPTS
 
 # =============================================================================
-# AGREEABLENESS MODIFIER (injected into critique prompts)
-# =============================================================================
-
-_AGREEABLENESS_TEMPLATES = {
-    "confrontational": _load("agreeableness/confrontational.txt"),
-    "skeptical": _load("agreeableness/skeptical.txt"),
-    "balanced": _load("agreeableness/balanced.txt"),
-    "collaborative": _load("agreeableness/collaborative.txt"),
-    "agreeable": _load("agreeableness/agreeable.txt"),
-}
-
-
-def get_agreeableness_modifier(agreeableness: float) -> str:
-    """
-    Generate a system prompt modifier based on the agreeableness knob.
-
-    agreeableness=0.0 -> maximally confrontational (fights every point)
-    agreeableness=0.5 -> balanced (critiques on merit)
-    agreeableness=1.0 -> maximally agreeable/sycophantic (finds consensus)
-
-    This is a key experimental variable for RQ3 (does debate reduce sycophancy?).
-    """
-    if agreeableness < 0.2:
-        return _AGREEABLENESS_TEMPLATES["confrontational"]
-    elif agreeableness < 0.4:
-        return _AGREEABLENESS_TEMPLATES["skeptical"]
-    elif agreeableness < 0.6:
-        return _AGREEABLENESS_TEMPLATES["balanced"]
-    elif agreeableness < 0.8:
-        return _AGREEABLENESS_TEMPLATES["collaborative"]
-    else:
-        return _AGREEABLENESS_TEMPLATES["agreeable"]
-
-
-# =============================================================================
 # DEBATE PHASE PROMPTS (rendered via Jinja2 templates)
 # =============================================================================
 
@@ -205,26 +170,26 @@ def build_critique_prompt(
     context: str,
     all_proposals: list[dict],
     my_proposal: str,
-    agreeableness: float = 0.3,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
-    """Build critique prompt for a role agent in the debate."""
+    """Build critique user prompt for a role agent in the debate.
+
+    Tone/agreeableness is now handled by the system prompt via
+    ``PromptRegistry.build()`` — not injected into the user prompt.
+    """
     others = [p for p in all_proposals if p["role"] != role]
     others_text = "\n\n".join(
         f"### {p['role'].upper()} agent proposed:\n{p['proposal']}"
         for p in others
     )
 
-    agreeableness_mod = get_agreeableness_modifier(agreeableness)
-
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("critique_template", "phases/critique_allocation.txt")
 
     template_vars = {
         "role": role.upper(),
-        "agreeableness_mod": agreeableness_mod,
         "context": context,
         "my_proposal": my_proposal,
         "others_text": others_text,
@@ -245,13 +210,12 @@ def build_revision_prompt(
     context: str,
     my_proposal: str,
     critiques_received: list[dict],
-    agreeableness: float = 0.3,
     use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
-    """Build revision prompt for a role agent after receiving critiques."""
+    """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
         f"- [{c['from_role'].upper()}]: {c['objection']}"
         + (f" | Falsifier: {c.get('falsifier', 'N/A')}" if c.get("falsifier") else "")

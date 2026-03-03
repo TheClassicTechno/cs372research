@@ -1,9 +1,9 @@
-"""Modular prompt registry for RAudit PID-controlled debates.
+"""Unified prompt registry for debate system prompt assembly.
 
 This module provides the PromptRegistry — a layered prompt builder that
 separates concerns (role identity, phase preamble, tone injection) into
-composable blocks.  It is activated ONLY when PID is enabled
-(``is_modular_mode`` returns True); legacy prompts are untouched.
+composable blocks.  All phases route through ``PromptRegistry.build()``
+with tone derived from ``resolve_beta()`` (PID β or agreeableness → β).
 
 ==========================================================================
 β → TONE MAPPING (CORRECTED RAudit SEMANTICS)
@@ -105,16 +105,116 @@ def beta_to_bucket(beta: float) -> str:
     return "adversarial"
 
 
-def is_modular_mode(config: dict) -> bool:
-    """Check whether the modular prompt path should be used.
+def resolve_beta(config: dict, phase: str) -> float | None:
+    """Get beta for tone selection, unifying PID and static agreeableness.
 
-    Modular mode activates when PID is enabled in the config dict.
-    When False, graph.py falls through to legacy prompt builders.
+    For critique/revise: uses ``_current_beta`` if set by the PID runner,
+    otherwise derives from the static ``agreeableness`` knob via
+    ``beta = 1.0 - agreeableness`` (semantics are inverted: high
+    agreeableness = low contentiousness = low beta).
+
+    For propose/judge: always returns ``None`` (no tone injection).
 
     Args:
         config: The LangGraph state config dict (state["config"]).
+        phase: Debate phase — "propose", "critique", "revise", or "judge".
+
+    Returns:
+        Beta value in [0, 1] for critique/revise, or None for propose/judge.
     """
-    return config.get("pid_enabled", False)
+    if phase not in ("critique", "revise"):
+        return None
+    beta = config.get("_current_beta")
+    if beta is not None:
+        return beta
+    return 1.0 - config.get("agreeableness", 0.3)
+
+
+# =========================================================================
+# Prompt file manifest (for once-per-round logging)
+# =========================================================================
+
+# Default user-prompt template files per phase.
+_DEFAULT_PHASE_TEMPLATES = {
+    "propose": "phases/proposal_allocation.txt",
+    "critique": "phases/critique_allocation.txt",
+    "revise": "phases/revision_allocation.txt",
+    "judge": "phases/judge_allocation.txt",
+}
+
+# Override key names used in prompt_file_overrides for each phase template.
+_PHASE_TEMPLATE_OVERRIDE_KEYS = {
+    "propose": "proposal_template",
+    "critique": "critique_template",
+    "revise": "revision_template",
+    "judge": "judge_template",
+}
+
+
+def build_prompt_manifest(config: dict) -> dict:
+    """Return prompt file names for all phases, without loading content.
+
+    Mirrors the file-selection logic in ``PromptRegistry.build()`` and the
+    ``build_*_prompt()`` functions but only resolves file names — no file
+    I/O.  Called once per round by the runner for compact manifest logging.
+
+    Args:
+        config: The LangGraph state config dict (state["config"]).
+
+    Returns:
+        Dict with keys: block_order, causal_contract, role_files, tone,
+        beta, beta_bucket, phase_templates.
+    """
+    use_cc = config.get("use_system_causal_contract", False)
+    overrides = config.get("prompt_file_overrides", {})
+    roles = config.get("roles", [])
+    block_order = config.get(
+        "system_prompt_block_order", _DEFAULT_BLOCK_ORDER,
+    )
+
+    manifest: dict[str, Any] = {"block_order": list(block_order)}
+
+    # --- Causal contract ---
+    if use_cc:
+        manifest["causal_contract"] = overrides.get(
+            "causal_contract", "system_contract/system_causal_contract.txt",
+        )
+
+    # --- Role files ---
+    role_files: dict[str, str] = {}
+    for role in roles:
+        override = overrides.get(f"role_{role}")
+        if override:
+            role_files[role] = override
+        else:
+            suffix = "_slim" if use_cc else ""
+            role_files[role] = f"roles/{role}{suffix}.txt"
+    manifest["role_files"] = role_files
+
+    # --- Tone files (critique/revise only) ---
+    beta = resolve_beta(config, "critique")
+    if beta is not None:
+        bucket = beta_to_bucket(beta)
+        manifest["beta"] = beta
+        manifest["beta_bucket"] = bucket
+        tone_files: dict[str, str] = {}
+        for phase in ("critique", "revise"):
+            override = overrides.get(f"tone_{phase}_{bucket}")
+            if override:
+                tone_files[phase] = override
+            else:
+                filename = _TONE_FILES.get((phase, bucket), "")
+                tone_files[phase] = f"tone/{filename}" if filename else ""
+        manifest["tone"] = tone_files
+
+    # --- Phase templates (user prompts) ---
+    phase_templates: dict[str, str] = {}
+    for phase, default_file in _DEFAULT_PHASE_TEMPLATES.items():
+        override_key = _PHASE_TEMPLATE_OVERRIDE_KEYS[phase]
+        phase_templates[phase] = overrides.get(override_key, default_file)
+    manifest["phase_templates"] = phase_templates
+
+    return manifest
 
 
 # =========================================================================

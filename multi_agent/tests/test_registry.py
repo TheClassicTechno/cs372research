@@ -9,7 +9,7 @@ RAudit paper references:
 import pytest
 from multi_agent.prompts.registry import (
     beta_to_bucket,
-    is_modular_mode,
+    resolve_beta,
     get_registry,
     reset_registry_cache,
     PromptRegistry,
@@ -56,20 +56,38 @@ class TestBetaToBucket:
 
 
 # ---------------------------------------------------------------------------
-# is_modular_mode
+# resolve_beta
 # ---------------------------------------------------------------------------
 
-class TestIsModularMode:
-    """Test modular mode detection from config dict."""
+class TestResolveBeta:
+    """Test unified beta resolution from PID _current_beta or agreeableness."""
 
-    def test_pid_enabled_true(self):
-        assert is_modular_mode({"pid_enabled": True}) is True
+    def test_propose_always_none(self):
+        assert resolve_beta({"_current_beta": 0.7}, "propose") is None
 
-    def test_pid_enabled_false(self):
-        assert is_modular_mode({"pid_enabled": False}) is False
+    def test_judge_always_none(self):
+        assert resolve_beta({"_current_beta": 0.7}, "judge") is None
 
-    def test_pid_enabled_missing(self):
-        assert is_modular_mode({}) is False
+    def test_critique_uses_current_beta(self):
+        assert resolve_beta({"_current_beta": 0.42}, "critique") == 0.42
+
+    def test_revise_uses_current_beta(self):
+        assert resolve_beta({"_current_beta": 0.85}, "revise") == 0.85
+
+    def test_critique_derives_from_agreeableness(self):
+        """Without _current_beta, beta = 1.0 - agreeableness."""
+        assert resolve_beta({"agreeableness": 0.3}, "critique") == pytest.approx(0.7)
+
+    def test_revise_derives_from_agreeableness(self):
+        assert resolve_beta({"agreeableness": 0.7}, "revise") == pytest.approx(0.3)
+
+    def test_default_agreeableness(self):
+        """Empty config → agreeableness=0.3 → beta=0.7."""
+        assert resolve_beta({}, "critique") == pytest.approx(0.7)
+
+    def test_current_beta_zero_is_not_none(self):
+        """_current_beta=0.0 should be used, not fall through to agreeableness."""
+        assert resolve_beta({"_current_beta": 0.0, "agreeableness": 0.3}, "critique") == 0.0
 
 
 # ---------------------------------------------------------------------------

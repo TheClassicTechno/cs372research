@@ -110,7 +110,7 @@ def _round_floats(obj, ndigits=4):
 
 
 from .config import AgentRole, DebateConfig
-from .prompts.registry import beta_to_bucket, reset_registry_cache
+from .prompts.registry import beta_to_bucket, build_prompt_manifest, reset_registry_cache
 from .graph import (
     compile_finalize_graph,
     compile_parallel_single_round_graph,
@@ -125,6 +125,7 @@ from .graph import (
     compile_parallel_revise_graph,
     _call_llm,
 )
+from .graph.llm import _extract_snapshot_id, prompt_logger
 from .models import (
     Action,
     AgentTrace,
@@ -251,6 +252,64 @@ class MultiAgentRunner:
                 self.config.pid_config, self.config.initial_beta
             )
 
+    def _log_prompt_manifest(self, state: dict, round_num: int) -> None:
+        """Log prompt file manifest once at the start of a round.
+
+        Emits a compact summary of all prompt files that will be used,
+        plus a unique snapshot identifier, via the debate.prompts logger.
+        """
+        config = state["config"]
+        manifest = build_prompt_manifest(config)
+
+        snapshot_id = _extract_snapshot_id(
+            state.get("enriched_context", ""),
+            state.get("observation", {}),
+        )
+
+        lines = [
+            "=" * 72,
+            f"  [Prompt Manifest] Round {round_num} | Snapshot: {snapshot_id}",
+            "-" * 72,
+        ]
+
+        # System block order
+        order = manifest.get("block_order", [])
+        lines.append(f"  System blocks: {' → '.join(order)}")
+
+        # Causal contract
+        cc = manifest.get("causal_contract")
+        if cc:
+            lines.append(f"    causal_contract: {cc}")
+
+        # Role files
+        role_files = manifest.get("role_files", {})
+        if role_files:
+            names = ", ".join(
+                f.rsplit("/", 1)[-1] for f in role_files.values()
+            )
+            lines.append(f"    role_files: {names}")
+
+        # Tone
+        tone = manifest.get("tone", {})
+        if tone:
+            beta = manifest.get("beta", "?")
+            bucket = manifest.get("beta_bucket", "?")
+            tone_names = ", ".join(
+                f.rsplit("/", 1)[-1] for f in tone.values() if f
+            )
+            lines.append(f"    tone (β={beta:.2f}, {bucket}): {tone_names}")
+
+        # Phase templates
+        phase_templates = manifest.get("phase_templates", {})
+        if phase_templates:
+            names = ", ".join(
+                f.rsplit("/", 1)[-1] for f in phase_templates.values()
+            )
+            lines.append(f"  Phase templates: {names}")
+
+        lines.append("=" * 72)
+        prompt_logger.info("\n".join(lines))
+
     def run(self, observation: Observation) -> tuple[Action, AgentTrace]:
         """
         Run the full debate pipeline on an observation.
@@ -289,6 +348,11 @@ class MultiAgentRunner:
         terminated_early = False
         for t in range(self.config.max_rounds):
             state["current_round"] = t + 1
+
+            # Prompt manifest: log file names once at round start
+            if state["config"].get("log_prompt_manifest"):
+                self._log_prompt_manifest(state, t + 1)
+
             # Reset critiques so operator.add (parallel graph) doesn't
             # accumulate across rounds.  Harmless for the sequential graph
             # (batch nodes replace lists entirely).

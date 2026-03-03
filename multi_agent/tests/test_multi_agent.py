@@ -63,7 +63,6 @@ from multi_agent.prompts import (
     build_judge_prompt,
     build_proposal_user_prompt,
     build_revision_prompt,
-    get_agreeableness_modifier,
 )
 # Removed import: build_observation_context (deleted)
 from multi_agent.runner import MultiAgentRunner
@@ -276,17 +275,6 @@ class TestPrompts:
         full = build_proposal_user_prompt("test context")
         assert "JSON" in full or "json" in full
 
-    def test_agreeableness_modifier_varies(self):
-        """Different agreeableness values produce different modifiers."""
-        m0 = get_agreeableness_modifier(0.0)
-        m5 = get_agreeableness_modifier(0.5)
-        m10 = get_agreeableness_modifier(1.0)
-        assert m0 != m5
-        assert m5 != m10
-        assert "CONFRONTATIONAL" in m0
-        assert "BALANCED" in m5
-        assert "AGREEABLE" in m10
-
     def test_critique_prompt_has_structure(self):
         prompt = build_critique_prompt(
             "macro",
@@ -296,12 +284,10 @@ class TestPrompts:
                 {"role": "risk", "proposal": '{"orders": []}'},
             ],
             '{"orders": []}',
-            agreeableness=0.3,
         )
         assert "MACRO" in prompt
         assert "VALUE" in prompt
         assert "RISK" in prompt
-        assert "SKEPTICAL" in prompt  # agreeableness=0.3
 
     def test_revision_prompt_has_structure(self):
         prompt = build_revision_prompt(
@@ -773,11 +759,12 @@ class TestPromptTemplates:
         "roles/technical.txt",
         "roles/sentiment.txt",
         "roles/devils_advocate.txt",
-        "agreeableness/confrontational.txt",
-        "agreeableness/skeptical.txt",
-        "agreeableness/balanced.txt",
-        "agreeableness/collaborative.txt",
-        "agreeableness/agreeable.txt",
+        "tone/critique_adversarial.txt",
+        "tone/critique_balanced.txt",
+        "tone/critique_collaborative.txt",
+        "tone/revise_adversarial.txt",
+        "tone/revise_balanced.txt",
+        "tone/revise_collaborative.txt",
         "phases/proposal_allocation.txt",
         "phases/critique_allocation.txt",
         "phases/revision_allocation.txt",
@@ -803,12 +790,10 @@ class TestPromptTemplates:
             "Test context",
             [{"role": "value", "proposal": "buy AAPL"}],
             "my proposal text",
-            agreeableness=0.5,
         )
         assert "MACRO" in result
         assert "Test context" in result
         assert "my proposal text" in result
-        assert "BALANCED" in result
 
     def test_revision_template_renders(self):
         result = build_revision_prompt(
