@@ -1,0 +1,58 @@
+# ============================================================================
+# Debate Agent Simulation — PID-Enabled Live Mode
+# ============================================================================
+# Run with:
+#   OPENAI_API_KEY=sk-... python run_simulation.py --config config/debate_pid_live.yaml
+#
+# Same PID configuration as debate_pid_mock.yaml but makes real API calls.
+
+dataset_path: "data/cases"
+
+top_n_news: 5
+
+tickers:
+  - NVDA
+
+quarters:
+  - Q1
+
+num_episodes: 1
+
+# --------------------------------------------------------------------------
+# Agent Configuration — Multi-Agent Debate with PID
+# --------------------------------------------------------------------------
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  # Debate structure — PID needs multiple rounds to intervene between them
+  max_rounds: 3
+
+  # PID enabled
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+
+  # Per-phase PID toggles
+  pid_propose: false
+  pid_critique: true
+  pid_revise: true
+
+  # Logging
+  pid_log_metrics: true
+  pid_log_llm_calls: false
+  log_system_prompts: false
+  log_user_prompts: false
+  log_llm_responses: false
+
+# --------------------------------------------------------------------------
+# Broker Configuration
+# --------------------------------------------------------------------------
+broker:
+  initial_cash: 100000.0
