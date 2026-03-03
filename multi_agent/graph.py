@@ -92,11 +92,17 @@ import logging
 import operator
 import os
 import re
+import threading
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Dedicated prompt logger — lets users filter rendered prompts separately.
+# Activated by log_rendered_prompts=True in config.
+prompt_logger = logging.getLogger("debate.prompts")
+prompt_logger.setLevel(logging.INFO)
 
 load_dotenv()  # auto-load .env file if present
 from typing import Annotated, TypedDict
@@ -240,6 +246,43 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
                 )
                 return "{}"
     return "{}"
+
+
+def _log_prompt(
+    config: dict,
+    role: str,
+    phase: str,
+    round_num: int,
+    system_prompt: str,
+    user_prompt: str,
+) -> None:
+    """Log the full rendered system + user prompt via the debate.prompts logger.
+
+    Activated by config["log_rendered_prompts"] = True.  Emits at INFO level
+    so it's visible with default logging.  The dedicated logger name
+    ("debate.prompts") lets users filter prompt output separately from
+    debate progress and PID metrics.
+    """
+    if not config.get("log_rendered_prompts"):
+        return
+    prompt_logger.info(
+        "\n%s\n"
+        "  %s | Round %d | %s\n"
+        "%s\n"
+        "--- SYSTEM PROMPT ---\n"
+        "%s\n"
+        "--- USER PROMPT ---\n"
+        "%s\n"
+        "%s",
+        "=" * 72,
+        phase.upper(),
+        round_num,
+        role.upper(),
+        "-" * 72,
+        system_prompt,
+        user_prompt,
+        "=" * 72,
+    )
 
 
 def _parse_json(text: str) -> dict:
@@ -806,10 +849,7 @@ def propose_node(state: DebateState) -> dict:
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context, allocation_mode=allocation_mode)
 
-        if config.get("log_system_prompts"):
-            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
-        if config.get("log_user_prompts"):
-            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+        _log_prompt(config, role, "propose", 0, role_system, user_prompt)
 
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
@@ -818,9 +858,6 @@ def propose_node(state: DebateState) -> dict:
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
-
-        if config.get("log_llm_responses"):
-            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         if allocation_mode:
             universe = obs.get("universe", [])
@@ -921,6 +958,8 @@ def critique_node(state: DebateState) -> dict:
                 + get_agreeableness_modifier(agreeableness)
             )
 
+        _log_prompt(config, role, "critique", current_round, system_msg, prompt)
+
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
             result = _mock_critique(role, source)
@@ -1012,6 +1051,8 @@ def revise_node(state: DebateState) -> dict:
             system_msg = build_result.system_prompt
         else:
             system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
+        _log_prompt(config, role, "revise", current_round, system_msg, prompt)
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
@@ -1126,10 +1167,7 @@ def make_propose_node(role: str):
         role_system = ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS.get(AgentRole.MACRO, ""))
         user_prompt = build_proposal_user_prompt(context, allocation_mode=allocation_mode)
 
-        if config.get("log_system_prompts"):
-            print(f"  [Round 0 - Propose] {role.upper()} system prompt:\n{role_system}", flush=True)
-        if config.get("log_user_prompts"):
-            print(f"  [Round 0 - Propose] {role.upper()} user prompt:\n{user_prompt}", flush=True)
+        _log_prompt(config, role, "propose", 0, role_system, user_prompt)
 
         raw_text = None
         if is_mock:
@@ -1138,9 +1176,6 @@ def make_propose_node(role: str):
         else:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
-
-        if config.get("log_llm_responses"):
-            print(f"  [Round 0 - Propose] {role.upper()} raw LLM response:\n{raw_text}", flush=True)
 
         if allocation_mode:
             universe = obs.get("universe", [])
@@ -1252,6 +1287,8 @@ def make_critique_node(role: str):
                 + get_agreeableness_modifier(agreeableness)
             )
 
+        _log_prompt(config, role, "critique", current_round, system_msg, prompt)
+
         raw_text = None
         if is_mock:
             result = _mock_critique(role, source)
@@ -1355,6 +1392,8 @@ def make_revise_node(role: str):
             system_msg = build_result.system_prompt
         else:
             system_msg = f"You are the {role.upper()} agent. Revise your proposal based on critiques."
+
+        _log_prompt(config, role, "revise", current_round, system_msg, prompt)
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
@@ -1656,6 +1695,8 @@ def judge_node(state: DebateState) -> dict:
             system_msg = "You are the Judge. Synthesize the debate and produce a final portfolio allocation with an audited memo."
         else:
             system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+
+    _log_prompt(config, "judge", "judge", 0, system_msg, prompt)
 
     raw_text = None  # Raw LLM output for eval module
     if is_mock:

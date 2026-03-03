@@ -1,16 +1,12 @@
 {{ context }}
 
-Based on the financial data provided, construct a portfolio allocation.
+You are a professional portfolio manager operating under institutional constraints and are allocating capital for the upcoming quarter. Your objective is to construct a risk-aware, well-reasoned portfolio designed to maximize risk-adjusted return over the next quarter. In doing so, you must balance expected return and volatility, carefully consider correlations and diversification effects across assets, and explicitly identify key risks that could impact performance. You should prioritize risk-adjusted returns, diversification, downside risk control, and evidence-based reasoning grounded in the provided data. At the same time, you must avoid overconcentration, narrative-only reasoning without quantitative grounding, excessive confidence, and any extreme or fragile allocations that could lead to unstable outcomes.
 
-IMPORTANT: You may ONLY allocate to the tickers listed in the "Allocation universe"
-section above. Do NOT suggest or include any other tickers. If a ticker is not in
-the universe, you cannot allocate to it regardless of your analysis.
-
-Consider:
-- Macro regime and its implications for sector tilts
-- Individual ticker fundamentals, momentum, and valuation
-- Risk diversification across sectors and factor exposures
-- Current sentiment signals and filing disclosures
+Using the data above, analyse the universe and assign weights. Ground every allocation
+decision in the provided metrics — cite evidence IDs using the exact bracket notation
+from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]). Every claim about a ticker or
+macro condition MUST include at least one bracketed evidence ID. Uncited claims will be
+scored lower by the evaluation system.
 
 {{ causal_claim_format }}
 {{ forced_uncertainty }}

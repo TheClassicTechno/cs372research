@@ -75,6 +75,11 @@ class AgentConfig(BaseModel):
         default=False,
         description="Log the raw LLM response text.",
     )
+    log_rendered_prompts: bool = Field(
+        default=False,
+        description="Log the full rendered system + user prompts sent to the LLM "
+        "via the debate.prompts logger. Useful for debugging prompt quality.",
+    )
 
     # --- PID controller settings (flat YAML fields) ---
     pid_enabled: bool = Field(
@@ -95,6 +100,13 @@ class AgentConfig(BaseModel):
         ge=0.0,
         le=1.0,
         description="Initial agreeableness value for PID controller.",
+    )
+    pid_epsilon: float = Field(
+        default=0.001,
+        gt=0.0,
+        le=1.0,
+        description="JS divergence convergence tolerance. Debate stops early "
+        "when JS <= epsilon. Default 0.001 (tight — agents must nearly agree).",
     )
     pid_propose: bool = Field(
         default=False,

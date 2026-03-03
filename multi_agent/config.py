@@ -90,6 +90,8 @@ class DebateConfig:
     log_user_prompts: bool = False
     # log_llm_responses: print the raw LLM response text
     log_llm_responses: bool = False
+    # log_rendered_prompts: log full system + user prompts via debate.prompts logger
+    log_rendered_prompts: bool = False
 
     # --- Output ---
     trace_dir: str = "./traces"
@@ -108,6 +110,9 @@ class DebateConfig:
     pid_rho_star: float = 0.8
 
     initial_beta: float = 0.5
+
+    # --- PID convergence ---
+    pid_epsilon: float = 0.001  # JS divergence convergence tolerance
 
     # --- Per-phase PID intervention toggles ---
     # Controls which debate phases use PID's beta_new as agreeableness.
@@ -170,6 +175,7 @@ class DebateConfig:
             self.pid_config = PIDConfig(
                 gains=PIDGains(Kp=self.pid_kp, Ki=self.pid_ki, Kd=self.pid_kd),
                 rho_star=self.pid_rho_star,
+                epsilon=self.pid_epsilon,
             )
 
     def to_dict(self) -> dict:
@@ -189,6 +195,7 @@ class DebateConfig:
             "log_system_prompts": self.log_system_prompts,
             "log_user_prompts": self.log_user_prompts,
             "log_llm_responses": self.log_llm_responses,
+            "log_rendered_prompts": self.log_rendered_prompts,
             "trace_dir": self.trace_dir,
             "pid_enabled": self.pid_enabled,
             "pid_propose": self.pid_propose,

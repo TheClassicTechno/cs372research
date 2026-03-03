@@ -46,18 +46,20 @@ agent:
   pid_kd: 0.03
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
+  pid_epsilon: 0.001
 
   # Per-phase PID toggles
   pid_propose: false
   pid_critique: true
   pid_revise: true
 
-  # Logging — see PID metrics
+  # Logging — see PID metrics and rendered prompts
   pid_log_metrics: true
   pid_log_llm_calls: false
   log_system_prompts: false
   log_user_prompts: false
   log_llm_responses: false
+  log_rendered_prompts: true
 
 broker:
   initial_cash: 100000.0

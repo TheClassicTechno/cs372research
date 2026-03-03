@@ -79,6 +79,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -194,6 +195,9 @@ class MultiAgentRunner:
         # --- PID controller ---
         self._pid_controller = None
         self._pid_events: list[PIDEvent] = []
+        self._debate_id: str = str(uuid.uuid4())
+        self._pid_round_data: list[dict] = []
+        self._phase_agreeableness: dict = {}
         self._original_agreeableness = self.config.agreeableness
 
         if self.config.pid_config:
@@ -218,6 +222,9 @@ class MultiAgentRunner:
         controller state must be fresh for each decision point.
         """
         self._pid_events = []
+        self._debate_id = str(uuid.uuid4())
+        self._pid_round_data = []
+        self._phase_agreeableness = {}
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -260,6 +267,7 @@ class MultiAgentRunner:
         state = self.pipeline_graph.invoke(state)
 
         # Phase 2: Debate rounds
+        terminated_early = False
         for t in range(self.config.max_rounds):
             state["current_round"] = t + 1
             # Reset critiques so operator.add (parallel graph) doesn't
@@ -306,14 +314,14 @@ class MultiAgentRunner:
                         self._pid_controller.beta if self._pid_controller else 0.0,
                     )
 
-            if self.should_terminate(state):
-                last_js = self._pid_events[-1].metrics.js_divergence
-                pid_metrics_logger.info(
-                    "[PID] Early termination after round %d: "
-                    "JS divergence %.6f <= epsilon %.4f",
-                    t + 1, last_js, self._pid_controller.config.epsilon,
-                )
+            terminated_early = self.should_terminate(state)
+            if terminated_early:
                 break
+
+        # Emit end-of-debate PID summary
+        if self._pid_controller and self._pid_round_data and self._log_metrics:
+            summary = self._build_pid_summary(terminated_early=terminated_early)
+            pid_metrics_logger.info(json.dumps(summary, indent=2))
 
         # Phase 3: Judge + trace
         state = self.finalize_graph.invoke(state)
@@ -350,13 +358,12 @@ class MultiAgentRunner:
         state["config"]["_current_beta"] = beta if self.config.pid_revise else None
         state = self._revise_graph.invoke(state)
 
-        if self._log_metrics:
-            pid_metrics_logger.info(
-                "[PID Round %d] Per-phase agreeableness: "
-                "propose=%.4f  critique=%.4f  revise=%.4f  (beta=%.4f, original=%.4f)",
-                round_num, propose_a, critique_a, revise_a,
-                beta, self._original_agreeableness,
-            )
+        # Store for JSON logging in _pid_step
+        self._phase_agreeableness = {
+            "propose": propose_a,
+            "critique": critique_a,
+            "revise": revise_a,
+        }
 
         return state
 
@@ -419,74 +426,107 @@ class MultiAgentRunner:
         )
         self._pid_events.append(event)
 
-        # --- PID metrics logging ---
+        # --- Build structured round data & emit JSON ---
         if self._log_metrics:
-            pid_cfg = self._pid_controller.config
-            pid_state = self._pid_controller.state
+            # Per-agent confidences (used for JS, normally discarded)
+            agent_confidences = {}
+            for d in decisions:
+                role = d.get("role", "unknown")
+                agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
 
-            # Per-agent ρ_i scores
-            agent_rho_lines = []
-            for role, agent_cr in round_crit.agent_scores.items():
-                ps = agent_cr.pillar_scores
-                agent_rho_lines.append(
-                    f"    {role:12s}: rho_i={agent_cr.rho_bar:.4f}  "
-                    f"IC={ps.internal_consistency:.3f}  "
-                    f"ES={ps.evidence_support:.3f}  "
-                    f"TA={ps.trace_alignment:.3f}  "
-                    f"CI={ps.causal_integrity:.3f}"
-                )
-            agent_rho_str = "\n".join(agent_rho_lines)
+            # Per-agent evidence IDs (normally aggregated to scalar OV)
+            agent_evidence = {
+                role: sorted(spans) for role, spans in evidence_sets.items()
+            }
 
-            pid_metrics_logger.info(
-                "[PID Round %d] Quadrant: %s  div=%s  qual=%s  "
-                "beta: %.4f -> %.4f  bucket: %s",
-                round_num, pid_result.quadrant,
-                pid_result.div_signal, pid_result.qual_signal,
-                self._pid_controller.state.beta,
-                pid_result.beta_new,
-                beta_to_bucket(pid_result.beta_new),
-            )
+            round_data = {
+                "type": "pid_round",
+                "debate_id": self._debate_id,
+                "round_id": str(uuid.uuid4()),
+                "round": round_num,
+                "phase_agreeableness": self._phase_agreeableness,
+                "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                "crit": {
+                    "rho_bar": round_crit.rho_bar,
+                    "agents": {
+                        role: {
+                            "rho_i": cr.rho_bar,
+                            "pillars": {
+                                "IC": cr.pillar_scores.internal_consistency,
+                                "ES": cr.pillar_scores.evidence_support,
+                                "TA": cr.pillar_scores.trace_alignment,
+                                "CI": cr.pillar_scores.causal_integrity,
+                            },
+                            "diagnostics": {
+                                "contradictions": cr.diagnostics.contradictions_detected,
+                                "unsupported_claims": cr.diagnostics.unsupported_claims_detected,
+                                "conclusion_drift": cr.diagnostics.conclusion_drift_detected,
+                                "causal_overreach": cr.diagnostics.causal_overreach_detected,
+                            },
+                        }
+                        for role, cr in round_crit.agent_scores.items()
+                    },
+                },
+                "pid": {
+                    "e_t": pid_result.e_t,
+                    "integral": self._pid_controller.state.integral,
+                    "e_prev": self._pid_controller.state.e_prev,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "u_t": pid_result.u_t,
+                    "beta_old": self._pid_controller.state.beta,
+                    "beta_new": pid_result.beta_new,
+                    "quadrant": pid_result.quadrant,
+                    "div_signal": pid_result.div_signal,
+                    "qual_signal": pid_result.qual_signal,
+                    "sycophancy": pid_result.s_t,
+                },
+                "divergence": {
+                    "js": js,
+                    "ov": ov,
+                    "agent_confidences": agent_confidences,
+                    "agent_evidence_ids": agent_evidence,
+                },
+            }
+            self._pid_round_data.append(round_data)
+            pid_metrics_logger.info(json.dumps(round_data, indent=2))
 
-            pid_metrics_logger.info(
-                "[PID Round %d]\n"
-                "  CRIT:     rho_bar=%.4f  rho_star=%.4f  (mean of %d agents)\n"
-                "  Per-agent scores:\n%s\n"
-                "  Error:    e_t=%.6f  integral=%.6f  e_prev=%.6f\n"
-                "  PID:      p_term=%.6f  i_term=%.6f  d_term=%.6f  u_t=%.6f\n"
-                "  Gains:    Kp=%.4f  Ki=%.4f  Kd=%.4f\n"
-                "  Beta:     old=%.4f  new=%.4f  gamma_beta=%.4f\n"
-                "  Syco:     s_t=%d  mu=%.4f  delta_s=%.4f\n"
-                "  Diverg:   JS=%.6f  OV=%.6f\n"
-                "  Config:   T_max=%d  epsilon=%.4f\n"
-                "  Phase toggles: propose=%s  critique=%s  revise=%s",
-                round_num,
-                round_crit.rho_bar, pid_cfg.rho_star,
-                len(round_crit.agent_scores),
-                agent_rho_str,
-                pid_result.e_t, pid_state.integral, pid_state.e_prev,
-                pid_result.p_term, pid_result.i_term, pid_result.d_term, pid_result.u_t,
-                pid_cfg.gains.Kp, pid_cfg.gains.Ki, pid_cfg.gains.Kd,
-                pid_state.beta - pid_result.u_t if round_num > 0 else self.config.initial_beta,
-                pid_result.beta_new, pid_cfg.gamma_beta,
-                pid_result.s_t, pid_cfg.mu, pid_cfg.delta_s,
-                js, ov,
-                pid_cfg.T_max, pid_cfg.epsilon,
-                self.config.pid_propose, self.config.pid_critique, self.config.pid_revise,
-            )
-
-            # Per-agent diagnostics
-            for role, agent_cr in round_crit.agent_scores.items():
-                diag = agent_cr.diagnostics
-                pid_metrics_logger.info(
-                    "[PID Round %d] CRIT diagnostics [%s]: "
-                    "contradictions=%s  unsupported_claims=%s  "
-                    "conclusion_drift=%s  causal_overreach=%s",
-                    round_num, role,
-                    diag.contradictions_detected,
-                    diag.unsupported_claims_detected,
-                    diag.conclusion_drift_detected,
-                    diag.causal_overreach_detected,
-                )
+    def _build_pid_summary(self, *, terminated_early: bool) -> dict:
+        """Assemble end-of-debate JSON summary from accumulated round data."""
+        pid_cfg = self._pid_controller.config
+        last = self._pid_round_data[-1] if self._pid_round_data else {}
+        return {
+            "type": "pid_summary",
+            "debate_id": self._debate_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "config": {
+                "Kp": pid_cfg.gains.Kp,
+                "Ki": pid_cfg.gains.Ki,
+                "Kd": pid_cfg.gains.Kd,
+                "rho_star": pid_cfg.rho_star,
+                "gamma_beta": pid_cfg.gamma_beta,
+                "initial_beta": self.config.initial_beta,
+                "epsilon": pid_cfg.epsilon,
+                "T_max": pid_cfg.T_max,
+                "mu": pid_cfg.mu,
+                "delta_s": pid_cfg.delta_s,
+                "delta_js": pid_cfg.delta_js,
+                "delta_beta": pid_cfg.delta_beta,
+                "pid_propose": self.config.pid_propose,
+                "pid_critique": self.config.pid_critique,
+                "pid_revise": self.config.pid_revise,
+            },
+            "rounds": [rd["round_id"] for rd in self._pid_round_data],
+            "outcome": {
+                "total_rounds": len(self._pid_round_data),
+                "terminated_early": terminated_early,
+                "termination_reason": "js_converged" if terminated_early else "max_rounds",
+                "final_beta": last.get("pid", {}).get("beta_new"),
+                "final_rho_bar": last.get("crit", {}).get("rho_bar"),
+                "final_js": last.get("divergence", {}).get("js"),
+            },
+        }
 
     def _initialize_state(self, observation: Observation) -> dict:
         """Build the initial state dict for the debate.
