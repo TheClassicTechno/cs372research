@@ -40,6 +40,7 @@ CAUSAL_CLAIM_FORMAT: str = _load("causal_claim_format.txt")
 FORCED_UNCERTAINTY: str = _load("forced_uncertainty.txt")
 TRAP_AWARENESS: str = _load("trap_awareness.txt")
 JSON_OUTPUT_INSTRUCTIONS: str = _load("json_output_instructions.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("allocation_output_instructions.txt")
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
@@ -156,8 +157,17 @@ def build_observation_context(
 # =============================================================================
 
 
-def build_proposal_user_prompt(context: str) -> str:
+def build_proposal_user_prompt(context: str, allocation_mode: bool = False) -> str:
     """User prompt sent to each role agent for their initial proposal."""
+    if allocation_mode:
+        tmpl = _env.get_template("proposal_allocation.txt")
+        return tmpl.render(
+            context=context,
+            causal_claim_format=CAUSAL_CLAIM_FORMAT,
+            forced_uncertainty=FORCED_UNCERTAINTY,
+            trap_awareness=TRAP_AWARENESS,
+            allocation_output_instructions=ALLOCATION_OUTPUT_INSTRUCTIONS,
+        )
     tmpl = _env.get_template("proposal.txt")
     return tmpl.render(
         context=context,
@@ -174,6 +184,7 @@ def build_critique_prompt(
     all_proposals: list[dict],
     my_proposal: str,
     agreeableness: float = 0.3,
+    allocation_mode: bool = False,
 ) -> str:
     """Build critique prompt for a role agent in the debate."""
     others = [p for p in all_proposals if p["role"] != role]
@@ -184,7 +195,8 @@ def build_critique_prompt(
 
     agreeableness_mod = get_agreeableness_modifier(agreeableness)
 
-    tmpl = _env.get_template("critique.txt")
+    template_name = "critique_allocation.txt" if allocation_mode else "critique.txt"
+    tmpl = _env.get_template(template_name)
     return tmpl.render(
         role=role.upper(),
         agreeableness_mod=agreeableness_mod,
@@ -200,6 +212,7 @@ def build_revision_prompt(
     my_proposal: str,
     critiques_received: list[dict],
     agreeableness: float = 0.3,
+    allocation_mode: bool = False,
 ) -> str:
     """Build revision prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -211,7 +224,8 @@ def build_revision_prompt(
     if not critiques_text:
         critiques_text = "(No critiques targeted at you this round.)"
 
-    tmpl = _env.get_template("revision.txt")
+    template_name = "revision_allocation.txt" if allocation_mode else "revision.txt"
+    tmpl = _env.get_template(template_name)
     return tmpl.render(
         role=role.upper(),
         context=context,
@@ -227,6 +241,7 @@ def build_judge_prompt(
     revisions: list[dict],
     all_critiques_text: str,
     strongest_disagreements: str = "",
+    allocation_mode: bool = False,
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -241,7 +256,8 @@ def build_judge_prompt(
             f"{strongest_disagreements}"
         )
 
-    tmpl = _env.get_template("judge.txt")
+    template_name = "judge_allocation.txt" if allocation_mode else "judge.txt"
+    tmpl = _env.get_template(template_name)
     return tmpl.render(
         context=context,
         revisions_text=revisions_text,

@@ -29,6 +29,18 @@ from itertools import combinations
 
 from eval.PID.sycophancy import evidence_overlap
 
+# Regex to match memo evidence IDs: [L1-FF], [AAPL-RET60], [NVDA-F3], etc.
+_EVIDENCE_ID_RE = re.compile(r"\[([A-Z0-9]+-[A-Z0-9_]+|L1-[A-Z0-9]+)\]")
+
+
+def extract_evidence_ids(text: str) -> set[str]:
+    """Extract memo evidence IDs from agent text output.
+
+    Matches patterns like [AAPL-RET60], [L1-VIX], [NVDA-F3].
+    Returns the set of matched IDs (without brackets).
+    """
+    return set(_EVIDENCE_ID_RE.findall(text))
+
 
 def normalize_variable(var: str) -> str:
     """Normalize a causal variable name for Jaccard comparison.
@@ -43,16 +55,44 @@ def normalize_variable(var: str) -> str:
 
 
 def extract_evidence_spans(decision: dict) -> set[str]:
-    """Extract normalized causal variables from one agent's decision.
+    """Extract evidence identifiers from one agent's decision.
 
-    Collects all ``variables`` entries from the ``claims`` list in the
-    decision dict, normalizes each, and returns the union as a set.
+    First attempts to extract memo evidence IDs (e.g. [AAPL-RET60], [L1-VIX])
+    from justification text, claim_text values, and raw_response. These are
+    canonical, unambiguous references used in memo-based allocation mode.
 
-    If no claims or no variables are present, falls back to splitting
-    ``claim_text`` values into whitespace-delimited tokens (normalized).
-
-    TODO: Maybe use evidence IDs from raw text instead of claim variables.
+    Falls back to the legacy path: extracting normalized causal variables from
+    ``claims[].variables``, then whitespace-tokenizing ``claim_text`` values.
     """
+    # --- Try memo evidence IDs first (allocation mode) ---
+    action_dict = decision.get("action_dict", {})
+    if not isinstance(action_dict, dict):
+        action_dict = {}
+
+    texts_to_scan: list[str] = []
+
+    justification = action_dict.get("justification", "")
+    if justification:
+        texts_to_scan.append(justification)
+
+    for claim in action_dict.get("claims", []):
+        if isinstance(claim, dict):
+            ct = claim.get("claim_text", "")
+            if ct:
+                texts_to_scan.append(ct)
+
+    raw = decision.get("raw_response", "")
+    if raw:
+        texts_to_scan.append(raw)
+
+    ids: set[str] = set()
+    for text in texts_to_scan:
+        ids |= extract_evidence_ids(text)
+
+    if ids:
+        return ids
+
+    # --- Fallback: legacy claims[].variables path ---
     claims = decision.get("claims", [])
     if isinstance(decision.get("action_dict"), dict):
         claims = decision["action_dict"].get("claims", claims)
@@ -107,7 +147,7 @@ def compute_mean_overlap(evidence_sets: dict[str, set[str]]) -> float | None:
 
     Uses ``eval.PID.sycophancy.evidence_overlap()`` for each pair.
     Returns None if fewer than 2 agents.
-    Returns 0 have non-empty evidence sets.
+    Returns 0.0 if no agents have non-empty evidence sets.
     """
     roles = evidence_sets.keys()
     if len(roles) < 2:

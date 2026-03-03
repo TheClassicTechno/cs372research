@@ -571,6 +571,7 @@ class MultiAgentRunner:
 
         return Action(
             orders=orders,
+            allocation=d.get("allocation"),
             justification=d.get("justification", ""),
             confidence=d.get("confidence", 0.5),
             claims=claims,

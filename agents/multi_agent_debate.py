@@ -40,6 +40,31 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 
+def allocation_to_decision(
+    allocation: dict[str, float],
+    prices: dict[str, float],
+    cash: float,
+) -> Decision:
+    """Convert allocation weights to buy orders.
+
+    Each weight * cash = dollar amount for that ticker.
+    Dollar amount / price = shares (integer, floor).
+    Remaining cash (from rounding) is unallocated.
+    """
+    orders: list[SimOrder] = []
+    for ticker, weight in allocation.items():
+        if weight <= 0 or ticker not in prices:
+            continue
+        price = prices[ticker]
+        if price <= 0:
+            continue
+        dollar_amount = weight * cash
+        shares = int(dollar_amount / price)
+        if shares > 0:
+            orders.append(SimOrder(ticker=ticker, side="buy", quantity=shares))
+    return Decision(orders=orders)
+
+
 def action_to_decision(action: Action) -> Decision:
     """Convert a debate ``Action`` into a simulation ``Decision``.
 
@@ -147,6 +172,8 @@ class DebateAgentSystem(AgentSystem):
             log_user_prompts=config.log_user_prompts,
             log_llm_responses=config.log_llm_responses,
             prompt_logging=config.prompt_logging,
+            allocation_mode=config.allocation_mode,
+            skip_pipeline=config.skip_pipeline,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles
@@ -192,12 +219,23 @@ class DebateAgentSystem(AgentSystem):
         )
 
         # 3. Convert Action → Decision
-        decision = action_to_decision(action)
-        logger.info(
-            "Debate agent: converted to %d simulation order(s) for case %s",
-            len(decision.orders),
-            case.case_id,
-        )
+        if self._debate_cfg.allocation_mode and action.allocation:
+            prices = {t: sd.current_price for t, sd in case.stock_data.items()}
+            cash = case.portfolio.cash
+            decision = allocation_to_decision(action.allocation, prices, cash)
+            logger.info(
+                "Debate agent: allocation mode — %d ticker(s) allocated, %d buy order(s) for case %s",
+                sum(1 for w in action.allocation.values() if w > 0),
+                len(decision.orders),
+                case.case_id,
+            )
+        else:
+            decision = action_to_decision(action)
+            logger.info(
+                "Debate agent: converted to %d simulation order(s) for case %s",
+                len(decision.orders),
+                case.case_id,
+            )
 
         # 4. Build raw output for logging (includes full debate trace)
         raw_output = {

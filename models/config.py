@@ -7,9 +7,10 @@ simulation runner, agent systems, and evaluation tooling.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AgentConfig(BaseModel):
@@ -125,6 +126,43 @@ class AgentConfig(BaseModel):
         "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
     )
 
+    # --- Memo / allocation mode ---
+    allocation_mode: bool = Field(
+        default=False,
+        description="When True, agents output allocation weights instead of orders. "
+        "Auto-set by SimulationConfig when case_format='memo'.",
+    )
+    skip_pipeline: bool = Field(
+        default=False,
+        description="When True, skip news_digest and data_analysis pipeline nodes. "
+        "Auto-set by SimulationConfig when case_format='memo'.",
+    )
+
+
+class AllocationConstraints(BaseModel):
+    """Constraints on portfolio allocation weights (memo mode)."""
+
+    max_weight: float = Field(
+        default=0.40,
+        gt=0.0,
+        le=1.0,
+        description="Maximum weight per ticker (default 40%).",
+    )
+    min_holdings: int = Field(
+        default=3,
+        ge=1,
+        description="Minimum number of tickers with non-zero weight.",
+    )
+    fully_invested: bool = Field(
+        default=True,
+        description="Weights must sum to 1.0 (no cash reserve).",
+    )
+    max_tickers: int = Field(
+        default=10,
+        ge=1,
+        description="Maximum number of tickers in the allocation universe.",
+    )
+
 
 class BrokerConfig(BaseModel):
     """Configuration for the in-process broker."""
@@ -172,6 +210,43 @@ class SimulationConfig(BaseModel):
         ge=1,
         description="Number of episodes to run.",
     )
+
+    # --- Memo / allocation mode ---
+    case_format: Literal["legacy", "memo"] = Field(
+        default="legacy",
+        description="Case format: 'legacy' for earnings/news/price cases, "
+        "'memo' for quarterly memo-based allocation.",
+    )
+    memo_format: Literal["text", "json"] = Field(
+        default="text",
+        description="Memo payload format: 'text' for .txt memo, 'json' for snapshot JSON.",
+    )
+    invest_quarter: str | None = Field(
+        default=None,
+        description="Invest quarter for memo mode, e.g. '2025Q1'. "
+        "Agents see the prior quarter's data and allocate for this quarter.",
+    )
+    allocation_constraints: AllocationConstraints = Field(
+        default_factory=AllocationConstraints,
+        description="Allocation weight constraints (memo mode only).",
+    )
+
+    @model_validator(mode="after")
+    def _wire_memo_mode(self) -> SimulationConfig:
+        """Auto-set agent flags when case_format is 'memo'."""
+        if self.case_format == "memo":
+            self.agent.allocation_mode = True
+            self.agent.skip_pipeline = True
+            if self.invest_quarter is None:
+                raise ValueError(
+                    "invest_quarter is required when case_format='memo'."
+                )
+            if len(self.tickers) > self.allocation_constraints.max_tickers:
+                raise ValueError(
+                    f"Too many tickers ({len(self.tickers)}) for allocation mode "
+                    f"(max {self.allocation_constraints.max_tickers})."
+                )
+        return self
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> SimulationConfig:

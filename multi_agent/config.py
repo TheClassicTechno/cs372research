@@ -128,6 +128,10 @@ class DebateConfig:
     #        log_beta_bucket, max_prompt_log_chars
     prompt_logging: dict = field(default_factory=dict)
 
+    # --- Memo / allocation mode ---
+    allocation_mode: bool = False
+    skip_pipeline: bool = False
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -191,4 +195,6 @@ class DebateConfig:
             "pid_critique": self.pid_critique,
             "pid_revise": self.pid_revise,
             "prompt_logging": self.prompt_logging,
+            "allocation_mode": self.allocation_mode,
+            "skip_pipeline": self.skip_pipeline,
         }
