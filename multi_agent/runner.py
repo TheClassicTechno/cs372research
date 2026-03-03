@@ -79,6 +79,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -137,10 +138,11 @@ class MultiAgentRunner:
     def __init__(self, config: DebateConfig | None = None):
         self.config = config or DebateConfig()
 
-        # Auto-inject devil's advocate if adversarial mode is enabled
+        # Auto-inject devil's advocate if adversarial mode is enabled.
+        # Copy roles to avoid mutating a shared config object.
         if self.config.enable_adversarial:
             if AgentRole.DEVILS_ADVOCATE not in self.config.roles:
-                self.config.roles.append(AgentRole.DEVILS_ADVOCATE)
+                self.config.roles = list(self.config.roles) + [AgentRole.DEVILS_ADVOCATE]
 
         self.pipeline_graph = compile_pipeline_graph(self.config)
         if self.config.parallel_agents:
@@ -395,9 +397,20 @@ class MultiAgentRunner:
 
         evidence_sets = extract_agent_evidence_spans(decisions)
         ov = compute_mean_overlap(evidence_sets)
+        if ov is None:
+            ov = 0.0
+
+        # Guard rho_bar against None/NaN — either would corrupt PID state
+        rho_bar = round_crit.rho_bar
+        if rho_bar is None or math.isnan(rho_bar):
+            logger.warning("rho_bar is %s — defaulting to 0.0", rho_bar)
+            rho_bar = 0.0
+
+        # Capture beta BEFORE step() mutates controller state
+        old_beta = self._pid_controller.beta
 
         # PID step (uses aggregated rho_bar)
-        pid_result = self._pid_controller.step(round_crit.rho_bar, js, ov)
+        pid_result = self._pid_controller.step(rho_bar, js, ov)
 
         # Record event
         ctrl_output = ControllerOutput(new_agreeableness=pid_result.beta_new)
@@ -405,7 +418,7 @@ class MultiAgentRunner:
             round_index=round_num,
             metrics=RoundMetrics(
                 round_index=round_num,
-                rho_bar=round_crit.rho_bar,
+                rho_bar=rho_bar,
                 js_divergence=js,
                 ov_overlap=ov,
             ),
@@ -475,7 +488,7 @@ class MultiAgentRunner:
                     "i_term": pid_result.i_term,
                     "d_term": pid_result.d_term,
                     "u_t": pid_result.u_t,
-                    "beta_old": self._pid_controller.state.beta,
+                    "beta_old": old_beta,
                     "beta_new": pid_result.beta_new,
                     "quadrant": pid_result.quadrant,
                     "div_signal": pid_result.div_signal,

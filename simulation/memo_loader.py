@@ -40,7 +40,17 @@ def prev_quarter(year: int, quarter: str) -> tuple[int, str]:
 
 def _parse_invest_quarter(invest_quarter: str) -> tuple[int, str]:
     """Parse '2025Q1' → (2025, 'Q1')."""
-    year = int(invest_quarter[:4])
+    if len(invest_quarter) < 6:
+        raise ValueError(
+            f"invest_quarter must be at least 6 chars (e.g. '2025Q1'), "
+            f"got {invest_quarter!r}"
+        )
+    try:
+        year = int(invest_quarter[:4])
+    except ValueError:
+        raise ValueError(
+            f"Invalid year in invest_quarter: {invest_quarter!r}"
+        )
     q = invest_quarter[4:]
     if q not in ("Q1", "Q2", "Q3", "Q4"):
         raise ValueError(f"Invalid quarter in invest_quarter: {invest_quarter!r}")
@@ -52,8 +62,13 @@ def _load_snapshot_json(base_dir: Path, year: int, quarter: str) -> dict | None:
     path = base_dir / "json_data" / f"snapshot_{year}_{quarter}.json"
     if not path.exists():
         return None
-    with open(path, "r") as f:
-        return json.load(f)
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"Malformed JSON in snapshot file {path}: {exc}"
+        ) from exc
 
 
 def _load_memo_text(base_dir: Path, year: int, quarter: str) -> str | None:
@@ -120,6 +135,14 @@ def load_memo_cases(
     inv_year, inv_q = _parse_invest_quarter(invest_quarter)
     prior_year, prior_q = prev_quarter(inv_year, inv_q)
 
+    # --- Load prior-quarter snapshot (needed for entry prices in all modes) ---
+    prior_snap = _load_snapshot_json(base_dir, prior_year, prior_q)
+    if prior_snap is None:
+        raise FileNotFoundError(
+            f"Snapshot JSON required for prices: "
+            f"{base_dir / 'json_data' / f'snapshot_{prior_year}_{prior_q}.json'}"
+        )
+
     # --- Load prior-quarter context ---
     if memo_format == "text":
         memo_text = _load_memo_text(base_dir, prior_year, prior_q)
@@ -129,22 +152,10 @@ def load_memo_cases(
             )
         context = memo_text
     elif memo_format == "json":
-        prior_snap = _load_snapshot_json(base_dir, prior_year, prior_q)
-        if prior_snap is None:
-            raise FileNotFoundError(
-                f"Snapshot not found: {base_dir / 'json_data' / f'snapshot_{prior_year}_{prior_q}.json'}"
-            )
+        # Reuse already-loaded snapshot (avoid double disk read)
         context = json.dumps(prior_snap, indent=2)
     else:
         raise ValueError(f"Unknown memo_format: {memo_format!r}")
-
-    # Always load prior-quarter snapshot for entry prices
-    prior_snap = _load_snapshot_json(base_dir, prior_year, prior_q)
-    if prior_snap is None:
-        raise FileNotFoundError(
-            f"Snapshot JSON required for prices: "
-            f"{base_dir / 'json_data' / f'snapshot_{prior_year}_{prior_q}.json'}"
-        )
 
     entry_prices = _extract_prices(prior_snap, tickers)
     as_of = prior_snap.get("as_of_date", f"{prior_year}-{prior_q}")

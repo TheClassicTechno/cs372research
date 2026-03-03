@@ -116,7 +116,7 @@ def shannon_entropy(p: float) -> float:
     Returns:
         Entropy in bits.  Range [0, 1] for valid inputs.
     """
-    if p <= 0.0 or p >= 1.0:
+    if math.isnan(p) or p <= 0.0 or p >= 1.0:
         return 0.0
     return -p * math.log2(p) - (1.0 - p) * math.log2(1.0 - p)
 

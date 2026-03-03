@@ -75,7 +75,14 @@ def action_to_decision(action: Action) -> Decision:
     """
     sim_orders: list[SimOrder] = []
     for order in action.orders:
-        qty = int(math.trunc(order.size))
+        try:
+            qty = int(math.trunc(order.size))
+        except (ValueError, OverflowError):
+            logger.warning(
+                "Invalid order size %s for %s — skipping",
+                order.size, order.ticker,
+            )
+            continue
         if qty <= 0:
             logger.warning(
                 "Skipping order with non-positive quantity: %s %s size=%.2f → qty=%d",
