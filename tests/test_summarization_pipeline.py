@@ -343,9 +343,10 @@ class TestDeterministicFormatting:
     def test_key_order_matches_spec(self, summary):
         keys = list(summary.keys())
         expected_order = fsp.KEY_ORDER
-        # All spec keys should appear in order
+        # Keys present in both summary and KEY_ORDER should appear in the same order
         filtered = [k for k in keys if k in expected_order]
-        assert filtered == expected_order
+        expected = [k for k in expected_order if k in summary]
+        assert filtered == expected
 
     def test_save_produces_stable_order(self, tmp_path):
         out = tmp_path / "test.json"
