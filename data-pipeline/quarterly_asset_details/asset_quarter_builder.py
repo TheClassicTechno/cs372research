@@ -146,7 +146,7 @@ def _sharpe(px: pd.Series, window: int) -> Optional[float]:
     if len(px) < window + 1:
         return None
     log_ret = np.log(px.iloc[-(window + 1):]).diff().dropna()
-    if len(log_ret) < 10 or log_ret.std() == 0:
+    if len(log_ret) < 10 or log_ret.std() < 1e-12:
         return None
     return float((log_ret.mean() / log_ret.std()) * np.sqrt(252))
 
@@ -166,7 +166,7 @@ def _beta(ticker_px: pd.Series, spy_px: pd.Series, window: int) -> Optional[floa
     y = aligned.iloc[:, 0].values  # ticker
     x = aligned.iloc[:, 1].values  # SPY
     cov = np.cov(y, x, ddof=1)
-    if cov[1, 1] == 0:
+    if cov[1, 1] < 1e-12:
         return None
     return float(cov[0, 1] / cov[1, 1])
 
@@ -174,12 +174,15 @@ def _beta(ticker_px: pd.Series, spy_px: pd.Series, window: int) -> Optional[floa
 def _idiosyncratic_momentum(
     ticker_px: pd.Series, spy_px: pd.Series, window: int,
 ) -> Optional[float]:
-    """Residual return after removing beta component over `window` days.
+    """Cumulative return after removing beta-adjusted market component.
 
     Procedure:
       1. Regress daily ticker returns on SPY returns (OLS with intercept)
-      2. Compute residual series: e_t = r_ticker_t - (a + b * r_spy_t)
-      3. Return sum of residuals = cumulative idiosyncratic return
+      2. Subtract only the beta component: e_t = r_ticker_t - beta * r_spy_t
+      3. Return sum = cumulative alpha + residual noise
+
+    The intercept (alpha) is estimated but NOT subtracted, so the result
+    captures the stock's idiosyncratic outperformance over the window.
     """
     if len(ticker_px) < window + 1 or len(spy_px) < window + 1:
         return None
@@ -194,8 +197,8 @@ def _idiosyncratic_momentum(
     X = np.column_stack([np.ones(len(x)), x])
     try:
         coeffs = np.linalg.lstsq(X, y, rcond=None)[0]
-        residuals = y - X @ coeffs
-        return float(residuals.sum())
+        beta = coeffs[1]
+        return float((y - beta * x).sum())
     except np.linalg.LinAlgError:
         return None
 
