@@ -125,7 +125,7 @@ from .graph import (
     compile_parallel_revise_graph,
     _call_llm,
 )
-from .graph.llm import _extract_snapshot_id, prompt_logger
+from .graph.llm import _compact_context_for_crit, _extract_snapshot_id, prompt_logger
 from .models import (
     Action,
     AgentTrace,
@@ -494,7 +494,7 @@ class MultiAgentRunner:
 
         # --- CRIT audit (per-agent scoring → RoundCritResult) ---
         round_crit = self._crit_scorer.score(
-            case_data=state.get("enriched_context", ""),
+            case_data=_compact_context_for_crit(state.get("enriched_context", "")),
             agent_traces=filtered_traces,
             decisions=decisions,
         )
