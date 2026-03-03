@@ -5,6 +5,18 @@ node_modules/
 traces/
 demo_debate_traces/
 results/
+
+# Data pipeline
+data-pipeline/EDGAR/raw_html/
+data-pipeline/EDGAR/clean_text/
+data-pipeline/EDGAR/_cache/
+data-pipeline/sentiment/news_cache/
+data-pipeline/provenance/
+
+# Snapshots
+data-pipeline/final_snapshots/memo_data
+data-pipeline/final_snapshots/json_data
+
 # Environment files
 .env
 .env.local

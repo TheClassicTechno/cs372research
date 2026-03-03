@@ -83,12 +83,12 @@ def _assert_passes(validator, doc):
 
 
 # ===================================================================
-# POSITIVE — provided examples pass schema validation
+# POSITIVE — provided test_examples pass schema validation
 # ===================================================================
 
 
 class TestExampleSchemaValidation:
-    """Every example file in evaluation/schemas/examples/ must pass."""
+    """Every example file in evaluation/schemas/test_examples/ must pass."""
 
     @pytest.mark.parametrize("filename", EXAMPLE_FILES)
     def test_example_passes_schema(self, validator, filename):
