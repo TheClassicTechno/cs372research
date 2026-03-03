@@ -19,6 +19,9 @@ Pipeline context:
                 │
                 ▼
     FinancialMetrics (Pydantic model for downstream consumers)
+
+    TODO: Ratios and drawdown should likely be computed over daily price rather
+    than just decision points to give more realistic values.
 """
 
 from __future__ import annotations
@@ -66,6 +69,7 @@ def build_equity_curve(episode_log: EpisodeLog, initial_cash: float) -> list[flo
     fallback_prices = episode_log.final_prices
 
     for dp in episode_log.decision_point_logs:
+        # TODO: Cash should add interest rate here if it isn't added by sim
         prices = dp.case_prices if dp.case_prices else fallback_prices
         bv = _book_value(
             dp.portfolio_after.cash,
@@ -103,7 +107,7 @@ def sharpe_ratio(returns: list[float], risk_free: float = 0.0) -> float | None:
     excess = mean_r - risk_free
     variance = sum((r - mean_r) ** 2 for r in returns) / (len(returns) - 1)
     std = math.sqrt(variance)
-    if std == 0.0:
+    if math.fabs(std) < 1e-12:
         return None
     return excess / std
 

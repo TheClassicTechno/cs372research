@@ -50,6 +50,8 @@ def extract_evidence_spans(decision: dict) -> set[str]:
 
     If no claims or no variables are present, falls back to splitting
     ``claim_text`` values into whitespace-delimited tokens (normalized).
+
+    TODO: Maybe use evidence IDs from raw text instead of claim variables.
     """
     claims = decision.get("claims", [])
     if isinstance(decision.get("action_dict"), dict):
@@ -100,15 +102,16 @@ def extract_agent_evidence_spans(
     return result
 
 
-def compute_mean_overlap(evidence_sets: dict[str, set[str]]) -> float:
+def compute_mean_overlap(evidence_sets: dict[str, set[str]]) -> float | None:
     """Average pairwise Jaccard similarity across all agent pairs.
 
     Uses ``eval.PID.sycophancy.evidence_overlap()`` for each pair.
-    Returns 0.0 if fewer than 2 agents have non-empty evidence sets.
+    Returns None if fewer than 2 agents.
+    Returns 0 have non-empty evidence sets.
     """
-    roles = [r for r, s in evidence_sets.items() if s]
+    roles = evidence_sets.keys()
     if len(roles) < 2:
-        return 0.0
+        return None
 
     total = 0.0
     n_pairs = 0
@@ -116,4 +119,4 @@ def compute_mean_overlap(evidence_sets: dict[str, set[str]]) -> float:
         total += evidence_overlap(evidence_sets[a], evidence_sets[b])
         n_pairs += 1
 
-    return total / n_pairs if n_pairs > 0 else 0.0
+    return total / n_pairs if n_pairs > 0 else None

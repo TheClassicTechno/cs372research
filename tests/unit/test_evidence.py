@@ -146,8 +146,8 @@ class TestComputeMeanOverlap:
         assert 0.1 < ov < 0.3
 
     def test_fewer_than_two_agents(self):
-        assert compute_mean_overlap({}) == 0.0
-        assert compute_mean_overlap({"a": {"x"}}) == 0.0
+        assert compute_mean_overlap({}) == None
+        assert compute_mean_overlap({"a": {"x"}}) == None
 
     def test_empty_evidence_ignored(self):
         sets = {
