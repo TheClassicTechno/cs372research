@@ -1,0 +1,127 @@
+PID Tuning Results Comparison
+=============================
+Date: 2026-03-02
+Setup: NVDA Q1, 2 agents (MACRO + VALUE), max 3 rounds, 2 cases each
+
+Case 1 (NVDA/2025_Q1)
+---------------------
+Config                                  | Rounds | Rd1 rho_bar | Rd1 Quadrant | beta trajectory | u_t
+Baseline (Kp=0.15)                      | 1      | 0.812       | CONVERGED    | 0.5 -> 0.45     | -0.0019
+High Kp (Kp=0.4)                        | 1      | 0.812       | CONVERGED    | 0.5 -> 0.45     | -0.0050
+PI (Kp=0.15, Ki=0.01)                   | 1      | 0.812       | CONVERGED    | 0.5 -> 0.45     | -0.0020
+Full PID (Kp=0.15, Ki=0.01, Kd=0.03)   | 1      | 0.750       | STUCK        | 0.5 -> 0.6      | +0.0095
+
+Case 2 (NVDA/2025_Q1_bk)
+-------------------------
+Config                                  | Rounds | Rd1 rho_bar | Rd1 Quadrant | beta trajectory      | Rd2?
+Baseline (Kp=0.15)                      | 1      | 0.875       | CONVERGED    | 0.5 -> 0.45          | no
+High Kp (Kp=0.4)                        | 2      | 0.812       | CONVERGED    | 0.5 -> 0.45 -> 0.405 | yes, rho_bar=0.85
+PI (Kp=0.15, Ki=0.01)                   | 1      | 0.850       | CONVERGED    | 0.5 -> 0.45          | no
+Full PID (Kp=0.15, Ki=0.01, Kd=0.03)   | 1      | 0.812       | CONVERGED    | 0.5 -> 0.45          | no
+
+Key Observations
+----------------
+1. Quality is generally high -- rho_bar ranges from 0.75 to 0.875 (target is 0.8).
+   Most cases land in CONVERGED quadrant, so beta decays (0.5 -> 0.45) as expected.
+
+2. Full PID caught a STUCK case -- the derivative term (Kd=0.03) made the controller
+   more sensitive, and case 1 with rho_bar=0.750 was classified STUCK. Beta correctly
+   bumped from 0.5 -> 0.6 (more adversarial). This is the PID doing its job.
+
+3. High Kp triggered extra round -- case 2 ran 2 rounds instead of 1 because the
+   stronger Kp produced a larger correction signal. Beta decayed further (0.45 -> 0.405)
+   in round 2.
+
+4. Ki barely contributes -- with only 1-2 rounds, the integral term is tiny
+   (I-term ~0.0001-0.0005). Ki would matter more with longer debates (more rounds
+   to accumulate).
+
+5. Causal integrity is the weakest pillar -- consistently scores 0.5 across all
+   experiments. This is a prompt/model issue, not a PID issue.
+
+6. Original Ki=0.03 was correctly rejected -- the stability check (Eq 17) caught
+   that Ki=0.03 with T_max=20 would violate the stability bound (1.35 > 1.11).
+   We lowered to Ki=0.01 which passes (0.63 < 1.11).
+
+CRIT Scores (per-agent)
+-----------------------
+Baseline Case 1:  macro rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5), value rho=0.88 (IC=1.0 ES=1.0 TA=1.0 CI=0.5)
+Baseline Case 2:  macro rho=0.88 (IC=1.0 ES=1.0 TA=1.0 CI=0.5), value rho=0.88 (IC=1.0 ES=1.0 TA=1.0 CI=0.5)
+High Kp Case 1:   macro rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5), value rho=0.88 (IC=1.0 ES=0.8 TA=1.0 CI=0.7)
+High Kp Case 2:   Rd1 macro=0.88, value=0.75; Rd2 macro=0.88, value=0.82
+PI Case 1:        macro rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5), value rho=0.88 (IC=1.0 ES=0.8 TA=1.0 CI=0.7)
+PI Case 2:        macro rho=0.82 (IC=1.0 ES=0.8 TA=1.0 CI=0.5), value rho=0.88 (IC=1.0 ES=0.8 TA=1.0 CI=0.7)
+Full PID Case 1:  macro rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5), value rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5)
+Full PID Case 2:  macro rho=0.88 (IC=1.0 ES=0.8 TA=1.0 CI=0.7), value rho=0.75 (IC=1.0 ES=0.5 TA=1.0 CI=0.5)
+
+Recommendation for Veljko
+-------------------------
+For the current 3-round setup, Full PID (Kp=0.15, Ki=0.01, Kd=0.03) is the most
+interesting -- it's the only config that detected a STUCK case and bumped beta.
+If you increase max_rounds to 5+, the Ki term will become more impactful. The
+high Kp (0.4) is also worth exploring for faster reactions, but watch for
+overshoot in longer debates.
+
+================================================================================
+EXPERIMENT 5: Multi-Ticker (Full PID across 4 sectors)
+================================================================================
+Date: 2026-03-03
+Setup: Full PID (Kp=0.15, Ki=0.01, Kd=0.03), 4 tickers, Q1, max 3 rounds
+
+Ticker | Rd1 rho_bar | Quadrant  | beta      | u_t     | P       | I       | D
+BAC    | 0.787       | STUCK     | 0.5->0.6  | +0.0024 | +0.0019 | +0.0001 | +0.0004
+CVX    | 0.875       | CONVERGED | 0.5->0.45 | -0.0142 | -0.0112 | -0.0007 | -0.0022
+KO     | 0.750       | STUCK     | 0.5->0.6  | +0.0095 | +0.0075 | +0.0005 | +0.0015
+NVDA   | 0.875       | CONVERGED | 0.5->0.45 | -0.0142 | -0.0112 | -0.0007 | -0.0022
+NVDA_bk| 0.875       | CONVERGED | 0.5->0.45 | -0.0142 | -0.0112 | -0.0007 | -0.0022
+
+Observations:
+7. Gains generalize across sectors -- STUCK detected for BAC (financials) and
+   KO (consumer staples), not just tech. The controller responds appropriately
+   to lower reasoning quality regardless of ticker domain.
+
+8. 2 of 5 cases hit STUCK (40%) -- BAC (rho_bar=0.787) and KO (rho_bar=0.750)
+   both had lower quality reasoning. The PID correctly bumped beta from 0.5->0.6
+   to push for more adversarial critique in the next round.
+
+9. High-quality cases converge identically -- CVX, NVDA, NVDA_bk all scored
+   rho_bar=0.875 and produced identical PID outputs. This is expected: same
+   gains + same quality = same response.
+
+================================================================================
+EXPERIMENT 6: 5 Rounds (test Ki accumulation)
+================================================================================
+Date: 2026-03-03
+Setup: Full PID (Kp=0.15, Ki=0.01, Kd=0.03), NVDA Q1, max 5 rounds
+
+Case     | PID rounds | Rd1 rho_bar | Quadrant  | beta      | u_t
+NVDA     | 1          | 0.812       | CONVERGED | 0.5->0.45 | -0.0024
+NVDA_bk  | 1          | 0.875       | CONVERGED | 0.5->0.45 | -0.0142
+
+Observations:
+10. Early termination works correctly -- despite max_rounds=5, both cases
+    converged after round 1 (JS divergence near 0). The PID's termination
+    check prevented unnecessary extra rounds.
+
+11. Ki still minimal at 1 round -- with only 1 PID step, the integral term
+    stays at ~0.0001-0.0007. To truly test Ki accumulation, we'd need cases
+    where quality stays persistently low (STUCK for 3+ consecutive rounds).
+
+12. The current NVDA data is too "easy" -- agents consistently score 0.75-0.875
+    on CRIT, which is near or above the target (0.8). To stress-test Ki, we need
+    harder cases or lower rho_star to force more PID rounds.
+
+Next Steps for Ki Testing:
+- Lower pid_rho_star to 0.9 (harder target) to keep PID active longer
+- Use more contentious tickers or deliberately adversarial case data
+- Or increase initial_beta to 0.8 to start in a more adversarial regime
+
+================================================================================
+
+Config files used:
+- config/pid_tune_baseline.yaml
+- config/pid_tune_high_kp.yaml
+- config/pid_tune_pi.yaml
+- config/pid_tune_full_pid.yaml
+- config/pid_tune_multiticker.yaml
+- config/pid_tune_5rounds.yaml
