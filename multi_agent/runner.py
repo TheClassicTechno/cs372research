@@ -444,7 +444,7 @@ class MultiAgentRunner:
 
         # --- Evidence overlap (average pairwise Jaccard) ---
         evidence_sets = extract_agent_evidence_spans(
-            decisions, allocation_mode=self.config.allocation_mode,
+            decisions, allocation_mode=True,
         )
         ov = compute_mean_overlap(evidence_sets)
         if ov is None:

@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import math
 from typing import Any, Callable
 
 from agents.base import AgentSystem
@@ -63,48 +62,6 @@ def allocation_to_decision(
         if shares > 0:
             orders.append(SimOrder(ticker=ticker, side="buy", quantity=shares))
     return Decision(orders=orders)
-
-
-def action_to_decision(action: Action) -> Decision:
-    """Convert a debate ``Action`` into a simulation ``Decision``.
-
-    Mapping:
-        DebateOrder.ticker  →  SimOrder.ticker
-        DebateOrder.side    →  SimOrder.side   (validated as "buy"/"sell")
-        DebateOrder.size    →  SimOrder.quantity  (float→int, truncated toward zero)
-    """
-    sim_orders: list[SimOrder] = []
-    for order in action.orders:
-        try:
-            qty = int(math.trunc(order.size))
-        except (ValueError, OverflowError):
-            logger.warning(
-                "Invalid order size %s for %s — skipping",
-                order.size, order.ticker,
-            )
-            continue
-        if qty <= 0:
-            logger.warning(
-                "Skipping order with non-positive quantity: %s %s size=%.2f → qty=%d",
-                order.side,
-                order.ticker,
-                order.size,
-                qty,
-            )
-            continue
-
-        side = order.side.lower()
-        if side not in ("buy", "sell"):
-            logger.warning(
-                "Invalid side '%s' for %s — skipping order.", order.side, order.ticker
-            )
-            continue
-
-        sim_orders.append(
-            SimOrder(ticker=order.ticker, side=side, quantity=qty)  # type: ignore[arg-type]
-        )
-
-    return Decision(orders=sim_orders)
 
 
 # ------------------------------------------------------------------
@@ -183,8 +140,6 @@ class DebateAgentSystem(AgentSystem):
             log_llm_responses=config.log_llm_responses,
             log_rendered_prompts=config.log_rendered_prompts,
             prompt_logging=config.prompt_logging,
-            allocation_mode=config.allocation_mode,
-            skip_pipeline=config.skip_pipeline,
             use_system_causal_contract=config.use_system_causal_contract,
         )
         if roles is not None:
@@ -230,24 +185,17 @@ class DebateAgentSystem(AgentSystem):
             action.confidence,
         )
 
-        # 3. Convert Action → Decision
-        if self._debate_cfg.allocation_mode and action.allocation:
-            prices = {t: sd.current_price for t, sd in case.stock_data.items()}
-            cash = case.portfolio.cash
-            decision = allocation_to_decision(action.allocation, prices, cash)
-            logger.info(
-                "Debate agent: allocation mode — %d ticker(s) allocated, %d buy order(s) for case %s",
-                sum(1 for w in action.allocation.values() if w > 0),
-                len(decision.orders),
-                case.case_id,
-            )
-        else:
-            decision = action_to_decision(action)
-            logger.info(
-                "Debate agent: converted to %d simulation order(s) for case %s",
-                len(decision.orders),
-                case.case_id,
-            )
+        # 3. Convert allocation → Decision (buy orders from weights)
+        prices = {t: sd.current_price for t, sd in case.stock_data.items()}
+        cash = case.portfolio.cash
+        allocation = action.allocation or {}
+        decision = allocation_to_decision(allocation, prices, cash)
+        logger.info(
+            "Debate agent: %d ticker(s) allocated, %d buy order(s) for case %s",
+            sum(1 for w in allocation.values() if w > 0),
+            len(decision.orders),
+            case.case_id,
+        )
 
         # 4. Build raw output for logging (includes full debate trace)
         raw_output = {

@@ -1,4 +1,4 @@
-"""Unit tests for AllocationConstraints and memo-mode config wiring."""
+"""Unit tests for AllocationConstraints and memo-mode config validation."""
 
 import pytest
 from pydantic import ValidationError
@@ -25,6 +25,7 @@ def _sim_config(**overrides) -> SimulationConfig:
     d = {
         "dataset_path": "data/cases",
         "tickers": ["AAPL", "MSFT", "GOOG"],
+        "invest_quarter": "2025Q1",
         "agent": _base_agent(),
     }
     d.update(overrides)
@@ -68,60 +69,40 @@ class TestAllocationConstraints:
         assert restored == ac
 
 
-# ── SimulationConfig._wire_memo_mode ─────────────────────────────────────────
+# ── SimulationConfig._validate_memo_mode ─────────────────────────────────────
 
 
-class TestWireMemoMode:
-    def test_memo_sets_allocation_mode_true(self):
-        cfg = _sim_config(
-            case_format="memo", invest_quarter="2025Q1",
-            dataset_path="data-pipeline/final_snapshots",
-        )
-        assert cfg.agent.allocation_mode is True
-
-    def test_memo_sets_skip_pipeline_true(self):
-        cfg = _sim_config(
-            case_format="memo", invest_quarter="2025Q1",
-            dataset_path="data-pipeline/final_snapshots",
-        )
-        assert cfg.agent.skip_pipeline is True
-
-    def test_memo_requires_invest_quarter(self):
+class TestValidateMemoMode:
+    def test_requires_invest_quarter(self):
         with pytest.raises(ValueError, match="invest_quarter is required"):
             _sim_config(
-                case_format="memo",
+                invest_quarter=None,
                 dataset_path="data-pipeline/final_snapshots",
             )
 
-    def test_memo_ticker_count_check(self):
+    def test_ticker_count_check(self):
         tickers = [f"T{i}" for i in range(11)]  # 11 > default max_tickers=10
         with pytest.raises(ValueError, match="Too many tickers"):
             _sim_config(
-                case_format="memo", invest_quarter="2025Q1",
+                invest_quarter="2025Q1",
                 dataset_path="data-pipeline/final_snapshots",
                 tickers=tickers,
             )
 
-    def test_memo_ticker_count_at_limit(self):
+    def test_ticker_count_at_limit(self):
         tickers = [f"T{i}" for i in range(10)]
         cfg = _sim_config(
-            case_format="memo", invest_quarter="2025Q1",
+            invest_quarter="2025Q1",
             dataset_path="data-pipeline/final_snapshots",
             tickers=tickers,
         )
         assert len(cfg.tickers) == 10
 
-    def test_legacy_mode_no_auto_set(self):
-        cfg = _sim_config(case_format="legacy")
-        assert cfg.agent.allocation_mode is False
-        assert cfg.agent.skip_pipeline is False
-
     def test_custom_allocation_constraints(self):
         cfg = _sim_config(
-            case_format="memo", invest_quarter="2025Q1",
+            invest_quarter="2025Q1",
             dataset_path="data-pipeline/final_snapshots",
             allocation_constraints={"max_weight": 0.25, "min_holdings": 5},
         )
         assert cfg.allocation_constraints.max_weight == 0.25
         assert cfg.allocation_constraints.min_holdings == 5
-        assert cfg.agent.allocation_mode is True

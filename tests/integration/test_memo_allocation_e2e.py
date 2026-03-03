@@ -35,15 +35,13 @@ TICKERS = ["AAPL", "MSFT", "GOOG"]
 
 @pytest.fixture
 def alloc_agent_config() -> AgentConfig:
-    """AgentConfig with allocation_mode, skip_pipeline, mock."""
+    """AgentConfig with mock mode for allocation testing."""
     return AgentConfig(
         agent_system="multi_agent_debate",
         llm_provider="openai",
         llm_model="gpt-4o-mini",
         temperature=0.3,
         system_prompt_override="mock",
-        allocation_mode=True,
-        skip_pipeline=True,
     )
 
 
@@ -154,11 +152,10 @@ class TestMTMCaseDetection:
 
 
 class TestConfigPropagation:
-    def test_yaml_memo_auto_wiring(self):
-        """case_format='memo' auto-sets allocation_mode and skip_pipeline."""
+    def test_yaml_memo_validation(self):
+        """SimulationConfig validates memo constraints (tickers, invest_quarter)."""
         cfg = SimulationConfig(
             dataset_path="data-pipeline/final_snapshots",
-            case_format="memo",
             invest_quarter="2025Q1",
             tickers=["AAPL", "MSFT", "GOOG"],
             agent={
@@ -168,14 +165,14 @@ class TestConfigPropagation:
                 "temperature": 0.3,
             },
         )
-        assert cfg.agent.allocation_mode is True
-        assert cfg.agent.skip_pipeline is True
+        assert cfg.invest_quarter == "2025Q1"
+        assert cfg.tickers == ["AAPL", "MSFT", "GOOG"]
 
-    def test_debate_config_receives_flags(self, alloc_agent_config):
-        """DebateAgentSystem creates DebateConfig with allocation flags."""
+    def test_debate_config_created(self, alloc_agent_config):
+        """DebateAgentSystem creates a DebateConfig successfully."""
         agent = DebateAgentSystem(alloc_agent_config)
-        assert agent._debate_cfg.allocation_mode is True
-        assert agent._debate_cfg.skip_pipeline is True
+        assert agent._debate_cfg is not None
+        assert agent._debate_cfg.mock is True
 
 
 # ── prompt templates ─────────────────────────────────────────────────────────

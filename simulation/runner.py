@@ -28,7 +28,7 @@ from models.config import SimulationConfig
 from models.decision import Decision
 from models.log import DecisionPointLog, EpisodeLog
 from simulation.broker import Broker
-from simulation.case_loader import build_case, load_case_templates
+from simulation.case_loader import build_case
 from simulation.sim_logging import SimulationLogger, run_name_from_config_path
 
 logger = logging.getLogger(__name__)
@@ -52,27 +52,14 @@ class AsyncSimulationRunner:
         """Execute the full simulation."""
         self._sim_logger.init_run(self._config_yaml_path)
 
-        # Load case templates once (shared across episodes).
-        if self._config.case_format == "memo":
-            from simulation.memo_loader import load_memo_cases
-            templates = load_memo_cases(
-                self._config.dataset_path,
-                invest_quarter=self._config.invest_quarter,
-                memo_format=self._config.memo_format,
-                tickers=self._config.tickers,
-            )
-        else:
-            # All filtering is controlled via YAML config fields:
-            #   tickers  — which tickers to include
-            #   quarters — which quarters to include (optional)
-            #   top_n_news — cap news items per case (optional)
-            templates = load_case_templates(
-                self._config.dataset_path,
-                top_n_news=self._config.top_n_news,
-                ticker_filter=self._config.tickers,
-                quarters=self._config.quarters,
-                merge_tickers=self._config.merge_tickers,
-            )
+        # Load memo case templates (shared across episodes).
+        from simulation.memo_loader import load_memo_cases
+        templates = load_memo_cases(
+            self._config.dataset_path,
+            invest_quarter=self._config.invest_quarter,
+            memo_format=self._config.memo_format,
+            tickers=self._config.tickers,
+        )
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
         num_mtm = num_cases - num_decision

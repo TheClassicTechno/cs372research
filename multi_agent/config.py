@@ -43,9 +43,13 @@ class DebateConfig:
       - max_rounds: how many critique-revision cycles
       - agreeableness: sycophancy knob (0=confrontational, 1=agreeable)
       - enable_adversarial: add devil's advocate agent
-      - enable_news_pipeline / enable_data_pipeline: preprocessing stages
       - model_name / temperature: LLM settings
       - mock: use mock responses (no API calls)
+
+    The system operates in allocation mode: agents output portfolio
+    allocation weights (memo-based) rather than buy/sell orders.
+    Pipeline preprocessing (news_digest, data_analysis) is skipped;
+    memo content provides the financial context directly.
 
     PID controller can be configured either by passing a PIDConfig
     object directly (pid_config), or by setting pid_enabled=True with
@@ -65,10 +69,6 @@ class DebateConfig:
 
     # Whether to add an explicit devil's advocate agent
     enable_adversarial: bool = False
-
-    # --- Pipeline preprocessing ---
-    enable_news_pipeline: bool = True
-    enable_data_pipeline: bool = True
 
     # --- LLM settings ---
     model_name: str = "gpt-4o-mini"
@@ -134,10 +134,6 @@ class DebateConfig:
     # Keys: enabled, log_rendered_prompt, log_selected_blocks,
     #        log_beta_bucket, max_prompt_log_chars
     prompt_logging: dict = field(default_factory=dict)
-
-    # --- Memo / allocation mode ---
-    allocation_mode: bool = False
-    skip_pipeline: bool = False
 
     # --- System-level causal contract ---
     use_system_causal_contract: bool = False
@@ -208,8 +204,6 @@ class DebateConfig:
             "max_rounds": self.max_rounds,
             "agreeableness": self.agreeableness,
             "enable_adversarial": self.enable_adversarial,
-            "enable_news_pipeline": self.enable_news_pipeline,
-            "enable_data_pipeline": self.enable_data_pipeline,
             "model_name": self.model_name,
             "temperature": self.temperature,
             "parallel_agents": self.parallel_agents,
@@ -227,8 +221,8 @@ class DebateConfig:
             "prompt_logging": self.prompt_logging,
             "convergence_window": self.convergence_window,
             "delta_rho": self.delta_rho,
-            "allocation_mode": self.allocation_mode,
-            "skip_pipeline": self.skip_pipeline,
+            "allocation_mode": True,
+            "skip_pipeline": True,
             "use_system_causal_contract": self.use_system_causal_contract,
             "system_prompt_block_order": self.system_prompt_block_order,
             "user_prompt_section_order": self.user_prompt_section_order,

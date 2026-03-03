@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agents.multi_agent_debate import DebateAgentSystem, action_to_decision
+from agents.multi_agent_debate import DebateAgentSystem
 from models.agents import AgentInvocation, AgentInvocationResult
 from models.case import Case, CaseData, CaseDataItem, ClosePricePoint, StockData
 from models.config import AgentConfig, SimulationConfig
@@ -103,6 +103,7 @@ class TestYAMLConfigPropagation:
         yaml_content = """\
 dataset_path: "data/cases"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
 agent:
   agent_system: multi_agent_debate
   llm_provider: openai
@@ -141,6 +142,7 @@ agent:
         yaml_content = """\
 dataset_path: "data/cases"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
 agent:
   agent_system: multi_agent_debate
   llm_provider: openai

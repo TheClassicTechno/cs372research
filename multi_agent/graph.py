@@ -117,13 +117,10 @@ from langgraph.graph import END, START, StateGraph
 from .config import AgentRole, DebateConfig
 from .models import Observation
 from .prompts import (
-    DATA_ANALYSIS_SYSTEM_PROMPT,
-    NEWS_DIGEST_SYSTEM_PROMPT,
     ROLE_SYSTEM_PROMPTS,
     SYSTEM_CAUSAL_CONTRACT,
     build_critique_prompt,
     build_judge_prompt,
-    build_observation_context,
     build_proposal_user_prompt,
     build_revision_prompt,
     get_agreeableness_modifier,
@@ -499,70 +496,22 @@ def _enforce_max_weight(alloc: dict[str, float], max_weight: float) -> dict[str,
 
 
 def _mock_proposal(role: str, obs_dict: dict, config: dict | None = None) -> dict:
-    """Generate a deterministic mock proposal for a given role."""
+    """Generate a deterministic mock proposal (allocation mode) for a given role."""
     tickers = obs_dict.get("universe", ["AAPL"])
     if not tickers:
         tickers = ["AAPL"]
 
-    # Allocation mode: return equal-weight allocation
-    if config and config.get("allocation_mode"):
-        eq = round(1.0 / len(tickers), 4)
-        return {
-            "allocation": {t: eq for t in tickers},
-            "justification": f"[{role} mock] Equal-weight allocation across {len(tickers)} tickers",
-            "confidence": 0.5,
-            "risks_or_falsifiers": f"A reversal in {role} signals would change this view",
-            "claims": [
-                {
-                    "claim_text": f"[{role}] Equal-weight is optimal given balanced signals [{tickers[0]}-RET60] [L1-VIX]",
-                    "pearl_level": "L2",
-                    "variables": tickers[:2],
-                    "confidence": 0.55,
-                }
-            ],
-        }
-
-    returns = obs_dict.get("market_state", {}).get("returns") or {}
-    t = tickers[0]
-    r = returns.get(t, 0.0)
-
-    # Each role has a different bias to create realistic disagreements
-    bias_map = {
-        "macro": 0.02,
-        "value": -0.01,
-        "risk": -0.03,
-        "technical": 0.015,
-        "sentiment": 0.005,
-        "devils_advocate": -0.025,
-    }
-    bias = bias_map.get(role, 0.0)
-    threshold = r + bias
-
-    if threshold > 0.01:
-        orders = [{"ticker": t, "side": "buy", "size": 10}]
-        direction = "Bullish"
-    elif threshold < -0.01:
-        orders = [{"ticker": t, "side": "sell", "size": 10}]
-        direction = "Bearish"
-    else:
-        orders = []
-        direction = "Neutral"
-
-    pearl = "L2" if role != "devils_advocate" else "L3"
-
+    eq = round(1.0 / len(tickers), 4)
     return {
-        "what_i_saw": f"[{role}] Observed {t} return {r * 100:.2f}%",
-        "hypothesis": f"[{role}] {direction} based on {role} analysis",
-        "orders": orders,
-        "justification": f"[{role} mock] threshold={threshold * 100:.2f}%",
-        "confidence": round(min(0.9, 0.4 + abs(threshold) * 5), 2),
+        "allocation": {t: eq for t in tickers},
+        "justification": f"[{role} mock] Equal-weight allocation across {len(tickers)} tickers",
+        "confidence": 0.5,
         "risks_or_falsifiers": f"A reversal in {role} signals would change this view",
         "claims": [
             {
-                "claim_text": f"If {role} signals persist, {t} will {'rise' if threshold > 0 else 'decline'}",
-                "pearl_level": pearl,
-                "variables": [t, f"{role}_signal"],
-                "assumptions": [f"{role} analytical framework is valid for current regime"],
+                "claim_text": f"[{role}] Equal-weight is optimal given balanced signals [{tickers[0]}-RET60] [L1-VIX]",
+                "pearl_level": "L2",
+                "variables": tickers[:2],
                 "confidence": 0.55,
             }
         ],
@@ -599,111 +548,38 @@ def _mock_revision(role: str, original_action: dict, obs_dict: dict, config: dic
 
 
 def _mock_judge(revisions: list, config: dict | None = None) -> dict:
-    """Generate a deterministic mock judge decision."""
-    # Allocation mode: average all agents' allocations
-    if config and config.get("allocation_mode"):
-        all_allocs: list[dict[str, float]] = []
-        for r in revisions:
-            alloc = r.get("action_dict", {}).get("allocation", {})
-            if alloc:
-                all_allocs.append(alloc)
-        if all_allocs:
-            tickers = sorted(set().union(*all_allocs))
-            avg = {}
-            for t in tickers:
-                avg[t] = sum(a.get(t, 0.0) for a in all_allocs) / len(all_allocs)
-            # Normalize
-            total = sum(avg.values())
-            if total > 0:
-                avg = {t: w / total for t, w in avg.items()}
-        else:
-            avg = {}
-        return {
-            "allocation": avg,
-            "audited_memo": f"[Judge mock] Averaged {len(all_allocs)} agent allocations.",
-            "strongest_objection": "Risk agent raised concentration concerns",
-            "confidence": 0.55,
-            "risks_or_falsifiers": "Unexpected correlation breakdown or macro shock",
-            "claims": [
-                {
-                    "claim_text": "Averaged allocation reduces individual agent bias [L1-VIX]",
-                    "pearl_level": "L2",
-                    "variables": ["consensus", "allocation"],
-                    "confidence": 0.6,
-                }
-            ],
-        }
-
-    buy_count = 0
-    sell_count = 0
-    ticker = "AAPL"
+    """Generate a deterministic mock judge decision (allocation mode)."""
+    all_allocs: list[dict[str, float]] = []
     for r in revisions:
-        action = r.get("action_dict", {})
-        for o in action.get("orders", []):
-            if o.get("side") == "buy":
-                buy_count += 1
-                ticker = o.get("ticker", ticker)
-            elif o.get("side") == "sell":
-                sell_count += 1
-                ticker = o.get("ticker", ticker)
-
-    if buy_count > sell_count:
-        orders = [{"ticker": ticker, "side": "buy", "size": 10}]
-    elif sell_count > buy_count:
-        orders = [{"ticker": ticker, "side": "sell", "size": 10}]
+        alloc = r.get("action_dict", {}).get("allocation", {})
+        if alloc:
+            all_allocs.append(alloc)
+    if all_allocs:
+        tickers = sorted(set().union(*all_allocs))
+        avg = {}
+        for t in tickers:
+            avg[t] = sum(a.get(t, 0.0) for a in all_allocs) / len(all_allocs)
+        # Normalize
+        total = sum(avg.values())
+        if total > 0:
+            avg = {t: w / total for t, w in avg.items()}
     else:
-        orders = []
-
+        avg = {}
     return {
-        "orders": orders,
-        "audited_memo": (
-            f"[Judge mock] {len(revisions)} agents debated. "
-            f"Buy votes: {buy_count}, Sell votes: {sell_count}. "
-            f"Decision based on majority direction."
-        ),
-        "strongest_objection": "Risk agent raised volatility regime concerns",
+        "allocation": avg,
+        "audited_memo": f"[Judge mock] Averaged {len(all_allocs)} agent allocations.",
+        "strongest_objection": "Risk agent raised concentration concerns",
         "confidence": 0.55,
         "risks_or_falsifiers": "Unexpected correlation breakdown or macro shock",
         "claims": [
             {
-                "claim_text": "Debate consensus reflects weighted multi-perspective analysis",
+                "claim_text": "Averaged allocation reduces individual agent bias [L1-VIX]",
                 "pearl_level": "L2",
-                "variables": ["consensus", "trade_direction"],
-                "assumptions": ["Multi-agent deliberation reduces individual bias"],
+                "variables": ["consensus", "allocation"],
                 "confidence": 0.6,
             }
         ],
     }
-
-
-def _mock_pipeline(agent_type: str, obs_dict: dict) -> dict:
-    """Generate a deterministic mock pipeline output."""
-    if agent_type == "news_digest":
-        return {
-            "summary": f"Mixed sentiment for {', '.join(obs_dict.get('universe', []))}. Key drivers: macro policy and earnings.",
-            "sentiment_score": 0.15,
-            "key_signals": [
-                "Fed signals potential rate adjustment",
-                "Tech sector earnings mixed",
-                "Geopolitical uncertainty elevated",
-            ],
-            "causal_implications": "Rate policy shift could benefit growth stocks if confirmed",
-            "information_freshness": "new",
-            "narrative_shift": False,
-            "confidence": 0.6,
-        }
-    else:
-        returns = obs_dict.get("market_state", {}).get("returns") or {}
-        avg_return = sum(returns.values()) / max(len(returns), 1) if returns else 0.0
-        return {
-            "summary": "Market data shows moderate momentum with contained volatility",
-            "momentum_signal": "positive" if avg_return > 0 else "negative" if avg_return < 0 else "neutral",
-            "volatility_regime": "medium",
-            "relative_strength": returns,
-            "risk_assessment": "Moderate risk; no extreme readings detected",
-            "key_levels": [],
-            "confidence": 0.6,
-        }
 
 
 # =============================================================================
@@ -836,82 +712,20 @@ def _verbose_judge(result: dict) -> None:
 # =============================================================================
 
 
-def news_digest_node(state: DebateState) -> dict:
-    """Pipeline node: digest news/text context into structured signals."""
-    config = state["config"]
-    if config.get("skip_pipeline"):
-        return {"news_digest": ""}
-
-    print("  [Pipeline] News digest agent processing...", flush=True)
-    obs = state["observation"]
-    text_context = obs.get("text_context", "")
-
-    if not text_context:
-        return {"news_digest": "No news context provided."}
-
-    if config.get("mock", False):
-        result = _mock_pipeline("news_digest", obs)
-        return {"news_digest": json.dumps(result, indent=2)}
-
-    raw = _call_llm(
-        config,
-        NEWS_DIGEST_SYSTEM_PROMPT,
-        f"Text context to analyze:\n{text_context}\n\nUniverse: {', '.join(obs.get('universe', []))}",
-    )
-    return {"news_digest": raw}
-
-
-def data_analysis_node(state: DebateState) -> dict:
-    """Pipeline node: analyze market data into structured signals."""
-    config = state["config"]
-    if config.get("skip_pipeline"):
-        return {"data_analysis": ""}
-
-    print("  [Pipeline] Data analysis agent processing...", flush=True)
-    obs = state["observation"]
-
-    market_str = json.dumps(obs.get("market_state", {}), indent=2)
-    portfolio_str = json.dumps(obs.get("portfolio_state", {}), indent=2)
-
-    if config.get("mock", False):
-        result = _mock_pipeline("data_analysis", obs)
-        return {"data_analysis": json.dumps(result, indent=2)}
-
-    raw = _call_llm(
-        config,
-        DATA_ANALYSIS_SYSTEM_PROMPT,
-        f"Market data:\n{market_str}\n\nPortfolio:\n{portfolio_str}\n\nUniverse: {', '.join(obs.get('universe', []))}",
-    )
-    return {"data_analysis": raw}
-
-
 def build_context_node(state: DebateState) -> dict:
-    """Combine observation + pipeline outputs into enriched context string."""
-    config = state["config"]
+    """Build enriched context string from observation (memo/allocation mode)."""
     obs_model = Observation(**state["observation"])
 
-    if config.get("allocation_mode"):
-        # Memo mode: the text_context IS the financial context.
-        # Prepend only portfolio state and universe.
-        header = (
-            f"## Portfolio Allocation Task\n"
-            f"- Cash to allocate: ${obs_model.portfolio_state.cash:,.2f}\n"
-            f"- Allocation universe: {', '.join(obs_model.universe)}\n"
-            f"- As-of: {obs_model.timestamp}\n"
-        )
-        memo_context = obs_model.text_context or ""
-        enriched = header + "\n" + memo_context
-    else:
-        pipeline_parts = []
-        news = state.get("news_digest", "")
-        if news and news != "No news context provided.":
-            pipeline_parts.append(f"### News Intelligence\n{news}")
-        data = state.get("data_analysis", "")
-        if data:
-            pipeline_parts.append(f"### Data Analysis\n{data}")
-
-        pipeline_context = "\n\n".join(pipeline_parts)
-        enriched = build_observation_context(obs_model, pipeline_context)
+    # Memo mode: the text_context IS the financial context.
+    # Prepend only portfolio state and universe.
+    header = (
+        f"## Portfolio Allocation Task\n"
+        f"- Cash to allocate: ${obs_model.portfolio_state.cash:,.2f}\n"
+        f"- Allocation universe: {', '.join(obs_model.universe)}\n"
+        f"- As-of: {obs_model.timestamp}\n"
+    )
+    memo_context = obs_model.text_context or ""
+    enriched = header + "\n" + memo_context
 
     return {"enriched_context": enriched}
 
@@ -939,7 +753,6 @@ def propose_node(state: DebateState) -> dict:
     proposals = []
     turns = []
 
-    allocation_mode = config.get("allocation_mode", False)
     use_cc = config.get("use_system_causal_contract", False)
 
     for i, role in enumerate(roles):
@@ -949,7 +762,7 @@ def propose_node(state: DebateState) -> dict:
         if use_cc:
             role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
         user_prompt = build_proposal_user_prompt(
-            context, allocation_mode=allocation_mode,
+            context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
@@ -965,28 +778,19 @@ def propose_node(state: DebateState) -> dict:
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
 
-        if allocation_mode:
-            universe = obs.get("universe", [])
-            raw_alloc = result.get("allocation", {})
-            action_dict = {
-                "allocation": normalize_allocation(raw_alloc, universe),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
-        else:
-            action_dict = {
-                "orders": result.get("orders", []),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
+        universe = obs.get("universe", [])
+        raw_alloc = result.get("allocation", {})
+        action_dict = {
+            "allocation": normalize_allocation(raw_alloc, universe),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
 
         if config.get("verbose"):
             _verbose_proposal(role, result)
 
-        if allocation_mode:
-            _print_allocation(role, action_dict, "proposes")
+        _print_allocation(role, action_dict, "proposes")
 
         proposals.append({
             "role": role,
@@ -1023,7 +827,6 @@ def critique_node(state: DebateState) -> dict:
     current_round = state.get("current_round", 1)
     agreeableness = config.get("agreeableness", 0.3)
     is_mock = config.get("mock", False)
-    allocation_mode = config.get("allocation_mode", False)
 
     # After first round, critique the revisions; otherwise the proposals
     source = state.get("revisions") if state.get("revisions") else state["proposals"]
@@ -1049,7 +852,6 @@ def critique_node(state: DebateState) -> dict:
         # legacy path uses the original agreeableness-based builders.
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
-            allocation_mode=allocation_mode,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
@@ -1088,8 +890,7 @@ def critique_node(state: DebateState) -> dict:
         if config.get("verbose"):
             _verbose_critique(role, result)
 
-        if allocation_mode:
-            _print_critique_summary(role, result)
+        _print_critique_summary(role, result)
 
         critiques.append({
             "role": role,
@@ -1127,7 +928,6 @@ def revise_node(state: DebateState) -> dict:
     current_round = state.get("current_round", 1)
     agreeableness = config.get("agreeableness", 0.3)
     is_mock = config.get("mock", False)
-    allocation_mode = config.get("allocation_mode", False)
     obs = state["observation"]
     all_critiques = state.get("critiques", [])
 
@@ -1157,7 +957,6 @@ def revise_node(state: DebateState) -> dict:
         use_cc = config.get("use_system_causal_contract", False)
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
-            allocation_mode=allocation_mode,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
@@ -1189,28 +988,19 @@ def revise_node(state: DebateState) -> dict:
             raw_text = _call_llm(config, system_msg, prompt)
             result = _parse_json(raw_text)
 
-        if allocation_mode:
-            universe = obs.get("universe", [])
-            raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
-            action_dict = {
-                "allocation": normalize_allocation(raw_alloc, universe),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
-        else:
-            action_dict = {
-                "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
+        universe = obs.get("universe", [])
+        raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
+        action_dict = {
+            "allocation": normalize_allocation(raw_alloc, universe),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
 
         if config.get("verbose"):
             _verbose_revision(role, result)
 
-        if allocation_mode:
-            _print_allocation(role, action_dict, "revised")
+        _print_allocation(role, action_dict, "revised")
 
         revisions.append({
             "role": role,
@@ -1291,14 +1081,13 @@ def make_propose_node(role: str):
         i = roles.index(role) if role in roles else 0
         print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
 
-        allocation_mode = config.get("allocation_mode", False)
         use_cc = config.get("use_system_causal_contract", False)
         rp = get_role_prompts(use_cc)
         role_system = rp.get(role, rp.get(AgentRole.MACRO, ""))
         if use_cc:
             role_system = SYSTEM_CAUSAL_CONTRACT + "\n\n" + role_system
         user_prompt = build_proposal_user_prompt(
-            context, allocation_mode=allocation_mode,
+            context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
@@ -1314,28 +1103,19 @@ def make_propose_node(role: str):
             raw_text = _call_llm(config, role_system, user_prompt)
             result = _parse_json(raw_text)
 
-        if allocation_mode:
-            universe = obs.get("universe", [])
-            raw_alloc = result.get("allocation", {})
-            action_dict = {
-                "allocation": normalize_allocation(raw_alloc, universe),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
-        else:
-            action_dict = {
-                "orders": result.get("orders", []),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
+        universe = obs.get("universe", [])
+        raw_alloc = result.get("allocation", {})
+        action_dict = {
+            "allocation": normalize_allocation(raw_alloc, universe),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
 
         if config.get("verbose"):
             _verbose_proposal(role, result)
 
-        if allocation_mode:
-            _print_allocation(role, action_dict, "proposes")
+        _print_allocation(role, action_dict, "proposes")
 
         proposal = {
             "role": role,
@@ -1400,7 +1180,6 @@ def make_critique_node(role: str):
             for entry in source
         ]
 
-        allocation_mode = config.get("allocation_mode", False)
         roles = config.get("roles", ["macro", "value", "risk"])
         i = roles.index(role) if role in roles else 0
         print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
@@ -1409,7 +1188,6 @@ def make_critique_node(role: str):
         use_cc = config.get("use_system_causal_contract", False)
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal, agreeableness,
-            allocation_mode=allocation_mode,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
@@ -1448,8 +1226,7 @@ def make_critique_node(role: str):
         if config.get("verbose"):
             _verbose_critique(role, result)
 
-        if allocation_mode:
-            _print_critique_summary(role, result)
+        _print_critique_summary(role, result)
 
         critique = {
             "role": role,
@@ -1496,7 +1273,6 @@ def make_revise_node(role: str):
         current_round = state.get("current_round", 1)
         agreeableness = config.get("agreeableness", 0.3)
         is_mock = config.get("mock", False)
-        allocation_mode = config.get("allocation_mode", False)
         obs = state["observation"]
         all_critiques = state.get("critiques", [])
 
@@ -1529,7 +1305,6 @@ def make_revise_node(role: str):
         use_cc = config.get("use_system_causal_contract", False)
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received, agreeableness,
-            allocation_mode=allocation_mode,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
@@ -1561,28 +1336,19 @@ def make_revise_node(role: str):
             raw_text = _call_llm(config, system_msg, prompt)
             result = _parse_json(raw_text)
 
-        if allocation_mode:
-            universe = obs.get("universe", [])
-            raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
-            action_dict = {
-                "allocation": normalize_allocation(raw_alloc, universe),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
-        else:
-            action_dict = {
-                "orders": result.get("orders", p.get("action_dict", {}).get("orders", [])),
-                "justification": result.get("justification", ""),
-                "confidence": result.get("confidence", 0.5),
-                "claims": result.get("claims", []),
-            }
+        universe = obs.get("universe", [])
+        raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
+        action_dict = {
+            "allocation": normalize_allocation(raw_alloc, universe),
+            "justification": result.get("justification", ""),
+            "confidence": result.get("confidence", 0.5),
+            "claims": result.get("claims", []),
+        }
 
         if config.get("verbose"):
             _verbose_revision(role, result)
 
-        if allocation_mode:
-            _print_allocation(role, action_dict, "revised")
+        _print_allocation(role, action_dict, "revised")
 
         revision = {
             "role": role,
@@ -1817,7 +1583,6 @@ def judge_node(state: DebateState) -> dict:
     revisions = state.get("revisions", state.get("proposals", []))
     all_critiques = state.get("critiques", [])
     is_mock = config.get("mock", False)
-    allocation_mode = config.get("allocation_mode", False)
 
     # Format critiques for the judge
     critiques_text = "\n".join(
@@ -1840,7 +1605,6 @@ def judge_node(state: DebateState) -> dict:
     use_cc = config.get("use_system_causal_contract", False)
     prompt = build_judge_prompt(
         context, revisions_for_judge, critiques_text,
-        allocation_mode=allocation_mode,
         use_system_causal_contract=use_cc,
         section_order=config.get("user_prompt_section_order"),
         prompt_file_overrides=config.get("prompt_file_overrides"),
@@ -1857,10 +1621,7 @@ def judge_node(state: DebateState) -> dict:
         )
         system_msg = build_result.system_prompt
     else:
-        if allocation_mode:
-            system_msg = "You are the Judge. Synthesize the debate and produce a final portfolio allocation with an audited memo."
-        else:
-            system_msg = "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+        system_msg = "You are the Judge. Synthesize the debate and produce a final portfolio allocation with an audited memo."
         if use_cc:
             system_msg = SYSTEM_CAUSAL_CONTRACT + "\n\n" + system_msg
 
@@ -1877,24 +1638,16 @@ def judge_node(state: DebateState) -> dict:
     if config.get("verbose"):
         _verbose_judge(result)
 
-    if allocation_mode:
-        obs = state["observation"]
-        universe = obs.get("universe", [])
-        raw_alloc = result.get("allocation", {})
-        final_action = {
-            "allocation": normalize_allocation(raw_alloc, universe),
-            "justification": result.get("audited_memo", result.get("justification", "")),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
-        _print_allocation("judge", final_action, "FINAL")
-    else:
-        final_action = {
-            "orders": result.get("orders", []),
-            "justification": result.get("audited_memo", result.get("justification", "")),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
+    obs = state["observation"]
+    universe = obs.get("universe", [])
+    raw_alloc = result.get("allocation", {})
+    final_action = {
+        "allocation": normalize_allocation(raw_alloc, universe),
+        "justification": result.get("audited_memo", result.get("justification", "")),
+        "confidence": result.get("confidence", 0.5),
+        "claims": result.get("claims", []),
+    }
+    _print_allocation("judge", final_action, "FINAL")
 
     turns = [
         {
@@ -2136,14 +1889,6 @@ def build_debate_graph(config: DebateConfig) -> StateGraph:
     graph = StateGraph(DebateState)
 
     # --- Add all nodes ---
-    has_news = config.enable_news_pipeline
-    has_data = config.enable_data_pipeline
-
-    if has_news:
-        graph.add_node("news_digest", news_digest_node)
-    if has_data:
-        graph.add_node("data_analysis", data_analysis_node)
-
     graph.add_node("build_context", build_context_node)
     graph.add_node("propose", propose_node)
     graph.add_node("critique", critique_node)
@@ -2151,20 +1896,8 @@ def build_debate_graph(config: DebateConfig) -> StateGraph:
     graph.add_node("judge", judge_node)
     graph.add_node("build_trace", build_trace_node)
 
-    # --- Edges: START -> pipeline (parallel) -> build_context ---
-    if has_news and has_data:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge(START, "data_analysis")
-        graph.add_edge("news_digest", "build_context")
-        graph.add_edge("data_analysis", "build_context")
-    elif has_news:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge("news_digest", "build_context")
-    elif has_data:
-        graph.add_edge(START, "data_analysis")
-        graph.add_edge("data_analysis", "build_context")
-    else:
-        graph.add_edge(START, "build_context")
+    # --- Edges: START -> build_context (no pipeline) ---
+    graph.add_edge(START, "build_context")
 
     # --- Edges: debate flow ---
     graph.add_edge("build_context", "propose")
@@ -2212,42 +1945,15 @@ def compile_debate_graph(config: DebateConfig):
 
 
 def build_pipeline_graph(config: DebateConfig) -> StateGraph:
-    """Pipeline: sequential news → data → build_context → END.
+    """Pipeline: build_context → END.
 
-    Runs preprocessing stages that enrich the observation with news
-    signals and data analysis before the debate begins.
-
-    Uses SEQUENTIAL edges (not parallel fan-in) because this graph is
-    invoked as a standalone phase.  The monolithic graph uses parallel
-    fan-in for news+data, but since these nodes don't depend on each
-    other's outputs, the sequential ordering produces identical results.
-    Equivalence tests (with pipelines disabled) confirm this doesn't
-    affect debate output.
+    In allocation mode, there are no preprocessing pipeline stages.
+    The build_context node constructs the enriched context directly
+    from the memo observation.
     """
     graph = StateGraph(DebateState)
-    has_news = config.enable_news_pipeline
-    has_data = config.enable_data_pipeline
-
-    if has_news:
-        graph.add_node("news_digest", news_digest_node)
-    if has_data:
-        graph.add_node("data_analysis", data_analysis_node)
     graph.add_node("build_context", build_context_node)
-
-    # SEQUENTIAL chain — no parallel fan-in from START
-    if has_news and has_data:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge("news_digest", "data_analysis")
-        graph.add_edge("data_analysis", "build_context")
-    elif has_news:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge("news_digest", "build_context")
-    elif has_data:
-        graph.add_edge(START, "data_analysis")
-        graph.add_edge("data_analysis", "build_context")
-    else:
-        graph.add_edge(START, "build_context")
-
+    graph.add_edge(START, "build_context")
     graph.add_edge("build_context", END)
     return graph
 
@@ -2325,34 +2031,13 @@ def build_majority_vote_graph(config: DebateConfig) -> StateGraph:
     """
     graph = StateGraph(DebateState)
 
-    has_news = config.enable_news_pipeline
-    has_data = config.enable_data_pipeline
-
-    if has_news:
-        graph.add_node("news_digest", news_digest_node)
-    if has_data:
-        graph.add_node("data_analysis", data_analysis_node)
-
     graph.add_node("build_context", build_context_node)
     graph.add_node("propose", propose_node)
     graph.add_node("aggregate", aggregate_proposals_node)
     graph.add_node("build_mv_trace", build_mv_trace_node)
 
-    # --- Edges: START -> pipeline (parallel) -> build_context ---
-    if has_news and has_data:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge(START, "data_analysis")
-        graph.add_edge("news_digest", "build_context")
-        graph.add_edge("data_analysis", "build_context")
-    elif has_news:
-        graph.add_edge(START, "news_digest")
-        graph.add_edge("news_digest", "build_context")
-    elif has_data:
-        graph.add_edge(START, "data_analysis")
-        graph.add_edge("data_analysis", "build_context")
-    else:
-        graph.add_edge(START, "build_context")
-
+    # --- Edges: START -> build_context (no pipeline) ---
+    graph.add_edge(START, "build_context")
     graph.add_edge("build_context", "propose")
     graph.add_edge("propose", "aggregate")
     graph.add_edge("aggregate", "build_mv_trace")

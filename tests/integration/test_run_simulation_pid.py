@@ -78,25 +78,17 @@ def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Minimal case template JSON (written to disk during test setup)
+# Minimal snapshot JSON (written to disk during test setup)
+# invest_quarter=2025Q1 → loader reads prior quarter 2024Q4
 # ---------------------------------------------------------------------------
 
-CASE_TEMPLATE = {
-    "case_data": {
-        "items": [
-            {"kind": "earnings", "content": "NVDA beat earnings by 10%."},
-            {"kind": "news", "content": "AI chip demand surging."},
-        ]
-    },
-    "stock_data": {
+SNAPSHOT_2024_Q4 = {
+    "as_of_date": "2024-12-31",
+    "ticker_data": {
         "NVDA": {
-            "ticker": "NVDA",
-            "current_price": 150.0,
-            "daily_bars": [
-                {"timestamp": "2025-01-01", "close": 145.0},
-                {"timestamp": "2025-01-02", "close": 148.0},
-                {"timestamp": "2025-01-03", "close": 150.0},
-            ],
+            "asset_features": {
+                "close": 150.0,
+            }
         }
     },
 }
@@ -109,6 +101,8 @@ CASE_TEMPLATE = {
 YAML_PID_ENABLED = """\
 dataset_path: "{dataset_path}"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
+memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
@@ -132,6 +126,8 @@ agent:
 YAML_PID_DISABLED = """\
 dataset_path: "{dataset_path}"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
+memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
@@ -154,11 +150,11 @@ def simulation_dir():
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
 
-        # Dataset directory with one case JSON
-        dataset_dir = root / "dataset" / "NVDA"
-        dataset_dir.mkdir(parents=True)
-        case_file = dataset_dir / "2025_Q1.json"
-        case_file.write_text(json.dumps(CASE_TEMPLATE), encoding="utf-8")
+        # Snapshot JSON directory (memo loader expects json_data/)
+        json_dir = root / "dataset" / "json_data"
+        json_dir.mkdir(parents=True)
+        snapshot_file = json_dir / "snapshot_2024_Q4.json"
+        snapshot_file.write_text(json.dumps(SNAPSHOT_2024_Q4), encoding="utf-8")
 
         # Output directory
         output_dir = root / "results"

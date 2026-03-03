@@ -14,8 +14,6 @@ from multi_agent.graph import (
     _mock_judge,
     _print_allocation,
     _print_critique_summary,
-    news_digest_node,
-    data_analysis_node,
     build_context_node,
     propose_node,
     judge_node,
@@ -49,11 +47,9 @@ def alloc_obs_dict():
 
 @pytest.fixture
 def alloc_config_dict():
-    """DebateConfig dict with allocation_mode=True, skip_pipeline=True, mock=True."""
+    """DebateConfig dict with mock=True for allocation mode tests."""
     return DebateConfig(
         mock=True,
-        allocation_mode=True,
-        skip_pipeline=True,
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=1,
         trace_dir="/tmp/test_traces",
@@ -99,21 +95,6 @@ class TestMockProposalAllocation:
     def test_has_confidence(self, alloc_obs_dict, alloc_config_dict):
         result = _mock_proposal("macro", alloc_obs_dict, alloc_config_dict)
         assert 0.0 <= result["confidence"] <= 1.0
-
-
-# ── pipeline skip ────────────────────────────────────────────────────────────
-
-
-class TestPipelineSkip:
-    def test_news_digest_returns_empty_when_skip(self, alloc_obs_dict, alloc_config_dict):
-        state = _make_state(alloc_obs_dict, alloc_config_dict)
-        result = news_digest_node(state)
-        assert result["news_digest"] == ""
-
-    def test_data_analysis_returns_empty_when_skip(self, alloc_obs_dict, alloc_config_dict):
-        state = _make_state(alloc_obs_dict, alloc_config_dict)
-        result = data_analysis_node(state)
-        assert result["data_analysis"] == ""
 
 
 # ── build_context allocation mode ────────────────────────────────────────────

@@ -126,8 +126,6 @@ def test_equivalence_1_round(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=1,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
 
@@ -166,8 +164,6 @@ def test_equivalence_2_rounds(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
 
@@ -202,8 +198,6 @@ def test_max_rounds_counting(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=3,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
 
@@ -244,8 +238,6 @@ def test_single_round_primitive(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
 
@@ -287,8 +279,6 @@ def test_final_critiques_revisions_match_old(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
 
@@ -424,16 +414,12 @@ def test_parallel_equivalence_1_round(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=1,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
     par_config = DebateConfig(
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=1,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=True,
     )
 
@@ -460,16 +446,12 @@ def test_parallel_equivalence_2_rounds(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=False,
     )
     par_config = DebateConfig(
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=True,
     )
 
@@ -499,8 +481,6 @@ def test_parallel_turn_counting(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=3,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=True,
     )
 
@@ -534,8 +514,6 @@ def test_parallel_proposals_not_duplicated(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=True,
     )
 
@@ -561,8 +539,6 @@ def test_parallel_critiques_reset(sample_observation):
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=2,
         mock=True,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         parallel_agents=True,
     )
 
@@ -589,15 +565,13 @@ def test_parallel_config_toggle(sample_observation):
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=1,
             mock=True,
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
             parallel_agents=parallel,
         )
         runner = MultiAgentRunner(config)
         state = runner.run_returning_state(sample_observation)
 
         # Both modes should produce a valid final_action
-        assert "orders" in state["final_action"]
+        assert "allocation" in state["final_action"]
         assert "confidence" in state["final_action"]
 
         # Both modes should produce the right number of turns

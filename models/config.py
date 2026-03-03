@@ -151,18 +151,6 @@ class AgentConfig(BaseModel):
         "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
     )
 
-    # --- Memo / allocation mode ---
-    allocation_mode: bool = Field(
-        default=False,
-        description="When True, agents output allocation weights instead of orders. "
-        "Auto-set by SimulationConfig when case_format='memo'.",
-    )
-    skip_pipeline: bool = Field(
-        default=False,
-        description="When True, skip news_digest and data_analysis pipeline nodes. "
-        "Auto-set by SimulationConfig when case_format='memo'.",
-    )
-
     # --- System-level causal contract ---
     use_system_causal_contract: bool = Field(
         default=False,
@@ -262,11 +250,6 @@ class SimulationConfig(BaseModel):
     )
 
     # --- Memo / allocation mode ---
-    case_format: Literal["legacy", "memo"] = Field(
-        default="legacy",
-        description="Case format: 'legacy' for earnings/news/price cases, "
-        "'memo' for quarterly memo-based allocation.",
-    )
     memo_format: Literal["text", "json"] = Field(
         default="text",
         description="Memo payload format: 'text' for .txt memo, 'json' for snapshot JSON.",
@@ -282,29 +265,24 @@ class SimulationConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _wire_memo_mode(self) -> SimulationConfig:
-        """Auto-set agent flags when case_format is 'memo'."""
+    def _validate_memo_mode(self) -> SimulationConfig:
+        """Validate memo/allocation mode constraints."""
         if not self.tickers:
             raise ValueError("tickers must not be empty.")
-        if self.case_format == "memo":
-            self.agent.allocation_mode = True
-            self.agent.skip_pipeline = True
-            if self.invest_quarter is None:
-                raise ValueError(
-                    "invest_quarter is required when case_format='memo'."
-                )
-            if len(self.tickers) > self.allocation_constraints.max_tickers:
-                raise ValueError(
-                    f"Too many tickers ({len(self.tickers)}) for allocation mode "
-                    f"(max {self.allocation_constraints.max_tickers})."
-                )
-            ac = self.allocation_constraints
-            if ac.max_weight * ac.min_holdings < 1.0 - 1e-8:
-                raise ValueError(
-                    f"Impossible allocation constraints: max_weight ({ac.max_weight}) * "
-                    f"min_holdings ({ac.min_holdings}) = {ac.max_weight * ac.min_holdings:.2f} < 1.0. "
-                    f"Cannot satisfy both constraints simultaneously."
-                )
+        if self.invest_quarter is None:
+            raise ValueError("invest_quarter is required.")
+        if len(self.tickers) > self.allocation_constraints.max_tickers:
+            raise ValueError(
+                f"Too many tickers ({len(self.tickers)}) for allocation mode "
+                f"(max {self.allocation_constraints.max_tickers})."
+            )
+        ac = self.allocation_constraints
+        if ac.max_weight * ac.min_holdings < 1.0 - 1e-8:
+            raise ValueError(
+                f"Impossible allocation constraints: max_weight ({ac.max_weight}) * "
+                f"min_holdings ({ac.min_holdings}) = {ac.max_weight * ac.min_holdings:.2f} < 1.0. "
+                f"Cannot satisfy both constraints simultaneously."
+            )
         return self
 
     @classmethod

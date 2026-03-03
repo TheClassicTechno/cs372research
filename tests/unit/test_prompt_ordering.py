@@ -48,7 +48,7 @@ class TestPromptsDirectoryStructure:
 
     EXPECTED_SUBDIRS = [
         "roles", "phases", "scaffolding", "output_format",
-        "tone", "agreeableness", "pipeline", "system_contract",
+        "tone", "agreeableness", "system_contract",
     ]
 
     def test_all_subdirectories_exist(self):
@@ -66,10 +66,10 @@ class TestPromptsDirectoryStructure:
         assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
 
     @pytest.mark.parametrize("path", [
-        "phases/proposal.txt", "phases/proposal_allocation.txt",
-        "phases/critique.txt", "phases/critique_allocation.txt",
-        "phases/revision.txt", "phases/revision_allocation.txt",
-        "phases/judge.txt", "phases/judge_allocation.txt",
+        "phases/proposal_allocation.txt",
+        "phases/critique_allocation.txt",
+        "phases/revision_allocation.txt",
+        "phases/judge_allocation.txt",
     ])
     def test_phase_templates_in_phases_dir(self, path):
         assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
@@ -99,13 +99,6 @@ class TestPromptsDirectoryStructure:
     def test_agreeableness_files(self, path):
         assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
 
-    @pytest.mark.parametrize("path", [
-        "pipeline/news_digest_system.txt",
-        "pipeline/data_analysis_system.txt",
-    ])
-    def test_pipeline_files(self, path):
-        assert (PROMPT_DIR / path).exists(), f"Missing: {path}"
-
     def test_system_contract_file(self):
         assert (PROMPT_DIR / "system_contract/system_causal_contract.txt").exists()
 
@@ -133,14 +126,6 @@ class TestLoadSectionedTemplate:
         assert "scaffolding" in sections
         assert "output_format" in sections
 
-    def test_critique_has_all_sections(self):
-        sections = _load_sectioned_template("phases/critique.txt")
-        assert "preamble" in sections
-        assert "context" in sections
-        assert "agent_data" in sections
-        assert "task" in sections
-        assert "output_format" in sections
-
     def test_critique_allocation_has_all_sections(self):
         sections = _load_sectioned_template("phases/critique_allocation.txt")
         assert "preamble" in sections
@@ -149,8 +134,8 @@ class TestLoadSectionedTemplate:
         assert "task" in sections
         assert "output_format" in sections
 
-    def test_revision_has_sections(self):
-        sections = _load_sectioned_template("phases/revision.txt")
+    def test_revision_allocation_has_sections(self):
+        sections = _load_sectioned_template("phases/revision_allocation.txt")
         assert "preamble" in sections
         assert "context" in sections
         assert "agent_data" in sections
@@ -158,24 +143,17 @@ class TestLoadSectionedTemplate:
         assert "scaffolding" in sections
         assert "output_format" in sections
 
-    def test_judge_has_sections(self):
-        sections = _load_sectioned_template("phases/judge.txt")
+    def test_judge_allocation_has_sections(self):
+        sections = _load_sectioned_template("phases/judge_allocation.txt")
         assert "preamble" in sections
         assert "context" in sections
         assert "agent_data" in sections
         assert "task" in sections
-        assert "output_format" in sections
-
-    def test_proposal_has_sections(self):
-        sections = _load_sectioned_template("phases/proposal.txt")
-        assert "context" in sections
-        # proposal.txt has no preamble section (it's just context + scaffolding + output)
-        assert "scaffolding" in sections
         assert "output_format" in sections
 
     def test_sections_contain_template_variables(self):
         """Section content should contain Jinja2 variables."""
-        sections = _load_sectioned_template("phases/critique.txt")
+        sections = _load_sectioned_template("phases/critique_allocation.txt")
         assert "{{ role }}" in sections["preamble"]
         assert "{{ context }}" in sections["context"]
         assert "{{ my_proposal }}" in sections["agent_data"]
@@ -320,24 +298,6 @@ class TestUserPromptSectionOrdering:
 
 class TestPromptFileOverrides:
     """Test selecting alternate template files via prompt_file_overrides."""
-
-    def test_critique_template_override_to_allocation(self):
-        """Override critique template to use the allocation variant."""
-        result_normal = build_critique_prompt(
-            "macro", "CTX",
-            [{"role": "value", "proposal": "buy"}],
-            "my prop",
-        )
-        result_override = build_critique_prompt(
-            "macro", "CTX",
-            [{"role": "value", "proposal": "buy"}],
-            "my prop",
-            prompt_file_overrides={"critique_template": "phases/critique_allocation.txt"},
-        )
-        # Allocation template mentions "portfolio allocation"
-        assert "portfolio allocation" in result_override
-        # Normal template should not
-        assert "portfolio allocation" not in result_normal
 
     def test_proposal_template_override(self):
         result = build_proposal_user_prompt(

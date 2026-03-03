@@ -113,7 +113,6 @@ class TestParseActionAllocation:
         config = DebateConfig(
             mock=True,
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            allocation_mode=True,
             trace_dir="/tmp/test_traces",
         )
         return MultiAgentRunner(config)

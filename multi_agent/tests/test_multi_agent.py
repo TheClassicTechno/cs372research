@@ -11,9 +11,8 @@ Tests verify:
   6. Different configurations produce different behavior
   7. Agreeableness knob changes prompt content
   8. Adversarial mode adds devil's advocate
-  9. Pipeline agents produce structured output
-  10. Multiple debate rounds work correctly
-  11. Template files exist, are non-empty, and render correctly
+  9. Multiple debate rounds work correctly
+  10. Template files exist, are non-empty, and render correctly
 """
 
 import json
@@ -26,7 +25,6 @@ from multi_agent.graph import (
     DebateState,
     _mock_critique,
     _mock_judge,
-    _mock_pipeline,
     _mock_proposal,
     _mock_revision,
     _get_vote_direction,
@@ -38,15 +36,14 @@ from multi_agent.graph import (
     compile_debate_graph,
     compile_majority_vote_graph,
     critique_node,
-    data_analysis_node,
     judge_node,
-    news_digest_node,
     propose_node,
     revise_node,
     should_continue,
     build_trace_node,
     build_mv_trace_node,
 )
+# Removed imports: _mock_pipeline, news_digest_node, data_analysis_node (deleted)
 from multi_agent.models import (
     Action,
     AgentTrace,
@@ -64,11 +61,11 @@ from multi_agent.prompts import (
     ROLE_SYSTEM_PROMPTS,
     build_critique_prompt,
     build_judge_prompt,
-    build_observation_context,
     build_proposal_user_prompt,
     build_revision_prompt,
     get_agreeableness_modifier,
 )
+# Removed import: build_observation_context (deleted)
 from multi_agent.runner import MultiAgentRunner
 from multi_agent.majority_vote_runner import MajorityVoteRunner
 
@@ -290,20 +287,6 @@ class TestPrompts:
         assert "BALANCED" in m5
         assert "AGREEABLE" in m10
 
-    def test_observation_context_builder(self, sample_observation: Observation):
-        ctx = build_observation_context(sample_observation)
-        assert "AAPL" in ctx
-        assert "$185.50" in ctx
-        assert "rate cuts" in ctx.lower() or "Rate cuts" in ctx or "rate" in ctx.lower()
-
-    def test_observation_context_with_pipeline(self, sample_observation: Observation):
-        ctx = build_observation_context(
-            sample_observation,
-            pipeline_context="### NEWS: Bullish sentiment detected",
-        )
-        assert "Pre-Processed Intelligence" in ctx
-        assert "Bullish sentiment" in ctx
-
     def test_critique_prompt_has_structure(self):
         prompt = build_critique_prompt(
             "macro",
@@ -362,22 +345,20 @@ class TestMockGenerators:
     def test_mock_proposal_structure(self, sample_obs_dict: dict):
         for role in ["macro", "value", "risk", "technical", "sentiment", "devils_advocate"]:
             result = _mock_proposal(role, sample_obs_dict)
-            assert "what_i_saw" in result
-            assert "hypothesis" in result
-            assert "orders" in result
+            assert "allocation" in result
             assert "justification" in result
             assert "confidence" in result
             assert "claims" in result
-            assert isinstance(result["orders"], list)
+            assert isinstance(result["allocation"], dict)
             assert isinstance(result["claims"], list)
             assert 0 <= result["confidence"] <= 1
 
-    def test_mock_proposals_disagree(self, sample_obs_dict: dict):
-        """Different roles should produce different proposals (disagreement for debate)."""
+    def test_mock_proposals_have_allocations(self, sample_obs_dict: dict):
+        """Different roles should produce allocation proposals."""
         proposals = {role: _mock_proposal(role, sample_obs_dict) for role in ["macro", "value", "risk"]}
-        # At least some should have different directions or confidences
-        confidences = [p["confidence"] for p in proposals.values()]
-        assert len(set(confidences)) > 1, "All mock proposals have identical confidence"
+        for role, p in proposals.items():
+            assert "allocation" in p, f"{role} missing allocation"
+            assert sum(p["allocation"].values()) == pytest.approx(1.0, abs=0.01)
 
     def test_mock_critique_structure(self, sample_obs_dict: dict):
         proposals = [
@@ -399,31 +380,17 @@ class TestMockGenerators:
         assert revised["confidence"] <= original["confidence"]
         assert "revision_notes" in revised
 
-    def test_mock_judge_follows_majority(self):
+    def test_mock_judge_averages_allocations(self):
         revisions = [
-            {"role": "macro", "action_dict": {"orders": [{"ticker": "AAPL", "side": "buy", "size": 10}], "confidence": 0.7}},
-            {"role": "value", "action_dict": {"orders": [{"ticker": "AAPL", "side": "buy", "size": 5}], "confidence": 0.6}},
-            {"role": "risk", "action_dict": {"orders": [{"ticker": "AAPL", "side": "sell", "size": 3}], "confidence": 0.5}},
+            {"role": "macro", "action_dict": {"allocation": {"AAPL": 0.6, "GOOGL": 0.4}, "confidence": 0.7}},
+            {"role": "value", "action_dict": {"allocation": {"AAPL": 0.4, "GOOGL": 0.6}, "confidence": 0.6}},
+            {"role": "risk", "action_dict": {"allocation": {"AAPL": 0.5, "GOOGL": 0.5}, "confidence": 0.5}},
         ]
         result = _mock_judge(revisions)
-        assert "orders" in result
+        assert "allocation" in result
         assert "audited_memo" in result
         assert "strongest_objection" in result
-        # 2 buys vs 1 sell -> should buy
-        assert any(o["side"] == "buy" for o in result["orders"])
-
-    def test_mock_pipeline_news(self, sample_obs_dict: dict):
-        result = _mock_pipeline("news_digest", sample_obs_dict)
-        assert "summary" in result
-        assert "sentiment_score" in result
-        assert "key_signals" in result
-        assert isinstance(result["key_signals"], list)
-
-    def test_mock_pipeline_data(self, sample_obs_dict: dict):
-        result = _mock_pipeline("data_analysis", sample_obs_dict)
-        assert "summary" in result
-        assert "momentum_signal" in result
-        assert result["momentum_signal"] in ("positive", "negative", "neutral")
+        assert sum(result["allocation"].values()) == pytest.approx(1.0, abs=0.01)
 
 
 # =============================================================================
@@ -455,43 +422,11 @@ class TestNodes:
         state.update(overrides)
         return state
 
-    def test_news_digest_node(self, sample_obs_dict: dict, mock_config_dict: dict):
-        state = self._make_state(sample_obs_dict, mock_config_dict)
-        result = news_digest_node(state)
-        assert "news_digest" in result
-        parsed = json.loads(result["news_digest"])
-        assert "summary" in parsed
-        assert "sentiment_score" in parsed
-
-    def test_news_digest_node_no_context(self, mock_config_dict: dict):
-        obs = {
-            "timestamp": "2025-01-01T00:00:00Z",
-            "universe": ["AAPL"],
-            "market_state": {"prices": {"AAPL": 180}},
-            "portfolio_state": {"cash": 10000, "positions": {}},
-        }
-        state = self._make_state(obs, mock_config_dict)
-        result = news_digest_node(state)
-        assert result["news_digest"] == "No news context provided."
-
-    def test_data_analysis_node(self, sample_obs_dict: dict, mock_config_dict: dict):
-        state = self._make_state(sample_obs_dict, mock_config_dict)
-        result = data_analysis_node(state)
-        assert "data_analysis" in result
-        parsed = json.loads(result["data_analysis"])
-        assert "momentum_signal" in parsed
-
     def test_build_context_node(self, sample_obs_dict: dict, mock_config_dict: dict):
-        state = self._make_state(
-            sample_obs_dict,
-            mock_config_dict,
-            news_digest='{"summary": "Bullish news"}',
-            data_analysis='{"summary": "Positive momentum"}',
-        )
+        state = self._make_state(sample_obs_dict, mock_config_dict)
         result = build_context_node(state)
         assert "enriched_context" in result
         assert "AAPL" in result["enriched_context"]
-        assert "Pre-Processed Intelligence" in result["enriched_context"]
 
     def test_propose_node(self, sample_obs_dict: dict, mock_config_dict: dict):
         state = self._make_state(
@@ -507,7 +442,7 @@ class TestNodes:
         for p in result["proposals"]:
             assert "role" in p
             assert "action_dict" in p
-            assert "orders" in p["action_dict"]
+            assert "allocation" in p["action_dict"]
             assert "confidence" in p["action_dict"]
 
     def test_critique_node(self, sample_obs_dict: dict, mock_config_dict: dict):
@@ -572,7 +507,7 @@ class TestNodes:
         assert "final_action" in result
         assert "strongest_objection" in result
         assert "audited_memo" in result
-        assert "orders" in result["final_action"]
+        assert "allocation" in result["final_action"]
         assert "confidence" in result["final_action"]
 
     def test_build_trace_node(self, sample_obs_dict: dict, mock_config_dict: dict):
@@ -633,41 +568,6 @@ class TestFullGraph:
             assert claim.pearl_level in (PearlLevel.L1, PearlLevel.L2, PearlLevel.L3)
             assert len(claim.claim_text) > 0
 
-    def test_no_pipeline_config(self, sample_observation: Observation):
-        config = DebateConfig(
-            roles=[AgentRole.MACRO, AgentRole.VALUE],
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
-            mock=True,
-            trace_dir="/tmp/test_traces",
-        )
-        runner = MultiAgentRunner(config)
-        action, trace = runner.run(sample_observation)
-        assert isinstance(action, Action)
-
-    def test_only_news_pipeline(self, sample_observation: Observation):
-        config = DebateConfig(
-            roles=[AgentRole.MACRO, AgentRole.VALUE],
-            enable_news_pipeline=True,
-            enable_data_pipeline=False,
-            mock=True,
-            trace_dir="/tmp/test_traces",
-        )
-        runner = MultiAgentRunner(config)
-        action, trace = runner.run(sample_observation)
-        assert isinstance(action, Action)
-
-    def test_only_data_pipeline(self, sample_observation: Observation):
-        config = DebateConfig(
-            roles=[AgentRole.MACRO, AgentRole.VALUE],
-            enable_news_pipeline=False,
-            enable_data_pipeline=True,
-            mock=True,
-            trace_dir="/tmp/test_traces",
-        )
-        runner = MultiAgentRunner(config)
-        action, trace = runner.run(sample_observation)
-        assert isinstance(action, Action)
 
 
 # =============================================================================
@@ -762,30 +662,11 @@ class TestGraphStructure:
         graph = compile_debate_graph(config)
         assert graph is not None
 
-    def test_graph_compiles_no_pipeline(self):
-        config = DebateConfig(
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
-            mock=True,
-        )
-        graph = compile_debate_graph(config)
-        assert graph is not None
-
-    def test_graph_compiles_one_pipeline(self):
-        config = DebateConfig(
-            enable_news_pipeline=True,
-            enable_data_pipeline=False,
-            mock=True,
-        )
-        graph = compile_debate_graph(config)
-        assert graph is not None
-
     def test_graph_has_expected_nodes(self):
         config = DebateConfig(mock=True)
         graph = build_debate_graph(config)
         node_names = set(graph.nodes.keys())
-        expected = {"news_digest", "data_analysis", "build_context", "propose",
-                    "critique", "revise", "judge", "build_trace"}
+        expected = {"build_context", "propose", "critique", "revise", "judge", "build_trace"}
         assert expected.issubset(node_names)
 
 
@@ -892,17 +773,15 @@ class TestPromptTemplates:
         "roles/technical.txt",
         "roles/sentiment.txt",
         "roles/devils_advocate.txt",
-        "pipeline/news_digest_system.txt",
-        "pipeline/data_analysis_system.txt",
         "agreeableness/confrontational.txt",
         "agreeableness/skeptical.txt",
         "agreeableness/balanced.txt",
         "agreeableness/collaborative.txt",
         "agreeableness/agreeable.txt",
-        "phases/proposal.txt",
-        "phases/critique.txt",
-        "phases/revision.txt",
-        "phases/judge.txt",
+        "phases/proposal_allocation.txt",
+        "phases/critique_allocation.txt",
+        "phases/revision_allocation.txt",
+        "phases/judge_allocation.txt",
     ]
 
     @pytest.mark.parametrize("filename", EXPECTED_FILES)
@@ -1221,17 +1100,6 @@ class TestMajorityVoteRunner:
         data = json.loads(traces[0].read_text())
         assert data["trace"]["architecture"] == "majority_vote"
 
-    def test_no_pipeline(self, sample_observation):
-        config = DebateConfig(
-            roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
-            mock=True,
-            trace_dir="/tmp/test_traces",
-        )
-        runner = MajorityVoteRunner(config)
-        action, trace = runner.run(sample_observation)
-        assert isinstance(action, Action)
 
 
 # =============================================================================
@@ -1251,7 +1119,7 @@ class TestMajorityVoteGraph:
         config = DebateConfig(mock=True)
         graph = build_majority_vote_graph(config)
         node_names = set(graph.nodes.keys())
-        expected = {"news_digest", "data_analysis", "build_context", "propose", "aggregate", "build_mv_trace"}
+        expected = {"build_context", "propose", "aggregate", "build_mv_trace"}
         assert expected.issubset(node_names)
 
     def test_graph_has_no_debate_nodes(self):
@@ -1261,15 +1129,3 @@ class TestMajorityVoteGraph:
         assert "critique" not in node_names
         assert "revise" not in node_names
         assert "judge" not in node_names
-
-    def test_graph_no_pipeline(self):
-        config = DebateConfig(
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
-            mock=True,
-        )
-        graph = build_majority_vote_graph(config)
-        node_names = set(graph.nodes.keys())
-        assert "news_digest" not in node_names
-        assert "data_analysis" not in node_names
-        assert "build_context" in node_names

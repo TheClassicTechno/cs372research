@@ -58,8 +58,6 @@ def _make_debate_config(
         agreeableness=0.3,
         mock=True,
         parallel_agents=False,
-        enable_news_pipeline=False,
-        enable_data_pipeline=False,
         pid_config=pid_config,
         pid_propose=pid_propose,
         pid_critique=pid_critique,
@@ -317,8 +315,6 @@ class TestPIDWithParallelAgents:
             agreeableness=0.3,
             mock=True,
             parallel_agents=True,
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
             pid_config=pid_config,
         )
         runner = _make_runner_with_mock_crit(config)
@@ -336,8 +332,6 @@ class TestPIDWithParallelAgents:
             agreeableness=0.3,
             mock=True,
             parallel_agents=True,
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
             pid_config=pid_config,
         )
         runner = _make_runner_with_mock_crit(config)
@@ -360,8 +354,6 @@ class TestFlatYAMLPIDConfig:
             agreeableness=0.3,
             mock=True,
             parallel_agents=False,
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
             _pid_enabled_flag=True,
             pid_kp=0.05,
             pid_ki=0.005,
@@ -391,8 +383,6 @@ class TestFlatYAMLPIDConfig:
             agreeableness=0.3,
             mock=True,
             parallel_agents=False,
-            enable_news_pipeline=False,
-            enable_data_pipeline=False,
             _pid_enabled_flag=True,
             pid_kp=0.05,
             pid_ki=0.005,

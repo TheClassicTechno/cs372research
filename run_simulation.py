@@ -140,35 +140,22 @@ def _setup_logging(level: str) -> None:
 
 def _dump_prompts(config: SimulationConfig) -> None:
     """Print full system + user prompts for one propose round and exit."""
-    from multi_agent.config import AgentRole, DebateConfig
-    from multi_agent.models import Observation
+    from multi_agent.config import AgentRole
     from multi_agent.prompts import (
-        ROLE_SYSTEM_PROMPTS,
         SYSTEM_CAUSAL_CONTRACT,
-        build_observation_context,
         build_proposal_user_prompt,
         get_role_prompts,
     )
     from simulation.feature_engineering import build_observation
+    from simulation.memo_loader import load_memo_cases
 
     # --- Load one case ---
-    if config.case_format == "memo":
-        from simulation.memo_loader import load_memo_cases
-        cases = load_memo_cases(
-            config.dataset_path,
-            invest_quarter=config.invest_quarter,
-            memo_format=config.memo_format,
-            tickers=config.tickers,
-        )
-    else:
-        from simulation.case_loader import load_case_templates
-        cases = load_case_templates(
-            config.dataset_path,
-            top_n_news=config.top_n_news,
-            ticker_filter=config.tickers,
-            quarters=config.quarters,
-            merge_tickers=config.merge_tickers,
-        )
+    cases = load_memo_cases(
+        config.dataset_path,
+        invest_quarter=config.invest_quarter,
+        memo_format=config.memo_format,
+        tickers=config.tickers,
+    )
 
     if not cases:
         print("ERROR: No cases found for the given config.")
@@ -177,19 +164,15 @@ def _dump_prompts(config: SimulationConfig) -> None:
     case = cases[0]
     obs = build_observation(case)
 
-    # --- Build enriched context (same logic as build_context_node) ---
-    allocation_mode = config.agent.allocation_mode
-    if allocation_mode:
-        header = (
-            f"## Portfolio Allocation Task\n"
-            f"- Cash to allocate: ${obs.portfolio_state.cash:,.2f}\n"
-            f"- Allocation universe: {', '.join(obs.universe)}\n"
-            f"- As-of: {obs.timestamp}\n"
-        )
-        memo_context = obs.text_context or ""
-        context = header + "\n" + memo_context
-    else:
-        context = build_observation_context(obs)
+    # --- Build enriched context (allocation mode) ---
+    header = (
+        f"## Portfolio Allocation Task\n"
+        f"- Cash to allocate: ${obs.portfolio_state.cash:,.2f}\n"
+        f"- Allocation universe: {', '.join(obs.universe)}\n"
+        f"- As-of: {obs.timestamp}\n"
+    )
+    memo_context = obs.text_context or ""
+    context = header + "\n" + memo_context
 
     # --- Resolve roles ---
     role_strs = config.agent.debate_roles or ["macro", "value", "risk", "technical"]
@@ -208,14 +191,12 @@ def _dump_prompts(config: SimulationConfig) -> None:
     sep = "=" * 80
 
     print(f"\n{sep}")
-    print(f"  PROMPT DUMP — {len(roles)} roles, allocation_mode={allocation_mode}, "
-          f"use_system_causal_contract={use_cc}")
+    print(f"  PROMPT DUMP — {len(roles)} roles, use_system_causal_contract={use_cc}")
     print(f"{sep}\n")
 
     rp = get_role_prompts(use_cc)
     user_prompt = build_proposal_user_prompt(
         context,
-        allocation_mode=allocation_mode,
         use_system_causal_contract=use_cc,
     )
 
@@ -248,12 +229,10 @@ async def _main() -> None:
 
     config = SimulationConfig.from_yaml(args.config)
 
-    # --list-tickers: print available tickers and exit (no simulation).
+    # --list-tickers: print configured tickers and exit (no simulation).
     if args.list_tickers:
-        from simulation.case_loader import list_available_tickers
-        tickers = list_available_tickers(config.dataset_path)
-        print("Available tickers:")
-        for t in tickers:
+        print("Configured tickers:")
+        for t in config.tickers:
             print(f"  {t}")
         return
 

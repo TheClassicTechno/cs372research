@@ -16,7 +16,6 @@ import re
 from jinja2 import Environment, FileSystemLoader
 
 from ..config import AgentRole
-from ..models import Observation
 
 # ---------------------------------------------------------------------------
 # Jinja2 environment — templates live next to this __init__.py
@@ -127,13 +126,6 @@ def get_role_prompts(use_causal_contract: bool = False) -> dict[str, str]:
     return ROLE_SYSTEM_PROMPTS_SLIM if use_causal_contract else ROLE_SYSTEM_PROMPTS
 
 # =============================================================================
-# PIPELINE AGENT PROMPTS
-# =============================================================================
-
-NEWS_DIGEST_SYSTEM_PROMPT: str = _load("pipeline/news_digest_system.txt")
-DATA_ANALYSIS_SYSTEM_PROMPT: str = _load("pipeline/data_analysis_system.txt")
-
-# =============================================================================
 # AGREEABLENESS MODIFIER (injected into critique prompts)
 # =============================================================================
 
@@ -169,71 +161,16 @@ def get_agreeableness_modifier(agreeableness: float) -> str:
 
 
 # =============================================================================
-# OBSERVATION CONTEXT BUILDER
-# =============================================================================
-
-
-def build_observation_context(
-    obs: Observation,
-    pipeline_context: str = "",
-) -> str:
-    """Build the market context string from an Observation, optionally enriched
-    with pipeline preprocessing output."""
-    prices_str = ", ".join(
-        f"{t}: ${p:.2f}" for t, p in obs.market_state.prices.items()
-    )
-
-    returns_str = "N/A"
-    if obs.market_state.returns:
-        returns_str = ", ".join(
-            f"{t}: {r * 100:.2f}%"
-            for t, r in obs.market_state.returns.items()
-        )
-
-    vol_str = ""
-    if obs.market_state.volatility:
-        vol_str = "\n- Volatility: " + ", ".join(
-            f"{t}: {v:.4f}" for t, v in obs.market_state.volatility.items()
-        )
-
-    portfolio_str = (
-        f"Cash: ${obs.portfolio_state.cash:.2f}, "
-        f"Positions: {obs.portfolio_state.positions}"
-    )
-
-    context = f"""## Market Observation
-- Timestamp: {obs.timestamp}
-- Universe: {', '.join(obs.universe)}
-- Prices: {prices_str}
-- Returns: {returns_str}{vol_str}
-- Portfolio: {portfolio_str}"""
-
-    if obs.text_context:
-        context += f"\n- News/Context: {obs.text_context}"
-
-    if obs.constraints:
-        context += (
-            f"\n- Constraints: max_leverage={obs.constraints.max_leverage}, "
-            f"max_position_size={obs.constraints.max_position_size}"
-        )
-
-    if pipeline_context:
-        context += f"\n\n## Pre-Processed Intelligence\n{pipeline_context}"
-
-    return context
-
-
-# =============================================================================
 # DEBATE PHASE PROMPTS (rendered via Jinja2 templates)
 # =============================================================================
 
 
 def build_proposal_user_prompt(
     context: str,
-    allocation_mode: bool = False,
     use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
     """User prompt sent to each role agent for their initial proposal."""
     causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
@@ -241,8 +178,7 @@ def build_proposal_user_prompt(
     traps = "" if use_system_causal_contract else TRAP_AWARENESS
 
     overrides = prompt_file_overrides or {}
-    default_name = "phases/proposal_allocation.txt" if allocation_mode else "phases/proposal.txt"
-    template_name = overrides.get("proposal_template", default_name)
+    template_name = overrides.get("proposal_template", "phases/proposal_allocation.txt")
 
     template_vars = {
         "context": context,
@@ -270,9 +206,9 @@ def build_critique_prompt(
     all_proposals: list[dict],
     my_proposal: str,
     agreeableness: float = 0.3,
-    allocation_mode: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
     """Build critique prompt for a role agent in the debate."""
     others = [p for p in all_proposals if p["role"] != role]
@@ -284,8 +220,7 @@ def build_critique_prompt(
     agreeableness_mod = get_agreeableness_modifier(agreeableness)
 
     overrides = prompt_file_overrides or {}
-    default_name = "phases/critique_allocation.txt" if allocation_mode else "phases/critique.txt"
-    template_name = overrides.get("critique_template", default_name)
+    template_name = overrides.get("critique_template", "phases/critique_allocation.txt")
 
     template_vars = {
         "role": role.upper(),
@@ -311,10 +246,10 @@ def build_revision_prompt(
     my_proposal: str,
     critiques_received: list[dict],
     agreeableness: float = 0.3,
-    allocation_mode: bool = False,
     use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
     """Build revision prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -330,8 +265,7 @@ def build_revision_prompt(
     uncertainty = "" if use_system_causal_contract else FORCED_UNCERTAINTY
 
     overrides = prompt_file_overrides or {}
-    default_name = "phases/revision_allocation.txt" if allocation_mode else "phases/revision.txt"
-    template_name = overrides.get("revision_template", default_name)
+    template_name = overrides.get("revision_template", "phases/revision_allocation.txt")
 
     template_vars = {
         "role": role.upper(),
@@ -357,10 +291,10 @@ def build_judge_prompt(
     revisions: list[dict],
     all_critiques_text: str,
     strongest_disagreements: str = "",
-    allocation_mode: bool = False,
     use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -378,8 +312,7 @@ def build_judge_prompt(
     causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
 
     overrides = prompt_file_overrides or {}
-    default_name = "phases/judge_allocation.txt" if allocation_mode else "phases/judge.txt"
-    template_name = overrides.get("judge_template", default_name)
+    template_name = overrides.get("judge_template", "phases/judge_allocation.txt")
 
     template_vars = {
         "context": context,
