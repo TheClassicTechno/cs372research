@@ -50,9 +50,15 @@ WHERE THIS SITS IN THE PIPELINE
 =================================================================================
 """
 
+import math
+
 from eval.PID.types import PIDGains, PIDConfig, PIDState, PIDStepResult, Quadrant
 from eval.PID.beta_dynamics import update_beta_clipped
 from eval.PID.sycophancy import compute_sycophancy_signal
+
+# Anti-windup clamp: bounds the integral accumulator to prevent runaway
+# I-term when persistent error accumulates over many rounds.
+_INTEGRAL_MAX = 10.0
 
 
 def classify_quadrant(
@@ -283,6 +289,24 @@ class PIDController:
         st = self.state
 
         # ---------------------------------------------------------------
+        # Guard: reject NaN inputs that would silently corrupt all
+        # downstream state (error, integral, beta) permanently.
+        # ---------------------------------------------------------------
+        if math.isnan(rho_bar) or math.isnan(js_current) or math.isnan(ov_current):
+            import logging
+            logging.getLogger(__name__).warning(
+                "NaN input to PID step (rho_bar=%s, js=%s, ov=%s) — "
+                "returning previous state unchanged",
+                rho_bar, js_current, ov_current,
+            )
+            return PIDStepResult(
+                e_t=st.e_t, u_t=0.0, beta_new=st.beta,
+                p_term=0.0, i_term=0.0, d_term=0.0, s_t=0,
+                quadrant=Quadrant.STUCK.value,
+                div_signal=False, qual_signal=False,
+            )
+
+        # ---------------------------------------------------------------
         # Step 1: Record this round's JS and overlap values.
         # We keep the full history so the sycophancy detector can compare
         # this round to last round.
@@ -314,13 +338,15 @@ class PIDController:
         e_t = compute_error(cfg.rho_star, rho_bar, cfg.mu, s_t)
 
         # ---------------------------------------------------------------
-        # Step 4: Accumulate error into the integral.
+        # Step 4: Accumulate error into the integral (with anti-windup).
         # The integral is the running sum of all errors from round 0 to now.
         # The I-term (Ki * integral) will use this to correct persistent
         # offsets — if quality has been below target for many rounds, the
         # integral grows and the controller pushes harder.
+        # Anti-windup: clamp to [-_INTEGRAL_MAX, _INTEGRAL_MAX] to prevent
+        # runaway I-term from dominating u_t after many rounds of error.
         # ---------------------------------------------------------------
-        st.integral += e_t
+        st.integral = max(-_INTEGRAL_MAX, min(_INTEGRAL_MAX, st.integral + e_t))
 
         # ---------------------------------------------------------------
         # Step 5: Compute the PID output u_t (Eq 6).

@@ -157,6 +157,23 @@ class PIDConfig:
     delta_js: float = 0.05
     delta_beta: float = 0.1
 
+    def __post_init__(self) -> None:
+        """Validate PID config parameter ranges."""
+        if not (0.0 <= self.rho_star <= 1.0):
+            raise ValueError(f"rho_star must be in [0, 1], got {self.rho_star}")
+        if not (0.0 <= self.gamma_beta <= 1.0):
+            raise ValueError(f"gamma_beta must be in [0, 1], got {self.gamma_beta}")
+        if self.mu < 0:
+            raise ValueError(f"mu must be non-negative, got {self.mu}")
+        if self.delta_s < 0:
+            raise ValueError(f"delta_s must be non-negative, got {self.delta_s}")
+        if self.delta_js < 0:
+            raise ValueError(f"delta_js must be non-negative, got {self.delta_js}")
+        if self.delta_beta < 0:
+            raise ValueError(f"delta_beta must be non-negative, got {self.delta_beta}")
+        if self.T_max < 1:
+            raise ValueError(f"T_max must be >= 1, got {self.T_max}")
+
 
 @dataclass
 class PIDState:

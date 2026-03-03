@@ -161,6 +161,10 @@ class DebateConfig:
                 f"PID gains must be non-negative, got Kp={self.pid_kp}, "
                 f"Ki={self.pid_ki}, Kd={self.pid_kd}"
             )
+        if not (0.0 <= self.pid_rho_star <= 1.0):
+            raise ValueError(
+                f"pid_rho_star must be in [0, 1], got {self.pid_rho_star}"
+            )
 
         # If flat YAML fields request PID but no PIDConfig was provided,
         # construct it here so the adapter never imports from eval/.

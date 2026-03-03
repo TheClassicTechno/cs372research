@@ -255,8 +255,9 @@ class AsyncSimulationRunner:
                 continue
 
             # Per-position market values.
+            prices = ep.final_prices or {}
             position_values = {
-                ticker: qty * ep.final_prices.get(ticker, 0.0)
+                ticker: qty * prices.get(ticker, 0.0)
                 for ticker, qty in ep.final_portfolio.positions.items()
             }
             book_value = ep.book_value or 0.0

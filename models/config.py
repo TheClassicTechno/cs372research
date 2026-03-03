@@ -234,6 +234,8 @@ class SimulationConfig(BaseModel):
     @model_validator(mode="after")
     def _wire_memo_mode(self) -> SimulationConfig:
         """Auto-set agent flags when case_format is 'memo'."""
+        if not self.tickers:
+            raise ValueError("tickers must not be empty.")
         if self.case_format == "memo":
             self.agent.allocation_mode = True
             self.agent.skip_pipeline = True
@@ -245,6 +247,13 @@ class SimulationConfig(BaseModel):
                 raise ValueError(
                     f"Too many tickers ({len(self.tickers)}) for allocation mode "
                     f"(max {self.allocation_constraints.max_tickers})."
+                )
+            ac = self.allocation_constraints
+            if ac.max_weight * ac.min_holdings < 1.0 - 1e-8:
+                raise ValueError(
+                    f"Impossible allocation constraints: max_weight ({ac.max_weight}) * "
+                    f"min_holdings ({ac.min_holdings}) = {ac.max_weight * ac.min_holdings:.2f} < 1.0. "
+                    f"Cannot satisfy both constraints simultaneously."
                 )
         return self
 

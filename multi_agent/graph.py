@@ -205,15 +205,22 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
     import time
 
-    from langchain_openai import ChatOpenAI
     from langchain_core.messages import HumanMessage, SystemMessage  # type: ignore[import-not-found]
 
-    llm = ChatOpenAI(
-        model=config.get("model_name", "gpt-4o-mini"),
-        temperature=config.get("temperature", 0.3),
-        api_key=os.environ.get("OPENAI_API_KEY", "sk-dummy"),
-        request_timeout=60,
-    )
+    model_name = config.get("model_name", "gpt-4o-mini")
+    temperature = config.get("temperature", 0.3)
+
+    if model_name.startswith("claude"):
+        from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
+        llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=60)
+    else:
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(
+            model=model_name,
+            temperature=temperature,
+            api_key=os.environ.get("OPENAI_API_KEY", "sk-dummy"),
+            request_timeout=60,
+        )
 
     max_retries = 3
     for attempt in range(max_retries):
@@ -276,6 +283,11 @@ def normalize_allocation(
     7. Enforce min_holdings (force minimum weight on zero tickers)
     8. Re-normalize to sum to 1.0
     """
+    # Guard: empty universe
+    if not universe:
+        logger.warning("Empty universe — returning empty allocation")
+        return {}
+
     # Steps 1-3: clean up
     alloc = {}
     for t in universe:
@@ -330,6 +342,16 @@ def normalize_allocation(
     if final_total > 0:
         alloc = {t: w / final_total for t, w in alloc.items()}
 
+    # Step 9: post-renorm max_weight re-check.
+    # With few tickers, Step 8 re-normalization can push weights above
+    # max_weight (e.g. 2 tickers both at max_weight=0.40, Step 7 adds a
+    # 1% floor → renorm pushes them above 0.40). Re-cap and re-normalize.
+    if any(w > max_weight + 1e-8 for w in alloc.values()):
+        alloc = {t: min(w, max_weight) for t, w in alloc.items()}
+        recapped_total = sum(alloc.values())
+        if recapped_total > 0:
+            alloc = {t: w / recapped_total for t, w in alloc.items()}
+
     return alloc
 
 
@@ -341,10 +363,12 @@ def normalize_allocation(
 def _mock_proposal(role: str, obs_dict: dict, config: dict | None = None) -> dict:
     """Generate a deterministic mock proposal for a given role."""
     tickers = obs_dict.get("universe", ["AAPL"])
+    if not tickers:
+        tickers = ["AAPL"]
 
     # Allocation mode: return equal-weight allocation
     if config and config.get("allocation_mode"):
-        eq = round(1.0 / len(tickers), 4) if tickers else 0.0
+        eq = round(1.0 / len(tickers), 4)
         return {
             "allocation": {t: eq for t in tickers},
             "justification": f"[{role} mock] Equal-weight allocation across {len(tickers)} tickers",
@@ -361,7 +385,7 @@ def _mock_proposal(role: str, obs_dict: dict, config: dict | None = None) -> dic
         }
 
     returns = obs_dict.get("market_state", {}).get("returns") or {}
-    t = tickers[0] if tickers else "AAPL"
+    t = tickers[0]
     r = returns.get(t, 0.0)
 
     # Each role has a different bias to create realistic disagreements
