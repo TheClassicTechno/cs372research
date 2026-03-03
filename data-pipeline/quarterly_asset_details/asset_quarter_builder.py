@@ -194,9 +194,12 @@ def _idiosyncratic_momentum(
     X = np.column_stack([np.ones(len(x)), x])
     try:
         coeffs = np.linalg.lstsq(X, y, rcond=None)[0]
-        residuals = y - X @ coeffs
-        return float(residuals.sum())
-    except np.linalg.LinAlgError:
+        # Standard iMOM: return minus beta-adjusted market return.
+        # This preserves the alpha (outperformance) in the result.
+        beta = coeffs[1]
+        idiosyncratic_returns = y - (beta * x)
+        return float(idiosyncratic_returns.sum())
+    except (np.linalg.LinAlgError, IndexError):
         return None
 
 
