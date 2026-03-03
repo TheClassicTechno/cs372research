@@ -375,9 +375,11 @@ class MultiAgentRunner:
         ]
         js = jensen_shannon_divergence(confidences) if len(confidences) >= 2 else 0.0
 
-        # Evidence overlap: average Jaccard across agent pairs
-        # For now, use 0.0 as default (evidence extraction is not yet implemented)
-        ov = 0.0
+        # Evidence overlap: average pairwise Jaccard of normalized causal variables
+        from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+        evidence_sets = extract_agent_evidence_spans(decisions)
+        ov = compute_mean_overlap(evidence_sets)
 
         # PID step (uses aggregated rho_bar)
         pid_result = self._pid_controller.step(round_crit.rho_bar, js, ov)

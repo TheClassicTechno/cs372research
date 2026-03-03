@@ -30,6 +30,7 @@ class DecisionPointLog(BaseModel):
     agent_output: dict | str | None = None
     elapsed_seconds: float = 0.0
     timestamp: str | None = None  # ISO 8601 timestamp for when this log was created
+    case_prices: dict[str, float] = {}  # price snapshot at this decision point
 
 
 class EpisodeLog(BaseModel):
