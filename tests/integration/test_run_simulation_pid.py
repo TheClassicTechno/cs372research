@@ -340,7 +340,7 @@ class TestRunSimulationWithPID:
         decision = dp["extracted_decision"]
         assert "orders" in decision
 
-        # Portfolio snapshots exist
+        # Portfolio final_snapshots exist
         assert dp["portfolio_before"]["cash"] == 100000.0
         assert "portfolio_after" in dp
 
