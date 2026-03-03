@@ -1,0 +1,53 @@
+# ============================================================================
+# PID Tuning Experiment 1: Baseline (P-only, default gains)
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/pid_tune_baseline.yaml
+#
+# Baseline: Kp=0.15, Ki=0, Kd=0 (proportional only).
+# Expect: β adjusts slowly, may miss persistent low quality.
+
+dataset_path: "data/cases"
+
+top_n_news: 5
+
+tickers:
+  - NVDA
+
+quarters:
+  - Q1
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  debate_roles:
+    - macro
+    - value
+
+  max_rounds: 3
+
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.0
+  pid_kd: 0.0
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+
+  pid_propose: false
+  pid_critique: true
+  pid_revise: true
+
+  pid_log_metrics: true
+  pid_log_llm_calls: false
+  log_system_prompts: false
+  log_user_prompts: false
+  log_llm_responses: false
+
+broker:
+  initial_cash: 100000.0

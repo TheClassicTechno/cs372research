@@ -1,0 +1,55 @@
+# ============================================================================
+# PID Tuning Experiment 3: PI controller (add integral term)
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/pid_tune_pi.yaml
+#
+# Kp=0.15, Ki=0.01: integral term catches persistent low quality
+# that proportional alone misses. Ki accumulates past errors.
+# Ki=0.01 chosen to pass stability check (T_max=20, mu=1.0).
+# Expect: β ramps up over rounds if quality stays low.
+
+dataset_path: "data/cases"
+
+top_n_news: 5
+
+tickers:
+  - NVDA
+
+quarters:
+  - Q1
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  debate_roles:
+    - macro
+    - value
+
+  max_rounds: 3
+
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.0
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+
+  pid_propose: false
+  pid_critique: true
+  pid_revise: true
+
+  pid_log_metrics: true
+  pid_log_llm_calls: false
+  log_system_prompts: false
+  log_user_prompts: false
+  log_llm_responses: false
+
+broker:
+  initial_cash: 100000.0

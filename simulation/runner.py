@@ -61,6 +61,7 @@ class AsyncSimulationRunner:
             top_n_news=self._config.top_n_news,
             ticker_filter=self._config.tickers,
             quarters=self._config.quarters,
+            merge_tickers=self._config.merge_tickers,
         )
         num_cases = len(templates)
         logger.info(

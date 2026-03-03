@@ -27,7 +27,7 @@ from models.agents import AgentInvocation, AgentInvocationResult
 from models.config import AgentConfig
 from models.decision import Decision
 from models.decision import Order as SimOrder
-from multi_agent.config import DebateConfig
+from multi_agent.config import AgentRole, DebateConfig
 from multi_agent.models import Action
 from multi_agent.runner import MultiAgentRunner
 from simulation.feature_engineering import build_observation
@@ -104,13 +104,34 @@ class DebateAgentSystem(AgentSystem):
             and "mock" in config.system_prompt_override.lower()
         )
 
-        # Build DebateConfig with flat PID fields.
+        # Build the debate roster from YAML config, or fall back to defaults.
+        # Valid role strings map to AgentRole enum values.
+        roles = None
+        if config.debate_roles:
+            roles = []
+            for role_str in config.debate_roles:
+                try:
+                    roles.append(AgentRole(role_str.lower()))
+                except ValueError:
+                    logger.warning(
+                        "Unknown debate role '%s' — skipping. Valid: %s",
+                        role_str,
+                        [r.value for r in AgentRole],
+                    )
+            if not roles:
+                logger.warning("No valid debate_roles found; using defaults.")
+                roles = None
+
+        # Build DebateConfig with all simulation-layer fields.
         # PID object construction is handled inside DebateConfig.__post_init__
         # so this adapter stays decoupled and has no direct dependency on PID.
-        self._debate_cfg = DebateConfig(
+        debate_kwargs: dict[str, Any] = dict(
             model_name=config.llm_model,
             temperature=config.temperature,
             mock=use_mock,
+            max_rounds=config.max_rounds,
+            agreeableness=config.agreeableness,
+            enable_adversarial=config.enable_adversarial,
             _pid_enabled_flag=config.pid_enabled,
             pid_kp=config.pid_kp,
             pid_ki=config.pid_ki,
@@ -125,8 +146,12 @@ class DebateAgentSystem(AgentSystem):
             log_system_prompts=config.log_system_prompts,
             log_user_prompts=config.log_user_prompts,
             log_llm_responses=config.log_llm_responses,
-            prompt_logging=config.prompt_logging
+            prompt_logging=config.prompt_logging,
         )
+        if roles is not None:
+            debate_kwargs["roles"] = roles
+
+        self._debate_cfg = DebateConfig(**debate_kwargs)
         self._debate_runner = MultiAgentRunner(self._debate_cfg)
 
     def bind_tools(self, submit_decision_fn: Callable[..., Any]) -> None:

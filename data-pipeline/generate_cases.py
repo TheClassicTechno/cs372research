@@ -74,6 +74,28 @@ def _map_kind(news_type: list[str] | str, news_source: str) -> str:
     return "other"
 
 
+def _summarize_text(text: str, max_chars: int = 320, max_sentences: int = 2) -> str:
+    """Create a short extractive summary to keep case content compact."""
+    clean = re.sub(r"\s+", " ", (text or "")).strip()
+    if not clean:
+        return ""
+
+    # Split into simple sentences and keep the first 1-2 informative ones.
+    parts = re.split(r"(?<=[.!?])\s+", clean)
+    summary = " ".join(parts[:max(1, max_sentences)]).strip()
+    if len(summary) > max_chars:
+        summary = summary[: max_chars - 3].rstrip() + "..."
+    return summary
+
+
+def _round_or_none(value, decimals: int) -> float | None:
+    """Round numeric values for smaller JSON output while preserving nulls."""
+    if value is None or pd.isna(value):
+        return None
+    rounded = round(float(value), decimals)
+    return 0.0 if rounded == 0 else rounded
+
+
 def fetch_stock_prices(ticker: str, start: str, end: str) -> pd.DataFrame:
     """Fetch daily close prices from yfinance."""
     import yfinance as yf
@@ -203,10 +225,14 @@ def combine_and_enrich(
         return 0.0
 
     def impact_score(sent: float, pub_ts, trading_date, half_life_hours: float = 24) -> float:
-        if pd.isna(pub_ts):
-            decay = 0.5
+        # Historical case generation should not decay against "current wall clock time".
+        # Decay relative to when the market can first react to the event instead.
+        if pd.isna(pub_ts) or pd.isna(trading_date):
+            decay = 1.0
         else:
-            age_h = max(0, (pd.Timestamp.utcnow() - _ts(pub_ts)).total_seconds() / 3600)
+            pub = _ts(pub_ts)
+            td = _ts(trading_date)
+            age_h = max(0.0, (td - pub).total_seconds() / 3600.0)
             decay = 0.5 ** (age_h / half_life_hours)
         pct = get_pct_change(trading_date)
         return float(sent * decay * (1 + pct / 100.0))
@@ -215,20 +241,22 @@ def combine_and_enrich(
         if df.empty:
             return df
         df = df.copy()
-        df["combined_text"] = (
+        # Keep raw full text for scoring; summary is applied only at JSON output time.
+        df["raw_content"] = (
             df.get("title", pd.Series([""] * len(df))).fillna("")
             + " "
             + df.get("description", pd.Series([""] * len(df))).fillna("")
         )
-        df["sentiment_score"] = df["combined_text"].apply(sentiment)
-        df["news_type"] = df["combined_text"].apply(tag_events)
+        df["sentiment_score"] = df["raw_content"].apply(sentiment)
+        df["news_type"] = df["raw_content"].apply(tag_events)
         df["trading_date"] = df["published_at"].apply(get_trading_date)
         df["impact_score"] = df.apply(
             lambda r: impact_score(r["sentiment_score"], r["published_at"], r["trading_date"]),
             axis=1,
         )
         df["news_source"] = news_source
-        df["content"] = df["combined_text"]
+        # Backward-compatible field; this remains full text in the enriched dataframe.
+        df["content"] = df["raw_content"]
         return df
 
     news_processed = process_df(news_df, "finnhub")
@@ -243,6 +271,11 @@ def build_case_json(
     combined_df: pd.DataFrame,
     stock_prices_df: pd.DataFrame,
     quarter: dict,
+    summary_max_chars: int = 320,
+    summary_max_sentences: int = 2,
+    max_items_per_quarter: int = 250,
+    impact_decimals: int = 2,
+    price_decimals: int = 2,
 ) -> dict:
     """Build Case-valid JSON for one quarter."""
     start = quarter["start"]
@@ -252,6 +285,16 @@ def build_case_json(
     news_q = combined_df[
         (combined_df["published_at"] >= start) & (combined_df["published_at"] <= end)
     ]
+    if len(news_q) > max_items_per_quarter:
+        # Keep highest-signal items to reduce file size and downstream token load.
+        news_q = (
+            news_q.assign(_abs_impact=news_q["impact_score"].fillna(0).abs())
+            .sort_values("_abs_impact", ascending=False)
+            .head(max_items_per_quarter)
+            .sort_values("published_at")
+            .drop(columns=["_abs_impact"])
+        )
+
     prices_q = stock_prices_df[
         (stock_prices_df["timestamp"] >= start) & (stock_prices_df["timestamp"] <= end)
     ]
@@ -259,9 +302,14 @@ def build_case_json(
     items = []
     for _, row in news_q.iterrows():
         kind = _map_kind(row.get("news_type", []), row.get("news_source", "other"))
-        content = row.get("content", "")
+        raw_content = row.get("raw_content", row.get("content", ""))
+        content = _summarize_text(
+            raw_content,
+            max_chars=summary_max_chars,
+            max_sentences=summary_max_sentences,
+        )
         impact = row.get("impact_score")
-        impact_val = float(impact) if pd.notna(impact) else None
+        impact_val = _round_or_none(impact, impact_decimals)
         items.append({
             "kind": kind,
             "content": content,
@@ -274,8 +322,11 @@ def build_case_json(
         for _, r in prices_q.iterrows():
             ts = r["timestamp"]
             ts_str = ts.strftime("%Y-%m-%d") if hasattr(ts, "strftime") else str(ts)[:10]
-            daily_bars.append({"timestamp": ts_str, "close": float(r["close_price"])})
-        current_price = float(prices_q["close_price"].iloc[-1])
+            daily_bars.append({
+                "timestamp": ts_str,
+                "close": round(float(r["close_price"]), price_decimals),
+            })
+        current_price = round(float(prices_q["close_price"].iloc[-1]), price_decimals)
 
     stock_data_entry = {
         "ticker": ticker,
@@ -296,10 +347,15 @@ def run(
     finnhub_key: str | None = None,
     use_cache: bool = False,
     cache_dir: str | None = None,
+    summary_max_chars: int = 320,
+    summary_max_sentences: int = 2,
+    max_items_per_quarter: int = 250,
+    impact_decimals: int = 2,
+    price_decimals: int = 2,
 ) -> list[Path]:
     """Fetch data, build cases, and write JSON files. Returns paths of written files."""
     load_dotenv()
-    api_key = finnhub_key or os.environ.get("FINNHUB_API_KEY", "")
+    api_key = finnhub_key or os.environ.get("FINNHUB_API_KEY", "d480co1r01qk80birj8gd480co1r01qk80birj90")
     if not api_key:
         raise ValueError("FINNHUB_API_KEY not set. Add it to .env or pass --finnhub-key.")
 
@@ -316,6 +372,8 @@ def run(
             close_prices_df = pd.read_parquet(cp_file)
             combined_df = pd.read_parquet(ne_file)
             combined_df["published_at"] = pd.to_datetime(combined_df["published_at"])
+            if "raw_content" not in combined_df.columns:
+                combined_df["raw_content"] = combined_df.get("content", "")
             stock_prices_df = close_prices_df
         else:
             close_prices_df = fetch_stock_prices(ticker, start, end)
@@ -360,7 +418,17 @@ def run(
     out.mkdir(parents=True, exist_ok=True)
     written = []
     for q in quarters:
-        case_json = build_case_json(ticker, combined_df, stock_prices_df, q)
+        case_json = build_case_json(
+            ticker,
+            combined_df,
+            stock_prices_df,
+            q,
+            summary_max_chars=summary_max_chars,
+            summary_max_sentences=summary_max_sentences,
+            max_items_per_quarter=max_items_per_quarter,
+            impact_decimals=impact_decimals,
+            price_decimals=price_decimals,
+        )
         path = out / f"{q['name']}.json"
         path.write_text(json.dumps(case_json, indent=2), encoding="utf-8")
         written.append(path)
@@ -395,6 +463,36 @@ def main() -> None:
         default=None,
         help="Finnhub API key (overrides FINNHUB_API_KEY from .env)",
     )
+    parser.add_argument(
+        "--summary-max-chars",
+        type=int,
+        default=320,
+        help="Max characters kept per content item (default: 320)",
+    )
+    parser.add_argument(
+        "--summary-max-sentences",
+        type=int,
+        default=2,
+        help="Max leading sentences kept per content item (default: 2)",
+    )
+    parser.add_argument(
+        "--max-items-per-quarter",
+        type=int,
+        default=250,
+        help="Cap items per quarter; highest absolute impact kept (default: 250)",
+    )
+    parser.add_argument(
+        "--impact-decimals",
+        type=int,
+        default=2,
+        help="Decimals for impact_score in output JSON (default: 2)",
+    )
+    parser.add_argument(
+        "--price-decimals",
+        type=int,
+        default=2,
+        help="Decimals for price values in output JSON (default: 2)",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -409,6 +507,11 @@ def main() -> None:
         finnhub_key=args.finnhub_key,
         use_cache=args.use_cache,
         cache_dir=args.cache_dir if args.use_cache else None,
+        summary_max_chars=args.summary_max_chars,
+        summary_max_sentences=args.summary_max_sentences,
+        max_items_per_quarter=args.max_items_per_quarter,
+        impact_decimals=args.impact_decimals,
+        price_decimals=args.price_decimals,
     )
     print(f"Generated {len(paths)} case(s):")
     for p in paths:
