@@ -1,0 +1,103 @@
+{
+  "manifest_version": "1.0",
+  "pipeline_run_id": "20260304T083447Z_56910",
+  "status": "failed",
+  "environment": {
+    "git_commit": "a2568c71516e30e26cdfa7034f1b8d720da4bb82",
+    "git_branch": "main",
+    "git_dirty": true,
+    "hostname": "Veljkos-MacBook-Pro.local",
+    "python_version": "3.13.5",
+    "platform": "macOS-26.2-arm64-arm-64bit-Mach-O"
+  },
+  "invocation": {
+    "command": "data-pipeline/run_pipeline.py --start 2024Q4 --end 2025Q3",
+    "args": {
+      "start": "2024Q4",
+      "end": "2025Q3",
+      "force": false,
+      "dry_run": false
+    },
+    "tickers_resolved": [
+      "CAT",
+      "DAL",
+      "DE",
+      "RTX",
+      "JPM",
+      "GS",
+      "BAC",
+      "BLK",
+      "UNH",
+      "LLY",
+      "JNJ",
+      "AMT",
+      "PLD",
+      "XOM",
+      "CVX",
+      "COST",
+      "WMT",
+      "PG",
+      "AAPL",
+      "NVDA",
+      "MSFT",
+      "AVGO",
+      "AMD",
+      "GOOG",
+      "META",
+      "NFLX",
+      "DIS",
+      "AMZN",
+      "TSLA",
+      "HD"
+    ],
+    "quarters_resolved": [
+      [
+        2024,
+        4
+      ],
+      [
+        2025,
+        1
+      ],
+      [
+        2025,
+        2
+      ],
+      [
+        2025,
+        3
+      ]
+    ]
+  },
+  "timing": {
+    "started_at_utc": "2026-03-04T08:34:47Z",
+    "completed_at_utc": "2026-03-04T08:58:32Z",
+    "total_duration_seconds": 1425.0
+  },
+  "stages": {
+    "1_edgar_download": {
+      "script": "EDGAR/get_sec_data.py",
+      "status": "completed",
+      "duration_seconds": 199.0
+    },
+    "2_filing_summarization": {
+      "script": "EDGAR/filing_summarization_pipeline.py",
+      "status": "completed",
+      "duration_seconds": 1081.5
+    },
+    "3_macro_data": {
+      "script": "Macro data",
+      "status": "skipped"
+    },
+    "4_asset_features": {
+      "script": "quarterly_asset_details/asset_quarter_builder.py",
+      "status": "completed",
+      "duration_seconds": 144.6
+    },
+    "5_sentiment_scoring": {
+      "script": "sentiment/sentiment.py",
+      "status": "failed",
+      "duration_seconds": 0.2
+    }
+  }
+}
