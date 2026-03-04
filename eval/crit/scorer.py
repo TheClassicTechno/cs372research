@@ -47,14 +47,22 @@ class CritScorer:
         # result.agent_scores["macro"].rho_bar → per-agent ρ_i
     """
 
-    def __init__(self, llm_fn: Callable[[str, str], str]) -> None:
+    def __init__(
+        self,
+        llm_fn: Callable[[str, str], str],
+        capture_fn: Callable[[str, str, str, str], None] | None = None,
+    ) -> None:
         """
         Args:
             llm_fn: Function that takes (system_prompt, user_prompt)
                      and returns raw LLM response string.
                      Dependency injection for testability.
+            capture_fn: Optional callback (role, system_prompt, user_prompt,
+                        raw_response) called after each LLM scoring call.
+                        Used to capture CRIT prompts/responses for diagnostics.
         """
         self._llm_fn = llm_fn
+        self._capture_fn = capture_fn
 
     def _score_single_agent(self, role: str, bundle: dict) -> tuple[str, CritResult]:
         """Score a single agent's reasoning bundle via one LLM call.
@@ -73,6 +81,9 @@ class CritScorer:
         system_prompt, user_prompt = render_crit_prompts(bundle)
 
         raw_text = self._llm_fn(system_prompt, user_prompt)
+
+        if self._capture_fn:
+            self._capture_fn(role, system_prompt, user_prompt, raw_text)
 
         # Strip markdown code fences if present
         cleaned = raw_text.strip()

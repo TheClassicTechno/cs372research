@@ -303,7 +303,20 @@ class MultiAgentRunner:
                     )
                 return response
 
-            self._crit_scorer = CritScorer(llm_fn=_logging_llm_fn)
+            def _crit_capture(role, system_prompt, user_prompt, raw_response):
+                self._crit_current_captures[role] = {
+                    "system_prompt": system_prompt,
+                    "user_prompt": user_prompt,
+                    "raw_response": raw_response,
+                }
+
+            self._crit_scorer = CritScorer(
+                llm_fn=_logging_llm_fn, capture_fn=_crit_capture,
+            )
+
+        # --- CRIT prompt/response capture ---
+        self._crit_current_captures: dict[str, dict] = {}
+        self._crit_round1_captures: dict[str, dict] | None = None
 
         # --- PID controller ---
         self._pid_controller = None
@@ -349,6 +362,8 @@ class MultiAgentRunner:
         self._stable_rounds = 0
         self._prev_rho_bar = None
         self._memo_evidence_lookup = {}
+        self._crit_current_captures = {}
+        self._crit_round1_captures = None
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -551,6 +566,7 @@ class MultiAgentRunner:
             self._debate_logger.finalize(
                 state, self._pid_phase_data, terminated_early,
                 state.get("enriched_context", ""),
+                crit_captures=self._crit_round1_captures,
             )
             if not self.config.console_display:
                 print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
@@ -667,7 +683,10 @@ class MultiAgentRunner:
             return
 
         # --- CRIT audit (per-agent parallel scoring → RoundCritResult) ---
+        self._crit_current_captures = {}
         round_crit = self._crit_scorer.score(bundles)
+        if round_num == 1:
+            self._crit_round1_captures = self._crit_current_captures
 
         # --- JS divergence from agent confidences ---
         confidences = [
@@ -722,9 +741,11 @@ class MultiAgentRunner:
         )
         self._pid_events.append(event)
 
-        # --- Structured debate logger: CRIT metrics ---
+        # --- Structured debate logger: CRIT metrics + prompts ---
         if self._debate_logger:
             self._debate_logger.write_crit_metrics(round_crit, round_num)
+            if self._crit_current_captures:
+                self._debate_logger.write_crit_prompts(self._crit_current_captures)
 
         # --- Compute agent confidences + evidence (used by both loggers) ---
         agent_confidences = {}
@@ -771,6 +792,12 @@ class MultiAgentRunner:
                                 "unsupported_claims": cr.diagnostics.unsupported_claims_detected,
                                 "conclusion_drift": cr.diagnostics.conclusion_drift_detected,
                                 "causal_overreach": cr.diagnostics.causal_overreach_detected,
+                            },
+                            "explanations": {
+                                "internal_consistency": cr.explanations.internal_consistency,
+                                "evidence_support": cr.explanations.evidence_support,
+                                "trace_alignment": cr.explanations.trace_alignment,
+                                "causal_integrity": cr.explanations.causal_integrity,
                             },
                         }
                         for role, cr in round_crit.agent_scores.items()
@@ -824,8 +851,45 @@ class MultiAgentRunner:
                     "beta_new": pid_result.beta_new,
                     "quadrant": pid_result.quadrant,
                 }
+                crit_data = {
+                    "rho_bar": round_crit.rho_bar,
+                }
+                crit_data.update({
+                    role: {
+                        "rho_i": cr.rho_bar,
+                        "pillars": {
+                            "IC": cr.pillar_scores.internal_consistency,
+                            "ES": cr.pillar_scores.evidence_support,
+                            "TA": cr.pillar_scores.trace_alignment,
+                            "CI": cr.pillar_scores.causal_integrity,
+                        },
+                    }
+                    for role, cr in round_crit.agent_scores.items()
+                })
+                pid_data = {
+                    "beta_in": beta_in,
+                    "beta_new": pid_result.beta_new,
+                    "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                    "e_t": pid_result.e_t,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "u_t": pid_result.u_t,
+                    "quadrant": pid_result.quadrant,
+                    "sycophancy": pid_result.s_t,
+                    "convergence": {
+                        "stable_rounds": self._stable_rounds,
+                        "delta_rho_actual": (
+                            abs(rho_bar - self._prev_rho_bar)
+                            if self._prev_rho_bar is not None else None
+                        ),
+                        "delta_rho_threshold": self.config.delta_rho,
+                    },
+                }
                 self._debate_logger.write_round_state(
                     state, round_num, _round_floats(metrics_summary),
+                    crit_data=_round_floats(crit_data),
+                    pid_data=_round_floats(pid_data),
                 )
 
             # Rich console display: CRIT + PID metrics

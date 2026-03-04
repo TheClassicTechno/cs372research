@@ -251,6 +251,7 @@ class TestRoundArtifacts:
         assert (round_dir / "proposals").is_dir()
         assert (round_dir / "critiques").is_dir()
         assert (round_dir / "revisions").is_dir()
+        assert (round_dir / "CRIT").is_dir()
         assert (round_dir / "metrics").is_dir()
 
     def test_write_proposals_creates_per_agent_dirs(
@@ -342,6 +343,105 @@ class TestRoundArtifacts:
         assert "revisions" in round_state
         assert "metrics" in round_state
         assert round_state["metrics"]["rho_bar"] == 0.81
+
+    def test_write_crit_prompts_creates_per_agent_dirs(
+        self, tmp_logger, sample_observation,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+
+        captures = {
+            "macro": {
+                "system_prompt": "You are a blind reasoning auditor.",
+                "user_prompt": "Evaluate the following reasoning bundle...",
+                "raw_response": '{"pillar_scores": {"IC": 0.85}}',
+            },
+            "value": {
+                "system_prompt": "You are a blind reasoning auditor.",
+                "user_prompt": "Evaluate the following value bundle...",
+                "raw_response": '{"pillar_scores": {"IC": 0.80}}',
+            },
+        }
+        tmp_logger.write_crit_prompts(captures)
+
+        round_dir = tmp_logger.run_dir / "rounds" / "round_001"
+        macro_dir = round_dir / "CRIT" / "macro"
+        value_dir = round_dir / "CRIT" / "value"
+
+        assert macro_dir.is_dir()
+        assert value_dir.is_dir()
+        assert (macro_dir / "prompt.txt").exists()
+        assert (macro_dir / "response.txt").exists()
+        assert (value_dir / "prompt.txt").exists()
+        assert (value_dir / "response.txt").exists()
+
+        # Verify prompt.txt content
+        prompt_content = (macro_dir / "prompt.txt").read_text()
+        assert "=== SYSTEM PROMPT ===" in prompt_content
+        assert "You are a blind reasoning auditor." in prompt_content
+        assert "=== USER PROMPT ===" in prompt_content
+        assert "Evaluate the following reasoning bundle..." in prompt_content
+
+        # Verify response.txt content
+        response_content = (macro_dir / "response.txt").read_text()
+        assert '{"pillar_scores": {"IC": 0.85}}' in response_content
+
+    def test_round_state_has_crit_and_pid(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+
+        state = {"proposals": sample_proposals, "revisions": sample_revisions}
+        metrics = {"rho_bar": 0.81}
+        crit_data = {
+            "rho_bar": 0.81,
+            "macro": {
+                "rho_i": 0.75,
+                "pillars": {"IC": 1.0, "ES": 0.5, "TA": 0.8, "CI": 0.7},
+            },
+            "value": {
+                "rho_i": 0.87,
+                "pillars": {"IC": 0.9, "ES": 0.85, "TA": 0.85, "CI": 0.9},
+            },
+        }
+        pid_data = {
+            "beta_in": 0.5,
+            "beta_new": 0.45,
+            "tone_bucket": "balanced",
+            "e_t": -0.04,
+            "p_term": -0.006,
+            "i_term": -0.0004,
+            "d_term": -0.001,
+            "u_t": -0.008,
+            "quadrant": "converged",
+            "sycophancy": 0,
+            "convergence": {
+                "stable_rounds": 0,
+                "delta_rho_actual": None,
+                "delta_rho_threshold": 0.02,
+            },
+        }
+        tmp_logger.write_round_state(
+            state, 1, metrics, crit_data=crit_data, pid_data=pid_data,
+        )
+
+        round_state = json.loads(
+            (tmp_logger.run_dir / "rounds" / "round_001" / "round_state.json").read_text()
+        )
+        # CRIT data present with per-agent pillars
+        assert "crit" in round_state
+        assert round_state["crit"]["rho_bar"] == 0.81
+        assert round_state["crit"]["macro"]["pillars"]["IC"] == 1.0
+        assert round_state["crit"]["value"]["rho_i"] == 0.87
+
+        # PID data present with full metrics
+        assert "pid" in round_state
+        assert round_state["pid"]["beta_in"] == 0.5
+        assert round_state["pid"]["beta_new"] == 0.45
+        assert round_state["pid"]["quadrant"] == "converged"
+        assert round_state["pid"]["e_t"] == -0.04
+        assert round_state["pid"]["convergence"]["delta_rho_threshold"] == 0.02
 
 
 # ---------------------------------------------------------------------------
@@ -489,7 +589,7 @@ class TestFinalize:
         tmp_logger.finalize(state, [], False, "enriched memo content")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        for i in range(10):
+        for i in range(11):
             assert f"SECTION {i}" in content, f"Missing SECTION {i}"
 
     def test_diagnostic_has_proposal_prompts(
@@ -520,6 +620,112 @@ class TestFinalize:
         assert "PROPOSAL PROMPT: VALUE AGENT" in content
         assert "sys macro prompt" in content
         assert "sys value prompt" in content
+
+    def test_section7_has_explanations(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        pid_phase_data = [
+            {
+                "round": 1,
+                "crit": {
+                    "rho_bar": 0.78,
+                    "rho_i": {"macro": 0.80, "value": 0.76},
+                    "agents": {
+                        "macro": {
+                            "pillars": {"IC": 0.85, "ES": 0.70, "TA": 0.80, "CI": 0.75},
+                            "diagnostics": {"contradictions": False, "unsupported_claims": True,
+                                            "conclusion_drift": False, "causal_overreach": False},
+                            "explanations": {
+                                "internal_consistency": "Agent maintains consistent thesis throughout.",
+                                "evidence_support": "Two claims lack citation support.",
+                                "trace_alignment": "Allocation follows from stated thesis.",
+                                "causal_integrity": "Causal claims appropriately scoped.",
+                            },
+                        },
+                        "value": {
+                            "pillars": {"IC": 0.80, "ES": 0.75, "TA": 0.70, "CI": 0.78},
+                            "diagnostics": {"contradictions": False, "unsupported_claims": False,
+                                            "conclusion_drift": False, "causal_overreach": False},
+                            "explanations": {
+                                "internal_consistency": "Consistent value-based reasoning.",
+                                "evidence_support": "All claims well-supported.",
+                                "trace_alignment": "Minor drift in allocation rationale.",
+                                "causal_integrity": "Sound causal reasoning.",
+                            },
+                        },
+                    },
+                },
+                "pid": {},
+                "divergence": {},
+                "convergence": {},
+            }
+        ]
+
+        tmp_logger.finalize(state, pid_phase_data, False, "memo")
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        # Section 7 should contain explanation blocks
+        section7_start = content.find("SECTION 7")
+        section8_start = content.find("SECTION 8")
+        section7_text = content[section7_start:section8_start]
+        assert "explanations:" in section7_text
+        assert "IC: Agent maintains consistent thesis throughout." in section7_text
+        assert "ES: Two claims lack citation support." in section7_text
+        assert "TA: Allocation follows from stated thesis." in section7_text
+        assert "CI: Causal claims appropriately scoped." in section7_text
+
+    def test_section10_has_crit_data(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        crit_captures = {
+            "macro": {
+                "system_prompt": "You are a blind reasoning auditor...",
+                "user_prompt": "Evaluate the following reasoning bundle...",
+                "raw_response": '{"pillar_scores": {"IC": 0.85}}',
+            },
+            "value": {
+                "system_prompt": "You are a blind reasoning auditor...",
+                "user_prompt": "Evaluate the following value bundle...",
+                "raw_response": '{"pillar_scores": {"IC": 0.80}}',
+            },
+        }
+
+        tmp_logger.finalize(state, [], False, "memo", crit_captures=crit_captures)
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        section10_start = content.find("SECTION 10")
+        assert section10_start != -1, "Missing SECTION 10"
+        section10_text = content[section10_start:]
+        assert "=== CRIT: MACRO AGENT ===" in section10_text
+        assert "=== CRIT: VALUE AGENT ===" in section10_text
+        assert "--- SYSTEM PROMPT ---" in section10_text
+        assert "--- USER PROMPT ---" in section10_text
+        assert "--- RAW LLM RESPONSE ---" in section10_text
+        assert "You are a blind reasoning auditor..." in section10_text
+        assert '{"pillar_scores": {"IC": 0.85}}' in section10_text
+
+    def test_section10_empty_when_no_captures(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        section10_start = content.find("SECTION 10")
+        assert section10_start != -1
+        section10_text = content[section10_start:]
+        assert "(no CRIT data captured" in section10_text
 
 
 # ---------------------------------------------------------------------------

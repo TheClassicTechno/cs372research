@@ -373,6 +373,7 @@ class DebateLogger:
         (self._round_dir / "proposals").mkdir(exist_ok=True)
         (self._round_dir / "critiques").mkdir(exist_ok=True)
         (self._round_dir / "revisions").mkdir(exist_ok=True)
+        (self._round_dir / "CRIT").mkdir(exist_ok=True)
         (self._round_dir / "metrics").mkdir(exist_ok=True)
 
     def write_proposals(self, proposals: list[dict]) -> None:
@@ -429,6 +430,24 @@ class DebateLogger:
             action = r.get("action_dict", {})
             allocation = action.get("allocation", {}) if isinstance(action, dict) else {}
             _write_json(agent_dir / "portfolio.json", allocation)
+
+    def write_crit_prompts(self, captures: dict[str, dict]) -> None:
+        """Write CRIT/<agent>/prompt.txt + response.txt for each agent."""
+        if self._mode == "off" or self._round_dir is None:
+            return
+        for role, cap in captures.items():
+            agent_dir = self._round_dir / "CRIT" / role
+            agent_dir.mkdir(parents=True, exist_ok=True)
+            prompt_content = (
+                "=== SYSTEM PROMPT ===\n"
+                f"{cap['system_prompt']}\n\n"
+                "=== USER PROMPT ===\n"
+                f"{cap['user_prompt']}\n"
+            )
+            (agent_dir / "prompt.txt").write_text(prompt_content, encoding="utf-8")
+            (agent_dir / "response.txt").write_text(
+                cap.get("raw_response", ""), encoding="utf-8",
+            )
 
     def write_crit_metrics(self, round_crit: Any, round_num: int) -> None:
         """Write metrics/crit_scores.json."""
@@ -532,6 +551,8 @@ class DebateLogger:
         state: dict,
         round_num: int,
         metrics: dict | None = None,
+        crit_data: dict | None = None,
+        pid_data: dict | None = None,
     ) -> None:
         """Write round_state.json — compact round snapshot."""
         if self._mode == "off" or self._round_dir is None:
@@ -561,6 +582,8 @@ class DebateLogger:
             "proposals": proposals_summary,
             "revisions": revisions_summary,
             "metrics": metrics or {},
+            "crit": crit_data or {},
+            "pid": pid_data or {},
         }
         _write_json(self._round_dir / "round_state.json", _round_floats(data))
 
@@ -600,6 +623,7 @@ class DebateLogger:
         pid_phase_data: list[dict],
         terminated_early: bool,
         enriched_context: str,
+        crit_captures: dict[str, dict] | None = None,
     ) -> None:
         """Write final/ artifacts and update manifest.json."""
         if self._mode == "off":
@@ -623,6 +647,7 @@ class DebateLogger:
         # debate_diagnostic.txt — plaintext casefile for LLM diagnosis
         casefile = self._build_diagnostic_casefile(
             state, pid_phase_data, terminated_early, enriched_context,
+            crit_captures=crit_captures,
         )
         (final_dir / "debate_diagnostic.txt").write_text(casefile, encoding="utf-8")
 
@@ -655,12 +680,13 @@ class DebateLogger:
         pid_phase_data: list[dict],
         terminated_early: bool,
         enriched_context: str,
+        crit_captures: dict[str, dict] | None = None,
     ) -> str:
         """Build the plaintext debate diagnostic casefile.
 
         Returns a string with two parts:
         1. Fixed diagnostic scaffold (instructions for the diagnosing LLM)
-        2. Raw debate data in plaintext sections (SECTION 0-9)
+        2. Raw debate data in plaintext sections (SECTION 0-10)
         """
         sep = "=" * 80
 
@@ -686,6 +712,8 @@ class DebateLogger:
             + self._section_pid_metrics(pid_phase_data),
             f"\n{sep}\nSECTION 9 — DIVERGENCE METRICS (RAW)\n{sep}\n\n"
             + self._section_divergence_metrics(pid_phase_data),
+            f"\n{sep}\nSECTION 10 — CRIT PROMPTS + RESPONSES (ROUND 1)\n{sep}\n\n"
+            + self._section_crit_data(crit_captures),
         ]
 
         return _DIAGNOSTIC_SCAFFOLD + "\n".join(sections) + "\n"
@@ -870,6 +898,12 @@ class DebateLogger:
                 parts.append(f"    pillars: IC={pillars.get('IC')}  ES={pillars.get('ES')}  TA={pillars.get('TA')}  CI={pillars.get('CI')}")
                 flags = [k for k, v in diags.items() if v]
                 parts.append(f"    diagnostics: {', '.join(flags) if flags else '(none)'}")
+                explanations = agent_data.get("explanations", {})
+                if explanations:
+                    parts.append(f"    explanations:")
+                    for pillar_key, short_name in [("internal_consistency", "IC"), ("evidence_support", "ES"),
+                                                     ("trace_alignment", "TA"), ("causal_integrity", "CI")]:
+                        parts.append(f"      {short_name}: {explanations.get(pillar_key, 'N/A')}")
             parts.append("")
 
         return "\n".join(parts)
@@ -923,6 +957,21 @@ class DebateLogger:
                     parts.append(f"    {role}: {', '.join(str(i) for i in id_list)}")
             parts.append("")
 
+        return "\n".join(parts)
+
+    def _section_crit_data(self, crit_captures: dict[str, dict] | None) -> str:
+        if not crit_captures:
+            return "(no CRIT data captured — PID was not enabled)\n"
+
+        parts = []
+        for role in sorted(crit_captures.keys()):
+            cap = crit_captures[role]
+            parts.append(
+                f"=== CRIT: {role.upper()} AGENT ===\n\n"
+                f"--- SYSTEM PROMPT ---\n{cap['system_prompt']}\n\n"
+                f"--- USER PROMPT ---\n{cap['user_prompt']}\n\n"
+                f"--- RAW LLM RESPONSE ---\n{cap['raw_response']}\n"
+            )
         return "\n".join(parts)
 
 
