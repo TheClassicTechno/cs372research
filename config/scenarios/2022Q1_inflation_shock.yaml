@@ -1,0 +1,156 @@
+# ============================================================================
+# Scenario: 2022 Inflation Shock Debate (Q1 Data → Q2 Investment)
+# ============================================================================
+# Demonstrates sector configuration features:
+#   - Ticker → sector mapping
+#   - Per-sector exposure limits (min/max)
+#   - Role-specific sector permissions
+#
+# Decision point: Start of Q2 2022
+# Data available to agents: End of Q1 2022
+#
+# Narrative tensions:
+#   - Inflation hedge (energy)
+#   - Rising rates (financials)
+#   - Duration risk (tech)
+#   - Recession risk (defensives vs cyclicals)
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/sector_constrained.yaml
+
+invest_quarter: "2022Q2"
+
+tickers:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMD
+
+  - JPM
+  - GS
+  - BAC
+  - MS
+
+  - XOM
+  - CVX
+  - COP
+  - OXY
+
+  - CAT
+  - DE
+
+  - AMZN
+  - TSLA
+  - NKE
+
+  - WMT
+  - COST
+
+  - UNH
+
+# Sector definitions: every ticker belongs to exactly one sector.
+sectors:
+  tech:
+    - AAPL
+    - MSFT
+    - NVDA
+    - AMD
+
+  energy:
+    - XOM
+    - CVX
+    - COP
+    - OXY
+
+  financials:
+    - JPM
+    - GS
+    - BAC
+    - MS
+
+  defensive:
+    - WMT
+    - COST
+
+  consumer:
+    - AMZN
+    - TSLA
+    - NKE
+
+  healthcare:
+    - UNH
+
+  industrials:
+    - CAT
+    - DE
+
+# Per-sector exposure bounds enforced on the final (judge) allocation.
+# Sectors without entries here are unconstrained.
+sector_limits:
+  tech:
+    min: 0.05
+    max: 0.35
+
+  energy:
+    min: 0.05
+    max: 0.30
+
+  financials:
+    min: 0.05
+    max: 0.30
+
+  defensive:
+    min: 0.05
+    max: 0.25
+
+  consumer:
+    min: 0.05
+    max: 0.25
+
+  healthcare:
+    min: 0.05
+    max: 0.20
+
+  industrials:
+    min: 0.05
+    max: 0.25
+
+# Role-specific sector permissions.
+# Each agent role can only allocate to its allowed sectors.
+# Use ["*"] to allow all sectors.
+agent_sector_permissions:
+  macro:
+    - energy
+    - financials
+    - industrials
+    - tech
+
+  value:
+    - financials
+    - industrials
+    - consumer
+    - energy
+
+  growth:
+    - tech
+    - consumer
+
+  technical:
+    - "*"
+
+  risk:
+    - defensive
+    - healthcare
+    - financials
+
+# Blanket sector cap — no single sector may exceed this weight.
+# Composable with sector_limits: the stricter bound wins per sector.
+max_sector_weight: 0.40
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 20
