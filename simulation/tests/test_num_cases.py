@@ -33,6 +33,7 @@ def sim_config(tmp_path) -> SimulationConfig:
         ),
         broker=BrokerConfig(initial_cash=100_000.0),
         tickers=["AAPL"],
+        invest_quarter="2025Q1",
         num_episodes=1,
     )
 
@@ -43,12 +44,12 @@ def _make_fake_templates(n: int) -> list:
 
 
 def _run_and_capture_load_call(runner, templates):
-    """Run the runner with mocked internals and return the kwargs passed to load_case_templates."""
+    """Run the runner with mocked internals and return the kwargs passed to load_memo_cases."""
     mock_load = MagicMock(return_value=templates)
     mock_episode = AsyncMock(return_value=MagicMock())
 
     with patch(
-        "simulation.runner.load_case_templates", mock_load
+        "simulation.memo_loader.load_memo_cases", mock_load
     ), patch.object(
         runner._sim_logger, "init_run"
     ), patch.object(
@@ -66,12 +67,12 @@ def _run_and_capture_load_call(runner, templates):
 
 
 # =============================================================================
-# TEST 1: Runner passes config tickers to load_case_templates
+# TEST 1: Runner passes config tickers to load_memo_cases
 # =============================================================================
 
 
 def test_runner_passes_config_tickers(sim_config, tmp_path):
-    """Runner should pass config.tickers as ticker_filter."""
+    """Runner should pass config.tickers to load_memo_cases."""
     templates = _make_fake_templates(5)
 
     runner = AsyncSimulationRunner(
@@ -80,16 +81,16 @@ def test_runner_passes_config_tickers(sim_config, tmp_path):
     )
 
     call_args = _run_and_capture_load_call(runner, templates)
-    assert call_args.kwargs["ticker_filter"] == ["AAPL"]
+    assert call_args.kwargs["tickers"] == ["AAPL"]
 
 
 # =============================================================================
-# TEST 2: Runner passes config quarters to load_case_templates
+# TEST 2: Runner passes invest_quarter to load_memo_cases
 # =============================================================================
 
 
-def test_runner_passes_config_quarters(tmp_path):
-    """Runner should pass config.quarters to load_case_templates."""
+def test_runner_passes_invest_quarter(tmp_path):
+    """Runner should pass config.invest_quarter to load_memo_cases."""
     config = SimulationConfig(
         dataset_path=str(tmp_path),
         agent=AgentConfig(
@@ -99,7 +100,7 @@ def test_runner_passes_config_quarters(tmp_path):
         ),
         broker=BrokerConfig(initial_cash=100_000.0),
         tickers=["NVDA"],
-        quarters=["Q1", "Q3"],
+        invest_quarter="2025Q1",
         num_episodes=1,
     )
     templates = _make_fake_templates(3)
@@ -110,16 +111,16 @@ def test_runner_passes_config_quarters(tmp_path):
     )
 
     call_args = _run_and_capture_load_call(runner, templates)
-    assert call_args.kwargs["quarters"] == ["Q1", "Q3"]
+    assert call_args.kwargs["invest_quarter"] == "2025Q1"
 
 
 # =============================================================================
-# TEST 3: Runner passes None quarters when not set in config
+# TEST 3: Runner passes memo_format to load_memo_cases
 # =============================================================================
 
 
-def test_runner_passes_none_quarters_when_omitted(sim_config, tmp_path):
-    """When quarters is not set in config, None should be passed."""
+def test_runner_passes_memo_format(sim_config, tmp_path):
+    """Runner should pass config.memo_format to load_memo_cases."""
     templates = _make_fake_templates(5)
 
     runner = AsyncSimulationRunner(
@@ -128,7 +129,7 @@ def test_runner_passes_none_quarters_when_omitted(sim_config, tmp_path):
     )
 
     call_args = _run_and_capture_load_call(runner, templates)
-    assert call_args.kwargs["quarters"] is None
+    assert call_args.kwargs["memo_format"] == sim_config.memo_format
 
 
 # =============================================================================
