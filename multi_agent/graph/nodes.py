@@ -85,15 +85,41 @@ def _apply_sector_limits(
 ) -> dict[str, float]:
     """Enforce sector exposure limits on a normalized allocation (if configured).
 
+    Merges ``max_sector_weight`` (blanket cap) with per-sector ``sector_limits``
+    before calling ``enforce_sector_limits``.  When both are set the stricter
+    max wins for each sector.
+
     Returns the allocation unchanged if no sector config or limits are set.
     """
     sector_cfg = config.get("sector_config")
     if not sector_cfg:
         return alloc
-    limits = sector_cfg.get("sector_limits")
+
+    limits = sector_cfg.get("sector_limits") or {}
+    max_sw = sector_cfg.get("max_sector_weight")
+    sectors_def = sector_cfg.get("sectors")
+
+    if not limits and max_sw is None:
+        return alloc
+    if not sectors_def:
+        return alloc
+
+    # Merge max_sector_weight into per-sector limits
+    if max_sw is not None:
+        merged: dict[str, dict] = {}
+        for sector in sectors_def:
+            existing = limits.get(sector, {})
+            existing_max = existing.get("max", 1.0)
+            merged[sector] = {
+                "min": existing.get("min", 0.0),
+                "max": min(existing_max, max_sw),
+            }
+        limits = merged
+
     if not limits:
         return alloc
-    sector_map = build_sector_map(sector_cfg["sectors"])
+
+    sector_map = build_sector_map(sectors_def)
     return enforce_sector_limits(alloc, sector_map, limits)
 
 

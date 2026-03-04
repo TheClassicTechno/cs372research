@@ -228,3 +228,28 @@ class TestSectorConfigThreading:
         assert sc["sectors"] == VALID_SECTORS
         assert sc["sector_limits"] is None
         assert sc["agent_sector_permissions"] is None
+
+
+# ── max_sector_weight validation ──────────────────────────────────────
+
+
+class TestMaxSectorWeight:
+    def test_max_sector_weight_without_sectors_raises(self):
+        with pytest.raises(ValueError, match="requires 'sectors'"):
+            SimulationConfig(**_base_config(max_sector_weight=0.40))
+
+    def test_max_sector_weight_valid(self):
+        config = SimulationConfig(**_base_config(
+            sectors=VALID_SECTORS,
+            max_sector_weight=0.40,
+        ))
+        assert config.max_sector_weight == 0.40
+
+    def test_max_sector_weight_packed_into_sector_config(self):
+        config = SimulationConfig(**_base_config(
+            sectors=VALID_SECTORS,
+            max_sector_weight=0.35,
+        ))
+        sc = config.agent.sector_config
+        assert sc is not None
+        assert sc["max_sector_weight"] == 0.35

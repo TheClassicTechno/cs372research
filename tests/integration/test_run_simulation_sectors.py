@@ -146,6 +146,64 @@ agent:
   system_prompt_override: "mock"
 """
 
+YAML_MAX_SECTOR_WEIGHT = """\
+dataset_path: "{dataset_path}"
+tickers: [AAPL, NVDA, XOM, JPM]
+invest_quarter: "2025Q1"
+memo_format: json
+num_episodes: 1
+broker:
+  initial_cash: 100000.0
+allocation_constraints:
+  max_weight: 0.50
+  min_holdings: 2
+sectors:
+  tech: [AAPL, NVDA]
+  energy: [XOM]
+  financials: [JPM]
+max_sector_weight: 0.40
+agent:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-4o-mini
+  temperature: 0.3
+  system_prompt_override: "mock"
+"""
+
+YAML_MAX_SECTOR_WEIGHT_WITH_LIMITS = """\
+dataset_path: "{dataset_path}"
+tickers: [AAPL, NVDA, XOM, JPM]
+invest_quarter: "2025Q1"
+memo_format: json
+num_episodes: 1
+broker:
+  initial_cash: 100000.0
+allocation_constraints:
+  max_weight: 0.50
+  min_holdings: 2
+sectors:
+  tech: [AAPL, NVDA]
+  energy: [XOM]
+  financials: [JPM]
+sector_limits:
+  tech:
+    min: 0.20
+    max: 0.60
+  energy:
+    min: 0.10
+    max: 0.35
+  financials:
+    min: 0.10
+    max: 0.35
+max_sector_weight: 0.40
+agent:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-4o-mini
+  temperature: 0.3
+  system_prompt_override: "mock"
+"""
+
 YAML_SECTORS_LIMITS_ONLY = """\
 dataset_path: "{dataset_path}"
 tickers: [AAPL, NVDA, XOM, JPM]
@@ -218,6 +276,26 @@ def sector_limits_only_config_path(simulation_dir):
     dataset_path = str(simulation_dir / "dataset")
     yaml_content = YAML_SECTORS_LIMITS_ONLY.format(dataset_path=dataset_path)
     config_path = simulation_dir / "config_sectors_limits.yaml"
+    config_path.write_text(yaml_content, encoding="utf-8")
+    return str(config_path)
+
+
+@pytest.fixture
+def max_sector_weight_config_path(simulation_dir):
+    """Write config with max_sector_weight only (no sector_limits)."""
+    dataset_path = str(simulation_dir / "dataset")
+    yaml_content = YAML_MAX_SECTOR_WEIGHT.format(dataset_path=dataset_path)
+    config_path = simulation_dir / "config_max_sw.yaml"
+    config_path.write_text(yaml_content, encoding="utf-8")
+    return str(config_path)
+
+
+@pytest.fixture
+def max_sector_weight_with_limits_config_path(simulation_dir):
+    """Write config with both max_sector_weight AND sector_limits."""
+    dataset_path = str(simulation_dir / "dataset")
+    yaml_content = YAML_MAX_SECTOR_WEIGHT_WITH_LIMITS.format(dataset_path=dataset_path)
+    config_path = simulation_dir / "config_max_sw_limits.yaml"
     config_path.write_text(yaml_content, encoding="utf-8")
     return str(config_path)
 
@@ -427,3 +505,83 @@ class TestSectorLimitsWithoutPermissions:
         sim_log = json.loads(sim_log_path.read_text())
         assert len(sim_log["errors"]) == 0
         assert len(sim_log["episode_logs"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Tests: max_sector_weight enforcement
+# ---------------------------------------------------------------------------
+
+MAX_SECTOR_WEIGHT = 0.40
+
+
+class TestMaxSectorWeight:
+    """Verify max_sector_weight caps every sector's total weight."""
+
+    def test_max_sector_weight_enforced(
+        self, simulation_dir, max_sector_weight_config_path, monkeypatch
+    ):
+        """No sector exceeds max_sector_weight in the final allocation.
+
+        Mock equal-weight produces 50% tech (2/4 tickers), which must be
+        capped to 40%.
+        """
+        monkeypatch.setattr("multi_agent.runner._call_llm", _mock_call_llm)
+        output_dir = str(simulation_dir / "results")
+        run_dir = _run_simulation(max_sector_weight_config_path, output_dir)
+
+        alloc = _get_final_allocation(run_dir)
+        totals = _compute_sector_totals(alloc, SECTOR_MAP)
+
+        tol = 0.01
+        for sector, total in totals.items():
+            assert total <= MAX_SECTOR_WEIGHT + tol, (
+                f"Sector {sector} total {total:.4f} exceeds "
+                f"max_sector_weight {MAX_SECTOR_WEIGHT}"
+            )
+
+    def test_allocation_sums_to_one_with_max_sector_weight(
+        self, simulation_dir, max_sector_weight_config_path, monkeypatch
+    ):
+        """Allocation still sums to 1.0 after max_sector_weight enforcement."""
+        monkeypatch.setattr("multi_agent.runner._call_llm", _mock_call_llm)
+        output_dir = str(simulation_dir / "results")
+        run_dir = _run_simulation(max_sector_weight_config_path, output_dir)
+
+        alloc = _get_final_allocation(run_dir)
+        total = sum(alloc.values())
+        assert abs(total - 1.0) < 0.01, f"Allocation sums to {total}, expected 1.0"
+
+    def test_pipeline_completes_with_max_sector_weight(
+        self, simulation_dir, max_sector_weight_config_path, monkeypatch
+    ):
+        """Full pipeline completes without errors using max_sector_weight."""
+        monkeypatch.setattr("multi_agent.runner._call_llm", _mock_call_llm)
+        output_dir = str(simulation_dir / "results")
+        run_dir = _run_simulation(max_sector_weight_config_path, output_dir)
+
+        sim_log_path = run_dir / "simulation_log.json"
+        sim_log = json.loads(sim_log_path.read_text())
+        assert len(sim_log["errors"]) == 0
+
+    def test_max_sector_weight_combined_with_sector_limits(
+        self, simulation_dir, max_sector_weight_with_limits_config_path, monkeypatch
+    ):
+        """When both are set, the stricter bound applies.
+
+        sector_limits tech max=0.60, but max_sector_weight=0.40 → effective
+        tech max is 0.40.
+        """
+        monkeypatch.setattr("multi_agent.runner._call_llm", _mock_call_llm)
+        output_dir = str(simulation_dir / "results")
+        run_dir = _run_simulation(max_sector_weight_with_limits_config_path, output_dir)
+
+        alloc = _get_final_allocation(run_dir)
+        totals = _compute_sector_totals(alloc, SECTOR_MAP)
+
+        tol = 0.01
+        # max_sector_weight (0.40) is stricter than tech's sector_limits max (0.60)
+        for sector, total in totals.items():
+            assert total <= MAX_SECTOR_WEIGHT + tol, (
+                f"Sector {sector} total {total:.4f} exceeds "
+                f"max_sector_weight {MAX_SECTOR_WEIGHT}"
+            )

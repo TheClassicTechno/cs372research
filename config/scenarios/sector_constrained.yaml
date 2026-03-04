@@ -97,6 +97,10 @@ agent_sector_permissions:
     - healthcare
     - financials
 
+# Blanket sector cap — no single sector may exceed this weight.
+# Composable with sector_limits: the stricter bound wins per sector.
+# max_sector_weight: 0.35
+
 allocation_constraints:
   max_weight: 0.20
   min_holdings: 5

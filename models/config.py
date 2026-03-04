@@ -354,6 +354,13 @@ class SimulationConfig(BaseModel):
         description="Per-role allowed sectors. Use ['*'] for all sectors. "
         "Requires 'sectors' to be defined.",
     )
+    max_sector_weight: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Maximum portfolio weight for any single sector. "
+        "Requires 'sectors' to be defined.",
+    )
 
     @model_validator(mode="after")
     def _validate_sectors(self) -> SimulationConfig:
@@ -363,6 +370,8 @@ class SimulationConfig(BaseModel):
                 raise ValueError("sector_limits requires 'sectors' to be defined.")
             if self.agent_sector_permissions is not None:
                 raise ValueError("agent_sector_permissions requires 'sectors' to be defined.")
+            if self.max_sector_weight is not None:
+                raise ValueError("max_sector_weight requires 'sectors' to be defined.")
             return self
 
         # Every ticker must be in exactly one sector
@@ -435,6 +444,7 @@ class SimulationConfig(BaseModel):
                 else None
             ),
             "agent_sector_permissions": self.agent_sector_permissions,
+            "max_sector_weight": self.max_sector_weight,
         }
 
         return self
