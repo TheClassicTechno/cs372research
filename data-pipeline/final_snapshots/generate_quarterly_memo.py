@@ -290,6 +290,7 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
         lines.append(f"    [{ticker}-SMA200]   SMA 200D: ${_f(af.get('sma_200d'))}")
         lines.append(f"    [{ticker}-MOM200]   200D Momentum: {_f(af.get('momentum_200d'))}")
         lines.append(f"    [{ticker}-MOM12_1]  12-1M Momentum: {_pct(af.get('momentum_12_1'))}")
+        lines.append(f"    [{ticker}-IDMOM]    Idiosyncratic Momentum 60D: {_f(af.get('idiosyncratic_momentum'), 4)}")
         lines.append(f"    [{ticker}-TREND]    Trend Consistency: {_f(af.get('trend_consistency'))}")
         lines.append(f"    [{ticker}-RS60]     Relative Strength 60D: {_pct(af.get('relative_strength_60d'))}")
 

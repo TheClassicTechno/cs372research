@@ -29,7 +29,7 @@ from jsonschema import Draft202012Validator
 
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 SCHEMA_PATH = SCHEMA_DIR / "eval.schema.json"
-EXAMPLES_DIR = SCHEMA_DIR / "test_examples"
+EXAMPLES_DIR = SCHEMA_DIR / "examples"
 
 EXAMPLE_FILES = [
     "eval_schema_post_hoc_example_1.json",

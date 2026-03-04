@@ -21,6 +21,7 @@ from typing import Any
 
 from agents.registry import create_agent_system
 from agents.tools import make_submit_decision_tool
+from eval.financial import compute_financial_metrics
 from models.agents import AgentInvocation
 from models.case import Case
 from models.config import SimulationConfig
@@ -236,6 +237,8 @@ class AsyncSimulationRunner:
             }
             book_value = ep.book_value or 0.0
 
+            fin = compute_financial_metrics(ep, initial_cash)
+
             summaries.append(
                 {
                     "episode_id": ep.episode_id,
@@ -247,6 +250,11 @@ class AsyncSimulationRunner:
                     "book_value": book_value,
                     "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
                     "total_trades": len(ep.trades),
+                    "sharpe_ratio": fin.sharpe_ratio,
+                    "sortino_ratio": fin.sortino_ratio,
+                    "max_drawdown": fin.max_drawdown,
+                    "max_drawdown_pct": fin.max_drawdown_pct,
+                    "calmar_ratio": fin.calmar_ratio,
                 }
             )
         return {

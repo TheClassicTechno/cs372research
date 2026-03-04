@@ -1,0 +1,58 @@
+# ============================================================================
+# PID Tuning Experiment 5: Multi-ticker (test gain generalization)
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/pid_tune_multiticker.yaml
+#
+# Uses Full PID (best config from single-ticker experiments) across 4 tickers
+# to see if gains generalize beyond NVDA. Tests diverse sectors:
+#   NVDA (tech/semiconductors), KO (consumer staples),
+#   BAC (financials), CVX (energy)
+
+dataset_path: "data/cases"
+
+top_n_news: 5
+
+tickers:
+  - NVDA
+  - KO
+  - BAC
+  - CVX
+
+quarters:
+  - Q1
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  debate_roles:
+    - macro
+    - value
+
+  max_rounds: 3
+
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+
+  pid_propose: false
+  pid_critique: true
+  pid_revise: true
+
+  pid_log_metrics: true
+  pid_log_llm_calls: false
+  log_system_prompts: false
+  log_user_prompts: false
+  log_llm_responses: false
+
+broker:
+  initial_cash: 100000.0
