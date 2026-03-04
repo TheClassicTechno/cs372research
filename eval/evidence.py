@@ -106,8 +106,7 @@ def compute_mean_overlap(evidence_sets: dict[str, set[str]]) -> float | None:
     """Average pairwise Jaccard similarity across all agent pairs.
 
     Uses ``eval.PID.sycophancy.evidence_overlap()`` for each pair.
-    Returns None if fewer than 2 agents.
-    Returns 0 have non-empty evidence sets.
+    Returns None for fewer than 2 agents.
     """
     roles = evidence_sets.keys()
     if len(roles) < 2:

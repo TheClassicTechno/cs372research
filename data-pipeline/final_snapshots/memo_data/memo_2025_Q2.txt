@@ -1,0 +1,1736 @@
+QUARTERLY SNAPSHOT MEMO — 2025 Q2
+As-of date: 2025-06-30
+Tickers: 30
+
+This document is the complete data payload for agent deliberation.
+It contains macro regime, per-ticker price/fundamental metrics,
+SEC filing summaries, and news sentiment for the quarter.
+
+Agents must:
+  - Cite evidence IDs (e.g. [L1-10Y], [AAPL-RET60]) when making claims.
+  - Integrate across layers (macro -> filings -> sentiment -> price).
+  - Treat all interpretations as non-binding hypotheses.
+
+======================================================================
+LAYER 1 — MACRO REGIME
+======================================================================
+
+Rates & Yields:
+  [L1-FF]    Fed Funds: 4.33%
+  [L1-2Y]    2Y Treasury: 3.72% (-17bps QoQ)
+  [L1-10Y]   10Y Treasury: 4.24% (+1bps QoQ)
+  [L1-30Y]   30Y Treasury: 4.78%
+  [L1-CURVE] 10Y-2Y Spread: 0.52% (positive)
+  [L1-REAL]  10Y Real Yield: 1.95%
+
+Inflation:
+  [L1-CPI]   CPI YoY: 2.68%
+  [L1-CORE]  Core CPI YoY: 2.91%
+
+Growth & Labor:
+  [L1-INDPRO] Industrial Production Index: 101.48
+  [L1-UNEMP] Unemployment: 4.10%
+
+Credit & Commodities:
+  [L1-HY]    HY OAS Spread: 2.96%
+  [L1-DXY]   Dollar Index: 119.41
+  [L1-WTI]   WTI Crude: $66.30
+
+Volatility:
+  [L1-VIX]   VIX: 16.73
+  [L1-EQBC]  Equity-Bond Correlation: 1.00
+
+======================================================================
+CROSS-SECTIONAL SUMMARY
+======================================================================
+
+  TICKER     CLOSE  60D RET  60D VOL   BETA  SHARPE  SENT_Z      GM
+  -----------------------------------------------------------------
+  CAT       381.32   +16.9%    39.4%   1.11    1.67    0.01   32.8%
+  DAL        49.13   +17.2%    69.0%   1.63    0.97   -0.84   27.4%
+  DE        508.18    +7.3%    33.5%   0.75    0.88    0.96   39.2%
+  RTX       142.98    +9.4%    40.7%   0.49    0.93   -1.45   20.3%
+  JPM       283.07   +18.6%    33.9%   0.95    2.11    0.46     n/a
+  GS        680.16   +26.6%    43.7%   1.33    2.26   -1.10     n/a
+  BAC        46.62   +14.2%    39.5%   0.97    1.42    0.66     n/a
+  BLK      1037.84   +11.6%    37.7%   1.02    1.22    0.97   47.9%
+  UNH       305.12   -40.5%    78.8%   0.19   -2.77    1.62   17.9%
+  LLY       771.33    -3.5%    53.2%   0.77   -0.28   -0.92   84.3%
+  JNJ       149.55    +0.3%    20.3%   0.01    0.06   -0.31   67.9%
+  AMT       213.80    +0.9%    29.7%  -0.03    0.12    1.78   73.8%
+  PLD       103.88    -4.3%    39.0%   0.86   -0.48    0.85   74.7%
+  XOM       106.72    -7.3%    33.1%   0.50   -0.96   -1.54   22.6%
+  CVX       139.27   -13.6%    36.5%   0.68   -1.69   -0.95   29.7%
+  COST      982.39    +3.4%    25.9%   0.61    0.53    0.15   13.0%
+  WMT        96.85    +9.8%    28.6%   0.60    1.37   -0.21   24.9%
+  PG        156.56    -5.7%    22.6%   0.14   -1.09    1.26   49.1%
+  AAPL      200.47    -9.8%    50.0%   1.20   -0.86    0.82   46.5%
+  NVDA      157.73   +43.2%    57.9%   2.06    2.61   -1.24   60.5%
+  MSFT      493.08   +30.0%    32.1%   0.93    3.43   -0.77   68.6%
+  AVGO      268.38   +60.2%    58.8%   1.95    3.37   -1.18   68.0%
+  AMD       143.81   +39.9%    71.1%   1.94    1.98   -1.86   39.8%
+  GOOG      177.99   +12.3%    38.5%   1.02    1.27    1.41   59.5%
+  META      732.54   +25.3%    51.0%   1.37    1.86    0.76   82.1%
+  NFLX      132.31   +42.5%    33.5%   0.92    4.44    0.06   51.9%
+  DIS       121.52   +25.8%    46.6%   0.97    2.07    0.61   38.6%
+  AMZN      223.30   +16.2%    45.8%   1.35    1.38    0.03   51.8%
+  TSLA      323.63   +20.5%    81.2%   2.37    0.97    0.45   17.2%
+  HD        364.30    +1.5%    25.6%   0.63    0.25   -0.48   33.8%
+
+======================================================================
+TICKER: CAT
+======================================================================
+
+  Price & Returns:
+    [CAT-PX]       Close: $381.32
+    [CAT-RET20]    20D Return: +9.4%
+    [CAT-RET60]    60D Return: +16.9%
+    [CAT-RET120]   120D Return: +7.8%
+    [CAT-RET252]   1Y Return: +19.4%
+
+  Volatility & Risk:
+    [CAT-VOL20]    20D Vol (ann): 18.2%
+    [CAT-VOL60]    60D Vol (ann): 39.4%
+    [CAT-DVOL60]   60D Downside Vol: 32.4%
+    [CAT-DD60]     60D Drawdown: -18.1%
+    [CAT-MDD1Y]    1Y Max Drawdown: -34.1%
+    [CAT-SHARPE]   60D Sharpe: 1.67
+    [CAT-BETA]     1Y Beta: 1.11
+
+  Trend & Momentum:
+    [CAT-SMA20]    SMA 20D: $357.29
+    [CAT-SMA50]    SMA 50D: $336.71
+    [CAT-SMA200]   SMA 200D: $354.35
+    [CAT-MOM200]   200D Momentum: 1.08
+    [CAT-MOM12_1]  12-1M Momentum: +8.5%
+    [CAT-IDMOM]    Idiosyncratic Momentum 60D: 0.0512
+    [CAT-TREND]    Trend Consistency: 0.57
+    [CAT-RS60]     Relative Strength 60D: +5.0%
+
+  Fundamentals:
+    [CAT-MCAP]     Log Market Cap: 25.91
+    [CAT-BM]       Book-to-Market: 0.1045
+    [CAT-GM]       Gross Margin: 32.8%
+    [CAT-ROE]      ROE: +11.7%
+    [CAT-FCFY]     FCF Yield: +1.2%
+    [CAT-DE]       Debt/Equity: 2.18
+    [CAT-ESURP]    Earnings Surprise: -2.1%
+    [CAT-ADVOL]    Avg Dollar Volume 20D: $927,092,465
+
+  Sentiment:
+    [CAT-SENT]     Mean Sentiment: 0.0267
+    [CAT-SVOL]     Sentiment Volatility: 0.6536
+    [CAT-SSURP]    Surprise (QoQ): -0.0391 ↓
+    [CAT-CSZ]      Cross-Sectional Z: 0.0078
+    [CAT-ACNT]     Article Count: 228
+
+  Filing Summary (10-Q, filed 2025-05-07, fiscal period: 2025-Q1):
+    [CAT-F1] Operations: Total sales and revenues decreased 10 percent to $14.249 billion in Q1 2025, driven by lower sales volume of $1.1 billion and unfavorable price realization of $250 million. Sales declined across all three primary segments, with Construction Industries experiencing the steepest decline while Energy & Transportation showed relative resilience. Lower sales volume was primarily driven by changes in dealer inventories, which increased only $100 million compared to $1.4 billion in the prior year quarter.
+    [CAT-F2] Costs/Margins: Operating profit margin compressed to 18.1 percent from 22.3 percent, reflecting the profit impact of lower sales volume and unfavorable price realization. Cost of goods sold improved benefiting from lower sales volumes, while SG&A and R&D expenses declined. Manufacturing costs increased unfavorably in Energy & Transportation, with the company expecting unfavorable manufacturing costs and higher expenses in Q2 2025, including estimated tariff-related costs of $250-350 million.
+    [CAT-F3] Material Events: The company repurchased $3.660 billion of common stock in Q1 2025, with $16.468 billion remaining under authorization. Dividends paid totaled $674 million, with the Board maintaining the quarterly dividend at $1.41 per share. Order backlog increased approximately $5.0 billion to $35.0 billion at quarter-end, with the largest increase in Energy & Transportation. Cash position decreased to $3.6 billion from $6.9 billion reflecting substantial capital allocation activities.
+    [CAT-F4] Macro Exposures: The company is closely monitoring evolving economic conditions and has evaluated various scenarios to estimate potential tariff impacts for the remainder of 2025. Due to tariff announcements and increasing economic uncertainty, management assessed potential cost impacts from current tariffs but noted uncertainty regarding future tariff rates and timing of mitigation actions makes accurate full-year impact estimates difficult.
+    [CAT-F5] Forward Outlook: For full-year 2025, management expects sales and revenues to be about flat compared to 2024 in a pre-tariff scenario, or down slightly assuming negative economic growth in the second half. The company expects restructuring costs of approximately $150-200 million and capital expenditures of about $2.5 billion. For Q2 2025, sales and revenues are expected to be similar to Q2 2024, with growth in Energy & Transportation offset by declines in other segments.
+    [CAT-F6] Risks/Uncertainty: The company faces uncertainty regarding the magnitude and timing of tariff impacts, with estimated Q2 2025 tariff-related costs of $250-350 million before mitigation actions. Management continues to monitor supply chain disruptions, inflationary costs, labor pressures, and trade policy impacts. The effective tax rate excluding discrete items is anticipated to be 23.0 percent in 2025, compared to 22.5 percent in the prior year.
+
+======================================================================
+TICKER: DAL
+======================================================================
+
+  Price & Returns:
+    [DAL-PX]       Close: $49.13
+    [DAL-RET20]    20D Return: +2.2%
+    [DAL-RET60]    60D Return: +17.2%
+    [DAL-RET120]   120D Return: -15.6%
+    [DAL-RET252]   1Y Return: +2.8%
+
+  Volatility & Risk:
+    [DAL-VOL20]    20D Vol (ann): 41.0%
+    [DAL-VOL60]    60D Vol (ann): 69.0%
+    [DAL-DVOL60]   60D Downside Vol: 47.4%
+    [DAL-DD60]     60D Drawdown: -17.3%
+    [DAL-MDD1Y]    1Y Max Drawdown: -47.9%
+    [DAL-SHARPE]   60D Sharpe: 0.97
+    [DAL-BETA]     1Y Beta: 1.63
+
+  Trend & Momentum:
+    [DAL-SMA20]    SMA 20D: $48.48
+    [DAL-SMA50]    SMA 50D: $46.66
+    [DAL-SMA200]   SMA 200D: $53.47
+    [DAL-MOM200]   200D Momentum: 0.92
+    [DAL-MOM12_1]  12-1M Momentum: +0.8%
+    [DAL-IDMOM]    Idiosyncratic Momentum 60D: -0.0152
+    [DAL-TREND]    Trend Consistency: 0.55
+    [DAL-RS60]     Relative Strength 60D: +5.3%
+
+  Fundamentals:
+    [DAL-MCAP]     Log Market Cap: 24.19
+    [DAL-BM]       Book-to-Market: 0.5436
+    [DAL-GM]       Gross Margin: 27.4%
+    [DAL-ROE]      ROE: +12.2%
+    [DAL-FCFY]     FCF Yield: +2.0%
+    [DAL-DE]       Debt/Equity: 1.22
+    [DAL-ESURP]    Earnings Surprise: -7.5%
+    [DAL-ADVOL]    Avg Dollar Volume 20D: $447,569,546
+
+  Sentiment:
+    [DAL-SENT]     Mean Sentiment: -0.0568
+    [DAL-SVOL]     Sentiment Volatility: 0.6321
+    [DAL-SSURP]    Surprise (QoQ): -0.1560 ↓
+    [DAL-CSZ]      Cross-Sectional Z: -0.8437
+    [DAL-ACNT]     Article Count: 231
+
+  Filing Summary (10-Q, filed 2025-04-09, fiscal period: 2025-Q1):
+    [DAL-F1] Operations: Total revenue increased 2% to $13.9 billion driven by strength in premium products and long-haul international travel despite 4% capacity expansion. Passenger revenue grew $349 million on premium product demand and loyalty travel awards, while total adjusted revenue increased 3.3% excluding refinery sales. Operating income declined $45 million to $569 million as revenue growth was offset by higher operating expenses.
+    [DAL-F2] Costs/Margins: Total operating expenses increased 3% primarily from capacity expansion costs, higher employee wages, and increased landing fees, partially offset by lower aircraft fuel costs. Total cost per available seat mile decreased 2% while non-fuel unit costs increased 2.6%. Operating margin compressed as expense growth outpaced revenue gains despite fuel cost relief.
+    [DAL-F3] Material Events: Judith McKenna was elected to the Board of Directors effective February 7, 2025. The company generated $2.4 billion in operating cash flow and $1.3 billion in free cash flow during the quarter. Delta made $531 million in debt and finance lease repayments while maintaining $6.8 billion in total liquidity.
+    [DAL-F4] Macro Exposures: Management revised March quarter guidance downward citing reduced consumer and corporate confidence from increased macro uncertainty driving softness in domestic demand. The company lowered total revenue growth expectations from 7-9% to 3-4% and operating margin guidance from 6-8% to 4-5%.
+    [DAL-F5] Forward Outlook: Management expects March quarter total revenue growth of 3-4% year-over-year with operating margin of 4-5% and earnings per share of $0.30-$0.50. Premium, international and loyalty revenue growth trends remain consistent with expectations, demonstrating resilience in the diversified revenue base despite domestic demand softness.
+    [DAL-F6] Risks/Uncertainty: No material changes were reported to the risk factors described in the Form 10-K. Standard forward-looking statement disclosures reference risks including fuel cost volatility, technology disruptions, labor issues, environmental regulations, and geopolitical conflicts without indicating material escalation in any specific risk category.
+
+======================================================================
+TICKER: DE
+======================================================================
+
+  Price & Returns:
+    [DE-PX]       Close: $508.18
+    [DE-RET20]    20D Return: +2.0%
+    [DE-RET60]    60D Return: +7.3%
+    [DE-RET120]   120D Return: +23.2%
+    [DE-RET252]   1Y Return: +41.0%
+
+  Volatility & Risk:
+    [DE-VOL20]    20D Vol (ann): 18.2%
+    [DE-VOL60]    60D Vol (ann): 33.5%
+    [DE-DVOL60]   60D Downside Vol: 17.9%
+    [DE-DD60]     60D Drawdown: -13.7%
+    [DE-MDD1Y]    1Y Max Drawdown: -18.6%
+    [DE-SHARPE]   60D Sharpe: 0.88
+    [DE-BETA]     1Y Beta: 0.75
+
+  Trend & Momentum:
+    [DE-SMA20]    SMA 20D: $509.89
+    [DE-SMA50]    SMA 50D: $492.94
+    [DE-SMA200]   SMA 200D: $448.24
+    [DE-MOM200]   200D Momentum: 1.13
+    [DE-MOM12_1]  12-1M Momentum: +39.5%
+    [DE-IDMOM]    Idiosyncratic Momentum 60D: -0.0080
+    [DE-TREND]    Trend Consistency: 0.50
+    [DE-RS60]     Relative Strength 60D: -4.7%
+
+  Fundamentals:
+    [DE-MCAP]     Log Market Cap: 25.65
+    [DE-BM]       Book-to-Market: 0.1765
+    [DE-GM]       Gross Margin: 39.2%
+    [DE-ROE]      ROE: +7.4%
+    [DE-FCFY]     FCF Yield: +0.5%
+    [DE-DE]       Debt/Equity: 2.74
+    [DE-ESURP]    Earnings Surprise: +18.1%
+    [DE-ADVOL]    Avg Dollar Volume 20D: $602,130,582
+
+  Sentiment:
+    [DE-SENT]     Mean Sentiment: 0.1203
+    [DE-SVOL]     Sentiment Volatility: 0.6432
+    [DE-SSURP]    Surprise (QoQ): -0.1678 ↓
+    [DE-CSZ]      Cross-Sectional Z: 0.9620
+    [DE-ACNT]     Article Count: 215
+
+  Filing Summary (10-Q, filed 2025-05-29, fiscal period: 2025-Q2 [FYE: Oct 31]):
+    [DE-F1] Operations: Net sales declined 16% to $12.8 billion in Q2 driven by elevated interest rates, economic uncertainties, and high used inventory levels across equipment segments. Production and precision agriculture sales fell 21% from reduced U.S. demand while construction and forestry dropped 23% due to lower volumes in U.S. and Brazil. Small agriculture and turf declined 6% with U.S. and Europe weakness partially offset by India growth. Financial services generated $391 million net income versus $370 million prior year.
+    [DE-F2] Costs/Margins: Cost of sales ratio increased to 68.1% from production inefficiencies at lower volumes and incremental tariff costs of approximately $95 million, partially offset by reduced material costs and lower employee profit-sharing incentives. Operating margins compressed across equipment segments with production and precision agriculture declining to 22.0% from 25.1% and construction and forestry falling to 12.9% from 17.4%. Research and development expenses remained stable while selling and administrative expenses declined.
+    [DE-F3] Material Events: Completed Banco John Deere S.A. joint venture in Brazil through sale of 50% ownership to Banco Bradesco in February 2025, resulting in deconsolidation and $362 million equity method investment. Executed $838 million in share repurchases year-to-date under $18 billion authorization program with $8.2 billion remaining available. Increased quarterly dividend to $1.62 per share from $1.47 prior year.
+    [DE-F4] Macro Exposures: New tariffs imposed in Q2 2025 resulted in approximately $95 million direct incremental costs with ongoing uncertainty from evolving trade policies potentially affecting supply chains and export competitiveness. Federal Trade Commission filed antitrust lawsuit in January 2025 alleging monopolization in repair markets, seeking permanent injunction for equipment access by owners and independent repair providers. High interest rates continue pressuring customer demand and financing spreads while foreign exchange translation provided $300 million positive impact year-to-date.
+    [DE-F5] Forward Outlook: Management expects agriculture and turf equipment sales volumes to remain lower than prior year for remainder of 2025 due to reduced demand from high interest rates and elevated used inventory levels. Construction equipment industry sales forecasted down in U.S. and Canada from moderating housing starts and softening rental markets. Financial services net income expected up with favorable selling expenses offsetting unfavorable financing spreads.
+    [DE-F6] Risks/Uncertainty: FTC antitrust litigation represents primary near-term uncertainty with potential for permanent injunctive relief requiring expanded access to repair tools and resources for independent providers, materially impacting service business model and competitive positioning. Variable interest entity structure for Brazilian joint venture creates ongoing funding and guarantee obligations with maximum exposure. Elevated credit losses in agriculture and turf financing portfolio due to deteriorating market conditions require intensified monitoring.
+
+======================================================================
+TICKER: RTX
+======================================================================
+
+  Price & Returns:
+    [RTX-PX]       Close: $142.98
+    [RTX-RET20]    20D Return: +7.3%
+    [RTX-RET60]    60D Return: +9.4%
+    [RTX-RET120]   120D Return: +26.0%
+    [RTX-RET252]   1Y Return: +45.4%
+
+  Volatility & Risk:
+    [RTX-VOL20]    20D Vol (ann): 22.5%
+    [RTX-VOL60]    60D Vol (ann): 40.7%
+    [RTX-DVOL60]   60D Downside Vol: 43.8%
+    [RTX-DD60]     60D Drawdown: -14.6%
+    [RTX-MDD1Y]    1Y Max Drawdown: -16.2%
+    [RTX-SHARPE]   60D Sharpe: 0.93
+    [RTX-BETA]     1Y Beta: 0.49
+
+  Trend & Momentum:
+    [RTX-SMA20]    SMA 20D: $140.35
+    [RTX-SMA50]    SMA 50D: $132.55
+    [RTX-SMA200]   SMA 200D: $123.74
+    [RTX-MOM200]   200D Momentum: 1.16
+    [RTX-MOM12_1]  12-1M Momentum: +33.5%
+    [RTX-IDMOM]    Idiosyncratic Momentum 60D: 0.0355
+    [RTX-TREND]    Trend Consistency: 0.58
+    [RTX-RS60]     Relative Strength 60D: -2.5%
+
+  Fundamentals:
+    [RTX-MCAP]     Log Market Cap: 25.98
+    [RTX-BM]       Book-to-Market: 0.3260
+    [RTX-GM]       Gross Margin: 20.3%
+    [RTX-ROE]      ROE: +2.7%
+    [RTX-FCFY]     FCF Yield: -0.1%
+    [RTX-DE]       Debt/Equity: 0.70
+    [RTX-ESURP]    Earnings Surprise: +7.3%
+    [RTX-ADVOL]    Avg Dollar Volume 20D: $947,841,998
+
+  Sentiment:
+    [RTX-SENT]     Mean Sentiment: -0.1160
+    [RTX-SVOL]     Sentiment Volatility: 0.6558
+    [RTX-SSURP]    Surprise (QoQ): -0.1756 ↓
+    [RTX-CSZ]      Cross-Sectional Z: -1.4481
+    [RTX-ACNT]     Article Count: 205
+
+  Filing Summary (10-Q, filed 2025-04-22, fiscal period: 2025-Q1):
+    [RTX-F1] Operations: Total net sales increased 5% to $20.3 billion driven by organic growth of $1.5 billion across all segments, with Pratt & Whitney benefiting from higher commercial aftermarket volume and favorable mix, Collins from commercial aerospace aftermarket and defense growth, and Raytheon from land and air defense systems. The increase was partially offset by reduction from the CIS business divestiture completed in Q1 2024.
+    [RTX-F2] Costs/Margins: Total cost of sales improved to 79.7% of net sales from 81.6% in the prior year, reflecting enhanced operational efficiency and absence of Collins titanium-related charges from Q1 2024. The organic cost increase aligned with higher sales volumes while restructuring costs increased primarily from Collins workforce reduction initiatives.
+    [RTX-F3] Material Events: The company resolved multiple legal matters in 2024 including deferred prosecution agreements with DOJ and SEC administrative settlement regarding Middle East contract payments and defective pricing claims, requiring three-year compliance monitoring with Special Compliance Officer appointed in September 2024. The CIS business sale completed in Q1 2024 generated approximately $1.3 billion in proceeds. Gregory Hayes stepped down as Executive Chairman effective April 30, 2025, with Christopher Calio elected as Chairman, President and CEO.
+    [RTX-F4] Macro Exposures: New tariff executive orders issued in February 2025 covering most U.S. trading partners prompted retaliatory measures from China, EU, and Canada, creating uncertainty around the company's 2025 outlook. Supply chain disruptions continue from geopolitical conflicts and labor shortages, while inflationary pressures on materials and labor persist with the company pursuing mitigation strategies including exemptions and pricing increases.
+    [RTX-F5] Forward Outlook: Management expects continued supply chain disruptions and anticipates negative impacts from sustained tariff levels on profitability and cash flows. The Powder Metal Matter is estimated to impact 2025 cash flows significantly including customer compensation and partner recovery timing. Defense bookings reflect timing variations in award cycles.
+    [RTX-F6] Risks/Uncertainty: Tariff implementation scope, duration, and countermeasures create significant uncertainty around financial statement estimates including contract completion assessments and asset recoverability. The compliance monitoring period extends three years with potential prosecution risk for violations, while geopolitical tensions could disrupt business activities.
+
+======================================================================
+TICKER: JPM
+======================================================================
+
+  Price & Returns:
+    [JPM-PX]       Close: $283.07
+    [JPM-RET20]    20D Return: +8.6%
+    [JPM-RET60]    60D Return: +18.6%
+    [JPM-RET120]   120D Return: +21.0%
+    [JPM-RET252]   1Y Return: +48.3%
+
+  Volatility & Risk:
+    [JPM-VOL20]    20D Vol (ann): 14.6%
+    [JPM-VOL60]    60D Vol (ann): 33.9%
+    [JPM-DVOL60]   60D Downside Vol: 33.0%
+    [JPM-DD60]     60D Drawdown: -13.9%
+    [JPM-MDD1Y]    1Y Max Drawdown: -24.4%
+    [JPM-SHARPE]   60D Sharpe: 2.11
+    [JPM-BETA]     1Y Beta: 0.95
+
+  Trend & Momentum:
+    [JPM-SMA20]    SMA 20D: $267.77
+    [JPM-SMA50]    SMA 50D: $256.47
+    [JPM-SMA200]   SMA 200D: $239.31
+    [JPM-MOM200]   200D Momentum: 1.18
+    [JPM-MOM12_1]  12-1M Momentum: +36.1%
+    [JPM-IDMOM]    Idiosyncratic Momentum 60D: 0.0811
+    [JPM-TREND]    Trend Consistency: 0.62
+    [JPM-RS60]     Relative Strength 60D: +6.6%
+
+  Fundamentals:
+    [JPM-MCAP]     Log Market Cap: 27.38
+    [JPM-BM]       Book-to-Market: 0.4585
+    [JPM-GM]       Gross Margin: n/a
+    [JPM-ROE]      ROE: +4.2%
+    [JPM-FCFY]     FCF Yield: +3.8%
+    [JPM-DE]       Debt/Equity: 1.36
+    [JPM-ESURP]    Earnings Surprise: +9.3%
+    [JPM-ADVOL]    Avg Dollar Volume 20D: $2,322,285,429
+
+  Sentiment:
+    [JPM-SENT]     Mean Sentiment: 0.0710
+    [JPM-SVOL]     Sentiment Volatility: 0.6110
+    [JPM-SSURP]    Surprise (QoQ): -0.0357 ↓
+    [JPM-CSZ]      Cross-Sectional Z: 0.4596
+    [JPM-ACNT]     Article Count: 215
+
+  Filing Summary (10-Q, filed 2025-05-01, fiscal period: 2025-Q1):
+    [JPM-F1] Operations: No specific revenue or operating performance data was provided in the filing excerpt. The filing references risk factors and regulatory supervision sections from the 2024 Form 10-K without presenting current quarter financial results or operational metrics.
+    [JPM-F2] Costs/Margins: No cost structure information or expense trends were disclosed in the provided filing excerpt. The filing directs readers to prior year disclosures without presenting current period cost dynamics or margin performance.
+    [JPM-F3] Material Events: No material events were disclosed in the provided filing excerpt. The filing contains only references to risk factors and regulatory supervision sections from previous disclosures.
+    [JPM-F4] Macro Exposures: No new or materially escalated macro risks were identified in the provided filing excerpt. The filing references existing risk factors from the 2024 Form 10-K without highlighting changes or new exposures for the current period.
+    [JPM-F5] Forward Outlook: No forward guidance or strategic direction was provided in the filing excerpt. Management outlook and capital allocation plans were not addressed in the referenced sections.
+    [JPM-F6] Risks/Uncertainty: No specific contingencies or pending matters were disclosed in the provided filing excerpt. The filing references general risk factors and regulatory supervision framework from prior disclosures without detailing current period uncertainties.
+
+======================================================================
+TICKER: GS
+======================================================================
+
+  Price & Returns:
+    [GS-PX]       Close: $680.16
+    [GS-RET20]    20D Return: +14.8%
+    [GS-RET60]    60D Return: +26.6%
+    [GS-RET120]   120D Return: +21.3%
+    [GS-RET252]   1Y Return: +54.2%
+
+  Volatility & Risk:
+    [GS-VOL20]    20D Vol (ann): 18.0%
+    [GS-VOL60]    60D Vol (ann): 43.7%
+    [GS-DVOL60]   60D Downside Vol: 40.5%
+    [GS-DD60]     60D Drawdown: -17.9%
+    [GS-MDD1Y]    1Y Max Drawdown: -30.9%
+    [GS-SHARPE]   60D Sharpe: 2.26
+    [GS-BETA]     1Y Beta: 1.33
+
+  Trend & Momentum:
+    [GS-SMA20]    SMA 20D: $620.22
+    [GS-SMA50]    SMA 50D: $582.87
+    [GS-SMA200]   SMA 200D: $558.09
+    [GS-MOM200]   200D Momentum: 1.22
+    [GS-MOM12_1]  12-1M Momentum: +35.1%
+    [GS-IDMOM]    Idiosyncratic Momentum 60D: 0.1164
+    [GS-TREND]    Trend Consistency: 0.63
+    [GS-RS60]     Relative Strength 60D: +14.6%
+
+  Fundamentals:
+    [GS-MCAP]     Log Market Cap: 26.05
+    [GS-BM]       Book-to-Market: 0.6024
+    [GS-GM]       Gross Margin: n/a
+    [GS-ROE]      ROE: +3.0%
+    [GS-FCFY]     FCF Yield: +2.5%
+    [GS-DE]       Debt/Equity: 3.01
+    [GS-ESURP]    Earnings Surprise: +14.9%
+    [GS-ADVOL]    Avg Dollar Volume 20D: $1,276,759,958
+
+  Sentiment:
+    [GS-SENT]     Mean Sentiment: -0.0816
+    [GS-SVOL]     Sentiment Volatility: 0.6358
+    [GS-SSURP]    Surprise (QoQ): -0.0687 ↓
+    [GS-CSZ]      Cross-Sectional Z: -1.0975
+    [GS-ACNT]     Article Count: 222
+
+  Filing Summary (10-Q, filed 2025-05-02, fiscal period: 2025-Q1):
+    [GS-F1] Operations: Net revenues increased 6% to $15.06 billion driven by significantly higher net interest income and investment management revenues, partially offset by lower principal transactions and market making revenues. Equities revenues rose 27% from derivatives and portfolio financing strength while FICC revenues increased modestly. Investment banking fees declined 8% due to significantly lower Advisory revenues despite higher Debt underwriting activity.
+    [GS-F2] Costs/Margins: Operating expenses increased 5% primarily from significantly higher transaction-based expenses and compensation reflecting improved performance, partially offset by lower consolidated investment entity expenses and absence of prior year FDIC special assessment fees. Efficiency ratio improved to 60.6% from 60.9% with headcount essentially unchanged. Consumer-related activities generated negative pre-tax earnings improving from prior year losses.
+    [GS-F3] Material Events: Returned $5.34 billion to shareholders through share repurchases and dividends under new $40 billion share repurchase program with no expiration date. Maintained strong capital position with CET1 ratios of 14.8% under Standardized and 15.5% under Advanced Capital Rules despite Federal Reserve increasing stress capital buffer to 6.2%. Assets under supervision increased to $3.17 trillion with net inflows and market appreciation.
+    [GS-F4] Macro Exposures: Escalating concerns over international trade policies including potential new tariffs created market volatility during the quarter, with developments intensifying global macroeconomic concerns and heightening U.S. recession prospects. Operating environment characterized by continued inflation uncertainty, geopolitical risks, and global central bank policy uncertainty contributing to 5% decline in S&P 500 Index. Ukrainian market exposure remained at $110 million primarily in sovereign debt.
+    [GS-F5] Forward Outlook: Management expects 2025 annual effective tax rate of approximately 21% with target through-the-cycle ROE of 14-16% and ROTE target of 15-17%, achieving Q1 ROE of 16.9% and ROTE of 18.0%. Asset & Wealth Management targets mid-teens ROE and mid-twenties pre-tax margins within medium-term horizon. Credit alternative assets targeted to grow to $300 billion by end-2028 with historical principal investments selldown continuing through end-2026.
+    [GS-F6] Risks/Uncertainty: OECD Pillar II minimum tax legislation enacted in multiple jurisdictions could materially impact future effective tax rates pending additional guidance. Provision for credit losses methodology incorporates multiple economic scenarios with adverse scenario modeling indicating potential $0.8 billion increase under 100% adverse weighting. Cybersecurity risks heightened from AI-enabled fraud and ransomware attacks requiring increased employee training and business continuity resource allocation.
+
+======================================================================
+TICKER: BAC
+======================================================================
+
+  Price & Returns:
+    [BAC-PX]       Close: $46.62
+    [BAC-RET20]    20D Return: +7.1%
+    [BAC-RET60]    60D Return: +14.2%
+    [BAC-RET120]   120D Return: +7.7%
+    [BAC-RET252]   1Y Return: +22.6%
+
+  Volatility & Risk:
+    [BAC-VOL20]    20D Vol (ann): 15.0%
+    [BAC-VOL60]    60D Vol (ann): 39.5%
+    [BAC-DVOL60]   60D Downside Vol: 45.0%
+    [BAC-DD60]     60D Drawdown: -17.8%
+    [BAC-MDD1Y]    1Y Max Drawdown: -27.5%
+    [BAC-SHARPE]   60D Sharpe: 1.42
+    [BAC-BETA]     1Y Beta: 0.97
+
+  Trend & Momentum:
+    [BAC-SMA20]    SMA 20D: $44.63
+    [BAC-SMA50]    SMA 50D: $42.41
+    [BAC-SMA200]   SMA 200D: $42.28
+    [BAC-MOM200]   200D Momentum: 1.10
+    [BAC-MOM12_1]  12-1M Momentum: +14.0%
+    [BAC-IDMOM]    Idiosyncratic Momentum 60D: 0.0384
+    [BAC-TREND]    Trend Consistency: 0.63
+    [BAC-RS60]     Relative Strength 60D: +2.3%
+
+  Fundamentals:
+    [BAC-MCAP]     Log Market Cap: 26.57
+    [BAC-BM]       Book-to-Market: 0.8642
+    [BAC-GM]       Gross Margin: n/a
+    [BAC-ROE]      ROE: +2.4%
+    [BAC-FCFY]     FCF Yield: -2.6%
+    [BAC-DE]       Debt/Equity: 1.21
+    [BAC-ESURP]    Earnings Surprise: +9.8%
+    [BAC-ADVOL]    Avg Dollar Volume 20D: $1,775,972,574
+
+  Sentiment:
+    [BAC-SENT]     Mean Sentiment: 0.0907
+    [BAC-SVOL]     Sentiment Volatility: 0.6428
+    [BAC-SSURP]    Surprise (QoQ): -0.1794 ↓
+    [BAC-CSZ]      Cross-Sectional Z: 0.6606
+    [BAC-ACNT]     Article Count: 224
+
+  Filing Summary (10-Q, filed 2025-04-30, fiscal period: 2025-Q1):
+    [BAC-F1] Operations: Total revenue increased $1.5 billion to $27.4 billion driven by higher noninterest income and net interest income growth. Investment and brokerage services revenue rose on elevated equity market valuations and positive AUM flows, while market making revenue declined from lower FICC credit trading. Commercial loans increased from Global Markets and Global Banking growth, expanding total assets to $3.35 trillion with CET1 ratio maintained at 11.8%.
+    [BAC-F2] Costs/Margins: Noninterest expense increased to $17.8 billion from investments in people, technology, and operations, with revenue-related incentive compensation rising alongside higher fee income. Efficiency ratio improved to 64.93% from 66.77% as revenue growth outpaced expense increases. Commercial net charge-offs decreased year-over-year from lower commercial real estate office losses, while consumer charge-offs increased to 4.05% from credit card portfolio normalization.
+    [BAC-F3] Material Events: Rudolf Bless stepped down as Chief Accounting Officer effective March 1, 2025, replaced by Johnbull Okpara. Corporation executed $4.5 billion in share repurchases and paid $1.9 billion in dividends, while issuing TLAC-compliant long-term debt. Board declared quarterly dividend of $0.26 per share payable June 27, 2025, with 2025 CCAR results expected by June 30.
+    [BAC-F4] Macro Exposures: Provision for credit losses increased to $1.5 billion primarily from credit card portfolios and commercial real estate office exposure. Commercial reservable criticized exposure increased from sustained high interest rate environment, with office loans maturing by end of 2025 amid stagnant office space demand. International trade policy negotiations, inflationary pressures, elevated interest rates, and geopolitical tensions continue affecting credit quality metrics.
+    [BAC-F5] Forward Outlook: Federal Reserve proposed NPR in April 2025 to reduce stress capital buffer volatility, with G-SIB surcharge expected to increase to 3.5% from 3.0% on January 1, 2027. Management continues strategic investments in technology and operations supporting client growth and digital capabilities. Capital allocation priorities focus on organic growth, maintaining strong ratios, and returning capital through dividends and repurchases.
+    [BAC-F6] Risks/Uncertainty: CECL transition provisions fully phased-in as of January 1, 2025, eliminating prior transitional capital benefits, with pending regulatory developments around capital requirements and stress testing methodologies. Climate risk encompasses physical risks from extreme weather events and transition risks from low-carbon economy changes affecting operations and credit portfolios.
+
+======================================================================
+TICKER: BLK
+======================================================================
+
+  Price & Returns:
+    [BLK-PX]       Close: $1037.84
+    [BLK-RET20]    20D Return: +7.9%
+    [BLK-RET60]    60D Return: +11.6%
+    [BLK-RET120]   120D Return: +4.1%
+    [BLK-RET252]   1Y Return: +34.8%
+
+  Volatility & Risk:
+    [BLK-VOL20]    20D Vol (ann): 14.8%
+    [BLK-VOL60]    60D Vol (ann): 37.7%
+    [BLK-DVOL60]   60D Downside Vol: 34.8%
+    [BLK-DD60]     60D Drawdown: -15.2%
+    [BLK-MDD1Y]    1Y Max Drawdown: -23.7%
+    [BLK-SHARPE]   60D Sharpe: 1.22
+    [BLK-BETA]     1Y Beta: 1.02
+
+  Trend & Momentum:
+    [BLK-SMA20]    SMA 20D: $981.08
+    [BLK-SMA50]    SMA 50D: $945.84
+    [BLK-SMA200]   SMA 200D: $956.90
+    [BLK-MOM200]   200D Momentum: 1.08
+    [BLK-MOM12_1]  12-1M Momentum: +24.3%
+    [BLK-IDMOM]    Idiosyncratic Momentum 60D: 0.0049
+    [BLK-TREND]    Trend Consistency: 0.62
+    [BLK-RS60]     Relative Strength 60D: -0.4%
+
+  Fundamentals:
+    [BLK-MCAP]     Log Market Cap: 25.80
+    [BLK-BM]       Book-to-Market: 0.3060
+    [BLK-GM]       Gross Margin: 47.9%
+    [BLK-ROE]      ROE: +3.2%
+    [BLK-FCFY]     FCF Yield: +0.8%
+    [BLK-DE]       Debt/Equity: 0.30
+    [BLK-ESURP]    Earnings Surprise: +11.6%
+    [BLK-ADVOL]    Avg Dollar Volume 20D: $611,742,358
+
+  Sentiment:
+    [BLK-SENT]     Mean Sentiment: 0.1206
+    [BLK-SVOL]     Sentiment Volatility: 0.6370
+    [BLK-SSURP]    Surprise (QoQ): -0.0910 ↓
+    [BLK-CSZ]      Cross-Sectional Z: 0.9655
+    [BLK-ACNT]     Article Count: 207
+
+  Filing Summary (10-Q, filed 2025-05-07, fiscal period: 2025-Q1):
+    [BLK-F1] Operations: Total revenue increased 12% to $5.3 billion driven by organic base fee growth, market beta impact on AUM, and GIP Transaction contributions, partially offset by performance fees declining to $60 million from $204 million due to lower alternatives performance. Investment advisory fees rose while technology services revenue increased reflecting sustained Aladdin demand and completed Preqin acquisition. Operating activities generated $2.99 billion in cash flow compared to $876 million in the prior year period.
+    [BLK-F2] Costs/Margins: Total expenses increased 18% to $3.6 billion driven by acquisition-related costs from GIP and Preqin transactions, with employee compensation rising including nonrecurring retention costs. General administration expenses increased primarily from transaction costs and contingent consideration fair value adjustments. Amortization of intangible assets rose significantly reflecting recent acquisitions, with operating margin as adjusted improving to 43.2% from 42.2% despite GAAP margin compression.
+    [BLK-F3] Material Events: Completed acquisition of Preqin for $3.2 billion in March 2025, adding private markets data capabilities and recognizing $2.3 billion in goodwill and $1.2 billion in intangible assets. Announced definitive agreement to acquire HPS Investment Partners for up to 13.7 million BlackRock shares, expected to close mid-2025 subject to regulatory approvals. Repurchased $657 million in shares and paid $838 million in dividends during the quarter, with net cash decreasing $5.0 billion primarily due to Preqin acquisition funding.
+    [BLK-F4] Macro Exposures: AUM increased from foreign exchange movements due to US dollar weakening against major currencies, while net market depreciation was driven by US equity market decline. The company maintains derivative positions through exchange-traded futures to hedge seed investment exposures and foreign currency forward contracts. Economic investment exposure totals $4.4 billion across equity markets, interest rate securities, and foreign currency assets.
+    [BLK-F5] Forward Outlook: HPS Transaction expected to close mid-2025 creating integrated private credit platform, while Preqin integration will incorporate private markets data into Aladdin technology platform. Issued euro-denominated notes due 2035 in April for general corporate purposes including refinancing maturing obligations. Amended credit facility increased capacity to $5.9 billion with extended maturity to March 2030.
+    [BLK-F6] Risks/Uncertainty: Contingent consideration liabilities total $4.4 billion including amounts related to GIP Transaction payable in shares subject to performance targets through December 2028. The company holds deferred carried interest subject to clawback provisions and maintains assets valued using significant unobservable inputs. Integration risks from recent acquisitions and HPS Transaction closing conditions remain subject to regulatory approvals.
+
+======================================================================
+TICKER: UNH
+======================================================================
+
+  Price & Returns:
+    [UNH-PX]       Close: $305.12
+    [UNH-RET20]    20D Return: +4.4%
+    [UNH-RET60]    60D Return: -40.5%
+    [UNH-RET120]   120D Return: -38.0%
+    [UNH-RET252]   1Y Return: -35.0%
+
+  Volatility & Risk:
+    [UNH-VOL20]    20D Vol (ann): 22.6%
+    [UNH-VOL60]    60D Vol (ann): 78.8%
+    [UNH-DVOL60]   60D Downside Vol: 87.8%
+    [UNH-DD60]     60D Drawdown: -54.2%
+    [UNH-MDD1Y]    1Y Max Drawdown: -55.8%
+    [UNH-SHARPE]   60D Sharpe: -2.77
+    [UNH-BETA]     1Y Beta: 0.19
+
+  Trend & Momentum:
+    [UNH-SMA20]    SMA 20D: $300.03
+    [UNH-SMA50]    SMA 50D: $338.56
+    [UNH-SMA200]   SMA 200D: $483.89
+    [UNH-MOM200]   200D Momentum: 0.63
+    [UNH-MOM12_1]  12-1M Momentum: -37.8%
+    [UNH-IDMOM]    Idiosyncratic Momentum 60D: -0.5345
+    [UNH-TREND]    Trend Consistency: 0.45
+    [UNH-RS60]     Relative Strength 60D: -52.4%
+
+  Fundamentals:
+    [UNH-MCAP]     Log Market Cap: 26.34
+    [UNH-BM]       Book-to-Market: 0.3430
+    [UNH-GM]       Gross Margin: 17.9%
+    [UNH-ROE]      ROE: +3.6%
+    [UNH-FCFY]     FCF Yield: +2.3%
+    [UNH-DE]       Debt/Equity: 0.84
+    [UNH-ESURP]    Earnings Surprise: -1.2%
+    [UNH-ADVOL]    Avg Dollar Volume 20D: $3,893,688,546
+
+  Sentiment:
+    [UNH-SENT]     Mean Sentiment: 0.1852
+    [UNH-SVOL]     Sentiment Volatility: 0.5997
+    [UNH-SSURP]    Surprise (QoQ): 0.1071 ↑
+    [UNH-CSZ]      Cross-Sectional Z: 1.6248
+    [UNH-ACNT]     Article Count: 229
+
+  Filing Summary (10-Q, filed 2025-05-07, fiscal period: 2025-Q1):
+    [UNH-F1] Operations: Consolidated revenues grew 10% to $109.6 billion driven by UnitedHealthcare's 12% growth and Optum's 5% expansion. UnitedHealthcare served 945,000 additional people with strength in Medicare Advantage and commercial offerings, while Medicaid membership declined due to redeterminations. Optum Health revenues decreased 5% due to risk-based contract conversions and Medicare funding pressures, offset by Optum Rx's 14% growth from higher script volumes and new clients.
+    [UNH-F2] Costs/Margins: Medical care ratio increased 50 basis points to 84.8% driven by elevated care patterns in Medicare Advantage seniors, IRA-driven Medicare Part D impacts, and higher acuity member profiles, partially offset by seasonal IRA benefits. Operating cost ratio improved 170 basis points to 12.4% due to cost management initiatives and reduced Change Healthcare cyberattack response costs from 2024. Consolidated operating margin expanded 40 basis points to 8.3%.
+    [UNH-F3] Material Events: The company repurchased 6.0 million shares for $3.0 billion at an average price of $503.72 per share with 27 million shares remaining under board authorization. Quarterly dividend maintained at $8.40 annual rate. Pending acquisitions totaling approximately $4 billion in anticipated consideration await regulatory approval and customary closing conditions.
+    [UNH-F4] Macro Exposures: Medicare Advantage funding continues multi-year pressure with 2026 rates approaching but not matching industry medical cost trends, creating sustained program pressure compounded by risk adjustment model revisions. Medicaid rate environment remains insufficient relative to member acuity despite 2025 updates, creating margin pressure risks. Elevated senior care patterns above benefit design expectations may persist in future periods.
+    [UNH-F5] Forward Outlook: Management expects continued health care spending growth driven by inflation, technology advancement, and demographic trends, with growth rates affected by macroeconomic conditions and regulatory changes. The company maintains focus on balancing growth and profitability while advocating for actuarially sound rates. Capital resources deemed sufficient for future liquidity needs with ongoing evaluation of expansion opportunities through internal development and acquisitions.
+    [UNH-F6] Risks/Uncertainty: DOJ legal action relating to risk adjustment submission matter remains unresolved. Cyberattack risks and data security compliance requirements present ongoing operational challenges. Medicare star ratings program changes and risk adjustment data validation audits create revenue uncertainty. Potential tax law changes and competitive pressures in commercial risk markets may impact future performance.
+
+======================================================================
+TICKER: LLY
+======================================================================
+
+  Price & Returns:
+    [LLY-PX]       Close: $771.33
+    [LLY-RET20]    20D Return: +7.3%
+    [LLY-RET60]    60D Return: -3.5%
+    [LLY-RET120]   120D Return: +0.0%
+    [LLY-RET252]   1Y Return: -13.7%
+
+  Volatility & Risk:
+    [LLY-VOL20]    20D Vol (ann): 26.8%
+    [LLY-VOL60]    60D Vol (ann): 53.2%
+    [LLY-DVOL60]   60D Downside Vol: 41.5%
+    [LLY-DD60]     60D Drawdown: -20.4%
+    [LLY-MDD1Y]    1Y Max Drawdown: -25.2%
+    [LLY-SHARPE]   60D Sharpe: -0.28
+    [LLY-BETA]     1Y Beta: 0.77
+
+  Trend & Momentum:
+    [LLY-SMA20]    SMA 20D: $776.65
+    [LLY-SMA50]    SMA 50D: $776.75
+    [LLY-SMA200]   SMA 200D: $813.13
+    [LLY-MOM200]   200D Momentum: 0.95
+    [LLY-MOM12_1]  12-1M Momentum: -19.9%
+    [LLY-IDMOM]    Idiosyncratic Momentum 60D: -0.1038
+    [LLY-TREND]    Trend Consistency: 0.57
+    [LLY-RS60]     Relative Strength 60D: -15.5%
+
+  Fundamentals:
+    [LLY-MCAP]     Log Market Cap: 27.26
+    [LLY-BM]       Book-to-Market: 0.0264
+    [LLY-GM]       Gross Margin: 84.3%
+    [LLY-ROE]      ROE: +31.0%
+    [LLY-FCFY]     FCF Yield: +0.2%
+    [LLY-DE]       Debt/Equity: 2.18
+    [LLY-ESURP]    Earnings Surprise: -5.7%
+    [LLY-ADVOL]    Avg Dollar Volume 20D: $2,609,953,803
+
+  Sentiment:
+    [LLY-SENT]     Mean Sentiment: -0.0646
+    [LLY-SVOL]     Sentiment Volatility: 0.6312
+    [LLY-SSURP]    Surprise (QoQ): -0.1005 ↓
+    [LLY-CSZ]      Cross-Sectional Z: -0.9242
+    [LLY-ACNT]     Article Count: 221
+
+  Filing Summary (10-Q, filed 2025-05-01, fiscal period: 2025-Q1):
+    [LLY-F1] Operations: Revenue increased 45% to $12.7 billion driven by Mounjaro and Zepbound volume growth, with U.S. revenue up 49% and international up 38%. Mounjaro revenue reached $3.8 billion (113% increase) while Zepbound generated $2.3 billion versus $517 million prior year. Volume increases were partially offset by lower realized prices across incretin medicines and unfavorable foreign exchange impact of 2%.
+    [LLY-F2] Costs/Margins: Gross margin improved to 82.5% from 80.9% driven by improved production costs and favorable product mix, offsetting lower realized prices. Marketing, selling, and administrative expenses increased 26% supporting ongoing and future launches. Research and development expenses rose 8% reflecting continued pipeline investments.
+    [LLY-F3] Material Events: Acquired Scorpion's PI3Kα inhibitor program STX-478 for $1.76 billion with associated acquired IPR&D charges of $1.57 billion. Issued $6.5 billion in fixed-rate notes in February to fund the acquisition and general business purposes. Repurchased $1.2 billion in shares under the $15 billion authorization program. Paid $1.35 billion in dividends at $1.50 per share.
+    [LLY-F4] Macro Exposures: Inflation Reduction Act pricing pressures intensified with Jardiance selected for government price-setting effective 2026, with additional significant products expected in future selections. Potential tariff impacts on supply chain costs and operations, though pharmaceuticals currently exempt from certain tariffs. Foreign exchange headwinds primarily from euro, yen, and yuan fluctuations against the dollar.
+    [LLY-F5] Forward Outlook: Manufacturing capacity expansion ongoing with additional capacity expected operational over next several years. Capital expenditures will increase meaningfully to support facility investments. Supply agreements for medicines in development could require up to $8 billion in payments if specified purchase amounts not met over agreement durations up to 8 years.
+    [LLY-F6] Risks/Uncertainty: Tirzepatide supply dynamics remain complex with periodic unavailability of certain presentations despite overall supply meeting demand. Counterfeit and compounded incretin production continues despite FDA confirmation of shortage end. EMA Committee issued negative opinion on donanemab for Alzheimer's treatment with company seeking re-examination. Ongoing litigation related to 340B program, insulin access, and pricing matters.
+
+======================================================================
+TICKER: JNJ
+======================================================================
+
+  Price & Returns:
+    [JNJ-PX]       Close: $149.55
+    [JNJ-RET20]    20D Return: -0.8%
+    [JNJ-RET60]    60D Return: +0.3%
+    [JNJ-RET120]   120D Return: +7.6%
+    [JNJ-RET252]   1Y Return: +6.9%
+
+  Volatility & Risk:
+    [JNJ-VOL20]    20D Vol (ann): 13.1%
+    [JNJ-VOL60]    60D Vol (ann): 20.3%
+    [JNJ-DVOL60]   60D Downside Vol: 15.5%
+    [JNJ-DD60]     60D Drawdown: -8.4%
+    [JNJ-MDD1Y]    1Y Max Drawdown: -14.4%
+    [JNJ-SHARPE]   60D Sharpe: 0.06
+    [JNJ-BETA]     1Y Beta: 0.01
+
+  Trend & Momentum:
+    [JNJ-SMA20]    SMA 20D: $150.91
+    [JNJ-SMA50]    SMA 50D: $150.33
+    [JNJ-SMA200]   SMA 200D: $150.67
+    [JNJ-MOM200]   200D Momentum: 0.99
+    [JNJ-MOM12_1]  12-1M Momentum: +6.9%
+    [JNJ-IDMOM]    Idiosyncratic Momentum 60D: -0.0115
+    [JNJ-TREND]    Trend Consistency: 0.53
+    [JNJ-RS60]     Relative Strength 60D: -11.7%
+
+  Fundamentals:
+    [JNJ-MCAP]     Log Market Cap: 26.61
+    [JNJ-BM]       Book-to-Market: 0.2180
+    [JNJ-GM]       Gross Margin: 67.9%
+    [JNJ-ROE]      ROE: +7.1%
+    [JNJ-FCFY]     FCF Yield: +0.7%
+    [JNJ-DE]       Debt/Equity: 0.65
+    [JNJ-ESURP]    Earnings Surprise: +100.9%
+    [JNJ-ADVOL]    Avg Dollar Volume 20D: $1,245,297,177
+
+  Sentiment:
+    [JNJ-SENT]     Mean Sentiment: -0.0041
+    [JNJ-SVOL]     Sentiment Volatility: 0.6856
+    [JNJ-SSURP]    Surprise (QoQ): -0.0076 ↓
+    [JNJ-CSZ]      Cross-Sectional Z: -0.3062
+    [JNJ-ACNT]     Article Count: 242
+
+  Filing Summary (10-Q, filed 2025-04-23, fiscal period: 2025-Q1):
+    [JNJ-F1] Operations: Total revenue increased 2.4% to $21.9 billion driven by 6.3% U.S. growth offsetting 2.9% international decline and 1.8% currency headwinds. Innovative Medicine grew 2.3% to $13.9 billion with oncology advancing 20.4% operationally led by CARVYKTI (135% growth) and DARZALEX (20% growth), while STELARA declined 34% from biosimilar competition. MedTech increased 2.5% to $8.0 billion with cardiovascular up 16.4% including Shockwave acquisition contribution, offsetting 4.2% orthopaedics decline.
+    [JNJ-F2] Costs/Margins: Gross margin compressed to 66.4% from 69.6% due to unfavorable product mix, currency impacts, and Shockwave inventory step-up charges. Operating expenses improved with selling and administrative costs declining to 23.3% of sales from 24.6% and research and development falling to 14.7% from 16.6%, reflecting operational leverage and prior restructuring benefits partially offset by acquisition integration costs.
+    [JNJ-F3] Material Events: Company reversed approximately $7.0 billion in talc reserves following Texas Bankruptcy Court dismissal of Red River case on March 31, 2025. Completed $14.6 billion Intra-Cellular Therapies acquisition in April funded by $9.2 billion senior unsecured notes issuance and €4 billion euro-denominated debt offering in February. Board increased quarterly dividend to $1.30 per share from $1.24 while executing $2.1 billion in share repurchases.
+    [JNJ-F4] Macro Exposures: STELARA biosimilar launches reduced operational sales by 4.7% with continued European and U.S. rollouts expected throughout 2025. Medicare Part D redesign impacted multiple products including ERLEADA, IMBRUVICA, and TREMFYA. China volume-based procurement pressures affected Surgery and Orthopaedics franchises while currency translation created $575 million negative impact in comprehensive income.
+    [JNJ-F5] Forward Outlook: Management expects continued oncology momentum with CARVYKTI and DARZALEX driving growth while STELARA biosimilar pressure persists. Intra-Cellular acquisition expands neuroscience capabilities with CAPLYTA integration. Orthopaedics restructuring program targeting $0.7-0.8 billion total costs through fiscal 2025 completion. Strong liquidity position of $38.8 billion supports strategic investments and remaining talc settlement obligations.
+    [JNJ-F6] Risks/Uncertainty: Talc litigation exposure remains unresolved with approximately 62,850 plaintiffs following bankruptcy dismissal, requiring alternative resolution pathways. Patent challenges continue across XARELTO, INVEGA SUSTENNA, and CAPLYTA through federal courts and USPTO proceedings. DOJ investigations of Vision intraocular lens practices and Janssen REMICADE contracting create ongoing regulatory uncertainty. IRA Medicare Drug Price Negotiation constitutional challenge remains under appeal with uncertain implementation impact.
+
+======================================================================
+TICKER: AMT
+======================================================================
+
+  Price & Returns:
+    [AMT-PX]       Close: $213.80
+    [AMT-RET20]    20D Return: +2.7%
+    [AMT-RET60]    60D Return: +0.9%
+    [AMT-RET120]   120D Return: +22.2%
+    [AMT-RET252]   1Y Return: +16.7%
+
+  Volatility & Risk:
+    [AMT-VOL20]    20D Vol (ann): 15.1%
+    [AMT-VOL60]    60D Vol (ann): 29.7%
+    [AMT-DVOL60]   60D Downside Vol: 23.7%
+    [AMT-DD60]     60D Drawdown: -10.3%
+    [AMT-MDD1Y]    1Y Max Drawdown: -27.4%
+    [AMT-SHARPE]   60D Sharpe: 0.12
+    [AMT-BETA]     1Y Beta: -0.03
+
+  Trend & Momentum:
+    [AMT-SMA20]    SMA 20D: $211.41
+    [AMT-SMA50]    SMA 50D: $210.65
+    [AMT-SMA200]   SMA 200D: $201.30
+    [AMT-MOM200]   200D Momentum: 1.06
+    [AMT-MOM12_1]  12-1M Momentum: +13.0%
+    [AMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0034
+    [AMT-TREND]    Trend Consistency: 0.57
+    [AMT-RS60]     Relative Strength 60D: -11.1%
+
+  Fundamentals:
+    [AMT-MCAP]     Log Market Cap: 25.33
+    [AMT-BM]       Book-to-Market: 0.0371
+    [AMT-GM]       Gross Margin: 73.8%
+    [AMT-ROE]      ROE: +9.9%
+    [AMT-FCFY]     FCF Yield: +1.0%
+    [AMT-DE]       Debt/Equity: 12.18
+    [AMT-ESURP]    Earnings Surprise: -33.8%
+    [AMT-ADVOL]    Avg Dollar Volume 20D: $489,364,899
+
+  Sentiment:
+    [AMT-SENT]     Mean Sentiment: 0.2005
+    [AMT-SVOL]     Sentiment Volatility: 0.6639
+    [AMT-SSURP]    Surprise (QoQ): 0.0571 ↑
+    [AMT-CSZ]      Cross-Sectional Z: 1.7809
+    [AMT-ACNT]     Article Count: 173
+
+  Filing Summary (10-Q, filed 2025-04-29, fiscal period: 2025-Q1):
+    [AMT-F1] Operations: Total operating revenues increased 2% to $2.56 billion driven by services revenue growth and data centers expansion, while property revenue remained stable. Operating income expanded to $1.25 billion from $1.14 billion as operating expenses declined, benefiting from reduced depreciation and administrative costs. International markets showed broad growth with positive results in Africa, APAC and Europe, offset by Latin America declining from foreign currency headwinds and U.S. & Canada declining from reduced straight-line accounting benefits and elevated T-Mobile churn.
+    [AMT-F2] Costs/Margins: Property costs decreased while services costs increased reflecting expanded offerings. Depreciation, amortization and accretion declined driven by operational efficiencies. Administrative expenses decreased from reduced stock-based compensation following executive departure. Interest expense decreased to $325.3 million from $363.8 million reflecting debt refinancing activities.
+    [AMT-F3] Material Events: Completed sale of South Africa Fiber assets for $137.7 million generating a $53.6 million gain in March. Executed $1.4 billion debt refinancing by repaying existing senior notes and issuing new notes due 2030 and 2035. Amended credit facilities extending maturity dates to 2028-2030. Eugene Noel was promoted to Chief Operating Officer and Rajesh Kalathur was elected to the board.
+    [AMT-F4] Macro Exposures: Foreign currency translation generated $593.6 million in other comprehensive income while foreign currency losses of $345.7 million in other expense compared to prior year gains from intercompany notes. Translation effects reduced revenues across international segments with significant negative impacts from Nigerian Naira, Brazilian Real, and Mexican Peso. The company maintains 31% of revenues and 37% of operating expenses denominated in foreign currencies with EUR-denominated debt creating substantial exchange rate sensitivity.
+    [AMT-F5] Forward Outlook: Management expects 2025 total capital expenditures of $1.6-1.7 billion for communications sites construction and data center investments. Elevated churn rates in U.S. & Canada are expected to continue through 2025 from contractual T-Mobile lease cancellations. The company maintains over $55 billion in non-cancellable customer lease revenue based on existing contracts.
+    [AMT-F6] Risks/Uncertainty: Unrecognized tax benefits totaled $105.4 million with potential changes from ongoing tax matters and contingent liability for tax indemnification. Current portion long-term obligations of $2.82 billion include EUR-denominated notes due April 2025 and various notes maturing through 2026. Revenue concentration with limited customers creates potential adverse effects from significant defaults, while foreclosure risk exists on communications sites securing notes.
+
+======================================================================
+TICKER: PLD
+======================================================================
+
+  Price & Returns:
+    [PLD-PX]       Close: $103.88
+    [PLD-RET20]    20D Return: -2.4%
+    [PLD-RET60]    60D Return: -4.3%
+    [PLD-RET120]   120D Return: +3.2%
+    [PLD-RET252]   1Y Return: -0.5%
+
+  Volatility & Risk:
+    [PLD-VOL20]    20D Vol (ann): 15.8%
+    [PLD-VOL60]    60D Vol (ann): 39.0%
+    [PLD-DVOL60]   60D Downside Vol: 34.8%
+    [PLD-DD60]     60D Drawdown: -20.1%
+    [PLD-MDD1Y]    1Y Max Drawdown: -30.5%
+    [PLD-SHARPE]   60D Sharpe: -0.48
+    [PLD-BETA]     1Y Beta: 0.86
+
+  Trend & Momentum:
+    [PLD-SMA20]    SMA 20D: $104.96
+    [PLD-SMA50]    SMA 50D: $103.49
+    [PLD-SMA200]   SMA 200D: $109.18
+    [PLD-MOM200]   200D Momentum: 0.95
+    [PLD-MOM12_1]  12-1M Momentum: +0.7%
+    [PLD-IDMOM]    Idiosyncratic Momentum 60D: -0.1365
+    [PLD-TREND]    Trend Consistency: 0.55
+    [PLD-RS60]     Relative Strength 60D: -16.3%
+
+  Fundamentals:
+    [PLD-MCAP]     Log Market Cap: 25.29
+    [PLD-BM]       Book-to-Market: 0.5470
+    [PLD-GM]       Gross Margin: 74.7%
+    [PLD-ROE]      ROE: +1.1%
+    [PLD-FCFY]     FCF Yield: +1.3%
+    [PLD-DE]       Debt/Equity: 0.66
+    [PLD-ESURP]    Earnings Surprise: +0.0%
+    [PLD-ADVOL]    Avg Dollar Volume 20D: $412,795,987
+
+  Sentiment:
+    [PLD-SENT]     Mean Sentiment: 0.1094
+    [PLD-SVOL]     Sentiment Volatility: 0.6456
+    [PLD-SSURP]    Surprise (QoQ): -0.1026 ↓
+    [PLD-CSZ]      Cross-Sectional Z: 0.8509
+    [PLD-ACNT]     Article Count: 192
+
+  Filing Summary (10-Q, filed 2025-04-29, fiscal period: 2025-Q1):
+    [PLD-F1] Operations: Total revenues increased to $2.1 billion driven by rental revenue growth reflecting strong rent change of 53.7% on lease rollovers and same-store NOI growth of 5.9%. Net earnings attributable to common stockholders reached $592 million versus $584 million prior year, with consolidated occupancy declining to 94.8% from 95.4%. Strategic capital revenues grew driven by higher recurring fees and increased operating distributions from unconsolidated entities.
+    [PLD-F2] Costs/Margins: Real Estate Segment NOI expanded as rental expense increases were outpaced by revenue growth while Strategic Capital Segment NOI improved as expenses declined. Interest payments net of capitalized amounts increased to $269 million from $211 million reflecting higher borrowing costs, with G&A expenses increasing modestly and depreciation rising to $652 million.
+    [PLD-F3] Material Events: Issued C$750 million of 8-year senior notes at 4.2% weighted average rate in February generating net proceeds for general corporate purposes and debt repayment. CEO Hamid Moghadam announced retirement effective January 1, 2026, with President Daniel Letter appointed as successor CEO and added to the Board. Completed 14 development stabilizations with build-to-suit composition and generated net proceeds from property dispositions. Common stock quarterly dividend increased to $1.01 from $0.96 per share.
+    [PLD-F4] Macro Exposures: Customer decision-making anticipated to slow due to heightened economic uncertainty from tariff policy changes since early April, with supply chain disruption potentially creating repositioning opportunities. Foreign currency exchange impacts generated $55 million in unrealized losses versus $35 million in gains prior year across British pound, Canadian dollar, euro and Japanese yen investments. Interest rate sensitivity persists through variable-rate exposures and refinancing requirements.
+    [PLD-F5] Forward Outlook: Maintaining disciplined capital deployment focused on build-to-suit development for logistics and data centers with development pipeline requiring remaining investment. Land bank and redevelopment sites support potential future development capacity. Lease mark-to-market of approximately 25% provides organic NOI growth runway despite market rent headwinds, with leadership transition to Letter as CEO signaling strategic continuity.
+    [PLD-F6] Risks/Uncertainty: Tariff policy volatility creates unpredictable impacts on business operations and customer behavior patterns with development portfolio completion timeline extending through July 2027. Debt maturities require refinancing execution in 2025 and 2026 while unconsolidated co-investment ventures carry third-party debt requiring future refinancing coordination amid foreign currency translation volatility.
+
+======================================================================
+TICKER: XOM
+======================================================================
+
+  Price & Returns:
+    [XOM-PX]       Close: $106.72
+    [XOM-RET20]    20D Return: +6.5%
+    [XOM-RET60]    60D Return: -7.3%
+    [XOM-RET120]   120D Return: +3.8%
+    [XOM-RET252]   1Y Return: -1.0%
+
+  Volatility & Risk:
+    [XOM-VOL20]    20D Vol (ann): 24.1%
+    [XOM-VOL60]    60D Vol (ann): 33.1%
+    [XOM-DVOL60]   60D Downside Vol: 28.9%
+    [XOM-DD60]     60D Drawdown: -16.1%
+    [XOM-MDD1Y]    1Y Max Drawdown: -18.9%
+    [XOM-SHARPE]   60D Sharpe: -0.96
+    [XOM-BETA]     1Y Beta: 0.50
+
+  Trend & Momentum:
+    [XOM-SMA20]    SMA 20D: $105.52
+    [XOM-SMA50]    SMA 50D: $103.95
+    [XOM-SMA200]   SMA 200D: $107.45
+    [XOM-MOM200]   200D Momentum: 0.99
+    [XOM-MOM12_1]  12-1M Momentum: -7.6%
+    [XOM-IDMOM]    Idiosyncratic Momentum 60D: -0.1429
+    [XOM-TREND]    Trend Consistency: 0.53
+    [XOM-RS60]     Relative Strength 60D: -19.2%
+
+  Fundamentals:
+    [XOM-MCAP]     Log Market Cap: 26.84
+    [XOM-BM]       Book-to-Market: 0.5772
+    [XOM-GM]       Gross Margin: 22.6%
+    [XOM-ROE]      ROE: +2.7%
+    [XOM-FCFY]     FCF Yield: +1.2%
+    [XOM-DE]       Debt/Equity: 0.15
+    [XOM-ESURP]    Earnings Surprise: +1.1%
+    [XOM-ADVOL]    Avg Dollar Volume 20D: $2,224,222,138
+
+  Sentiment:
+    [XOM-SENT]     Mean Sentiment: -0.1254
+    [XOM-SVOL]     Sentiment Volatility: 0.6412
+    [XOM-SSURP]    Surprise (QoQ): -0.2393 ↓
+    [XOM-CSZ]      Cross-Sectional Z: -1.5438
+    [XOM-ACNT]     Article Count: 231
+
+  Filing Summary (10-Q, filed 2025-05-05, fiscal period: 2025-Q1):
+    [XOM-F1] Operations: First quarter 2025 earnings of $7.7 billion decreased from $8.2 billion driven by weaker industry refining margins normalizing from historically high levels and lower crude prices. Upstream production increased 767 thousand oil-equivalent barrels daily to 4.6 million barrels from Pioneer acquisition and growing Permian and Guyana volumes. Energy Products earnings declined substantially due to margin compression while Chemical Products earnings fell on higher North American feed costs and reduced opportunistic sales volumes.
+    [XOM-F2] Costs/Margins: Structural cost savings contributed $0.6 billion bringing cumulative savings to $12.7 billion versus 2019 levels through operational efficiencies and workforce reductions. Cash operating expenses excluding energy and production taxes increased reflecting higher activity levels and growth investments. Depreciation and depletion expenses rose from increased asset base from acquisitions and new projects.
+    [XOM-F3] Material Events: The company repurchased $4.8 billion of shares representing 43.4 million shares as part of ongoing buyback program. Total debt decreased to $37.6 billion from $41.7 billion at year-end 2024, reducing debt-to-capital ratio to 12.2 percent. The company issued floating rate notes due 2075 in March 2025.
+    [XOM-F4] Macro Exposures: The U.S. announced various trade-related actions including tariffs on imports from several countries with many countries announcing retaliatory tariffs in response. Certain tariffs were paused but not withdrawn creating continued volatility in the global trade environment. The likelihood of resuming tariffs, imposing new reciprocal tariffs, export restrictions, or other trade-related sanctions remains highly uncertain with unclear effects on the Corporation, suppliers, customers, and overall macroeconomic environment.
+    [XOM-F5] Forward Outlook: The Corporation plans capital investments of $27 billion to $29 billion for 2025 with actual spending dependent on project progress and property acquisitions. Management maintains capital allocation priorities of investing in competitively advantaged high-return projects, maintaining strong balance sheet, and consistent shareholder returns through share repurchases and growing dividends. The company continues evaluating asset portfolio optimization through ongoing divestment programs and potential acquisitions based on strategic fit and attractive valuations.
+    [XOM-F6] Risks/Uncertainty: Forward-looking statements regarding emission reduction plans including net zero targets by 2050 and Permian Basin goals by 2030-2035 depend on technological progress, stable policy support, and timely permitting. Environmental sustainability statements are based on evolving measurement standards and assumptions subject to future change including regulatory rule-making. Project advancement depends on stable policy frameworks, permitting approvals, technological cost-effectiveness, and stakeholder alignment with investment levels subject to opportunity availability and public policy support.
+
+======================================================================
+TICKER: CVX
+======================================================================
+
+  Price & Returns:
+    [CVX-PX]       Close: $139.27
+    [CVX-RET20]    20D Return: +4.3%
+    [CVX-RET60]    60D Return: -13.6%
+    [CVX-RET120]   120D Return: +0.3%
+    [CVX-RET252]   1Y Return: -5.1%
+
+  Volatility & Risk:
+    [CVX-VOL20]    20D Vol (ann): 19.8%
+    [CVX-VOL60]    60D Vol (ann): 36.5%
+    [CVX-DVOL60]   60D Downside Vol: 34.8%
+    [CVX-DD60]     60D Drawdown: -20.6%
+    [CVX-MDD1Y]    1Y Max Drawdown: -20.6%
+    [CVX-SHARPE]   60D Sharpe: -1.69
+    [CVX-BETA]     1Y Beta: 0.68
+
+  Trend & Momentum:
+    [CVX-SMA20]    SMA 20D: $138.65
+    [CVX-SMA50]    SMA 50D: $134.88
+    [CVX-SMA200]   SMA 200D: $142.25
+    [CVX-MOM200]   200D Momentum: 0.98
+    [CVX-MOM12_1]  12-1M Momentum: -10.3%
+    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.2318
+    [CVX-TREND]    Trend Consistency: 0.52
+    [CVX-RS60]     Relative Strength 60D: -25.6%
+
+  Fundamentals:
+    [CVX-MCAP]     Log Market Cap: 26.20
+    [CVX-BM]       Book-to-Market: 0.6134
+    [CVX-GM]       Gross Margin: 29.7%
+    [CVX-ROE]      ROE: +1.7%
+    [CVX-FCFY]     FCF Yield: +2.0%
+    [CVX-DE]       Debt/Equity: 0.20
+    [CVX-ESURP]    Earnings Surprise: +1.4%
+    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,395,079,393
+
+  Sentiment:
+    [CVX-SENT]     Mean Sentiment: -0.0674
+    [CVX-SVOL]     Sentiment Volatility: 0.6301
+    [CVX-SSURP]    Surprise (QoQ): -0.2452 ↓
+    [CVX-CSZ]      Cross-Sectional Z: -0.9526
+    [CVX-ACNT]     Article Count: 231
+
+  Filing Summary (10-Q, filed 2025-05-08, fiscal period: 2025-Q1):
+    [CVX-F1] Operations: No specific revenue or operational performance data disclosed in the filing materials provided. The company reported fourth quarter 2024 earnings of $3.2 billion in January 2025, but no Q1 2025 operating metrics were available in these documents.
+    [CVX-F2] Costs/Margins: Restructuring costs remained elevated with $989 million in accrued severance liability as of March 31, 2025, down marginally from $990 million at year-end 2024. The company expects substantial settlement of these obligations by end of 2026, indicating ongoing workforce optimization efforts.
+    [CVX-F3] Material Events: Chevron issued $5.5 billion in debt securities through subsidiary CUSA in February 2025, comprising fixed and floating rate notes with maturities from 2027 to 2035. The company purchased 15.4 million Hess shares representing 4.99% of outstanding stock between January and March 2025 at prices below the merger exchange ratio, demonstrating confidence in the pending acquisition.
+    [CVX-F4] Macro Exposures: The company faces heightened geopolitical risks from ongoing military conflicts in Ukraine and the Middle East, with potential impacts on global energy markets and operations. Regulatory approval uncertainties persist around the Hess acquisition, including unresolved arbitration proceedings regarding preemptive rights in the Stabroek Block joint operating agreement.
+    [CVX-F5] Forward Outlook: Management continues executing the Hess acquisition strategy while maintaining share repurchase programs alongside the strategic Hess stock purchases. The debt issuance provides additional financial flexibility for capital allocation priorities and transaction completion.
+    [CVX-F6] Risks/Uncertainty: The Hess transaction faces regulatory approval risks and ongoing arbitration that could delay or prevent consummation. Broader operational uncertainties include potential production curtailments from market conditions, supply chain disruptions, and the evolving regulatory environment for greenhouse gas emissions and climate change measures.
+
+======================================================================
+TICKER: COST
+======================================================================
+
+  Price & Returns:
+    [COST-PX]       Close: $982.39
+    [COST-RET20]    20D Return: -2.3%
+    [COST-RET60]    60D Return: +3.4%
+    [COST-RET120]   120D Return: +8.5%
+    [COST-RET252]   1Y Return: +15.8%
+
+  Volatility & Risk:
+    [COST-VOL20]    20D Vol (ann): 23.4%
+    [COST-VOL60]    60D Vol (ann): 25.9%
+    [COST-DVOL60]   60D Downside Vol: 19.7%
+    [COST-DD60]     60D Drawdown: -7.8%
+    [COST-MDD1Y]    1Y Max Drawdown: -17.3%
+    [COST-SHARPE]   60D Sharpe: 0.53
+    [COST-BETA]     1Y Beta: 0.61
+
+  Trend & Momentum:
+    [COST-SMA20]    SMA 20D: $1002.76
+    [COST-SMA50]    SMA 50D: $1000.22
+    [COST-SMA200]   SMA 200D: $955.82
+    [COST-MOM200]   200D Momentum: 1.03
+    [COST-MOM12_1]  12-1M Momentum: +19.0%
+    [COST-IDMOM]    Idiosyncratic Momentum 60D: -0.0162
+    [COST-TREND]    Trend Consistency: 0.50
+    [COST-RS60]     Relative Strength 60D: -8.6%
+
+  Fundamentals:
+    [COST-MCAP]     Log Market Cap: 26.80
+    [COST-BM]       Book-to-Market: 0.0623
+    [COST-GM]       Gross Margin: 13.0%
+    [COST-ROE]      ROE: +7.0%
+    [COST-FCFY]     FCF Yield: +0.5%
+    [COST-DE]       Debt/Equity: 0.30
+    [COST-ESURP]    Earnings Surprise: +0.9%
+    [COST-ADVOL]    Avg Dollar Volume 20D: $2,273,600,438
+
+  Sentiment:
+    [COST-SENT]     Mean Sentiment: 0.0407
+    [COST-SVOL]     Sentiment Volatility: 0.6532
+    [COST-SSURP]    Surprise (QoQ): -0.2142 ↓
+    [COST-CSZ]      Cross-Sectional Z: 0.1505
+    [COST-ACNT]     Article Count: 228
+
+  Filing Summary (10-Q, filed 2025-03-13, fiscal period: 2025-Q1 [FYE: Aug 31]):
+    [COST-F1] Operations: Total revenue increased 9% to $63.7 billion driven by 7% comparable sales growth and 23 net new warehouses opened since prior year. E-commerce comparable sales accelerated 21% while warehouse ancillary businesses grew modestly. Operating cash flow increased to $6,008 from $5,382 in the prior year first half driven by net sales and membership fee growth.
+    [COST-F2] Costs/Margins: Gross margin percentage improved 5 basis points to 10.85% driven by core merchandise performance, though excluding gasoline deflation the improvement was 4 basis points. SG&A expenses as a percentage of sales decreased 8 basis points to 9.06% primarily from improved warehouse productivity and operational leverage. Core merchandise gross margins faced pressure from increased supply chain costs to support higher inventory levels and category mix shifts.
+    [COST-F3] Material Events: The company declared quarterly dividend of $1.16 per share in February 2025, compared to prior year which included a special dividend of $15 per share. Share repurchases totaled $413 for 443,000 shares at an average price of $932.03 versus $322 for 528,000 shares in the prior year. Annual membership fees were increased in the U.S. and Canada effective September 1, 2024, contributing approximately 3% to membership fee revenue growth.
+    [COST-F4] Macro Exposures: Foreign currency translation adjustments created $414 million negative impact on comprehensive income for the first half, primarily from Canadian and Other International operations. Gasoline price deflation of 3% in Q2 and 8% year-to-date created net sales headwinds while benefiting gross margin percentage. Government tariff actions across multiple countries continue to affect merchandise costs with timing and degree dependent on specific goods and rates imposed.
+    [COST-F5] Forward Outlook: Management continues executing warehouse expansion with eight new warehouses opened in the first half and plans to open 20 additional new warehouses in the remainder of fiscal 2025. Membership fee increases are being recognized ratably over the one-year membership period with renewal rates of 93.0% in U.S./Canada and 90.5% worldwide.
+    [COST-F6] Risks/Uncertainty: The company faces multiple legal proceedings including California labor law class actions, opioid litigation, privacy law violations related to website pixel trackers, and product liability cases. Federal investigations include a False Claims Act inquiry regarding prescription medications and EPA administrative complaints for pesticide regulation violations.
+
+======================================================================
+TICKER: WMT
+======================================================================
+
+  Price & Returns:
+    [WMT-PX]       Close: $96.85
+    [WMT-RET20]    20D Return: +0.2%
+    [WMT-RET60]    60D Return: +9.8%
+    [WMT-RET120]   120D Return: +8.6%
+    [WMT-RET252]   1Y Return: +45.8%
+
+  Volatility & Risk:
+    [WMT-VOL20]    20D Vol (ann): 16.0%
+    [WMT-VOL60]    60D Vol (ann): 28.6%
+    [WMT-DVOL60]   60D Downside Vol: 16.7%
+    [WMT-DD60]     60D Drawdown: -8.9%
+    [WMT-MDD1Y]    1Y Max Drawdown: -21.9%
+    [WMT-SHARPE]   60D Sharpe: 1.37
+    [WMT-BETA]     1Y Beta: 0.60
+
+  Trend & Momentum:
+    [WMT-SMA20]    SMA 20D: $96.54
+    [WMT-SMA50]    SMA 50D: $96.16
+    [WMT-SMA200]   SMA 200D: $90.14
+    [WMT-MOM200]   200D Momentum: 1.07
+    [WMT-MOM12_1]  12-1M Momentum: +45.7%
+    [WMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0290
+    [WMT-TREND]    Trend Consistency: 0.50
+    [WMT-RS60]     Relative Strength 60D: -2.2%
+
+  Fundamentals:
+    [WMT-MCAP]     Log Market Cap: 27.37
+    [WMT-BM]       Book-to-Market: 0.1083
+    [WMT-GM]       Gross Margin: 24.9%
+    [WMT-ROE]      ROE: +5.3%
+    [WMT-FCFY]     FCF Yield: +0.1%
+    [WMT-DE]       Debt/Equity: 0.80
+    [WMT-ESURP]    Earnings Surprise: -3.5%
+    [WMT-ADVOL]    Avg Dollar Volume 20D: $1,716,692,253
+
+  Sentiment:
+    [WMT-SENT]     Mean Sentiment: 0.0049
+    [WMT-SVOL]     Sentiment Volatility: 0.6129
+    [WMT-SSURP]    Surprise (QoQ): -0.0754 ↓
+    [WMT-CSZ]      Cross-Sectional Z: -0.2150
+    [WMT-ACNT]     Article Count: 227
+
+  Filing Summary (10-Q, filed 2025-06-06, fiscal period: 2025-Q2 [FYE: Jan 31]):
+    [WMT-F1] Operations: The filing provides limited operational detail for Q2 2025, with management noting continued uncertainty in business and global economy. The company moved its corporate headquarters from 702 S.W. 8th Street to 1 Customer Drive in Bentonville, Arkansas effective May 15, 2025. No specific revenue figures or segment performance data were disclosed in the available filing excerpts.
+    [WMT-F2] Costs/Margins: No specific cost structure information or margin dynamics were disclosed in the available filing excerpts for Q2 2025. Management acknowledged ongoing supply chain pressures and inflationary trends as factors that may impact results, but provided no quantitative detail on gross margins or operating expense trends.
+    [WMT-F3] Material Events: Walmart completed a $4.0 billion debt issuance on April 28, 2025, comprising floating rate notes due 2027, 4.100% notes due 2027, 4.350% notes due 2030, and 4.900% notes due 2035. The company relocated its corporate headquarters to 1 Customer Drive, Bentonville, Arkansas on May 15, 2025. At the June 5, 2025 annual shareholders meeting, all twelve director nominees were elected and shareholders approved the 2025 Stock Incentive Plan while rejecting seven shareholder proposals on various social and environmental matters.
+    [WMT-F4] Macro Exposures: Management expects continued uncertainty from tariffs and trade restrictions, inflationary trends, global currency fluctuations, macroeconomic swings affecting consumer confidence, employment volatility, and supply chain pressures. The company noted these factors may impact results but indicated no material change in risk factors from the prior annual report.
+    [WMT-F5] Forward Outlook: No specific forward guidance or strategic direction was provided in the available filing excerpts. Management referenced investment community meetings held in April 2025 but did not disclose the content of those discussions in the available documents.
+    [WMT-F6] Risks/Uncertainty: The company maintains exposure to ongoing macroeconomic uncertainties including trade policy changes, inflation, currency volatility, and supply chain disruptions. No new material legal or regulatory contingencies were disclosed beyond standard business uncertainties. Pending accounting standard changes were not specifically addressed in the available filing excerpts.
+
+======================================================================
+TICKER: PG
+======================================================================
+
+  Price & Returns:
+    [PG-PX]       Close: $156.56
+    [PG-RET20]    20D Return: -5.2%
+    [PG-RET60]    60D Return: -5.7%
+    [PG-RET120]   120D Return: -2.5%
+    [PG-RET252]   1Y Return: -1.8%
+
+  Volatility & Risk:
+    [PG-VOL20]    20D Vol (ann): 14.7%
+    [PG-VOL60]    60D Vol (ann): 22.6%
+    [PG-DVOL60]   60D Downside Vol: 17.5%
+    [PG-DD60]     60D Drawdown: -8.1%
+    [PG-MDD1Y]    1Y Max Drawdown: -11.8%
+    [PG-SHARPE]   60D Sharpe: -1.09
+    [PG-BETA]     1Y Beta: 0.14
+
+  Trend & Momentum:
+    [PG-SMA20]    SMA 20D: $158.83
+    [PG-SMA50]    SMA 50D: $159.30
+    [PG-SMA200]   SMA 200D: $162.76
+    [PG-MOM200]   200D Momentum: 0.96
+    [PG-MOM12_1]  12-1M Momentum: +2.8%
+    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0852
+    [PG-TREND]    Trend Consistency: 0.50
+    [PG-RS60]     Relative Strength 60D: -17.6%
+
+  Fundamentals:
+    [PG-MCAP]     Log Market Cap: 26.63
+    [PG-BM]       Book-to-Market: 0.1419
+    [PG-GM]       Gross Margin: 49.1%
+    [PG-ROE]      ROE: +7.0%
+    [PG-FCFY]     FCF Yield: +1.1%
+    [PG-DE]       Debt/Equity: 0.68
+    [PG-ESURP]    Earnings Surprise: +0.7%
+    [PG-ADVOL]    Avg Dollar Volume 20D: $1,304,271,342
+
+  Sentiment:
+    [PG-SENT]     Mean Sentiment: 0.1493
+    [PG-SVOL]     Sentiment Volatility: 0.5659
+    [PG-SSURP]    Surprise (QoQ): -0.0033 ↓
+    [PG-CSZ]      Cross-Sectional Z: 1.2585
+    [PG-ACNT]     Article Count: 223
+
+  Filing Summary (10-Q, filed 2025-04-24, fiscal period: 2025-Q1 [FYE: Jun 30]):
+    [PG-F1] Operations: Net sales declined 2% to $19.8 billion with organic sales increasing 1% despite unit volume decline offset by higher pricing. Beauty segment declined driven by competitive pressures in hair care and skin care, Health Care grew supported by personal health care expansion, while Fabric & Home Care decreased reflecting volume pressures in developed markets. Foreign exchange provided unfavorable 2% impact on reported sales.
+    [PG-F2] Costs/Margins: Gross margin improved to 51.0% from 48.8% prior year as manufacturing productivity savings of 160 basis points offset unfavorable product mix and higher commodity costs. Operating expenses declined as percentage of sales reflecting reduced marketing spending and overhead cost management. Operating income increased 2% despite lower sales volumes driven by operational efficiency programs.
+    [PG-F3] Material Events: Company completed substantial liquidation of Argentina operations recording $791 million in other non-operating charges primarily from accumulated foreign currency translation losses. Executed $1.35 billion in share repurchases during Q1 with $7.3 billion returned to shareholders through dividends and repurchases during nine months. Ongoing restructuring program incurred charges across separation costs, asset write-downs, and operational restructuring.
+    [PG-F4] Macro Exposures: Foreign currency translation provided $623 million positive impact to comprehensive income as dollar weakened against major currencies, with negative quarterly earnings impact from transaction exposures. Company maintains exposure to approximately 70 countries with ongoing tax audits across multiple jurisdictions. Commodity price volatility in oil-derived and paper-based materials directly affects costs, while geopolitical tensions create ongoing uncertainty.
+    [PG-F5] Forward Outlook: Management reaffirmed expectations to repurchase $6-7 billion in shares during fiscal 2025 financed through operating cash flows and debt issuance. Company continues focus on productivity improvements and cost savings while investing in innovation through ongoing manufacturing and workforce optimization. Capital allocation strategy maintains commitment to dividend payments with quarterly dividend declared.
+    [PG-F6] Risks/Uncertainty: Gillette indefinite-lived intangible asset carrying value of $12.8 billion remains sensitive to discount rate and growth rate assumptions with fair value exceeding carrying value by greater than 10%. Uncertain tax positions across multiple jurisdictions could result in audit settlements over next 12 months, with pending international digital economy taxation developments creating additional policy uncertainty. Government controls on currency exchanges, pricing authorizations, and environmental regulations may affect financial performance.
+
+======================================================================
+TICKER: AAPL
+======================================================================
+
+  Price & Returns:
+    [AAPL-PX]       Close: $200.47
+    [AAPL-RET20]    20D Return: +0.6%
+    [AAPL-RET60]    60D Return: -9.8%
+    [AAPL-RET120]   120D Return: -17.3%
+    [AAPL-RET252]   1Y Return: -3.4%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 16.9%
+    [AAPL-VOL60]    60D Vol (ann): 50.0%
+    [AAPL-DVOL60]   60D Downside Vol: 37.0%
+    [AAPL-DD60]     60D Drawdown: -23.0%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -33.4%
+    [AAPL-SHARPE]   60D Sharpe: -0.86
+    [AAPL-BETA]     1Y Beta: 1.20
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $199.83
+    [AAPL-SMA50]    SMA 50D: $201.92
+    [AAPL-SMA200]   SMA 200D: $222.22
+    [AAPL-MOM200]   200D Momentum: 0.90
+    [AAPL-MOM12_1]  12-1M Momentum: -3.7%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: -0.2349
+    [AAPL-TREND]    Trend Consistency: 0.52
+    [AAPL-RS60]     Relative Strength 60D: -21.8%
+
+  Fundamentals:
+    [AAPL-MCAP]     Log Market Cap: 28.72
+    [AAPL-BM]       Book-to-Market: 0.0221
+    [AAPL-GM]       Gross Margin: 46.5%
+    [AAPL-ROE]      ROE: +35.6%
+    [AAPL-FCFY]     FCF Yield: +0.8%
+    [AAPL-DE]       Debt/Equity: 1.54
+    [AAPL-ESURP]    Earnings Surprise: +1.2%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $10,788,711,041
+
+  Sentiment:
+    [AAPL-SENT]     Mean Sentiment: 0.1059
+    [AAPL-SVOL]     Sentiment Volatility: 0.5711
+    [AAPL-SSURP]    Surprise (QoQ): -0.1230 ↓
+    [AAPL-CSZ]      Cross-Sectional Z: 0.8157
+    [AAPL-ACNT]     Article Count: 224
+
+  Filing Summary (10-Q, filed 2025-05-02, fiscal period: 2025-Q1 [FYE: Sep 30]):
+    [AAPL-F1] Operations: Total revenue increased 5% to $95.4 billion in Q2 2025, driven by iPhone Pro model strength and 12% Services growth from advertising, App Store, and cloud services. Regional performance was broadly positive with double-digit growth in Japan and Americas, while Greater China declined 2% due to iPhone weakness. Mac and iPad showed strong growth at 7% and 15% respectively, while Wearables declined 5%.
+    [AAPL-F2] Costs/Margins: Total gross margin expanded to 47.1% from 46.6% year-over-year, with Services margin improving to 75.7% from favorable mix while Products margin compressed to 35.9% from unfavorable product mix and currency headwinds. Operating expenses increased to 16% of revenue driven by higher R&D headcount and infrastructure costs plus increased professional services and variable selling expenses.
+    [AAPL-F3] Material Events: Company repurchased $25.0 billion in shares during Q2 and announced additional $100 billion buyback authorization in May 2025. Quarterly dividend increased from $0.25 to $0.26 per share beginning Q3 2025. Released €14.2 billion from escrow to Ireland, fully settling the State Aid Decision obligation. Launched iPhone 16e, updated iPad Air, iPad, MacBook Air, and Mac Studio during the quarter.
+    [AAPL-F4] Macro Exposures: New U.S. tariffs implemented in Q2 2025 targeting imports from China, India, Japan, South Korea, Taiwan, Vietnam, and EU with reciprocal retaliatory measures imposed by affected countries. Department of Commerce initiated Section 232 investigation into semiconductor imports and downstream products. Currency weakness across major markets created unfavorable revenue translation impacts throughout the quarter.
+    [AAPL-F5] Forward Outlook: Management expects continued quarterly volatility in gross margins due to product mix shifts, currency fluctuations, and tariff impacts. Company maintains commitment to annual dividend increases subject to board approval. Manufacturing purchase obligations total $38.4 billion payable within 12 months as of quarter-end.
+    [AAPL-F6] Risks/Uncertainty: Tariff impact magnitude remains uncertain pending additional sector-based measures and duration of trade disputes. New accounting standards for expense disaggregation effective Q4 2028 and enhanced segment disclosures effective Q4 2025. Ongoing exposure to supply chain disruptions from geopolitical tensions and natural disasters affecting concentrated manufacturing regions.
+
+======================================================================
+TICKER: NVDA
+======================================================================
+
+  Price & Returns:
+    [NVDA-PX]       Close: $157.73
+    [NVDA-RET20]    20D Return: +13.3%
+    [NVDA-RET60]    60D Return: +43.2%
+    [NVDA-RET120]   120D Return: +14.1%
+    [NVDA-RET252]   1Y Return: +25.1%
+
+  Volatility & Risk:
+    [NVDA-VOL20]    20D Vol (ann): 27.6%
+    [NVDA-VOL60]    60D Vol (ann): 57.9%
+    [NVDA-DVOL60]   60D Downside Vol: 39.9%
+    [NVDA-DD60]     60D Drawdown: -15.2%
+    [NVDA-MDD1Y]    1Y Max Drawdown: -36.9%
+    [NVDA-SHARPE]   60D Sharpe: 2.61
+    [NVDA-BETA]     1Y Beta: 2.06
+
+  Trend & Momentum:
+    [NVDA-SMA20]    SMA 20D: $144.53
+    [NVDA-SMA50]    SMA 50D: $129.54
+    [NVDA-SMA200]   SMA 200D: $129.17
+    [NVDA-MOM200]   200D Momentum: 1.22
+    [NVDA-MOM12_1]  12-1M Momentum: +6.9%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.2077
+    [NVDA-TREND]    Trend Consistency: 0.60
+    [NVDA-RS60]     Relative Strength 60D: +31.3%
+
+  Fundamentals:
+    [NVDA-MCAP]     Log Market Cap: 28.98
+    [NVDA-BM]       Book-to-Market: 0.0218
+    [NVDA-GM]       Gross Margin: 60.5%
+    [NVDA-ROE]      ROE: +22.4%
+    [NVDA-FCFY]     FCF Yield: +0.7%
+    [NVDA-DE]       Debt/Equity: 0.12
+    [NVDA-ESURP]    Earnings Surprise: -6.2%
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $28,632,333,197
+
+  Sentiment:
+    [NVDA-SENT]     Mean Sentiment: -0.0960
+    [NVDA-SVOL]     Sentiment Volatility: 0.6401
+    [NVDA-SSURP]    Surprise (QoQ): -0.2730 ↓
+    [NVDA-CSZ]      Cross-Sectional Z: -1.2445
+    [NVDA-ACNT]     Article Count: 241
+
+  Filing Summary (10-Q, filed 2025-05-28, fiscal period: 2025-Q2 [FYE: Jan 31]):
+    [NVDA-F1] Operations: Revenue reached $44.1 billion, up 69% year-over-year and 12% sequentially, driven by Data Center acceleration from large language models and generative AI applications with Blackwell architecture ramping across all customer categories. Gaming revenue increased 42% year-over-year from Blackwell architecture adoption while Professional Visualization grew 19% from Ada RTX workstation GPU sales. Supply-demand mismatches persist with manufacturing lead times exceeding 12 months amid accelerated annual product transition cadences.
+    [NVDA-F2] Costs/Margins: Gross margin declined to 60.5% from 78.4% prior year due to a $4.5 billion charge for H20 excess inventory and purchase obligations following export licensing requirements, plus initial ramp costs for sophisticated Data Center systems and inventory provisions for low-yielding Blackwell material. Operating expenses increased 44% year-over-year driven by higher compensation from employee growth, increased compute infrastructure costs, and expanded engineering development resources with supplier premiums and long-term capacity commitments.
+    [NVDA-F3] Material Events: USG imposed export licensing requirements on H20 products to China effective April 9, 2025, resulting in a $4.5 billion inventory and purchase obligation charge with anticipated additional charges up to $5.5 billion in first quarter fiscal 2026. USG rescinded the AI Diffusion Interim Final Rule in May 2025 with plans for replacement rule of uncertain scope. The company repurchased 126 million shares for $14.5 billion and paid dividends.
+    [NVDA-F4] Macro Exposures: Export control restrictions eliminated quarterly H20 sales to China and expanded across multiple product categories with potential worldwide licensing requirements creating competitive disadvantages against non-US suppliers. Geopolitical tensions involving Taiwan and China threaten supply chain continuity given critical manufacturing partnerships while Chinese government investigations regarding market discrimination and Mellanox acquisition commitments pose regulatory risks.
+    [NVDA-F5] Forward Outlook: Management plans increased US-based manufacturing capabilities and specialized domestic production equipment investment dependent on domestic ecosystem capacity ramp timing. The company continues annual Data Center architecture updates and expanded supply purchases with existing and new suppliers to support demand projections. Management expects Blackwell Ultra platform samples and production units beginning Q2 fiscal 2026 while open-source foundation model adoption creates dependency on developer engagement.
+    [NVDA-F6] Risks/Uncertainty: Replacement export control rules remain undefined regarding scope, timing, and product coverage with potential for broader geographic or customer restrictions on popular data center products. Product transitions and sophisticated system configurations may create supply-demand management challenges resulting in revenue volatility, quality issues, or delays. Supply chain vulnerabilities persist given concentration in Taiwan and South Korea for critical components while ongoing regulatory investigations across multiple jurisdictions create compliance burdens.
+
+======================================================================
+TICKER: MSFT
+======================================================================
+
+  Price & Returns:
+    [MSFT-PX]       Close: $493.08
+    [MSFT-RET20]    20D Return: +8.1%
+    [MSFT-RET60]    60D Return: +30.0%
+    [MSFT-RET120]   120D Return: +18.9%
+    [MSFT-RET252]   1Y Return: +10.8%
+
+  Volatility & Risk:
+    [MSFT-VOL20]    20D Vol (ann): 10.2%
+    [MSFT-VOL60]    60D Vol (ann): 32.1%
+    [MSFT-DVOL60]   60D Downside Vol: 17.4%
+    [MSFT-DD60]     60D Drawdown: -8.0%
+    [MSFT-MDD1Y]    1Y Max Drawdown: -23.7%
+    [MSFT-SHARPE]   60D Sharpe: 3.43
+    [MSFT-BETA]     1Y Beta: 0.93
+
+  Trend & Momentum:
+    [MSFT-SMA20]    SMA 20D: $473.94
+    [MSFT-SMA50]    SMA 50D: $442.80
+    [MSFT-SMA200]   SMA 200D: $419.23
+    [MSFT-MOM200]   200D Momentum: 1.18
+    [MSFT-MOM12_1]  12-1M Momentum: +2.2%
+    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: 0.1832
+    [MSFT-TREND]    Trend Consistency: 0.62
+    [MSFT-RS60]     Relative Strength 60D: +18.0%
+
+  Fundamentals:
+    [MSFT-MCAP]     Log Market Cap: 28.93
+    [MSFT-BM]       Book-to-Market: 0.0937
+    [MSFT-GM]       Gross Margin: 68.6%
+    [MSFT-ROE]      ROE: +7.9%
+    [MSFT-FCFY]     FCF Yield: +0.7%
+    [MSFT-DE]       Debt/Equity: 0.18
+    [MSFT-ESURP]    Earnings Surprise: +7.4%
+    [MSFT-ADVOL]    Avg Dollar Volume 20D: $9,678,475,932
+
+  Sentiment:
+    [MSFT-SENT]     Mean Sentiment: -0.0493
+    [MSFT-SVOL]     Sentiment Volatility: 0.6396
+    [MSFT-SSURP]    Surprise (QoQ): -0.2764 ↓
+    [MSFT-CSZ]      Cross-Sectional Z: -0.7681
+    [MSFT-ACNT]     Article Count: 236
+
+  Filing Summary (10-Q, filed 2024-10-30, fiscal period: 2024-Q4 [FYE: Jun 30]):
+    [MSFT-F1] Operations: Microsoft Cloud revenue increased 21% to $40.9 billion in Q2 FY2025, driven by Azure growth of 31% and Microsoft 365 Commercial cloud growth of 16%. Server products and cloud services revenue rose 21% while Dynamics 365 revenue expanded 19%, reflecting broad-based enterprise cloud adoption. Search and news advertising revenue increased 21% excluding traffic acquisition costs, and LinkedIn revenue grew 9%.
+    [MSFT-F2] Costs/Margins: Operating expenses increased primarily due to datacenter operations expansion supporting cloud services growth and employee compensation costs. The company continues investing heavily in AI infrastructure and cloud capacity to support accelerating demand across Azure and Microsoft 365 services. Cost structure reflects ongoing shift toward cloud-first operations with emphasis on datacenter scaling.
+    [MSFT-F3] Material Events: The company completed its annual shareholder meeting in December 2024, re-electing all 12 board directors and approving executive compensation on an advisory basis. Microsoft announced an expected $800 million impairment charge in Q2 FY2025 related to its minority investment in Cruise following GM's decision to realign autonomous driving strategy and cease robotaxi development funding.
+    [MSFT-F4] Macro Exposures: No material new macro risk exposures were disclosed this period beyond standard forward-looking statement risks related to business operations and market conditions. The company maintains exposure to global economic conditions affecting enterprise IT spending and consumer demand patterns.
+    [MSFT-F5] Forward Outlook: Management provided Q2 FY2025 guidance on October 30, 2024, which excluded the subsequently announced Cruise impairment charge estimated to reduce diluted earnings per share by approximately $0.09. The company continues strategic focus on AI integration across cloud services and productivity solutions to drive future growth.
+    [MSFT-F6] Risks/Uncertainty: Primary uncertainties include standard business risks related to competitive dynamics, regulatory changes, and market conditions as outlined in forward-looking statements. The Cruise investment impairment represents resolution of one investment uncertainty, while broader technology sector regulatory developments remain ongoing considerations.
+
+  Recent 8-K Events (1):
+    [MSFT-EV1] 8-K filed 2025-04-30
+      Microsoft completed $8.4 billion in share repurchases during the quarter and declared a quarterly dividend of $0.83 per share. The company announced the general availability of Copilot for Microsoft 365 across enterprise customers and launched new AI-powered features in Azure OpenAI Service. Leadership appointed new divisional heads for AI platform development and cloud infrastructure operations.
+
+======================================================================
+TICKER: AVGO
+======================================================================
+
+  Price & Returns:
+    [AVGO-PX]       Close: $268.38
+    [AVGO-RET20]    20D Return: +11.6%
+    [AVGO-RET60]    60D Return: +60.2%
+    [AVGO-RET120]   120D Return: +16.7%
+    [AVGO-RET252]   1Y Return: +72.3%
+
+  Volatility & Risk:
+    [AVGO-VOL20]    20D Vol (ann): 34.3%
+    [AVGO-VOL60]    60D Vol (ann): 58.8%
+    [AVGO-DVOL60]   60D Downside Vol: 43.4%
+    [AVGO-DD60]     60D Drawdown: -15.0%
+    [AVGO-MDD1Y]    1Y Max Drawdown: -41.1%
+    [AVGO-SHARPE]   60D Sharpe: 3.37
+    [AVGO-BETA]     1Y Beta: 1.95
+
+  Trend & Momentum:
+    [AVGO-SMA20]    SMA 20D: $253.00
+    [AVGO-SMA50]    SMA 50D: $225.52
+    [AVGO-SMA200]   SMA 200D: $199.42
+    [AVGO-MOM200]   200D Momentum: 1.35
+    [AVGO-MOM12_1]  12-1M Momentum: +52.8%
+    [AVGO-IDMOM]    Idiosyncratic Momentum 60D: 0.3257
+    [AVGO-TREND]    Trend Consistency: 0.65
+    [AVGO-RS60]     Relative Strength 60D: +48.2%
+
+  Fundamentals:
+    [AVGO-MCAP]     Log Market Cap: 27.86
+    [AVGO-BM]       Book-to-Market: 0.0551
+    [AVGO-GM]       Gross Margin: 68.0%
+    [AVGO-ROE]      ROE: +7.1%
+    [AVGO-FCFY]     FCF Yield: +0.5%
+    [AVGO-DE]       Debt/Equity: 0.97
+    [AVGO-ESURP]    Earnings Surprise: +0.6%
+    [AVGO-ADVOL]    Avg Dollar Volume 20D: $6,877,329,266
+
+  Sentiment:
+    [AVGO-SENT]     Mean Sentiment: -0.0894
+    [AVGO-SVOL]     Sentiment Volatility: 0.6501
+    [AVGO-SSURP]    Surprise (QoQ): -0.1920 ↓
+    [AVGO-CSZ]      Cross-Sectional Z: -1.1766
+    [AVGO-ACNT]     Article Count: 233
+
+  Filing Summary (10-Q, filed 2025-06-11, fiscal period: 2025-Q2 [FYE: Oct 31]):
+    [AVGO-F1] Operations: Total revenue increased 20% to $15.0 billion driven by AI networking demand in semiconductor solutions and VMware Cloud Foundation growth in infrastructure software. Semiconductor solutions rose 17% from AI networking products offset by lower broadband demand, while infrastructure software increased 25% from VCF demand and subscription transition. Top five customers represent 40% of revenue with distributors accounting for 47%, creating concentrated dependencies.
+    [AVGO-F2] Costs/Margins: Gross margin expanded to 68% from 62% driven by higher software revenue mix and lower acquisition-related intangible amortization. Manufacturing operations primarily outsourced with TSMC fabricating 95% of wafers and three-quarters of materials sourced from five suppliers. Operating expenses decreased as percentage of revenue from lower amortization and reduced VMware integration costs, offset by higher stock-based compensation from new equity awards.
+    [AVGO-F3] Material Events: Board authorized $10 billion stock repurchase program through December 2025 with $2.5 billion executed in Q2 and paid $2.8 billion quarterly dividends. Granted two-year equity awards creating $27 billion unrecognized compensation cost over 3.8 year service period. Issued $3.9 billion commercial paper and reclassified $900 million senior notes to short-term debt.
+    [AVGO-F4] Macro Exposures: Ongoing Korean Fair Trade Commission investigation and continued U.S. export restrictions limiting customer relationships. Escalating U.S.-China trade tensions create supply chain disruption risks and potential retaliatory measures. Geographic concentration in seismically active Pacific Rim regions increases natural disaster exposure. Expanding global privacy laws and minimum tax implementations may materially increase compliance costs and effective tax rates.
+    [AVGO-F5] Forward Outlook: Management focused on VMware core private cloud business with simplified product portfolio and subscription licensing transition while continuing divestiture of non-core assets. Significant R&D investments expected for AI-related products including custom accelerators. Maintaining capital return strategy through dividends and opportunistic share repurchases while managing resource strain from simultaneous major design win implementations.
+    [AVGO-F6] Risks/Uncertainty: VMware customer acceptance of subscription model transition remains uncertain with potential tax liabilities from former Dell ownership structure unresolved. $69.4 billion outstanding debt with $5.6 billion due within twelve months requiring refinancing. Cybersecurity threats escalating with AI-enabled attack sophistication while open source software integration creates licensing compliance exposures and semiconductor cyclicality threatens AI demand sustainability.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $143.81
+    [AMD-RET20]    20D Return: +27.2%
+    [AMD-RET60]    60D Return: +39.9%
+    [AMD-RET120]   120D Return: +19.2%
+    [AMD-RET252]   1Y Return: -10.3%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 46.8%
+    [AMD-VOL60]    60D Vol (ann): 71.1%
+    [AMD-DVOL60]   60D Downside Vol: 46.0%
+    [AMD-DD60]     60D Drawdown: -24.0%
+    [AMD-MDD1Y]    1Y Max Drawdown: -57.5%
+    [AMD-SHARPE]   60D Sharpe: 1.98
+    [AMD-BETA]     1Y Beta: 1.94
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $125.07
+    [AMD-SMA50]    SMA 50D: $111.84
+    [AMD-SMA200]   SMA 200D: $124.10
+    [AMD-MOM200]   200D Momentum: 1.16
+    [AMD-MOM12_1]  12-1M Momentum: -29.6%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.1535
+    [AMD-TREND]    Trend Consistency: 0.58
+    [AMD-RS60]     Relative Strength 60D: +28.0%
+
+  Fundamentals:
+    [AMD-MCAP]     Log Market Cap: 26.18
+    [AMD-BM]       Book-to-Market: 0.2558
+    [AMD-GM]       Gross Margin: 39.8%
+    [AMD-ROE]      ROE: +1.5%
+    [AMD-FCFY]     FCF Yield: +0.7%
+    [AMD-DE]       Debt/Equity: 0.07
+    [AMD-ESURP]    Earnings Surprise: +3.2%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $6,816,549,502
+
+  Sentiment:
+    [AMD-SENT]     Mean Sentiment: -0.1568
+    [AMD-SVOL]     Sentiment Volatility: 0.6472
+    [AMD-SSURP]    Surprise (QoQ): -0.2360 ↓
+    [AMD-CSZ]      Cross-Sectional Z: -1.8646
+    [AMD-ACNT]     Article Count: 240
+
+  Filing Summary (10-Q, filed 2025-05-07, fiscal period: 2025-Q1):
+    [AMD-F1] Operations: AMD completed acquisition of ZT Group Int'l for $3.375 billion in cash plus 8.3 million shares on March 31, 2025, with potential additional consideration contingent on performance metrics. The company experienced significant demand for AI accelerators in its Data Center segment during 2024, while Embedded segment revenue decreased as customers normalized inventory levels.
+    [AMD-F2] Costs/Margins: Manufacturing costs are subject to volatility from third-party foundry pricing, with TSMC providing all wafers for advanced nodes while GLOBALFOUNDRIES handles larger nodes. The company maintains long-term purchase commitments and prepayment arrangements with suppliers that could result in excess inventory costs if demand estimates prove inaccurate. Price protection agreements with AIB partners create margin exposure during product price declines.
+    [AMD-F3] Material Events: AMD issued $1.5 billion in senior notes plus $950 million in commercial paper to fund the ZT acquisition. The company expects approximately $800 million in inventory and related reserve charges for AMD Instinct MI308 product due to new U.S. export license requirements. AMD is actively seeking a strategic partner to acquire ZT Systems' manufacturing business following the acquisition close.
+    [AMD-F4] Macro Exposures: New U.S. export licensing requirements for semiconductor products to China and D5 countries create revenue uncertainty, with the AI Diffusion Rule effective May 15, 2025 expanding licensing requirements worldwide for AI-related semiconductor transactions. Economic uncertainty including inflation, higher interest rates, and potential recession could reduce customer demand and delay purchases.
+    [AMD-F5] Forward Outlook: AMD is building AI capabilities across all product lines including Ryzen AI PC processors, though adoption rates remain uncertain. Management is pursuing divestiture of ZT Systems' manufacturing operations to a strategic partner, though timing and terms remain uncertain. The company expects to apply for export licenses for China-restricted products but cannot assure approval timing or conditions.
+    [AMD-F6] Risks/Uncertainty: Export license applications face uncertain approval timelines under evolving U.S. semiconductor regulations, with no assurance licenses will be granted timely or at all. ZT Systems divestiture completion depends on finding suitable buyers and obtaining regulatory approvals, while contingent consideration tied to performance conditions could result in additional payments. Manufacturing dependency on limited suppliers, particularly TSMC for advanced nodes, creates supply chain concentration risk.
+
+======================================================================
+TICKER: GOOG
+======================================================================
+
+  Price & Returns:
+    [GOOG-PX]       Close: $177.99
+    [GOOG-RET20]    20D Return: +3.2%
+    [GOOG-RET60]    60D Return: +12.3%
+    [GOOG-RET120]   120D Return: -6.3%
+    [GOOG-RET252]   1Y Return: -3.5%
+
+  Volatility & Risk:
+    [GOOG-VOL20]    20D Vol (ann): 26.6%
+    [GOOG-VOL60]    60D Vol (ann): 38.5%
+    [GOOG-DVOL60]   60D Downside Vol: 25.3%
+    [GOOG-DD60]     60D Drawdown: -8.0%
+    [GOOG-MDD1Y]    1Y Max Drawdown: -29.3%
+    [GOOG-SHARPE]   60D Sharpe: 1.27
+    [GOOG-BETA]     1Y Beta: 1.02
+
+  Trend & Momentum:
+    [GOOG-SMA20]    SMA 20D: $173.13
+    [GOOG-SMA50]    SMA 50D: $166.76
+    [GOOG-SMA200]   SMA 200D: $173.16
+    [GOOG-MOM200]   200D Momentum: 1.03
+    [GOOG-MOM12_1]  12-1M Momentum: -6.2%
+    [GOOG-IDMOM]    Idiosyncratic Momentum 60D: 0.0362
+    [GOOG-TREND]    Trend Consistency: 0.50
+    [GOOG-RS60]     Relative Strength 60D: +0.4%
+
+  Fundamentals:
+    [GOOG-MCAP]     Log Market Cap: 28.40
+    [GOOG-BM]       Book-to-Market: 0.1684
+    [GOOG-GM]       Gross Margin: 59.5%
+    [GOOG-ROE]      ROE: +7.8%
+    [GOOG-FCFY]     FCF Yield: +0.2%
+    [GOOG-DE]       Debt/Equity: 0.10
+    [GOOG-ESURP]    Earnings Surprise: +39.8%
+    [GOOG-ADVOL]    Avg Dollar Volume 20D: $4,954,836,967
+
+  Sentiment:
+    [GOOG-SENT]     Mean Sentiment: 0.1646
+    [GOOG-SVOL]     Sentiment Volatility: 0.6118
+    [GOOG-SSURP]    Surprise (QoQ): -0.0594 ↓
+    [GOOG-CSZ]      Cross-Sectional Z: 1.4140
+    [GOOG-ACNT]     Article Count: 230
+
+  Filing Summary (10-Q, filed 2025-04-25, fiscal period: 2025-Q1):
+    [GOOG-F1] Operations: Total revenues increased 12% to $90.2 billion driven by Google Search growing 10% and Google Cloud accelerating 28%. YouTube ads expanded while Google Network declined due to foreign currency headwinds and decreased Ad Manager performance. Operating cash flows increased to $36.2 billion from $28.8 billion driven by higher customer receipts across segments.
+    [GOOG-F2] Costs/Margins: Cost of revenues increased 8% to $36.4 billion with traffic acquisition costs rising and other costs increasing from higher content acquisition and depreciation. TAC rate decreased from 21.0% to 20.6% due to revenue mix shift toward Search properties. Research and development expenses rose driven by AI product development and increased headcount. Capital expenditures surged to $17.2 billion from $12.0 billion primarily for AI-supporting servers, network equipment, and data center construction.
+    [GOOG-F3] Material Events: Board authorized additional $70 billion share repurchase program following $15.3 billion in Q1 repurchases. Quarterly dividend increased 5% to $0.21 per share. Entered definitive agreement to acquire Wiz cloud security platform for $32.0 billion in all-cash transaction expected to close in 2026. Converted $3.0 billion of convertible notes into equity securities generating $416 million in gains.
+    [GOOG-F4] Macro Exposures: International revenues representing 51% of total revenues faced unfavorable foreign currency impacts of $1.6 billion from U.S. dollar strengthening against major currencies. European Commission fines increased to $6.5 billion including foreign exchange effects. Purchase commitments may experience cost increases from ongoing international trade developments affecting manufacturing and supply chain operations.
+    [GOOG-F5] Forward Outlook: Management expects continued investment increases in technical infrastructure relative to 2024 to support AI products and long-term growth. Revenue backlog of $92.4 billion provides visibility with 55% expected to be recognized over next 24 months. Wiz acquisition expected to enhance Google Cloud security capabilities upon 2026 closing.
+    [GOOG-F6] Risks/Uncertainty: Multiple ongoing antitrust proceedings including U.S. District Court ruling against Google Search practices with remedies hearing scheduled April 2025 and decision expected second half 2025. European Commission issued preliminary non-compliance findings under Digital Markets Act. Wiz acquisition subject to regulatory approvals with potential for delays or modifications.
+
+======================================================================
+TICKER: META
+======================================================================
+
+  Price & Returns:
+    [META-PX]       Close: $732.54
+    [META-RET20]    20D Return: +13.8%
+    [META-RET60]    60D Return: +25.3%
+    [META-RET120]   120D Return: +22.6%
+    [META-RET252]   1Y Return: +44.2%
+
+  Volatility & Risk:
+    [META-VOL20]    20D Vol (ann): 26.4%
+    [META-VOL60]    60D Vol (ann): 51.0%
+    [META-DVOL60]   60D Downside Vol: 34.3%
+    [META-DD60]     60D Drawdown: -17.3%
+    [META-MDD1Y]    1Y Max Drawdown: -34.2%
+    [META-SHARPE]   60D Sharpe: 1.86
+    [META-BETA]     1Y Beta: 1.37
+
+  Trend & Momentum:
+    [META-SMA20]    SMA 20D: $692.63
+    [META-SMA50]    SMA 50D: $630.90
+    [META-SMA200]   SMA 200D: $608.38
+    [META-MOM200]   200D Momentum: 1.20
+    [META-MOM12_1]  12-1M Momentum: +26.4%
+    [META-IDMOM]    Idiosyncratic Momentum 60D: 0.0937
+    [META-TREND]    Trend Consistency: 0.52
+    [META-RS60]     Relative Strength 60D: +13.3%
+
+  Fundamentals:
+    [META-MCAP]     Log Market Cap: 28.24
+    [META-BM]       Book-to-Market: 0.1058
+    [META-GM]       Gross Margin: 82.1%
+    [META-ROE]      ROE: +9.4%
+    [META-FCFY]     FCF Yield: +0.5%
+    [META-DE]       Debt/Equity: 0.25
+    [META-ESURP]    Earnings Surprise: +23.2%
+    [META-ADVOL]    Avg Dollar Volume 20D: $8,848,366,944
+
+  Sentiment:
+    [META-SENT]     Mean Sentiment: 0.1005
+    [META-SVOL]     Sentiment Volatility: 0.6449
+    [META-SSURP]    Surprise (QoQ): -0.1453 ↓
+    [META-CSZ]      Cross-Sectional Z: 0.7605
+    [META-ACNT]     Article Count: 233
+
+  Filing Summary (10-Q, filed 2025-05-01, fiscal period: 2025-Q1):
+    [META-F1] Operations: Total revenue increased 16% to $42.3 billion driven by advertising revenue growth to $41.4 billion, with ad impressions up 5% and average price per ad up 10%. Family of Apps revenue reached $41.9 billion while Reality Labs declined 6% due to lower Meta Quest sales. Growth was broadly positive across regions with particular strength in developed markets. Operating cash flows increased to $24.0 billion from $19.3 billion reflecting higher revenue collection.
+    [META-F2] Costs/Margins: Total costs increased 9% to $24.8 billion with research and development rising 22% primarily from higher employee compensation and AI infrastructure costs. Cost of revenue increased 14% mainly from data center operational expenses while general and administrative expenses decreased 34% due to lower legal costs. Operating margin expanded to 41% from 38% as income from operations grew to $17.6 billion. Extended server and network asset useful lives to 5.5 years reduced depreciation expense.
+    [META-F3] Material Events: The company repurchased $12.8 billion of Class A common stock and paid $1.3 billion in dividends at an increased quarterly rate of $0.525 per share. Capital expenditures surged to $12.9 billion from $6.4 billion for data center construction and AI infrastructure. Multiple executive trading plans were established and the Compensation Committee increased target bonus percentages for named officers. Headcount increased 11% to 76,834 employees.
+    [META-F4] Macro Exposures: European regulatory enforcement intensified with fines totaling approximately EUR €2 billion for Facebook Marketplace practices, subscription model non-compliance, and data transfer violations under appeal. Apple's iOS changes and platform restrictions continue negatively impacting advertiser targeting capabilities. Economic uncertainty including inflation and high interest rates affects marketer spending decisions.
+    [META-F5] Forward Outlook: Management projects 2025 capital expenditures of $64-72 billion supporting core business and generative AI efforts, with Reality Labs operating losses expected to increase from continued metaverse investments. The company maintains contractual commitments primarily for infrastructure. Management expects modifications to European subscription model may significantly impact European business as early as Q3 2025 based on regulatory feedback.
+    [META-F6] Risks/Uncertainty: The FTC administrative proceeding seeking modifications to the 2020 consent order begins trial April 2025, potentially prohibiting minors' data use and limiting product launches. Multiple high-stakes proceedings include youth social media addiction cases with first trial November 2025, copyright claims related to AI training, and IRS transfer pricing disputes potentially resulting in $9.0 billion additional tax liability. The company faces potential structural remedies from competition authorities and uncertain tax positions totaling $10.9 billion.
+
+======================================================================
+TICKER: NFLX
+======================================================================
+
+  Price & Returns:
+    [NFLX-PX]       Close: $132.31
+    [NFLX-RET20]    20D Return: +11.7%
+    [NFLX-RET60]    60D Return: +42.5%
+    [NFLX-RET120]   120D Return: +49.2%
+    [NFLX-RET252]   1Y Return: +96.8%
+
+  Volatility & Risk:
+    [NFLX-VOL20]    20D Vol (ann): 18.7%
+    [NFLX-VOL60]    60D Vol (ann): 33.5%
+    [NFLX-DVOL60]   60D Downside Vol: 24.3%
+    [NFLX-DD60]     60D Drawdown: -8.5%
+    [NFLX-MDD1Y]    1Y Max Drawdown: -19.1%
+    [NFLX-SHARPE]   60D Sharpe: 4.44
+    [NFLX-BETA]     1Y Beta: 0.92
+
+  Trend & Momentum:
+    [NFLX-SMA20]    SMA 20D: $123.94
+    [NFLX-SMA50]    SMA 50D: $117.39
+    [NFLX-SMA200]   SMA 200D: $94.51
+    [NFLX-MOM200]   200D Momentum: 1.40
+    [NFLX-MOM12_1]  12-1M Momentum: +79.7%
+    [NFLX-IDMOM]    Idiosyncratic Momentum 60D: 0.2876
+    [NFLX-TREND]    Trend Consistency: 0.65
+    [NFLX-RS60]     Relative Strength 60D: +30.6%
+
+  Fundamentals:
+    [NFLX-MCAP]     Log Market Cap: 27.06
+    [NFLX-BM]       Book-to-Market: 0.0444
+    [NFLX-GM]       Gross Margin: 51.9%
+    [NFLX-ROE]      ROE: +12.5%
+    [NFLX-FCFY]     FCF Yield: +0.4%
+    [NFLX-DE]       Debt/Equity: 0.58
+    [NFLX-ESURP]    Earnings Surprise: +15.8%
+    [NFLX-ADVOL]    Avg Dollar Volume 20D: $3,497,066,137
+
+  Sentiment:
+    [NFLX-SENT]     Mean Sentiment: 0.0319
+    [NFLX-SVOL]     Sentiment Volatility: 0.6858
+    [NFLX-SSURP]    Surprise (QoQ): -0.1700 ↓
+    [NFLX-CSZ]      Cross-Sectional Z: 0.0602
+    [NFLX-ACNT]     Article Count: 225
+
+  Filing Summary (10-Q, filed 2025-04-18, fiscal period: 2025-Q1):
+    [NFLX-F1] Operations: Netflix generated $10.5 billion in revenue for Q1 2025, representing 13% growth year-over-year driven by broad-based global membership expansion and pricing optimization across all regions with particularly strong performance in APAC and EMEA markets. Operating income reached $3.3 billion with operating margin expanding 360 basis points to 31.7% as revenue growth significantly outpaced expense increases, demonstrating substantial operating leverage.
+    [NFLX-F2] Costs/Margins: Gross margin improved 300 basis points to 50% despite content amortization increases reflecting expanded content slate investments. Operating expenses grew modestly with technology and development rising primarily from additional personnel costs, sales and marketing increasing driven by advertising sales headcount expansion, and general administrative expenses up from higher third-party costs. The company maintained disciplined expense growth while achieving significant operating leverage.
+    [NFLX-F3] Material Events: Netflix repurchased $3.5 billion of common stock during the quarter, retiring 3.7 million shares under its expanded $25 billion authorization program with $13.6 billion remaining available. The company repaid $800 million of maturing Senior Notes in February 2025. Netflix discontinued quarterly reporting of membership metrics, focusing instead on revenue and operating margin as primary performance indicators.
+    [NFLX-F4] Macro Exposures: Foreign currency headwinds reduced revenue growth by approximately 300 basis points despite currencies other than USD representing 55% of revenue and 29% of operating expenses. The company experienced foreign exchange losses primarily from euro-denominated debt remeasurement across $15.1 billion of fixed-rate debt. Brazilian tax authorities continue assessments with potential exposure estimated at $500 million, while the company faces approximately $900 million in tax deposit requirements exceeding typical annual obligations.
+    [NFLX-F5] Forward Outlook: Management expects continued significant investment in global content requiring upfront cash payments well in advance of amortization, with content obligations totaling $21.8 billion. The company anticipates potential additional debt capital raises for refinancing upcoming maturities. Capital allocation remains focused on content investment, share repurchases, and maintaining financial flexibility through the $3 billion revolving credit facility.
+    [NFLX-F6] Risks/Uncertainty: Content obligation estimates for unknown future titles carry considerable management judgment with actual amounts potentially differing materially from projections. Ongoing litigation includes various employment and business practice claims with outcomes difficult to predict. Pending accounting standard changes require evaluation for implementation impact.
+
+======================================================================
+TICKER: DIS
+======================================================================
+
+  Price & Returns:
+    [DIS-PX]       Close: $121.52
+    [DIS-RET20]    20D Return: +9.7%
+    [DIS-RET60]    60D Return: +25.8%
+    [DIS-RET120]   120D Return: +10.9%
+    [DIS-RET252]   1Y Return: +21.3%
+
+  Volatility & Risk:
+    [DIS-VOL20]    20D Vol (ann): 15.4%
+    [DIS-VOL60]    60D Vol (ann): 46.6%
+    [DIS-DVOL60]   60D Downside Vol: 37.5%
+    [DIS-DD60]     60D Drawdown: -16.5%
+    [DIS-MDD1Y]    1Y Max Drawdown: -30.2%
+    [DIS-SHARPE]   60D Sharpe: 2.07
+    [DIS-BETA]     1Y Beta: 0.97
+
+  Trend & Momentum:
+    [DIS-SMA20]    SMA 20D: $115.95
+    [DIS-SMA50]    SMA 50D: $105.94
+    [DIS-SMA200]   SMA 200D: $103.11
+    [DIS-MOM200]   200D Momentum: 1.18
+    [DIS-MOM12_1]  12-1M Momentum: +10.1%
+    [DIS-IDMOM]    Idiosyncratic Momentum 60D: 0.1154
+    [DIS-TREND]    Trend Consistency: 0.55
+    [DIS-RS60]     Relative Strength 60D: +13.8%
+
+  Fundamentals:
+    [DIS-MCAP]     Log Market Cap: 26.11
+    [DIS-BM]       Book-to-Market: 0.4998
+    [DIS-GM]       Gross Margin: 38.6%
+    [DIS-ROE]      ROE: +4.8%
+    [DIS-FCFY]     FCF Yield: +0.9%
+    [DIS-DE]       Debt/Equity: 0.39
+    [DIS-ESURP]    Earnings Surprise: +19.8%
+    [DIS-ADVOL]    Avg Dollar Volume 20D: $1,164,972,767
+
+  Sentiment:
+    [DIS-SENT]     Mean Sentiment: 0.0859
+    [DIS-SVOL]     Sentiment Volatility: 0.6376
+    [DIS-SSURP]    Surprise (QoQ): -0.1849 ↓
+    [DIS-CSZ]      Cross-Sectional Z: 0.6111
+    [DIS-ACNT]     Article Count: 220
+
+  Filing Summary (10-Q, filed 2025-05-07, fiscal period: 2025-Q1 [FYE: Sep 30]):
+    [DIS-F1] Operations: Disney reported Q1 2025 results on February 5, 2025, though specific revenue figures and segment performance details are not disclosed in the available filing excerpts. The company continues operations across entertainment, parks and experiences, and consumer products segments with international exposure through theme parks in France, mainland China, and Hong Kong.
+    [DIS-F2] Costs/Margins: Cost structure details for Q1 2025 are not provided in the available filing excerpts. The company faces ongoing cost pressures from content production investments, theme park operations, and regulatory compliance requirements across multiple jurisdictions.
+    [DIS-F3] Material Events: Disney entered a definitive agreement on January 6, 2025 to combine Hulu + Live TV with FuboTV, with Disney, Warner Bros. Discovery and FOX making an aggregate $220 million cash settlement payment to Fubo related to Venu Sports litigation. The company renewed its $5.25 billion 364-day credit facility on February 28, 2025, maintaining the same borrowing capacity with maturity extended to February 27, 2026. Annual shareholder meeting occurred March 20, 2025 with all director nominees elected and executive compensation approved.
+    [DIS-F4] Macro Exposures: Disney faces heightened regulatory uncertainty from evolving AI technology frameworks and increased state-level legislative activity targeting specific sectors. New 2025 tariffs announced by U.S. trading partners are expected to have modest near-term impact but could significantly affect longer-term operations depending on implementation scope. The company maintains exposure to international political developments, trade restrictions, and sanctions that have previously required operational pauses in certain regions.
+    [DIS-F5] Forward Outlook: Management guidance and strategic direction details are not provided in the available filing excerpts. The Hulu + Live TV transaction with FuboTV remains subject to regulatory approval and potential legal challenges that could delay or prevent closing.
+    [DIS-F6] Risks/Uncertainty: Disney faces potential regulatory or third-party legal actions that could prevent the Hulu + Live TV transaction closing, which would trigger termination fees. Venu Sports launch remains uncertain due to possible regulatory or third-party legal challenges beyond the settled Fubo litigation. The company confronts evolving intellectual property risks from AI-generated content and uncertain legal frameworks for new technologies, while copyright expirations including Steamboat Willie create ongoing revenue exposure.
+
+======================================================================
+TICKER: AMZN
+======================================================================
+
+  Price & Returns:
+    [AMZN-PX]       Close: $223.30
+    [AMZN-RET20]    20D Return: +8.6%
+    [AMZN-RET60]    60D Return: +16.2%
+    [AMZN-RET120]   120D Return: +1.4%
+    [AMZN-RET252]   1Y Return: +19.8%
+
+  Volatility & Risk:
+    [AMZN-VOL20]    20D Vol (ann): 22.3%
+    [AMZN-VOL60]    60D Vol (ann): 45.8%
+    [AMZN-DVOL60]   60D Downside Vol: 30.1%
+    [AMZN-DD60]     60D Drawdown: -14.6%
+    [AMZN-MDD1Y]    1Y Max Drawdown: -30.9%
+    [AMZN-SHARPE]   60D Sharpe: 1.38
+    [AMZN-BETA]     1Y Beta: 1.35
+
+  Trend & Momentum:
+    [AMZN-SMA20]    SMA 20D: $212.30
+    [AMZN-SMA50]    SMA 50D: $200.95
+    [AMZN-SMA200]   SMA 200D: $204.93
+    [AMZN-MOM200]   200D Momentum: 1.09
+    [AMZN-MOM12_1]  12-1M Momentum: +9.9%
+    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.0328
+    [AMZN-TREND]    Trend Consistency: 0.50
+    [AMZN-RS60]     Relative Strength 60D: +4.2%
+
+  Fundamentals:
+    [AMZN-MCAP]     Log Market Cap: 28.50
+    [AMZN-BM]       Book-to-Market: 0.1402
+    [AMZN-GM]       Gross Margin: 51.8%
+    [AMZN-ROE]      ROE: +5.4%
+    [AMZN-FCFY]     FCF Yield: +0.0%
+    [AMZN-DE]       Debt/Equity: 0.40
+    [AMZN-ESURP]    Earnings Surprise: +16.9%
+    [AMZN-ADVOL]    Avg Dollar Volume 20D: $9,203,439,282
+
+  Sentiment:
+    [AMZN-SENT]     Mean Sentiment: 0.0292
+    [AMZN-SVOL]     Sentiment Volatility: 0.6498
+    [AMZN-SSURP]    Surprise (QoQ): -0.1619 ↓
+    [AMZN-CSZ]      Cross-Sectional Z: 0.0331
+    [AMZN-ACNT]     Article Count: 237
+
+  Filing Summary (10-Q, filed 2025-05-02, fiscal period: 2025-Q1):
+    [AMZN-F1] Operations: Total net sales increased 8.6% to $155.7 billion driven by AWS growth of 16.9% and North America growth of 7.6%, while International growth of 4.9% faced foreign exchange headwinds. Consolidated operating income rose 20.2% to $18.4 billion with operating margin expanding to 11.8%, reflecting improved operational leverage across all segments.
+    [AMZN-F2] Costs/Margins: Operating expenses increased 7% with cost of sales rising 6% and fulfillment costs growing 10% from increased sales and network investments. Technology and infrastructure expenses increased 13% primarily from AWS infrastructure investments, including depreciation increases from shortened server and networking equipment useful lives from six to five years effective January 2025. Stock-based compensation decreased to $3.7 billion from $5.0 billion.
+    [AMZN-F3] Material Events: Converted portion of Anthropic convertible notes to nonvoting preferred stock, recognizing $3.3 billion gain in other income during Q1 2025. Increased commercial paper program capacity to $30.0 billion in April 2025 and committed to invest additional $2.7 billion in Anthropic convertible notes by Q4 2025. Cash capital expenditures increased significantly to $24.3 billion from $13.9 billion primarily for technology infrastructure supporting AWS growth.
+    [AMZN-F4] Macro Exposures: Foreign exchange volatility intensified with $1.4 billion unfavorable revenue impact and potential losses of $930 million to $3.7 billion on foreign currency holdings under adverse scenarios. Regulatory proceedings increased across antitrust, privacy, and consumer protection matters with active Federal Trade Commission litigation. Tax exposure expanded through ongoing disputes across multiple jurisdictions including Luxembourg and Indian assessments.
+    [AMZN-F5] Forward Outlook: AWS performance obligations for contracts exceeding one year totaled approximately $189 billion with weighted-average remaining contract life of 4.1 years as of March 31, 2025. Management expects continued increases in cash capital expenditures during 2025 primarily driven by technology infrastructure investments and artificial intelligence capabilities development including commercial arrangement with Anthropic.
+    [AMZN-F6] Risks/Uncertainty: Income tax contingencies of $6.3 billion reflect ongoing IRS examinations for 2016 and thereafter plus disputes across multiple jurisdictions with resolution timing highly uncertain. Luxembourg Administrative Court dismissed appeal of €746 million GDPR fine in March 2025 with appeal to higher court filed in April 2025. Legal proceedings outcomes remain unpredictable with potential for substantial future payments or operational restrictions.
+
+======================================================================
+TICKER: TSLA
+======================================================================
+
+  Price & Returns:
+    [TSLA-PX]       Close: $323.63
+    [TSLA-RET20]    20D Return: -9.7%
+    [TSLA-RET60]    60D Return: +20.5%
+    [TSLA-RET120]   120D Return: -14.7%
+    [TSLA-RET252]   1Y Return: +72.7%
+
+  Volatility & Risk:
+    [TSLA-VOL20]    20D Vol (ann): 75.8%
+    [TSLA-VOL60]    60D Vol (ann): 81.2%
+    [TSLA-DVOL60]   60D Downside Vol: 53.9%
+    [TSLA-DD60]     60D Drawdown: -21.6%
+    [TSLA-MDD1Y]    1Y Max Drawdown: -53.8%
+    [TSLA-SHARPE]   60D Sharpe: 0.97
+    [TSLA-BETA]     1Y Beta: 2.37
+
+  Trend & Momentum:
+    [TSLA-SMA20]    SMA 20D: $325.33
+    [TSLA-SMA50]    SMA 50D: $311.30
+    [TSLA-SMA200]   SMA 200D: $312.82
+    [TSLA-MOM200]   200D Momentum: 1.03
+    [TSLA-MOM12_1]  12-1M Momentum: +90.5%
+    [TSLA-IDMOM]    Idiosyncratic Momentum 60D: 0.0034
+    [TSLA-TREND]    Trend Consistency: 0.53
+    [TSLA-RS60]     Relative Strength 60D: +8.6%
+
+  Fundamentals:
+    [TSLA-MCAP]     Log Market Cap: 27.67
+    [TSLA-BM]       Book-to-Market: 0.0741
+    [TSLA-GM]       Gross Margin: 17.2%
+    [TSLA-ROE]      ROE: +1.5%
+    [TSLA-FCFY]     FCF Yield: +0.0%
+    [TSLA-DE]       Debt/Equity: 0.17
+    [TSLA-ESURP]    Earnings Surprise: -34.2%
+    [TSLA-ADVOL]    Avg Dollar Volume 20D: $39,886,661,902
+
+  Sentiment:
+    [TSLA-SENT]     Mean Sentiment: 0.0700
+    [TSLA-SVOL]     Sentiment Volatility: 0.5711
+    [TSLA-SSURP]    Surprise (QoQ): -0.1219 ↓
+    [TSLA-CSZ]      Cross-Sectional Z: 0.4497
+    [TSLA-ACNT]     Article Count: 228
+
+  Filing Summary (10-Q, filed 2025-04-23, fiscal period: 2025-Q1):
+    [TSLA-F1] Operations: Total revenue declined 9% to $19.34 billion driven by automotive sales decreasing 21% from lower Model 3/Y deliveries due to simultaneous factory changeovers to New Model Y production. Energy generation and storage revenue surged 67% from increased Megapack and Powerwall deployments while services revenue grew 15% from higher Supercharging, insurance, and used vehicle sales. Automotive regulatory credits increased 35% as competitors scaled back electric vehicle plans.
+    [TSLA-F2] Costs/Margins: Total gross margin compressed to 16.3% from 17.4% as automotive gross margin fell to 16.2% from 18.5% due to lower average selling prices from sales mix and customer incentives, partially offset by reduced raw material costs and favorable foreign exchange impacts. Energy storage gross margin expanded to 28.8% from 24.6% driven by higher-margin product mix and lower per-unit costs. Research and development expenses increased 22% primarily from AI program investments while selling expenses decreased 9% from reduced employee costs.
+    [TSLA-F3] Material Events: Tesla executed industry-first simultaneous production line changeovers across all factories for New Model Y launch, resulting in several weeks of lost production but demonstrating operational capabilities. The company received proceeds from directors in shareholder settlement arrangements. Bitcoin holdings generated $125 million mark-to-market loss compared to $335 million gain in prior year.
+    [TSLA-F4] Macro Exposures: Evolving trade policy creates uncertainty with higher tariffs potentially impacting global supply chain costs and component availability, with relatively larger impact expected on energy business versus automotive. Rising interest rates from central bank responses to inflation continue affecting vehicle financing affordability and customer demand. Foreign currency fluctuations on significant intercompany balances create volatility as the company does not typically hedge foreign exchange risk.
+    [TSLA-F5] Forward Outlook: Management expects capital expenditures to exceed $10 billion in 2025 for AI infrastructure, factory expansion, and new product development, though trade policy changes may necessitate project timeline adjustments. The company targets profitable growth through leveraging existing capacity for more affordable products, advancing FSD capabilities including Robotaxi development, and expanding energy storage production.
+    [TSLA-F6] Risks/Uncertainty: Trade policy scope and application remain uncertain with potential for retaliatory tariffs and export controls affecting production costs and market access. Battery cell supply adequacy for energy storage products faces challenges from potential import tariff increases on battery components. Manufacturing ramp uncertainties persist across concurrent international projects with ambitious technological targets.
+
+======================================================================
+TICKER: HD
+======================================================================
+
+  Price & Returns:
+    [HD-PX]       Close: $364.30
+    [HD-RET20]    20D Return: +0.7%
+    [HD-RET60]    60D Return: +1.5%
+    [HD-RET120]   120D Return: -3.9%
+    [HD-RET252]   1Y Return: +11.6%
+
+  Volatility & Risk:
+    [HD-VOL20]    20D Vol (ann): 17.8%
+    [HD-VOL60]    60D Vol (ann): 25.6%
+    [HD-DVOL60]   60D Downside Vol: 15.7%
+    [HD-DD60]     60D Drawdown: -9.6%
+    [HD-MDD1Y]    1Y Max Drawdown: -21.8%
+    [HD-SHARPE]   60D Sharpe: 0.25
+    [HD-BETA]     1Y Beta: 0.63
+
+  Trend & Momentum:
+    [HD-SMA20]    SMA 20D: $357.20
+    [HD-SMA50]    SMA 50D: $357.56
+    [HD-SMA200]   SMA 200D: $378.09
+    [HD-MOM200]   200D Momentum: 0.96
+    [HD-MOM12_1]  12-1M Momentum: +10.7%
+    [HD-IDMOM]    Idiosyncratic Momentum 60D: -0.0406
+    [HD-TREND]    Trend Consistency: 0.45
+    [HD-RS60]     Relative Strength 60D: -10.4%
+
+  Fundamentals:
+    [HD-MCAP]     Log Market Cap: 26.62
+    [HD-BM]       Book-to-Market: 0.0219
+    [HD-GM]       Gross Margin: 33.8%
+    [HD-ROE]      ROE: +43.2%
+    [HD-FCFY]     FCF Yield: +1.0%
+    [HD-DE]       Debt/Equity: 7.70
+    [HD-ESURP]    Earnings Surprise: -2.0%
+    [HD-ADVOL]    Avg Dollar Volume 20D: $1,317,098,090
+
+  Sentiment:
+    [HD-SENT]     Mean Sentiment: -0.0211
+    [HD-SVOL]     Sentiment Volatility: 0.6210
+    [HD-SSURP]    Surprise (QoQ): -0.0976 ↓
+    [HD-CSZ]      Cross-Sectional Z: -0.4804
+    [HD-ACNT]     Article Count: 230
+
+  Filing Summary (10-Q, filed 2025-05-28, fiscal period: 2025-Q2 [FYE: Jan 31]):
+    [HD-F1] Operations: Net sales increased 9.4% to $39.9 billion driven by SRS acquisition contributing $2.6 billion and favorable seasonal timing from fiscal calendar shift. Comparable sales declined 0.3% reflecting decreased customer transactions offset by flat average ticket, pressured by macroeconomic uncertainties and high interest rates. Online sales represented 15.5% of total sales, increasing 10.9% including seasonal benefit.
+    [HD-F2] Costs/Margins: Gross margin compressed to 33.8% from 34.1% primarily due to SRS inclusion, partially offset by lower shrink and supply chain productivity improvements. SG&A increased to 18.9% of sales from 18.3% due to absence of prior year legal benefit and higher payroll costs. Depreciation and amortization increased 15.9% driven by SRS intangible asset amortization.
+    [HD-F3] Material Events: Company opened three new U.S. stores bringing total count to 2,350. Quarterly dividend increased 2.2% to $2.30 per share with $2.3 billion paid to shareholders. Company repaid $1.1 billion of long-term debt and established new $7.0 billion backup credit facilities supporting commercial paper program.
+    [HD-F4] Macro Exposures: Foreign exchange headwinds negatively impacted net sales by $275 million due to stronger U.S. dollar. Company estimates over 50% of product purchases are domestically sourced with ongoing supply chain diversification efforts. Tariff and trade policy developments have not had meaningful financial impact but remain subject to ongoing policy discussions.
+    [HD-F5] Forward Outlook: Management expects approximately $4 billion in capital expenditures for fiscal 2025, representing 2.5% of anticipated net sales, focused on customer experience improvements and technology. Share repurchases remain paused through fiscal 2025 following SRS acquisition with $11.7 billion authorization remaining available.
+    [HD-F6] Risks/Uncertainty: Macroeconomic uncertainties and persistently high interest rates continue pressuring home improvement demand with unpredictable impact on comparable sales performance. Trade policy discussions remain ongoing with uncertain ultimate impact despite supply chain diversification efforts. ROIC declined to 31.3% from 37.1% primarily due to SRS acquisition financing.
+
+======================================================================
+END OF MEMO
+======================================================================
