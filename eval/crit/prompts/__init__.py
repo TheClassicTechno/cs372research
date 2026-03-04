@@ -18,21 +18,28 @@ _TEMPLATE_DIR = Path(__file__).parent
 _JINJA_ENV = jinja2.Environment(
     loader=jinja2.FileSystemLoader(str(_TEMPLATE_DIR)),
     keep_trailing_newline=True,
+    undefined=jinja2.StrictUndefined,
 )
 
 
-def render_crit_prompts(bundle: dict) -> tuple[str, str]:
+def render_crit_prompts(
+    bundle: dict,
+    system_template: str = "crit_system.jinja",
+    user_template: str = "crit_user.jinja",
+) -> tuple[str, str]:
     """Render CRIT system + user prompts from a reasoning bundle.
 
     Args:
         bundle: Dict with keys: round, agent_role, proposal,
                 critiques_received, revised_argument.
+        system_template: Filename for the CRIT system prompt template.
+        user_template: Filename for the CRIT user prompt template.
 
     Returns:
         (system_prompt, user_prompt) tuple of rendered strings.
     """
-    system_tmpl = _JINJA_ENV.get_template("crit_system.jinja")
-    user_tmpl = _JINJA_ENV.get_template("crit_user.jinja")
+    system_tmpl = _JINJA_ENV.get_template(system_template)
+    user_tmpl = _JINJA_ENV.get_template(user_template)
     system_prompt = system_tmpl.render(agent_role=bundle["agent_role"])
     user_prompt = user_tmpl.render(
         round=bundle["round"],

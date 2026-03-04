@@ -80,6 +80,7 @@ class DebateConfig:
     # --- Rate limiting ---
     no_rate_limit: bool = False   # Disable stagger entirely (all calls fire at once)
     llm_stagger_ms: int = 500    # Milliseconds between parallel LLM call starts
+    max_concurrent_llm: int = 0  # Max concurrent LLM calls (0 = unlimited)
 
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
@@ -156,6 +157,14 @@ class DebateConfig:
     # Values: filename relative to multi_agent/prompts/ directory.
     prompt_file_overrides: dict[str, str] = field(default_factory=dict)
 
+    # --- Prompt profile (per-agent prompt composition) ---
+    prompt_profile: str = ""  # profile name (e.g. "default", "minimal") or "" for backward compat
+    role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
+
+    # --- CRIT template configurability ---
+    crit_system_template: str = "crit_system.jinja"
+    crit_user_template: str = "crit_user.jinja"
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -214,6 +223,7 @@ class DebateConfig:
             "mock": self.mock,
             "no_rate_limit": self.no_rate_limit,
             "llm_stagger_ms": self.llm_stagger_ms,
+            "max_concurrent_llm": self.max_concurrent_llm,
             "verbose": self.verbose,
             "log_system_prompts": self.log_system_prompts,
             "log_user_prompts": self.log_user_prompts,
@@ -233,4 +243,8 @@ class DebateConfig:
             "system_prompt_block_order": self.system_prompt_block_order,
             "user_prompt_section_order": self.user_prompt_section_order,
             "prompt_file_overrides": self.prompt_file_overrides,
+            "prompt_profile": self.prompt_profile,
+            "role_overrides": self.role_overrides,
+            "crit_system_template": self.crit_system_template,
+            "crit_user_template": self.crit_user_template,
         }

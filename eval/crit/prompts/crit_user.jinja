@@ -1,21 +1,117 @@
 ## Round {{ round }}
 
-## Agent Under Evaluation: {{ agent_role | upper }}
+## Agent Under Evaluation
 
-### Original Proposal
+{{ agent_role | upper }}
+
+You are evaluating the **REVISED ARGUMENT** produced by this agent after a debate round.
+
+Your task is to audit the **reasoning integrity of the revision**.
+
+The original proposal and critiques are provided only to determine:
+
+• whether critiques were addressed
+• whether contradictions were resolved
+• whether alternative considerations were incorporated
+
+Focus your evaluation on the **quality of reasoning in the revised argument**.
+
+Do NOT evaluate prediction accuracy or market performance.
+
+---
+
+# Original Proposal
 
 {{ proposal | tojson(indent=2) }}
 
-### Critiques Received
+---
+
+# Critiques Received
 
 {{ critiques_received | tojson(indent=2) }}
 
-### Revised Argument
+---
+
+# Revised Argument
 
 {{ revised_argument | tojson(indent=2) }}
 
-## Instructions
+---
 
-Score the revised argument of the {{ agent_role | upper }} agent across the four pillars: internal_consistency, evidence_support, trace_alignment, causal_integrity.
+# Evaluation Procedure
 
-Respond with the JSON object described in your system prompt.
+Before assigning scores, perform the following checks.
+
+## Step 1 — Check for Contradictions
+
+Determine whether the revised argument contains:
+
+• internal contradictions
+• mutually incompatible claims
+• unresolved conflicts identified in critiques
+
+---
+
+## Step 2 — Check Evidence Usage
+
+Identify whether:
+
+• key claims are supported by cited evidence
+• evidence citations actually support the claims
+• important assertions lack evidence
+
+---
+
+## Step 3 — Check Trace Alignment
+
+Determine whether the **final portfolio allocation follows logically from the reasoning**.
+
+Check for:
+
+• conclusion drift
+• allocation decisions not justified by the argument
+• critiques ignored in the revision
+
+---
+
+## Step 4 — Check Causal Reasoning
+
+Evaluate causal claims in the argument.
+
+Determine whether the agent correctly distinguishes:
+
+L1 — correlation
+L2 — intervention
+L3 — counterfactual reasoning
+
+Flag causal leaps such as:
+
+• correlation presented as causation
+• macro claims directly mapped to asset outcomes without mechanism
+
+---
+
+# Scoring
+
+After completing the checks above, assign scores for the four pillars:
+
+internal_consistency
+evidence_support
+trace_alignment
+causal_integrity
+
+Scores must be in the range **0.0–1.0**.
+
+Use intermediate values when reasoning quality is mixed.
+
+Important rule:
+
+If a diagnostic issue is detected for a pillar, that pillar's score **cannot exceed 0.75**.
+
+---
+
+# Output
+
+Return **only the JSON object specified in the system prompt**.
+
+Do not include any additional commentary outside the JSON.

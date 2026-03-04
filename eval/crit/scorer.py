@@ -51,6 +51,8 @@ class CritScorer:
         self,
         llm_fn: Callable[[str, str], str],
         capture_fn: Callable[[str, str, str, str], None] | None = None,
+        crit_system_template: str = "crit_system.jinja",
+        crit_user_template: str = "crit_user.jinja",
     ) -> None:
         """
         Args:
@@ -60,9 +62,13 @@ class CritScorer:
             capture_fn: Optional callback (role, system_prompt, user_prompt,
                         raw_response) called after each LLM scoring call.
                         Used to capture CRIT prompts/responses for diagnostics.
+            crit_system_template: CRIT system prompt template filename.
+            crit_user_template: CRIT user prompt template filename.
         """
         self._llm_fn = llm_fn
         self._capture_fn = capture_fn
+        self._crit_system_template = crit_system_template
+        self._crit_user_template = crit_user_template
 
     def _score_single_agent(self, role: str, bundle: dict) -> tuple[str, CritResult]:
         """Score a single agent's reasoning bundle via one LLM call.
@@ -78,7 +84,11 @@ class CritScorer:
         Raises:
             ValueError: If LLM response is malformed.
         """
-        system_prompt, user_prompt = render_crit_prompts(bundle)
+        system_prompt, user_prompt = render_crit_prompts(
+            bundle,
+            system_template=self._crit_system_template,
+            user_template=self._crit_user_template,
+        )
 
         raw_text = self._llm_fn(system_prompt, user_prompt)
 

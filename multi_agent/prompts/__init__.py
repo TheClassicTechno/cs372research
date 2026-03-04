@@ -13,7 +13,8 @@ from pathlib import Path
 
 import re
 
-from jinja2 import Environment, FileSystemLoader
+import yaml
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from ..config import AgentRole
 
@@ -25,7 +26,120 @@ _TEMPLATE_DIR = Path(__file__).resolve().parent
 _env = Environment(
     loader=FileSystemLoader(str(_TEMPLATE_DIR)),
     keep_trailing_newline=True,
+    undefined=StrictUndefined,
 )
+
+# ---------------------------------------------------------------------------
+# Module catalog — auto-discovery of prompt modules from directory structure
+# ---------------------------------------------------------------------------
+
+_SUBDIR_PREFIX: dict[str, str] = {
+    "roles": "role",
+    "scaffolding": "scaffolding",
+    "output_format": "output",
+    "tone": "tone",
+    "system_contract": "contract",
+    "phases": "phase",
+}
+
+_MODULE_ALIASES: dict[str, str] = {
+    "scaffolding_causal": "scaffolding/causal_claim_format.txt",
+    "scaffolding_uncertainty": "scaffolding/forced_uncertainty.txt",
+    "scaffolding_traps": "scaffolding/trap_awareness.txt",
+    "output_allocation": "output_format/allocation_output_instructions.txt",
+    "output_json": "output_format/json_output_instructions.txt",
+    "causal_contract": "system_contract/system_causal_contract.txt",
+}
+
+
+def _build_module_catalog() -> dict[str, str]:
+    """Auto-discover prompt modules from directory structure.
+
+    Convention: {subdir}/{file}.txt -> {prefix}_{filestem}
+    """
+    catalog: dict[str, str] = {}
+    for subdir, prefix in _SUBDIR_PREFIX.items():
+        dir_path = _TEMPLATE_DIR / subdir
+        if not dir_path.is_dir():
+            continue
+        for txt_file in dir_path.glob("*.txt"):
+            module_name = f"{prefix}_{txt_file.stem}"
+            catalog[module_name] = str(txt_file.relative_to(_TEMPLATE_DIR))
+    # Apply short aliases for common modules
+    catalog.update(_MODULE_ALIASES)
+    return catalog
+
+
+MODULE_CATALOG: dict[str, str] = _build_module_catalog()
+
+
+def load_module(name: str, overrides: dict[str, str] | None = None) -> str:
+    """Load a prompt module by symbolic name.
+
+    Checks prompt_file_overrides first, then MODULE_CATALOG.
+    Returns empty string if not found.
+    """
+    if overrides and name in overrides:
+        path = _TEMPLATE_DIR / overrides[name]
+        return path.read_text() if path.exists() else ""
+    rel_path = MODULE_CATALOG.get(name)
+    if rel_path:
+        return (_TEMPLATE_DIR / rel_path).read_text()
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Prompt profile loading + resolution
+# ---------------------------------------------------------------------------
+
+
+def load_prompt_profile(name: str) -> dict:
+    """Load a prompt profile YAML file by name."""
+    path = _TEMPLATE_DIR / "profiles" / f"{name}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Prompt profile not found: {path}")
+    return yaml.safe_load(path.read_text()) or {}
+
+
+def resolve_prompt_profile(config: dict, role: str) -> dict:
+    """Resolve the prompt profile for a given agent role.
+
+    Priority: role_overrides[role] keys > base profile keys > empty dict.
+    """
+    profile_name = config.get("prompt_profile")
+    if not profile_name:
+        return {}  # no profile -> backward compat
+    base = load_prompt_profile(profile_name)
+    role_overrides = config.get("role_overrides", {}).get(role, {})
+    return {**base, **role_overrides}
+
+
+# ---------------------------------------------------------------------------
+# Template variable registry (for CI validation)
+# ---------------------------------------------------------------------------
+
+TEMPLATE_VARS: dict[str, set[str]] = {
+    "propose": {
+        "context", "causal_claim_format", "forced_uncertainty",
+        "trap_awareness", "json_output_instructions",
+        "allocation_output_instructions",
+    },
+    "critique": {"role", "context", "my_proposal", "others_text"},
+    "revise": {
+        "role", "context", "my_proposal", "critiques_text",
+        "causal_claim_format", "forced_uncertainty",
+    },
+    "judge": {
+        "context", "revisions_text", "all_critiques_text",
+        "disagreements_section", "causal_claim_format",
+    },
+}
+
+CRIT_TEMPLATE_VARS: dict[str, set[str]] = {
+    "crit_system": {"agent_role"},
+    "crit_user": {"round", "agent_role", "proposal",
+                  "critiques_received", "revised_argument"},
+}
 
 
 def _load(name: str) -> str:
@@ -65,20 +179,29 @@ def _assemble_user_prompt(
     sections: dict[str, str],
     order: list[str],
     template_vars: dict,
+    prompt_file_overrides: dict[str, str] | None = None,
 ) -> str:
     """Render each section with Jinja2 and join in the specified order.
 
-    Sections not present in *sections* dict are silently skipped.
+    For each name in *order*:
+      - If it exists in *sections* dict, render with Jinja2 (template section).
+      - Otherwise, try MODULE_CATALOG (static module text, no Jinja rendering).
+      - If neither, skip silently.
     """
     parts: list[str] = []
     for section_name in order:
         raw_tmpl = sections.get(section_name)
-        if raw_tmpl is None:
-            continue
-        tmpl = _env.from_string(raw_tmpl)
-        rendered = tmpl.render(**template_vars).strip()
-        if rendered:
-            parts.append(rendered)
+        if raw_tmpl is not None:
+            # Template section — render with Jinja2
+            tmpl = _env.from_string(raw_tmpl)
+            rendered = tmpl.render(**template_vars).strip()
+            if rendered:
+                parts.append(rendered)
+        else:
+            # Not a template section — try MODULE_CATALOG
+            content = load_module(section_name, prompt_file_overrides)
+            if content:
+                parts.append(content.strip())
     return "\n\n".join(parts)
 
 
@@ -136,6 +259,7 @@ def build_proposal_user_prompt(
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
 ) -> str:
     """User prompt sent to each role agent for their initial proposal."""
     causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
@@ -145,16 +269,23 @@ def build_proposal_user_prompt(
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("proposal_template", "phases/proposal_allocation.txt")
 
+    # Allow overriding the allocation output instructions via prompt_file_overrides
+    alloc_instructions = (
+        load_module("output_allocation", overrides)
+        if "output_allocation" in overrides
+        else ALLOCATION_OUTPUT_INSTRUCTIONS
+    )
+
     template_vars = {
         "context": context,
         "causal_claim_format": causal,
         "forced_uncertainty": uncertainty,
         "trap_awareness": traps,
         "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
-        "allocation_output_instructions": ALLOCATION_OUTPUT_INSTRUCTIONS,
+        "allocation_output_instructions": alloc_instructions,
     }
 
-    order = section_order if section_order is not None else _DEFAULT_SECTION_ORDER
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
@@ -162,7 +293,7 @@ def build_proposal_user_prompt(
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars)
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_critique_prompt(
@@ -173,6 +304,7 @@ def build_critique_prompt(
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
 ) -> str:
     """Build critique user prompt for a role agent in the debate.
 
@@ -195,14 +327,14 @@ def build_critique_prompt(
         "others_text": others_text,
     }
 
-    order = section_order if section_order is not None else _DEFAULT_SECTION_ORDER
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars)
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_revision_prompt(
@@ -214,6 +346,7 @@ def build_revision_prompt(
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -240,14 +373,14 @@ def build_revision_prompt(
         "forced_uncertainty": uncertainty,
     }
 
-    order = section_order if section_order is not None else _DEFAULT_SECTION_ORDER
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars)
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_judge_prompt(
@@ -259,6 +392,7 @@ def build_judge_prompt(
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -286,11 +420,11 @@ def build_judge_prompt(
         "causal_claim_format": causal,
     }
 
-    order = section_order if section_order is not None else _DEFAULT_SECTION_ORDER
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars)
+    return _assemble_user_prompt(sections, order, template_vars, overrides)

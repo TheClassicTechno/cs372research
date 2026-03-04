@@ -686,34 +686,36 @@ class DebateLogger:
 
         Returns a string with two parts:
         1. Fixed diagnostic scaffold (instructions for the diagnosing LLM)
-        2. Raw debate data in plaintext sections (SECTION 0-10)
+        2. Structured debate data in three layers: SIGNAL / PROMPT / TRACE
         """
         sep = "=" * 80
 
         sections = [
-            f"\n{sep}\nPART 2 — RAW DEBATE DATA\n{sep}\n",
+            f"\n{sep}\nPART 2 — STRUCTURED DEBATE DATA\n{sep}\n",
+            # --- SIGNAL LAYER (most important for diagnosis) ---
             f"\n{sep}\nSECTION 0 — META\n{sep}\n\n"
             + self._section_meta(state, pid_phase_data, terminated_early),
-            f"\n{sep}\nSECTION 1 — TASK STATEMENT\n{sep}\n\n"
+            f"\n{sep}\nSECTION 1 — TASK\n{sep}\n\n"
             + self._section_task_statement(enriched_context),
             f"\n{sep}\nSECTION 2 — SHARED INVESTMENT MEMO\n{sep}\n\n"
             + self._section_memo(enriched_context),
-            f"\n{sep}\nSECTION 3 — EVIDENCE COVERAGE MAP\n{sep}\n\n"
-            + self._section_evidence_map(enriched_context),
-            f"\n{sep}\nSECTION 4 — PROPOSAL PROMPTS (VERBATIM)\n{sep}\n\n"
-            + self._section_proposal_prompts(state, enriched_context),
-            f"\n{sep}\nSECTION 5 — PROPOSAL OUTPUTS (ROUND 1)\n{sep}\n\n"
-            + self._section_proposal_outputs(state),
-            f"\n{sep}\nSECTION 6 — ROUND ALLOCATION HISTORY\n{sep}\n\n"
-            + self._section_allocation_history(state),
-            f"\n{sep}\nSECTION 7 — CRIT METRICS (RAW)\n{sep}\n\n"
-            + self._section_crit_metrics(pid_phase_data),
-            f"\n{sep}\nSECTION 8 — PID METRICS (RAW)\n{sep}\n\n"
-            + self._section_pid_metrics(pid_phase_data),
-            f"\n{sep}\nSECTION 9 — DIVERGENCE METRICS (RAW)\n{sep}\n\n"
-            + self._section_divergence_metrics(pid_phase_data),
-            f"\n{sep}\nSECTION 10 — CRIT PROMPTS + RESPONSES (ROUND 1)\n{sep}\n\n"
-            + self._section_crit_data(crit_captures),
+            f"\n{sep}\nSECTION 3 — SHARED PROMPT CONTRACT\n{sep}\n\n"
+            + self._section_shared_contract(state),
+            # --- PROMPT LAYER ---
+            f"\n{sep}\nSECTION 4 — ROLE PROMPTS\n{sep}\n\n"
+            + self._section_role_prompts(state),
+            # --- SIGNAL LAYER (continued) ---
+            f"\n{sep}\nSECTION 5 — ROUND HISTORY\n{sep}\n\n"
+            + self._section_round_history(state),
+            f"\n{sep}\nSECTION 6 — REASONING QUALITY (CRIT)\n{sep}\n\n"
+            + self._section_crit_signal(pid_phase_data),
+            f"\n{sep}\nSECTION 7 — PID CONTROLLER\n{sep}\n\n"
+            + self._section_pid_signal(pid_phase_data),
+            f"\n{sep}\nSECTION 8 — DISAGREEMENT METRICS\n{sep}\n\n"
+            + self._section_disagreement_signal(pid_phase_data),
+            # --- TRACE LAYER ---
+            f"\n{sep}\nSECTION 9 — FULL PROPOSALS (ROUND 1 ONLY)\n{sep}\n\n"
+            + self._section_full_proposals_r1(state),
         ]
 
         return _DIAGNOSTIC_SCAFFOLD + "\n".join(sections) + "\n"
@@ -727,12 +729,14 @@ class DebateLogger:
         terminated_early: bool,
     ) -> str:
         obs = state.get("observation", {})
+        config = state.get("config", {})
         total_rounds = (
             len({d["round"] for d in pid_phase_data})
             if pid_phase_data
             else self._round_num
         )
         universe = obs.get("universe", [])
+        roles = config.get("roles", [r.value for r in self._config.roles])
         reason = "stable_convergence" if terminated_early else "max_rounds"
 
         lines = [
@@ -742,6 +746,7 @@ class DebateLogger:
             f"as_of_date: {obs.get('timestamp', '')}",
             f"investment_quarter: {obs.get('timestamp', '')}",
             f"universe: {', '.join(universe)}",
+            f"agents: [{' '.join(roles)}]",
             f"rounds_completed: {total_rounds}",
             f"termination_reason: {reason}",
         ]
@@ -771,76 +776,139 @@ class DebateLogger:
         ]
         return "\n".join(lines) + "\n"
 
-    def _section_evidence_map(self, enriched_context: str) -> str:
-        from eval.evidence import parse_memo_evidence
+    def _section_shared_contract(self, state: dict) -> str:
+        """Extract shared reasoning contract from agent prompts.
 
-        lookup = parse_memo_evidence(enriched_context)
-        if not lookup:
-            return "(no evidence IDs found in memo)\n"
-
-        # Group by ticker prefix
-        groups: dict[str, list[str]] = defaultdict(list)
-        for eid in sorted(lookup.keys()):
-            parts = eid.split("-", 1)
-            prefix = parts[0] if len(parts) == 2 else eid
-            suffix = parts[1] if len(parts) == 2 else eid
-            groups[prefix].append(suffix)
-
-        lines = []
-        # Ticker evidence first
-        for prefix in sorted(groups.keys()):
-            if prefix == "L1":
-                continue
-            lines.append(f"{prefix}: {' '.join(groups[prefix])}")
-
-        # Macro evidence
-        if "L1" in groups:
-            lines.append("")
-            lines.append("Macro evidence:")
-            for suffix in groups["L1"]:
-                lines.append(f"  [L1-{suffix}]")
-
-        return "\n".join(lines) + "\n"
-
-    def _section_proposal_prompts(self, state: dict, enriched_context: str) -> str:
+        Outputs the causal scaffolding, uncertainty disclosure, and trap
+        awareness text that is common across all agents.  Shown once here
+        instead of being duplicated inside every agent prompt dump.
+        """
+        # Extract scaffolding from the first proposal user prompt
         debate_turns = state.get("debate_turns", [])
-        parts = []
+        user_prompt = ""
+        for turn in debate_turns:
+            if turn.get("type") == "proposal" and turn.get("round", -1) == 0:
+                user_prompt = turn.get("raw_user_prompt", "") or ""
+                break
 
+        # Also check if system causal contract was used
+        sys_prompt = ""
+        for turn in debate_turns:
+            if turn.get("type") == "proposal" and turn.get("round", -1) == 0:
+                sys_prompt = turn.get("raw_system_prompt", "") or ""
+                break
+
+        parts: list[str] = []
+        parts.append(
+            "(This reasoning contract is shared across all agents.\n"
+            " It appears once here instead of being repeated per-agent.)\n"
+        )
+
+        # Extract system-level causal contract if present
+        try:
+            from ..prompts import SYSTEM_CAUSAL_CONTRACT
+            if SYSTEM_CAUSAL_CONTRACT and SYSTEM_CAUSAL_CONTRACT.strip()[:60] in sys_prompt:
+                parts.append("--- SYSTEM CAUSAL CONTRACT ---")
+                parts.append(SYSTEM_CAUSAL_CONTRACT.strip())
+                parts.append("")
+        except ImportError:
+            pass
+
+        # Extract user-prompt scaffolding blocks
+        _SCAFFOLDING_MARKERS = [
+            ("CAUSAL CLAIM REQUIREMENTS", "## Causal Claim", "## Mandatory Uncertainty"),
+            ("UNCERTAINTY DISCLOSURE", "## Mandatory Uncertainty", "## Causal Reasoning Traps"),
+            ("TRAP AWARENESS", "## Causal Reasoning Traps", None),
+        ]
+        for label, start_marker, end_marker in _SCAFFOLDING_MARKERS:
+            start_idx = user_prompt.find(start_marker)
+            if start_idx == -1:
+                continue
+            if end_marker:
+                end_idx = user_prompt.find(end_marker, start_idx)
+                if end_idx == -1:
+                    end_idx = len(user_prompt)
+            else:
+                # For the last block, find the next section boundary
+                end_idx = len(user_prompt)
+                for boundary in ["## Your Task", "Respond with valid JSON",
+                                 "## Financial Context", "Using the data above"]:
+                    bidx = user_prompt.find(boundary, start_idx + len(start_marker))
+                    if bidx != -1 and bidx < end_idx:
+                        end_idx = bidx
+            block = user_prompt[start_idx:end_idx].strip()
+            if block:
+                parts.append(f"--- {label} ---")
+                parts.append(block)
+                parts.append("")
+
+        if len(parts) <= 1:
+            # Fallback: load scaffolding from module files directly
+            try:
+                from ..prompts import CAUSAL_CLAIM_FORMAT, FORCED_UNCERTAINTY, TRAP_AWARENESS
+                if CAUSAL_CLAIM_FORMAT.strip():
+                    parts.append("--- CAUSAL CLAIM REQUIREMENTS ---")
+                    parts.append(CAUSAL_CLAIM_FORMAT.strip())
+                    parts.append("")
+                if FORCED_UNCERTAINTY.strip():
+                    parts.append("--- UNCERTAINTY DISCLOSURE ---")
+                    parts.append(FORCED_UNCERTAINTY.strip())
+                    parts.append("")
+                if TRAP_AWARENESS.strip():
+                    parts.append("--- TRAP AWARENESS ---")
+                    parts.append(TRAP_AWARENESS.strip())
+                    parts.append("")
+            except ImportError:
+                parts.append("(scaffolding modules not available)")
+
+        return "\n".join(parts) + "\n"
+
+    def _section_role_prompts(self, state: dict) -> str:
+        """Extract role-specific system prompts only (no shared contract).
+
+        Each agent's role identity is shown once.  The shared causal
+        contract and scaffolding are in Section 3 and not repeated here.
+        """
+        debate_turns = state.get("debate_turns", [])
+        parts: list[str] = []
+
+        # Collect unique role system prompts from round-0 proposals
+        seen_roles: set[str] = set()
         for turn in debate_turns:
             if turn.get("type") != "proposal" or turn.get("round", -1) != 0:
                 continue
             role = turn.get("role", "unknown")
+            if role in seen_roles:
+                continue
+            seen_roles.add(role)
+
             sys_prompt = turn.get("raw_system_prompt", "") or ""
-            usr_prompt = turn.get("raw_user_prompt", "") or ""
 
-            # Strip memo from user prompt
-            usr_prompt = _replace_memo_in_prompt(usr_prompt, enriched_context)
+            # Strip the system causal contract prefix if present
+            role_text = sys_prompt
+            try:
+                from ..prompts import SYSTEM_CAUSAL_CONTRACT
+                contract = SYSTEM_CAUSAL_CONTRACT.strip()
+                if contract and role_text.strip().startswith(contract[:60]):
+                    # Remove the contract block
+                    idx = role_text.find(contract)
+                    if idx != -1:
+                        role_text = role_text[idx + len(contract):].strip()
+            except ImportError:
+                pass
 
-            parts.append(
-                f"=== PROPOSAL PROMPT: {role.upper()} AGENT ===\n"
-                f"(Investment memo removed — see Section 2)\n\n"
-                f"--- SYSTEM PROMPT ---\n{sys_prompt}\n\n"
-                f"--- USER PROMPT ---\n{usr_prompt}\n"
-            )
+            parts.append(f"{role.upper()}\n")
+            parts.append(role_text.strip())
+            parts.append("")
 
-        return "\n".join(parts) if parts else "(no proposal turns found)\n"
+        if not parts:
+            return "(no proposal turns found — role prompts unavailable)\n"
 
-    def _section_proposal_outputs(self, state: dict) -> str:
-        debate_turns = state.get("debate_turns", [])
-        parts = []
+        parts.insert(0, "(Shared reasoning contract omitted — see Section 3)\n")
+        return "\n".join(parts) + "\n"
 
-        for turn in debate_turns:
-            if turn.get("type") != "proposal" or turn.get("round", -1) != 0:
-                continue
-            role = turn.get("role", "unknown")
-            raw = turn.get("raw_response", "") or ""
-            parts.append(
-                f"=== {role.upper()} PROPOSAL OUTPUT ===\n\n{raw}\n"
-            )
-
-        return "\n".join(parts) if parts else "(no proposal turns found)\n"
-
-    def _section_allocation_history(self, state: dict) -> str:
+    def _section_round_history(self, state: dict) -> str:
+        """Compact allocation vectors per agent per round."""
         debate_turns = state.get("debate_turns", [])
 
         # Group turns by round, keeping proposals and revisions
@@ -854,10 +922,11 @@ class DebateLogger:
         if not rounds:
             return "(no allocation data found)\n"
 
-        parts = []
+        parts: list[str] = []
         for r in sorted(rounds.keys()):
-            phase = "Proposals" if r == 0 else f"Revisions (round {r})"
-            parts.append(f"--- {phase} ---\n")
+            label = "ROUND 1" if r == 0 else f"ROUND {r + 1}"
+            parts.append(label)
+            parts.append("")
             for turn in rounds[r]:
                 role = turn.get("role", "unknown")
                 content = turn.get("content", {})
@@ -865,114 +934,153 @@ class DebateLogger:
                     content = {}
                 alloc = content.get("allocation", {})
                 if not alloc:
-                    parts.append(f"  {role.upper()}: (no allocation)\n")
+                    parts.append(f"{role}:\n(no allocation)\n")
                     continue
-                weights = "  ".join(
-                    f"{t}:{w:.1%}" for t, w in sorted(alloc.items(), key=lambda x: -x[1])
+                weights = " ".join(
+                    f"{t}={w:.2f}"
+                    for t, w in sorted(alloc.items(), key=lambda x: -x[1])
+                    if w > 0
                 )
-                parts.append(f"  {role.upper()}: {weights}\n")
+                parts.append(f"{role}:\n[{weights}]\n")
             parts.append("")
 
         return "\n".join(parts)
 
-    def _section_crit_metrics(self, pid_phase_data: list[dict]) -> str:
+    def _section_crit_signal(self, pid_phase_data: list[dict]) -> str:
+        """Compact CRIT signal: rho_bar table + final-round per-agent detail."""
         if not pid_phase_data:
             return "(no CRIT data — PID was not enabled)\n"
 
-        parts = []
+        parts: list[str] = []
+
+        # --- rho_bar table ---
+        parts.append(f"{'round':<8}{'rho_bar':<10}")
         for pd in pid_phase_data:
             r = pd.get("round", "?")
-            crit = pd.get("crit", {})
-            parts.append(f"--- Round {r} ---")
-            parts.append(f"  rho_bar: {crit.get('rho_bar')}")
+            rho = pd.get("crit", {}).get("rho_bar")
+            rho_str = f"{rho:.2f}" if isinstance(rho, (int, float)) else str(rho)
+            parts.append(f"{r:<8}{rho_str:<10}")
+        parts.append("")
 
-            rho_i = crit.get("rho_i", {})
-            if rho_i:
-                parts.append(f"  rho_i: {_fmt_dict(rho_i)}")
+        # --- Per-agent detail for the FINAL round only ---
+        last = pid_phase_data[-1]
+        agents = last.get("crit", {}).get("agents", {})
+        if agents:
+            parts.append(f"--- Final round ({last.get('round', '?')}) per-agent ---")
+            parts.append("")
 
-            agents = crit.get("agents", {})
-            for role, agent_data in sorted(agents.items()):
+            # Track weakest pillar across all agents
+            weakest_pillar = ""
+            weakest_score = 2.0
+
+            for role in sorted(agents.keys()):
+                agent_data = agents[role]
                 pillars = agent_data.get("pillars", {})
-                diags = agent_data.get("diagnostics", {})
-                parts.append(f"  {role}:")
-                parts.append(f"    pillars: IC={pillars.get('IC')}  ES={pillars.get('ES')}  TA={pillars.get('TA')}  CI={pillars.get('CI')}")
-                flags = [k for k, v in diags.items() if v]
-                parts.append(f"    diagnostics: {', '.join(flags) if flags else '(none)'}")
+                parts.append(role)
+                for abbr in ("IC", "ES", "TA", "CI"):
+                    val = pillars.get(abbr)
+                    val_str = f"{val:.1f}" if isinstance(val, (int, float)) else str(val)
+                    parts.append(f"{abbr} {val_str}")
+                    if isinstance(val, (int, float)) and val < weakest_score:
+                        weakest_score = val
+                        weakest_pillar = f"{role}/{abbr}"
+                parts.append("")
+
+                # Include explanations if present
                 explanations = agent_data.get("explanations", {})
                 if explanations:
-                    parts.append(f"    explanations:")
-                    for pillar_key, short_name in [("internal_consistency", "IC"), ("evidence_support", "ES"),
-                                                     ("trace_alignment", "TA"), ("causal_integrity", "CI")]:
-                        parts.append(f"      {short_name}: {explanations.get(pillar_key, 'N/A')}")
-            parts.append("")
+                    for pillar_key, short_name in [
+                        ("internal_consistency", "IC"),
+                        ("evidence_support", "ES"),
+                        ("trace_alignment", "TA"),
+                        ("causal_integrity", "CI"),
+                    ]:
+                        expl = explanations.get(pillar_key)
+                        if expl:
+                            parts.append(f"  {short_name}: {expl}")
+                    parts.append("")
+
+            if weakest_pillar:
+                parts.append(f"weakest_pillar: {weakest_pillar} ({weakest_score:.2f})")
+                parts.append("")
 
         return "\n".join(parts)
 
-    def _section_pid_metrics(self, pid_phase_data: list[dict]) -> str:
+    def _section_pid_signal(self, pid_phase_data: list[dict]) -> str:
+        """Compact PID signal: target_rho + beta table + controller params."""
         if not pid_phase_data:
             return "(no PID data — PID was not enabled)\n"
 
-        parts = []
+        parts: list[str] = []
+
+        # target_rho from config
+        rho_star = getattr(self._config, "pid_rho_star", None)
+        if rho_star is None and self._config.pid_config is not None:
+            rho_star = self._config.pid_config.rho_star
+        if rho_star is not None:
+            parts.append(f"target_rho: {rho_star}")
+            parts.append("")
+
+        # --- Beta table ---
+        parts.append(f"{'round':<8}{'beta':<10}")
         for pd in pid_phase_data:
             r = pd.get("round", "?")
-            pid = pd.get("pid", {})
-            parts.append(f"--- Round {r} ---")
-            parts.append(f"  beta_in: {pd.get('beta_in')}")
-            parts.append(f"  beta_out: {pid.get('beta_new')}")
-            parts.append(f"  e_t: {pid.get('e_t')}")
-            parts.append(f"  integral: {pid.get('integral')}")
-            parts.append(f"  p_term: {pid.get('p_term')}")
-            parts.append(f"  i_term: {pid.get('i_term')}")
-            parts.append(f"  d_term: {pid.get('d_term')}")
-            parts.append(f"  u_t: {pid.get('u_t')}")
-            parts.append(f"  quadrant: {pid.get('quadrant')}")
-            parts.append(f"  div_signal: {pid.get('div_signal')}")
-            parts.append(f"  qual_signal: {pid.get('qual_signal')}")
-            parts.append(f"  sycophancy: {pid.get('sycophancy')}")
+            beta = pd.get("pid", {}).get("beta_new", pd.get("beta_in"))
+            beta_str = f"{beta:.2f}" if isinstance(beta, (int, float)) else str(beta)
+            parts.append(f"{r:<8}{beta_str:<10}")
+        parts.append("")
+
+        # --- Controller parameters (compact) ---
+        if self._config.pid_config is not None:
+            gains = self._config.pid_config.gains
+            parts.append("controller_params:")
+            parts.append(f"  Kp={gains.Kp}  Ki={gains.Ki}  Kd={gains.Kd}")
             parts.append("")
 
         return "\n".join(parts)
 
-    def _section_divergence_metrics(self, pid_phase_data: list[dict]) -> str:
+    def _section_disagreement_signal(self, pid_phase_data: list[dict]) -> str:
+        """Compact disagreement tables: JS divergence + evidence overlap."""
         if not pid_phase_data:
             return "(no divergence data — PID was not enabled)\n"
 
-        parts = []
+        parts: list[str] = []
+
+        # --- JS divergence table ---
+        parts.append(f"{'round':<8}{'JS':<10}")
         for pd in pid_phase_data:
             r = pd.get("round", "?")
-            div = pd.get("divergence", {})
-            parts.append(f"--- Round {r} ---")
-            parts.append(f"  JS divergence: {div.get('js')}")
-            parts.append(f"  portfolio overlap: {div.get('ov')}")
+            js = pd.get("divergence", {}).get("js")
+            js_str = f"{js:.2f}" if isinstance(js, (int, float)) else str(js)
+            parts.append(f"{r:<8}{js_str:<10}")
+        parts.append("")
 
-            confs = div.get("agent_confidences", {})
-            if confs:
-                parts.append(f"  agent confidences: {_fmt_dict(confs)}")
+        # --- Evidence overlap table ---
+        parts.append(f"{'round':<8}{'overlap':<10}")
+        for pd in pid_phase_data:
+            r = pd.get("round", "?")
+            ov = pd.get("divergence", {}).get("ov")
+            ov_str = f"{ov:.2f}" if isinstance(ov, (int, float)) else str(ov)
+            parts.append(f"{r:<8}{ov_str:<10}")
+        parts.append("")
 
-            evidence = div.get("agent_evidence_ids", {})
-            if evidence:
-                parts.append("  agent evidence IDs:")
-                for role, ids in sorted(evidence.items()):
-                    id_list = ids if isinstance(ids, list) else list(ids)
-                    parts.append(f"    {role}: {', '.join(str(i) for i in id_list)}")
+        return "\n".join(parts)
+
+    def _section_full_proposals_r1(self, state: dict) -> str:
+        """Full proposal output for round 1 only — reasoning, claims, evidence."""
+        debate_turns = state.get("debate_turns", [])
+        parts: list[str] = []
+
+        for turn in debate_turns:
+            if turn.get("type") != "proposal" or turn.get("round", -1) != 0:
+                continue
+            role = turn.get("role", "unknown")
+            raw = turn.get("raw_response", "") or ""
+            parts.append(f"=== {role.upper()} ===\n")
+            parts.append(raw.strip())
             parts.append("")
 
-        return "\n".join(parts)
-
-    def _section_crit_data(self, crit_captures: dict[str, dict] | None) -> str:
-        if not crit_captures:
-            return "(no CRIT data captured — PID was not enabled)\n"
-
-        parts = []
-        for role in sorted(crit_captures.keys()):
-            cap = crit_captures[role]
-            parts.append(
-                f"=== CRIT: {role.upper()} AGENT ===\n\n"
-                f"--- SYSTEM PROMPT ---\n{cap['system_prompt']}\n\n"
-                f"--- USER PROMPT ---\n{cap['user_prompt']}\n\n"
-                f"--- RAW LLM RESPONSE ---\n{cap['raw_response']}\n"
-            )
-        return "\n".join(parts)
+        return "\n".join(parts) if parts else "(no proposal turns found)\n"
 
 
 # ------------------------------------------------------------------

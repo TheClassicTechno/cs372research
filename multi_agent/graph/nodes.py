@@ -19,6 +19,7 @@ from ..prompts import (
     build_proposal_user_prompt,
     build_revision_prompt,
     get_role_prompts,
+    resolve_prompt_profile,
 )
 from ..prompts.registry import resolve_beta, get_registry
 
@@ -105,11 +106,17 @@ def propose_node(state: DebateState) -> dict:
     for i, role in enumerate(roles):
         if not config.get("console_display"):
             print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
+
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         user_prompt = build_proposal_user_prompt(
             context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -117,7 +124,7 @@ def propose_node(state: DebateState) -> dict:
             beta=resolve_beta(config, "propose"),
             user_prompt=user_prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         role_system = build_result.system_prompt
@@ -208,10 +215,15 @@ def critique_node(state: DebateState) -> dict:
             print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -219,7 +231,7 @@ def critique_node(state: DebateState) -> dict:
             beta=resolve_beta(config, "critique"),
             user_prompt=prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         system_msg = build_result.system_prompt
@@ -306,11 +318,17 @@ def revise_node(state: DebateState) -> dict:
                     })
 
         use_cc = config.get("use_system_causal_contract", False)
+
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -318,7 +336,7 @@ def revise_node(state: DebateState) -> dict:
             beta=resolve_beta(config, "revise"),
             user_prompt=prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         system_msg = build_result.system_prompt
@@ -432,11 +450,17 @@ def make_propose_node(role: str):
             print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
 
         use_cc = config.get("use_system_causal_contract", False)
+
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         user_prompt = build_proposal_user_prompt(
             context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -444,7 +468,7 @@ def make_propose_node(role: str):
             beta=resolve_beta(config, "propose"),
             user_prompt=user_prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         role_system = build_result.system_prompt
@@ -547,10 +571,16 @@ def make_critique_node(role: str):
         my_proposal = json.dumps(p.get("action_dict", {}))
 
         use_cc = config.get("use_system_causal_contract", False)
+
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -558,7 +588,7 @@ def make_critique_node(role: str):
             beta=resolve_beta(config, "critique"),
             user_prompt=prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         system_msg = build_result.system_prompt
@@ -658,11 +688,17 @@ def make_revise_node(role: str):
                     })
 
         use_cc = config.get("use_system_causal_contract", False)
+
+        profile = resolve_prompt_profile(config, role)
+        system_blocks = profile.get("system_blocks")
+        user_secs = profile.get("user_sections")
+
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
+            user_sections=user_secs,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -670,7 +706,7 @@ def make_revise_node(role: str):
             beta=resolve_beta(config, "revise"),
             user_prompt=prompt,
             use_system_causal_contract=use_cc,
-            block_order=config.get("system_prompt_block_order"),
+            block_order=system_blocks or config.get("system_prompt_block_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
         )
         system_msg = build_result.system_prompt
@@ -774,11 +810,17 @@ def judge_node(state: DebateState) -> dict:
     ]
 
     use_cc = config.get("use_system_causal_contract", False)
+
+    profile = resolve_prompt_profile(config, "judge")
+    system_blocks = profile.get("system_blocks")
+    user_secs = profile.get("user_sections")
+
     prompt = build_judge_prompt(
         context, revisions_for_judge, critiques_text,
         use_system_causal_contract=use_cc,
         section_order=config.get("user_prompt_section_order"),
         prompt_file_overrides=config.get("prompt_file_overrides"),
+        user_sections=user_secs,
     )
     registry = get_registry(config)
     build_result = registry.build(
@@ -786,7 +828,7 @@ def judge_node(state: DebateState) -> dict:
         beta=resolve_beta(config, "judge"),
         user_prompt=prompt,
         use_system_causal_contract=use_cc,
-        block_order=config.get("system_prompt_block_order"),
+        block_order=system_blocks or config.get("system_prompt_block_order"),
         prompt_file_overrides=config.get("prompt_file_overrides"),
     )
     system_msg = build_result.system_prompt

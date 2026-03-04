@@ -1,0 +1,82 @@
+
+## Output Format
+Respond with valid JSON only (no markdown, no extra text).
+
+CRITICAL CONSTRAINT — ALLOWED TICKERS:
+You may ONLY allocate to the tickers listed in the "Allocation universe" above.
+Do NOT include any other tickers. Any ticker not in that list will be discarded.
+Your JSON "allocation" object must contain ONLY tickers from the allocation universe,
+and it must contain ALL of them (use 0.0 for tickers you do not want to hold).
+
+Example — if the universe is [AAPL, NVDA, MSFT, JPM, XOM]:
+{
+  "allocation": {"AAPL": 0.20, "NVDA": 0.20, "MSFT": 0.20, "JPM": 0.20, "XOM": 0.20},
+  "justification": "...",
+  "confidence": 0.75,
+  "risks_or_falsifiers": "...",
+  "claims": [...]
+}
+
+WRONG (ticker not in universe):
+{
+  "allocation": {"AAPL": 0.30, "NFLX": 0.30, "MSFT": 0.40}
+}
+^^^ NFLX is not in the universe — this is INVALID.
+
+Full JSON schema:
+{
+  "allocation": {"TICKER": 0.XX, ...for EVERY ticker in the universe},
+  "justification": "Your reasoning for this allocation",
+  "confidence": 0.0-1.0,
+  "risks_or_falsifiers": "What would change your mind (REQUIRED)",
+  "claims": [
+    {
+      "claim_text": "...",
+      "pearl_level": "L1"|"L2"|"L3",
+      "variables": ["X", "Y"],
+      "assumptions": ["..."],
+      "confidence": 0.0-1.0
+    }
+  ]
+}
+
+ALLOCATION RULES:
+- Include EVERY ticker from the allocation universe — no more, no fewer.
+- Weights must be between 0.0 and 0.20 (max 20% per ticker).
+- Weights MUST sum to 1.0 (fully invested, no cash reserve).
+- At least 5 tickers must have weight > 0.
+- A weight of 0.0 means you recommend zero allocation to that ticker.
+- Higher weight = stronger conviction in that ticker's risk-adjusted return.
+
+SECTOR DIVERSIFICATION RULE:
+- Your allocation MUST include non-zero weight in at least 5 different sectors.
+- The sectors represented in the universe are:
+    Tech:              AAPL, NVDA, MSFT, GOOG, AMZN, META
+    Financials:        JPM, GS, BAC
+    Healthcare:        UNH, LLY, JNJ
+    Energy:            XOM
+    Industrials:       CAT, DAL
+    Real Estate:       AMT
+    Consumer Staples:  COST, WMT
+    Consumer/Auto:     TSLA
+    Comm/Media:        NFLX
+- You may NOT concentrate entirely in one or two sectors.
+- If your allocation covers fewer than 5 sectors, add positions until it does.
+
+EVIDENCE CITATIONS:
+When making claims about specific data, you MUST cite the evidence ID
+from the memo in square brackets. For example:
+  "NVDA shows strong momentum [NVDA-MOM200] but elevated volatility [NVDA-VOL60]
+   in a rising rate environment [L1-10Y]."
+
+Available evidence ID categories:
+  [L1-*]         Macro metrics (e.g., [L1-FF], [L1-VIX], [L1-CPI])
+  [TICKER-PX]    Close price
+  [TICKER-RET*]  Returns (RET20, RET60, RET120, RET252)
+  [TICKER-VOL*]  Volatility (VOL20, VOL60)
+  [TICKER-BETA]  Beta, [TICKER-SHARPE] Sharpe ratio
+  [TICKER-F1..F6] Filing summary sections (Operations, Costs, Events, Macro, Outlook, Risks)
+  [TICKER-SENT]  Sentiment, [TICKER-CSZ] Cross-sectional Z
+  [TICKER-GM]    Gross margin, [TICKER-ROE] ROE, [TICKER-DE] Debt/Equity
+
+Cite ALL evidence you rely on. Uncited claims will be scored lower.

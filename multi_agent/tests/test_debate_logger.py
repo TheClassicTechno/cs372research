@@ -589,10 +589,10 @@ class TestFinalize:
         tmp_logger.finalize(state, [], False, "enriched memo content")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        for i in range(11):
+        for i in range(10):  # Sections 0-9
             assert f"SECTION {i}" in content, f"Missing SECTION {i}"
 
-    def test_diagnostic_has_proposal_prompts(
+    def test_diagnostic_has_role_prompts(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
@@ -601,13 +601,13 @@ class TestFinalize:
         state["debate_turns"] = [
             {
                 "role": "macro", "type": "proposal", "round": 0,
-                "raw_system_prompt": "sys macro prompt",
+                "raw_system_prompt": "You are a macro strategist.",
                 "raw_user_prompt": "usr macro prompt",
                 "raw_response": "resp macro",
             },
             {
                 "role": "value", "type": "proposal", "round": 0,
-                "raw_system_prompt": "sys value prompt",
+                "raw_system_prompt": "You are a value analyst.",
                 "raw_user_prompt": "usr value prompt",
                 "raw_response": "resp value",
             },
@@ -616,12 +616,16 @@ class TestFinalize:
         tmp_logger.finalize(state, [], False, "memo")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        assert "PROPOSAL PROMPT: MACRO AGENT" in content
-        assert "PROPOSAL PROMPT: VALUE AGENT" in content
-        assert "sys macro prompt" in content
-        assert "sys value prompt" in content
+        # Section 4 — ROLE PROMPTS should have role-specific system prompts
+        section4_start = content.find("SECTION 4")
+        section5_start = content.find("SECTION 5")
+        section4_text = content[section4_start:section5_start]
+        assert "MACRO" in section4_text
+        assert "VALUE" in section4_text
+        assert "You are a macro strategist." in section4_text
+        assert "You are a value analyst." in section4_text
 
-    def test_section7_has_explanations(
+    def test_section6_has_crit_explanations(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
@@ -668,51 +672,48 @@ class TestFinalize:
         tmp_logger.finalize(state, pid_phase_data, False, "memo")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        # Section 7 should contain explanation blocks
+        # Section 6 — REASONING QUALITY should have explanation lines
+        section6_start = content.find("SECTION 6")
         section7_start = content.find("SECTION 7")
-        section8_start = content.find("SECTION 8")
-        section7_text = content[section7_start:section8_start]
-        assert "explanations:" in section7_text
-        assert "IC: Agent maintains consistent thesis throughout." in section7_text
-        assert "ES: Two claims lack citation support." in section7_text
-        assert "TA: Allocation follows from stated thesis." in section7_text
-        assert "CI: Causal claims appropriately scoped." in section7_text
+        section6_text = content[section6_start:section7_start]
+        assert "IC: Agent maintains consistent thesis throughout." in section6_text
+        assert "ES: Two claims lack citation support." in section6_text
+        assert "TA: Allocation follows from stated thesis." in section6_text
+        assert "CI: Causal claims appropriately scoped." in section6_text
+        assert "weakest_pillar:" in section6_text
 
-    def test_section10_has_crit_data(
+    def test_section9_has_full_proposals_r1(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
         tmp_logger.start_round(1, 0.5)
         state = self._make_state(sample_proposals, sample_revisions)
-
-        crit_captures = {
-            "macro": {
-                "system_prompt": "You are a blind reasoning auditor...",
-                "user_prompt": "Evaluate the following reasoning bundle...",
-                "raw_response": '{"pillar_scores": {"IC": 0.85}}',
+        state["debate_turns"] = [
+            {
+                "role": "macro", "type": "proposal", "round": 0,
+                "raw_system_prompt": "sys",
+                "raw_user_prompt": "usr",
+                "raw_response": "Full macro reasoning output here",
             },
-            "value": {
-                "system_prompt": "You are a blind reasoning auditor...",
-                "user_prompt": "Evaluate the following value bundle...",
-                "raw_response": '{"pillar_scores": {"IC": 0.80}}',
+            {
+                "role": "value", "type": "proposal", "round": 0,
+                "raw_system_prompt": "sys",
+                "raw_user_prompt": "usr",
+                "raw_response": "Full value reasoning output here",
             },
-        }
+        ]
 
-        tmp_logger.finalize(state, [], False, "memo", crit_captures=crit_captures)
+        tmp_logger.finalize(state, [], False, "memo")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        section10_start = content.find("SECTION 10")
-        assert section10_start != -1, "Missing SECTION 10"
-        section10_text = content[section10_start:]
-        assert "=== CRIT: MACRO AGENT ===" in section10_text
-        assert "=== CRIT: VALUE AGENT ===" in section10_text
-        assert "--- SYSTEM PROMPT ---" in section10_text
-        assert "--- USER PROMPT ---" in section10_text
-        assert "--- RAW LLM RESPONSE ---" in section10_text
-        assert "You are a blind reasoning auditor..." in section10_text
-        assert '{"pillar_scores": {"IC": 0.85}}' in section10_text
+        section9_start = content.find("SECTION 9")
+        section9_text = content[section9_start:]
+        assert "=== MACRO ===" in section9_text
+        assert "=== VALUE ===" in section9_text
+        assert "Full macro reasoning output here" in section9_text
+        assert "Full value reasoning output here" in section9_text
 
-    def test_section10_empty_when_no_captures(
+    def test_section9_empty_when_no_proposals(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
@@ -722,10 +723,36 @@ class TestFinalize:
         tmp_logger.finalize(state, [], False, "memo")
 
         content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        section10_start = content.find("SECTION 10")
-        assert section10_start != -1
-        section10_text = content[section10_start:]
-        assert "(no CRIT data captured" in section10_text
+        section9_start = content.find("SECTION 9")
+        section9_text = content[section9_start:]
+        assert "(no proposal turns found)" in section9_text
+
+    def test_diagnostic_meta_has_agents_field(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        section0_start = content.find("SECTION 0")
+        section1_start = content.find("SECTION 1")
+        section0_text = content[section0_start:section1_start]
+        assert "agents:" in section0_text
+
+    def test_diagnostic_has_shared_prompt_contract(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        assert "SHARED PROMPT CONTRACT" in content
 
 
 # ---------------------------------------------------------------------------
@@ -778,48 +805,6 @@ class TestMemoPlaceholder:
         prompt = "Some prompt text"
         result = _replace_memo_in_prompt(prompt, "short")
         assert result == prompt
-
-    def test_diagnostic_proposal_prompts_have_placeholder(
-        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
-    ):
-        memo = "x" * 200  # Long enough to trigger replacement
-        tmp_logger.init_run("d", sample_observation, memo)
-        tmp_logger.start_round(1, 0.5)
-
-        state = {
-            "observation": sample_observation,
-            "proposals": sample_proposals,
-            "revisions": sample_revisions,
-            "critiques": [],
-            "debate_turns": [
-                {
-                    "role": "macro", "type": "proposal", "round": 0,
-                    "raw_system_prompt": "system",
-                    "raw_user_prompt": f"Before\n[INFO] QUARTERLY SNAPSHOT MEMO\n{memo}\nUsing the data above, do stuff",
-                    "raw_response": "response",
-                },
-                {
-                    "role": "value", "type": "proposal", "round": 0,
-                    "raw_system_prompt": "system",
-                    "raw_user_prompt": f"Before\n[INFO] QUARTERLY SNAPSHOT MEMO\n{memo}\nUsing the data above, do stuff",
-                    "raw_response": "response",
-                },
-            ],
-            "final_action": {"allocation": {}, "justification": "", "confidence": 0.5},
-            "strongest_objection": "",
-        }
-
-        tmp_logger.finalize(state, [], False, memo)
-
-        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
-        # Memo placeholder should appear in Section 4 (proposal prompts)
-        assert "<<MEMO CONTENT INSERTED HERE>>" in content
-        # The raw memo should NOT appear in Section 4 prompts
-        # (it only appears in Section 2)
-        section4_start = content.find("SECTION 4")
-        section5_start = content.find("SECTION 5")
-        section4_text = content[section4_start:section5_start]
-        assert memo not in section4_text
 
     def test_diagnostic_memo_appears_once_in_section2(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,

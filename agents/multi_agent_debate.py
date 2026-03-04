@@ -144,7 +144,13 @@ class DebateAgentSystem(AgentSystem):
             parallel_agents=config.parallel_agents,
             no_rate_limit=config.no_rate_limit,
             llm_stagger_ms=config.llm_stagger_ms,
+            max_concurrent_llm=config.max_concurrent_llm,
             console_display=config.console_display,
+            prompt_file_overrides=config.prompt_file_overrides or {},
+            prompt_profile=config.prompt_profile,
+            role_overrides=config.role_overrides or {},
+            crit_system_template=config.crit_system_template,
+            crit_user_template=config.crit_user_template,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

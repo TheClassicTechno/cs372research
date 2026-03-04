@@ -33,6 +33,22 @@ _LLM_STAGGER_LOCK = threading.Lock()
 _LLM_LAST_CALL: float = 0.0
 _DEFAULT_STAGGER_MS: int = 500
 
+# Concurrency semaphore — limits how many LLM calls run in parallel.
+# Set via config["max_concurrent_llm"]. 0 = unlimited (default).
+_LLM_SEMAPHORE: threading.Semaphore | None = None
+_LLM_SEMAPHORE_SIZE: int = 0
+
+
+def _get_semaphore(max_concurrent: int) -> threading.Semaphore | None:
+    """Get or create the LLM concurrency semaphore."""
+    global _LLM_SEMAPHORE, _LLM_SEMAPHORE_SIZE
+    if max_concurrent <= 0:
+        return None
+    if _LLM_SEMAPHORE is None or _LLM_SEMAPHORE_SIZE != max_concurrent:
+        _LLM_SEMAPHORE = threading.Semaphore(max_concurrent)
+        _LLM_SEMAPHORE_SIZE = max_concurrent
+    return _LLM_SEMAPHORE
+
 
 def _stagger_wait(stagger_ms: int) -> None:
     """Wait until at least ``stagger_ms`` since the last LLM call start.
@@ -148,14 +164,21 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
     max_retries = 6
     stagger_ms = 0 if config.get("no_rate_limit", False) else config.get("llm_stagger_ms", _DEFAULT_STAGGER_MS)
+    sem = _get_semaphore(config.get("max_concurrent_llm", 0))
     for attempt in range(max_retries):
         try:
             if stagger_ms > 0:
                 _stagger_wait(stagger_ms)
-            response = llm.invoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt),
-            ])
+            if sem is not None:
+                sem.acquire()
+            try:
+                response = llm.invoke([
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ])
+            finally:
+                if sem is not None:
+                    sem.release()
             return response.content
         except Exception as e:
             wait = _retry_wait(e, attempt)

@@ -77,6 +77,11 @@ class AgentConfig(BaseModel):
         description="Milliseconds between parallel LLM call starts. "
         "Default 200ms spreads 4 calls over 600ms to avoid 429 bursts.",
     )
+    max_concurrent_llm: int = Field(
+        default=0,
+        ge=0,
+        description="Max concurrent LLM calls. 0 = unlimited.",
+    )
 
     log_system_prompts: bool = Field(
         default=False,
@@ -200,6 +205,28 @@ class AgentConfig(BaseModel):
         description="Override which .txt file to load for a given block/section name. "
         "Keys: 'causal_contract', 'role_<rolename>', 'proposal_template', etc. "
         "Values: filename relative to multi_agent/prompts/ directory.",
+    )
+
+    # --- Prompt profile (per-agent prompt composition) ---
+    prompt_profile: str = Field(
+        default="",
+        description="Prompt profile name (e.g. 'default', 'minimal'). "
+        "Empty string uses existing defaults (backward compatible).",
+    )
+    role_overrides: dict | None = Field(
+        default=None,
+        description="Per-role prompt profile overrides. Keys are role names, "
+        "values are dicts with 'system_blocks' and/or 'user_sections' lists.",
+    )
+
+    # --- CRIT template configurability ---
+    crit_system_template: str = Field(
+        default="crit_system.jinja",
+        description="CRIT system prompt template filename (in eval/crit/prompts/).",
+    )
+    crit_user_template: str = Field(
+        default="crit_user.jinja",
+        description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
 

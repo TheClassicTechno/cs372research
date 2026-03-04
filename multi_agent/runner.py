@@ -312,6 +312,8 @@ class MultiAgentRunner:
 
             self._crit_scorer = CritScorer(
                 llm_fn=_logging_llm_fn, capture_fn=_crit_capture,
+                crit_system_template=self.config.crit_system_template,
+                crit_user_template=self.config.crit_user_template,
             )
 
         # --- CRIT prompt/response capture ---

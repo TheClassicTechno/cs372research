@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import AgentRole
-from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts
+from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts, load_module
 
 logger = logging.getLogger("prompt.build")
 
@@ -357,10 +357,18 @@ class PromptRegistry:
                     tone_file = override_file
 
         # --- Assemble in specified order, skipping unavailable blocks ---
+        # Special blocks are resolved by the logic above; if absent from
+        # `available`, they were intentionally excluded (e.g. causal_contract
+        # when use_system_causal_contract=False).  Do NOT fall back to
+        # MODULE_CATALOG for these.
+        _SPECIAL_BLOCKS = {"causal_contract", "role_system", "phase_preamble", "tone", "judge_system"}
         blocks_used = []
         parts = []
         for block_name in order:
             content = available.get(block_name)
+            if content is None and block_name not in _SPECIAL_BLOCKS:
+                # Try MODULE_CATALOG for explicit module names (e.g. role_macro_slim)
+                content = load_module(block_name, overrides)
             if content:
                 parts.append(content)
                 blocks_used.append(block_name)
