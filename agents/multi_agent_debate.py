@@ -151,6 +151,7 @@ class DebateAgentSystem(AgentSystem):
             role_overrides=config.role_overrides or {},
             crit_system_template=config.crit_system_template,
             crit_user_template=config.crit_user_template,
+            sector_config=config.sector_config,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

@@ -229,6 +229,27 @@ class AgentConfig(BaseModel):
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
+    # --- Sector constraints (populated from SimulationConfig, not set in YAML) ---
+    sector_config: dict | None = Field(
+        default=None,
+        description="Sector constraints forwarded from SimulationConfig. "
+        "Contains 'sectors', 'sector_limits', 'agent_sector_permissions'. "
+        "Not intended to be set directly in agent YAML configs.",
+    )
+
+
+class SectorLimit(BaseModel):
+    """Min/max exposure bound for a single sector."""
+
+    min: float = Field(default=0.0, ge=0.0, le=1.0, description="Minimum sector exposure.")
+    max: float = Field(default=1.0, ge=0.0, le=1.0, description="Maximum sector exposure.")
+
+    @model_validator(mode="after")
+    def _min_le_max(self) -> SectorLimit:
+        if self.min > self.max:
+            raise ValueError(f"Sector limit min ({self.min}) > max ({self.max})")
+        return self
+
 
 class AllocationConstraints(BaseModel):
     """Constraints on portfolio allocation weights (memo mode)."""
@@ -316,6 +337,107 @@ class SimulationConfig(BaseModel):
         default_factory=AllocationConstraints,
         description="Allocation weight constraints (memo mode only).",
     )
+
+    # --- Sector configuration (optional) ---
+    sectors: dict[str, list[str]] | None = Field(
+        default=None,
+        description="Mapping of sector name to list of tickers. "
+        "If provided, every ticker must belong to exactly one sector.",
+    )
+    sector_limits: dict[str, SectorLimit] | None = Field(
+        default=None,
+        description="Per-sector min/max exposure limits. "
+        "Requires 'sectors' to be defined.",
+    )
+    agent_sector_permissions: dict[str, list[str]] | None = Field(
+        default=None,
+        description="Per-role allowed sectors. Use ['*'] for all sectors. "
+        "Requires 'sectors' to be defined.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_sectors(self) -> SimulationConfig:
+        """Validate sector configuration and pack into agent.sector_config."""
+        if self.sectors is None:
+            if self.sector_limits is not None:
+                raise ValueError("sector_limits requires 'sectors' to be defined.")
+            if self.agent_sector_permissions is not None:
+                raise ValueError("agent_sector_permissions requires 'sectors' to be defined.")
+            return self
+
+        # Every ticker must be in exactly one sector
+        ticker_to_sector: dict[str, str] = {}
+        for sector, tickers in self.sectors.items():
+            for t in tickers:
+                if t in ticker_to_sector:
+                    raise ValueError(
+                        f"Ticker {t} appears in multiple sectors: "
+                        f"'{ticker_to_sector[t]}' and '{sector}'"
+                    )
+                ticker_to_sector[t] = sector
+
+        # All config tickers must appear in sector map
+        missing = [t for t in self.tickers if t not in ticker_to_sector]
+        if missing:
+            raise ValueError(f"Tickers missing from sector mapping: {missing}")
+
+        # All sector tickers must be in config tickers
+        config_tickers = set(self.tickers)
+        for sector, tickers in self.sectors.items():
+            unknown = [t for t in tickers if t not in config_tickers]
+            if unknown:
+                raise ValueError(
+                    f"Sector '{sector}' references unknown tickers: {unknown}"
+                )
+
+        # Validate sector_limits
+        if self.sector_limits is not None:
+            valid_sectors = set(self.sectors.keys())
+            for sector_name in self.sector_limits:
+                if sector_name not in valid_sectors:
+                    raise ValueError(
+                        f"sector_limits references unknown sector: '{sector_name}'"
+                    )
+            min_sum = sum(sl.min for sl in self.sector_limits.values())
+            if min_sum > 1.0 + 1e-8:
+                raise ValueError(
+                    f"Sector min limits sum to {min_sum:.2f} > 1.0 — infeasible"
+                )
+            max_sum = sum(sl.max for sl in self.sector_limits.values())
+            if max_sum < 1.0 - 1e-8:
+                raise ValueError(
+                    f"Sector max limits sum to {max_sum:.2f} < 1.0 — "
+                    f"cannot reach fully invested"
+                )
+
+        # Validate agent_sector_permissions
+        valid_roles = {"macro", "value", "risk", "technical", "sentiment", "devils_advocate"}
+        if self.agent_sector_permissions is not None:
+            valid_sectors = set(self.sectors.keys())
+            for role, allowed in self.agent_sector_permissions.items():
+                if role not in valid_roles:
+                    raise ValueError(
+                        f"agent_sector_permissions references unknown role: '{role}'"
+                    )
+                if isinstance(allowed, list) and allowed != ["*"]:
+                    for s in allowed:
+                        if s not in valid_sectors:
+                            raise ValueError(
+                                f"Role '{role}' references unknown sector: '{s}'"
+                            )
+
+        # Pack into agent.sector_config for the debate system
+        self.agent.sector_config = {
+            "sectors": self.sectors,
+            "sector_limits": (
+                {k: v.model_dump() for k, v in self.sector_limits.items()}
+                if self.sector_limits
+                else None
+            ),
+            "agent_sector_permissions": self.agent_sector_permissions,
+        }
+
+        return self
 
     @model_validator(mode="after")
     def _validate_memo_mode(self) -> SimulationConfig:

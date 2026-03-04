@@ -60,9 +60,10 @@ def _mock_crit_llm_per_role(role_scores: dict[str, tuple]):
         responses[role] = json.dumps(_make_crit_entry(ic, es, ta, ci))
 
     def _llm(sys_prompt: str, usr_prompt: str) -> str:
-        # Extract agent_role from the user prompt (rendered by Jinja)
+        # Match the agent role from the "## Agent Under Evaluation" section.
+        # The template renders {{ agent_role | upper }} on its own line.
         for role in role_scores:
-            if role in usr_prompt.lower():
+            if f"\n{role.upper()}\n" in usr_prompt:
                 return responses[role]
         # Fallback: return first entry
         return next(iter(responses.values()))

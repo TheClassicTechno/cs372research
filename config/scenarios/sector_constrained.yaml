@@ -1,0 +1,104 @@
+# ============================================================================
+# Scenario: Sector-Constrained Broad Universe
+# ============================================================================
+# Demonstrates sector configuration features:
+#   - Ticker → sector mapping
+#   - Per-sector exposure limits (min/max)
+#   - Role-specific sector permissions (agent investment restrictions)
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/sector_constrained.yaml
+
+invest_quarter: "2025Q1"
+
+tickers:
+  - AAPL    # Tech
+  - NVDA    # Tech
+  - XOM     # Energy
+  - CVX     # Energy
+  - JPM     # Financials
+  - BAC     # Financials
+  - WMT     # Defensive
+  - COST    # Defensive
+  - AMZN    # Consumer
+  - TSLA    # Consumer
+  - UNH     # Healthcare
+  - CAT     # Industrials
+  - DAL     # Industrials
+
+# Sector definitions: every ticker belongs to exactly one sector.
+sectors:
+  tech:
+    - AAPL
+    - NVDA
+  energy:
+    - XOM
+    - CVX
+  financials:
+    - JPM
+    - BAC
+  defensive:
+    - WMT
+    - COST
+  consumer:
+    - AMZN
+    - TSLA
+  healthcare:
+    - UNH
+  industrials:
+    - CAT
+    - DAL
+
+# Per-sector exposure bounds enforced on the final (judge) allocation.
+# Sectors without entries here are unconstrained.
+sector_limits:
+  tech:
+    min: 0.10
+    max: 0.35
+  energy:
+    min: 0.05
+    max: 0.25
+  financials:
+    min: 0.05
+    max: 0.25
+  defensive:
+    min: 0.05
+    max: 0.25
+  consumer:
+    min: 0.05
+    max: 0.25
+  healthcare:
+    min: 0.05
+    max: 0.20
+  industrials:
+    min: 0.05
+    max: 0.20
+
+# Role-specific sector permissions.
+# Each agent role can only allocate to its allowed sectors.
+# Use ["*"] to allow all sectors.
+agent_sector_permissions:
+  macro:
+    - energy
+    - financials
+    - industrials
+    - tech
+  value:
+    - financials
+    - industrials
+    - consumer
+    - tech
+  technical:
+    - "*"
+  risk:
+    - defensive
+    - healthcare
+    - financials
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 20

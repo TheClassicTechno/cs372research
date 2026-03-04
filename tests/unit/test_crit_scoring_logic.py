@@ -75,8 +75,10 @@ def _make_scorer_per_role(role_scores: dict[str, dict]) -> CritScorer:
     }
 
     def _llm(sys_prompt: str, usr_prompt: str) -> str:
+        # Match the agent role from the "## Agent Under Evaluation" section.
+        # The template renders {{ agent_role | upper }} on its own line.
         for role in role_scores:
-            if role in usr_prompt.lower():
+            if f"\n{role.upper()}\n" in usr_prompt:
                 return responses[role]
         return next(iter(responses.values()))
 

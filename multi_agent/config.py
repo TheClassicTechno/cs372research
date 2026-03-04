@@ -165,6 +165,9 @@ class DebateConfig:
     crit_system_template: str = "crit_system.jinja"
     crit_user_template: str = "crit_user.jinja"
 
+    # --- Sector constraints (optional, forwarded from SimulationConfig) ---
+    sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -247,4 +250,5 @@ class DebateConfig:
             "role_overrides": self.role_overrides,
             "crit_system_template": self.crit_system_template,
             "crit_user_template": self.crit_user_template,
+            "sector_config": self.sector_config,
         }

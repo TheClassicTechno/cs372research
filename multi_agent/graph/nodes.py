@@ -24,6 +24,11 @@ from ..prompts import (
 from ..prompts.registry import resolve_beta, get_registry
 
 from .allocation import normalize_allocation
+from .sector_constraints import (
+    build_sector_map,
+    enforce_sector_limits,
+    filter_allocation_by_permissions,
+)
 from .display import (
     _print_allocation,
     _print_critique_summary,
@@ -53,6 +58,43 @@ def _call_llm_with_lifecycle(config: dict, system_prompt: str, user_prompt: str,
     finally:
         end_fn(call_id, result)
     return result
+
+
+def _apply_sector_permissions(
+    raw_alloc: dict[str, float],
+    role: str,
+    config: dict,
+) -> dict[str, float]:
+    """Filter raw allocation by role's sector permissions (if configured).
+
+    Returns the allocation unchanged if no sector config or permissions are set.
+    """
+    sector_cfg = config.get("sector_config")
+    if not sector_cfg:
+        return raw_alloc
+    permissions = sector_cfg.get("agent_sector_permissions")
+    if not permissions:
+        return raw_alloc
+    sector_map = build_sector_map(sector_cfg["sectors"])
+    return filter_allocation_by_permissions(raw_alloc, role, sector_map, permissions)
+
+
+def _apply_sector_limits(
+    alloc: dict[str, float],
+    config: dict,
+) -> dict[str, float]:
+    """Enforce sector exposure limits on a normalized allocation (if configured).
+
+    Returns the allocation unchanged if no sector config or limits are set.
+    """
+    sector_cfg = config.get("sector_config")
+    if not sector_cfg:
+        return alloc
+    limits = sector_cfg.get("sector_limits")
+    if not limits:
+        return alloc
+    sector_map = build_sector_map(sector_cfg["sectors"])
+    return enforce_sector_limits(alloc, sector_map, limits)
 
 
 # =============================================================================
@@ -144,6 +186,7 @@ def propose_node(state: DebateState) -> dict:
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", {})
+        raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
         action_dict = {
             "allocation": normalize_allocation(raw_alloc, universe),
             "justification": result.get("justification", ""),
@@ -355,6 +398,7 @@ def revise_node(state: DebateState) -> dict:
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
+        raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
         action_dict = {
             "allocation": normalize_allocation(raw_alloc, universe),
             "justification": result.get("justification", ""),
@@ -488,6 +532,7 @@ def make_propose_node(role: str):
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", {})
+        raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
         action_dict = {
             "allocation": normalize_allocation(raw_alloc, universe),
             "justification": result.get("justification", ""),
@@ -725,6 +770,7 @@ def make_revise_node(role: str):
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
+        raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
         action_dict = {
             "allocation": normalize_allocation(raw_alloc, universe),
             "justification": result.get("justification", ""),
@@ -852,8 +898,10 @@ def judge_node(state: DebateState) -> dict:
     obs = state["observation"]
     universe = obs.get("universe", [])
     raw_alloc = result.get("allocation", {})
+    alloc = normalize_allocation(raw_alloc, universe)
+    alloc = _apply_sector_limits(alloc, config)
     final_action = {
-        "allocation": normalize_allocation(raw_alloc, universe),
+        "allocation": alloc,
         "justification": result.get("audited_memo", result.get("justification", "")),
         "confidence": result.get("confidence", 0.5),
         "claims": result.get("claims", []),
