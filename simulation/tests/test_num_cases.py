@@ -162,7 +162,7 @@ def test_cli_rejects_num_cases_flag():
     """The --num-cases flag should no longer be accepted."""
     from run_simulation import _parse_args
 
-    with patch("sys.argv", ["run_simulation.py", "--config", "test.yaml", "--num-cases", "5"]):
+    with patch("sys.argv", ["run_simulation.py", "--agents", "test.yaml", "--num-cases", "5"]):
         with pytest.raises(SystemExit):
             _parse_args()
 
@@ -171,13 +171,13 @@ def test_cli_rejects_ticker_flag():
     """The --ticker flag should no longer be accepted."""
     from run_simulation import _parse_args
 
-    with patch("sys.argv", ["run_simulation.py", "--config", "test.yaml", "--ticker", "NVDA"]):
+    with patch("sys.argv", ["run_simulation.py", "--agents", "test.yaml", "--ticker", "NVDA"]):
         with pytest.raises(SystemExit):
             _parse_args()
 
 
 # =============================================================================
-# TEST 6: CLI still accepts --config, --output-dir, --list-tickers, --log-level
+# TEST 6: CLI still accepts --agents, --output-dir, --list-tickers, --log-level
 # =============================================================================
 
 
@@ -187,13 +187,13 @@ def test_cli_accepts_remaining_flags():
 
     with patch("sys.argv", [
         "run_simulation.py",
-        "--config", "test.yaml",
+        "--agents", "test.yaml",
         "--output-dir", "out",
         "--log-level", "ERROR",
     ]):
         args = _parse_args()
 
-    assert args.config == "test.yaml"
+    assert args.agents == "test.yaml"
     assert args.output_dir == "out"
     assert args.log_level == "ERROR"
     assert args.list_tickers is False

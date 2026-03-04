@@ -2,7 +2,7 @@
 # PID Tuning Experiment 4: Full PID (all three terms)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/pid_tune_full_pid.yaml
+#   python run_simulation.py --agents config/pid_tune_full_pid.yaml
 #
 # Kp=0.15, Ki=0.01, Kd=0.03: full PID with derivative damping.
 # Ki=0.01, Kd=0.03 chosen to pass stability check (T_max=20, mu=1.0).
@@ -43,9 +43,6 @@ agent:
 
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 broker:
   initial_cash: 100000.0

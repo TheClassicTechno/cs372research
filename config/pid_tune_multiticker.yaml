@@ -2,10 +2,10 @@
 # PID Tuning Experiment 5: Multi-ticker (test gain generalization)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/pid_tune_multiticker.yaml
+#   python run_simulation.py --agents config/pid_tune_multiticker.yaml
 #
 # Uses Full PID (best config from single-ticker experiments) across 4 tickers
-# to see if gains generalize beyond NVDA. Tests diverse sectors:
+# to see if gains generalize beyond NVDA. Tests agents sectors:
 #   NVDA (tech/semiconductors), KO (consumer staples),
 #   BAC (financials), CVX (energy)
 
@@ -50,9 +50,6 @@ agent:
 
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 broker:
   initial_cash: 100000.0

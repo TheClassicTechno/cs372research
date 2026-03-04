@@ -95,7 +95,7 @@ Analyze the following:
    - Are the evidence heuristics too similar across roles?
 
 4. Over-constrained causal scaffolding
-   - Are the prompts heavily structured in a way that restricts diverse reasoning paths?
+   - Are the prompts heavily structured in a way that restricts agents reasoning paths?
    - Do the prompts implicitly guide all agents toward similar conclusions?
 
 5. Role collapse risk
@@ -196,7 +196,7 @@ Analyze how evidence was used in the debate.
 
 Determine:
 
-1. Whether agents relied on diverse evidence.
+1. Whether agents relied on agents evidence.
 2. Whether a small number of evidence items dominated reasoning.
 3. Whether claims were grounded in cited evidence.
 

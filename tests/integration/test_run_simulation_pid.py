@@ -1,7 +1,7 @@
 """End-to-end integration test: run_simulation → disk output with PID events.
 
 Tests the complete simulation pipeline — the same path executed by
-``python run_simulation.py --config <yaml>``:
+``python run_simulation.py --agents <yaml>``:
 
     YAML config on disk
         → SimulationConfig.from_yaml()
@@ -179,7 +179,7 @@ def no_pid_config_path(simulation_dir):
 def _run_simulation(config_path: str, output_dir: str) -> Path:
     """Run the full simulation pipeline and return the run output directory.
 
-    This is the same path as ``python run_simulation.py --config <yaml>``.
+    This is the same path as ``python run_simulation.py --agents <yaml>``.
     """
     config = SimulationConfig.from_yaml(config_path)
     runner = AsyncSimulationRunner(

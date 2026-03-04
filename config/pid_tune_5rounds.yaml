@@ -2,7 +2,7 @@
 # PID Tuning Experiment 6: 5 rounds (test Ki accumulation)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/pid_tune_5rounds.yaml
+#   python run_simulation.py --agents config/pid_tune_5rounds.yaml
 #
 # Same Full PID gains but with max_rounds=5 instead of 3.
 # With more rounds, Ki has more time to accumulate past errors.
@@ -47,9 +47,6 @@ agent:
 
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 broker:
   initial_cash: 100000.0

@@ -2,7 +2,7 @@
 # Debate Agent Simulation — PID-Enabled Mock Mode
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/debate_pid_mock.yaml
+#   python run_simulation.py --agents config/debate_pid_mock.yaml
 #
 # Tests the full PID pipeline (adapter → DebateConfig → PIDController)
 # in mock mode (no API calls). CRIT scorer will log warnings because
@@ -46,9 +46,6 @@ agent:
   # Logging — enable to see PID metrics in output
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 # --------------------------------------------------------------------------
 # Broker Configuration

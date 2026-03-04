@@ -54,22 +54,26 @@ Example configs::
 Example commands
 ----------------
 # Run with default config (single LLM agent, NVDA only, 1 episode):
-    python run_simulation.py --config config/example.yaml
+    python run_simulation.py --agents config/example.yaml
 
 # Run the multi-agent debate (4 specialists + judge, real API calls):
-    python run_simulation.py --config config/debate.yaml
+    python run_simulation.py --agents config/debate.yaml
 
 # Run the debate in mock mode (no API calls, deterministic):
-    python run_simulation.py --config config/debate_mock.yaml
+    python run_simulation.py --agents config/debate_mock.yaml
 
 # List all available tickers in the dataset:
-    python run_simulation.py --config config/example.yaml --list-tickers
+    python run_simulation.py --agents config/example.yaml --list-tickers
 
 # Save results to a custom directory:
-    python run_simulation.py --config config/debate.yaml --output-dir results/experiment_1
+    python run_simulation.py --agents config/debate.yaml --output-dir results/experiment_1
+
+# Override tickers/constraints with a scenario file:
+    python run_simulation.py --agents config/agents/debate_diverse_agents.yaml \
+        --scenario config/scenarios/financials_heavy.yaml
 
 # Quiet mode — only show errors:
-    python run_simulation.py --config config/debate.yaml --log-level ERROR
+    python run_simulation.py --agents config/debate.yaml --log-level ERROR
 """
 
 from __future__ import annotations
@@ -77,8 +81,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import subprocess
 import sys
+from pathlib import Path
 
+import yaml
 from dotenv import load_dotenv
 
 from models.config import SimulationConfig
@@ -93,10 +100,17 @@ def _parse_args() -> argparse.Namespace:
         description="Run a multi-agent trading simulation.",
     )
     parser.add_argument(
-        "--config",
+        "--agents",
         required=True,
         type=str,
-        help="Path to the YAML configuration file.",
+        help="Path to the agent YAML configuration file (roles, prompts, PID, logging).",
+    )
+    parser.add_argument(
+        "--scenario",
+        default=None,
+        type=str,
+        help="Path to a scenario YAML file (tickers, invest_quarter, "
+        "allocation_constraints, etc.). Scenario values override the base config.",
     )
     parser.add_argument(
         "--output-dir",
@@ -158,6 +172,17 @@ def _parse_args() -> argparse.Namespace:
         "Uses minimal plain-text output instead.",
     )
     return parser.parse_args()
+
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Recursively merge *override* into *base* (override wins)."""
+    merged = base.copy()
+    for key, val in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(val, dict):
+            merged[key] = _deep_merge(merged[key], val)
+        else:
+            merged[key] = val
+    return merged
 
 
 def _setup_logging(level: str) -> None:
@@ -260,9 +285,23 @@ async def _main() -> None:
     _setup_logging(args.log_level)
 
     logger = logging.getLogger(__name__)
-    logger.info("Loading config from '%s'...", args.config)
+    logger.info("Loading agent config from '%s'...", args.agents)
 
-    config = SimulationConfig.from_yaml(args.config)
+    # --- Load base config, optionally merge scenario overrides ---
+    if args.scenario:
+        scenario_path = Path(args.scenario)
+        if not scenario_path.exists():
+            logger.error("Scenario file not found: %s", scenario_path)
+            sys.exit(1)
+        with open(args.agents, encoding="utf-8") as fh:
+            base_raw = yaml.safe_load(fh) or {}
+        with scenario_path.open(encoding="utf-8") as fh:
+            scenario_raw = yaml.safe_load(fh) or {}
+        merged_raw = _deep_merge(base_raw, scenario_raw)
+        logger.info("Merged scenario '%s' into base config", args.scenario)
+        config = SimulationConfig(**merged_raw)
+    else:
+        config = SimulationConfig.from_yaml(args.agents)
 
     # --logging-mode: override debate logging mode from CLI.
     if args.logging_mode is not None:
@@ -303,9 +342,23 @@ async def _main() -> None:
 
     logger.info("Config loaded: agent='%s'", config.agent.agent_system)
 
+    # --- Auto-generate snapshot data if using memo pipeline ---
+    if "final_snapshots" in config.dataset_path:
+        logger.info("Auto-generating snapshots for %s (%d tickers)...",
+                     config.invest_quarter, len(config.tickers))
+        subprocess.run(
+            [
+                sys.executable,
+                str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
+                "--tickers", ",".join(config.tickers),
+                "--invest-quarter", config.invest_quarter,
+            ],
+            check=True,
+        )
+
     runner = AsyncSimulationRunner(
         config,
-        config_yaml_path=args.config,
+        config_yaml_path=args.agents,
         output_dir=args.output_dir,
     )
     await runner.run()

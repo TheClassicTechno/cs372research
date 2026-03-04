@@ -2,7 +2,7 @@
 # Debate Agent Simulation — Memo Allocation + PID Controller (7 rounds)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/debate_memo_pid.yaml
+#   python run_simulation.py --agents config/debate_memo_pid.yaml
 
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
@@ -57,9 +57,6 @@ agent:
   # Logging — see PID metrics and rendered prompts
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
   log_rendered_prompts: false
   log_prompt_manifest: true
 

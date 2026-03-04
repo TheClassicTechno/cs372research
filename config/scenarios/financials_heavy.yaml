@@ -1,0 +1,24 @@
+# ============================================================================
+# Scenario: Financials-Heavy Universe
+# ============================================================================
+# Concentrated financials universe for testing sector-specific debate dynamics.
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/financials_heavy.yaml
+
+invest_quarter: "2025Q1"
+
+tickers:
+  - JPM     # Financials
+  - GS      # Financials
+  - BAC     # Financials
+  - UNH     # Healthcare
+  - XOM     # Energy
+
+allocation_constraints:
+  max_weight: 0.30
+  min_holdings: 3
+  fully_invested: true
+  max_tickers: 10
