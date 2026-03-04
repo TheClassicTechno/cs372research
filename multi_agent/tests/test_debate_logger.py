@@ -1,0 +1,642 @@
+"""Tests for multi_agent.debate_logger.DebateLogger.
+
+Covers directory structure, artifact writing, mode gating, finalization,
+and diagnostic artifact generation.
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import pytest
+
+from multi_agent.debate_logger import DebateLogger, _replace_memo_in_prompt, _build_allocation_top3
+
+
+# ---------------------------------------------------------------------------
+# Minimal stub config (mirrors DebateConfig fields DebateLogger reads)
+# ---------------------------------------------------------------------------
+
+class _StubRole:
+    def __init__(self, v: str):
+        self.value = v
+
+
+@dataclass
+class _StubPIDGains:
+    Kp: float = 0.15
+    Ki: float = 0.01
+    Kd: float = 0.03
+
+
+@dataclass
+class _StubPIDConfig:
+    gains: _StubPIDGains = field(default_factory=_StubPIDGains)
+    rho_star: float = 0.8
+    gamma_beta: float = 0.5
+    epsilon: float = 0.001
+    T_max: int = 10
+    mu: float = 0.5
+    delta_s: float = 0.1
+    delta_js: float = 0.1
+    delta_beta: float = 0.05
+
+
+@dataclass
+class _StubConfig:
+    logging_mode: str = "standard"
+    model_name: str = "gpt-4o-mini"
+    temperature: float = 0.3
+    roles: list = field(default_factory=lambda: [_StubRole("macro"), _StubRole("value")])
+    max_rounds: int = 3
+    agreeableness: float = 0.3
+    initial_beta: float = 0.5
+    parallel_agents: bool = True
+    pid_config: _StubPIDConfig | None = None
+    pid_enabled: bool = False
+    convergence_window: int = 2
+    delta_rho: float = 0.02
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def tmp_logger(tmp_path, monkeypatch):
+    """Create a DebateLogger writing to a tmp directory."""
+    monkeypatch.chdir(tmp_path)
+    config = _StubConfig()
+    return DebateLogger(config, "test_experiment")
+
+
+@pytest.fixture
+def tmp_debug_logger(tmp_path, monkeypatch):
+    """Create a DebateLogger in debug mode."""
+    monkeypatch.chdir(tmp_path)
+    config = _StubConfig(logging_mode="debug")
+    return DebateLogger(config, "test_experiment")
+
+
+@pytest.fixture
+def tmp_off_logger(tmp_path, monkeypatch):
+    """Create a DebateLogger in off mode."""
+    monkeypatch.chdir(tmp_path)
+    config = _StubConfig(logging_mode="off")
+    return DebateLogger(config, "test_experiment")
+
+
+@pytest.fixture
+def sample_observation():
+    return {"universe": ["AAPL", "NVDA", "MSFT"], "timestamp": "2025Q1"}
+
+
+@pytest.fixture
+def sample_proposals():
+    return [
+        {
+            "role": "macro",
+            "action_dict": {
+                "allocation": {"AAPL": 0.3, "NVDA": 0.4, "MSFT": 0.3},
+                "justification": "Macro thesis: tech momentum",
+                "confidence": 0.75,
+            },
+            "raw_response": "Full macro reasoning text here...",
+        },
+        {
+            "role": "value",
+            "action_dict": {
+                "allocation": {"AAPL": 0.4, "NVDA": 0.2, "MSFT": 0.4},
+                "justification": "Value thesis: AAPL undervalued",
+                "confidence": 0.68,
+            },
+            "raw_response": "Full value reasoning text here...",
+        },
+    ]
+
+
+@pytest.fixture
+def sample_critiques():
+    return [
+        {
+            "role": "macro",
+            "critiques": [
+                {"target_role": "value", "objection": "Over-concentrated in AAPL"},
+            ],
+            "self_critique": "My macro thesis might be too bullish",
+        },
+        {
+            "role": "value",
+            "critiques": [
+                {"target_role": "macro", "objection": "Ignoring valuation metrics"},
+            ],
+            "self_critique": "",
+        },
+    ]
+
+
+@pytest.fixture
+def sample_revisions():
+    return [
+        {
+            "role": "macro",
+            "action_dict": {
+                "allocation": {"AAPL": 0.35, "NVDA": 0.35, "MSFT": 0.3},
+                "justification": "Revised macro thesis",
+                "confidence": 0.80,
+            },
+            "raw_response": "Revised macro reasoning...",
+            "revision_notes": "Incorporated value feedback",
+        },
+        {
+            "role": "value",
+            "action_dict": {
+                "allocation": {"AAPL": 0.35, "NVDA": 0.25, "MSFT": 0.4},
+                "justification": "Revised value thesis",
+                "confidence": 0.72,
+            },
+            "raw_response": "Revised value reasoning...",
+            "revision_notes": "Diversified away from AAPL",
+        },
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Tests: init_run and directory structure
+# ---------------------------------------------------------------------------
+
+class TestInitRun:
+    def test_creates_directory_tree(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("debate-123", sample_observation, "memo content here")
+        run_dir = tmp_logger.run_dir
+
+        assert run_dir.exists()
+        assert (run_dir / "shared_context").is_dir()
+        assert (run_dir / "rounds").is_dir()
+        assert (run_dir / "final").is_dir()
+        assert (run_dir / "manifest.json").exists()
+        assert (run_dir / "shared_context" / "memo.txt").exists()
+
+    def test_manifest_has_required_fields(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("debate-123", sample_observation, "memo")
+        manifest = json.loads((tmp_logger.run_dir / "manifest.json").read_text())
+
+        assert manifest["experiment_name"] == "test_experiment"
+        assert manifest["debate_id"] == "debate-123"
+        assert manifest["started_at"] is not None
+        assert manifest["completed_at"] is None  # Not finalized yet
+        assert manifest["ticker_universe"] == ["AAPL", "NVDA", "MSFT"]
+        assert manifest["model_name"] == "gpt-4o-mini"
+        assert manifest["logging_mode"] == "standard"
+
+    def test_manifest_uses_ticker_universe_field(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("debate-123", sample_observation, "memo")
+        manifest = json.loads((tmp_logger.run_dir / "manifest.json").read_text())
+        assert "ticker_universe" in manifest
+        assert "universe" not in manifest
+
+    def test_writes_memo(self, tmp_logger, sample_observation):
+        memo = "This is the full enriched context memo..."
+        tmp_logger.init_run("debate-123", sample_observation, memo)
+        memo_path = tmp_logger.run_dir / "shared_context" / "memo.txt"
+        assert memo_path.read_text() == memo
+
+    def test_writes_pid_config_when_enabled(self, tmp_path, monkeypatch, sample_observation):
+        monkeypatch.chdir(tmp_path)
+        pid_cfg = _StubPIDConfig()
+        config = _StubConfig(pid_config=pid_cfg, pid_enabled=True)
+        logger = DebateLogger(config, "test_pid")
+        logger.init_run("debate-pid", sample_observation, "memo")
+
+        pid_path = logger.run_dir / "pid_config.json"
+        assert pid_path.exists()
+        data = json.loads(pid_path.read_text())
+        assert data["Kp"] == 0.15
+        assert data["Ki"] == 0.01
+        assert data["rho_star"] == 0.8
+
+    def test_no_pid_config_when_disabled(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("debate-123", sample_observation, "memo")
+        pid_path = tmp_logger.run_dir / "pid_config.json"
+        assert not pid_path.exists()
+
+    def test_off_mode_writes_nothing(self, tmp_off_logger, sample_observation):
+        tmp_off_logger.init_run("debate-123", sample_observation, "memo")
+        # run_dir path is set but nothing should be created
+        assert not tmp_off_logger.run_dir.exists()
+
+
+# ---------------------------------------------------------------------------
+# Tests: per-round artifacts
+# ---------------------------------------------------------------------------
+
+class TestRoundArtifacts:
+    def test_round_dir_three_digit_padding(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        assert (tmp_logger.run_dir / "rounds" / "round_001").is_dir()
+
+        tmp_logger.start_round(10, 0.4)
+        assert (tmp_logger.run_dir / "rounds" / "round_010").is_dir()
+
+        tmp_logger.start_round(100, 0.3)
+        assert (tmp_logger.run_dir / "rounds" / "round_100").is_dir()
+
+    def test_start_round_creates_subdirs(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        round_dir = tmp_logger.run_dir / "rounds" / "round_001"
+        assert (round_dir / "proposals").is_dir()
+        assert (round_dir / "critiques").is_dir()
+        assert (round_dir / "revisions").is_dir()
+        assert (round_dir / "metrics").is_dir()
+
+    def test_write_proposals_creates_per_agent_dirs(
+        self, tmp_logger, sample_observation, sample_proposals,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_proposals(sample_proposals)
+
+        round_dir = tmp_logger.run_dir / "rounds" / "round_001"
+        macro_dir = round_dir / "proposals" / "macro"
+        value_dir = round_dir / "proposals" / "value"
+
+        assert macro_dir.is_dir()
+        assert value_dir.is_dir()
+        assert (macro_dir / "response.txt").exists()
+        assert (macro_dir / "portfolio.json").exists()
+        assert (value_dir / "response.txt").exists()
+        assert (value_dir / "portfolio.json").exists()
+
+    def test_proposal_response_is_plain_text(
+        self, tmp_logger, sample_observation, sample_proposals,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_proposals(sample_proposals)
+
+        response = (tmp_logger.run_dir / "rounds" / "round_001" / "proposals" / "macro" / "response.txt").read_text()
+        assert response == "Full macro reasoning text here..."
+
+    def test_proposal_portfolio_is_json(
+        self, tmp_logger, sample_observation, sample_proposals,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_proposals(sample_proposals)
+
+        portfolio = json.loads(
+            (tmp_logger.run_dir / "rounds" / "round_001" / "proposals" / "macro" / "portfolio.json").read_text()
+        )
+        assert portfolio == {"AAPL": 0.3, "NVDA": 0.4, "MSFT": 0.3}
+
+    def test_write_critiques_creates_per_agent_json(
+        self, tmp_logger, sample_observation, sample_critiques,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_critiques(sample_critiques)
+
+        macro_resp = json.loads(
+            (tmp_logger.run_dir / "rounds" / "round_001" / "critiques" / "macro" / "response.json").read_text()
+        )
+        assert "critiques" in macro_resp
+        assert len(macro_resp["critiques"]) == 1
+        assert macro_resp["critiques"][0]["target_role"] == "value"
+        assert macro_resp["self_critique"] == "My macro thesis might be too bullish"
+
+    def test_write_revisions_creates_per_agent_dirs(
+        self, tmp_logger, sample_observation, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_revisions(sample_revisions)
+
+        round_dir = tmp_logger.run_dir / "rounds" / "round_001"
+        macro_dir = round_dir / "revisions" / "macro"
+        assert (macro_dir / "response.txt").exists()
+        assert (macro_dir / "portfolio.json").exists()
+
+        portfolio = json.loads((macro_dir / "portfolio.json").read_text())
+        assert portfolio["AAPL"] == 0.35
+
+    def test_round_state_json_has_required_fields(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+
+        state = {"proposals": sample_proposals, "revisions": sample_revisions}
+        metrics = {"rho_bar": 0.81, "js_divergence": 0.12}
+        tmp_logger.write_round_state(state, 1, metrics)
+
+        round_state = json.loads(
+            (tmp_logger.run_dir / "rounds" / "round_001" / "round_state.json").read_text()
+        )
+        assert round_state["round"] == 1
+        assert round_state["beta"] == 0.5
+        assert "proposals" in round_state
+        assert "revisions" in round_state
+        assert "metrics" in round_state
+        assert round_state["metrics"]["rho_bar"] == 0.81
+
+
+# ---------------------------------------------------------------------------
+# Tests: prompt capture (debug vs standard)
+# ---------------------------------------------------------------------------
+
+class TestPromptCapture:
+    def test_debug_mode_writes_prompts(
+        self, tmp_debug_logger, sample_observation,
+    ):
+        tmp_debug_logger.init_run("d", sample_observation, "m")
+        tmp_debug_logger.start_round(1, 0.5)
+        tmp_debug_logger.write_prompt(
+            "proposals", "macro", "System prompt here", "User prompt here",
+        )
+
+        prompt_path = (
+            tmp_debug_logger.run_dir / "rounds" / "round_001"
+            / "proposals" / "macro" / "prompt.txt"
+        )
+        assert prompt_path.exists()
+        content = prompt_path.read_text()
+        assert "=== SYSTEM PROMPT ===" in content
+        assert "System prompt here" in content
+        assert "=== USER PROMPT ===" in content
+        assert "User prompt here" in content
+
+    def test_standard_mode_skips_prompts(
+        self, tmp_logger, sample_observation,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_prompt(
+            "proposals", "macro", "System prompt", "User prompt",
+        )
+
+        prompt_path = (
+            tmp_logger.run_dir / "rounds" / "round_001"
+            / "proposals" / "macro" / "prompt.txt"
+        )
+        assert not prompt_path.exists()
+
+
+# ---------------------------------------------------------------------------
+# Tests: finalize
+# ---------------------------------------------------------------------------
+
+class TestFinalize:
+    def _make_state(self, proposals, revisions):
+        return {
+            "observation": {"universe": ["AAPL", "NVDA", "MSFT"], "timestamp": "2025Q1"},
+            "proposals": proposals,
+            "revisions": revisions,
+            "critiques": [],
+            "debate_turns": [],
+            "final_action": {
+                "allocation": {"AAPL": 0.3, "NVDA": 0.35, "MSFT": 0.35},
+                "justification": "Balanced allocation based on debate consensus",
+                "confidence": 0.75,
+            },
+            "strongest_objection": "NVDA concentration risk",
+        }
+
+    def test_finalize_updates_manifest(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        manifest = json.loads((tmp_logger.run_dir / "manifest.json").read_text())
+        assert manifest["completed_at"] is not None
+        assert manifest["terminated_early"] is False
+        assert manifest["termination_reason"] == "max_rounds"
+
+    def test_finalize_writes_final_portfolio(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        portfolio = json.loads(
+            (tmp_logger.run_dir / "final" / "final_portfolio.json").read_text()
+        )
+        assert portfolio["AAPL"] == 0.3
+        assert portfolio["NVDA"] == 0.35
+
+    def test_finalize_writes_judge_response(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+        state["debate_turns"] = [
+            {"type": "judge_decision", "raw_response": "Judge full reasoning here..."},
+        ]
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        judge_path = tmp_logger.run_dir / "final" / "judge_response.txt"
+        assert judge_path.exists()
+        assert judge_path.read_text() == "Judge full reasoning here..."
+
+    def test_finalize_no_judge_response_when_no_judge_turn(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        judge_path = tmp_logger.run_dir / "final" / "judge_response.txt"
+        assert not judge_path.exists()
+
+    def test_finalize_writes_diagnostic(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "enriched memo content")
+
+        diag = json.loads(
+            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
+        )
+        assert "meta" in diag
+        assert "memo_excerpt" in diag
+        assert "context_samples" in diag
+        assert "round_summaries" in diag
+        assert "disagreement_diagnostics" in diag
+        assert "final_decision" in diag
+
+    def test_diagnostic_has_two_agent_context_samples(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+        # Add debate_turns for context samples
+        state["debate_turns"] = [
+            {
+                "role": "macro", "type": "proposal", "round": 0,
+                "raw_system_prompt": "sys macro", "raw_user_prompt": "usr macro",
+                "raw_response": "resp macro",
+            },
+            {
+                "role": "value", "type": "proposal", "round": 0,
+                "raw_system_prompt": "sys value", "raw_user_prompt": "usr value",
+                "raw_response": "resp value",
+            },
+        ]
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        diag = json.loads(
+            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
+        )
+        samples = diag["context_samples"]
+        assert "agent_example_1" in samples
+        assert "agent_example_2" in samples
+        assert samples["agent_example_1"]["role"] == "macro"
+        assert samples["agent_example_2"]["role"] == "value"
+
+
+# ---------------------------------------------------------------------------
+# Tests: crash safety — partial rounds preserved
+# ---------------------------------------------------------------------------
+
+class TestCrashSafety:
+    def test_partial_rounds_preserved(
+        self, tmp_logger, sample_observation, sample_proposals,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+
+        # Round 1 — complete
+        tmp_logger.start_round(1, 0.5)
+        tmp_logger.write_proposals(sample_proposals)
+
+        # Round 2 — started but not finished (simulating crash)
+        tmp_logger.start_round(2, 0.4)
+
+        # Verify round 1 artifacts survive
+        round1 = tmp_logger.run_dir / "rounds" / "round_001"
+        assert (round1 / "proposals" / "macro" / "response.txt").exists()
+        assert (round1 / "proposals" / "macro" / "portfolio.json").exists()
+
+        # Round 2 dir exists but has no proposals
+        round2 = tmp_logger.run_dir / "rounds" / "round_002"
+        assert round2.is_dir()
+        assert not (round2 / "proposals" / "macro").exists()
+
+
+# ---------------------------------------------------------------------------
+# Tests: memo placeholder in diagnostic
+# ---------------------------------------------------------------------------
+
+class TestMemoPlaceholder:
+    def test_replace_memo_with_marker(self):
+        memo = "x" * 200  # Must be >= 100 chars to trigger replacement
+        prompt = f"Before\n[INFO] QUARTERLY SNAPSHOT MEMO\n{memo}\nUsing the data above, analyze..."
+        result = _replace_memo_in_prompt(prompt, memo)
+        assert "<<MEMO CONTENT INSERTED HERE>>" in result
+        assert memo not in result
+        assert "Using the data above" in result
+
+    def test_no_marker_returns_unchanged(self):
+        prompt = "No memo marker present in this prompt"
+        result = _replace_memo_in_prompt(prompt, "short")
+        assert result == prompt
+
+    def test_short_context_returns_unchanged(self):
+        prompt = "Some prompt text"
+        result = _replace_memo_in_prompt(prompt, "short")
+        assert result == prompt
+
+    def test_diagnostic_context_samples_have_placeholder(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        memo = "x" * 200  # Long enough to trigger replacement
+        tmp_logger.init_run("d", sample_observation, memo)
+        tmp_logger.start_round(1, 0.5)
+
+        state = {
+            "observation": sample_observation,
+            "proposals": sample_proposals,
+            "revisions": sample_revisions,
+            "critiques": [],
+            "debate_turns": [
+                {
+                    "role": "macro", "type": "proposal", "round": 0,
+                    "raw_system_prompt": "system",
+                    "raw_user_prompt": f"Before\n[INFO] QUARTERLY SNAPSHOT MEMO\n{memo}\nUsing the data above, do stuff",
+                    "raw_response": "response",
+                },
+                {
+                    "role": "value", "type": "proposal", "round": 0,
+                    "raw_system_prompt": "system",
+                    "raw_user_prompt": f"Before\n[INFO] QUARTERLY SNAPSHOT MEMO\n{memo}\nUsing the data above, do stuff",
+                    "raw_response": "response",
+                },
+            ],
+            "final_action": {"allocation": {}, "justification": "", "confidence": 0.5},
+            "strongest_objection": "",
+        }
+
+        tmp_logger.finalize(state, [], False, memo)
+
+        diag = json.loads(
+            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
+        )
+        # Check that memo was replaced in at least one context sample prompt
+        sample1 = diag["context_samples"]["agent_example_1"]
+        assert "<<MEMO CONTENT INSERTED HERE>>" in sample1["proposal_prompt_full"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: helper functions
+# ---------------------------------------------------------------------------
+
+class TestHelpers:
+    def test_build_allocation_top3(self):
+        alloc = {"NVDA": 0.25, "AAPL": 0.15, "MSFT": 0.35, "TSLA": 0.10, "JPM": 0.15}
+        result = _build_allocation_top3(alloc)
+        # Top 3 by weight: MSFT:35%, NVDA:25%, AAPL or JPM:15%
+        assert "MSFT:35%" in result
+        assert "NVDA:25%" in result
+
+    def test_build_allocation_top3_empty(self):
+        assert _build_allocation_top3({}) == ""
+
+    def test_build_allocation_top3_fewer_than_3(self):
+        alloc = {"AAPL": 0.6, "NVDA": 0.4}
+        result = _build_allocation_top3(alloc)
+        assert "AAPL:60%" in result
+        assert "NVDA:40%" in result
+
+
+# ---------------------------------------------------------------------------
+# Tests: prompt manifest
+# ---------------------------------------------------------------------------
+
+class TestPromptManifest:
+    def test_writes_prompt_manifest(self, tmp_logger, sample_observation):
+        tmp_logger.init_run("d", sample_observation, "m")
+        manifest = {"block_order": ["causal_contract", "role_system"], "role_files": {}}
+        tmp_logger.write_prompt_manifest(manifest)
+
+        path = tmp_logger.run_dir / "prompt_manifest.json"
+        assert path.exists()
+        data = json.loads(path.read_text())
+        assert data["block_order"] == ["causal_contract", "role_system"]

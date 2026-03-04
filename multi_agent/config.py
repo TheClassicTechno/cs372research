@@ -131,6 +131,10 @@ class DebateConfig:
     # --- System-level causal contract ---
     use_system_causal_contract: bool = False
 
+    # --- Structured debate logging ---
+    logging_mode: str = "off"  # "standard" | "debug" | "off"
+    experiment_name: str | None = None  # defaults to config filename stem
+
     # --- Prompt block/section ordering (for ablation experiments) ---
     system_prompt_block_order: list[str] = field(
         default_factory=lambda: ["causal_contract", "role_system", "phase_preamble", "tone"]
@@ -214,6 +218,7 @@ class DebateConfig:
             "delta_rho": self.delta_rho,
             "allocation_mode": True,
             "skip_pipeline": True,
+            "logging_mode": self.logging_mode,
             "use_system_causal_contract": self.use_system_causal_contract,
             "system_prompt_block_order": self.system_prompt_block_order,
             "user_prompt_section_order": self.user_prompt_section_order,

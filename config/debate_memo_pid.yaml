@@ -51,6 +51,9 @@ agent:
   # System-level causal contract (consolidates causal scaffolding)
   use_system_causal_contract: true
 
+  # Structured debate logging
+  logging_mode: "standard"
+
   # Logging — see PID metrics and rendered prompts
   pid_log_metrics: true
   pid_log_llm_calls: false

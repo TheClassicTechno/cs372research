@@ -143,6 +143,18 @@ class AgentConfig(BaseModel):
         "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
     )
 
+    # --- Structured debate logging ---
+    logging_mode: str = Field(
+        default="off",
+        description="Debate logging mode: 'standard' (artifacts only), "
+        "'debug' (artifacts + prompts), 'off' (disabled).",
+    )
+    experiment_name: str | None = Field(
+        default=None,
+        description="Experiment name for logging directory. "
+        "Defaults to config filename stem if not set.",
+    )
+
     # --- System-level causal contract ---
     use_system_causal_contract: bool = Field(
         default=False,

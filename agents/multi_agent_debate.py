@@ -139,6 +139,8 @@ class DebateAgentSystem(AgentSystem):
             log_prompt_manifest=config.log_prompt_manifest,
             prompt_logging=config.prompt_logging,
             use_system_causal_contract=config.use_system_causal_contract,
+            logging_mode=config.logging_mode,
+            experiment_name=config.experiment_name,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

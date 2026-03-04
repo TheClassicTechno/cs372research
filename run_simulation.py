@@ -125,6 +125,13 @@ def _parse_args() -> argparse.Namespace:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging verbosity (default: INFO).",
     )
+    parser.add_argument(
+        "--logging-mode",
+        default=None,
+        choices=["standard", "debug", "off"],
+        help="Override debate logging mode from config. "
+        "'standard' writes artifacts only, 'debug' adds prompt files, 'off' disables.",
+    )
     return parser.parse_args()
 
 
@@ -231,6 +238,11 @@ async def _main() -> None:
     logger.info("Loading config from '%s'...", args.config)
 
     config = SimulationConfig.from_yaml(args.config)
+
+    # --logging-mode: override debate logging mode from CLI.
+    if args.logging_mode is not None:
+        config.agent.logging_mode = args.logging_mode
+        logger.info("Logging mode overridden to '%s'", args.logging_mode)
 
     # --list-tickers: print configured tickers and exit (no simulation).
     if args.list_tickers:

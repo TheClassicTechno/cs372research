@@ -306,6 +306,13 @@ class MultiAgentRunner:
         self._original_agreeableness = self.config.agreeableness
         self._memo_evidence_lookup: dict[str, str] = {}
 
+        # --- Structured debate logger ---
+        self._debate_logger = None
+        if self.config.logging_mode != "off":
+            from .debate_logger import DebateLogger
+            experiment = self.config.experiment_name or "default"
+            self._debate_logger = DebateLogger(self.config, experiment)
+
         if self.config.pid_config:
             from eval.PID.controller import PIDController
             from eval.PID.stability import validate_gains
@@ -436,6 +443,17 @@ class MultiAgentRunner:
                 state.get("enriched_context", "")
             )
 
+        # Initialize structured debate logger
+        if self._debate_logger:
+            self._debate_logger.init_run(
+                self._debate_id,
+                state.get("observation", {}),
+                state.get("enriched_context", ""),
+            )
+            # Set prompt capture callback for debug mode
+            if self.config.logging_mode == "debug":
+                state["config"]["_prompt_capture"] = self._debate_logger.write_prompt
+
         # Phase 2: Debate rounds
         terminated_early = False
         for t in range(self.config.max_rounds):
@@ -444,6 +462,11 @@ class MultiAgentRunner:
             # Prompt manifest: log file names once at round start
             if state["config"].get("log_prompt_manifest"):
                 self._log_prompt_manifest(state, t + 1)
+
+            # Write prompt manifest to structured log (first round only)
+            if t == 0 and self._debate_logger:
+                manifest = build_prompt_manifest(state["config"])
+                self._debate_logger.write_prompt_manifest(manifest)
 
             # Reset critiques so operator.add (parallel graph) doesn't
             # accumulate across rounds.  Harmless for the sequential graph
@@ -488,6 +511,14 @@ class MultiAgentRunner:
         # Phase 3: Judge + trace
         state = self.finalize_graph.invoke(state)
 
+        # Finalize structured debate log
+        if self._debate_logger:
+            self._debate_logger.finalize(
+                state, self._pid_phase_data, terminated_early,
+                state.get("enriched_context", ""),
+            )
+            print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
+
         return state
 
     def _run_round_with_pid(self, state: dict, round_num: int) -> dict:
@@ -502,20 +533,33 @@ class MultiAgentRunner:
         """
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
 
+        # Start round in structured logger
+        if self._debate_logger:
+            self._debate_logger.start_round(round_num, beta)
+
         # --- Propose phase (no tone injection) ---
         state["config"]["agreeableness"] = self._original_agreeableness
         state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
+
+        if self._debate_logger:
+            self._debate_logger.write_proposals(state.get("proposals", []))
 
         # --- Critique phase (uses PID beta for tone) ---
         state["config"]["agreeableness"] = beta
         state["config"]["_current_beta"] = beta
         state = self._critique_graph.invoke(state)
 
+        if self._debate_logger:
+            self._debate_logger.write_critiques(state.get("critiques", []))
+
         # --- Revise phase (uses PID beta for tone) ---
         state["config"]["agreeableness"] = beta
         state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
+
+        if self._debate_logger:
+            self._debate_logger.write_revisions(state.get("revisions", []))
 
         # --- CRIT + PID (once per round, after revise) ---
         if self._pid_controller and self._crit_scorer:
@@ -610,17 +654,28 @@ class MultiAgentRunner:
         )
         self._pid_events.append(event)
 
+        # --- Structured debate logger: CRIT metrics ---
+        if self._debate_logger:
+            self._debate_logger.write_crit_metrics(round_crit, round_num)
+
+        # --- Compute agent confidences + evidence (used by both loggers) ---
+        agent_confidences = {}
+        for d in decisions:
+            role = d.get("role", "unknown")
+            agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
+
+        agent_evidence = {
+            role: sorted(spans) for role, spans in evidence_sets.items()
+        }
+
+        # --- Structured debate logger: divergence metrics ---
+        if self._debate_logger:
+            self._debate_logger.write_divergence_metrics(
+                js, ov, agent_confidences, agent_evidence, round_num,
+            )
+
         # --- Structured JSON logging ---
-        if self._log_metrics:
-            agent_confidences = {}
-            for d in decisions:
-                role = d.get("role", "unknown")
-                agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
-
-            agent_evidence = {
-                role: sorted(spans) for role, spans in evidence_sets.items()
-            }
-
+        if self._log_metrics or self._debate_logger:
             phase_data = {
                 "type": "pid_round",
                 "debate_id": self._debate_id,
@@ -686,7 +741,28 @@ class MultiAgentRunner:
 
             phase_data = _round_floats(phase_data)
             self._pid_phase_data.append(phase_data)
-            pid_metrics_logger.info(json.dumps(phase_data, indent=2))
+
+            # Structured debate logger: PID metrics + round state
+            if self._debate_logger:
+                self._debate_logger.write_pid_metrics(phase_data)
+                metrics_summary = {
+                    "rho_bar": round_crit.rho_bar,
+                    "rho_i": {
+                        role: cr.rho_bar
+                        for role, cr in round_crit.agent_scores.items()
+                    },
+                    "js_divergence": js,
+                    "evidence_overlap": ov,
+                    "beta_new": pid_result.beta_new,
+                    "quadrant": pid_result.quadrant,
+                }
+                self._debate_logger.write_round_state(
+                    state, round_num, _round_floats(metrics_summary),
+                )
+
+            # Terminal PID logging
+            if self._log_metrics:
+                pid_metrics_logger.info(json.dumps(phase_data, indent=2))
 
     def _build_pid_summary(self, *, terminated_early: bool) -> dict:
         """Assemble end-of-debate JSON summary from accumulated phase data."""

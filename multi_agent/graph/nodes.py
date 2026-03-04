@@ -104,6 +104,9 @@ def propose_node(state: DebateState) -> dict:
         role_system = build_result.system_prompt
 
         _log_prompt(config, role, "propose", 0, role_system, user_prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("proposals", role, role_system, user_prompt)
 
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
@@ -200,6 +203,9 @@ def critique_node(state: DebateState) -> dict:
         system_msg = build_result.system_prompt
 
         _log_prompt(config, role, "critique", current_round, system_msg, prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("critiques", role, system_msg, prompt)
 
         raw_text = None  # Raw LLM output for eval module
         if is_mock:
@@ -293,6 +299,9 @@ def revise_node(state: DebateState) -> dict:
         system_msg = build_result.system_prompt
 
         _log_prompt(config, role, "revise", current_round, system_msg, prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("revisions", role, system_msg, prompt)
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
@@ -413,6 +422,9 @@ def make_propose_node(role: str):
         role_system = build_result.system_prompt
 
         _log_prompt(config, role, "propose", 0, role_system, user_prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("proposals", role, role_system, user_prompt)
 
         raw_text = None
         if is_mock:
@@ -522,6 +534,9 @@ def make_critique_node(role: str):
         system_msg = build_result.system_prompt
 
         _log_prompt(config, role, "critique", current_round, system_msg, prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("critiques", role, system_msg, prompt)
 
         raw_text = None
         if is_mock:
@@ -629,6 +644,9 @@ def make_revise_node(role: str):
         system_msg = build_result.system_prompt
 
         _log_prompt(config, role, "revise", current_round, system_msg, prompt)
+        _capture = config.get("_prompt_capture")
+        if _capture:
+            _capture("revisions", role, system_msg, prompt)
 
         if is_mock:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
@@ -740,6 +758,9 @@ def judge_node(state: DebateState) -> dict:
     system_msg = build_result.system_prompt
 
     _log_prompt(config, "judge", "judge", 0, system_msg, prompt)
+    _capture = config.get("_prompt_capture")
+    if _capture:
+        _capture("final", "judge", system_msg, prompt)
 
     raw_text = None  # Raw LLM output for eval module
     if is_mock:
