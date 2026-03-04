@@ -24,17 +24,82 @@ logger = logging.getLogger("multi_agent.graph")
 prompt_logger = logging.getLogger("debate.prompts")
 prompt_logger.setLevel(logging.INFO)
 
-# Throttle concurrent LLM calls to avoid 429 rate limits.
-# Parallel agents fire 4 calls at once per phase; this semaphore caps
-# concurrency to 2 (still 2x faster than sequential, avoids bursts).
-_LLM_SEMAPHORE = threading.Semaphore(2)
+# Stagger concurrent LLM calls to avoid 429 rate limits.
+# Parallel agents fire 4 calls at once per phase; this stagger spreads
+# call starts by a configurable interval (default 200ms).  All calls
+# still overlap during execution — total phase time increases by only
+# (N-1) * stagger_ms, which is negligible vs LLM latency.
+_LLM_STAGGER_LOCK = threading.Lock()
+_LLM_LAST_CALL: float = 0.0
+_DEFAULT_STAGGER_MS: int = 500
+
+
+def _stagger_wait(stagger_ms: int) -> None:
+    """Wait until at least ``stagger_ms`` since the last LLM call start.
+
+    Serializes call *starts* so parallel threads don't all hit the API
+    at t=0.  The actual API calls still overlap during execution.
+    """
+    import time
+
+    global _LLM_LAST_CALL
+    with _LLM_STAGGER_LOCK:
+        now = time.monotonic()
+        delay = (stagger_ms / 1000) - (now - _LLM_LAST_CALL)
+        if delay > 0:
+            time.sleep(delay)
+        _LLM_LAST_CALL = time.monotonic()
+
+
+def _parse_retry_after(exc: Exception) -> float | None:
+    """Extract retry-after hint from an API rate-limit error message.
+
+    OpenAI errors include text like "Please try again in 610ms" or
+    "Please try again in 1.2s".  Returns seconds, or None if not found.
+    """
+    msg = str(exc)
+    m = re.search(r"try again in\s+([\d.]+)\s*(ms|s)", msg, re.IGNORECASE)
+    if not m:
+        return None
+    value = float(m.group(1))
+    if m.group(2).lower() == "ms":
+        value /= 1000.0
+    return value
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """Check if an exception is a rate-limit (429) error."""
+    name = type(exc).__name__
+    if "RateLimit" in name:
+        return True
+    if hasattr(exc, "status_code") and exc.status_code == 429:
+        return True
+    if "429" in str(exc)[:200]:
+        return True
+    return False
+
+
+def _retry_wait(exc: Exception, attempt: int) -> float:
+    """Compute wait time for a retry attempt.
+
+    For rate-limit errors: use the API's retry-after hint (+ 0.5s buffer),
+    falling back to longer exponential backoff (2s, 4s, 8s, 16s, 32s).
+    For other errors: standard exponential backoff (1s, 2s, 4s, 8s, 16s, 32s).
+    """
+    if _is_rate_limit_error(exc):
+        hint = _parse_retry_after(exc)
+        if hint is not None:
+            return hint + 0.5  # add buffer
+        return 2 ** (attempt + 1)  # 2s, 4s, 8s, 16s, 32s
+    return 2 ** attempt  # 1s, 2s, 4s, 8s, 16s, 32s
 
 
 def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
     """Call LLM with the given system and user prompts. Returns raw text.
 
-    Retries up to 3 times with exponential backoff on transient errors
-    (connection errors, rate limits, timeouts).
+    Retries up to 6 times on transient errors.  For rate-limit (429)
+    errors, uses the API's retry-after hint when available; otherwise
+    falls back to exponential backoff.
     """
     if config.get("mock", False):
         # Return a valid single-agent CRIT response.
@@ -81,19 +146,21 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
             request_timeout=60,
         )
 
-    max_retries = 3
+    max_retries = 6
+    stagger_ms = 0 if config.get("no_rate_limit", False) else config.get("llm_stagger_ms", _DEFAULT_STAGGER_MS)
     for attempt in range(max_retries):
         try:
-            with _LLM_SEMAPHORE:
-                response = llm.invoke([
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=user_prompt),
-                ])
+            if stagger_ms > 0:
+                _stagger_wait(stagger_ms)
+            response = llm.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt),
+            ])
             return response.content
         except Exception as e:
-            wait = 2 ** attempt  # 1s, 2s, 4s
+            wait = _retry_wait(e, attempt)
             if attempt < max_retries - 1:
-                print(f"  [LLM RETRY] {type(e).__name__} — retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", flush=True)
+                print(f"  [LLM RETRY] {type(e).__name__} — retrying in {wait:.1f}s (attempt {attempt + 1}/{max_retries})...", flush=True)
                 logger.warning(
                     "_call_llm retry %d/%d: %s: %s",
                     attempt + 1, max_retries, type(e).__name__, e,
@@ -248,11 +315,25 @@ def _log_prompt(
     )
 
 
+def _strip_code_fences(text: str) -> str:
+    """Strip markdown code fences from LLM output.
+
+    Handles: ```json ... ```, ``` ... ```, and unclosed ``` prefixes.
+    """
+    # Closed fence: ```json ... ``` or ``` ... ```
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if match:
+        return match.group(1).strip()
+    # Unclosed fence: ```json\n{...  (no closing ```)
+    match = re.match(r"^\s*```(?:json)?\s*\n([\s\S]*)", text)
+    if match:
+        return match.group(1).strip()
+    return text.strip()
+
+
 def _parse_json(text: str) -> dict:
     """Parse JSON from LLM response, handling markdown code blocks."""
-    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
-    json_str = match.group(1) if match else text
-    json_str = json_str.strip()
+    json_str = _strip_code_fences(text)
     try:
         return json.loads(json_str)
     except json.JSONDecodeError:

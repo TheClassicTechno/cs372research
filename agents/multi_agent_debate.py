@@ -141,6 +141,10 @@ class DebateAgentSystem(AgentSystem):
             use_system_causal_contract=config.use_system_causal_contract,
             logging_mode=config.logging_mode,
             experiment_name=config.experiment_name,
+            parallel_agents=config.parallel_agents,
+            no_rate_limit=config.no_rate_limit,
+            llm_stagger_ms=config.llm_stagger_ms,
+            console_display=config.console_display,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

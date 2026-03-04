@@ -77,6 +77,10 @@ class DebateConfig:
     # --- Parallel agents (per-agent LangGraph nodes for concurrent LLM calls) ---
     parallel_agents: bool = True
 
+    # --- Rate limiting ---
+    no_rate_limit: bool = False   # Disable stagger entirely (all calls fire at once)
+    llm_stagger_ms: int = 500    # Milliseconds between parallel LLM call starts
+
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
 
@@ -134,6 +138,9 @@ class DebateConfig:
     # --- Structured debate logging ---
     logging_mode: str = "off"  # "standard" | "debug" | "off"
     experiment_name: str | None = None  # defaults to config filename stem
+
+    # --- Console display ---
+    console_display: bool = True  # Rich-formatted terminal output (set False for minimal logs)
 
     # --- Prompt block/section ordering (for ablation experiments) ---
     system_prompt_block_order: list[str] = field(
@@ -205,6 +212,8 @@ class DebateConfig:
             "temperature": self.temperature,
             "parallel_agents": self.parallel_agents,
             "mock": self.mock,
+            "no_rate_limit": self.no_rate_limit,
+            "llm_stagger_ms": self.llm_stagger_ms,
             "verbose": self.verbose,
             "log_system_prompts": self.log_system_prompts,
             "log_user_prompts": self.log_user_prompts,
@@ -219,6 +228,7 @@ class DebateConfig:
             "allocation_mode": True,
             "skip_pipeline": True,
             "logging_mode": self.logging_mode,
+            "console_display": self.console_display,
             "use_system_causal_contract": self.use_system_causal_contract,
             "system_prompt_block_order": self.system_prompt_block_order,
             "user_prompt_section_order": self.user_prompt_section_order,

@@ -39,7 +39,7 @@ from .llm import (
     _call_llm,
     _compact_user_prompt,
     _log_prompt,
-    _LLM_SEMAPHORE,
+    _LLM_STAGGER_LOCK,
     _parse_json,
     logger,
     prompt_logger,
@@ -60,6 +60,7 @@ from .display import (
     _verbose_critique,
     _verbose_revision,
     _verbose_judge,
+    _print_comparison_table,
 )
 
 # --- nodes ---
@@ -117,7 +118,7 @@ __all__ = [
     "_call_llm",
     "_compact_user_prompt",
     "_log_prompt",
-    "_LLM_SEMAPHORE",
+    "_LLM_STAGGER_LOCK",
     "_parse_json",
     "logger",
     "prompt_logger",
@@ -137,6 +138,7 @@ __all__ = [
     "_verbose_critique",
     "_verbose_revision",
     "_verbose_judge",
+    "_print_comparison_table",
     # nodes
     "build_context_node",
     "propose_node",

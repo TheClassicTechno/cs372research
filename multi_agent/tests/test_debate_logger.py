@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from multi_agent.debate_logger import DebateLogger, _replace_memo_in_prompt, _build_allocation_top3
+from multi_agent.debate_logger import DebateLogger, _replace_memo_in_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -462,7 +462,7 @@ class TestFinalize:
         judge_path = tmp_logger.run_dir / "final" / "judge_response.txt"
         assert not judge_path.exists()
 
-    def test_finalize_writes_diagnostic(
+    def test_finalize_writes_diagnostic_txt(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
@@ -471,46 +471,55 @@ class TestFinalize:
 
         tmp_logger.finalize(state, [], False, "enriched memo content")
 
-        diag = json.loads(
-            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
-        )
-        assert "meta" in diag
-        assert "memo_excerpt" in diag
-        assert "context_samples" in diag
-        assert "round_summaries" in diag
-        assert "disagreement_diagnostics" in diag
-        assert "final_decision" in diag
+        diag_path = tmp_logger.run_dir / "final" / "debate_diagnostic.txt"
+        assert diag_path.exists()
+        content = diag_path.read_text()
+        assert content.startswith("LLM DEBATE DIAGNOSIS SCAFFOLD")
+        assert "SECTION 0" in content
+        assert "SECTION 1" in content
+        assert "SECTION 2" in content
 
-    def test_diagnostic_has_two_agent_context_samples(
+    def test_diagnostic_has_all_sections(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         tmp_logger.init_run("d", sample_observation, "m")
         tmp_logger.start_round(1, 0.5)
         state = self._make_state(sample_proposals, sample_revisions)
-        # Add debate_turns for context samples
+
+        tmp_logger.finalize(state, [], False, "enriched memo content")
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        for i in range(10):
+            assert f"SECTION {i}" in content, f"Missing SECTION {i}"
+
+    def test_diagnostic_has_proposal_prompts(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
         state["debate_turns"] = [
             {
                 "role": "macro", "type": "proposal", "round": 0,
-                "raw_system_prompt": "sys macro", "raw_user_prompt": "usr macro",
+                "raw_system_prompt": "sys macro prompt",
+                "raw_user_prompt": "usr macro prompt",
                 "raw_response": "resp macro",
             },
             {
                 "role": "value", "type": "proposal", "round": 0,
-                "raw_system_prompt": "sys value", "raw_user_prompt": "usr value",
+                "raw_system_prompt": "sys value prompt",
+                "raw_user_prompt": "usr value prompt",
                 "raw_response": "resp value",
             },
         ]
 
         tmp_logger.finalize(state, [], False, "memo")
 
-        diag = json.loads(
-            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
-        )
-        samples = diag["context_samples"]
-        assert "agent_example_1" in samples
-        assert "agent_example_2" in samples
-        assert samples["agent_example_1"]["role"] == "macro"
-        assert samples["agent_example_2"]["role"] == "value"
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        assert "PROPOSAL PROMPT: MACRO AGENT" in content
+        assert "PROPOSAL PROMPT: VALUE AGENT" in content
+        assert "sys macro prompt" in content
+        assert "sys value prompt" in content
 
 
 # ---------------------------------------------------------------------------
@@ -564,7 +573,7 @@ class TestMemoPlaceholder:
         result = _replace_memo_in_prompt(prompt, "short")
         assert result == prompt
 
-    def test_diagnostic_context_samples_have_placeholder(
+    def test_diagnostic_proposal_prompts_have_placeholder(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):
         memo = "x" * 200  # Long enough to trigger replacement
@@ -596,34 +605,49 @@ class TestMemoPlaceholder:
 
         tmp_logger.finalize(state, [], False, memo)
 
-        diag = json.loads(
-            (tmp_logger.run_dir / "final" / "debate_diagnostic.json").read_text()
-        )
-        # Check that memo was replaced in at least one context sample prompt
-        sample1 = diag["context_samples"]["agent_example_1"]
-        assert "<<MEMO CONTENT INSERTED HERE>>" in sample1["proposal_prompt_full"]
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        # Memo placeholder should appear in Section 4 (proposal prompts)
+        assert "<<MEMO CONTENT INSERTED HERE>>" in content
+        # The raw memo should NOT appear in Section 4 prompts
+        # (it only appears in Section 2)
+        section4_start = content.find("SECTION 4")
+        section5_start = content.find("SECTION 5")
+        section4_text = content[section4_start:section5_start]
+        assert memo not in section4_text
 
+    def test_diagnostic_memo_appears_once_in_section2(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        memo_text = "[INFO] QUARTERLY SNAPSHOT MEMO\nThis is the full memo content " + "x" * 200
+        tmp_logger.init_run("d", sample_observation, memo_text)
+        tmp_logger.start_round(1, 0.5)
 
-# ---------------------------------------------------------------------------
-# Tests: helper functions
-# ---------------------------------------------------------------------------
+        state = {
+            "observation": sample_observation,
+            "proposals": sample_proposals,
+            "revisions": sample_revisions,
+            "critiques": [],
+            "debate_turns": [
+                {
+                    "role": "macro", "type": "proposal", "round": 0,
+                    "raw_system_prompt": "system",
+                    "raw_user_prompt": f"Before\n{memo_text}\nUsing the data above, do stuff",
+                    "raw_response": "response",
+                    "content": {"allocation": {}},
+                },
+            ],
+            "final_action": {"allocation": {}, "justification": "", "confidence": 0.5},
+            "strongest_objection": "",
+        }
 
-class TestHelpers:
-    def test_build_allocation_top3(self):
-        alloc = {"NVDA": 0.25, "AAPL": 0.15, "MSFT": 0.35, "TSLA": 0.10, "JPM": 0.15}
-        result = _build_allocation_top3(alloc)
-        # Top 3 by weight: MSFT:35%, NVDA:25%, AAPL or JPM:15%
-        assert "MSFT:35%" in result
-        assert "NVDA:25%" in result
+        tmp_logger.finalize(state, [], False, memo_text)
 
-    def test_build_allocation_top3_empty(self):
-        assert _build_allocation_top3({}) == ""
-
-    def test_build_allocation_top3_fewer_than_3(self):
-        alloc = {"AAPL": 0.6, "NVDA": 0.4}
-        result = _build_allocation_top3(alloc)
-        assert "AAPL:60%" in result
-        assert "NVDA:40%" in result
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        # Section 2 should contain the memo
+        assert "SHARED INVESTMENT MEMO" in content
+        assert "END MEMO" in content
+        # The full memo text should appear exactly once (in Section 2)
+        assert content.count("[INFO] QUARTERLY SNAPSHOT MEMO") == 1
 
 
 # ---------------------------------------------------------------------------

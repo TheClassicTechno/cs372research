@@ -36,6 +36,24 @@ from .mocks import _mock_critique, _mock_judge, _mock_proposal, _mock_revision
 from .state import DebateState, ParallelRoundState
 
 
+def _call_llm_with_lifecycle(config: dict, system_prompt: str, user_prompt: str,
+                              role: str, phase: str) -> str:
+    """Wrap _call_llm with optional lifecycle callbacks for terminal display."""
+    lifecycle = config.get("_llm_lifecycle")
+    if not lifecycle:
+        return _call_llm(config, system_prompt, user_prompt)
+
+    start_fn, end_fn, _ = lifecycle
+    call_id = f"{phase}_{role}"
+    start_fn(call_id, role, phase)
+    result = ""
+    try:
+        result = _call_llm(config, system_prompt, user_prompt)
+    finally:
+        end_fn(call_id, result)
+    return result
+
+
 # =============================================================================
 # SEQUENTIAL BATCH NODE FUNCTIONS
 # =============================================================================
@@ -85,7 +103,8 @@ def propose_node(state: DebateState) -> dict:
     use_cc = config.get("use_system_causal_contract", False)
 
     for i, role in enumerate(roles):
-        print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
         user_prompt = build_proposal_user_prompt(
             context,
             use_system_causal_contract=use_cc,
@@ -113,7 +132,7 @@ def propose_node(state: DebateState) -> dict:
             result = _mock_proposal(role, obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, role_system, user_prompt)
+            raw_text = _call_llm_with_lifecycle(config, role_system, user_prompt, role, "propose")
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
@@ -128,7 +147,8 @@ def propose_node(state: DebateState) -> dict:
         if config.get("verbose"):
             _verbose_proposal(role, result)
 
-        _print_allocation(role, action_dict, "proposes")
+        if not config.get("console_display"):
+            _print_allocation(role, action_dict, "proposes")
 
         proposals.append({
             "role": role,
@@ -150,7 +170,8 @@ def propose_node(state: DebateState) -> dict:
             },
         })
 
-    print(f"  [Round 0 - Propose] All {len(roles)} proposals complete.", flush=True)
+    if not config.get("console_display"):
+        print(f"  [Round 0 - Propose] All {len(roles)} proposals complete.", flush=True)
     return {
         "proposals": proposals,
         "debate_turns": turns,
@@ -183,7 +204,8 @@ def critique_node(state: DebateState) -> dict:
 
     for i, p in enumerate(source):
         role = p["role"]
-        print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
         prompt = build_critique_prompt(
@@ -212,13 +234,14 @@ def critique_node(state: DebateState) -> dict:
             result = _mock_critique(role, source)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, system_msg, prompt)
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique")
             result = _parse_json(raw_text)
 
         if config.get("verbose"):
             _verbose_critique(role, result)
 
-        _print_critique_summary(role, result)
+        if not config.get("console_display"):
+            _print_critique_summary(role, result)
 
         critiques.append({
             "role": role,
@@ -242,7 +265,8 @@ def critique_node(state: DebateState) -> dict:
             }
         })
 
-    print(f"  [Round {current_round} - Critique] All critiques complete.", flush=True)
+    if not config.get("console_display"):
+        print(f"  [Round {current_round} - Critique] All critiques complete.", flush=True)
     return {
         "critiques": critiques,
         "debate_turns": turns,
@@ -266,7 +290,8 @@ def revise_node(state: DebateState) -> dict:
 
     for i, p in enumerate(source):
         role = p["role"]
-        print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
         # Collect critiques targeted at this role
@@ -307,7 +332,7 @@ def revise_node(state: DebateState) -> dict:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, system_msg, prompt)
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise")
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
@@ -322,7 +347,8 @@ def revise_node(state: DebateState) -> dict:
         if config.get("verbose"):
             _verbose_revision(role, result)
 
-        _print_allocation(role, action_dict, "revised")
+        if not config.get("console_display"):
+            _print_allocation(role, action_dict, "revised")
 
         revisions.append({
             "role": role,
@@ -346,7 +372,8 @@ def revise_node(state: DebateState) -> dict:
             }
         })
 
-    print(f"  [Round {current_round} - Revise] All revisions complete.", flush=True)
+    if not config.get("console_display"):
+        print(f"  [Round {current_round} - Revise] All revisions complete.", flush=True)
     return {
         "revisions": revisions,
         "debate_turns": turns,
@@ -401,7 +428,8 @@ def make_propose_node(role: str):
         is_mock = config.get("mock", False)
 
         i = roles.index(role) if role in roles else 0
-        print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round 0 - Propose] {role.upper()} agent ({i+1}/{len(roles)})...", flush=True)
 
         use_cc = config.get("use_system_causal_contract", False)
         user_prompt = build_proposal_user_prompt(
@@ -431,7 +459,7 @@ def make_propose_node(role: str):
             result = _mock_proposal(role, obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, role_system, user_prompt)
+            raw_text = _call_llm_with_lifecycle(config, role_system, user_prompt, role, "propose")
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
@@ -446,7 +474,8 @@ def make_propose_node(role: str):
         if config.get("verbose"):
             _verbose_proposal(role, result)
 
-        _print_allocation(role, action_dict, "proposes")
+        if not config.get("console_display"):
+            _print_allocation(role, action_dict, "proposes")
 
         proposal = {
             "role": role,
@@ -513,7 +542,8 @@ def make_critique_node(role: str):
 
         roles = config.get("roles", ["macro", "value", "risk"])
         i = roles.index(role) if role in roles else 0
-        print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
         use_cc = config.get("use_system_causal_contract", False)
@@ -543,13 +573,14 @@ def make_critique_node(role: str):
             result = _mock_critique(role, source)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, system_msg, prompt)
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique")
             result = _parse_json(raw_text)
 
         if config.get("verbose"):
             _verbose_critique(role, result)
 
-        _print_critique_summary(role, result)
+        if not config.get("console_display"):
+            _print_critique_summary(role, result)
 
         critique = {
             "role": role,
@@ -611,7 +642,8 @@ def make_revise_node(role: str):
 
         roles = config.get("roles", ["macro", "value", "risk"])
         i = roles.index(role) if role in roles else 0
-        print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
+        if not config.get("console_display"):
+            print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
         # Collect critiques targeted at this role
@@ -652,7 +684,7 @@ def make_revise_node(role: str):
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm(config, system_msg, prompt)
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise")
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
@@ -667,7 +699,8 @@ def make_revise_node(role: str):
         if config.get("verbose"):
             _verbose_revision(role, result)
 
-        _print_allocation(role, action_dict, "revised")
+        if not config.get("console_display"):
+            _print_allocation(role, action_dict, "revised")
 
         revision = {
             "role": role,
@@ -716,8 +749,9 @@ def should_continue(state: DebateState) -> str:
 
 def judge_node(state: DebateState) -> dict:
     """Judge synthesizes the debate into a single final trading decision."""
-    print("  [Judge] Synthesizing final decision...", flush=True)
     config = state["config"]
+    if not config.get("console_display"):
+        print("  [Judge] Synthesizing final decision...", flush=True)
     context = state["enriched_context"]
     revisions = state.get("revisions", state.get("proposals", []))
     all_critiques = state.get("critiques", [])
@@ -767,7 +801,7 @@ def judge_node(state: DebateState) -> dict:
         result = _mock_judge(revisions, config)
         raw_text = json.dumps(result, indent=2)
     else:
-        raw_text = _call_llm(config, system_msg, prompt)
+        raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, "judge", "judge")
         result = _parse_json(raw_text)
 
     if config.get("verbose"):
@@ -782,7 +816,8 @@ def judge_node(state: DebateState) -> dict:
         "confidence": result.get("confidence", 0.5),
         "claims": result.get("claims", []),
     }
-    _print_allocation("judge", final_action, "FINAL")
+    if not config.get("console_display"):
+        _print_allocation("judge", final_action, "FINAL")
 
     turns = [
         {

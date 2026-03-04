@@ -121,3 +121,74 @@ def _verbose_judge(result: dict) -> None:
         print(f"    ║  Strongest objection preserved:", flush=True)
         print(f"    ║  {objection}", flush=True)
     print(f"    ╚{'═' * 54}", flush=True)
+
+
+def _print_comparison_table(agents: list[dict], phase: str = "Allocations") -> None:
+    """Print a side-by-side comparison table of allocations across agents.
+
+    Args:
+        agents: List of dicts with ``role`` and ``action_dict`` keys.
+        phase: Label for the table header (e.g. "Proposals", "Revisions").
+    """
+    if not agents:
+        return
+
+    # Deduplicate by role (keep last entry — matches runner dedup behaviour)
+    seen: dict[str, dict] = {}
+    for a in agents:
+        seen[a.get("role", "?")] = a
+    agents = list(seen.values())
+
+    roles: list[str] = []
+    allocations: list[dict[str, float]] = []
+    confidences: list[float] = []
+    for a in agents:
+        roles.append(a.get("role", "?").upper())
+        ad = a.get("action_dict", {})
+        allocations.append(ad.get("allocation", {}))
+        confidences.append(ad.get("confidence", 0.5))
+
+    # Collect tickers, sort by average weight descending
+    all_tickers: set[str] = set()
+    for alloc in allocations:
+        all_tickers.update(alloc.keys())
+
+    def _avg(t: str) -> float:
+        return sum(al.get(t, 0.0) for al in allocations) / len(allocations)
+
+    ticker_order = sorted(all_tickers, key=_avg, reverse=True)
+    # Only show tickers with non-trivial weight in at least one agent
+    ticker_order = [t for t in ticker_order if any(al.get(t, 0) > 0.005 for al in allocations)]
+
+    if not ticker_order:
+        return
+
+    # Column widths
+    col_w = max(max(len(r) for r in roles), 4) + 1
+    ticker_w = max(max(len(t) for t in ticker_order), 6)
+    total_w = ticker_w + 2 + len(roles) * (col_w + 2)
+
+    # Header
+    header_cols = "  ".join(f"{r:>{col_w}}" for r in roles)
+    sep = "─" * total_w
+
+    print(f"\n    ── {phase} {sep[len(phase) + 4:]}", flush=True)
+    print(f"    {'':>{ticker_w}}  {header_cols}", flush=True)
+    print(f"    {sep}", flush=True)
+
+    # Ticker rows
+    for t in ticker_order:
+        cells = []
+        for alloc in allocations:
+            w = alloc.get(t, 0.0)
+            if w > 0.005:
+                cells.append(f"{w:>{col_w}.0%}")
+            else:
+                cells.append(f"{'·':>{col_w}}")
+        print(f"    {t:<{ticker_w}}  {'  '.join(cells)}", flush=True)
+
+    # Confidence row
+    print(f"    {sep}", flush=True)
+    conf_cells = [f"{c:>{col_w}.0%}" for c in confidences]
+    print(f"    {'conf':<{ticker_w}}  {'  '.join(conf_cells)}", flush=True)
+    print(f"    {sep}", flush=True)

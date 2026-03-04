@@ -105,6 +105,14 @@ def _round_floats(obj, ndigits=4):
 
 from .config import AgentRole, DebateConfig
 from .prompts.registry import beta_to_bucket, build_prompt_manifest, reset_registry_cache
+from .terminal_display import (
+    render_round_header,
+    render_phase_label,
+    render_portfolio_table,
+    render_phase_metrics,
+    render_judge_result,
+    render_debate_end,
+)
 from .graph import (
     compile_finalize_graph,
     compile_parallel_single_round_graph,
@@ -118,6 +126,7 @@ from .graph import (
     compile_parallel_critique_graph,
     compile_parallel_revise_graph,
     _call_llm,
+    _print_comparison_table,
 )
 from .graph.llm import _extract_snapshot_id, prompt_logger
 from .models import (
@@ -454,13 +463,19 @@ class MultiAgentRunner:
             if self.config.logging_mode == "debug":
                 state["config"]["_prompt_capture"] = self._debate_logger.write_prompt
 
+        # Set LLM lifecycle callback for Rich console display
+        if self.config.console_display:
+            from .terminal_display import _llm_call_start, _llm_call_end, _reset_llm_tracker
+            state["config"]["_llm_lifecycle"] = (_llm_call_start, _llm_call_end, _reset_llm_tracker)
+
         # Phase 2: Debate rounds
         terminated_early = False
         for t in range(self.config.max_rounds):
             state["current_round"] = t + 1
 
             # Prompt manifest: log file names once at round start
-            if state["config"].get("log_prompt_manifest"):
+            # (skip when Rich console is active — avoids terminal noise)
+            if state["config"].get("log_prompt_manifest") and not self.config.console_display:
                 self._log_prompt_manifest(state, t + 1)
 
             # Write prompt manifest to structured log (first round only)
@@ -480,6 +495,12 @@ class MultiAgentRunner:
                 state = self._run_round_with_pid(state, t + 1)
             else:
                 state = self.run_single_round(state)
+                if self.config.console_display:
+                    render_portfolio_table(state.get("proposals", []), "Allocations")
+                    render_portfolio_table(state.get("revisions", []), "Revisions")
+                else:
+                    _print_comparison_table(state.get("proposals", []), "Allocations")
+                    _print_comparison_table(state.get("revisions", []), "Revisions")
 
             if self.config.parallel_agents:
                 # With operator.add, revisions accumulate (previous round's
@@ -503,13 +524,27 @@ class MultiAgentRunner:
             if terminated_early:
                 break
 
-        # Emit end-of-debate PID summary
-        if self._pid_controller and self._pid_phase_data and self._log_metrics:
+        # Emit end-of-debate PID summary (skip when Rich console is active)
+        if self._pid_controller and self._pid_phase_data and self._log_metrics and not self.config.console_display:
             summary = self._build_pid_summary(terminated_early=terminated_early)
             pid_metrics_logger.info(json.dumps(summary, indent=2))
 
         # Phase 3: Judge + trace
         state = self.finalize_graph.invoke(state)
+
+        # Rich console display: judge result + debate end
+        if self.config.console_display:
+            final_action = state.get("final_action", {})
+            if final_action:
+                render_judge_result(final_action)
+
+            logged_dir = None
+            if self._debate_logger:
+                logged_dir = str(self._debate_logger.run_dir)
+
+            total_rounds = len({d["round"] for d in self._pid_phase_data}) if self._pid_phase_data else self.config.max_rounds
+            reason = "stable_convergence" if terminated_early else "max_rounds"
+            render_debate_end(terminated_early, reason, total_rounds, logged_dir)
 
         # Finalize structured debate log
         if self._debate_logger:
@@ -517,7 +552,8 @@ class MultiAgentRunner:
                 state, self._pid_phase_data, terminated_early,
                 state.get("enriched_context", ""),
             )
-            print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
+            if not self.config.console_display:
+                print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
 
         return state
 
@@ -532,20 +568,44 @@ class MultiAgentRunner:
         registry can map beta to tone bucket without seeing the numeric value.
         """
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
+        use_display = self.config.console_display
 
         # Start round in structured logger
         if self._debate_logger:
             self._debate_logger.start_round(round_num, beta)
 
+        # --- Round header (terminal display) ---
+        if use_display:
+            universe = [r.value for r in self.config.roles]
+            obs_universe = state.get("observation", {}).get("universe", [])
+            tone = beta_to_bucket(beta)
+            render_round_header(
+                round_num, self.config.max_rounds, beta, tone,
+                obs_universe,
+            )
+
         # --- Propose phase (no tone injection) ---
+        n_agents = len(self.config.roles)
+        if use_display:
+            render_phase_label("Propose")
+            from .terminal_display import _reset_llm_tracker
+            _reset_llm_tracker(n_agents)
         state["config"]["agreeableness"] = self._original_agreeableness
         state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
+        if use_display:
+            render_portfolio_table(state.get("proposals", []), "Allocations")
+        else:
+            _print_comparison_table(state.get("proposals", []), "Allocations")
 
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
         # --- Critique phase (uses PID beta for tone) ---
+        if use_display:
+            render_phase_label("Critique")
+            from .terminal_display import _reset_llm_tracker
+            _reset_llm_tracker(n_agents)
         state["config"]["agreeableness"] = beta
         state["config"]["_current_beta"] = beta
         state = self._critique_graph.invoke(state)
@@ -554,9 +614,17 @@ class MultiAgentRunner:
             self._debate_logger.write_critiques(state.get("critiques", []))
 
         # --- Revise phase (uses PID beta for tone) ---
+        if use_display:
+            render_phase_label("Revise")
+            from .terminal_display import _reset_llm_tracker
+            _reset_llm_tracker(n_agents)
         state["config"]["agreeableness"] = beta
         state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
+        if use_display:
+            render_portfolio_table(state.get("revisions", []), "Revisions")
+        else:
+            _print_comparison_table(state.get("revisions", []), "Revisions")
 
         if self._debate_logger:
             self._debate_logger.write_revisions(state.get("revisions", []))
@@ -760,8 +828,15 @@ class MultiAgentRunner:
                     state, round_num, _round_floats(metrics_summary),
                 )
 
-            # Terminal PID logging
-            if self._log_metrics:
+            # Rich console display: CRIT + PID metrics
+            if self.config.console_display:
+                rho_star = self.config.pid_rho_star
+                render_phase_metrics(phase_data, rho_star=rho_star)
+
+            # PID metrics logger (programmatic JSON channel — skip when Rich
+            # console is active to avoid terminal noise; data is already
+            # rendered by render_phase_metrics and saved by debate_logger)
+            if self._log_metrics and not self.config.console_display:
                 pid_metrics_logger.info(json.dumps(phase_data, indent=2))
 
     def _build_pid_summary(self, *, terminated_early: bool) -> dict:

@@ -132,6 +132,31 @@ def _parse_args() -> argparse.Namespace:
         help="Override debate logging mode from config. "
         "'standard' writes artifacts only, 'debug' adds prompt files, 'off' disables.",
     )
+    parser.add_argument(
+        "--no-parallel",
+        action="store_true",
+        help="Run debate agents sequentially instead of in parallel. "
+        "Easier to debug but slower.",
+    )
+    parser.add_argument(
+        "--no-rate-limit",
+        action="store_true",
+        help="Disable LLM call stagger entirely. All parallel calls fire at once.",
+    )
+    parser.add_argument(
+        "--stagger-ms",
+        type=int,
+        default=None,
+        metavar="MS",
+        help="Milliseconds between parallel LLM call starts (default: 200). "
+        "Set to 0 to disable stagger.",
+    )
+    parser.add_argument(
+        "--no-display",
+        action="store_true",
+        help="Disable Rich-formatted terminal display. "
+        "Uses minimal plain-text output instead.",
+    )
     return parser.parse_args()
 
 
@@ -243,6 +268,26 @@ async def _main() -> None:
     if args.logging_mode is not None:
         config.agent.logging_mode = args.logging_mode
         logger.info("Logging mode overridden to '%s'", args.logging_mode)
+
+    # --no-parallel: force sequential agent execution.
+    if args.no_parallel:
+        config.agent.parallel_agents = False
+        logger.info("Parallel agents disabled (sequential mode)")
+
+    # --no-rate-limit: disable LLM call stagger entirely.
+    if args.no_rate_limit:
+        config.agent.no_rate_limit = True
+        logger.info("LLM call stagger disabled (all calls fire at once)")
+
+    # --stagger-ms: override stagger interval.
+    if args.stagger_ms is not None:
+        config.agent.llm_stagger_ms = args.stagger_ms
+        logger.info("LLM stagger interval set to %dms", args.stagger_ms)
+
+    # --no-display: disable Rich console display.
+    if args.no_display:
+        config.agent.console_display = False
+        logger.info("Rich console display disabled (plain text mode)")
 
     # --list-tickers: print configured tickers and exit (no simulation).
     if args.list_tickers:

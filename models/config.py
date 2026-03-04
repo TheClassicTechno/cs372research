@@ -62,6 +62,21 @@ class AgentConfig(BaseModel):
         default=False,
         description="Add an explicit devil's advocate agent to the debate.",
     )
+    parallel_agents: bool = Field(
+        default=True,
+        description="Run debate agents in parallel via LangGraph fan-out. "
+        "Set to false for sequential execution (easier to debug).",
+    )
+    no_rate_limit: bool = Field(
+        default=False,
+        description="Disable stagger entirely. All parallel LLM calls fire at once.",
+    )
+    llm_stagger_ms: int = Field(
+        default=200,
+        ge=0,
+        description="Milliseconds between parallel LLM call starts. "
+        "Default 200ms spreads 4 calls over 600ms to avoid 429 bursts.",
+    )
 
     log_system_prompts: bool = Field(
         default=False,
@@ -153,6 +168,13 @@ class AgentConfig(BaseModel):
         default=None,
         description="Experiment name for logging directory. "
         "Defaults to config filename stem if not set.",
+    )
+
+    # --- Console display ---
+    console_display: bool = Field(
+        default=True,
+        description="Enable Rich-formatted terminal display during debates. "
+        "Set to false for minimal plain-text logging.",
     )
 
     # --- System-level causal contract ---

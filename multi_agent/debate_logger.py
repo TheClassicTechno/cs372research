@@ -16,7 +16,7 @@ Directory layout::
     │   ├── critiques/<agent>/{response.json, prompt.txt*}
     │   ├── revisions/<agent>/{response.txt, portfolio.json, prompt.txt*}
     │   └── metrics/{crit_scores.json, js_divergence.json, evidence_overlap.json, pid_state.json}
-    └── final/{final_portfolio.json, debate_diagnostic.json}
+    └── final/{final_portfolio.json, debate_diagnostic.txt}
 
     * prompt.txt files written in debug mode only.
 """
@@ -25,9 +25,222 @@ from __future__ import annotations
 
 import json
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+# ------------------------------------------------------------------
+# Diagnostic scaffold — inserted verbatim at top of casefile
+# ------------------------------------------------------------------
+
+_DIAGNOSTIC_SCAFFOLD = """\
+LLM DEBATE DIAGNOSIS SCAFFOLD
+=============================
+
+You are diagnosing the behavior of a multi-agent debate system used for portfolio allocation.
+
+You will receive a structured debate diagnostic report describing how a debate evolved across multiple rounds, including agent allocations, reasoning quality metrics (CRIT), PID controller behavior, disagreement metrics, evidence usage, debate dynamics, and the prompts given to each agent.
+
+Your task is to carefully analyze the debate and determine what likely went wrong or what dynamics occurred.
+
+Follow the analysis steps below in order.
+
+Do NOT skip steps.
+Do NOT jump to conclusions before completing the analysis.
+
+Focus on careful reasoning grounded in the provided artifact.
+
+
+---------------------------------------------------------------------
+
+STEP 1 — Debate Reconstruction
+
+First reconstruct what happened in the debate.
+
+Summarize:
+
+1. What decision the agents were trying to make.
+2. How many agents participated and their roles.
+3. How many rounds occurred.
+4. What the final portfolio allocations were.
+5. Whether agents broadly agreed or disagreed at the end.
+
+This step should only restate the facts of the debate.
+
+Do not interpret yet.
+
+
+---------------------------------------------------------------------
+
+STEP 2 — Prompt Architecture Analysis
+
+Carefully examine the prompts given to each agent.
+
+Your goal is to determine whether the **prompt design itself may have caused the observed debate behavior**.
+
+Analyze the following:
+
+1. Role differentiation
+   - Do the agent prompts meaningfully differ in goals, reasoning style, or decision criteria?
+   - Or are they mostly identical with only minor cosmetic differences?
+
+2. Shared reasoning scaffolding
+   - Do the prompts force agents to follow the same reasoning structure?
+   - Do they require identical causal templates or argument structures?
+
+3. Evidence usage constraints
+   - Are agents required to use the same types of evidence?
+   - Are the evidence heuristics too similar across roles?
+
+4. Over-constrained causal scaffolding
+   - Are the prompts heavily structured in a way that restricts diverse reasoning paths?
+   - Do the prompts implicitly guide all agents toward similar conclusions?
+
+5. Role collapse risk
+   Determine whether the prompts make it difficult for agents to produce meaningfully different allocations.
+
+6. Tone or PID effects
+   - Does the tone configuration (e.g., adversarial vs balanced) encourage diversity or suppress disagreement?
+   - Could tone changes be reducing debate diversity?
+
+Explain whether prompt design likely **reduced agent diversity**.
+
+
+---------------------------------------------------------------------
+
+STEP 3 — Allocation Behavior
+
+Analyze the portfolio allocations across agents.
+
+Identify:
+
+1. Which agents had the most similar portfolios.
+2. Which agents disagreed the most.
+3. Whether allocations changed meaningfully across rounds.
+4. Whether the debate converged quickly or slowly.
+
+Explain what these patterns imply about the behavior of the debate.
+
+
+---------------------------------------------------------------------
+
+STEP 4 — Reasoning Quality (CRIT)
+
+Examine the reasoning quality metrics.
+
+Focus on:
+
+- overall reasoning quality (rho_bar)
+- per-agent reasoning scores
+
+Then analyze the CRIT pillars:
+
+IC — Internal Consistency
+ES — Evidence Support
+TA — Traceability of Argument
+CI — Conclusion Integrity
+
+Identify:
+
+1. Which agents had the weakest reasoning.
+2. Which pillar was weakest overall.
+3. What types of reasoning failures occurred.
+
+
+---------------------------------------------------------------------
+
+STEP 5 — Debate Dynamics
+
+Analyze how the debate evolved across rounds.
+
+Determine:
+
+1. Did disagreement decrease, remain stable, or increase?
+2. Did reasoning quality improve or degrade?
+3. Did agents revise their allocations meaningfully?
+4. Did the debate stabilize or stagnate?
+
+Classify the debate as one of the following:
+
+- productive convergence
+- premature convergence
+- oscillation
+- stagnation
+- unresolved disagreement
+
+Explain your reasoning.
+
+
+---------------------------------------------------------------------
+
+STEP 6 — PID Controller Behavior
+
+Analyze the PID controller output.
+
+Determine:
+
+1. How beta changed across rounds.
+2. Whether the controller stabilized the debate or caused oscillations.
+3. Whether the controller reacted appropriately to reasoning signals.
+
+Explain whether the controller improved debate quality or contributed to failure.
+
+
+---------------------------------------------------------------------
+
+STEP 7 — Evidence Usage
+
+Analyze how evidence was used in the debate.
+
+Determine:
+
+1. Whether agents relied on diverse evidence.
+2. Whether a small number of evidence items dominated reasoning.
+3. Whether claims were grounded in cited evidence.
+
+Explain whether the debate relied on strong evidence or weak unsupported claims.
+
+
+---------------------------------------------------------------------
+
+STEP 8 — Failure Diagnosis
+
+Based on the previous analysis, determine the most likely failure mode of the debate.
+
+Possible failure modes include:
+
+- Premature convergence
+- Debate stagnation
+- Evidence misuse
+- Unsupported claims
+- Weak causal reasoning
+- Controller misregulation
+- Overconfidence convergence
+- Structural disagreement
+- Prompt-induced role collapse
+
+Explain your diagnosis and support it using evidence from the artifact.
+
+
+---------------------------------------------------------------------
+
+STEP 9 — Suggested Improvements
+
+Propose concrete changes that could improve the debate system.
+
+Possible areas include:
+
+- prompt design
+- critique aggressiveness
+- evidence requirements
+- PID parameter tuning
+- debate structure
+- agent diversity
+
+Explain why each suggested change would improve the system.
+"""
 
 
 def _write_json(path: Path, data: Any) -> None:
@@ -407,11 +620,11 @@ class DebateLogger:
                 (final_dir / "judge_response.txt").write_text(raw, encoding="utf-8")
                 break
 
-        # debate_diagnostic.json
-        diagnostic = self._build_diagnostic(
+        # debate_diagnostic.txt — plaintext casefile for LLM diagnosis
+        casefile = self._build_diagnostic_casefile(
             state, pid_phase_data, terminated_early, enriched_context,
         )
-        _write_json(final_dir / "debate_diagnostic.json", diagnostic)
+        (final_dir / "debate_diagnostic.txt").write_text(casefile, encoding="utf-8")
 
         # Update manifest with completion data
         manifest_path = self._run_dir / "manifest.json"
@@ -433,263 +646,284 @@ class DebateLogger:
         _write_json(manifest_path, manifest)
 
     # ------------------------------------------------------------------
-    # Diagnostic artifact builder
+    # Diagnostic casefile builder
     # ------------------------------------------------------------------
 
-    def _build_diagnostic(
+    def _build_diagnostic_casefile(
         self,
         state: dict,
         pid_phase_data: list[dict],
         terminated_early: bool,
         enriched_context: str,
-    ) -> dict:
-        """Build the debate_diagnostic.json artifact."""
-        obs = state.get("observation", {})
-        total_rounds = len({d["round"] for d in pid_phase_data}) if pid_phase_data else self._round_num
+    ) -> str:
+        """Build the plaintext debate diagnostic casefile.
 
-        # Meta
-        meta = {
-            "experiment": self._experiment_name,
-            "run_id": self._run_id,
-            "model": getattr(self._config, "model_name", "unknown"),
-            "ticker_universe": obs.get("universe", []),
-            "invest_quarter": obs.get("timestamp", ""),
-            "rounds_completed": total_rounds,
-            "terminated_early": terminated_early,
-            "termination_reason": (
-                "stable_convergence" if terminated_early else "max_rounds"
-            ),
-        }
+        Returns a string with two parts:
+        1. Fixed diagnostic scaffold (instructions for the diagnosing LLM)
+        2. Raw debate data in plaintext sections (SECTION 0-9)
+        """
+        sep = "=" * 80
 
-        # Memo excerpt
-        memo_excerpt = enriched_context[:2000] if enriched_context else ""
+        sections = [
+            f"\n{sep}\nPART 2 — RAW DEBATE DATA\n{sep}\n",
+            f"\n{sep}\nSECTION 0 — META\n{sep}\n\n"
+            + self._section_meta(state, pid_phase_data, terminated_early),
+            f"\n{sep}\nSECTION 1 — TASK STATEMENT\n{sep}\n\n"
+            + self._section_task_statement(enriched_context),
+            f"\n{sep}\nSECTION 2 — SHARED INVESTMENT MEMO\n{sep}\n\n"
+            + self._section_memo(enriched_context),
+            f"\n{sep}\nSECTION 3 — EVIDENCE COVERAGE MAP\n{sep}\n\n"
+            + self._section_evidence_map(enriched_context),
+            f"\n{sep}\nSECTION 4 — PROPOSAL PROMPTS (VERBATIM)\n{sep}\n\n"
+            + self._section_proposal_prompts(state, enriched_context),
+            f"\n{sep}\nSECTION 5 — PROPOSAL OUTPUTS (ROUND 1)\n{sep}\n\n"
+            + self._section_proposal_outputs(state),
+            f"\n{sep}\nSECTION 6 — ROUND ALLOCATION HISTORY\n{sep}\n\n"
+            + self._section_allocation_history(state),
+            f"\n{sep}\nSECTION 7 — CRIT METRICS (RAW)\n{sep}\n\n"
+            + self._section_crit_metrics(pid_phase_data),
+            f"\n{sep}\nSECTION 8 — PID METRICS (RAW)\n{sep}\n\n"
+            + self._section_pid_metrics(pid_phase_data),
+            f"\n{sep}\nSECTION 9 — DIVERGENCE METRICS (RAW)\n{sep}\n\n"
+            + self._section_divergence_metrics(pid_phase_data),
+        ]
 
-        # Context samples — two agents from round 1
-        context_samples = self._build_context_samples(state, enriched_context)
+        return _DIAGNOSTIC_SCAFFOLD + "\n".join(sections) + "\n"
 
-        # Round summaries
-        round_summaries = self._build_round_summaries(state, pid_phase_data)
+    # --- Section builders ---
 
-        # Disagreement diagnostics
-        disagreement = self._build_disagreement_diagnostics(state)
-
-        # Final decision
-        final_action = state.get("final_action", {})
-        justification = final_action.get("justification", "")
-        final_decision = {
-            "allocation": final_action.get("allocation", {}),
-            "confidence": final_action.get("confidence", 0.5),
-            "justification_excerpt": justification[:300],
-            "strongest_objection": state.get("strongest_objection", ""),
-        }
-
-        return _round_floats({
-            "meta": meta,
-            "memo_excerpt": memo_excerpt,
-            "context_samples": context_samples,
-            "round_summaries": round_summaries,
-            "disagreement_diagnostics": disagreement,
-            "final_decision": final_decision,
-        })
-
-    def _build_context_samples(
-        self,
-        state: dict,
-        enriched_context: str,
-    ) -> dict:
-        """Extract prompt+response samples from two agents in round 1."""
-        debate_turns = state.get("debate_turns", [])
-        roles = [r.value for r in self._config.roles]
-        sample_roles = roles[:2] if len(roles) >= 2 else roles
-
-        samples = {}
-        for idx, role in enumerate(sample_roles):
-            sample = {"role": role}
-            for phase_type, key_prefix in [
-                ("proposal", "proposal"),
-                ("critique", "critique"),
-                ("revision", "revision"),
-            ]:
-                # Find the turn for this agent + phase in round 0 (proposals)
-                # or round 1 (critiques/revisions)
-                target_round = 0 if phase_type == "proposal" else 1
-                turn = None
-                for t in debate_turns:
-                    t_role = t.get("role", "")
-                    t_type = t.get("type", "")
-                    t_round = t.get("round", -1)
-                    if t_role == role and t_type == phase_type and t_round == target_round:
-                        turn = t
-                        break
-
-                if turn:
-                    sys_prompt = turn.get("raw_system_prompt", "") or ""
-                    usr_prompt = turn.get("raw_user_prompt", "") or ""
-                    full_prompt = (
-                        f"=== SYSTEM PROMPT ===\n{sys_prompt}\n\n"
-                        f"=== USER PROMPT ===\n{usr_prompt}"
-                    )
-                    full_prompt = _replace_memo_in_prompt(full_prompt, enriched_context)
-                    sample[f"{key_prefix}_prompt_full"] = full_prompt
-                    sample[f"{key_prefix}_response_example"] = turn.get("raw_response", "") or ""
-                else:
-                    sample[f"{key_prefix}_prompt_full"] = ""
-                    sample[f"{key_prefix}_response_example"] = ""
-
-            samples[f"agent_example_{idx + 1}"] = sample
-
-        return samples
-
-    def _build_round_summaries(
+    def _section_meta(
         self,
         state: dict,
         pid_phase_data: list[dict],
-    ) -> list[dict]:
-        """Build compact per-round summaries."""
-        # Group pid_phase_data by round
-        round_data = {}
+        terminated_early: bool,
+    ) -> str:
+        obs = state.get("observation", {})
+        total_rounds = (
+            len({d["round"] for d in pid_phase_data})
+            if pid_phase_data
+            else self._round_num
+        )
+        universe = obs.get("universe", [])
+        reason = "stable_convergence" if terminated_early else "max_rounds"
+
+        lines = [
+            f"experiment: {self._experiment_name}",
+            f"run_id: {self._run_id}",
+            f"model: {getattr(self._config, 'model_name', 'unknown')}",
+            f"as_of_date: {obs.get('timestamp', '')}",
+            f"investment_quarter: {obs.get('timestamp', '')}",
+            f"universe: {', '.join(universe)}",
+            f"rounds_completed: {total_rounds}",
+            f"termination_reason: {reason}",
+        ]
+        return "\n".join(lines) + "\n"
+
+    def _section_task_statement(self, enriched_context: str) -> str:
+        marker = "[INFO] QUARTERLY SNAPSHOT MEMO"
+        idx = enriched_context.find(marker)
+        if idx >= 0:
+            task = enriched_context[:idx].strip()
+            return (task + "\n") if task else "(no task header found before memo)\n"
+        return (enriched_context[:500].strip() + "\n") if enriched_context else ""
+
+    def _section_memo(self, enriched_context: str) -> str:
+        marker = "[INFO] QUARTERLY SNAPSHOT MEMO"
+        idx = enriched_context.find(marker)
+        memo_body = enriched_context[idx:] if idx >= 0 else enriched_context
+
+        lines = [
+            "SHARED INVESTMENT MEMO",
+            "(all agents receive this identical memo)",
+            "----------------------",
+            "",
+            memo_body,
+            "",
+            "END MEMO",
+        ]
+        return "\n".join(lines) + "\n"
+
+    def _section_evidence_map(self, enriched_context: str) -> str:
+        from eval.evidence import parse_memo_evidence
+
+        lookup = parse_memo_evidence(enriched_context)
+        if not lookup:
+            return "(no evidence IDs found in memo)\n"
+
+        # Group by ticker prefix
+        groups: dict[str, list[str]] = defaultdict(list)
+        for eid in sorted(lookup.keys()):
+            parts = eid.split("-", 1)
+            prefix = parts[0] if len(parts) == 2 else eid
+            suffix = parts[1] if len(parts) == 2 else eid
+            groups[prefix].append(suffix)
+
+        lines = []
+        # Ticker evidence first
+        for prefix in sorted(groups.keys()):
+            if prefix == "L1":
+                continue
+            lines.append(f"{prefix}: {' '.join(groups[prefix])}")
+
+        # Macro evidence
+        if "L1" in groups:
+            lines.append("")
+            lines.append("Macro evidence:")
+            for suffix in groups["L1"]:
+                lines.append(f"  [L1-{suffix}]")
+
+        return "\n".join(lines) + "\n"
+
+    def _section_proposal_prompts(self, state: dict, enriched_context: str) -> str:
+        debate_turns = state.get("debate_turns", [])
+        parts = []
+
+        for turn in debate_turns:
+            if turn.get("type") != "proposal" or turn.get("round", -1) != 0:
+                continue
+            role = turn.get("role", "unknown")
+            sys_prompt = turn.get("raw_system_prompt", "") or ""
+            usr_prompt = turn.get("raw_user_prompt", "") or ""
+
+            # Strip memo from user prompt
+            usr_prompt = _replace_memo_in_prompt(usr_prompt, enriched_context)
+
+            parts.append(
+                f"=== PROPOSAL PROMPT: {role.upper()} AGENT ===\n"
+                f"(Investment memo removed — see Section 2)\n\n"
+                f"--- SYSTEM PROMPT ---\n{sys_prompt}\n\n"
+                f"--- USER PROMPT ---\n{usr_prompt}\n"
+            )
+
+        return "\n".join(parts) if parts else "(no proposal turns found)\n"
+
+    def _section_proposal_outputs(self, state: dict) -> str:
+        debate_turns = state.get("debate_turns", [])
+        parts = []
+
+        for turn in debate_turns:
+            if turn.get("type") != "proposal" or turn.get("round", -1) != 0:
+                continue
+            role = turn.get("role", "unknown")
+            raw = turn.get("raw_response", "") or ""
+            parts.append(
+                f"=== {role.upper()} PROPOSAL OUTPUT ===\n\n{raw}\n"
+            )
+
+        return "\n".join(parts) if parts else "(no proposal turns found)\n"
+
+    def _section_allocation_history(self, state: dict) -> str:
+        debate_turns = state.get("debate_turns", [])
+
+        # Group turns by round, keeping proposals and revisions
+        rounds: dict[int, list[dict]] = defaultdict(list)
+        for turn in debate_turns:
+            t_type = turn.get("type", "")
+            if t_type in ("proposal", "revision"):
+                r = turn.get("round", 0)
+                rounds[r].append(turn)
+
+        if not rounds:
+            return "(no allocation data found)\n"
+
+        parts = []
+        for r in sorted(rounds.keys()):
+            phase = "Proposals" if r == 0 else f"Revisions (round {r})"
+            parts.append(f"--- {phase} ---\n")
+            for turn in rounds[r]:
+                role = turn.get("role", "unknown")
+                content = turn.get("content", {})
+                if not isinstance(content, dict):
+                    content = {}
+                alloc = content.get("allocation", {})
+                if not alloc:
+                    parts.append(f"  {role.upper()}: (no allocation)\n")
+                    continue
+                weights = "  ".join(
+                    f"{t}:{w:.1%}" for t, w in sorted(alloc.items(), key=lambda x: -x[1])
+                )
+                parts.append(f"  {role.upper()}: {weights}\n")
+            parts.append("")
+
+        return "\n".join(parts)
+
+    def _section_crit_metrics(self, pid_phase_data: list[dict]) -> str:
+        if not pid_phase_data:
+            return "(no CRIT data — PID was not enabled)\n"
+
+        parts = []
         for pd in pid_phase_data:
-            r = pd.get("round", 0)
-            round_data[r] = pd
-
-        summaries = []
-        # Use round_data rounds or fall back to simple range
-        max_round = max(round_data.keys()) if round_data else self._round_num
-        proposals_list = state.get("proposals", [])
-        revisions_list = state.get("revisions", [])
-
-        for r in range(1, max_round + 1):
-            pd = round_data.get(r, {})
+            r = pd.get("round", "?")
             crit = pd.get("crit", {})
+            parts.append(f"--- Round {r} ---")
+            parts.append(f"  rho_bar: {crit.get('rho_bar')}")
+
+            rho_i = crit.get("rho_i", {})
+            if rho_i:
+                parts.append(f"  rho_i: {_fmt_dict(rho_i)}")
+
+            agents = crit.get("agents", {})
+            for role, agent_data in sorted(agents.items()):
+                pillars = agent_data.get("pillars", {})
+                diags = agent_data.get("diagnostics", {})
+                parts.append(f"  {role}:")
+                parts.append(f"    pillars: IC={pillars.get('IC')}  ES={pillars.get('ES')}  TA={pillars.get('TA')}  CI={pillars.get('CI')}")
+                flags = [k for k, v in diags.items() if v]
+                parts.append(f"    diagnostics: {', '.join(flags) if flags else '(none)'}")
+            parts.append("")
+
+        return "\n".join(parts)
+
+    def _section_pid_metrics(self, pid_phase_data: list[dict]) -> str:
+        if not pid_phase_data:
+            return "(no PID data — PID was not enabled)\n"
+
+        parts = []
+        for pd in pid_phase_data:
+            r = pd.get("round", "?")
             pid = pd.get("pid", {})
+            parts.append(f"--- Round {r} ---")
+            parts.append(f"  beta_in: {pd.get('beta_in')}")
+            parts.append(f"  beta_out: {pid.get('beta_new')}")
+            parts.append(f"  e_t: {pid.get('e_t')}")
+            parts.append(f"  integral: {pid.get('integral')}")
+            parts.append(f"  p_term: {pid.get('p_term')}")
+            parts.append(f"  i_term: {pid.get('i_term')}")
+            parts.append(f"  d_term: {pid.get('d_term')}")
+            parts.append(f"  u_t: {pid.get('u_t')}")
+            parts.append(f"  quadrant: {pid.get('quadrant')}")
+            parts.append(f"  div_signal: {pid.get('div_signal')}")
+            parts.append(f"  qual_signal: {pid.get('qual_signal')}")
+            parts.append(f"  sycophancy: {pid.get('sycophancy')}")
+            parts.append("")
 
-            # Build proposal summaries from state (only available for last state)
-            proposal_summaries = {}
-            source = proposals_list if r == 1 else revisions_list
-            for p in source:
-                role = p.get("role", "unknown")
-                action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
-                alloc = action.get("allocation", {})
-                proposal_summaries[role] = {
-                    "allocation_top3": _build_allocation_top3(alloc),
-                    "confidence": action.get("confidence", 0.5),
-                    "thesis_excerpt": (action.get("justification", "") or "")[:200],
-                }
+        return "\n".join(parts)
 
-            # Critique highlights
-            critique_highlights = []
-            for c in state.get("critiques", []):
-                from_role = c.get("role", "?")
-                for crit_item in c.get("critiques", []):
-                    critique_highlights.append({
-                        "from": from_role,
-                        "to": crit_item.get("target_role", "?"),
-                        "objection_excerpt": (crit_item.get("objection", "") or "")[:150],
-                    })
+    def _section_divergence_metrics(self, pid_phase_data: list[dict]) -> str:
+        if not pid_phase_data:
+            return "(no divergence data — PID was not enabled)\n"
 
-            # Revision summaries
-            revision_summaries = {}
-            for rv in revisions_list:
-                role = rv.get("role", "unknown")
-                action = rv.get("action_dict", {}) if isinstance(rv.get("action_dict"), dict) else {}
-                alloc = action.get("allocation", {})
-                revision_summaries[role] = {
-                    "allocation_top3": _build_allocation_top3(alloc),
-                    "confidence": action.get("confidence", 0.5),
-                    "changed": True,  # Could compare but approximation is fine
-                }
+        parts = []
+        for pd in pid_phase_data:
+            r = pd.get("round", "?")
+            div = pd.get("divergence", {})
+            parts.append(f"--- Round {r} ---")
+            parts.append(f"  JS divergence: {div.get('js')}")
+            parts.append(f"  portfolio overlap: {div.get('ov')}")
 
-            summary = {
-                "round": r,
-                "proposals": proposal_summaries,
-                "critique_highlights": critique_highlights,
-                "revisions": revision_summaries,
-                "crit": {
-                    "rho_bar": crit.get("rho_bar"),
-                    "rho_i": crit.get("rho_i", {}),
-                },
-                "pid": {
-                    "beta_in": pd.get("beta_in"),
-                    "beta_new": pid.get("beta_new"),
-                    "quadrant": pid.get("quadrant"),
-                },
-            }
-            summaries.append(summary)
+            confs = div.get("agent_confidences", {})
+            if confs:
+                parts.append(f"  agent confidences: {_fmt_dict(confs)}")
 
-        return summaries
+            evidence = div.get("agent_evidence_ids", {})
+            if evidence:
+                parts.append("  agent evidence IDs:")
+                for role, ids in sorted(evidence.items()):
+                    id_list = ids if isinstance(ids, list) else list(ids)
+                    parts.append(f"    {role}: {', '.join(str(i) for i in id_list)}")
+            parts.append("")
 
-    def _build_disagreement_diagnostics(self, state: dict) -> dict:
-        """Compute allocation variance, confidence spread, drift."""
-        revisions = state.get("revisions", [])
-        proposals = state.get("proposals", [])
-        final_action = state.get("final_action", {})
-
-        # Allocation variance across agents (from revisions)
-        ticker_weights: dict[str, list[float]] = {}
-        for r in revisions:
-            action = r.get("action_dict", {}) if isinstance(r.get("action_dict"), dict) else {}
-            alloc = action.get("allocation", {})
-            for ticker, weight in alloc.items():
-                ticker_weights.setdefault(ticker, []).append(weight)
-
-        allocation_variance = {}
-        for ticker, weights in ticker_weights.items():
-            if len(weights) >= 2:
-                mean = sum(weights) / len(weights)
-                var = sum((w - mean) ** 2 for w in weights) / len(weights)
-                allocation_variance[ticker] = var
-
-        # Confidence spread
-        confidences = []
-        for r in revisions:
-            action = r.get("action_dict", {}) if isinstance(r.get("action_dict"), dict) else {}
-            confidences.append(action.get("confidence", 0.5))
-
-        if confidences:
-            confidence_spread = {
-                "min": min(confidences),
-                "max": max(confidences),
-                "range": max(confidences) - min(confidences),
-            }
-        else:
-            confidence_spread = {"min": 0, "max": 0, "range": 0}
-
-        # Final vs initial drift
-        initial_allocs: dict[str, float] = {}
-        for p in proposals:
-            action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
-            alloc = action.get("allocation", {})
-            for ticker, weight in alloc.items():
-                initial_allocs.setdefault(ticker, []).append(weight)  # type: ignore[union-attr]
-
-        initial_mean = {t: sum(ws) / len(ws) for t, ws in initial_allocs.items() if ws}
-        final_alloc = final_action.get("allocation", {})
-        drift = {}
-        all_tickers = set(initial_mean.keys()) | set(final_alloc.keys())
-        for t in all_tickers:
-            drift[t] = final_alloc.get(t, 0.0) - initial_mean.get(t, 0.0)
-
-        # Persistent disagreements
-        persistent = []
-        for ticker, weights in ticker_weights.items():
-            if len(weights) >= 2:
-                spread = max(weights) - min(weights)
-                if spread > 0.1:  # >10% disagreement
-                    parts = []
-                    for rv in revisions:
-                        role = rv.get("role", "?")
-                        action = rv.get("action_dict", {}) if isinstance(rv.get("action_dict"), dict) else {}
-                        w = action.get("allocation", {}).get(ticker)
-                        if w is not None:
-                            parts.append(f"{role} wants {w:.0%}")
-                    persistent.append(f"{ticker} weight: {', '.join(parts)}")
-
-        return _round_floats({
-            "allocation_variance": allocation_variance,
-            "confidence_spread": confidence_spread,
-            "persistent_disagreements": persistent,
-            "final_vs_initial_drift": drift,
-        })
+        return "\n".join(parts)
 
 
 # ------------------------------------------------------------------
@@ -744,10 +978,12 @@ def _replace_memo_in_prompt(prompt_text: str, enriched_context: str) -> str:
     return before + "<<MEMO CONTENT INSERTED HERE>>\n\n" + after
 
 
-def _build_allocation_top3(allocation: dict[str, float]) -> str:
-    """Build a compact top-3 allocation string like 'NVDA:25%, AAPL:15%, MSFT:12%'."""
-    if not allocation:
-        return ""
-    sorted_alloc = sorted(allocation.items(), key=lambda x: -x[1])
-    top3 = sorted_alloc[:3]
-    return ", ".join(f"{t}:{w:.0%}" for t, w in top3)
+def _fmt_dict(d: dict, ndigits: int = 4) -> str:
+    """Format a dict as compact key=value pairs."""
+    parts = []
+    for k, v in sorted(d.items()):
+        if isinstance(v, float):
+            parts.append(f"{k}={round(v, ndigits)}")
+        else:
+            parts.append(f"{k}={v}")
+    return "  ".join(parts)

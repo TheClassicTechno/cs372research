@@ -75,6 +75,7 @@ def _make_pid_runner(max_rounds: int = 2) -> MultiAgentRunner:
         pid_rho_star=0.8,
         initial_beta=0.5,
         trace_dir="/tmp/test_traces",
+        console_display=False,
     )
     runner = MultiAgentRunner(config)
     # Patch CRIT scorer to return valid mock data
