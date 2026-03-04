@@ -85,9 +85,6 @@ def pid_agent_config() -> AgentConfig:
         pid_kd=0.01,
         pid_rho_star=0.8,
         pid_initial_beta=0.5,
-        pid_propose=False,
-        pid_critique=True,
-        pid_revise=True,
     )
 
 
@@ -115,9 +112,6 @@ agent:
   pid_kd: 0.05
   pid_rho_star: 0.85
   pid_initial_beta: 0.6
-  pid_propose: true
-  pid_critique: true
-  pid_revise: false
 """
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".yaml", delete=False
@@ -133,9 +127,6 @@ agent:
         assert agent.pid_kd == 0.05
         assert agent.pid_rho_star == 0.85
         assert agent.pid_initial_beta == 0.6
-        assert agent.pid_propose is True
-        assert agent.pid_critique is True
-        assert agent.pid_revise is False
 
     def test_yaml_pid_disabled_by_default(self):
         """Without pid_enabled in YAML, PID stays off."""
@@ -169,9 +160,6 @@ agent:
         assert debate_cfg.pid_config.gains.Kd == 0.01
         assert debate_cfg.pid_config.rho_star == 0.8
         assert debate_cfg.initial_beta == 0.5
-        assert debate_cfg.pid_propose is False
-        assert debate_cfg.pid_critique is True
-        assert debate_cfg.pid_revise is True
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +242,7 @@ class TestAdapterInvokeWithPID:
 
     @staticmethod
     def _patch_crit_scorer(agent: DebateAgentSystem) -> None:
-        """Replace CRIT scorer's LLM with a mock that returns valid batch JSON."""
+        """Replace CRIT scorer's LLM with a mock that returns valid single-agent JSON."""
         runner = agent._debate_runner
         if runner._crit_scorer:
             entry = {
@@ -277,8 +265,7 @@ class TestAdapterInvokeWithPID:
                     "causal_integrity": "ok",
                 },
             }
-            role_names = [r.value for r in runner.config.roles]
-            mock_response = json.dumps({role: entry for role in role_names})
+            mock_response = json.dumps(entry)
             runner._crit_scorer._llm_fn = lambda sys, usr: mock_response
 
 
@@ -368,15 +355,6 @@ class TestConfigRoundTrip:
         assert ctrl.config.gains.Kd == pid_agent_config.pid_kd
         assert ctrl.config.rho_star == pid_agent_config.pid_rho_star
         assert ctrl.state.beta == pid_agent_config.pid_initial_beta
-
-    def test_per_phase_toggles_match(self, pid_agent_config: AgentConfig):
-        """Per-phase toggles in AgentConfig match DebateConfig."""
-        agent = DebateAgentSystem(pid_agent_config)
-        cfg = agent._debate_runner.config
-
-        assert cfg.pid_propose == pid_agent_config.pid_propose
-        assert cfg.pid_critique == pid_agent_config.pid_critique
-        assert cfg.pid_revise == pid_agent_config.pid_revise
 
     def test_phase_graphs_compiled_when_pid_enabled(
         self, pid_agent_config: AgentConfig

@@ -713,7 +713,7 @@ class TestBetaNoneFallsBackToAgreeableness:
     def test_critique_no_beta_gets_agreeableness_tone(self, obs_dict):
         """_current_beta=None + agreeableness=0.3 → beta=0.7 → adversarial tone."""
         config = _make_config(_pid_enabled_flag=True)
-        config["_current_beta"] = None  # simulates pid_critique=False
+        config["_current_beta"] = None  # simulates propose phase (no PID β)
 
         result, _ = _run_through_critique(obs_dict, config)
         turns = _get_turns(result, "critique")

@@ -118,15 +118,6 @@ class DebateConfig:
     convergence_window: int = 2  # consecutive stable rounds required for early stop
     delta_rho: float = 0.02      # rho_bar plateau tolerance for convergence
 
-    # --- Per-phase PID intervention toggles ---
-    # Controls which debate phases use PID's beta_new as agreeableness.
-    # pid_propose: proposals not strongly affected by agreeableness (default off)
-    # pid_critique: critique tone is most sensitive to agreeableness (default on)
-    # pid_revise: revision deference is also sensitive (default on)
-    pid_propose: bool = False
-    pid_critique: bool = True
-    pid_revise: bool = True
-
     # --- PID logging ---
     pid_log_metrics: bool = True
     pid_log_llm_calls: bool = False
@@ -218,9 +209,6 @@ class DebateConfig:
             "log_prompt_manifest": self.log_prompt_manifest,
             "trace_dir": self.trace_dir,
             "pid_enabled": self.pid_enabled,
-            "pid_propose": self.pid_propose,
-            "pid_critique": self.pid_critique,
-            "pid_revise": self.pid_revise,
             "prompt_logging": self.prompt_logging,
             "convergence_window": self.convergence_window,
             "delta_rho": self.delta_rho,

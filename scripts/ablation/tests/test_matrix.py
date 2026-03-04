@@ -61,11 +61,6 @@ class TestMakeRunLabel:
         assert param == "config"
         assert value == "aggressive_p"
 
-    def test_labeled_group_phases(self):
-        param, value = _make_run_label("phases", {}, 2)
-        assert param == "config"
-        assert value == "revise_only"
-
     def test_models_group(self):
         param, value = _make_run_label("models", {"model_name": "gpt-4o"}, 0)
         assert param == "model"

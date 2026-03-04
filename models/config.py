@@ -126,19 +126,6 @@ class AgentConfig(BaseModel):
         description="Rho-bar plateau tolerance for convergence detection. "
         "Termination requires |rho_bar(t) - rho_bar(t-1)| < delta_rho.",
     )
-    pid_propose: bool = Field(
-        default=False,
-        description="Whether PID controls agreeableness during propose phase.",
-    )
-    pid_critique: bool = Field(
-        default=True,
-        description="Whether PID controls agreeableness during critique phase.",
-    )
-    pid_revise: bool = Field(
-        default=True,
-        description="Whether PID controls agreeableness during revise phase.",
-    )
-
     # --- PID logging ---
     pid_log_metrics: bool = Field(
         default=True,

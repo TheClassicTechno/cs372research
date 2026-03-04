@@ -78,7 +78,7 @@ class TestBaseline:
             "rho_star", "gamma_beta", "delta_js", "delta_s", "delta_beta",
             "epsilon", "mu", "initial_beta", "max_rounds", "temperature",
             "model_name", "tickers", "roles", "agreeableness",
-            "pid_propose", "pid_critique", "pid_revise", "enable_adversarial",
+            "enable_adversarial",
         ]
         for key in required:
             assert key in BASELINE, f"Missing baseline key: {key}"
@@ -127,9 +127,6 @@ class TestSweepGroups:
 
     def test_sycophancy_group_has_entries(self):
         assert len(SWEEP_GROUPS["sycophancy"]) == 10
-
-    def test_phases_group_has_entries(self):
-        assert len(SWEEP_GROUPS["phases"]) == 4
 
     def test_models_group_has_entries(self):
         assert len(SWEEP_GROUPS["models"]) >= 3

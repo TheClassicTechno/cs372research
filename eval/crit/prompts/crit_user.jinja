@@ -1,0 +1,21 @@
+## Round {{ round }}
+
+## Agent Under Evaluation: {{ agent_role | upper }}
+
+### Original Proposal
+
+{{ proposal | tojson(indent=2) }}
+
+### Critiques Received
+
+{{ critiques_received | tojson(indent=2) }}
+
+### Revised Argument
+
+{{ revised_argument | tojson(indent=2) }}
+
+## Instructions
+
+Score the revised argument of the {{ agent_role | upper }} agent across the four pillars: internal_consistency, evidence_support, trace_alignment, causal_integrity.
+
+Respond with the JSON object described in your system prompt.

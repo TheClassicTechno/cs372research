@@ -48,11 +48,6 @@ agent:
   pid_initial_beta: 0.5
   pid_epsilon: 0.001
 
-  # Per-phase PID toggles
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
-
   # System-level causal contract (consolidates causal scaffolding)
   use_system_causal_contract: true
 

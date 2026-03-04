@@ -58,12 +58,8 @@ _CRIT_ENTRY = {
     },
 }
 
-# Batch format: all common roles get the same entry.
-# validate_batch_response only checks expected_roles, so extra roles are fine.
-MOCK_CRIT_RESPONSE = json.dumps({
-    role: _CRIT_ENTRY
-    for role in ["macro", "value", "risk", "technical"]
-})
+# Single-agent format: scorer now calls _llm_fn once per agent independently.
+MOCK_CRIT_RESPONSE = json.dumps(_CRIT_ENTRY)
 
 
 def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
@@ -118,9 +114,6 @@ agent:
   pid_kd: 0.01
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
 """
 
 YAML_PID_DISABLED = """\

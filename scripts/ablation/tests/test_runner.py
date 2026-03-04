@@ -94,15 +94,6 @@ class TestBuildDebateConfig:
         config = build_debate_config(BASELINE, mock=True)
         assert config.parallel_agents is False
 
-    def test_phase_flags_applied(self):
-        params = dict(BASELINE)
-        params["pid_propose"] = True
-        params["pid_critique"] = False
-        params["pid_revise"] = False
-        config = build_debate_config(params, mock=True)
-        assert config.pid_propose is True
-        assert config.pid_critique is False
-        assert config.pid_revise is False
 
 
 # ===========================================================================

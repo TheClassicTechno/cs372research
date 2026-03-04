@@ -43,11 +43,6 @@ agent:
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
 
-  # Per-phase PID toggles
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
-
   # Logging — enable to see PID metrics in output
   pid_log_metrics: true
   pid_log_llm_calls: false

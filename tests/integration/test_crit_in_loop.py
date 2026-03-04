@@ -43,68 +43,64 @@ def _make_crit_entry(ic=0.8, es=0.7, ta=0.9, ci=0.6):
 
 
 def _mock_crit_llm(ic=0.8, es=0.7, ta=0.9, ci=0.6):
-    """Return a mock LLM function that produces a valid batch CRIT response."""
+    """Return a mock LLM function that produces a valid single-agent CRIT response."""
     entry = _make_crit_entry(ic, es, ta, ci)
-    response = json.dumps({role: entry for role in ALL_ROLES})
+    response = json.dumps(entry)
     return lambda sys, usr: response
 
 
 def _mock_crit_llm_per_role(role_scores: dict[str, tuple]):
-    """Return a mock LLM that returns different scores per agent role (batch format).
+    """Return a mock LLM that returns different scores based on agent_role in prompt.
 
     Args:
         role_scores: Mapping of role name → (ic, es, ta, ci) tuple.
     """
-    batch = {}
+    responses = {}
     for role, (ic, es, ta, ci) in role_scores.items():
-        batch[role] = _make_crit_entry(ic, es, ta, ci)
-    response = json.dumps(batch)
-    return lambda sys, usr: response
+        responses[role] = json.dumps(_make_crit_entry(ic, es, ta, ci))
+
+    def _llm(sys_prompt: str, usr_prompt: str) -> str:
+        # Extract agent_role from the user prompt (rendered by Jinja)
+        for role in role_scores:
+            if role in usr_prompt.lower():
+                return responses[role]
+        # Fallback: return first entry
+        return next(iter(responses.values()))
+
+    return _llm
 
 
 # ---------------------------------------------------------------------------
-# Mock debate data
+# Mock reasoning bundles
 # ---------------------------------------------------------------------------
 
-MOCK_CASE_DATA = "NVDA reported strong Q3 earnings with revenue up 20% YoY."
+def _make_bundle(role: str) -> dict:
+    """Build a minimal reasoning bundle for one agent."""
+    return {
+        "round": 1,
+        "agent_role": role,
+        "proposal": {
+            "thesis": f"{role} thesis",
+            "portfolio_allocation": {"NVDA": 0.5},
+            "reasoning": f"{role} reasoning for buy.",
+            "evidence_citations": [],
+        },
+        "critiques_received": [],
+        "revised_argument": {
+            "thesis": f"{role} revised thesis",
+            "portfolio_allocation": {"NVDA": 0.5},
+            "reasoning": f"{role} revised reasoning.",
+            "evidence_citations": [],
+        },
+    }
 
-MOCK_AGENT_TRACES = [
-    {
-        "role": "macro",
-        "type": "proposal",
-        "content": {
-            "justification": "Strong macro tailwinds support growth.",
-            "confidence": 0.8,
-        },
-    },
-    {
-        "role": "value",
-        "type": "proposal",
-        "content": {
-            "justification": "Valuation stretched but justified by growth.",
-            "confidence": 0.6,
-        },
-    },
-]
 
-MOCK_DECISIONS = [
-    {
-        "role": "macro",
-        "action_dict": {
-            "orders": [{"ticker": "NVDA", "side": "buy", "size": 100}],
-            "justification": "Buy on strength.",
-            "confidence": 0.8,
-        },
-    },
-    {
-        "role": "value",
-        "action_dict": {
-            "orders": [{"ticker": "NVDA", "side": "buy", "size": 50}],
-            "justification": "Moderate buy.",
-            "confidence": 0.6,
-        },
-    },
-]
+MOCK_BUNDLES_2 = {
+    "macro": _make_bundle("macro"),
+    "value": _make_bundle("value"),
+}
+
+MOCK_BUNDLES_4 = {role: _make_bundle(role) for role in ALL_ROLES}
 
 
 # ---------------------------------------------------------------------------
@@ -115,13 +111,13 @@ class TestCritInLoop:
     def test_crit_returns_round_crit_result(self):
         """CRIT invoked after mock debate round returns RoundCritResult."""
         scorer = CritScorer(llm_fn=_mock_crit_llm())
-        result = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         assert isinstance(result, RoundCritResult)
 
     def test_per_agent_scores_present(self):
         """Each agent has its own CritResult in the RoundCritResult."""
         scorer = CritScorer(llm_fn=_mock_crit_llm())
-        result = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         assert "macro" in result.agent_scores
         assert "value" in result.agent_scores
         assert isinstance(result.agent_scores["macro"], CritResult)
@@ -133,22 +129,21 @@ class TestCritInLoop:
             "macro": (0.9, 0.9, 0.9, 0.9),  # ρ_i = 0.9
             "value": (0.5, 0.5, 0.5, 0.5),  # ρ_i = 0.5
         }))
-        result = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         expected = (0.9 + 0.5) / 2.0
         assert abs(result.rho_bar - expected) < 1e-9
 
     def test_rho_bar_computed_correctly_uniform(self):
         """With uniform mock LLM, all agents get same score, ρ̄ = ρ_i."""
         scorer = CritScorer(llm_fn=_mock_crit_llm(0.8, 0.7, 0.9, 0.6))
-        result = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         expected = (0.8 + 0.7 + 0.9 + 0.6) / 4.0
         assert abs(result.rho_bar - expected) < 1e-9
 
     def test_no_ground_truth_required(self):
-        """CRIT operates without any outcome information in case_data."""
-        case_data = "Company reported earnings. No forward guidance available."
+        """CRIT operates without any outcome information in bundles."""
         scorer = CritScorer(llm_fn=_mock_crit_llm())
-        result = scorer.score(case_data, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         assert isinstance(result, RoundCritResult)
 
     def test_no_broker_interaction(self):
@@ -160,46 +155,34 @@ class TestCritInLoop:
     def test_crit_can_run_without_pid(self):
         """CRIT scorer works standalone without PID controller."""
         scorer = CritScorer(llm_fn=_mock_crit_llm())
-        result = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        result = scorer.score(MOCK_BUNDLES_2)
         assert 0.0 <= result.rho_bar <= 1.0
 
     def test_crit_output_deterministic(self):
         """Given the same mock LLM, CRIT produces identical results."""
         scorer = CritScorer(llm_fn=_mock_crit_llm(0.75, 0.85, 0.65, 0.55))
-        r1 = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
-        r2 = scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
+        r1 = scorer.score(MOCK_BUNDLES_2)
+        r2 = scorer.score(MOCK_BUNDLES_2)
         assert r1.rho_bar == r2.rho_bar
         assert r1.agent_scores.keys() == r2.agent_scores.keys()
 
-    def test_llm_called_once_for_batch(self):
-        """The LLM is invoked once for all agents (batch mode)."""
+    def test_llm_called_once_per_agent(self):
+        """The LLM is invoked once per agent (parallel per-agent calls)."""
         call_count = 0
         entry = _make_crit_entry()
 
         def counting_llm(sys, usr):
             nonlocal call_count
             call_count += 1
-            return json.dumps({role: entry for role in ALL_ROLES})
+            return json.dumps(entry)
 
         scorer = CritScorer(llm_fn=counting_llm)
-        scorer.score(MOCK_CASE_DATA, MOCK_AGENT_TRACES, MOCK_DECISIONS)
-        assert call_count == 1  # single batch call for all agents
+        scorer.score(MOCK_BUNDLES_4)
+        assert call_count == 4  # one call per agent
 
     def test_four_agent_scoring(self):
         """Standard 4-agent debate produces 4 per-agent scores."""
-        traces = [
-            {"role": "macro", "type": "proposal", "content": "macro reasoning"},
-            {"role": "value", "type": "proposal", "content": "value reasoning"},
-            {"role": "risk", "type": "proposal", "content": "risk reasoning"},
-            {"role": "technical", "type": "proposal", "content": "tech reasoning"},
-        ]
-        decisions = [
-            {"role": "macro", "action_dict": {"confidence": 0.8}},
-            {"role": "value", "action_dict": {"confidence": 0.6}},
-            {"role": "risk", "action_dict": {"confidence": 0.5}},
-            {"role": "technical", "action_dict": {"confidence": 0.7}},
-        ]
         scorer = CritScorer(llm_fn=_mock_crit_llm())
-        result = scorer.score(MOCK_CASE_DATA, traces, decisions)
+        result = scorer.score(MOCK_BUNDLES_4)
         assert len(result.agent_scores) == 4
         assert set(result.agent_scores.keys()) == {"macro", "value", "risk", "technical"}

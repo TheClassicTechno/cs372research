@@ -8,7 +8,42 @@ It never sees ground truth, market outcomes, or impact scores.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
+import jinja2
+
+# Module-level Jinja environment singleton — templates loaded once and cached.
+# Templates live alongside this __init__.py in the prompts/ package directory.
+_TEMPLATE_DIR = Path(__file__).parent
+_JINJA_ENV = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(str(_TEMPLATE_DIR)),
+    keep_trailing_newline=True,
+)
+
+
+def render_crit_prompts(bundle: dict) -> tuple[str, str]:
+    """Render CRIT system + user prompts from a reasoning bundle.
+
+    Args:
+        bundle: Dict with keys: round, agent_role, proposal,
+                critiques_received, revised_argument.
+
+    Returns:
+        (system_prompt, user_prompt) tuple of rendered strings.
+    """
+    system_tmpl = _JINJA_ENV.get_template("crit_system.jinja")
+    user_tmpl = _JINJA_ENV.get_template("crit_user.jinja")
+    system_prompt = system_tmpl.render(agent_role=bundle["agent_role"])
+    user_prompt = user_tmpl.render(
+        round=bundle["round"],
+        agent_role=bundle["agent_role"],
+        proposal=bundle["proposal"],
+        critiques_received=bundle["critiques_received"],
+        revised_argument=bundle["revised_argument"],
+    )
+    return system_prompt, user_prompt
+
+# DEPRECATED: Use render_crit_prompts() with Jinja templates instead.
 CRIT_SYSTEM_PROMPT = """\
 You are a reasoning quality auditor (CRIT). Your job is to evaluate the \
 logical integrity of arguments produced by a single trading agent during \
@@ -86,6 +121,8 @@ def build_crit_user_prompt(
 ) -> str:
     """Build the CRIT user prompt from case data, agent arguments, and decisions.
 
+    .. deprecated:: Use render_crit_prompts() with Jinja templates instead.
+
     NOTE: This is the legacy multi-agent prompt.  The per-agent scorer uses
     build_crit_single_agent_prompt() instead.
 
@@ -138,6 +175,7 @@ def build_crit_user_prompt(
     return "\n".join(sections)
 
 
+# DEPRECATED: Use render_crit_prompts() with Jinja templates instead.
 CRIT_BATCH_SYSTEM_PROMPT = """\
 You are a reasoning quality auditor (CRIT). Your job is to evaluate the \
 logical integrity of arguments produced by multiple trading agents during \
@@ -221,6 +259,8 @@ def build_crit_batch_prompt(
 ) -> str:
     """Build a CRIT user prompt that evaluates all agents in one call.
 
+    .. deprecated:: Use render_crit_prompts() with Jinja templates instead.
+
     Args:
         case_data: The enriched context that agents saw (no ground truth).
         traces_by_role: Mapping of role name → list of debate turn dicts.
@@ -287,6 +327,8 @@ def build_crit_single_agent_prompt(
     decision: dict | None,
 ) -> str:
     """Build a CRIT user prompt for a single agent (per-agent ρ_i scoring).
+
+    .. deprecated:: Use render_crit_prompts() with Jinja templates instead.
 
     Per the RAudit paper (Section 3.3), CRIT evaluates each agent's
     reasoning quality individually.  This prompt presents only one

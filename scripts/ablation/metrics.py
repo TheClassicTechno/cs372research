@@ -453,7 +453,7 @@ def aggregate_replicates(results: list[dict]) -> dict:
         "run_id", "group", "param", "value", "model_name", "temperature",
         "num_tickers", "num_agents", "Kp", "Ki", "Kd", "rho_star",
         "gamma_beta", "delta_js", "delta_s", "delta_beta", "epsilon", "mu",
-        "initial_beta", "pid_propose", "pid_critique", "pid_revise",
+        "initial_beta",
         "enable_adversarial", "scenario", "status", "stability_check",
         "non_oscillation_check", "stochastic_regime",
     }

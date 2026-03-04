@@ -18,7 +18,7 @@ from multi_agent.prompts.registry import (
     build_prompt_manifest,
     resolve_beta,
 )
-from multi_agent.graph.llm import _compact_context_for_crit, _extract_snapshot_id
+from multi_agent.graph.llm import _extract_snapshot_id
 
 
 # ── fixtures ─────────────────────────────────────────────────────────────────
@@ -183,61 +183,6 @@ class TestExtractSnapshotId:
         context = "As-of: 2024-12-31\n"
         result = _extract_snapshot_id(context, observation)
         assert result == "2024-12-31 (AAPL)"
-
-
-# ── _compact_context_for_crit ────────────────────────────────────────────────
-
-
-class TestCompactContextForCrit:
-    """Verify CRIT context truncation for large memos."""
-
-    def test_short_context_returned_unchanged(self):
-        short = "Some short context data."
-        assert _compact_context_for_crit(short) == short
-
-    def test_exactly_at_limit_returned_unchanged(self):
-        ctx = "x" * 6000
-        assert _compact_context_for_crit(ctx) == ctx
-
-    def test_long_context_without_memo_marker_truncated(self):
-        ctx = "A" * 10000
-        result = _compact_context_for_crit(ctx, max_chars=500)
-        assert len(result) < len(ctx)
-        assert result.startswith("A" * 500)
-        assert "[... memo truncated for CRIT scoring ...]" in result
-
-    def test_long_context_with_memo_marker_keeps_header(self):
-        header = "Cash: $100,000\nAllocation universe: AAPL\nAs-of: 2025Q1\n\n"
-        memo = "[INFO] QUARTERLY SNAPSHOT MEMO\n" + "data " * 20000
-        ctx = header + memo
-        result = _compact_context_for_crit(ctx, max_chars=500)
-        # Header preserved in full
-        assert result.startswith(header)
-        # Memo truncated
-        assert "[... memo truncated" in result
-        assert "chars total" in result
-        assert len(result) < len(ctx)
-
-    def test_custom_max_chars(self):
-        ctx = "x" * 2000
-        result = _compact_context_for_crit(ctx, max_chars=1000)
-        assert len(result) < 2000
-        assert "[... memo truncated for CRIT scoring ...]" in result
-
-    def test_empty_context(self):
-        assert _compact_context_for_crit("") == ""
-
-    def test_remaining_budget_floor(self):
-        """Even if header is large, at least 200 chars of memo are kept."""
-        header = "H" * 600
-        memo = "[INFO] QUARTERLY SNAPSHOT MEMO\n" + "M" * 5000
-        ctx = header + memo
-        # max_chars=500 < header length, but remaining_budget floors at 200
-        result = _compact_context_for_crit(ctx, max_chars=500)
-        assert result.startswith(header)
-        # At least 200 chars of memo content
-        memo_portion = result[len(header):]
-        assert memo_portion.startswith("[INFO] QUARTERLY SNAPSHOT MEMO")
 
 
 # ── Config propagation ───────────────────────────────────────────────────────

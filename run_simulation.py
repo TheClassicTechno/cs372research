@@ -136,6 +136,9 @@ def _setup_logging(level: str) -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
         stream=sys.stdout,
     )
+    # Suppress noisy HTTP-level logs (e.g. "HTTP Request: POST ... 200 OK")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def _dump_prompts(config: SimulationConfig) -> None:

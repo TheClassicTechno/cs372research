@@ -37,7 +37,30 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
     (connection errors, rate limits, timeouts).
     """
     if config.get("mock", False):
-        return "{}"
+        # Return a valid single-agent CRIT response.
+        # Debate graph nodes never reach _call_llm in mock mode (they use
+        # their own mock shortcuts). Only the CRIT scorer hits this path.
+        import json as _json
+        return _json.dumps({
+            "pillar_scores": {
+                "internal_consistency": 0.8,
+                "evidence_support": 0.7,
+                "trace_alignment": 0.75,
+                "causal_integrity": 0.65,
+            },
+            "diagnostics": {
+                "contradictions_detected": False,
+                "unsupported_claims_detected": False,
+                "conclusion_drift_detected": False,
+                "causal_overreach_detected": False,
+            },
+            "explanations": {
+                "internal_consistency": "Mock: consistent.",
+                "evidence_support": "Mock: supported.",
+                "trace_alignment": "Mock: aligned.",
+                "causal_integrity": "Mock: sound.",
+            },
+        })
 
     import time
 
@@ -121,39 +144,6 @@ def _extract_snapshot_id(enriched_context: str, observation: dict) -> str:
     if universe:
         return f"({universe})"
     return "N/A"
-
-
-def _compact_context_for_crit(enriched_context: str, max_chars: int = 6000) -> str:
-    """Truncate the enriched context for CRIT scoring.
-
-    The full quarterly snapshot memo can be 80K+ chars.  CRIT only needs
-    enough context to judge whether agents cited evidence correctly — the
-    portfolio header plus the first ``max_chars`` of the memo body.
-
-    If the context is already short enough, it is returned unchanged.
-    """
-    if len(enriched_context) <= max_chars:
-        return enriched_context
-
-    # Find the memo start marker
-    memo_start = enriched_context.find("[INFO] QUARTERLY SNAPSHOT MEMO")
-    if memo_start == -1:
-        # No memo marker — just truncate
-        return enriched_context[:max_chars] + "\n\n[... memo truncated for CRIT scoring ...]\n"
-
-    # Keep the header (before memo) + first portion of memo
-    header = enriched_context[:memo_start]
-    remaining_budget = max_chars - len(header)
-    if remaining_budget < 200:
-        remaining_budget = 200
-
-    memo_excerpt = enriched_context[memo_start:memo_start + remaining_budget]
-    return (
-        header
-        + memo_excerpt
-        + f"\n\n[... memo truncated — {len(enriched_context) - memo_start:,} chars total, "
-        f"showing first {remaining_budget:,} for CRIT scoring ...]\n"
-    )
 
 
 def _compact_user_prompt(user_prompt: str, config: dict) -> str:

@@ -82,9 +82,6 @@ def build_debate_config(params: dict, mock: bool = False) -> Any:
         verbose=False,
         pid_config=pid_config,
         initial_beta=params.get("initial_beta", 0.5),
-        pid_propose=params.get("pid_propose", False),
-        pid_critique=params.get("pid_critique", True),
-        pid_revise=params.get("pid_revise", True),
         pid_log_metrics=True,
     )
 
@@ -139,9 +136,6 @@ def run_single_ablation(
         "epsilon": run_config.get("epsilon"),
         "mu": run_config.get("mu"),
         "initial_beta": run_config.get("initial_beta"),
-        "pid_propose": run_config.get("pid_propose"),
-        "pid_critique": run_config.get("pid_critique"),
-        "pid_revise": run_config.get("pid_revise"),
         "enable_adversarial": run_config.get("enable_adversarial"),
     }
 

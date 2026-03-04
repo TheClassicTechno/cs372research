@@ -14,24 +14,18 @@ its own LangGraph sub-graph:
 
     Phase 1 — Pipeline:      news → data → build_context
     Phase 2 — Debate rounds:  for t in range(max_rounds):
-                                  propose → critique → revise
+                                  propose → critique → revise → CRIT → PID
     Phase 3 — Finalize:       judge → build_trace
 
-The runner owns the iteration loop (Phase 2), calling single_round_graph
-once per round.  Between rounds, external controllers can observe the
-state and decide whether to continue, adjust agreeableness, etc.
-
-When PID is enabled, Phase 2 decomposes each round into three separate
-sub-graph invocations (propose, critique, revise).  CRIT scores and PID
-updates beta after EACH phase, so the updated beta feeds into the next
-phase within the same round:
+The runner owns the iteration loop (Phase 2), calling per-phase sub-graphs
+once per round.  CRIT runs once per round after revise, scoring each agent
+independently via parallel LLM calls (no cross-agent contamination).
+PID updates beta once per round from the aggregate CRIT score.
 
     for t in range(max_rounds):
         state = self._run_round_with_pid(state, t + 1)
         # Inside _run_round_with_pid:
-        #   propose(β₀) → CRIT → PID.step → β₁
-        #   critique(β₁) → CRIT → PID.step → β₂
-        #   revise(β₂)  → CRIT → PID.step → β₃
+        #   propose(β) → critique(β) → revise(β) → _crit_and_pid_step()
         if self.should_terminate(state):
             break
 
@@ -125,7 +119,7 @@ from .graph import (
     compile_parallel_revise_graph,
     _call_llm,
 )
-from .graph.llm import _compact_context_for_crit, _extract_snapshot_id, prompt_logger
+from .graph.llm import _extract_snapshot_id, prompt_logger
 from .models import (
     Action,
     AgentTrace,
@@ -137,6 +131,98 @@ from .models import (
     PIDEvent,
     RoundMetrics,
 )
+
+
+def build_reasoning_bundle(
+    state: dict,
+    role: str,
+    round_num: int,
+    memo_evidence_lookup: dict[str, str],
+) -> dict | None:
+    """Assemble one agent's reasoning bundle from debate state.
+
+    Returns the structured bundle dict for CRIT evaluation, or None
+    if the agent has no proposal or revision in this state.
+
+    Critical: critiques_received includes ONLY critiques targeting this
+    agent. Critiques list is reset each round, so all entries are current.
+    """
+    from eval.evidence import enrich_evidence_citations
+    import copy
+
+    # Find this agent's proposal
+    proposal = None
+    for p in state.get("proposals", []):
+        if p.get("role") == role:
+            proposal = p
+            break
+    if proposal is None:
+        return None
+
+    # Find this agent's revision (fall back to proposal if no revision)
+    revision = None
+    for r in state.get("revisions", []):
+        if r.get("role") == role:
+            revision = r
+            break
+    if revision is None:
+        revision = proposal
+
+    # Filter critiques: only those targeting this agent
+    critiques_received = []
+    for critic in state.get("critiques", []):
+        from_role = critic.get("role", "unknown")
+        for crit in critic.get("critiques", []):
+            if crit.get("target_role") == role:
+                critiques_received.append({
+                    "from_role": from_role,
+                    "critique_text": crit.get("objection", ""),
+                    "evidence_citations": copy.deepcopy(
+                        crit.get("evidence_citations", [])
+                    ),
+                })
+
+    # Extract action_dict content for proposal and revision
+    prop_action = proposal.get("action_dict", {})
+    if not isinstance(prop_action, dict):
+        prop_action = {}
+    rev_action = revision.get("action_dict", {})
+    if not isinstance(rev_action, dict):
+        rev_action = {}
+
+    # Build proposal bundle with embedded evidence
+    prop_citations = copy.deepcopy(prop_action.get("evidence_citations", []))
+    enrich_evidence_citations(prop_citations, memo_evidence_lookup)
+    proposal_bundle = {
+        "thesis": prop_action.get("justification", ""),
+        "portfolio_allocation": prop_action.get("allocation", {}),
+        "reasoning": proposal.get("raw_response", ""),
+        "evidence_citations": prop_citations,
+    }
+
+    # Build revision bundle with embedded evidence
+    rev_citations = copy.deepcopy(rev_action.get("evidence_citations", []))
+    enrich_evidence_citations(rev_citations, memo_evidence_lookup)
+    revised_bundle = {
+        "thesis": rev_action.get("justification", ""),
+        "portfolio_allocation": rev_action.get("allocation", {}),
+        "reasoning": revision.get("raw_response", ""),
+        "evidence_citations": rev_citations,
+    }
+
+    # Enrich critique citations
+    for crit in critiques_received:
+        enrich_evidence_citations(
+            crit.get("evidence_citations", []), memo_evidence_lookup,
+        )
+
+    return {
+        "round": round_num,
+        "agent_role": role,
+        "proposal": proposal_bundle,
+        "critiques_received": critiques_received,
+        "revised_argument": revised_bundle,
+    }
 
 
 class MultiAgentRunner:
@@ -218,6 +304,7 @@ class MultiAgentRunner:
         self._stable_rounds: int = 0
         self._prev_rho_bar: float | None = None
         self._original_agreeableness = self.config.agreeableness
+        self._memo_evidence_lookup: dict[str, str] = {}
 
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -245,6 +332,7 @@ class MultiAgentRunner:
         self._pid_phase_data = []
         self._stable_rounds = 0
         self._prev_rho_bar = None
+        self._memo_evidence_lookup = {}
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -255,8 +343,8 @@ class MultiAgentRunner:
     def _log_prompt_manifest(self, state: dict, round_num: int) -> None:
         """Log prompt file manifest once at the start of a round.
 
-        Emits a compact summary of all prompt files that will be used,
-        plus a unique snapshot identifier, via the debate.prompts logger.
+        Lists files top-to-bottom in the same order they appear in the
+        rendered system prompt, then the user-prompt (phase) template.
         """
         config = state["config"]
         manifest = build_prompt_manifest(config)
@@ -266,46 +354,43 @@ class MultiAgentRunner:
             state.get("observation", {}),
         )
 
+        beta = manifest.get("beta")
+        bucket = manifest.get("beta_bucket", "")
+        beta_str = f"β={beta:.2f} ({bucket})" if beta is not None else "β=N/A"
+
         lines = [
             "=" * 72,
-            f"  [Prompt Manifest] Round {round_num} | Snapshot: {snapshot_id}",
+            f"  [Prompt Manifest] Round {round_num} | {beta_str} | {snapshot_id}",
             "-" * 72,
+            "  System prompt (top → bottom):",
         ]
 
-        # System block order
+        # Walk the block order and emit each file in rendered order
         order = manifest.get("block_order", [])
-        lines.append(f"  System blocks: {' → '.join(order)}")
-
-        # Causal contract
-        cc = manifest.get("causal_contract")
-        if cc:
-            lines.append(f"    causal_contract: {cc}")
-
-        # Role files
         role_files = manifest.get("role_files", {})
-        if role_files:
-            names = ", ".join(
-                f.rsplit("/", 1)[-1] for f in role_files.values()
-            )
-            lines.append(f"    role_files: {names}")
 
-        # Tone
-        tone = manifest.get("tone", {})
-        if tone:
-            beta = manifest.get("beta", "?")
-            bucket = manifest.get("beta_bucket", "?")
-            tone_names = ", ".join(
-                f.rsplit("/", 1)[-1] for f in tone.values() if f
-            )
-            lines.append(f"    tone (β={beta:.2f}, {bucket}): {tone_names}")
+        for block in order:
+            if block == "causal_contract":
+                cc = manifest.get("causal_contract")
+                if cc:
+                    lines.append(f"    1. [{block}] {cc}")
+            elif block == "role_system":
+                for role, fname in role_files.items():
+                    lines.append(f"    2. [{block}] {fname}  ({role})")
+            elif block == "phase_preamble":
+                lines.append(f"    3. [{block}] [inline]")
+            elif block == "tone":
+                tone = manifest.get("tone", {})
+                if tone:
+                    for phase, fname in tone.items():
+                        if fname:
+                            lines.append(f"    4. [{block}] {fname}  ({phase})")
 
-        # Phase templates
+        # User-prompt templates
+        lines.append("  User prompt templates:")
         phase_templates = manifest.get("phase_templates", {})
-        if phase_templates:
-            names = ", ".join(
-                f.rsplit("/", 1)[-1] for f in phase_templates.values()
-            )
-            lines.append(f"  Phase templates: {names}")
+        for phase, fname in phase_templates.items():
+            lines.append(f"    - {fname}  ({phase})")
 
         lines.append("=" * 72)
         prompt_logger.info("\n".join(lines))
@@ -343,6 +428,13 @@ class MultiAgentRunner:
 
         # Phase 1: Pipeline (news digest, data analysis, context building)
         state = self.pipeline_graph.invoke(state)
+
+        # Parse memo evidence once for CRIT citation enrichment
+        if self.config.pid_enabled:
+            from eval.evidence import parse_memo_evidence
+            self._memo_evidence_lookup = parse_memo_evidence(
+                state.get("enriched_context", "")
+            )
 
         # Phase 2: Debate rounds
         terminated_early = False
@@ -399,11 +491,11 @@ class MultiAgentRunner:
         return state
 
     def _run_round_with_pid(self, state: dict, round_num: int) -> dict:
-        """Run one debate round with per-phase CRIT scoring and PID control.
+        """Run one debate round with once-per-round CRIT scoring and PID control.
 
-        Each phase (propose, critique, revise) is invoked as a separate
-        sub-graph.  After each phase, CRIT scores the current state and
-        PID updates beta — so the updated beta feeds into the next phase.
+        β stays constant across propose/critique/revise (from prior round's
+        PID update).  CRIT runs once after revise, scoring each agent
+        independently via parallel LLM calls.  PID updates β for the next round.
 
         Also injects ``_current_beta`` into config so the modular prompt
         registry can map beta to tone bucket without seeing the numeric value.
@@ -411,93 +503,59 @@ class MultiAgentRunner:
         beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
 
         # --- Propose phase (no tone injection) ---
-        propose_a = beta if self.config.pid_propose else self._original_agreeableness
-        state["config"]["agreeableness"] = propose_a
+        state["config"]["agreeableness"] = self._original_agreeableness
         state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
 
-        if self._pid_controller and self._crit_scorer:
-            try:
-                self._pid_phase_step(state, round_num, "propose", beta_in=beta)
-                beta = self._pid_controller.beta
-            except Exception as exc:
-                logger.warning(
-                    "CRIT/PID failed in round %d propose: %s — keeping beta %.3f",
-                    round_num, exc, beta,
-                )
-
-        # --- Critique phase ---
-        critique_a = beta if self.config.pid_critique else self._original_agreeableness
-        state["config"]["agreeableness"] = critique_a
-        state["config"]["_current_beta"] = beta if self.config.pid_critique else None
+        # --- Critique phase (uses PID beta for tone) ---
+        state["config"]["agreeableness"] = beta
+        state["config"]["_current_beta"] = beta
         state = self._critique_graph.invoke(state)
 
-        if self._pid_controller and self._crit_scorer:
-            try:
-                self._pid_phase_step(state, round_num, "critique", beta_in=beta)
-                beta = self._pid_controller.beta
-            except Exception as exc:
-                logger.warning(
-                    "CRIT/PID failed in round %d critique: %s — keeping beta %.3f",
-                    round_num, exc, beta,
-                )
-
-        # --- Revise phase ---
-        revise_a = beta if self.config.pid_revise else self._original_agreeableness
-        state["config"]["agreeableness"] = revise_a
-        state["config"]["_current_beta"] = beta if self.config.pid_revise else None
+        # --- Revise phase (uses PID beta for tone) ---
+        state["config"]["agreeableness"] = beta
+        state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
 
+        # --- CRIT + PID (once per round, after revise) ---
         if self._pid_controller and self._crit_scorer:
-            try:
-                self._pid_phase_step(state, round_num, "revise", beta_in=beta)
-            except Exception as exc:
-                logger.warning(
-                    "CRIT/PID failed in round %d revise: %s — keeping beta %.3f",
-                    round_num, exc, self._pid_controller.beta,
-                )
+            self._crit_and_pid_step(state, round_num, beta_in=beta)
 
         return state
 
-    # Turn types allowed in CRIT traces for each phase.
-    _PHASE_ALLOWED_TYPES: dict[str, set[str]] = {
-        "propose": {"proposal"},
-        "critique": {"proposal", "critique"},
-        "revise": {"proposal", "critique", "revision"},
-    }
-
-    def _pid_phase_step(
-        self, state: dict, round_num: int, phase: str, *, beta_in: float,
+    def _crit_and_pid_step(
+        self, state: dict, round_num: int, *, beta_in: float,
     ) -> None:
-        """Run CRIT scorer + PID controller step after one debate phase.
+        """Run per-agent CRIT scoring + PID controller step once per round.
 
-        Called after each phase (propose, critique, revise) within a round.
-        Selects appropriate decisions and trace context for the phase:
-          - propose/critique: decisions = proposals
-          - revise: decisions = revisions
-        Traces are filtered to only include turns up to the current phase.
+        Called once after revise.  Assembles reasoning bundles for each agent,
+        scores them in parallel via CritScorer, computes JS + OV, and
+        updates the PID controller.
         """
         from eval.PID.sycophancy import jensen_shannon_divergence
         from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-        # --- Select decisions and traces for this phase ---
-        if phase == "revise":
-            decisions = state.get("revisions", state.get("proposals", []))
-        else:
-            decisions = state.get("proposals", [])
+        decisions = state.get("revisions", state.get("proposals", []))
+        if not decisions:
+            logger.debug("Skipping CRIT — no decisions (mock mode?)")
+            return
 
-        allowed_types = self._PHASE_ALLOWED_TYPES.get(phase, {"proposal", "critique", "revision"})
-        filtered_traces = [
-            t for t in state.get("debate_turns", [])
-            if t.get("type", "") in allowed_types
-        ]
+        # --- Build reasoning bundles for each agent ---
+        bundles = {}
+        for role_enum in self.config.roles:
+            role = role_enum.value
+            bundle = build_reasoning_bundle(
+                state, role, round_num, self._memo_evidence_lookup,
+            )
+            if bundle is not None:
+                bundles[role] = bundle
 
-        # --- CRIT audit (per-agent scoring → RoundCritResult) ---
-        round_crit = self._crit_scorer.score(
-            case_data=_compact_context_for_crit(state.get("enriched_context", "")),
-            agent_traces=filtered_traces,
-            decisions=decisions,
-        )
+        if not bundles:
+            logger.debug("Skipping CRIT — no reasoning bundles assembled")
+            return
+
+        # --- CRIT audit (per-agent parallel scoring → RoundCritResult) ---
+        round_crit = self._crit_scorer.score(bundles)
 
         # --- JS divergence from agent confidences ---
         confidences = [
@@ -517,8 +575,8 @@ class MultiAgentRunner:
         # Guard rho_bar against None/NaN
         rho_bar = round_crit.rho_bar
         if rho_bar is None or math.isnan(rho_bar):
-            logger.warning("rho_bar is %s (round %d, %s) — defaulting to 0.0",
-                           rho_bar, round_num, phase)
+            logger.warning("rho_bar is %s (round %d) — defaulting to 0.0",
+                           rho_bar, round_num)
             rho_bar = 0.0
 
         # --- PID controller step ---
@@ -564,15 +622,18 @@ class MultiAgentRunner:
             }
 
             phase_data = {
-                "type": "pid_phase",
+                "type": "pid_round",
                 "debate_id": self._debate_id,
                 "phase_id": str(uuid.uuid4()),
                 "round": round_num,
-                "phase": phase,
                 "beta_in": beta_in,
                 "tone_bucket": beta_to_bucket(pid_result.beta_new),
                 "crit": {
                     "rho_bar": round_crit.rho_bar,
+                    "rho_i": {
+                        role: cr.rho_bar
+                        for role, cr in round_crit.agent_scores.items()
+                    },
                     "agents": {
                         role: {
                             "rho_i": cr.rho_bar,
@@ -613,18 +674,15 @@ class MultiAgentRunner:
                     "agent_confidences": agent_confidences,
                     "agent_evidence_ids": agent_evidence,
                 },
-            }
-
-            # Convergence metrics only meaningful on revise (end-of-round)
-            if phase == "revise":
-                phase_data["convergence"] = {
+                "convergence": {
                     "stable_rounds": self._stable_rounds,
                     "delta_rho_actual": (
                         abs(rho_bar - self._prev_rho_bar)
                         if self._prev_rho_bar is not None else None
                     ),
                     "delta_rho_threshold": self.config.delta_rho,
-                }
+                },
+            }
 
             phase_data = _round_floats(phase_data)
             self._pid_phase_data.append(phase_data)
@@ -652,9 +710,6 @@ class MultiAgentRunner:
                 "delta_s": pid_cfg.delta_s,
                 "delta_js": pid_cfg.delta_js,
                 "delta_beta": pid_cfg.delta_beta,
-                "pid_propose": self.config.pid_propose,
-                "pid_critique": self.config.pid_critique,
-                "pid_revise": self.config.pid_revise,
             },
             "phases": [rd["phase_id"] for rd in self._pid_phase_data],
             "outcome": {

@@ -74,9 +74,6 @@ BASELINE: dict = {
     "tickers": ["AAPL", "NVDA", "MSFT", "GOOG", "JPM"],
     "roles": ["macro", "value", "risk", "technical"],
     "agreeableness": 0.3,
-    "pid_propose": False,
-    "pid_critique": True,
-    "pid_revise": True,
     "enable_adversarial": False,
 }
 
@@ -122,15 +119,7 @@ SWEEP_GROUPS: dict[str, list[dict]] = {
         {"epsilon": v} for v in [0.001, 0.005, 0.01, 0.05, 0.1]
     ],
 
-    # --- Group 6: Phase toggles (4 runs) ---
-    "phases": [
-        {"pid_propose": True, "pid_critique": True, "pid_revise": True},
-        {"pid_propose": False, "pid_critique": True, "pid_revise": False},
-        {"pid_propose": False, "pid_critique": False, "pid_revise": True},
-        {"pid_propose": True, "pid_critique": False, "pid_revise": False},
-    ],
-
-    # --- Group 7: LLM models (5 runs) ---
+    # --- Group 6: LLM models (5 runs) ---
     "models": [
         {"model_name": "gpt-4o"},
         {"model_name": "gpt-4.1-mini"},
@@ -217,7 +206,6 @@ INTERACTION_LABELS = [
     "aggressive_p", "aggressive_i", "aggressive_d",
     "high_bar", "low_bar", "fast_decay", "no_pid", "kitchen_sink",
 ]
-PHASE_LABELS = ["all_phases", "critique_only", "revise_only", "propose_only"]
 TICKER_LABELS = [
     "3-cross-sector", "5-non-tech", "10-broad", "15-large", "20-full",
 ]

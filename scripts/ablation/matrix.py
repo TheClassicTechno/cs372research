@@ -17,7 +17,6 @@ from scripts.ablation.config import (
     HIGH_RHO_STRESS_LABELS,
     INTERACTION_LABELS,
     NUM_RANDOM_GAIN_SAMPLES,
-    PHASE_LABELS,
     SWEEP_GROUPS,
     TICKER_LABELS,
 )
@@ -25,7 +24,6 @@ from scripts.ablation.config import (
 # Groups that use named labels (index-matched)
 _LABELED_GROUPS: dict[str, list[str]] = {
     "interactions": INTERACTION_LABELS,
-    "phases": PHASE_LABELS,
     "tickers": TICKER_LABELS,
     "agents": AGENT_LABELS,
     "high_gain_stress": HIGH_GAIN_STRESS_LABELS,

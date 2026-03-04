@@ -126,9 +126,6 @@ def run_quarterly_ablation(
         "epsilon": run_config.get("epsilon"),
         "mu": run_config.get("mu"),
         "initial_beta": run_config.get("initial_beta"),
-        "pid_propose": run_config.get("pid_propose"),
-        "pid_critique": run_config.get("pid_critique"),
-        "pid_revise": run_config.get("pid_revise"),
         "enable_adversarial": run_config.get("enable_adversarial"),
         "num_episodes": len(INVEST_QUARTERS),
     }
