@@ -451,6 +451,7 @@ def revise_node(state: DebateState) -> dict:
             "role": role,
             "action_dict": action_dict,
             "revision_notes": result.get("revision_notes", ""),
+            "raw_response": raw_text,
         })
 
         turns.append({

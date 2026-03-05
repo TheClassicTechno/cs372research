@@ -156,7 +156,7 @@ def build_reasoning_bundle(
     Critical: critiques_received includes ONLY critiques targeting this
     agent. Critiques list is reset each round, so all entries are current.
     """
-    from eval.evidence import enrich_evidence_citations
+    from eval.evidence import enrich_evidence_citations, extract_evidence_ids
     import copy
 
     # Find this agent's proposal
@@ -201,6 +201,10 @@ def build_reasoning_bundle(
 
     # Build proposal bundle with embedded evidence
     prop_citations = copy.deepcopy(prop_action.get("evidence_citations", []))
+    if not prop_citations:
+        # Fallback: extract bracket citations from raw response text
+        raw = proposal.get("raw_response", "")
+        prop_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
         "thesis": prop_action.get("justification", ""),
@@ -211,6 +215,10 @@ def build_reasoning_bundle(
 
     # Build revision bundle with embedded evidence
     rev_citations = copy.deepcopy(rev_action.get("evidence_citations", []))
+    if not rev_citations:
+        # Fallback: extract bracket citations from raw response text
+        raw = revision.get("raw_response", "")
+        rev_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
         "thesis": rev_action.get("justification", ""),
@@ -281,12 +289,14 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses same LLM config as debate agents) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
 
-            base_llm_fn = lambda sys, usr: _call_llm(self.config.to_dict(), sys, usr)
+            crit_config = self.config.to_dict()
+            crit_config["model_name"] = self.config.crit_model_name
+            base_llm_fn = lambda sys, usr: _call_llm(crit_config, sys, usr)
 
             def _logging_llm_fn(system_prompt: str, user_prompt: str) -> str:
                 if self._log_llm:

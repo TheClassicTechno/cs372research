@@ -207,7 +207,12 @@ class AgentConfig(BaseModel):
         "values are dicts with 'system_blocks' and/or 'user_sections' lists.",
     )
 
-    # --- CRIT template configurability ---
+    # --- CRIT configuration ---
+    crit_llm_model: str = Field(
+        default="gpt-5",
+        description="LLM model to use for CRIT scoring calls. "
+        "Separate from llm_model so CRIT can use a stronger model.",
+    )
     crit_system_template: str = Field(
         default="crit_system.jinja",
         description="CRIT system prompt template filename (in eval/crit/prompts/).",
@@ -215,6 +220,18 @@ class AgentConfig(BaseModel):
     crit_user_template: str = Field(
         default="crit_user.jinja",
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
+    )
+
+    # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
+    run_command: str | None = Field(
+        default=None,
+        description="Effective CLI command used to launch this run. "
+        "Set automatically by run_simulation.py.",
+    )
+    config_paths: list[str] = Field(
+        default_factory=list,
+        description="Config file path(s) used for this run (agents, scenario). "
+        "Set automatically by run_simulation.py.",
     )
 
     # --- Sector constraints (populated from SimulationConfig, not set in YAML) ---

@@ -146,8 +146,11 @@ class DebateAgentSystem(AgentSystem):
             prompt_file_overrides=config.prompt_file_overrides or {},
             prompt_profile=config.prompt_profile,
             role_overrides=config.role_overrides or {},
+            crit_model_name=config.crit_llm_model,
             crit_system_template=config.crit_system_template,
             crit_user_template=config.crit_user_template,
+            run_command=config.run_command,
+            config_paths=config.config_paths,
             sector_config=config.sector_config,
         )
         if roles is not None:
