@@ -2,7 +2,7 @@
 # Debate Agent Simulation — 2-Agent Real Mode
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/debate_2agent_real.yaml
+#   python run_simulation.py --agents config/debate_2agent_real.yaml
 #
 # Minimal real API run: 2 agents (MACRO + VALUE), 1 ticker, 1 quarter.
 # Uses gpt-4o-mini for cost efficiency. top_n_news=5 to keep tokens low.
@@ -34,11 +34,6 @@ agent:
     - value
 
   max_rounds: 2
-
-  # Logging — enable to see what's happening
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: true
 
   pid_enabled: false
 

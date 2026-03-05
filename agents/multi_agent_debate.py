@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import math
 from typing import Any, Callable
 
 from agents.base import AgentSystem
@@ -40,39 +39,29 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 
-def action_to_decision(action: Action) -> Decision:
-    """Convert a debate ``Action`` into a simulation ``Decision``.
+def allocation_to_decision(
+    allocation: dict[str, float],
+    prices: dict[str, float],
+    cash: float,
+) -> Decision:
+    """Convert allocation weights to buy orders.
 
-    Mapping:
-        DebateOrder.ticker  →  SimOrder.ticker
-        DebateOrder.side    →  SimOrder.side   (validated as "buy"/"sell")
-        DebateOrder.size    →  SimOrder.quantity  (float→int, truncated toward zero)
+    Each weight * cash = dollar amount for that ticker.
+    Dollar amount / price = shares (integer, floor).
+    Remaining cash (from rounding) is unallocated.
     """
-    sim_orders: list[SimOrder] = []
-    for order in action.orders:
-        qty = int(math.trunc(order.size))
-        if qty <= 0:
-            logger.warning(
-                "Skipping order with non-positive quantity: %s %s size=%.2f → qty=%d",
-                order.side,
-                order.ticker,
-                order.size,
-                qty,
-            )
+    orders: list[SimOrder] = []
+    for ticker, weight in allocation.items():
+        if weight <= 0 or ticker not in prices:
             continue
-
-        side = order.side.lower()
-        if side not in ("buy", "sell"):
-            logger.warning(
-                "Invalid side '%s' for %s — skipping order.", order.side, order.ticker
-            )
+        price = prices[ticker]
+        if price <= 0:
             continue
-
-        sim_orders.append(
-            SimOrder(ticker=order.ticker, side=side, quantity=qty)  # type: ignore[arg-type]
-        )
-
-    return Decision(orders=sim_orders)
+        dollar_amount = weight * cash
+        shares = int(dollar_amount / price)
+        if shares > 0:
+            orders.append(SimOrder(ticker=ticker, side="buy", quantity=shares))
+    return Decision(orders=orders)
 
 
 # ------------------------------------------------------------------
@@ -137,16 +126,29 @@ class DebateAgentSystem(AgentSystem):
             pid_ki=config.pid_ki,
             pid_kd=config.pid_kd,
             pid_rho_star=config.pid_rho_star,
+            pid_epsilon=config.pid_epsilon,
+            convergence_window=config.convergence_window,
+            delta_rho=config.delta_rho,
             initial_beta=config.pid_initial_beta,
-            pid_propose=config.pid_propose,
-            pid_critique=config.pid_critique,
-            pid_revise=config.pid_revise,
             pid_log_metrics=config.pid_log_metrics,
             pid_log_llm_calls=config.pid_log_llm_calls,
-            log_system_prompts=config.log_system_prompts,
-            log_user_prompts=config.log_user_prompts,
-            log_llm_responses=config.log_llm_responses,
+            log_rendered_prompts=config.log_rendered_prompts,
+            log_prompt_manifest=config.log_prompt_manifest,
             prompt_logging=config.prompt_logging,
+            use_system_causal_contract=config.use_system_causal_contract,
+            logging_mode=config.logging_mode,
+            experiment_name=config.experiment_name,
+            parallel_agents=config.parallel_agents,
+            no_rate_limit=config.no_rate_limit,
+            llm_stagger_ms=config.llm_stagger_ms,
+            max_concurrent_llm=config.max_concurrent_llm,
+            console_display=config.console_display,
+            prompt_file_overrides=config.prompt_file_overrides or {},
+            prompt_profile=config.prompt_profile,
+            role_overrides=config.role_overrides or {},
+            crit_system_template=config.crit_system_template,
+            crit_user_template=config.crit_user_template,
+            sector_config=config.sector_config,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles
@@ -191,10 +193,14 @@ class DebateAgentSystem(AgentSystem):
             action.confidence,
         )
 
-        # 3. Convert Action → Decision
-        decision = action_to_decision(action)
+        # 3. Convert allocation → Decision (buy orders from weights)
+        prices = {t: sd.current_price for t, sd in case.stock_data.items()}
+        cash = case.portfolio.cash
+        allocation = action.allocation or {}
+        decision = allocation_to_decision(allocation, prices, cash)
         logger.info(
-            "Debate agent: converted to %d simulation order(s) for case %s",
+            "Debate agent: %d ticker(s) allocated, %d buy order(s) for case %s",
+            sum(1 for w in allocation.values() if w > 0),
             len(decision.orders),
             case.case_id,
         )

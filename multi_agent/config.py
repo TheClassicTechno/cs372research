@@ -43,9 +43,13 @@ class DebateConfig:
       - max_rounds: how many critique-revision cycles
       - agreeableness: sycophancy knob (0=confrontational, 1=agreeable)
       - enable_adversarial: add devil's advocate agent
-      - enable_news_pipeline / enable_data_pipeline: preprocessing stages
       - model_name / temperature: LLM settings
       - mock: use mock responses (no API calls)
+
+    The system operates in allocation mode: agents output portfolio
+    allocation weights (memo-based) rather than buy/sell orders.
+    Pipeline preprocessing (news_digest, data_analysis) is skipped;
+    memo content provides the financial context directly.
 
     PID controller can be configured either by passing a PIDConfig
     object directly (pid_config), or by setting pid_enabled=True with
@@ -66,10 +70,6 @@ class DebateConfig:
     # Whether to add an explicit devil's advocate agent
     enable_adversarial: bool = False
 
-    # --- Pipeline preprocessing ---
-    enable_news_pipeline: bool = True
-    enable_data_pipeline: bool = True
-
     # --- LLM settings ---
     model_name: str = "gpt-4o-mini"
     temperature: float = 0.3
@@ -77,19 +77,21 @@ class DebateConfig:
     # --- Parallel agents (per-agent LangGraph nodes for concurrent LLM calls) ---
     parallel_agents: bool = True
 
+    # --- Rate limiting ---
+    no_rate_limit: bool = False   # Disable stagger entirely (all calls fire at once)
+    llm_stagger_ms: int = 500    # Milliseconds between parallel LLM call starts
+    max_concurrent_llm: int = 0  # Max concurrent LLM calls (0 = unlimited)
+
     # --- Mock mode (no API calls, deterministic for testing) ---
     mock: bool = False
 
     # --- Verbose mode (print full debate content to terminal) ---
     verbose: bool = False
 
-    # --- Logging levels for LLM calls ---
-    # log_system_prompts: print the system prompt sent to each agent
-    log_system_prompts: bool = False
-    # log_user_prompts: print the full rendered user prompt (includes case data)
-    log_user_prompts: bool = False
-    # log_llm_responses: print the raw LLM response text
-    log_llm_responses: bool = False
+    # log_rendered_prompts: log full system + user prompts via debate.prompts logger
+    log_rendered_prompts: bool = False
+    # log_prompt_manifest: log prompt file names once per round (compact)
+    log_prompt_manifest: bool = False
 
     # --- Output ---
     trace_dir: str = "./traces"
@@ -109,17 +111,13 @@ class DebateConfig:
 
     initial_beta: float = 0.5
 
-    # --- Per-phase PID intervention toggles ---
-    # Controls which debate phases use PID's beta_new as agreeableness.
-    # pid_propose: proposals not strongly affected by agreeableness (default off)
-    # pid_critique: critique tone is most sensitive to agreeableness (default on)
-    # pid_revise: revision deference is also sensitive (default on)
-    pid_propose: bool = False
-    pid_critique: bool = True
-    pid_revise: bool = True
+    # --- PID convergence ---
+    pid_epsilon: float = 0.001  # JS divergence convergence tolerance
+    convergence_window: int = 2  # consecutive stable rounds required for early stop
+    delta_rho: float = 0.02      # rho_bar plateau tolerance for convergence
 
     # --- PID logging ---
-    pid_log_metrics: bool = False
+    pid_log_metrics: bool = True
     pid_log_llm_calls: bool = False
 
     # --- Prompt logging (modular prompt path only) ---
@@ -127,6 +125,41 @@ class DebateConfig:
     # Keys: enabled, log_rendered_prompt, log_selected_blocks,
     #        log_beta_bucket, max_prompt_log_chars
     prompt_logging: dict = field(default_factory=dict)
+
+    # --- System-level causal contract ---
+    use_system_causal_contract: bool = False
+
+    # --- Structured debate logging ---
+    logging_mode: str = "off"  # "standard" | "debug" | "off"
+    experiment_name: str | None = None  # defaults to config filename stem
+
+    # --- Console display ---
+    console_display: bool = True  # Rich-formatted terminal output (set False for minimal logs)
+
+    # --- Prompt block/section ordering (for ablation experiments) ---
+    system_prompt_block_order: list[str] = field(
+        default_factory=lambda: ["causal_contract", "role_system", "phase_preamble", "tone"]
+    )
+    user_prompt_section_order: list[str] = field(
+        default_factory=lambda: ["preamble", "context", "agent_data", "task", "scaffolding", "output_format"]
+    )
+    # Override which .txt file to load for a given block/section name.
+    # Keys: "causal_contract", "role_<rolename>", "phase_preamble_critique",
+    #        "phase_preamble_revise", "proposal_template", "critique_template",
+    #        "revision_template", "judge_template", etc.
+    # Values: filename relative to multi_agent/prompts/ directory.
+    prompt_file_overrides: dict[str, str] = field(default_factory=dict)
+
+    # --- Prompt profile (per-agent prompt composition) ---
+    prompt_profile: str = ""  # profile name (e.g. "default", "minimal") or "" for backward compat
+    role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
+
+    # --- CRIT template configurability ---
+    crit_system_template: str = "crit_system.jinja"
+    crit_user_template: str = "crit_user.jinja"
+
+    # --- Sector constraints (optional, forwarded from SimulationConfig) ---
+    sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
 
     @property
     def evaluation_mode(self) -> str:
@@ -157,6 +190,10 @@ class DebateConfig:
                 f"PID gains must be non-negative, got Kp={self.pid_kp}, "
                 f"Ki={self.pid_ki}, Kd={self.pid_kd}"
             )
+        if not (0.0 <= self.pid_rho_star <= 1.0):
+            raise ValueError(
+                f"pid_rho_star must be in [0, 1], got {self.pid_rho_star}"
+            )
 
         # If flat YAML fields request PID but no PIDConfig was provided,
         # construct it here so the adapter never imports from eval/.
@@ -166,6 +203,7 @@ class DebateConfig:
             self.pid_config = PIDConfig(
                 gains=PIDGains(Kp=self.pid_kp, Ki=self.pid_ki, Kd=self.pid_kd),
                 rho_star=self.pid_rho_star,
+                epsilon=self.pid_epsilon,
             )
 
     def to_dict(self) -> dict:
@@ -175,20 +213,32 @@ class DebateConfig:
             "max_rounds": self.max_rounds,
             "agreeableness": self.agreeableness,
             "enable_adversarial": self.enable_adversarial,
-            "enable_news_pipeline": self.enable_news_pipeline,
-            "enable_data_pipeline": self.enable_data_pipeline,
             "model_name": self.model_name,
             "temperature": self.temperature,
             "parallel_agents": self.parallel_agents,
             "mock": self.mock,
+            "no_rate_limit": self.no_rate_limit,
+            "llm_stagger_ms": self.llm_stagger_ms,
+            "max_concurrent_llm": self.max_concurrent_llm,
             "verbose": self.verbose,
-            "log_system_prompts": self.log_system_prompts,
-            "log_user_prompts": self.log_user_prompts,
-            "log_llm_responses": self.log_llm_responses,
+            "log_rendered_prompts": self.log_rendered_prompts,
+            "log_prompt_manifest": self.log_prompt_manifest,
             "trace_dir": self.trace_dir,
             "pid_enabled": self.pid_enabled,
-            "pid_propose": self.pid_propose,
-            "pid_critique": self.pid_critique,
-            "pid_revise": self.pid_revise,
             "prompt_logging": self.prompt_logging,
+            "convergence_window": self.convergence_window,
+            "delta_rho": self.delta_rho,
+            "allocation_mode": True,
+            "skip_pipeline": True,
+            "logging_mode": self.logging_mode,
+            "console_display": self.console_display,
+            "use_system_causal_contract": self.use_system_causal_contract,
+            "system_prompt_block_order": self.system_prompt_block_order,
+            "user_prompt_section_order": self.user_prompt_section_order,
+            "prompt_file_overrides": self.prompt_file_overrides,
+            "prompt_profile": self.prompt_profile,
+            "role_overrides": self.role_overrides,
+            "crit_system_template": self.crit_system_template,
+            "crit_user_template": self.crit_user_template,
+            "sector_config": self.sector_config,
         }

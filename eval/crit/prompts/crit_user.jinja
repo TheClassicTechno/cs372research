@@ -1,0 +1,181 @@
+## Round {{ round }}
+
+## Agent Under Evaluation
+
+{{ agent_role | upper }}
+
+You are evaluating the **REVISED ARGUMENT** produced by this agent after a debate round.
+
+Your task is to audit the **reasoning integrity of the revision**.
+
+The original proposal and critiques are provided only to determine:
+
+• whether critiques were addressed
+• whether contradictions were resolved
+• whether alternative explanations were considered
+
+Focus your evaluation on the **quality of reasoning in the revised argument**.
+
+You must NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• market outcomes
+• agreement with other agents
+
+Your task is strictly to evaluate **reasoning integrity**.
+
+
+--------------------------------------------------
+
+# Original Proposal
+
+{{ proposal | tojson(indent=2) }}
+
+--------------------------------------------------
+
+# Critiques Received
+
+{{ critiques_received | tojson(indent=2) }}
+
+--------------------------------------------------
+
+# Revised Argument
+
+{{ revised_argument | tojson(indent=2) }}
+
+--------------------------------------------------
+
+# Evaluation Procedure
+
+Follow the steps below **before assigning scores**.
+
+
+--------------------------------------------------
+
+STEP 1 — Detect Logical Failures
+
+Identify reasoning failures such as:
+
+• internal contradictions
+• mutually incompatible claims
+• circular reasoning
+• conclusions not supported by earlier reasoning
+• unresolved contradictions identified in critiques
+
+Record whether contradictions are present.
+
+
+--------------------------------------------------
+
+STEP 2 — Detect Evidence Failures
+
+Evaluate how evidence is used.
+
+Identify whether:
+
+• key claims lack evidence citations
+• citations do not support the claims they reference
+• evidence is selectively used or misinterpreted
+• claims are stronger than the cited evidence justifies
+
+Record whether unsupported claims exist.
+
+
+--------------------------------------------------
+
+STEP 3 — Detect Alternative Reasoning Failures
+
+Evaluate how the agent responds to critiques and alternative hypotheses.
+
+Identify whether:
+
+• critiques were ignored
+• alternative explanations were not considered
+• opposing arguments were not addressed
+• the agent shows premature certainty
+• the thesis changed without explanation
+
+Strong reasoning should acknowledge competing interpretations.
+
+
+--------------------------------------------------
+
+STEP 4 — Detect Causal Reasoning Failures
+
+Evaluate causal reasoning using **Pearl’s causal hierarchy**.
+
+Levels:
+
+L1 — correlation
+L2 — intervention
+L3 — counterfactual reasoning
+
+Identify **rung collapse**, including:
+
+• causal conclusions drawn from purely correlational evidence
+• macro claims mapped directly to asset outcomes without mechanism
+• causal statements lacking explanation of the transmission mechanism
+
+Record whether causal overreach occurs.
+
+
+--------------------------------------------------
+
+STEP 5 — Detect Conclusion Drift
+
+Determine whether the **final portfolio allocation logically follows from the reasoning**.
+
+Check for:
+
+• allocation decisions not justified by reasoning
+• thesis statements inconsistent with allocation choices
+• revisions that ignore critiques
+
+
+--------------------------------------------------
+
+# Scoring
+
+After identifying failures, assign scores for the four CRIT pillars.
+
+logical_validity
+evidential_support
+alternative_consideration
+causal_alignment
+
+Scores must be in the range **0.0 – 1.0**.
+
+Use the full range.
+
+Use these anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor weaknesses
+0.70 — acceptable reasoning with noticeable gaps
+0.55 — mixed reasoning with clear problems
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+Important rules:
+
+• If contradictions are detected → logical_validity ≤ 0.70
+• If unsupported claims are detected → evidential_support ≤ 0.70
+• If critiques were ignored → alternative_consideration ≤ 0.70
+• If causal overreach occurs → causal_alignment ≤ 0.70
+
+Avoid rounding scores to simple values such as **0.5 or 1.0** unless fully justified.
+
+When assigning scores, consider how many distinct reasoning failures were detected.
+
+1 failure → small penalty
+2–3 failures → moderate penalty
+4+ failures → severe penalty
+--------------------------------------------------
+
+# Output
+
+Return **only the JSON object defined in the system prompt**.
+
+Do not include explanations outside the JSON.

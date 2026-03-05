@@ -1,0 +1,17 @@
+# Diverse-agents profile: removes shared scaffolding so each role prompt
+# defines its own reasoning structure. Keeps tone for PID beta-control.
+#
+# Use with prompt_file_overrides to swap role prompts for *_diverse.txt variants.
+# See config/debate_diverse_agents.yaml for a complete example.
+
+system_blocks:
+  - role_system
+  - phase_preamble
+  - tone
+
+user_sections:
+  - preamble
+  - context
+  - agent_data
+  - task
+  - output_format

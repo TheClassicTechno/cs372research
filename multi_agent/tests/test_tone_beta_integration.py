@@ -5,7 +5,6 @@ Verifies:
    tone keywords into critique and revise system prompts.
 2. The full chain: PID β → beta_to_bucket → PromptRegistry.build → tone text.
 3. Edge cases: β at exact boundaries, β=None, propose/judge phases.
-4. Per-phase PID toggles (pid_propose, pid_critique, pid_revise).
 
 RAudit references:
     - Section 3.5 (p.4): "Contentiousness (β): Modulates adversarial prompting."

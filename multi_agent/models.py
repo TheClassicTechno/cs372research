@@ -104,6 +104,7 @@ class Action(BaseModel):
     """Output from agents: trading orders + auditable reasoning."""
 
     orders: list[Order] = Field(default_factory=list)
+    allocation: Optional[Dict[str, float]] = None  # ticker → weight (memo mode)
     justification: str = ""
     confidence: float = 0.5
     claims: list[Claim] = Field(default_factory=list)

@@ -35,7 +35,7 @@ This section traces exactly what happens in the code when PID is enabled, so you
 
 | File | What it does |
 |------|-------------|
-| `config/debate.yaml` | YAML config where `pid_enabled: true` and gain values live |
+| `config/debate_memo_pid.yaml` | YAML config where `pid_enabled: true` and gain values live |
 | `models/config.py` → `AgentConfig` | Pydantic model that receives YAML fields (`pid_kp`, `pid_ki`, etc.) |
 | `agents/multi_agent_debate.py` → `DebateAgentSystem.__init__` | Adapter that passes `AgentConfig` PID fields into `DebateConfig` |
 | `multi_agent/config.py` → `DebateConfig` | Dataclass that constructs a `PIDConfig` object in `__post_init__` |
@@ -45,8 +45,8 @@ This section traces exactly what happens in the code when PID is enabled, so you
 | File | What it does |
 |------|-------------|
 | `multi_agent/runner.py` → `MultiAgentRunner.__init__` | Creates `PIDController`, `CritScorer`, and per-phase sub-graphs |
-| `multi_agent/runner.py` → `_run_round_with_pid()` | Runs propose/critique/revise as 3 separate sub-graph invocations, setting agreeableness between each |
-| `multi_agent/runner.py` → `_pid_step()` | Calls CRIT scorer, computes divergence, runs PID controller, records events |
+| `multi_agent/runner.py` → `_run_round_with_pid()` | Runs propose/critique/revise as 3 separate sub-graph invocations, setting `_current_beta` between each |
+| `multi_agent/runner.py` → `_pid_phase_step()` | Calls CRIT scorer, computes divergence, runs PID controller, records events |
 
 **CRIT scorer** — the blind reasoning auditor:
 
@@ -74,12 +74,14 @@ This section traces exactly what happens in the code when PID is enabled, so you
 
 | File | What it does |
 |------|-------------|
-| `multi_agent/prompts/agreeableness_confrontational.txt` | Injected when agreeableness < 0.2: "CHALLENGE every assumption" |
-| `multi_agent/prompts/agreeableness_skeptical.txt` | Injected when 0.2 ≤ agreeableness < 0.4: "Default to skepticism" |
-| `multi_agent/prompts/agreeableness_balanced.txt` | Injected when 0.4 ≤ agreeableness < 0.6: "Evaluate on merits" |
-| `multi_agent/prompts/agreeableness_collaborative.txt` | Injected when 0.6 ≤ agreeableness < 0.8: "Look for common ground" |
-| `multi_agent/prompts/agreeableness_agreeable.txt` | Injected when agreeableness ≥ 0.8: "Find merit in other proposals" |
-| `multi_agent/prompts/__init__.py` → `get_agreeableness_modifier()` | Maps the float agreeableness value to one of the 5 templates above |
+| `multi_agent/prompts/tone/critique_adversarial.txt` | Injected when β ≥ 0.67: push agents to challenge assumptions |
+| `multi_agent/prompts/tone/critique_balanced.txt` | Injected when 0.33 ≤ β < 0.67: balanced evaluation |
+| `multi_agent/prompts/tone/critique_collaborative.txt` | Injected when β < 0.33: find common ground |
+| `multi_agent/prompts/tone/revise_adversarial.txt` | Same thresholds, for revise phase |
+| `multi_agent/prompts/tone/revise_balanced.txt` | Same thresholds, for revise phase |
+| `multi_agent/prompts/tone/revise_collaborative.txt` | Same thresholds, for revise phase |
+| `multi_agent/prompts/registry.py` → `PromptRegistry.build()` | Assembles system prompt from role + preamble + tone blocks |
+| `multi_agent/prompts/registry.py` → `resolve_beta()` | Unifies PID β and static agreeableness: `β = 1.0 - agreeableness` |
 
 **Data models for PID events** — what gets stored in the trace:
 
@@ -111,19 +113,24 @@ beta = self._pid_controller.beta
 ```
 
 **Step 4 — Propose phase.**
-The runner checks `config.pid_propose`. If true, sets `state["config"]["agreeableness"] = beta`. If false, uses the original static agreeableness. Then invokes `self._propose_graph.invoke(state)`.
+The runner checks `config.pid_propose`. If true, sets `state["config"]["agreeableness"] = beta`. If false, uses the original static agreeableness. Sets `state["config"]["_current_beta"] = None` (no tone injection for proposals). Then invokes `self._propose_graph.invoke(state)`.
 
-Inside the propose graph, each agent gets a role-specific system prompt from `ROLE_SYSTEM_PROMPTS` (e.g., `role_macro.txt`) plus a user prompt built by `build_proposal_user_prompt()`. Agreeableness doesn't strongly affect proposals (which is why `pid_propose` defaults to false).
+Inside the propose graph, each agent gets a system prompt assembled by `PromptRegistry.build(role, "propose", beta=None)` — which includes the role identity prompt (e.g., `roles/macro_slim.txt`) and optionally the causal contract, but no tone block. The user prompt is built by `build_proposal_user_prompt()`. Proposals aren't affected by tone (which is why `pid_propose` defaults to false).
 
 **Step 5 — Critique phase.**
-Same toggle check with `config.pid_critique` (defaults to true, so beta IS used). Invokes `self._critique_graph.invoke(state)`.
+Same toggle check with `config.pid_critique` (defaults to true, so beta IS used). Sets `state["config"]["_current_beta"] = beta`. Invokes `self._critique_graph.invoke(state)`.
 
-Inside the critique graph, each agent's system message includes `get_agreeableness_modifier(agreeableness)` — this is where PID has its main effect. A low beta (e.g. 0.2) injects the "confrontational" modifier telling agents to challenge everything. A high beta (e.g. 0.7) injects the "collaborative" modifier telling agents to find common ground.
+Inside the critique graph, `resolve_beta(config, "critique")` returns the current PID β, and `PromptRegistry.build()` maps it to a tone bucket via `beta_to_bucket()`:
+- β ≥ 0.67 → adversarial (`tone/critique_adversarial.txt`)
+- 0.33 ≤ β < 0.67 → balanced (`tone/critique_balanced.txt`)
+- β < 0.33 → collaborative (`tone/critique_collaborative.txt`)
+
+The tone text is placed LAST in the system prompt for maximum LLM attention (recency bias).
 
 **Step 6 — Revise phase.**
-Same toggle check with `config.pid_revise` (defaults to true). Invokes `self._revise_graph.invoke(state)`. The agreeableness modifier also affects revision prompts via `build_revision_prompt()`.
+Same toggle check with `config.pid_revise` (defaults to true). Invokes `self._revise_graph.invoke(state)`. The same β → tone mapping applies, using `tone/revise_*.txt` files.
 
-**Step 7 — CRIT scores the round: `_pid_step(state, round_num)`.**
+**Step 7 — CRIT scores the round: `_pid_phase_step(state, round_num, phase)`.**
 The runner calls `self._crit_scorer.score()` with:
 - `case_data`: the enriched market context (what agents saw)
 - `agent_traces`: all debate turns from `state["debate_turns"]`
@@ -176,43 +183,57 @@ Built per-agent with these sections:
 ```json
 {
   "pillar_scores": {
-    "internal_consistency": 0.85,
-    "evidence_support": 0.75,
-    "trace_alignment": 0.90,
-    "causal_integrity": 0.70
+    "logical_validity": 0.85,
+    "evidential_support": 0.75,
+    "alternative_consideration": 0.90,
+    "causal_alignment": 0.70
   },
   "diagnostics": {
     "contradictions_detected": false,
     "unsupported_claims_detected": false,
-    "conclusion_drift_detected": false,
-    "causal_overreach_detected": false
+    "ignored_critiques_detected": false,
+    "premature_certainty_detected": false,
+    "causal_overreach_detected": false,
+    "conclusion_drift_detected": false
   },
   "explanations": {
-    "internal_consistency": "Claims are logically consistent...",
-    "evidence_support": "Most claims cite case data...",
-    "trace_alignment": "Decision follows from reasoning...",
-    "causal_integrity": "L2 claims are properly scoped..."
+    "logical_validity": "Reasoning logically supports the conclusion...",
+    "evidential_support": "Most claims cite case data...",
+    "alternative_consideration": "Competing explanations considered...",
+    "causal_alignment": "L2 claims are properly scoped..."
   }
 }
 ```
 
 The per-agent `rho_i` is the mean of the 4 pillar scores. The round-level `rho_bar` is the mean of all agents' `rho_i`. This `rho_bar` feeds the PID controller's error signal.
 
-### How agreeableness changes the prompts
+### How β changes the prompts
 
-When PID adjusts beta (the agreeableness dial), it changes which modifier text gets injected into critique and revise system messages. Here's the mapping:
+All debate phases route through `PromptRegistry.build()`, which assembles system prompts from composable blocks in this order:
 
-| Beta range | Modifier | Effect on agent behavior |
-|-----------|----------|-------------------------|
-| < 0.2 | `agreeableness_confrontational.txt` | "CHALLENGE every assumption. Do NOT agree easily." |
-| 0.2–0.4 | `agreeableness_skeptical.txt` | "Default to skepticism. Point out at least 2 weaknesses." |
-| 0.4–0.6 | `agreeableness_balanced.txt` | "Agree when reasoning is sound, disagree when not." |
-| 0.6–0.8 | `agreeableness_collaborative.txt` | "Look for common ground. Only push back on significant gaps." |
-| ≥ 0.8 | `agreeableness_agreeable.txt` | "Find merit in other proposals. Only disagree on clear errors." |
+1. **Causal contract** (optional) — shared reasoning rules from `system_contract/system_causal_contract.txt`
+2. **Role identity** — agent expertise from `roles/{role}.txt` or `roles/{role}_slim.txt`
+3. **Phase preamble** — brief instruction (e.g., "Provide explicit, substantive critiques.")
+4. **Tone** (critique/revise only) — β-driven modifier from `tone/{phase}_{bucket}.txt`
 
-The function `get_agreeableness_modifier()` in `multi_agent/prompts/__init__.py` does this mapping. The modifier text is appended to the critique/revise system message in `graph.py` (`critique_node` and `make_critique_node`).
+Tone is placed LAST in the system prompt for maximum LLM attention (recency bias in transformer attention patterns).
 
-So when CRIT reports low reasoning quality → PID computes a lower beta → agents get the confrontational/skeptical modifier → they push back harder → reasoning quality (hopefully) improves → CRIT reports higher quality → PID eases off.
+When PID adjusts β, it changes which tone file gets injected into critique and revise system messages:
+
+| β range | Bucket | Tone file | Effect |
+|---------|--------|-----------|--------|
+| ≥ 0.67 | adversarial | `tone/critique_adversarial.txt` | Push agents to challenge assumptions, explore alternatives |
+| 0.33–0.67 | balanced | `tone/critique_balanced.txt` | Evaluate on merits, balanced critique |
+| < 0.33 | collaborative | `tone/critique_collaborative.txt` | Find common ground, ease off, converge |
+
+The same mapping applies for revise-phase tone files (`tone/revise_*.txt`).
+
+**β ↔ agreeableness conversion**: The legacy `agreeableness` knob (0 = confrontational, 1 = agreeable) has inverted semantics from β (RAudit-aligned: 0 = collaborative, 1 = adversarial). `resolve_beta()` in `registry.py` handles unification:
+- When PID is active: uses `_current_beta` directly (set by the runner)
+- When PID is off: derives β from static agreeableness via `β = 1.0 - agreeableness`
+- For propose/judge phases: always returns `None` (no tone injection)
+
+So when CRIT reports low reasoning quality → PID increases β → agents get the adversarial tone → they push back harder → reasoning quality (hopefully) improves → CRIT reports higher quality → PID decreases β → collaborative tone.
 
 ### Key data structures
 
@@ -241,18 +262,18 @@ So when CRIT reports low reasoning quality → PID computes a lower beta → age
           ▼                                 between them.
 
     ┌─────────────┐   pid_propose toggle
-    │   Propose   │   ──────────────────▶  if true:  agreeableness = beta
-    │ (all agents)│                        if false: agreeableness = original
+    │   Propose   │   ──────────────────▶  _current_beta = None (no tone)
+    │ (all agents)│
     └──────┬──────┘
            ▼
     ┌─────────────┐   pid_critique toggle
-    │  Critique   │   ──────────────────▶  if true:  agreeableness = beta
-    │ (all agents)│                        if false: agreeableness = original
+    │  Critique   │   ──────────────────▶  if true:  _current_beta = β
+    │ (all agents)│                        if false: _current_beta = None
     └──────┬──────┘
            ▼
     ┌─────────────┐   pid_revise toggle
-    │   Revise    │   ──────────────────▶  if true:  agreeableness = beta
-    │ (all agents)│                        if false: agreeableness = original
+    │   Revise    │   ──────────────────▶  if true:  _current_beta = β
+    │ (all agents)│                        if false: _current_beta = None
     └──────┬──────┘
            │
            ▼
@@ -290,15 +311,15 @@ So when CRIT reports low reasoning quality → PID computes a lower beta → age
 
 ### Per-phase decomposition
 
-Without PID, each debate round runs as a single graph invocation (propose → critique → revise atomically). With PID enabled, each round is decomposed into **three separate sub-graph invocations**. Between each invocation, the runner sets `agreeableness` based on that phase's toggle:
+Without PID, each debate round runs as a single graph invocation (propose → critique → revise atomically). With PID enabled, each round is decomposed into **three separate sub-graph invocations**. Between each invocation, the runner sets `_current_beta` based on that phase's toggle:
 
 | Phase     | Config toggle   | Default | Why |
 |-----------|----------------|---------|-----|
-| Propose   | `pid_propose`  | `false` | Proposals aren't strongly affected by agreeableness |
-| Critique  | `pid_critique` | `true`  | Critique tone is most sensitive to agreeableness |
-| Revise    | `pid_revise`   | `true`  | Revision deference is also sensitive |
+| Propose   | `pid_propose`  | `false` | Proposals: no tone injection (β always None) |
+| Critique  | `pid_critique` | `true`  | Critique tone is most sensitive to β |
+| Revise    | `pid_revise`   | `true`  | Revision deference is also sensitive to β |
 
-When a phase's toggle is `true`, PID's computed `beta` is used as agreeableness for that phase. When `false`, the original static `agreeableness` value (from `DebateConfig`) is used. All agents within a phase share the same agreeableness — the per-phase granularity is at the phase level, not the individual agent level.
+When a phase's toggle is `true`, PID's computed β is set as `_current_beta` on the config, and `resolve_beta()` returns it for tone bucket selection. When `false`, `_current_beta` is set to `None` and `resolve_beta()` falls back to deriving β from the static agreeableness knob. All agents within a phase share the same β — the per-phase granularity is at the phase level, not the individual agent level.
 
 ---
 
@@ -443,7 +464,7 @@ eval/PID/
 
 ### Enabling PID via YAML
 
-In `config/debate.yaml`:
+In `config/debate_memo_pid.yaml`:
 
 ```yaml
 agent:
@@ -463,13 +484,17 @@ agent:
   # Target quality score (0.0 - 1.0)
   pid_rho_star: 0.8
 
-  # Starting agreeableness for PID (0.0 - 1.0)
+  # Starting beta for PID (0.0 - 1.0)
   pid_initial_beta: 0.5
 
   # Per-phase toggles (which phases use PID's beta)
-  pid_propose: false     # Proposals use original agreeableness
-  pid_critique: true     # Critiques use PID-adjusted agreeableness
-  pid_revise: true       # Revisions use PID-adjusted agreeableness
+  pid_propose: false     # Proposals: no tone injection
+  pid_critique: true     # Critiques: β → tone bucket
+  pid_revise: true       # Revisions: β → tone bucket
+
+  # Logging
+  pid_log_metrics: true
+  log_prompt_manifest: true
 ```
 
 ### Enabling PID programmatically
@@ -515,6 +540,7 @@ for event in trace.pid_events:
 | Revise toggle | `pid_revise` | `true` | Whether PID controls revise phase |
 | Metrics logging | `pid_log_metrics` | `false` | Log scalar PID stats each round |
 | LLM logging | `pid_log_llm_calls` | `false` | Log full CRIT prompts/responses |
+| Prompt manifest | `log_prompt_manifest` | `false` | Log prompt file names once per round |
 
 Parameters not exposed in YAML (set via `PIDConfig` programmatically):
 
@@ -530,36 +556,37 @@ Parameters not exposed in YAML (set via `PIDConfig` programmatically):
 
 ## Logging
 
-Two independent logging channels can be enabled for PID debugging:
+Three independent logging channels can be enabled for PID debugging:
 
 ### Scalar metrics (`pid_log_metrics: true`)
 
-Logs per-round stats to the `pid.metrics` logger at DEBUG level:
+Logs per-phase structured JSON to the `pid.metrics` logger at INFO level. One entry per phase (propose, critique, revise) per round:
 
+```json
+{
+  "type": "pid_phase",
+  "debate_id": "...",
+  "round": 1,
+  "phase": "critique",
+  "beta_in": 0.5,
+  "tone_bucket": "balanced",
+  "crit": {
+    "rho_bar": 0.75,
+    "agents": {
+      "macro": { "rho_i": 0.80, "pillars": { "IC": 0.85, "ES": 0.75, "TA": 0.90, "CI": 0.70 } },
+      "value": { "rho_i": 0.73, "pillars": { "IC": 0.80, "ES": 0.70, "TA": 0.80, "CI": 0.60 } }
+    }
+  },
+  "pid": {
+    "e_t": 0.05, "p_term": 0.0075, "i_term": 0.0005, "d_term": 0.0015,
+    "u_t": 0.0095, "beta_old": 0.5, "beta_new": 0.4595,
+    "quadrant": "healthy", "sycophancy": 0
+  },
+  "divergence": { "js": 0.001, "ov": 0.15 }
+}
 ```
-[PID Round 1]
-  CRIT:     rho_bar=0.7500  rho_star=0.8000  (mean of 4 agents)
-  Per-agent scores:
-    macro       : rho_i=0.8000  IC=0.850  ES=0.750  TA=0.900  CI=0.700
-    value       : rho_i=0.7250  IC=0.800  ES=0.700  TA=0.800  CI=0.600
-    risk        : rho_i=0.7000  IC=0.750  ES=0.650  TA=0.800  CI=0.600
-    technical   : rho_i=0.7750  IC=0.800  ES=0.700  TA=0.900  CI=0.700
-  Error:    e_t=0.050000  integral=0.050000  e_prev=0.000000
-  PID:      p_term=0.007500  i_term=0.000500  d_term=0.001500  u_t=0.009500
-  Gains:    Kp=0.1500  Ki=0.0100  Kd=0.0300
-  Beta:     old=0.5000  new=0.4595  gamma_beta=0.9000
-  Syco:     s_t=0  mu=1.0000  delta_s=0.0500
-  Diverg:   JS=0.000000  OV=0.000000
-  Phase toggles: propose=False  critique=True  revise=True
 
-[PID Round 1] Per-phase agreeableness:
-  propose=0.3000  critique=0.4595  revise=0.4595  (beta=0.4595, original=0.3000)
-
-[PID Round 1] CRIT diagnostics [macro]:
-  contradictions=False  unsupported_claims=False  ...
-[PID Round 1] CRIT diagnostics [value]:
-  contradictions=False  unsupported_claims=False  ...
-```
+At the end of the debate, a `pid_summary` entry is emitted with config, outcome, and convergence info.
 
 ### LLM call logging (`pid_log_llm_calls: true`)
 
@@ -576,8 +603,36 @@ You are a reasoning quality auditor (CRIT). Your job is to evaluate...
 ...
 
 [CRIT LLM RESPONSE]
-{"pillar_scores": {"internal_consistency": 0.8, ...}, ...}
+{"pillar_scores": {"logical_validity": 0.8, ...}, ...}
 ```
+
+### Prompt file manifest (`log_prompt_manifest: true`)
+
+Logs a compact summary of all prompt files used, emitted **once per round** at the start (not per-agent). Uses the `debate.prompts` logger at INFO level:
+
+```
+========================================================================
+  [Prompt Manifest] Round 1 | Snapshot: 2025Q1 (AAPL, NVDA, MSFT, TSLA, JPM, GOOG, AMZN, META, XOM, LLY)
+------------------------------------------------------------------------
+  System blocks: causal_contract → role_system → phase_preamble → tone
+    causal_contract: system_contract/system_causal_contract.txt
+    role_files: macro_slim.txt, value_slim.txt, risk_slim.txt, technical_slim.txt
+    tone (β=0.50, balanced): critique_balanced.txt, revise_balanced.txt
+  Phase templates: proposal_allocation.txt, critique_allocation.txt, revision_allocation.txt, judge_allocation.txt
+========================================================================
+```
+
+This shows:
+- **System block order** — the assembly order of system prompt blocks
+- **Causal contract** — which shared reasoning contract file is used (if enabled)
+- **Role files** — which role identity prompt each agent gets
+- **Tone** — current β value, bucket, and which tone files are injected into critique/revise
+- **Phase templates** — which Jinja2 template files build the user prompts
+- **Snapshot identifier** — unique identifier for the quarterly memo (invest quarter + tickers)
+
+The snapshot identifier replaces logging the full 80K+ char memo content, enabling traceability without log bloat.
+
+Implementation: `build_prompt_manifest()` in `registry.py` resolves all file names (same logic as `PromptRegistry.build()` but without loading content). `_extract_snapshot_id()` in `llm.py` extracts quarter and tickers from state. The runner calls `_log_prompt_manifest()` at the top of each round iteration.
 
 ### Enabling logging
 
@@ -588,14 +643,16 @@ agent:
   pid_enabled: true
   pid_log_metrics: true
   pid_log_llm_calls: true
+  log_prompt_manifest: true
 ```
 
-To see the output, configure Python's logging system to show DEBUG messages for the `pid.*` loggers. For example:
+To see the output, configure Python's logging system to show the relevant loggers. For example:
 
 ```python
 import logging
 logging.getLogger("pid.metrics").setLevel(logging.DEBUG)
 logging.getLogger("pid.llm").setLevel(logging.DEBUG)
+logging.getLogger("debate.prompts").setLevel(logging.INFO)
 logging.basicConfig(level=logging.DEBUG)
 ```
 
@@ -622,7 +679,7 @@ When PID is enabled, every output artifact includes PID events.
           "crit_result": {
             "agent_scores": {
               "macro": {
-                "pillar_scores": { "internal_consistency": 0.85, ... },
+                "pillar_scores": { "logical_validity": 0.85, ... },
                 "diagnostics": { ... },
                 "explanations": { ... },
                 "rho_bar": 0.80
@@ -682,18 +739,28 @@ All artifacts have `"pid_events": null`.
 
 | File | What changed |
 |------|-------------|
-| `multi_agent/runner.py` | Decomposed round loop into per-phase sub-graphs when PID is active. Added CRIT scoring + PID step after each round. Added `_reset_per_invocation_state()` to prevent state leaking between decision points. Added PID logging infrastructure with instance-level flag gating. |
-| `multi_agent/graph.py` | Added 6 per-phase sub-graph builders (propose/critique/revise, sequential and parallel variants) + 6 compile wrappers. Added `ParallelRoundState` TypedDict. Fixed `StopIteration` crash in critique/revise nodes (safe `next()` with default). Added error logging in `_call_llm`. |
+| `multi_agent/runner.py` | Decomposed round loop into per-phase sub-graphs when PID is active. Added CRIT scoring + PID step after each phase. Added `_reset_per_invocation_state()` to prevent state leaking between decision points. Added PID logging infrastructure with instance-level flag gating. Added `_log_prompt_manifest()` for once-per-round prompt file logging. |
+| `multi_agent/graph/nodes.py` | (Decomposed from `graph.py`.) All 7 node functions (propose, critique, revise × sequential/parallel + judge) route through `PromptRegistry.build()`. No more `if is_modular_mode(config):` branches. |
+| `multi_agent/graph/llm.py` | (Decomposed from `graph.py`.) LLM call infrastructure, prompt logging (`_log_prompt`), memo compaction (`_compact_user_prompt`), snapshot ID extraction (`_extract_snapshot_id`). |
+| `multi_agent/prompts/registry.py` | Unified prompt builder. `PromptRegistry.build()` assembles system prompts from composable blocks. `resolve_beta()` unifies PID β and static agreeableness. `build_prompt_manifest()` resolves file names for manifest logging. |
+| `multi_agent/prompts/__init__.py` | Removed `get_agreeableness_modifier()` and 5-bucket agreeableness system. Tone is now handled by the system prompt via `PromptRegistry.build()`, not the user prompt template. |
 | `multi_agent/models.py` | Added `RoundMetrics`, `ControllerOutput`, `PIDEvent` Pydantic models. Added `pid_events` field to `AgentTrace`. |
-| `multi_agent/config.py` | Added PID fields to `DebateConfig`: `pid_config`, `_pid_enabled_flag`, gain fields, `initial_beta`, per-phase toggles, logging flags. Added `pid_enabled` and `evaluation_mode` properties. Added validation in `__post_init__` for PID gains and `initial_beta`. |
-| `models/config.py` | Added PID fields to `AgentConfig` for YAML-driven configuration. |
-| `agents/multi_agent_debate.py` | Wires PID fields from `AgentConfig` through to `DebateConfig`. |
-| `config/debate.yaml` | Added PID configuration section with commented-out defaults. |
+| `multi_agent/config.py` | Added PID fields to `DebateConfig`: `pid_config`, `_pid_enabled_flag`, gain fields, `initial_beta`, per-phase toggles, logging flags, `log_prompt_manifest`. Added `pid_enabled` and `evaluation_mode` properties. Added validation in `__post_init__` for PID gains and `initial_beta`. |
+| `models/config.py` | Added PID fields and `log_prompt_manifest` to `AgentConfig` for YAML-driven configuration. |
+| `agents/multi_agent_debate.py` | Wires PID fields and `log_prompt_manifest` from `AgentConfig` through to `DebateConfig`. |
+| `config/debate_memo_pid.yaml` | PID configuration with `log_prompt_manifest: true`. |
+
+### Deleted files
+
+| File | Why |
+|------|-----|
+| `multi_agent/prompts/agreeableness/*.txt` | Replaced by 3-bucket tone system in `multi_agent/prompts/tone/`. |
 
 ### Backward compatibility
 
 - PID is **disabled by default**. All existing behavior is unchanged when `pid_enabled: false`.
 - When PID is disabled, the runner uses the original single-round graph path (`run_single_round()`). The decomposed per-phase path is only used when PID is enabled.
+- When PID is disabled, `resolve_beta()` falls back to `β = 1.0 - agreeableness`, so the static agreeableness knob still works through the unified 3-bucket tone system.
 - All existing tests continue to pass without modification.
 - `pid_events` is `null` in all output artifacts when PID is disabled.
 
@@ -732,8 +799,9 @@ The error `GainInstabilityError` means your gains are too aggressive. Fix by:
 
 ### Observing the effect
 
-Enable `pid_log_metrics: true` and watch:
+Enable `pid_log_metrics: true` and `log_prompt_manifest: true`, then watch:
 - `e_t` — is it trending toward 0?
 - `beta_new` — is it settling to a stable value or oscillating?
 - `s_t` — is sycophancy being detected when it shouldn't be?
 - Per-pillar scores — which aspect of reasoning is weakest?
+- Prompt manifest — which tone bucket (adversarial/balanced/collaborative) is active each round? Which role files and templates are in use?

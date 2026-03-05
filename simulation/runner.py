@@ -28,7 +28,7 @@ from models.config import SimulationConfig
 from models.decision import Decision
 from models.log import DecisionPointLog, EpisodeLog
 from simulation.broker import Broker
-from simulation.case_loader import build_case, load_case_templates
+from simulation.case_loader import build_case
 from simulation.sim_logging import SimulationLogger, run_name_from_config_path
 
 logger = logging.getLogger(__name__)
@@ -52,25 +52,32 @@ class AsyncSimulationRunner:
         """Execute the full simulation."""
         self._sim_logger.init_run(self._config_yaml_path)
 
-        # Load case templates once (shared across episodes).
-        # All filtering is controlled via YAML config fields:
-        #   tickers  — which tickers to include
-        #   quarters — which quarters to include (optional)
-        #   top_n_news — cap news items per case (optional)
-        templates = load_case_templates(
+        # Load memo case templates (shared across episodes).
+        from simulation.memo_loader import load_memo_cases
+        templates = load_memo_cases(
             self._config.dataset_path,
-            top_n_news=self._config.top_n_news,
-            ticker_filter=self._config.tickers,
-            quarters=self._config.quarters,
-            merge_tickers=self._config.merge_tickers,
+            invest_quarter=self._config.invest_quarter,
+            memo_format=self._config.memo_format,
+            tickers=self._config.tickers,
         )
         num_cases = len(templates)
-        logger.info(
-            "Starting simulation '%s': %d episode(s), %d case(s) each.",
-            self._run_name,
-            self._config.num_episodes,
-            num_cases,
-        )
+        num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
+        num_mtm = num_cases - num_decision
+        if num_mtm:
+            logger.info(
+                "Starting simulation '%s': %d episode(s), %d decision case(s) + %d MTM (mark-to-market) each.",
+                self._run_name,
+                self._config.num_episodes,
+                num_decision,
+                num_mtm,
+            )
+        else:
+            logger.info(
+                "Starting simulation '%s': %d episode(s), %d case(s) each.",
+                self._run_name,
+                self._config.num_episodes,
+                num_cases,
+            )
 
         for ep_idx in range(self._config.num_episodes):
             episode_id = f"ep_{ep_idx:03d}"
@@ -110,12 +117,24 @@ class AsyncSimulationRunner:
         decision_point_logs: list[DecisionPointLog] = []
         num_cases = len(templates)
 
-        logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
+        num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
+        num_mtm = num_cases - num_decision
+        if num_mtm:
+            logger.info(
+                "Episode '%s' starting: %d decision case(s) + %d MTM price update(s).",
+                episode_id, num_decision, num_mtm,
+            )
+        else:
+            logger.info("Episode '%s' starting with %d decision points.", episode_id, num_cases)
 
         from datetime import datetime, timezone
         for dp_idx, template in enumerate(templates):
             case_id = f"{episode_id}:{dp_idx}"
             steps_remaining = num_cases - dp_idx - 1
+
+            # Check if template is a mark-to-market case *before*
+            # build_case overwrites case_id with the episode-scoped id.
+            is_mtm = template.case_id.startswith("mtm/")
 
             # Snapshot portfolio *before* the agent acts.
             portfolio_before = broker.get_portfolio()
@@ -128,33 +147,40 @@ class AsyncSimulationRunner:
                 decision_point_idx=dp_idx,
             )
 
-            # Create a fresh tool bound to the current broker state and case.
-            tool = make_submit_decision_tool(broker, case, agent_id)
-            agent.bind_tools(tool)
-
-            invocation = AgentInvocation(
-                case=case,
-                episode_id=episode_id,
-                agent_id=agent_id,
-                steps_remaining=steps_remaining,
-            )
-
-            # Invoke the agent.
-            t0 = time.monotonic()
-            try:
-                result = await agent.invoke(invocation)
-                decision = result.decision
-                agent_output: dict | str | None = result.raw_output
-            except Exception as exc:
-                logger.warning(
-                    "Agent error on case %s: %s — defaulting to hold.",
-                    case_id,
-                    exc,
-                )
+            # Mark-to-market case: skip agent, just update exit prices.
+            if is_mtm:
                 decision = Decision(orders=[])
-                agent_output = f"ERROR: {exc}"
+                agent_output: dict | str | None = {"type": "mark_to_market"}
+                elapsed = 0.0
+                logger.info("MTM case %s: updating exit prices only.", case_id)
+            else:
+                # Create a fresh tool bound to the current broker state and case.
+                tool = make_submit_decision_tool(broker, case, agent_id)
+                agent.bind_tools(tool)
 
-            elapsed = time.monotonic() - t0
+                invocation = AgentInvocation(
+                    case=case,
+                    episode_id=episode_id,
+                    agent_id=agent_id,
+                    steps_remaining=steps_remaining,
+                )
+
+                # Invoke the agent.
+                t0 = time.monotonic()
+                try:
+                    result = await agent.invoke(invocation)
+                    decision = result.decision
+                    agent_output = result.raw_output
+                except Exception as exc:
+                    logger.warning(
+                        "Agent error on case %s: %s — defaulting to hold.",
+                        case_id,
+                        exc,
+                    )
+                    decision = Decision(orders=[])
+                    agent_output = f"ERROR: {exc}"
+
+                elapsed = time.monotonic() - t0
             logger.info(
                 "Case %s: %d order(s), %.1fs elapsed.",
                 case_id,
@@ -163,20 +189,24 @@ class AsyncSimulationRunner:
             )
 
             # Retrieve the execution result from the tool (may be None if
-            # the agent never called submit_decision).
-            execution_result = getattr(
-                getattr(tool, "func", None), "_last_result", None
-            )
-
-            # If the agent returned orders but did not call the tool
-            # (e.g. the multi-agent debate adapter), the runner executes
-            # the decision through the broker directly.
-            if execution_result is None and decision.orders:
+            # the agent never called submit_decision, or for MTM cases).
+            if is_mtm:
+                # MTM: execute empty decision to update broker's last_prices.
                 execution_result = broker.execute_decision(decision, case, agent_id)
-                logger.info(
-                    "Runner executed decision for case %s directly (agent did not call tool).",
-                    case_id,
+            else:
+                execution_result = getattr(
+                    getattr(tool, "func", None), "_last_result", None
                 )
+
+                # If the agent returned orders but did not call the tool
+                # (e.g. the multi-agent debate adapter), the runner executes
+                # the decision through the broker directly.
+                if execution_result is None and decision.orders:
+                    execution_result = broker.execute_decision(decision, case, agent_id)
+                    logger.info(
+                        "Runner executed decision for case %s directly (agent did not call tool).",
+                        case_id,
+                    )
 
             # Snapshot portfolio *after* the decision has settled.
             portfolio_after = broker.get_portfolio()
@@ -231,8 +261,9 @@ class AsyncSimulationRunner:
                 continue
 
             # Per-position market values.
+            prices = ep.final_prices or {}
             position_values = {
-                ticker: qty * ep.final_prices.get(ticker, 0.0)
+                ticker: qty * prices.get(ticker, 0.0)
                 for ticker, qty in ep.final_portfolio.positions.items()
             }
             book_value = ep.book_value or 0.0
