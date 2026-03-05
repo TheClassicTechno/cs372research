@@ -83,7 +83,7 @@ def compile_parallel_single_round_graph(config: DebateConfig):
 # PER-PHASE SUB-GRAPHS (used by PID controller for per-phase intervention)
 # =============================================================================
 #
-# When the PID controller is active, it needs to adjust agreeableness
+# The PID controller needs to set beta (tone)
 # BETWEEN propose, critique, and revise phases within a single round.
 # The existing single-round graphs run all three atomically, so we
 # provide per-phase graphs that the runner can invoke individually.

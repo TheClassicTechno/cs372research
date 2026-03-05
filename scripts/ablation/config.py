@@ -73,7 +73,6 @@ BASELINE: dict = {
     "model_name": "gpt-4o-mini",
     "tickers": ["AAPL", "NVDA", "MSFT", "GOOG", "JPM"],
     "roles": ["macro", "value", "risk", "technical"],
-    "agreeableness": 0.3,
     "enable_adversarial": False,
 }
 

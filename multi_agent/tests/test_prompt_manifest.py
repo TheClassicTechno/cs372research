@@ -30,7 +30,6 @@ def _make_config(**overrides) -> dict:
     """Build a minimal LangGraph-style config dict."""
     cfg = {
         "roles": DEFAULT_ROLES,
-        "agreeableness": 0.3,
         "use_system_causal_contract": False,
         "system_prompt_block_order": list(_DEFAULT_BLOCK_ORDER),
         "prompt_file_overrides": {},
@@ -107,15 +106,12 @@ class TestBuildPromptManifest:
         assert m["beta_bucket"] == "balanced"
         assert m["tone"]["critique"] == "tone/critique_balanced.txt"
 
-    def test_no_tone_when_beta_none_propose_judge(self):
-        """When resolve_beta returns None (propose/judge), no tone key."""
-        # Simulate propose phase: resolve_beta("propose") → None
-        # build_prompt_manifest uses resolve_beta(config, "critique") for tone
-        # If agreeableness default 0.3 → beta 0.7, tone should be present
-        config = _make_config(agreeableness=0.3)
+    def test_no_tone_when_no_beta(self):
+        """When no _current_beta is set, no tone key in manifest."""
+        config = _make_config()
         m = build_prompt_manifest(config)
-        # With default agreeableness, beta resolves for critique
-        assert "tone" in m
+        # Without _current_beta, beta resolves to None → no tone
+        assert "tone" not in m or m.get("beta") is None
 
     def test_tone_override(self):
         config = _make_config(

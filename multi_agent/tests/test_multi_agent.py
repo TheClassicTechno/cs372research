@@ -105,7 +105,6 @@ def mock_config() -> DebateConfig:
     return DebateConfig(
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
         max_rounds=1,
-        agreeableness=0.3,
         mock=True,
         trace_dir="/tmp/test_traces",
     )
@@ -205,7 +204,6 @@ class TestConfig:
         cfg = DebateConfig()
         assert len(cfg.roles) == 4
         assert cfg.max_rounds == 1
-        assert cfg.agreeableness == 0.3
         assert cfg.enable_adversarial is False
         assert cfg.mock is False
 
@@ -213,13 +211,11 @@ class TestConfig:
         cfg = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.SENTIMENT],
             max_rounds=3,
-            agreeableness=0.8,
             enable_adversarial=True,
             mock=True,
         )
         assert len(cfg.roles) == 2
         assert cfg.max_rounds == 3
-        assert cfg.agreeableness == 0.8
         assert cfg.enable_adversarial is True
 
     def test_config_to_dict(self, mock_config: DebateConfig):
@@ -715,10 +711,10 @@ class TestEdgeCases:
         action, trace = runner.run(obs)
         assert isinstance(action, Action)
 
-    def test_high_agreeableness(self, sample_observation: Observation):
+    def test_high_initial_beta(self, sample_observation: Observation):
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE],
-            agreeableness=0.95,
+            initial_beta=0.95,
             mock=True,
             trace_dir="/tmp/test_traces",
         )
@@ -726,10 +722,10 @@ class TestEdgeCases:
         action, trace = runner.run(sample_observation)
         assert isinstance(action, Action)
 
-    def test_low_agreeableness(self, sample_observation: Observation):
+    def test_low_initial_beta(self, sample_observation: Observation):
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE],
-            agreeableness=0.05,
+            initial_beta=0.05,
             mock=True,
             trace_dir="/tmp/test_traces",
         )

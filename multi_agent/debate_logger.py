@@ -329,7 +329,6 @@ class DebateLogger:
             "actual_rounds": None,
             "terminated_early": None,
             "termination_reason": None,
-            "agreeableness": self._config.agreeableness,
             "initial_beta": getattr(self._config, "initial_beta", 0.5),
             "final_beta": None,
             "ticker_universe": observation.get("universe", []),

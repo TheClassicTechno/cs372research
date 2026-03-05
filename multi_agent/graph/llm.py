@@ -147,21 +147,20 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
     import time
 
-    from langchain_core.messages import HumanMessage, SystemMessage  # type: ignore[import-not-found]
-
     model_name = config.get("model_name", "gpt-4o-mini")
     temperature = config.get("temperature", 0.3)
+    use_anthropic = model_name.startswith("claude")
 
-    if model_name.startswith("claude"):
+    if use_anthropic:
         from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
+        from langchain_core.messages import HumanMessage, SystemMessage  # type: ignore[import-not-found]
         llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=60)
     else:
-        from langchain_openai import ChatOpenAI
-        llm = ChatOpenAI(
-            model=model_name,
-            temperature=temperature,
+        from openai import OpenAI
+        client = OpenAI(
             api_key=os.environ.get("OPENAI_API_KEY", "sk-dummy"),
-            request_timeout=60,
+            timeout=600,
+            max_retries=0,
         )
 
     max_retries = 6
@@ -174,25 +173,81 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
             if sem is not None:
                 sem.acquire()
             try:
-                response = llm.invoke([
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=user_prompt),
-                ])
+                if use_anthropic:
+                    response = llm.invoke([
+                        SystemMessage(content=system_prompt),
+                        HumanMessage(content=user_prompt),
+                    ])
+                else:
+                    # Reasoning models (o-series, gpt-5-mini, etc.) reject
+                    # the temperature parameter — only pass it for models
+                    # that accept it.
+                    _no_temp = model_name.startswith(("o1", "o3", "o4")) or "5-mini" in model_name
+                    _kwargs: dict = dict(
+                        model=model_name,
+                        instructions=system_prompt,
+                        input=user_prompt,
+                        store=False,
+                    )
+                    if not _no_temp:
+                        _kwargs["temperature"] = temperature
+                    response = client.responses.create(**_kwargs)
             finally:
                 if sem is not None:
                     sem.release()
-            return response.content
+            # Log token usage if enabled
+            if config.get("log_tokens"):
+                if use_anthropic:
+                    usage = response.response_metadata.get("token_usage", {})
+                    if usage:
+                        print(
+                            f"  [TOKENS] prompt={usage.get('prompt_tokens', 0):,}  "
+                            f"completion={usage.get('completion_tokens', 0):,}  "
+                            f"total={usage.get('total_tokens', 0):,}",
+                            flush=True,
+                        )
+                else:
+                    usage = response.usage
+                    if usage:
+                        print(
+                            f"  [TOKENS] prompt={usage.input_tokens:,}  "
+                            f"completion={usage.output_tokens:,}  "
+                            f"total={usage.total_tokens:,}",
+                            flush=True,
+                        )
+            return response.content if use_anthropic else response.output_text
         except Exception as e:
             wait = _retry_wait(e, attempt)
+            # Build full error detail
+            _details: list[str] = []
+            _details.append(f"    model={model_name}")
+            if hasattr(e, "status_code") and e.status_code is not None:
+                _details.append(f"    [HTTP {e.status_code}]")
+            if hasattr(e, "response") and e.response is not None:
+                try:
+                    _details.append(f"    [RESPONSE] {e.response.text}")
+                except Exception:
+                    _details.append(f"    [RESPONSE] {e.response}")
+            if hasattr(e, "request") and e.request is not None:
+                try:
+                    _details.append(f"    [URL] {e.request.url}")
+                except Exception:
+                    pass
+            _extra = "\n".join(_details)
             if attempt < max_retries - 1:
-                print(f"  [LLM RETRY] {type(e).__name__} — retrying in {wait:.1f}s (attempt {attempt + 1}/{max_retries})...", flush=True)
+                print(
+                    f"  [LLM RETRY] {type(e).__name__} — retrying in {wait:.1f}s "
+                    f"(attempt {attempt + 1}/{max_retries})\n"
+                    f"    {e}\n{_extra}",
+                    flush=True,
+                )
                 logger.warning(
-                    "_call_llm retry %d/%d: %s: %s",
-                    attempt + 1, max_retries, type(e).__name__, e,
+                    "_call_llm retry %d/%d: %s: %s\n%s",
+                    attempt + 1, max_retries, type(e).__name__, e, _extra,
                 )
                 time.sleep(wait)
             else:
-                print(f"  [LLM ERROR] {type(e).__name__}: {e} (all {max_retries} attempts failed)", flush=True)
+                print(f"  [LLM ERROR] {type(e).__name__}: {e}\n{_extra}\n  (all {max_retries} attempts failed)", flush=True)
                 logger.error(
                     "_call_llm failed after %d attempts: %s: %s — returning empty JSON",
                     max_retries, type(e).__name__, e,

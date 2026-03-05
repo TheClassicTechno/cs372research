@@ -18,7 +18,6 @@
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
-invest_quarter: "2025Q1"
 
 tickers:
   - TSLA
@@ -43,7 +42,7 @@ num_episodes: 1
 agent:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
-  llm_model: "gpt-4o-mini"
+  llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
 
@@ -74,8 +73,7 @@ agent:
   #   role_sentiment: "roles/sentiment.txt"          # (this is already the default)
   #   role_devils_advocate: "roles/devils_advocate.txt"  # (also the default)
 
-  agreeableness: 0.4
-  pid_enabled: false
+  pid_enabled: true
 
   logging_mode: "debug"
 

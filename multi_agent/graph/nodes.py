@@ -265,7 +265,6 @@ def critique_node(state: DebateState) -> dict:
     config = state["config"]
     context = state["enriched_context"]
     current_round = state.get("current_round", 1)
-    agreeableness = config.get("agreeableness", 0.3)
     is_mock = config.get("mock", False)
 
     # After first round, critique the revisions; otherwise the proposals
@@ -364,7 +363,6 @@ def revise_node(state: DebateState) -> dict:
     config = state["config"]
     context = state["enriched_context"]
     current_round = state.get("current_round", 1)
-    agreeableness = config.get("agreeableness", 0.3)
     is_mock = config.get("mock", False)
     obs = state["observation"]
     all_critiques = state.get("critiques", [])
@@ -380,11 +378,13 @@ def revise_node(state: DebateState) -> dict:
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
-        # Collect critiques targeted at this role
+        # Collect critiques targeted at this role.
+        # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                if crit.get("target_role") == role:
+                target = crit.get("target_role", "").lower().split()[0]
+                if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
@@ -627,7 +627,6 @@ def make_critique_node(role: str):
         config = state["config"]
         context = state["enriched_context"]
         current_round = state.get("current_round", 1)
-        agreeableness = config.get("agreeableness", 0.3)
         is_mock = config.get("mock", False)
 
         # After first round, critique the revisions; otherwise the proposals.
@@ -740,7 +739,6 @@ def make_revise_node(role: str):
         config = state["config"]
         context = state["enriched_context"]
         current_round = state.get("current_round", 1)
-        agreeableness = config.get("agreeableness", 0.3)
         is_mock = config.get("mock", False)
         obs = state["observation"]
         all_critiques = state.get("critiques", [])
@@ -761,11 +759,13 @@ def make_revise_node(role: str):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         my_proposal = json.dumps(p.get("action_dict", {}))
 
-        # Collect critiques targeted at this role
+        # Collect critiques targeted at this role.
+        # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                if crit.get("target_role") == role:
+                target = crit.get("target_role", "").lower().split()[0]
+                if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
@@ -1166,7 +1166,6 @@ def build_trace_node(state: DebateState) -> dict:
         "what_i_saw": state.get("enriched_context", "")[:500] + "...",
         "hypothesis": (
             f"Multi-agent debate: {len(roles)} agents ({', '.join(roles)}), "
-            f"agreeableness={config.get('agreeableness', 0.3)}, "
             f"rounds={config.get('max_rounds', 1)}"
         ),
         "decision": orders_desc,

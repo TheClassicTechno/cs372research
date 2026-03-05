@@ -159,7 +159,7 @@ class RoundMetrics(BaseModel):
 class ControllerOutput(BaseModel):
     """What the PID controller decided for the next round."""
 
-    new_agreeableness: Optional[float] = None
+    new_beta: Optional[float] = None
     force_extra_round: bool = False
     inject_prompt_modifier: Optional[str] = None
 

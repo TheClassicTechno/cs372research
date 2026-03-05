@@ -77,7 +77,7 @@ class TestBaseline:
         required = [
             "rho_star", "gamma_beta", "delta_js", "delta_s", "delta_beta",
             "epsilon", "mu", "initial_beta", "max_rounds", "temperature",
-            "model_name", "tickers", "roles", "agreeableness",
+            "model_name", "tickers", "roles",
             "enable_adversarial",
         ]
         for key in required:

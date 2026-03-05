@@ -66,7 +66,16 @@ class TestBackwardCompatibility:
         assert config.agent.sector_config is None
 
     def test_existing_config_file(self):
-        config = SimulationConfig.from_yaml("config/agents/debate_diverse_agents.yaml")
+        """Agent YAML merged with a scenario produces a valid config with no sectors."""
+        import yaml
+        from run_simulation import _deep_merge
+
+        with open("config/agents/debate_diverse_agents.yaml") as f:
+            agent_raw = yaml.safe_load(f)
+        # Agent configs don't include invest_quarter — scenarios supply it.
+        scenario = {"invest_quarter": "2025Q1"}
+        merged = _deep_merge(agent_raw, scenario)
+        config = SimulationConfig(**merged)
         assert config.sectors is None
         assert config.agent.sector_config is None
 

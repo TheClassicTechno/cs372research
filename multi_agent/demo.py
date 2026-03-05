@@ -6,7 +6,7 @@ Shows different configurations for ablation experiments:
   1. Default 4-agent debate (macro, value, risk, technical)
   2. With sentiment agent added
   3. With adversarial/devil's advocate
-  4. High vs low agreeableness
+  4. High vs low initial_beta (PID tone)
   5. Multiple debate rounds
   6. No pipeline preprocessing
 
@@ -131,7 +131,7 @@ def run_demo_config(
     print(f"  {name}")
     print(f"  Architecture: {architecture}")
     print(f"  Roles: {[r.value for r in config.roles]}")
-    print(f"  Rounds: {config.max_rounds} | Agreeableness: {config.agreeableness}")
+    print(f"  Rounds: {config.max_rounds} | Initial Beta: {config.initial_beta}")
     print(f"  Pipeline: news={config.enable_news_pipeline}, data={config.enable_data_pipeline}")
     print(f"  Adversarial: {config.enable_adversarial}")
     print(f"{'='*70}")
@@ -208,13 +208,13 @@ def main():
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             enable_adversarial=True, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs, "debate"),
-        (4, "Config 4: High Agreeableness (0.9 — sycophantic)", DebateConfig(
+        (4, "Config 4: High Beta (0.9 — adversarial)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.9, mock=mock, verbose=verbose, trace_dir=trace_dir,
+            initial_beta=0.9, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs, "debate"),
-        (5, "Config 5: Low Agreeableness (0.1 — confrontational)", DebateConfig(
+        (5, "Config 5: Low Beta (0.1 — collaborative)", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
-            agreeableness=0.1, mock=mock, verbose=verbose, trace_dir=trace_dir,
+            initial_beta=0.1, mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs, "debate"),
         (6, "Config 6: 3 Debate Rounds", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
@@ -227,7 +227,7 @@ def main():
         ), obs, "debate"),
         (8, "Config 8: Full System on Risk-Off Scenario", DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL, AgentRole.SENTIMENT],
-            enable_adversarial=True, max_rounds=2, agreeableness=0.3,
+            enable_adversarial=True, max_rounds=2,
             mock=mock, verbose=verbose, trace_dir=trace_dir,
         ), obs_risk, "debate"),
         (9, "Config 9: Minimal 2-agent Debate", DebateConfig(

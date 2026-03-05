@@ -171,31 +171,18 @@ class TestToneRouting:
                 f"got: {sys_prompt[:200]}"
             )
 
-    def test_critique_agreeableness_derived_tone(self, obs_dict):
-        """No _current_beta → tone derived from agreeableness via resolve_beta."""
-        config = _make_config(agreeableness=0.1)  # beta = 1.0 - 0.1 = 0.9 → adversarial
+    def test_critique_no_beta_no_tone(self, obs_dict):
+        """No _current_beta → no tone injection (beta is None)."""
+        config = _make_config()
+        # No _current_beta set → resolve_beta returns None → no tone
 
         result, _ = _run_through_critique(obs_dict, config)
         turns = _get_turns(result, "critique")
 
         for turn in turns:
             sys_prompt = turn["raw_system_prompt"]
-            assert "ADVERSARIAL" in sys_prompt, (
-                f"Expected adversarial tone (from agreeableness=0.1) for {turn['role']}"
-            )
-
-    def test_critique_agreeableness_collaborative(self, obs_dict):
-        """High agreeableness → low beta → collaborative tone."""
-        config = _make_config(agreeableness=0.9)  # beta = 0.1 → collaborative
-
-        result, _ = _run_through_critique(obs_dict, config)
-        turns = _get_turns(result, "critique")
-
-        for turn in turns:
-            sys_prompt = turn["raw_system_prompt"]
-            assert "COLLABORATIVE" in sys_prompt, (
-                f"Expected collaborative tone (from agreeableness=0.9) for {turn['role']}"
-            )
+            # Without _current_beta, no tone should be injected
+            assert "ADVERSARIAL" not in sys_prompt or "COLLABORATIVE" not in sys_prompt
 
     def test_revise_has_tone(self, obs_dict):
         """Revise system prompt gets tone injection via registry."""
@@ -561,7 +548,7 @@ class TestCausalContractWiring:
 #   value     → "VALUE/FUNDAMENTALS ANALYST"
 #   risk      → "RISK MANAGER"
 # These must be present in every agent's system prompt during critique
-# and revise, regardless of PID state or agreeableness value.
+# and revise, regardless of PID state or beta value.
 
 _ROLE_IDENTITY = {
     "macro": "MACRO STRATEGIST",
@@ -577,7 +564,7 @@ class TestRoleIdentityInCritique:
         reset_registry_cache()
 
     def test_critique_pid_off_has_role_identity(self, obs_dict):
-        """PID off (agreeableness-derived tone): each agent's critique prompt has its role."""
+        """PID off: each agent's critique prompt has its role."""
         config = _make_config()
         result, _ = _run_through_critique(obs_dict, config)
         turns = _get_turns(result, "critique")
@@ -621,9 +608,8 @@ class TestRoleIdentityInCritique:
             )
 
     def test_critique_no_explicit_beta_has_role_identity(self, obs_dict):
-        """No _current_beta (agreeableness fallback): role identity still present."""
+        """No _current_beta: role identity still present."""
         config = _make_config()
-        # No _current_beta → resolve_beta derives from agreeableness
         result, _ = _run_through_critique(obs_dict, config)
         turns = _get_turns(result, "critique")
 
@@ -642,7 +628,7 @@ class TestRoleIdentityInRevise:
         reset_registry_cache()
 
     def test_revise_pid_off_has_role_identity(self, obs_dict):
-        """PID off (agreeableness-derived tone): each agent's revise prompt has its role."""
+        """PID off: each agent's revise prompt has its role."""
         config = _make_config()
         result, _ = _run_through_revise(obs_dict, config)
         turns = _get_turns(result, "revision")
@@ -686,7 +672,7 @@ class TestRoleIdentityInRevise:
             )
 
     def test_revise_no_explicit_beta_has_role_identity(self, obs_dict):
-        """No _current_beta (agreeableness fallback): role identity still present."""
+        """No _current_beta: role identity still present."""
         config = _make_config()
         result, _ = _run_through_revise(obs_dict, config)
         turns = _get_turns(result, "revision")
@@ -700,18 +686,18 @@ class TestRoleIdentityInRevise:
 
 
 # =============================================================================
-# 9. _current_beta=None → agreeableness-derived tone (fallback)
+# 9. _current_beta=None → no tone injection
 # =============================================================================
 
 
-class TestBetaNoneFallsBackToAgreeableness:
-    """When _current_beta is absent, resolve_beta derives tone from agreeableness."""
+class TestBetaNoneNoTone:
+    """When _current_beta is None, no tone injection occurs."""
 
     def setup_method(self):
         reset_registry_cache()
 
-    def test_critique_no_beta_gets_agreeableness_tone(self, obs_dict):
-        """_current_beta=None + agreeableness=0.3 → beta=0.7 → adversarial tone."""
+    def test_critique_no_beta_gets_no_tone(self, obs_dict):
+        """_current_beta=None → no tone injection in critique."""
         config = _make_config(_pid_enabled_flag=True)
         config["_current_beta"] = None  # simulates propose phase (no PID β)
 
@@ -720,13 +706,13 @@ class TestBetaNoneFallsBackToAgreeableness:
 
         for turn in turns:
             sys_prompt = turn["raw_system_prompt"]
-            # Default agreeableness=0.3 → beta=0.7 → adversarial
-            assert "ADVERSARIAL" in sys_prompt, (
-                f"Expected adversarial tone from agreeableness fallback for {turn['role']}"
+            # No beta → no tone injection
+            assert "ADVERSARIAL" not in sys_prompt, (
+                f"Expected no tone injection when beta is None for {turn['role']}"
             )
 
-    def test_revise_no_beta_gets_agreeableness_tone(self, obs_dict):
-        """_current_beta=None + agreeableness=0.3 → beta=0.7 → firm/adversarial revise tone."""
+    def test_revise_no_beta_gets_no_tone(self, obs_dict):
+        """_current_beta=None → no tone injection in revise."""
         config = _make_config(_pid_enabled_flag=True)
         config["_current_beta"] = None
 
@@ -735,7 +721,7 @@ class TestBetaNoneFallsBackToAgreeableness:
 
         for turn in turns:
             sys_prompt = turn["raw_system_prompt"]
-            # Default agreeableness=0.3 → beta=0.7 → adversarial revise tone
-            assert "FIRM" in sys_prompt or "Stand by" in sys_prompt, (
-                f"Expected firm/adversarial revise tone from agreeableness fallback for {turn['role']}"
+            # No beta → no tone injection
+            assert "FIRM" not in sys_prompt, (
+                f"Expected no tone injection when beta is None for {turn['role']}"
             )
