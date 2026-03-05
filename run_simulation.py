@@ -147,6 +147,12 @@ def _parse_args() -> argparse.Namespace:
         "'standard' writes artifacts only, 'debug' adds prompt files, 'off' disables.",
     )
     parser.add_argument(
+        "--crit-model",
+        default=None,
+        metavar="MODEL",
+        help="Override LLM model used for CRIT scoring (default: gpt-5).",
+    )
+    parser.add_argument(
         "--no-parallel",
         action="store_true",
         help="Run debate agents sequentially instead of in parallel. "
@@ -308,6 +314,11 @@ async def _main() -> None:
         config.agent.logging_mode = args.logging_mode
         logger.info("Logging mode overridden to '%s'", args.logging_mode)
 
+    # --crit-model: override CRIT scoring model.
+    if args.crit_model is not None:
+        config.agent.crit_llm_model = args.crit_model
+        logger.info("CRIT scoring model overridden to '%s'", args.crit_model)
+
     # --no-parallel: force sequential agent execution.
     if args.no_parallel:
         config.agent.parallel_agents = False
@@ -327,6 +338,30 @@ async def _main() -> None:
     if args.no_display:
         config.agent.console_display = False
         logger.info("Rich console display disabled (plain text mode)")
+
+    # --- Build effective command string with all resolved args ---
+    cmd_parts = ["python run_simulation.py"]
+    cmd_parts.append(f"--agents {args.agents}")
+    if args.scenario:
+        cmd_parts.append(f"--scenario {args.scenario}")
+    cmd_parts.append(f"--output-dir {args.output_dir}")
+    cmd_parts.append(f"--log-level {args.log_level}")
+    cmd_parts.append(f"--logging-mode {config.agent.logging_mode}")
+    cmd_parts.append(f"--crit-model {config.agent.crit_llm_model}")
+    if not config.agent.parallel_agents:
+        cmd_parts.append("--no-parallel")
+    if config.agent.no_rate_limit:
+        cmd_parts.append("--no-rate-limit")
+    if args.stagger_ms is not None:
+        cmd_parts.append(f"--stagger-ms {args.stagger_ms}")
+    if not config.agent.console_display:
+        cmd_parts.append("--no-display")
+    config.agent.run_command = " ".join(cmd_parts)
+
+    config_paths = [str(Path(args.agents).resolve())]
+    if args.scenario:
+        config_paths.append(str(Path(args.scenario).resolve()))
+    config.agent.config_paths = config_paths
 
     # --list-tickers: print configured tickers and exit (no simulation).
     if args.list_tickers:

@@ -154,9 +154,14 @@ class DebateConfig:
     prompt_profile: str = ""  # profile name (e.g. "default", "minimal") or "" for backward compat
     role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
 
-    # --- CRIT template configurability ---
+    # --- CRIT configuration ---
+    crit_model_name: str = "gpt-5"  # LLM model for CRIT scoring (separate from debate model)
     crit_system_template: str = "crit_system.jinja"
     crit_user_template: str = "crit_user.jinja"
+
+    # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
+    run_command: str | None = None
+    config_paths: list[str] = field(default_factory=list)
 
     # --- Sector constraints (optional, forwarded from SimulationConfig) ---
     sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
