@@ -662,7 +662,7 @@ class MultiAgentRunner:
         scores them in parallel via CritScorer, computes JS + OV, and
         updates the PID controller.
         """
-        from eval.PID.sycophancy import jensen_shannon_divergence
+        from eval.divergence import generalized_js_divergence
         from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
         decisions = state.get("revisions", state.get("proposals", []))
@@ -690,12 +690,12 @@ class MultiAgentRunner:
         if round_num == 1:
             self._crit_round1_captures = self._crit_current_captures
 
-        # --- JS divergence from agent confidences ---
-        confidences = [
-            d.get("action_dict", {}).get("confidence", 0.5)
+        # --- JS divergence from portfolio allocation vectors ---
+        allocations = [
+            d.get("action_dict", {}).get("allocation", {})
             for d in decisions
         ]
-        js = jensen_shannon_divergence(confidences) if len(confidences) >= 2 else 0.0
+        js = generalized_js_divergence(allocations) if len(allocations) >= 2 else 0.0
 
         # --- Evidence overlap (average pairwise Jaccard) ---
         evidence_sets = extract_agent_evidence_spans(
