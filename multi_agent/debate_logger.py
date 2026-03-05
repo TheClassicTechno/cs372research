@@ -322,7 +322,7 @@ class DebateLogger:
             "run_command": getattr(self._config, "run_command", None),
             "config_paths": getattr(self._config, "config_paths", []),
             "model_name": getattr(self._config, "model_name", "unknown"),
-            "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5"),
+            "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5-mini"),
             "temperature": getattr(self._config, "temperature", 0.3),
             "roles": [r.value for r in self._config.roles],
             "max_rounds": self._config.max_rounds,

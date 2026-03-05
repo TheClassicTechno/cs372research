@@ -124,7 +124,7 @@ TEMPLATE_VARS: dict[str, set[str]] = {
         "trap_awareness", "json_output_instructions",
         "allocation_output_instructions", "sector_constraints",
     },
-    "critique": {"role", "context", "my_proposal", "others_text"},
+    "critique": {"role", "context", "my_proposal", "others_text", "sector_constraints"},
     "revise": {
         "role", "context", "my_proposal", "critiques_text",
         "causal_claim_format", "forced_uncertainty", "sector_constraints",
@@ -307,6 +307,7 @@ def build_critique_prompt(
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
     """Build critique user prompt for a role agent in the debate.
 
@@ -327,6 +328,7 @@ def build_critique_prompt(
         "context": context,
         "my_proposal": my_proposal,
         "others_text": others_text,
+        "sector_constraints": sector_constraints,
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER

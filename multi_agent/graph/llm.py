@@ -182,7 +182,7 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
                     # Reasoning models (o-series, gpt-5-mini, etc.) reject
                     # the temperature parameter — only pass it for models
                     # that accept it.
-                    _no_temp = model_name.startswith(("o1", "o3", "o4")) or "5-mini" in model_name
+                    _no_temp = model_name.startswith(("o1", "o3", "o4")) or "gpt-5" in model_name
                     _kwargs: dict = dict(
                         model=model_name,
                         instructions=system_prompt,

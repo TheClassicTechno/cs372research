@@ -152,7 +152,7 @@ class DebateConfig:
     role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
 
     # --- CRIT configuration ---
-    crit_model_name: str = "gpt-5"  # LLM model for CRIT scoring (separate from debate model)
+    crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
     crit_system_template: str = "crit_system.jinja"
     crit_user_template: str = "crit_user.jinja"
 

@@ -557,6 +557,11 @@ class MultiAgentRunner:
             pid_metrics_logger.info(json.dumps(summary, indent=2))
 
         # Phase 3: Judge + trace
+        if self.config.console_display:
+            render_phase_label("Judge")
+            from .terminal_display import _reset_llm_tracker
+            _reset_llm_tracker(1)
+            print(f"  Synthesizing final allocation ({self.config.model_name})", flush=True)
         state = self.finalize_graph.invoke(state)
 
         # Rich console display: judge result + debate end
@@ -660,6 +665,12 @@ class MultiAgentRunner:
 
         # --- CRIT + PID (once per round, after revise) ---
         if self._pid_controller and self._crit_scorer:
+            if use_display:
+                n_agents = len(self.config.roles)
+                render_phase_label("CRIT Scoring")
+                from .terminal_display import _reset_llm_tracker
+                _reset_llm_tracker(n_agents)
+                print(f"  Scoring {n_agents} agents with CRIT ({self.config.crit_model_name})", flush=True)
             self._crit_and_pid_step(state, round_num, beta_in=beta)
 
         return state

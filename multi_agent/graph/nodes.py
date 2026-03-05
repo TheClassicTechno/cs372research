@@ -292,11 +292,15 @@ def critique_node(state: DebateState) -> dict:
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -660,11 +664,15 @@ def make_critique_node(role: str):
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(

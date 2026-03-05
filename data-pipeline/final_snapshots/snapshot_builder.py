@@ -82,7 +82,40 @@ def _preflight_check(
                 warnings.append(f"sentiment/data/{ticker}/{year}_{quarter}.json — missing (optional)")
 
     if warnings:
+        # Group warnings by category for compact display
+        sentiment_missing: dict[str, list[str]] = {}  # quarter -> [tickers]
+        edgar_missing: list[str] = []
+        other: list[str] = []
         for w in warnings:
+            if "missing (optional)" in w:
+                # Extract ticker and quarter from path like "sentiment/data/AAPL/2022_Q2.json"
+                parts = w.split("/")
+                if len(parts) >= 4:
+                    ticker = parts[2]
+                    qtr = parts[3].replace(".json — missing (optional)", "")
+                    sentiment_missing.setdefault(qtr, []).append(ticker)
+                else:
+                    other.append(w)
+            elif "no filing summaries" in w:
+                ticker = w.split("/")[1] if "/" in w else w
+                edgar_missing.append(ticker)
+            else:
+                other.append(w)
+        if sentiment_missing:
+            for qtr in sorted(sentiment_missing):
+                tickers_list = sorted(sentiment_missing[qtr])
+                print(
+                    f"  WARNING: sentiment data missing (optional) for {qtr}: "
+                    f"{', '.join(tickers_list)} ({len(tickers_list)} tickers)",
+                    file=sys.stderr,
+                )
+        if edgar_missing:
+            print(
+                f"  WARNING: no EDGAR filing summaries for: "
+                f"{', '.join(sorted(edgar_missing))} (filings may lag)",
+                file=sys.stderr,
+            )
+        for w in other:
             print(f"  WARNING: {w}", file=sys.stderr)
 
     if missing_required:
