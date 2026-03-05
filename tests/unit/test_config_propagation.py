@@ -300,9 +300,9 @@ class TestConfigPropagation:
         cfg = self._build_debate_config(max_rounds=5)
         assert cfg.max_rounds == 5
 
-    def test_agreeableness_propagated(self):
-        cfg = self._build_debate_config(agreeableness=0.1)
-        assert cfg.agreeableness == 0.1
+    def test_initial_beta_propagated(self):
+        cfg = self._build_debate_config(pid_initial_beta=0.7)
+        assert cfg.initial_beta == 0.7
 
     def test_parallel_agents_propagated(self):
         cfg = self._build_debate_config(parallel_agents=False)

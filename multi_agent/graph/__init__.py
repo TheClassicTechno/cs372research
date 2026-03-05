@@ -15,7 +15,7 @@ system.  It serves two execution paths:
        build_single_round_graph — propose → critique → revise → END
        build_finalize_graph   — judge → build_trace → END
        The runner calls each sub-graph separately, owning the iteration
-       loop itself so external controllers (PID, agreeableness tuners)
+       loop itself so the PID controller
        can intervene between rounds.
 
 Sub-modules:

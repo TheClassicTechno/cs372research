@@ -52,12 +52,6 @@ class AgentConfig(BaseModel):
         description="Agent roles for debate, e.g. ['macro', 'value', 'risk']. "
         "If omitted, defaults to ['macro', 'value', 'risk', 'technical'].",
     )
-    agreeableness: float = Field(
-        default=0.3,
-        ge=0.0,
-        le=1.0,
-        description="Sycophancy knob: 0.0 = confrontational, 1.0 = agreeable.",
-    )
     enable_adversarial: bool = Field(
         default=False,
         description="Add an explicit devil's advocate agent to the debate.",
@@ -83,6 +77,10 @@ class AgentConfig(BaseModel):
         description="Max concurrent LLM calls. 0 = unlimited.",
     )
 
+    log_tokens: bool = Field(
+        default=False,
+        description="Print per-request token counts (prompt, completion, total) to console.",
+    )
     log_rendered_prompts: bool = Field(
         default=False,
         description="Log the full rendered system + user prompts sent to the LLM "
@@ -112,7 +110,7 @@ class AgentConfig(BaseModel):
         default=0.5,
         ge=0.0,
         le=1.0,
-        description="Initial agreeableness value for PID controller.",
+        description="Initial beta value for PID tone controller.",
     )
     pid_epsilon: float = Field(
         default=0.001,

@@ -11,7 +11,6 @@
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
-invest_quarter: "2025Q1"
 
 tickers:
   - TSLA
@@ -45,7 +44,7 @@ num_episodes: 1
 agent:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
-  llm_model: "gpt-4o-mini"
+  llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
 
@@ -117,11 +116,6 @@ agent:
     # judge_template:    "phases/judge_allocation.txt"
     # System contract (shared causal reasoning, used with _slim role prompts):
     # causal_contract: "system_contract/system_causal_contract.txt"
-
-  # --- Agreeableness ---
-  # 0.0 = maximally contrarian, 1.0 = maximally agreeable
-  # Default is ~0.5. Lower values produce more disagreement in debate.
-  agreeableness: 0.5
 
   # --- PID controller ---
   pid_enabled: true

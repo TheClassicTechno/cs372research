@@ -41,7 +41,6 @@ class DebateConfig:
     Designed for ablation experiments:
       - roles: which agents participate
       - max_rounds: how many critique-revision cycles
-      - agreeableness: sycophancy knob (0=confrontational, 1=agreeable)
       - enable_adversarial: add devil's advocate agent
       - model_name / temperature: LLM settings
       - mock: use mock responses (no API calls)
@@ -62,10 +61,6 @@ class DebateConfig:
     # --- Debate structure ---
     # Number of critique-revision cycles (1 = propose -> critique -> revise -> judge)
     max_rounds: int = 1
-
-    # Agreeableness knob: 0.0 = maximally confrontational, 1.0 = sycophantic
-    # Default 0.3 = somewhat skeptical (good for research on reducing groupthink)
-    agreeableness: float = 0.3
 
     # Whether to add an explicit devil's advocate agent
     enable_adversarial: bool = False
@@ -88,6 +83,8 @@ class DebateConfig:
     # --- Verbose mode (print full debate content to terminal) ---
     verbose: bool = False
 
+    # log_tokens: print per-request token counts to console
+    log_tokens: bool = False
     # log_rendered_prompts: log full system + user prompts via debate.prompts logger
     log_rendered_prompts: bool = False
     # log_prompt_manifest: log prompt file names once per round (compact)
@@ -155,7 +152,7 @@ class DebateConfig:
     role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
 
     # --- CRIT configuration ---
-    crit_model_name: str = "gpt-5"  # LLM model for CRIT scoring (separate from debate model)
+    crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
     crit_system_template: str = "crit_system.jinja"
     crit_user_template: str = "crit_user.jinja"
 
@@ -180,10 +177,6 @@ class DebateConfig:
         """Validate config values after initialization."""
         if self.max_rounds < 1:
             raise ValueError(f"max_rounds must be >= 1, got {self.max_rounds}")
-        if not (0.0 <= self.agreeableness <= 1.0):
-            raise ValueError(
-                f"agreeableness must be in [0, 1], got {self.agreeableness}"
-            )
         if not (0.0 <= self.initial_beta <= 1.0):
             raise ValueError(
                 f"initial_beta must be in [0, 1], got {self.initial_beta}"
@@ -216,7 +209,6 @@ class DebateConfig:
         return {
             "roles": [r.value for r in self.roles],
             "max_rounds": self.max_rounds,
-            "agreeableness": self.agreeableness,
             "enable_adversarial": self.enable_adversarial,
             "model_name": self.model_name,
             "temperature": self.temperature,
@@ -226,6 +218,7 @@ class DebateConfig:
             "llm_stagger_ms": self.llm_stagger_ms,
             "max_concurrent_llm": self.max_concurrent_llm,
             "verbose": self.verbose,
+            "log_tokens": self.log_tokens,
             "log_rendered_prompts": self.log_rendered_prompts,
             "log_prompt_manifest": self.log_prompt_manifest,
             "trace_dir": self.trace_dir,

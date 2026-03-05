@@ -14,7 +14,6 @@
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
-invest_quarter: "2025Q1"
 
 tickers:
   - TSLA
@@ -42,7 +41,7 @@ num_episodes: 1
 agent:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
-  llm_model: "gpt-4o-mini"
+  llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
 
@@ -68,8 +67,6 @@ agent:
     role_macro: "roles/macro_diverse.txt"
     role_value: "roles/value.txt"          # <-- standard prompt, not agents
     role_risk: "roles/risk_diverse.txt"
-
-  agreeableness: 0.3
 
   pid_enabled: true
   pid_kp: 0.15

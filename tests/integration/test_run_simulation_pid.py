@@ -261,7 +261,7 @@ class TestRunSimulationWithPID:
 
             # Controller output
             ctrl = event["controller_output"]
-            assert "new_agreeableness" in ctrl
+            assert "new_beta" in ctrl
 
     def test_reasoning_trace_file_contains_pid_events(
         self, simulation_dir, pid_config_path, monkeypatch

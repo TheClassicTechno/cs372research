@@ -52,7 +52,6 @@ def _make_debate_config(
     return DebateConfig(
         roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
         max_rounds=max_rounds,
-        agreeableness=0.3,
         mock=True,
         parallel_agents=False,
         pid_config=pid_config,
@@ -168,7 +167,7 @@ class TestPIDEventSchema:
         assert event.metrics.rho_bar > 0
         assert "e_t" in event.pid_step
         assert "beta_new" in event.pid_step
-        assert event.controller_output.new_agreeableness is not None
+        assert event.controller_output.new_beta is not None
 
 
 class TestPIDCritIntegration:
@@ -240,7 +239,6 @@ class TestPIDWithParallelAgents:
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=1,
-            agreeableness=0.3,
             mock=True,
             parallel_agents=True,
             pid_config=pid_config,
@@ -257,7 +255,6 @@ class TestPIDWithParallelAgents:
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=2,
-            agreeableness=0.3,
             mock=True,
             parallel_agents=True,
             pid_config=pid_config,
@@ -279,7 +276,6 @@ class TestFlatYAMLPIDConfig:
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=1,
-            agreeableness=0.3,
             mock=True,
             parallel_agents=False,
             _pid_enabled_flag=True,
@@ -308,7 +304,6 @@ class TestFlatYAMLPIDConfig:
         config = DebateConfig(
             roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
             max_rounds=1,
-            agreeableness=0.3,
             mock=True,
             parallel_agents=False,
             _pid_enabled_flag=True,

@@ -73,7 +73,6 @@ def build_debate_config(params: dict, mock: bool = False) -> Any:
     return DebateConfig(
         roles=roles,
         max_rounds=params.get("max_rounds", 10),
-        agreeableness=params.get("agreeableness", 0.3),
         enable_adversarial=params.get("enable_adversarial", False),
         model_name=params.get("model_name", "gpt-4o-mini"),
         temperature=params.get("temperature", 0.3),

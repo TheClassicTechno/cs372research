@@ -3,7 +3,7 @@
 This module provides the PromptRegistry — a layered prompt builder that
 separates concerns (role identity, phase preamble, tone injection) into
 composable blocks.  All phases route through ``PromptRegistry.build()``
-with tone derived from ``resolve_beta()`` (PID β or agreeableness → β).
+with tone derived from ``resolve_beta()`` (PID β → tone bucket).
 
 ==========================================================================
 β → TONE MAPPING (CORRECTED RAudit SEMANTICS)
@@ -106,13 +106,9 @@ def beta_to_bucket(beta: float) -> str:
 
 
 def resolve_beta(config: dict, phase: str) -> float | None:
-    """Get beta for tone selection, unifying PID and static agreeableness.
+    """Get PID beta for tone selection.
 
-    For critique/revise: uses ``_current_beta`` if set by the PID runner,
-    otherwise derives from the static ``agreeableness`` knob via
-    ``beta = 1.0 - agreeableness`` (semantics are inverted: high
-    agreeableness = low contentiousness = low beta).
-
+    For critique/revise: returns ``_current_beta`` set by the PID runner.
     For propose/judge: always returns ``None`` (no tone injection).
 
     Args:
@@ -124,10 +120,7 @@ def resolve_beta(config: dict, phase: str) -> float | None:
     """
     if phase not in ("critique", "revise"):
         return None
-    beta = config.get("_current_beta")
-    if beta is not None:
-        return beta
-    return 1.0 - config.get("agreeableness", 0.3)
+    return config.get("_current_beta")
 
 
 # =========================================================================

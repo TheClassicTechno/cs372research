@@ -337,7 +337,7 @@ class MultiAgentRunner:
         self._pid_phase_data: list[dict] = []
         self._stable_rounds: int = 0
         self._prev_rho_bar: float | None = None
-        self._original_agreeableness = self.config.agreeableness
+        self._original_beta = self.config.initial_beta
         self._memo_evidence_lookup: dict[str, str] = {}
 
         # --- Structured debate logger ---
@@ -557,6 +557,11 @@ class MultiAgentRunner:
             pid_metrics_logger.info(json.dumps(summary, indent=2))
 
         # Phase 3: Judge + trace
+        if self.config.console_display:
+            render_phase_label("Judge")
+            from .terminal_display import _reset_llm_tracker
+            _reset_llm_tracker(1)
+            print(f"  Synthesizing final allocation ({self.config.model_name})", flush=True)
         state = self.finalize_graph.invoke(state)
 
         # Rich console display: judge result + debate end
@@ -595,7 +600,7 @@ class MultiAgentRunner:
         Also injects ``_current_beta`` into config so the modular prompt
         registry can map beta to tone bucket without seeing the numeric value.
         """
-        beta = self._pid_controller.beta if self._pid_controller else self._original_agreeableness
+        beta = self._pid_controller.beta if self._pid_controller else self._original_beta
         use_display = self.config.console_display
 
         # Start round in structured logger
@@ -614,11 +619,12 @@ class MultiAgentRunner:
 
         # --- Propose phase (no tone injection) ---
         n_agents = len(self.config.roles)
+        role_names = ", ".join(r.upper() for r in self.config.roles)
         if use_display:
             render_phase_label("Propose")
             from .terminal_display import _reset_llm_tracker
             _reset_llm_tracker(n_agents)
-        state["config"]["agreeableness"] = self._original_agreeableness
+            print(f"  Calling {n_agents} agents: {role_names}", flush=True)
         state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
         if use_display:
@@ -634,7 +640,7 @@ class MultiAgentRunner:
             render_phase_label("Critique")
             from .terminal_display import _reset_llm_tracker
             _reset_llm_tracker(n_agents)
-        state["config"]["agreeableness"] = beta
+            print(f"  Calling {n_agents} agents: {role_names}", flush=True)
         state["config"]["_current_beta"] = beta
         state = self._critique_graph.invoke(state)
 
@@ -646,7 +652,7 @@ class MultiAgentRunner:
             render_phase_label("Revise")
             from .terminal_display import _reset_llm_tracker
             _reset_llm_tracker(n_agents)
-        state["config"]["agreeableness"] = beta
+            print(f"  Calling {n_agents} agents: {role_names}", flush=True)
         state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
         if use_display:
@@ -659,6 +665,12 @@ class MultiAgentRunner:
 
         # --- CRIT + PID (once per round, after revise) ---
         if self._pid_controller and self._crit_scorer:
+            if use_display:
+                n_agents = len(self.config.roles)
+                render_phase_label("CRIT Scoring")
+                from .terminal_display import _reset_llm_tracker
+                _reset_llm_tracker(n_agents)
+                print(f"  Scoring {n_agents} agents with CRIT ({self.config.crit_model_name})", flush=True)
             self._crit_and_pid_step(state, round_num, beta_in=beta)
 
         return state
@@ -727,7 +739,7 @@ class MultiAgentRunner:
         pid_result = self._pid_controller.step(rho_bar, js, ov)
 
         # Record PIDEvent
-        ctrl_output = ControllerOutput(new_agreeableness=pid_result.beta_new)
+        ctrl_output = ControllerOutput(new_beta=pid_result.beta_new)
         event = PIDEvent(
             round_index=round_num,
             metrics=RoundMetrics(
