@@ -562,6 +562,52 @@ class TestFinalize:
         judge_path = tmp_logger.run_dir / "final" / "judge_response.txt"
         assert not judge_path.exists()
 
+    def test_finalize_writes_pid_crit_all_rounds_json(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        pid_phase_data = [
+            {
+                "round": 1,
+                "crit": {"rho_bar": 0.75, "agents": {"macro": {"rho_i": 0.75}}},
+                "pid": {"beta_new": 0.5},
+                "divergence": {"js": 0.1},
+                "convergence": {},
+            },
+            {
+                "round": 2,
+                "crit": {"rho_bar": 0.80, "agents": {"macro": {"rho_i": 0.80}}},
+                "pid": {"beta_new": 0.45},
+                "divergence": {"js": 0.05},
+                "convergence": {},
+            },
+        ]
+
+        tmp_logger.finalize(state, pid_phase_data, False, "memo")
+
+        path = tmp_logger.run_dir / "final" / "pid_crit_all_rounds.json"
+        assert path.exists()
+        data = json.loads(path.read_text())
+        assert len(data) == 2
+        assert data[0]["round"] == 1
+        assert data[1]["round"] == 2
+        assert data[1]["crit"]["rho_bar"] == 0.80
+
+    def test_finalize_no_pid_crit_json_when_empty(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        tmp_logger.init_run("d", sample_observation, "m")
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, "memo")
+
+        path = tmp_logger.run_dir / "final" / "pid_crit_all_rounds.json"
+        assert not path.exists()
+
     def test_finalize_writes_diagnostic_txt(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
     ):

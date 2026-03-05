@@ -654,6 +654,10 @@ class DebateLogger:
                 (final_dir / "judge_response.txt").write_text(raw, encoding="utf-8")
                 break
 
+        # pid_crit_all_rounds.json — consolidated PID/CRIT data for all rounds
+        if pid_phase_data:
+            _write_json(final_dir / "pid_crit_all_rounds.json", pid_phase_data)
+
         # debate_diagnostic.txt — plaintext casefile for LLM diagnosis
         casefile = self._build_diagnostic_casefile(
             state, pid_phase_data, terminated_early, enriched_context,
