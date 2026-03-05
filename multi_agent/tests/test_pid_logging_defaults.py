@@ -39,22 +39,24 @@ def _mock_crit_result(roles: list[str]) -> RoundCritResult:
     for role in roles:
         agent_scores[role] = CritResult(
             pillar_scores=PillarScores(
-                internal_consistency=0.8,
-                evidence_support=0.7,
-                trace_alignment=0.75,
-                causal_integrity=0.65,
+                logical_validity=0.8,
+                evidential_support=0.7,
+                alternative_consideration=0.75,
+                causal_alignment=0.65,
             ),
             diagnostics=Diagnostics(
                 contradictions_detected=False,
                 unsupported_claims_detected=True,
-                conclusion_drift_detected=False,
+                ignored_critiques_detected=False,
+                premature_certainty_detected=False,
                 causal_overreach_detected=False,
+                conclusion_drift_detected=False,
             ),
             explanations=Explanations(
-                internal_consistency="Consistent reasoning.",
-                evidence_support="Some claims lack evidence.",
-                trace_alignment="Decision follows analysis.",
-                causal_integrity="Causal scoping appropriate.",
+                logical_validity="Consistent reasoning.",
+                evidential_support="Some claims lack evidence.",
+                alternative_consideration="Decision follows analysis.",
+                causal_alignment="Causal scoping appropriate.",
             ),
             rho_bar=(0.8 + 0.7 + 0.75 + 0.65) / 4.0,
         )
@@ -301,7 +303,7 @@ class TestPidJsonRoundStructure:
         for r in self.rounds:
             for role, data in r["crit"]["agents"].items():
                 pillars = data["pillars"]
-                for key in ("IC", "ES", "TA", "CI"):
+                for key in ("LV", "ES", "AC", "CA"):
                     assert key in pillars, f"Missing pillar {key} for {role}"
                     assert isinstance(pillars[key], float)
 
@@ -310,7 +312,8 @@ class TestPidJsonRoundStructure:
             for role, data in r["crit"]["agents"].items():
                 diag = data["diagnostics"]
                 for key in ("contradictions", "unsupported_claims",
-                            "conclusion_drift", "causal_overreach"):
+                            "ignored_critiques", "premature_certainty",
+                            "causal_overreach", "conclusion_drift"):
                     assert key in diag, f"Missing diagnostic {key} for {role}"
                     assert isinstance(diag[key], bool)
 

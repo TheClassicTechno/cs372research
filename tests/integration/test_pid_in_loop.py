@@ -63,22 +63,24 @@ def _make_single_crit_entry():
     """Build a single-agent CRIT response dict (used inside batch response)."""
     return {
         "pillar_scores": {
-            "internal_consistency": 0.8,
-            "evidence_support": 0.7,
-            "trace_alignment": 0.9,
-            "causal_integrity": 0.6,
+            "logical_validity": 0.8,
+            "evidential_support": 0.7,
+            "alternative_consideration": 0.9,
+            "causal_alignment": 0.6,
         },
         "diagnostics": {
             "contradictions_detected": False,
             "unsupported_claims_detected": False,
-            "conclusion_drift_detected": False,
+            "ignored_critiques_detected": False,
+            "premature_certainty_detected": False,
             "causal_overreach_detected": False,
+            "conclusion_drift_detected": False,
         },
         "explanations": {
-            "internal_consistency": "No issues.",
-            "evidence_support": "Well supported.",
-            "trace_alignment": "Aligned.",
-            "causal_integrity": "Sound.",
+            "logical_validity": "No issues.",
+            "evidential_support": "Well supported.",
+            "alternative_consideration": "Aligned.",
+            "causal_alignment": "Sound.",
         },
     }
 

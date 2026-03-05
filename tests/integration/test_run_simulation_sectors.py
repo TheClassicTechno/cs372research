@@ -39,22 +39,24 @@ from simulation.runner import AsyncSimulationRunner
 
 _CRIT_ENTRY = {
     "pillar_scores": {
-        "internal_consistency": 0.8,
-        "evidence_support": 0.7,
-        "trace_alignment": 0.9,
-        "causal_integrity": 0.6,
+        "logical_validity": 0.8,
+        "evidential_support": 0.7,
+        "alternative_consideration": 0.9,
+        "causal_alignment": 0.6,
     },
     "diagnostics": {
         "contradictions_detected": False,
         "unsupported_claims_detected": False,
-        "conclusion_drift_detected": False,
+        "ignored_critiques_detected": False,
+        "premature_certainty_detected": False,
         "causal_overreach_detected": False,
+        "conclusion_drift_detected": False,
     },
     "explanations": {
-        "internal_consistency": "ok",
-        "evidence_support": "ok",
-        "trace_alignment": "ok",
-        "causal_integrity": "ok",
+        "logical_validity": "ok",
+        "evidential_support": "ok",
+        "alternative_consideration": "ok",
+        "causal_alignment": "ok",
     },
 }
 
@@ -585,3 +587,179 @@ class TestMaxSectorWeight:
                 f"Sector {sector} total {total:.4f} exceeds "
                 f"max_sector_weight {MAX_SECTOR_WEIGHT}"
             )
+
+
+# ---------------------------------------------------------------------------
+# Tests: Sector constraint text appears in agent prompts
+# ---------------------------------------------------------------------------
+# These tests call node functions directly (mock mode) and inspect
+# raw_user_prompt in debate_turns — same pattern as test_node_prompt_wiring.py.
+
+from multi_agent.config import AgentRole, DebateConfig
+from multi_agent.graph import propose_node, revise_node, critique_node, judge_node
+from multi_agent.models import MarketState, Observation, PortfolioState
+from multi_agent.prompts.registry import reset_registry_cache
+
+
+_OBS_DICT = Observation(
+    timestamp="2024-12-31",
+    universe=["AAPL", "NVDA", "XOM", "JPM"],
+    market_state=MarketState(
+        prices={"AAPL": 200.0, "NVDA": 150.0, "XOM": 100.0, "JPM": 180.0},
+    ),
+    text_context="Macro memo with [L1-VIX] and [AAPL-RET60].",
+    portfolio_state=PortfolioState(cash=100_000.0, positions={}),
+).model_dump()
+
+_SECTOR_CONFIG = {
+    "sectors": {
+        "tech": ["AAPL", "NVDA"],
+        "energy": ["XOM"],
+        "financials": ["JPM"],
+    },
+    "sector_limits": {
+        "tech": {"min": 0.20, "max": 0.60},
+        "energy": {"min": 0.10, "max": 0.35},
+        "financials": {"min": 0.10, "max": 0.35},
+    },
+    "agent_sector_permissions": {
+        "macro": ["energy", "financials"],
+        "value": ["tech", "financials"],
+        "risk": ["*"],
+        "technical": ["tech", "energy"],
+    },
+}
+
+
+def _make_debate_config(**overrides) -> dict:
+    """Build a DebateConfig dict with mock=True, sector_config, and overrides."""
+    kwargs = dict(
+        mock=True,
+        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK],
+        max_rounds=1,
+        trace_dir="/tmp/test_traces",
+        sector_config=_SECTOR_CONFIG,
+    )
+    kwargs.update(overrides)
+    return DebateConfig(**kwargs).to_dict()
+
+
+def _make_debate_state(config_dict, **overrides):
+    """Minimal DebateState dict."""
+    state = {
+        "observation": _OBS_DICT,
+        "config": config_dict,
+        "news_digest": "",
+        "data_analysis": "",
+        "enriched_context": "Test context for sector constraint prompts.",
+        "proposals": [],
+        "critiques": [],
+        "revisions": [],
+        "current_round": 0,
+        "debate_turns": [],
+        "final_action": {},
+        "strongest_objection": "",
+        "audited_memo": "",
+        "trace": {},
+    }
+    state.update(overrides)
+    return state
+
+
+class TestSectorConstraintPrompts:
+    """Verify sector constraint text is injected into agent prompts."""
+
+    def setup_method(self):
+        reset_registry_cache()
+
+    def test_sector_constraints_in_proposal_prompt(self):
+        """Proposal user prompt contains SECTOR CONSTRAINT for a constrained role."""
+        config = _make_debate_config()
+        state = _make_debate_state(config)
+        result = propose_node(state)
+
+        proposals = [t for t in result["debate_turns"] if t["type"] == "proposal"]
+        macro_turn = next(t for t in proposals if t["role"] == "macro")
+        user_prompt = macro_turn["raw_user_prompt"]
+
+        assert "MANDATORY SECTOR CONSTRAINT" in user_prompt
+        assert "MACRO" in user_prompt
+        assert "energy" in user_prompt
+        assert "financials" in user_prompt
+
+    def test_sector_limits_in_proposal_prompt(self):
+        """Proposal user prompt contains SECTOR LIMITS text."""
+        config = _make_debate_config()
+        state = _make_debate_state(config)
+        result = propose_node(state)
+
+        # All agents should see sector limits
+        macro_turn = next(
+            t for t in result["debate_turns"]
+            if t["type"] == "proposal" and t["role"] == "macro"
+        )
+        assert "MANDATORY SECTOR LIMITS" in macro_turn["raw_user_prompt"]
+
+    def test_wildcard_agent_no_permissions_text(self):
+        """Agent with wildcard permissions should not see SECTOR CONSTRAINT."""
+        config = _make_debate_config()
+        state = _make_debate_state(config)
+        result = propose_node(state)
+
+        risk_turn = next(
+            t for t in result["debate_turns"]
+            if t["type"] == "proposal" and t["role"] == "risk"
+        )
+        user_prompt = risk_turn["raw_user_prompt"]
+        # risk has ["*"] → no SECTOR CONSTRAINT
+        assert "MANDATORY SECTOR CONSTRAINT" not in user_prompt
+        # But should still see SECTOR LIMITS
+        assert "MANDATORY SECTOR LIMITS" in user_prompt
+
+    def test_sector_constraints_in_revision_prompt(self):
+        """Revision user prompt contains constraint text for constrained role."""
+        config = _make_debate_config()
+        state = _make_debate_state(config)
+        state.update(propose_node(state))
+        state["current_round"] = 1
+        state.update(critique_node(state))
+        result = revise_node(state)
+
+        macro_turn = next(
+            t for t in result["debate_turns"]
+            if t["type"] == "revision" and t["role"] == "macro"
+        )
+        assert "MANDATORY SECTOR CONSTRAINT" in macro_turn["raw_user_prompt"]
+        assert "MACRO" in macro_turn["raw_user_prompt"]
+
+    def test_sector_limits_in_judge_prompt(self):
+        """Judge prompt contains SECTOR LIMITS but not per-role SECTOR CONSTRAINT."""
+        config = _make_debate_config()
+        state = _make_debate_state(config)
+        state.update(propose_node(state))
+        state["current_round"] = 1
+        state.update(critique_node(state))
+        state.update(revise_node(state))
+        result = judge_node(state)
+
+        judge_turn = next(
+            t for t in result["debate_turns"]
+            if t["type"] == "judge_decision"
+        )
+        user_prompt = judge_turn["raw_user_prompt"]
+        assert "MANDATORY SECTOR LIMITS" in user_prompt
+        # Judge should NOT have per-role permissions text
+        assert "MANDATORY SECTOR CONSTRAINT" not in user_prompt
+
+    def test_no_sector_config_no_constraint_text(self):
+        """Without sector_config, prompts contain no constraint text."""
+        config = _make_debate_config()
+        # Remove sector_config
+        config.pop("sector_config", None)
+        state = _make_debate_state(config)
+        result = propose_node(state)
+
+        for turn in result["debate_turns"]:
+            assert "MANDATORY SECTOR CONSTRAINT" not in turn["raw_user_prompt"]
+            assert "MANDATORY SECTOR LIMITS" not in turn["raw_user_prompt"]
+            assert "MANDATORY MAX SECTOR WEIGHT" not in turn["raw_user_prompt"]

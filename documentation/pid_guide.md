@@ -183,22 +183,24 @@ Built per-agent with these sections:
 ```json
 {
   "pillar_scores": {
-    "internal_consistency": 0.85,
-    "evidence_support": 0.75,
-    "trace_alignment": 0.90,
-    "causal_integrity": 0.70
+    "logical_validity": 0.85,
+    "evidential_support": 0.75,
+    "alternative_consideration": 0.90,
+    "causal_alignment": 0.70
   },
   "diagnostics": {
     "contradictions_detected": false,
     "unsupported_claims_detected": false,
-    "conclusion_drift_detected": false,
-    "causal_overreach_detected": false
+    "ignored_critiques_detected": false,
+    "premature_certainty_detected": false,
+    "causal_overreach_detected": false,
+    "conclusion_drift_detected": false
   },
   "explanations": {
-    "internal_consistency": "Claims are logically consistent...",
-    "evidence_support": "Most claims cite case data...",
-    "trace_alignment": "Decision follows from reasoning...",
-    "causal_integrity": "L2 claims are properly scoped..."
+    "logical_validity": "Reasoning logically supports the conclusion...",
+    "evidential_support": "Most claims cite case data...",
+    "alternative_consideration": "Competing explanations considered...",
+    "causal_alignment": "L2 claims are properly scoped..."
   }
 }
 ```
@@ -601,7 +603,7 @@ You are a reasoning quality auditor (CRIT). Your job is to evaluate...
 ...
 
 [CRIT LLM RESPONSE]
-{"pillar_scores": {"internal_consistency": 0.8, ...}, ...}
+{"pillar_scores": {"logical_validity": 0.8, ...}, ...}
 ```
 
 ### Prompt file manifest (`log_prompt_manifest: true`)
@@ -677,7 +679,7 @@ When PID is enabled, every output artifact includes PID events.
           "crit_result": {
             "agent_scores": {
               "macro": {
-                "pillar_scores": { "internal_consistency": 0.85, ... },
+                "pillar_scores": { "logical_validity": 0.85, ... },
                 "diagnostics": { ... },
                 "explanations": { ... },
                 "rho_bar": 0.80

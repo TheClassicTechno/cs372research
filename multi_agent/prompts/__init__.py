@@ -122,16 +122,16 @@ TEMPLATE_VARS: dict[str, set[str]] = {
     "propose": {
         "context", "causal_claim_format", "forced_uncertainty",
         "trap_awareness", "json_output_instructions",
-        "allocation_output_instructions",
+        "allocation_output_instructions", "sector_constraints",
     },
     "critique": {"role", "context", "my_proposal", "others_text"},
     "revise": {
         "role", "context", "my_proposal", "critiques_text",
-        "causal_claim_format", "forced_uncertainty",
+        "causal_claim_format", "forced_uncertainty", "sector_constraints",
     },
     "judge": {
         "context", "revisions_text", "all_critiques_text",
-        "disagreements_section", "causal_claim_format",
+        "disagreements_section", "causal_claim_format", "sector_constraints",
     },
 }
 
@@ -260,6 +260,7 @@ def build_proposal_user_prompt(
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
     """User prompt sent to each role agent for their initial proposal."""
     causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
@@ -283,6 +284,7 @@ def build_proposal_user_prompt(
         "trap_awareness": traps,
         "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
         "allocation_output_instructions": alloc_instructions,
+        "sector_constraints": sector_constraints,
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER
@@ -347,6 +349,7 @@ def build_revision_prompt(
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -371,6 +374,7 @@ def build_revision_prompt(
         "critiques_text": critiques_text,
         "causal_claim_format": causal,
         "forced_uncertainty": uncertainty,
+        "sector_constraints": sector_constraints,
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER
@@ -393,6 +397,7 @@ def build_judge_prompt(
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -418,6 +423,7 @@ def build_judge_prompt(
         "all_critiques_text": all_critiques_text,
         "disagreements_section": disagreements_section,
         "causal_claim_format": causal,
+        "sector_constraints": sector_constraints,
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER

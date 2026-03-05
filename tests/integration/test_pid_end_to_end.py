@@ -247,22 +247,24 @@ class TestAdapterInvokeWithPID:
         if runner._crit_scorer:
             entry = {
                 "pillar_scores": {
-                    "internal_consistency": 0.8,
-                    "evidence_support": 0.7,
-                    "trace_alignment": 0.9,
-                    "causal_integrity": 0.6,
+                    "logical_validity": 0.8,
+                    "evidential_support": 0.7,
+                    "alternative_consideration": 0.9,
+                    "causal_alignment": 0.6,
                 },
                 "diagnostics": {
                     "contradictions_detected": False,
                     "unsupported_claims_detected": False,
-                    "conclusion_drift_detected": False,
+                    "ignored_critiques_detected": False,
+                    "premature_certainty_detected": False,
                     "causal_overreach_detected": False,
+                    "conclusion_drift_detected": False,
                 },
                 "explanations": {
-                    "internal_consistency": "ok",
-                    "evidence_support": "ok",
-                    "trace_alignment": "ok",
-                    "causal_integrity": "ok",
+                    "logical_validity": "ok",
+                    "evidential_support": "ok",
+                    "alternative_consideration": "ok",
+                    "causal_alignment": "ok",
                 },
             }
             mock_response = json.dumps(entry)

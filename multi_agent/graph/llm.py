@@ -124,22 +124,24 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
         import json as _json
         return _json.dumps({
             "pillar_scores": {
-                "internal_consistency": 0.8,
-                "evidence_support": 0.7,
-                "trace_alignment": 0.75,
-                "causal_integrity": 0.65,
+                "logical_validity": 0.8,
+                "evidential_support": 0.7,
+                "alternative_consideration": 0.75,
+                "causal_alignment": 0.65,
             },
             "diagnostics": {
                 "contradictions_detected": False,
                 "unsupported_claims_detected": False,
-                "conclusion_drift_detected": False,
+                "ignored_critiques_detected": False,
+                "premature_certainty_detected": False,
                 "causal_overreach_detected": False,
+                "conclusion_drift_detected": False,
             },
             "explanations": {
-                "internal_consistency": "Mock: consistent.",
-                "evidence_support": "Mock: supported.",
-                "trace_alignment": "Mock: aligned.",
-                "causal_integrity": "Mock: sound.",
+                "logical_validity": "Mock: valid.",
+                "evidential_support": "Mock: supported.",
+                "alternative_consideration": "Mock: alternatives considered.",
+                "causal_alignment": "Mock: causally sound.",
             },
         })
 

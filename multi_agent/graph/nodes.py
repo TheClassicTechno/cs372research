@@ -25,6 +25,7 @@ from ..prompts.registry import resolve_beta, get_registry
 
 from .allocation import normalize_allocation
 from .sector_constraints import (
+    build_sector_constraint_text,
     build_sector_map,
     enforce_sector_limits,
     filter_allocation_by_permissions,
@@ -179,12 +180,16 @@ def propose_node(state: DebateState) -> dict:
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         user_prompt = build_proposal_user_prompt(
             context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -392,12 +397,16 @@ def revise_node(state: DebateState) -> dict:
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -525,12 +534,16 @@ def make_propose_node(role: str):
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         user_prompt = build_proposal_user_prompt(
             context,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -764,12 +777,16 @@ def make_revise_node(role: str):
         system_blocks = profile.get("system_blocks")
         user_secs = profile.get("user_sections")
 
+        sector_text = build_sector_constraint_text(
+            config.get("sector_config"), role,
+        )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             use_system_causal_contract=use_cc,
             section_order=config.get("user_prompt_section_order"),
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
+            sector_constraints=sector_text,
         )
         registry = get_registry(config)
         build_result = registry.build(
@@ -887,12 +904,16 @@ def judge_node(state: DebateState) -> dict:
     system_blocks = profile.get("system_blocks")
     user_secs = profile.get("user_sections")
 
+    sector_text = build_sector_constraint_text(
+        config.get("sector_config"), "judge", include_permissions=False,
+    )
     prompt = build_judge_prompt(
         context, revisions_for_judge, critiques_text,
         use_system_causal_contract=use_cc,
         section_order=config.get("user_prompt_section_order"),
         prompt_file_overrides=config.get("prompt_file_overrides"),
         user_sections=user_secs,
+        sector_constraints=sector_text,
     )
     registry = get_registry(config)
     build_result = registry.build(

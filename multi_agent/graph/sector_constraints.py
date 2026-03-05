@@ -13,6 +13,63 @@ import logging
 logger = logging.getLogger("multi_agent.graph.sector_constraints")
 
 
+def build_sector_constraint_text(
+    sector_config: dict | None,
+    role: str,
+    *,
+    include_permissions: bool = True,
+) -> str:
+    """Build human-readable constraint text for an agent's prompt.
+
+    Composes up to three blocks (permissions, sector limits, max sector weight)
+    into a single string.  Returns "" if no constraints apply.
+    """
+    if not sector_config:
+        return ""
+
+    parts: list[str] = []
+
+    # 1) Agent sector permissions (role-specific)
+    if include_permissions:
+        perms = sector_config.get("agent_sector_permissions") or {}
+        if role in perms:
+            allowed = perms[role]
+            if isinstance(allowed, list) and "*" not in allowed:
+                parts.append(
+                    f"MANDATORY SECTOR CONSTRAINT: As the {role.upper()} agent, you may ONLY "
+                    f"allocate to these sectors: {', '.join(sorted(allowed))}.\n"
+                    f"You MUST assign 0.0 weight to all tickers outside your allowed sectors."
+                )
+
+    # 2) Sector limits
+    limits = sector_config.get("sector_limits") or {}
+    if limits:
+        lines: list[str] = []
+        for sector, bounds in sorted(limits.items()):
+            lo = bounds.get("min", 0.0)
+            hi = bounds.get("max", 1.0)
+            if lo > 0 and hi < 1.0:
+                lines.append(f"  - {sector}: min {lo:.0%}, max {hi:.0%}")
+            elif lo > 0:
+                lines.append(f"  - {sector}: min {lo:.0%}")
+            elif hi < 1.0:
+                lines.append(f"  - {sector}: max {hi:.0%}")
+        if lines:
+            parts.append(
+                "MANDATORY SECTOR LIMITS (applied to final portfolio):\n" + "\n".join(lines)
+            )
+
+    # 3) Max sector weight
+    max_sw = sector_config.get("max_sector_weight")
+    if max_sw is not None:
+        parts.append(
+            f"MANDATORY MAX SECTOR WEIGHT: No single sector may exceed {max_sw:.0%} "
+            f"of the portfolio."
+        )
+
+    return "\n\n".join(parts)
+
+
 def build_sector_map(sectors: dict[str, list[str]]) -> dict[str, str]:
     """Invert sector definition into a ticker→sector lookup.
 

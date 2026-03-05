@@ -22,22 +22,24 @@ def _make_crit_entry(ic=0.8, es=0.7, ta=0.9, ci=0.6):
     """Build a single-agent CRIT response dict."""
     return {
         "pillar_scores": {
-            "internal_consistency": ic,
-            "evidence_support": es,
-            "trace_alignment": ta,
-            "causal_integrity": ci,
+            "logical_validity": ic,
+            "evidential_support": es,
+            "alternative_consideration": ta,
+            "causal_alignment": ci,
         },
         "diagnostics": {
             "contradictions_detected": False,
             "unsupported_claims_detected": False,
-            "conclusion_drift_detected": False,
+            "ignored_critiques_detected": False,
+            "premature_certainty_detected": False,
             "causal_overreach_detected": False,
+            "conclusion_drift_detected": False,
         },
         "explanations": {
-            "internal_consistency": "No issues found.",
-            "evidence_support": "Claims are well supported.",
-            "trace_alignment": "Decision follows reasoning.",
-            "causal_integrity": "Causal claims are sound.",
+            "logical_validity": "No issues found.",
+            "evidential_support": "Claims are well supported.",
+            "alternative_consideration": "Decision follows reasoning.",
+            "causal_alignment": "Causal claims are sound.",
         },
     }
 

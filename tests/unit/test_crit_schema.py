@@ -25,22 +25,24 @@ def _make_raw(
     """Build a valid raw CRIT response dict."""
     return {
         "pillar_scores": {
-            "internal_consistency": ic,
-            "evidence_support": es,
-            "trace_alignment": ta,
-            "causal_integrity": ci,
+            "logical_validity": ic,
+            "evidential_support": es,
+            "alternative_consideration": ta,
+            "causal_alignment": ci,
         },
         "diagnostics": {
             "contradictions_detected": contradictions,
             "unsupported_claims_detected": unsupported,
-            "conclusion_drift_detected": drift,
+            "ignored_critiques_detected": False,
+            "premature_certainty_detected": False,
             "causal_overreach_detected": overreach,
+            "conclusion_drift_detected": drift,
         },
         "explanations": {
-            "internal_consistency": "No contradictions found.",
-            "evidence_support": "Most claims are supported.",
-            "trace_alignment": "Decision follows from reasoning.",
-            "causal_integrity": "Some causal leaps noted.",
+            "logical_validity": "No contradictions found.",
+            "evidential_support": "Most claims are supported.",
+            "alternative_consideration": "Decision follows from reasoning.",
+            "causal_alignment": "Some causal leaps noted.",
         },
     }
 
@@ -57,48 +59,48 @@ def _make_crit_result(ic=0.8, es=0.7, ta=0.9, ci=0.6) -> CritResult:
 class TestPillarScores:
     def test_valid_scores(self):
         ps = PillarScores(
-            internal_consistency=0.8,
-            evidence_support=0.7,
-            trace_alignment=0.9,
-            causal_integrity=0.6,
+            logical_validity=0.8,
+            evidential_support=0.7,
+            alternative_consideration=0.9,
+            causal_alignment=0.6,
         )
-        assert ps.internal_consistency == 0.8
-        assert ps.evidence_support == 0.7
+        assert ps.logical_validity == 0.8
+        assert ps.evidential_support == 0.7
 
     def test_boundary_zero(self):
         ps = PillarScores(
-            internal_consistency=0.0,
-            evidence_support=0.0,
-            trace_alignment=0.0,
-            causal_integrity=0.0,
+            logical_validity=0.0,
+            evidential_support=0.0,
+            alternative_consideration=0.0,
+            causal_alignment=0.0,
         )
-        assert ps.internal_consistency == 0.0
+        assert ps.logical_validity == 0.0
 
     def test_boundary_one(self):
         ps = PillarScores(
-            internal_consistency=1.0,
-            evidence_support=1.0,
-            trace_alignment=1.0,
-            causal_integrity=1.0,
+            logical_validity=1.0,
+            evidential_support=1.0,
+            alternative_consideration=1.0,
+            causal_alignment=1.0,
         )
-        assert ps.internal_consistency == 1.0
+        assert ps.logical_validity == 1.0
 
     def test_score_below_zero_raises(self):
         with pytest.raises(ValidationError):
             PillarScores(
-                internal_consistency=-0.1,
-                evidence_support=0.5,
-                trace_alignment=0.5,
-                causal_integrity=0.5,
+                logical_validity=-0.1,
+                evidential_support=0.5,
+                alternative_consideration=0.5,
+                causal_alignment=0.5,
             )
 
     def test_score_above_one_raises(self):
         with pytest.raises(ValidationError):
             PillarScores(
-                internal_consistency=0.5,
-                evidence_support=1.1,
-                trace_alignment=0.5,
-                causal_integrity=0.5,
+                logical_validity=0.5,
+                evidential_support=1.1,
+                alternative_consideration=0.5,
+                causal_alignment=0.5,
             )
 
 
@@ -111,8 +113,10 @@ class TestDiagnostics:
         d = Diagnostics(
             contradictions_detected=False,
             unsupported_claims_detected=False,
-            conclusion_drift_detected=False,
+            ignored_critiques_detected=False,
+            premature_certainty_detected=False,
             causal_overreach_detected=False,
+            conclusion_drift_detected=False,
         )
         assert not d.contradictions_detected
 
@@ -120,8 +124,10 @@ class TestDiagnostics:
         d = Diagnostics(
             contradictions_detected=True,
             unsupported_claims_detected=True,
-            conclusion_drift_detected=True,
+            ignored_critiques_detected=True,
+            premature_certainty_detected=True,
             causal_overreach_detected=True,
+            conclusion_drift_detected=True,
         )
         assert d.causal_overreach_detected
 
@@ -142,7 +148,7 @@ class TestValidateRawResponse:
         raw = _make_raw(ic=0.8, es=0.7, ta=0.9, ci=0.6)
         result = validate_raw_response(raw)
         assert isinstance(result, CritResult)
-        assert result.pillar_scores.internal_consistency == 0.8
+        assert result.pillar_scores.logical_validity == 0.8
 
     def test_rho_bar_computed_as_mean(self):
         raw = _make_raw(ic=0.8, es=0.6, ta=1.0, ci=0.6)

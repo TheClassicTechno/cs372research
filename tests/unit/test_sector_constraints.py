@@ -3,6 +3,7 @@
 import pytest
 
 from multi_agent.graph.sector_constraints import (
+    build_sector_constraint_text,
     build_sector_map,
     enforce_sector_limits,
     filter_allocation_by_permissions,
@@ -163,3 +164,109 @@ class TestFilterPermissions:
         assert result["AAPL"] == 0.0  # tech, not in allowed
         assert result["UNKNOWN"] == 0.3  # no sector → kept
         assert result["XOM"] == 0.4  # energy, allowed
+
+
+# ── build_sector_constraint_text ──────────────────────────────────────
+
+
+class TestBuildSectorConstraintText:
+    """Tests for the prompt constraint text builder."""
+
+    def test_no_config_returns_empty(self):
+        assert build_sector_constraint_text(None, "macro") == ""
+
+    def test_empty_config_returns_empty(self):
+        assert build_sector_constraint_text({}, "macro") == ""
+
+    def test_permissions_only(self):
+        cfg = {
+            "sectors": SECTORS,
+            "agent_sector_permissions": {
+                "value": ["consumer", "energy", "financials"],
+            },
+        }
+        text = build_sector_constraint_text(cfg, "value")
+        assert "MANDATORY SECTOR CONSTRAINT" in text
+        assert "VALUE" in text
+        assert "consumer" in text
+        assert "energy" in text
+        assert "financials" in text
+        assert "MUST assign 0.0" in text
+
+    def test_permissions_wildcard_excluded(self):
+        cfg = {
+            "sectors": SECTORS,
+            "agent_sector_permissions": {"macro": ["*"]},
+        }
+        text = build_sector_constraint_text(cfg, "macro")
+        assert "MANDATORY SECTOR CONSTRAINT" not in text
+
+    def test_permissions_role_not_in_map(self):
+        cfg = {
+            "sectors": SECTORS,
+            "agent_sector_permissions": {"value": ["tech"]},
+        }
+        text = build_sector_constraint_text(cfg, "macro")
+        assert "MANDATORY SECTOR CONSTRAINT" not in text
+
+    def test_sector_limits(self):
+        cfg = {
+            "sectors": SECTORS,
+            "sector_limits": {
+                "tech": {"min": 0.10, "max": 0.40},
+                "energy": {"max": 0.30},
+            },
+        }
+        text = build_sector_constraint_text(cfg, "macro")
+        assert "MANDATORY SECTOR LIMITS" in text
+        assert "tech" in text
+        assert "energy" in text
+        assert "10%" in text
+        assert "40%" in text
+        assert "30%" in text
+
+    def test_sector_limits_no_constraint_lines_skipped(self):
+        """Sectors with default bounds (min=0, max=1) produce no lines."""
+        cfg = {
+            "sectors": SECTORS,
+            "sector_limits": {
+                "tech": {"min": 0.0, "max": 1.0},
+            },
+        }
+        text = build_sector_constraint_text(cfg, "macro")
+        assert "MANDATORY SECTOR LIMITS" not in text
+
+    def test_max_sector_weight(self):
+        cfg = {
+            "sectors": SECTORS,
+            "max_sector_weight": 0.35,
+        }
+        text = build_sector_constraint_text(cfg, "macro")
+        assert "MANDATORY MAX SECTOR WEIGHT" in text
+        assert "35%" in text
+
+    def test_all_three_constraints(self):
+        cfg = {
+            "sectors": SECTORS,
+            "agent_sector_permissions": {
+                "value": ["energy", "financials"],
+            },
+            "sector_limits": {"tech": {"max": 0.40}},
+            "max_sector_weight": 0.35,
+        }
+        text = build_sector_constraint_text(cfg, "value")
+        assert "MANDATORY SECTOR CONSTRAINT" in text
+        assert "MANDATORY SECTOR LIMITS" in text
+        assert "MANDATORY MAX SECTOR WEIGHT" in text
+
+    def test_judge_no_permissions(self):
+        cfg = {
+            "sectors": SECTORS,
+            "agent_sector_permissions": {
+                "value": ["energy", "financials"],
+            },
+            "sector_limits": {"tech": {"max": 0.40}},
+        }
+        text = build_sector_constraint_text(cfg, "judge", include_permissions=False)
+        assert "MANDATORY SECTOR CONSTRAINT" not in text
+        assert "MANDATORY SECTOR LIMITS" in text

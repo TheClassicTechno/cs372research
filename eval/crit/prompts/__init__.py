@@ -64,19 +64,18 @@ reasoning — ignore any other agents mentioned in the context.
 
 You score FOUR pillars of reasoning quality:
 
-1. **Internal Consistency** — Are the agent's claims logically compatible \
-with each other? Does the agent contradict itself within its argument?
+1. **Logical Validity** — Does the reasoning logically support the conclusion? \
+Are the agent's claims logically compatible with each other?
 
-2. **Evidence Support** — Are factual claims backed by cited evidence from \
+2. **Evidential Support** — Are factual claims backed by cited evidence from \
 the case context? Are there unsupported assertions?
 
-3. **Trace Alignment** — Does the final trading decision (buy/sell/hold, \
-sizing, confidence) logically follow from the reasoning presented? Or does \
-the conclusion drift from the argument?
+3. **Alternative Consideration** — Does the agent consider competing \
+explanations? Are alternative hypotheses acknowledged or ignored?
 
-4. **Causal Integrity** — Are causal claims properly scoped? Does the agent \
-distinguish between correlation (L1), intervention (L2), and counterfactual \
-(L3) reasoning? Are causal leaps flagged?
+4. **Causal Alignment** — Are causal claims justified by the evidence? Does \
+the agent distinguish between correlation (L1), intervention (L2), and \
+counterfactual (L3) reasoning?
 
 ## What you do NOT evaluate
 
@@ -88,9 +87,9 @@ distinguish between correlation (L1), intervention (L2), and counterfactual \
 ## Scoring rubric
 
 Each pillar is scored on a continuous scale [0.0, 1.0]:
-- 0.0 = Severe failure (contradictions, unsupported claims, conclusion drift, causal overreach)
+- 0.0 = Severe failure (contradictions, unsupported claims, ignored alternatives, causal overreach)
 - 0.5 = Mixed / partial (some issues but also some sound reasoning)
-- 1.0 = Rigorous (internally consistent, well-supported, aligned, causally sound)
+- 1.0 = Rigorous (logically valid, well-supported, considers alternatives, causally sound)
 
 ## Output format
 
@@ -99,22 +98,24 @@ You MUST respond with a single JSON object (no markdown, no explanation outside 
 ```json
 {
   "pillar_scores": {
-    "internal_consistency": <float 0.0-1.0>,
-    "evidence_support": <float 0.0-1.0>,
-    "trace_alignment": <float 0.0-1.0>,
-    "causal_integrity": <float 0.0-1.0>
+    "logical_validity": <float 0.0-1.0>,
+    "evidential_support": <float 0.0-1.0>,
+    "alternative_consideration": <float 0.0-1.0>,
+    "causal_alignment": <float 0.0-1.0>
   },
   "diagnostics": {
     "contradictions_detected": <bool>,
     "unsupported_claims_detected": <bool>,
-    "conclusion_drift_detected": <bool>,
-    "causal_overreach_detected": <bool>
+    "ignored_critiques_detected": <bool>,
+    "premature_certainty_detected": <bool>,
+    "causal_overreach_detected": <bool>,
+    "conclusion_drift_detected": <bool>
   },
   "explanations": {
-    "internal_consistency": "<1-2 sentence explanation>",
-    "evidence_support": "<1-2 sentence explanation>",
-    "trace_alignment": "<1-2 sentence explanation>",
-    "causal_integrity": "<1-2 sentence explanation>"
+    "logical_validity": "<1-2 sentence explanation>",
+    "evidential_support": "<1-2 sentence explanation>",
+    "alternative_consideration": "<1-2 sentence explanation>",
+    "causal_alignment": "<1-2 sentence explanation>"
   }
 }
 ```
@@ -174,8 +175,8 @@ def build_crit_user_prompt(
     sections.append(
         "## Instructions\n"
         "Evaluate the reasoning quality of the above agent arguments and "
-        "decisions across the four pillars: internal_consistency, "
-        "evidence_support, trace_alignment, causal_integrity.\n"
+        "decisions across the four pillars: logical_validity, "
+        "evidential_support, alternative_consideration, causal_alignment.\n"
         "Respond with the JSON object described in your system prompt."
     )
 
@@ -196,19 +197,18 @@ with the case context that the agents saw. Evaluate each agent independently \
 
 You score FOUR pillars of reasoning quality for EACH agent:
 
-1. **Internal Consistency** — Are the agent's claims logically compatible \
-with each other? Does the agent contradict itself within its argument?
+1. **Logical Validity** — Does the reasoning logically support the conclusion? \
+Are the agent's claims logically compatible with each other?
 
-2. **Evidence Support** — Are factual claims backed by cited evidence from \
+2. **Evidential Support** — Are factual claims backed by cited evidence from \
 the case context? Are there unsupported assertions?
 
-3. **Trace Alignment** — Does the final trading decision (buy/sell/hold, \
-sizing, confidence) logically follow from the reasoning presented? Or does \
-the conclusion drift from the argument?
+3. **Alternative Consideration** — Does the agent consider competing \
+explanations? Are alternative hypotheses acknowledged or ignored?
 
-4. **Causal Integrity** — Are causal claims properly scoped? Does the agent \
-distinguish between correlation (L1), intervention (L2), and counterfactual \
-(L3) reasoning? Are causal leaps flagged?
+4. **Causal Alignment** — Are causal claims justified by the evidence? Does \
+the agent distinguish between correlation (L1), intervention (L2), and \
+counterfactual (L3) reasoning?
 
 ## What you do NOT evaluate
 
@@ -220,9 +220,9 @@ distinguish between correlation (L1), intervention (L2), and counterfactual \
 ## Scoring rubric
 
 Each pillar is scored on a continuous scale [0.0, 1.0]:
-- 0.0 = Severe failure (contradictions, unsupported claims, conclusion drift, causal overreach)
+- 0.0 = Severe failure (contradictions, unsupported claims, ignored alternatives, causal overreach)
 - 0.5 = Mixed / partial (some issues but also some sound reasoning)
-- 1.0 = Rigorous (internally consistent, well-supported, aligned, causally sound)
+- 1.0 = Rigorous (logically valid, well-supported, considers alternatives, causally sound)
 
 ## Output format
 
@@ -234,22 +234,24 @@ and explanations:
 {
   "<role_name>": {
     "pillar_scores": {
-      "internal_consistency": <float 0.0-1.0>,
-      "evidence_support": <float 0.0-1.0>,
-      "trace_alignment": <float 0.0-1.0>,
-      "causal_integrity": <float 0.0-1.0>
+      "logical_validity": <float 0.0-1.0>,
+      "evidential_support": <float 0.0-1.0>,
+      "alternative_consideration": <float 0.0-1.0>,
+      "causal_alignment": <float 0.0-1.0>
     },
     "diagnostics": {
       "contradictions_detected": <bool>,
       "unsupported_claims_detected": <bool>,
-      "conclusion_drift_detected": <bool>,
-      "causal_overreach_detected": <bool>
+      "ignored_critiques_detected": <bool>,
+      "premature_certainty_detected": <bool>,
+      "causal_overreach_detected": <bool>,
+      "conclusion_drift_detected": <bool>
     },
     "explanations": {
-      "internal_consistency": "<1-2 sentence explanation>",
-      "evidence_support": "<1-2 sentence explanation>",
-      "trace_alignment": "<1-2 sentence explanation>",
-      "causal_integrity": "<1-2 sentence explanation>"
+      "logical_validity": "<1-2 sentence explanation>",
+      "evidential_support": "<1-2 sentence explanation>",
+      "alternative_consideration": "<1-2 sentence explanation>",
+      "causal_alignment": "<1-2 sentence explanation>"
     }
   }
 }
@@ -318,8 +320,8 @@ def build_crit_batch_prompt(
     sections.append(
         "## Instructions\n"
         "Evaluate the reasoning quality of EACH agent listed above "
-        "across the four pillars: internal_consistency, evidence_support, "
-        "trace_alignment, causal_integrity.\n"
+        "across the four pillars: logical_validity, evidential_support, "
+        "alternative_consideration, causal_alignment.\n"
         "Respond with the JSON object described in your system prompt, "
         "with one entry per agent keyed by role name."
     )
@@ -391,8 +393,8 @@ def build_crit_single_agent_prompt(
         "## Instructions\n"
         f"Evaluate the reasoning quality of the {role.upper()} agent's "
         "arguments and decision across the four pillars: "
-        "internal_consistency, evidence_support, trace_alignment, "
-        "causal_integrity.\n"
+        "logical_validity, evidential_support, alternative_consideration, "
+        "causal_alignment.\n"
         "Respond with the JSON object described in your system prompt."
     )
 

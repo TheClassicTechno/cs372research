@@ -354,12 +354,12 @@ class TestRoundArtifacts:
             "macro": {
                 "system_prompt": "You are a blind reasoning auditor.",
                 "user_prompt": "Evaluate the following reasoning bundle...",
-                "raw_response": '{"pillar_scores": {"IC": 0.85}}',
+                "raw_response": '{"pillar_scores": {"LV": 0.85}}',
             },
             "value": {
                 "system_prompt": "You are a blind reasoning auditor.",
                 "user_prompt": "Evaluate the following value bundle...",
-                "raw_response": '{"pillar_scores": {"IC": 0.80}}',
+                "raw_response": '{"pillar_scores": {"LV": 0.80}}',
             },
         }
         tmp_logger.write_crit_prompts(captures)
@@ -384,7 +384,7 @@ class TestRoundArtifacts:
 
         # Verify response.txt content
         response_content = (macro_dir / "response.txt").read_text()
-        assert '{"pillar_scores": {"IC": 0.85}}' in response_content
+        assert '{"pillar_scores": {"LV": 0.85}}' in response_content
 
     def test_round_state_has_crit_and_pid(
         self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
@@ -398,11 +398,11 @@ class TestRoundArtifacts:
             "rho_bar": 0.81,
             "macro": {
                 "rho_i": 0.75,
-                "pillars": {"IC": 1.0, "ES": 0.5, "TA": 0.8, "CI": 0.7},
+                "pillars": {"LV": 1.0, "ES": 0.5, "AC": 0.8, "CA": 0.7},
             },
             "value": {
                 "rho_i": 0.87,
-                "pillars": {"IC": 0.9, "ES": 0.85, "TA": 0.85, "CI": 0.9},
+                "pillars": {"LV": 0.9, "ES": 0.85, "AC": 0.85, "CA": 0.9},
             },
         }
         pid_data = {
@@ -432,7 +432,7 @@ class TestRoundArtifacts:
         # CRIT data present with per-agent pillars
         assert "crit" in round_state
         assert round_state["crit"]["rho_bar"] == 0.81
-        assert round_state["crit"]["macro"]["pillars"]["IC"] == 1.0
+        assert round_state["crit"]["macro"]["pillars"]["LV"] == 1.0
         assert round_state["crit"]["value"]["rho_i"] == 0.87
 
         # PID data present with full metrics
@@ -640,25 +640,25 @@ class TestFinalize:
                     "rho_i": {"macro": 0.80, "value": 0.76},
                     "agents": {
                         "macro": {
-                            "pillars": {"IC": 0.85, "ES": 0.70, "TA": 0.80, "CI": 0.75},
+                            "pillars": {"LV": 0.85, "ES": 0.70, "AC": 0.80, "CA": 0.75},
                             "diagnostics": {"contradictions": False, "unsupported_claims": True,
                                             "conclusion_drift": False, "causal_overreach": False},
                             "explanations": {
-                                "internal_consistency": "Agent maintains consistent thesis throughout.",
-                                "evidence_support": "Two claims lack citation support.",
-                                "trace_alignment": "Allocation follows from stated thesis.",
-                                "causal_integrity": "Causal claims appropriately scoped.",
+                                "logical_validity": "Agent maintains consistent thesis throughout.",
+                                "evidential_support": "Two claims lack citation support.",
+                                "alternative_consideration": "Allocation follows from stated thesis.",
+                                "causal_alignment": "Causal claims appropriately scoped.",
                             },
                         },
                         "value": {
-                            "pillars": {"IC": 0.80, "ES": 0.75, "TA": 0.70, "CI": 0.78},
+                            "pillars": {"LV": 0.80, "ES": 0.75, "AC": 0.70, "CA": 0.78},
                             "diagnostics": {"contradictions": False, "unsupported_claims": False,
                                             "conclusion_drift": False, "causal_overreach": False},
                             "explanations": {
-                                "internal_consistency": "Consistent value-based reasoning.",
-                                "evidence_support": "All claims well-supported.",
-                                "trace_alignment": "Minor drift in allocation rationale.",
-                                "causal_integrity": "Sound causal reasoning.",
+                                "logical_validity": "Consistent value-based reasoning.",
+                                "evidential_support": "All claims well-supported.",
+                                "alternative_consideration": "Minor drift in allocation rationale.",
+                                "causal_alignment": "Sound causal reasoning.",
                             },
                         },
                     },
@@ -676,10 +676,10 @@ class TestFinalize:
         section6_start = content.find("SECTION 6")
         section7_start = content.find("SECTION 7")
         section6_text = content[section6_start:section7_start]
-        assert "IC: Agent maintains consistent thesis throughout." in section6_text
+        assert "LV: Agent maintains consistent thesis throughout." in section6_text
         assert "ES: Two claims lack citation support." in section6_text
-        assert "TA: Allocation follows from stated thesis." in section6_text
-        assert "CI: Causal claims appropriately scoped." in section6_text
+        assert "AC: Allocation follows from stated thesis." in section6_text
+        assert "CA: Causal claims appropriately scoped." in section6_text
         assert "weakest_pillar:" in section6_text
 
     def test_section9_has_full_proposals_r1(

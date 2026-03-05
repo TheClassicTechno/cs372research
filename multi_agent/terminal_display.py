@@ -363,8 +363,8 @@ def render_crit_pillars(agent_scores: dict[str, Any]) -> None:
     if not agent_scores:
         return
 
-    pillar_keys = ["IC", "ES", "TA", "CI"]
-    pillar_full = {"IC": "Consistency", "ES": "Evidence", "TA": "Traceability", "CI": "Conclusion"}
+    pillar_keys = ["LV", "ES", "AC", "CA"]
+    pillar_full = {"LV": "Validity", "ES": "Evidence", "AC": "Alternatives", "CA": "Causal"}
 
     if not RICH_AVAILABLE or _console is None:
         print("\n  CRIT Pillars")
@@ -425,7 +425,7 @@ def render_crit_pillars(agent_scores: dict[str, Any]) -> None:
 
 def render_crit_diagnostics(agent_scores: dict[str, Any]) -> None:
     """Show detected CRIT diagnostic flags (only categories that fired)."""
-    diag_keys = ["contradictions", "unsupported_claims", "conclusion_drift", "causal_overreach"]
+    diag_keys = ["contradictions", "unsupported_claims", "ignored_critiques", "premature_certainty", "causal_overreach", "conclusion_drift"]
 
     triggered: dict[str, list[str]] = {}
     for role, cr in agent_scores.items():
@@ -699,8 +699,8 @@ def render_phase_metrics(phase_data: dict, rho_star: float = 0.80) -> None:
 
 def _find_weakest_pillar(agents: dict) -> str | None:
     """Find the weakest average pillar across agents (phase_data dict format)."""
-    pillar_keys = ["IC", "ES", "TA", "CI"]
-    pillar_full = {"IC": "Consistency", "ES": "Evidence", "TA": "Traceability", "CI": "Conclusion"}
+    pillar_keys = ["LV", "ES", "AC", "CA"]
+    pillar_full = {"LV": "Validity", "ES": "Evidence", "AC": "Alternatives", "CA": "Causal"}
     if not agents:
         return None
 

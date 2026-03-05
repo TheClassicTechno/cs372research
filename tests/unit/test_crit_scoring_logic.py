@@ -16,22 +16,24 @@ def _make_single_agent_response(ic=0.8, es=0.7, ta=0.9, ci=0.6):
     """Build a valid CRIT response dict for a single agent (not JSON-encoded)."""
     return {
         "pillar_scores": {
-            "internal_consistency": ic,
-            "evidence_support": es,
-            "trace_alignment": ta,
-            "causal_integrity": ci,
+            "logical_validity": ic,
+            "evidential_support": es,
+            "alternative_consideration": ta,
+            "causal_alignment": ci,
         },
         "diagnostics": {
             "contradictions_detected": ic < 0.5,
             "unsupported_claims_detected": es < 0.5,
-            "conclusion_drift_detected": ta < 0.5,
+            "ignored_critiques_detected": False,
+            "premature_certainty_detected": False,
             "causal_overreach_detected": ci < 0.5,
+            "conclusion_drift_detected": ta < 0.5,
         },
         "explanations": {
-            "internal_consistency": "Test explanation for IC.",
-            "evidence_support": "Test explanation for ES.",
-            "trace_alignment": "Test explanation for TA.",
-            "causal_integrity": "Test explanation for CI.",
+            "logical_validity": "Test explanation for IC.",
+            "evidential_support": "Test explanation for ES.",
+            "alternative_consideration": "Test explanation for TA.",
+            "causal_alignment": "Test explanation for CI.",
         },
     }
 
@@ -174,20 +176,22 @@ class TestCritScorerErrors:
     def test_partial_response_missing_pillar_raises(self):
         incomplete = json.dumps({
             "pillar_scores": {
-                "internal_consistency": 0.8,
+                "logical_validity": 0.8,
                 # missing other pillars
             },
             "diagnostics": {
                 "contradictions_detected": False,
                 "unsupported_claims_detected": False,
-                "conclusion_drift_detected": False,
+                "ignored_critiques_detected": False,
+                "premature_certainty_detected": False,
                 "causal_overreach_detected": False,
+                "conclusion_drift_detected": False,
             },
             "explanations": {
-                "internal_consistency": "ok",
-                "evidence_support": "ok",
-                "trace_alignment": "ok",
-                "causal_integrity": "ok",
+                "logical_validity": "ok",
+                "evidential_support": "ok",
+                "alternative_consideration": "ok",
+                "causal_alignment": "ok",
             },
         })
         scorer = CritScorer(llm_fn=lambda sys, usr: incomplete)

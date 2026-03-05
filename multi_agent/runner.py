@@ -784,22 +784,24 @@ class MultiAgentRunner:
                         role: {
                             "rho_i": cr.rho_bar,
                             "pillars": {
-                                "IC": cr.pillar_scores.internal_consistency,
-                                "ES": cr.pillar_scores.evidence_support,
-                                "TA": cr.pillar_scores.trace_alignment,
-                                "CI": cr.pillar_scores.causal_integrity,
+                                "LV": cr.pillar_scores.logical_validity,
+                                "ES": cr.pillar_scores.evidential_support,
+                                "AC": cr.pillar_scores.alternative_consideration,
+                                "CA": cr.pillar_scores.causal_alignment,
                             },
                             "diagnostics": {
                                 "contradictions": cr.diagnostics.contradictions_detected,
                                 "unsupported_claims": cr.diagnostics.unsupported_claims_detected,
-                                "conclusion_drift": cr.diagnostics.conclusion_drift_detected,
+                                "ignored_critiques": cr.diagnostics.ignored_critiques_detected,
+                                "premature_certainty": cr.diagnostics.premature_certainty_detected,
                                 "causal_overreach": cr.diagnostics.causal_overreach_detected,
+                                "conclusion_drift": cr.diagnostics.conclusion_drift_detected,
                             },
                             "explanations": {
-                                "internal_consistency": cr.explanations.internal_consistency,
-                                "evidence_support": cr.explanations.evidence_support,
-                                "trace_alignment": cr.explanations.trace_alignment,
-                                "causal_integrity": cr.explanations.causal_integrity,
+                                "logical_validity": cr.explanations.logical_validity,
+                                "evidential_support": cr.explanations.evidential_support,
+                                "alternative_consideration": cr.explanations.alternative_consideration,
+                                "causal_alignment": cr.explanations.causal_alignment,
                             },
                         }
                         for role, cr in round_crit.agent_scores.items()
@@ -860,10 +862,10 @@ class MultiAgentRunner:
                     role: {
                         "rho_i": cr.rho_bar,
                         "pillars": {
-                            "IC": cr.pillar_scores.internal_consistency,
-                            "ES": cr.pillar_scores.evidence_support,
-                            "TA": cr.pillar_scores.trace_alignment,
-                            "CI": cr.pillar_scores.causal_integrity,
+                            "LV": cr.pillar_scores.logical_validity,
+                            "ES": cr.pillar_scores.evidential_support,
+                            "AC": cr.pillar_scores.alternative_consideration,
+                            "CA": cr.pillar_scores.causal_alignment,
                         },
                     }
                     for role, cr in round_crit.agent_scores.items()
