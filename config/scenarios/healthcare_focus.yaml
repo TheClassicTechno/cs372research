@@ -1,0 +1,25 @@
+# ============================================================================
+# Scenario: Healthcare Focus
+# ============================================================================
+# Healthcare-tilted universe with defensive names.
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/healthcare_focus.yaml
+
+invest_quarter: "2025Q1"
+
+tickers:
+  - UNH     # Healthcare
+  - LLY     # Healthcare
+  - JNJ     # Healthcare
+  - COST    # Consumer Staples
+  - WMT     # Consumer Staples
+  - XOM     # Energy
+
+allocation_constraints:
+  max_weight: 0.25
+  min_holdings: 4
+  fully_invested: true
+  max_tickers: 10

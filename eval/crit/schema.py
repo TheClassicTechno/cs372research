@@ -2,12 +2,13 @@
 Data models and validation for CRIT reasoning audit results.
 
 CRIT evaluates four pillars of reasoning quality:
-    1. Internal Consistency — Are the agent's claims logically compatible?
-    2. Evidence Support — Are claims backed by cited evidence?
-    3. Trace Alignment — Does the final decision follow from the reasoning?
-    4. Causal Integrity — Are causal claims properly scoped (Pearl levels)?
+    1. Logical Validity — Does the reasoning logically support the conclusion?
+    2. Evidential Support — Are claims backed by cited evidence?
+    3. Alternative Consideration — Does the agent consider competing explanations?
+    4. Causal Alignment — Are causal claims justified by the evidence?
 
-Each pillar produces a score in [0, 1] and a binary diagnostic flag.
+Each pillar produces a score in [0, 1] and binary diagnostic flags detect
+specific failure modes.
 
 Per the RAudit paper (Section 3.3), CRIT scores each agent individually
 (ρ_i), then averages into ρ̄ = 1/n Σ ρ_i. The composite ρ̄ feeds into
@@ -22,10 +23,10 @@ from pydantic import BaseModel, Field, field_validator
 class PillarScores(BaseModel):
     """Four-pillar reasoning quality scores. All in [0, 1]."""
 
-    internal_consistency: float = Field(ge=0.0, le=1.0)
-    evidence_support: float = Field(ge=0.0, le=1.0)
-    trace_alignment: float = Field(ge=0.0, le=1.0)
-    causal_integrity: float = Field(ge=0.0, le=1.0)
+    logical_validity: float = Field(ge=0.0, le=1.0)
+    evidential_support: float = Field(ge=0.0, le=1.0)
+    alternative_consideration: float = Field(ge=0.0, le=1.0)
+    causal_alignment: float = Field(ge=0.0, le=1.0)
 
 
 class Diagnostics(BaseModel):
@@ -33,17 +34,19 @@ class Diagnostics(BaseModel):
 
     contradictions_detected: bool
     unsupported_claims_detected: bool
-    conclusion_drift_detected: bool
+    ignored_critiques_detected: bool
+    premature_certainty_detected: bool
     causal_overreach_detected: bool
+    conclusion_drift_detected: bool
 
 
 class Explanations(BaseModel):
     """Per-pillar textual explanations of the score."""
 
-    internal_consistency: str
-    evidence_support: str
-    trace_alignment: str
-    causal_integrity: str
+    logical_validity: str
+    evidential_support: str
+    alternative_consideration: str
+    causal_alignment: str
 
 
 class CritResult(BaseModel):
@@ -87,10 +90,10 @@ def validate_raw_response(raw: dict) -> CritResult:
     diagnostics = Diagnostics(**raw["diagnostics"])
     explanations = Explanations(**raw["explanations"])
     rho_bar = (
-        pillar_scores.internal_consistency
-        + pillar_scores.evidence_support
-        + pillar_scores.trace_alignment
-        + pillar_scores.causal_integrity
+        pillar_scores.logical_validity
+        + pillar_scores.evidential_support
+        + pillar_scores.alternative_consideration
+        + pillar_scores.causal_alignment
     ) / 4.0
     return CritResult(
         pillar_scores=pillar_scores,

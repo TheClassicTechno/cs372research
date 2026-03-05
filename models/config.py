@@ -7,9 +7,10 @@ simulation runner, agent systems, and evaluation tooling.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AgentConfig(BaseModel):
@@ -61,18 +62,36 @@ class AgentConfig(BaseModel):
         default=False,
         description="Add an explicit devil's advocate agent to the debate.",
     )
+    parallel_agents: bool = Field(
+        default=True,
+        description="Run debate agents in parallel via LangGraph fan-out. "
+        "Set to false for sequential execution (easier to debug).",
+    )
+    no_rate_limit: bool = Field(
+        default=False,
+        description="Disable stagger entirely. All parallel LLM calls fire at once.",
+    )
+    llm_stagger_ms: int = Field(
+        default=200,
+        ge=0,
+        description="Milliseconds between parallel LLM call starts. "
+        "Default 200ms spreads 4 calls over 600ms to avoid 429 bursts.",
+    )
+    max_concurrent_llm: int = Field(
+        default=0,
+        ge=0,
+        description="Max concurrent LLM calls. 0 = unlimited.",
+    )
 
-    log_system_prompts: bool = Field(
+    log_rendered_prompts: bool = Field(
         default=False,
-        description="Log the system prompt sent to each agent.",
+        description="Log the full rendered system + user prompts sent to the LLM "
+        "via the debate.prompts logger. Useful for debugging prompt quality.",
     )
-    log_user_prompts: bool = Field(
+    log_prompt_manifest: bool = Field(
         default=False,
-        description="Log the full rendered user prompt (includes case data).",
-    )
-    log_llm_responses: bool = Field(
-        default=False,
-        description="Log the raw LLM response text.",
+        description="Log prompt file names once per round (compact manifest). "
+        "Shows system block files, phase templates, and snapshot identifier.",
     )
 
     # --- PID controller settings (flat YAML fields) ---
@@ -95,22 +114,29 @@ class AgentConfig(BaseModel):
         le=1.0,
         description="Initial agreeableness value for PID controller.",
     )
-    pid_propose: bool = Field(
-        default=False,
-        description="Whether PID controls agreeableness during propose phase.",
+    pid_epsilon: float = Field(
+        default=0.001,
+        gt=0.0,
+        le=1.0,
+        description="JS divergence convergence tolerance. Debate stops early "
+        "when JS <= epsilon. Default 0.001 (tight — agents must nearly agree).",
     )
-    pid_critique: bool = Field(
-        default=True,
-        description="Whether PID controls agreeableness during critique phase.",
+    convergence_window: int = Field(
+        default=2,
+        ge=1,
+        description="Consecutive stable rounds (converged quadrant + JS < epsilon + "
+        "rho_bar plateau) before early termination.",
     )
-    pid_revise: bool = Field(
-        default=True,
-        description="Whether PID controls agreeableness during revise phase.",
+    delta_rho: float = Field(
+        default=0.02,
+        gt=0.0,
+        le=1.0,
+        description="Rho-bar plateau tolerance for convergence detection. "
+        "Termination requires |rho_bar(t) - rho_bar(t-1)| < delta_rho.",
     )
-
     # --- PID logging ---
     pid_log_metrics: bool = Field(
-        default=False,
+        default=True,
         description="Log scalar PID metrics (rho_bar, beta, JS, gains, etc.) each round.",
     )
     pid_log_llm_calls: bool = Field(
@@ -123,6 +149,118 @@ class AgentConfig(BaseModel):
         default_factory=dict,
         description="Prompt build logging config. Keys: enabled, log_rendered_prompt, "
         "log_selected_blocks, log_beta_bucket, max_prompt_log_chars.",
+    )
+
+    # --- Structured debate logging ---
+    logging_mode: str = Field(
+        default="off",
+        description="Debate logging mode: 'standard' (artifacts only), "
+        "'debug' (artifacts + prompts), 'off' (disabled).",
+    )
+    experiment_name: str | None = Field(
+        default=None,
+        description="Experiment name for logging directory. "
+        "Defaults to config filename stem if not set.",
+    )
+
+    # --- Console display ---
+    console_display: bool = Field(
+        default=True,
+        description="Enable Rich-formatted terminal display during debates. "
+        "Set to false for minimal plain-text logging.",
+    )
+
+    # --- System-level causal contract ---
+    use_system_causal_contract: bool = Field(
+        default=False,
+        description="When True, consolidates causal scaffolding into a shared system contract "
+        "and uses slimmed role prompts. Default False preserves existing prompts.",
+    )
+
+    # --- Prompt block/section ordering (for ablation experiments) ---
+    system_prompt_block_order: list[str] | None = Field(
+        default=None,
+        description="Order of system prompt blocks. "
+        "Default: [causal_contract, role_system, phase_preamble, tone].",
+    )
+    user_prompt_section_order: list[str] | None = Field(
+        default=None,
+        description="Order of user prompt sections. "
+        "Default: [preamble, context, agent_data, task, scaffolding, output_format].",
+    )
+    prompt_file_overrides: dict[str, str] | None = Field(
+        default=None,
+        description="Override which .txt file to load for a given block/section name. "
+        "Keys: 'causal_contract', 'role_<rolename>', 'proposal_template', etc. "
+        "Values: filename relative to multi_agent/prompts/ directory.",
+    )
+
+    # --- Prompt profile (per-agent prompt composition) ---
+    prompt_profile: str = Field(
+        default="",
+        description="Prompt profile name (e.g. 'default', 'minimal'). "
+        "Empty string uses existing defaults (backward compatible).",
+    )
+    role_overrides: dict | None = Field(
+        default=None,
+        description="Per-role prompt profile overrides. Keys are role names, "
+        "values are dicts with 'system_blocks' and/or 'user_sections' lists.",
+    )
+
+    # --- CRIT template configurability ---
+    crit_system_template: str = Field(
+        default="crit_system.jinja",
+        description="CRIT system prompt template filename (in eval/crit/prompts/).",
+    )
+    crit_user_template: str = Field(
+        default="crit_user.jinja",
+        description="CRIT user prompt template filename (in eval/crit/prompts/).",
+    )
+
+    # --- Sector constraints (populated from SimulationConfig, not set in YAML) ---
+    sector_config: dict | None = Field(
+        default=None,
+        description="Sector constraints forwarded from SimulationConfig. "
+        "Contains 'sectors', 'sector_limits', 'agent_sector_permissions'. "
+        "Not intended to be set directly in agent YAML configs.",
+    )
+
+
+class SectorLimit(BaseModel):
+    """Min/max exposure bound for a single sector."""
+
+    min: float = Field(default=0.0, ge=0.0, le=1.0, description="Minimum sector exposure.")
+    max: float = Field(default=1.0, ge=0.0, le=1.0, description="Maximum sector exposure.")
+
+    @model_validator(mode="after")
+    def _min_le_max(self) -> SectorLimit:
+        if self.min > self.max:
+            raise ValueError(f"Sector limit min ({self.min}) > max ({self.max})")
+        return self
+
+
+class AllocationConstraints(BaseModel):
+    """Constraints on portfolio allocation weights (memo mode)."""
+
+    max_weight: float = Field(
+        default=0.40,
+        gt=0.0,
+        le=1.0,
+        description="Maximum weight per ticker (default 40%).",
+    )
+    min_holdings: int = Field(
+        default=3,
+        ge=1,
+        description="Minimum number of tickers with non-zero weight.",
+    )
+    fully_invested: bool = Field(
+        default=True,
+        description="Weights must sum to 1.0 (no cash reserve).",
+    )
+    max_tickers: int = Field(
+        default=10,
+        ge=1,
+        description="Maximum number of tickers in the allocation universe.",
     )
 
 
@@ -172,6 +310,153 @@ class SimulationConfig(BaseModel):
         ge=1,
         description="Number of episodes to run.",
     )
+
+    # --- Memo / allocation mode ---
+    memo_format: Literal["text", "json"] = Field(
+        default="text",
+        description="Memo payload format: 'text' for .txt memo, 'json' for snapshot JSON.",
+    )
+    invest_quarter: str | None = Field(
+        default=None,
+        description="Invest quarter for memo mode, e.g. '2025Q1'. "
+        "Agents see the prior quarter's data and allocate for this quarter.",
+    )
+    allocation_constraints: AllocationConstraints = Field(
+        default_factory=AllocationConstraints,
+        description="Allocation weight constraints (memo mode only).",
+    )
+
+    # --- Sector configuration (optional) ---
+    sectors: dict[str, list[str]] | None = Field(
+        default=None,
+        description="Mapping of sector name to list of tickers. "
+        "If provided, every ticker must belong to exactly one sector.",
+    )
+    sector_limits: dict[str, SectorLimit] | None = Field(
+        default=None,
+        description="Per-sector min/max exposure limits. "
+        "Requires 'sectors' to be defined.",
+    )
+    agent_sector_permissions: dict[str, list[str]] | None = Field(
+        default=None,
+        description="Per-role allowed sectors. Use ['*'] for all sectors. "
+        "Requires 'sectors' to be defined.",
+    )
+    max_sector_weight: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Maximum portfolio weight for any single sector. "
+        "Requires 'sectors' to be defined.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_sectors(self) -> SimulationConfig:
+        """Validate sector configuration and pack into agent.sector_config."""
+        if self.sectors is None:
+            if self.sector_limits is not None:
+                raise ValueError("sector_limits requires 'sectors' to be defined.")
+            if self.agent_sector_permissions is not None:
+                raise ValueError("agent_sector_permissions requires 'sectors' to be defined.")
+            if self.max_sector_weight is not None:
+                raise ValueError("max_sector_weight requires 'sectors' to be defined.")
+            return self
+
+        # Every ticker must be in exactly one sector
+        ticker_to_sector: dict[str, str] = {}
+        for sector, tickers in self.sectors.items():
+            for t in tickers:
+                if t in ticker_to_sector:
+                    raise ValueError(
+                        f"Ticker {t} appears in multiple sectors: "
+                        f"'{ticker_to_sector[t]}' and '{sector}'"
+                    )
+                ticker_to_sector[t] = sector
+
+        # All config tickers must appear in sector map
+        missing = [t for t in self.tickers if t not in ticker_to_sector]
+        if missing:
+            raise ValueError(f"Tickers missing from sector mapping: {missing}")
+
+        # All sector tickers must be in config tickers
+        config_tickers = set(self.tickers)
+        for sector, tickers in self.sectors.items():
+            unknown = [t for t in tickers if t not in config_tickers]
+            if unknown:
+                raise ValueError(
+                    f"Sector '{sector}' references unknown tickers: {unknown}"
+                )
+
+        # Validate sector_limits
+        if self.sector_limits is not None:
+            valid_sectors = set(self.sectors.keys())
+            for sector_name in self.sector_limits:
+                if sector_name not in valid_sectors:
+                    raise ValueError(
+                        f"sector_limits references unknown sector: '{sector_name}'"
+                    )
+            min_sum = sum(sl.min for sl in self.sector_limits.values())
+            if min_sum > 1.0 + 1e-8:
+                raise ValueError(
+                    f"Sector min limits sum to {min_sum:.2f} > 1.0 — infeasible"
+                )
+            max_sum = sum(sl.max for sl in self.sector_limits.values())
+            if max_sum < 1.0 - 1e-8:
+                raise ValueError(
+                    f"Sector max limits sum to {max_sum:.2f} < 1.0 — "
+                    f"cannot reach fully invested"
+                )
+
+        # Validate agent_sector_permissions
+        valid_roles = {"macro", "value", "risk", "technical", "sentiment", "devils_advocate"}
+        if self.agent_sector_permissions is not None:
+            valid_sectors = set(self.sectors.keys())
+            for role, allowed in self.agent_sector_permissions.items():
+                if role not in valid_roles:
+                    raise ValueError(
+                        f"agent_sector_permissions references unknown role: '{role}'"
+                    )
+                if isinstance(allowed, list) and allowed != ["*"]:
+                    for s in allowed:
+                        if s not in valid_sectors:
+                            raise ValueError(
+                                f"Role '{role}' references unknown sector: '{s}'"
+                            )
+
+        # Pack into agent.sector_config for the debate system
+        self.agent.sector_config = {
+            "sectors": self.sectors,
+            "sector_limits": (
+                {k: v.model_dump() for k, v in self.sector_limits.items()}
+                if self.sector_limits
+                else None
+            ),
+            "agent_sector_permissions": self.agent_sector_permissions,
+            "max_sector_weight": self.max_sector_weight,
+        }
+
+        return self
+
+    @model_validator(mode="after")
+    def _validate_memo_mode(self) -> SimulationConfig:
+        """Validate memo/allocation mode constraints."""
+        if not self.tickers:
+            raise ValueError("tickers must not be empty.")
+        if self.invest_quarter is None:
+            raise ValueError("invest_quarter is required.")
+        if len(self.tickers) > self.allocation_constraints.max_tickers:
+            raise ValueError(
+                f"Too many tickers ({len(self.tickers)}) for allocation mode "
+                f"(max {self.allocation_constraints.max_tickers})."
+            )
+        ac = self.allocation_constraints
+        if ac.max_weight * ac.min_holdings < 1.0 - 1e-8:
+            raise ValueError(
+                f"Impossible allocation constraints: max_weight ({ac.max_weight}) * "
+                f"min_holdings ({ac.min_holdings}) = {ac.max_weight * ac.min_holdings:.2f} < 1.0. "
+                f"Cannot satisfy both constraints simultaneously."
+            )
+        return self
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> SimulationConfig:

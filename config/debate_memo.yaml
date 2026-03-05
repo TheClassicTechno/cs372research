@@ -1,0 +1,31 @@
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+invest_quarter: "2025Q1"
+
+tickers:
+  - AAPL
+  - NVDA
+  - MSFT
+  - TSLA
+  - JPM
+  - GOOG
+  - AMZN
+  - META
+  - XOM
+  - LLY
+
+allocation_constraints:
+  max_weight: 0.40
+  min_holdings: 3
+  fully_invested: true
+  max_tickers: 10
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3

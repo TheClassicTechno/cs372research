@@ -1,0 +1,14 @@
+# No-scaffold profile — keeps tone but removes all scaffolding modules.
+# Useful for ablation experiments isolating the effect of scaffolding.
+
+system_blocks:
+  - role_system
+  - phase_preamble
+  - tone
+
+user_sections:
+  - preamble
+  - context
+  - agent_data
+  - task
+  - output_allocation

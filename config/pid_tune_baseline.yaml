@@ -2,7 +2,7 @@
 # PID Tuning Experiment 1: Baseline (P-only, default gains)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/pid_tune_baseline.yaml
+#   python run_simulation.py --agents config/pid_tune_baseline.yaml
 #
 # Baseline: Kp=0.15, Ki=0, Kd=0 (proportional only).
 # Expect: β adjusts slowly, may miss persistent low quality.
@@ -39,15 +39,8 @@ agent:
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
 
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
-
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 broker:
   initial_cash: 100000.0

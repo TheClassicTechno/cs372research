@@ -2,7 +2,7 @@
 # Debate Agent Simulation Configuration
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/debate.yaml
+#   python run_simulation.py --agents config/debate.yaml
 #
 # Uses the multi-agent debate system (Propose -> Critique -> Revise -> Judge)
 # with 4 specialist agents: MACRO, VALUE, RISK, TECHNICAL.
@@ -38,11 +38,6 @@ agent:
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
-  # Logging — set to true to print LLM call details
-  log_system_prompts: false   # role instructions per agent
-  log_user_prompts: false     # full rendered prompt (includes case data)
-  log_llm_responses: false    # raw LLM response text
-
   # PID controller for debate quality regulation (disabled by default).
   # When enabled, CRIT scores each round and PID adjusts agreeableness.
   pid_enabled: false
@@ -51,9 +46,6 @@ agent:
   # pid_kd: 0.03
   # pid_rho_star: 0.8
   # pid_initial_beta: 0.5
-  # pid_propose: false
-  # pid_critique: true
-  # pid_revise: true
 
   # PID logging (only relevant when pid_enabled: true).
   # pid_log_metrics: log scalar PID stats each round (rho_bar, beta, JS, gains, etc.)

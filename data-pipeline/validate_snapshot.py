@@ -797,7 +797,12 @@ def check_memo_fiscal_annotations(
 # Main
 # ---------------------------------------------------------------------------
 
-def validate_quarter(year: int, quarter: str, verbose: bool) -> Tuple[int, int, int]:
+def validate_quarter(
+    year: int,
+    quarter: str,
+    verbose: bool,
+    tickers: Optional[List[str]] = None,
+) -> Tuple[int, int, int]:
     as_of = quarter_end_date(year, quarter).isoformat()
     print(f"\nSnapshot Validation: {year} {quarter} (as-of {as_of})")
     print("=" * 64)
@@ -815,10 +820,11 @@ def validate_quarter(year: int, quarter: str, verbose: bool) -> Tuple[int, int, 
     with open(snapshot_path, "r") as f:
         doc = json.load(f)
 
-    supported = load_supported_tickers()
+    # Use scenario-specific tickers if provided, otherwise all supported
+    expected = tickers if tickers is not None else load_supported_tickers()
 
     checks = [
-        check_completeness(doc, supported, verbose),
+        check_completeness(doc, expected, verbose),
         check_filing_cross_reference(doc, verbose),
         check_temporal_integrity(doc, year, quarter, verbose),
         check_freshness(doc, year, quarter, verbose),
@@ -848,8 +854,15 @@ def main():
     p.add_argument("--quarter", default=None, choices=["Q1", "Q2", "Q3", "Q4"])
     p.add_argument("--start", type=str, default=None)
     p.add_argument("--end", type=str, default=None)
+    p.add_argument("--tickers", type=str, default=None,
+                   help="Comma-separated tickers to check (default: all supported)")
     p.add_argument("--verbose", action="store_true", help="Print all checks, not just failures")
     args = p.parse_args()
+
+    ticker_list = (
+        [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+        if args.tickers else None
+    )
 
     if args.start and args.end:
         quarters = quarter_range_list(args.start, args.end)
@@ -869,7 +882,7 @@ def main():
     total_fail += config_result.fail
 
     for year, quarter in quarters:
-        ok, warn, fail = validate_quarter(year, quarter, args.verbose)
+        ok, warn, fail = validate_quarter(year, quarter, args.verbose, ticker_list)
         total_ok += ok
         total_warn += warn
         total_fail += fail

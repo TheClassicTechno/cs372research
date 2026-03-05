@@ -11,10 +11,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+import re
+
+import yaml
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from ..config import AgentRole
-from ..models import Observation
 
 # ---------------------------------------------------------------------------
 # Jinja2 environment — templates live next to this __init__.py
@@ -24,7 +26,120 @@ _TEMPLATE_DIR = Path(__file__).resolve().parent
 _env = Environment(
     loader=FileSystemLoader(str(_TEMPLATE_DIR)),
     keep_trailing_newline=True,
+    undefined=StrictUndefined,
 )
+
+# ---------------------------------------------------------------------------
+# Module catalog — auto-discovery of prompt modules from directory structure
+# ---------------------------------------------------------------------------
+
+_SUBDIR_PREFIX: dict[str, str] = {
+    "roles": "role",
+    "scaffolding": "scaffolding",
+    "output_format": "output",
+    "tone": "tone",
+    "system_contract": "contract",
+    "phases": "phase",
+}
+
+_MODULE_ALIASES: dict[str, str] = {
+    "scaffolding_causal": "scaffolding/causal_claim_format.txt",
+    "scaffolding_uncertainty": "scaffolding/forced_uncertainty.txt",
+    "scaffolding_traps": "scaffolding/trap_awareness.txt",
+    "output_allocation": "output_format/allocation_output_instructions.txt",
+    "output_json": "output_format/json_output_instructions.txt",
+    "causal_contract": "system_contract/system_causal_contract.txt",
+}
+
+
+def _build_module_catalog() -> dict[str, str]:
+    """Auto-discover prompt modules from directory structure.
+
+    Convention: {subdir}/{file}.txt -> {prefix}_{filestem}
+    """
+    catalog: dict[str, str] = {}
+    for subdir, prefix in _SUBDIR_PREFIX.items():
+        dir_path = _TEMPLATE_DIR / subdir
+        if not dir_path.is_dir():
+            continue
+        for txt_file in dir_path.glob("*.txt"):
+            module_name = f"{prefix}_{txt_file.stem}"
+            catalog[module_name] = str(txt_file.relative_to(_TEMPLATE_DIR))
+    # Apply short aliases for common modules
+    catalog.update(_MODULE_ALIASES)
+    return catalog
+
+
+MODULE_CATALOG: dict[str, str] = _build_module_catalog()
+
+
+def load_module(name: str, overrides: dict[str, str] | None = None) -> str:
+    """Load a prompt module by symbolic name.
+
+    Checks prompt_file_overrides first, then MODULE_CATALOG.
+    Returns empty string if not found.
+    """
+    if overrides and name in overrides:
+        path = _TEMPLATE_DIR / overrides[name]
+        return path.read_text() if path.exists() else ""
+    rel_path = MODULE_CATALOG.get(name)
+    if rel_path:
+        return (_TEMPLATE_DIR / rel_path).read_text()
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Prompt profile loading + resolution
+# ---------------------------------------------------------------------------
+
+
+def load_prompt_profile(name: str) -> dict:
+    """Load a prompt profile YAML file by name."""
+    path = _TEMPLATE_DIR / "profiles" / f"{name}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Prompt profile not found: {path}")
+    return yaml.safe_load(path.read_text()) or {}
+
+
+def resolve_prompt_profile(config: dict, role: str) -> dict:
+    """Resolve the prompt profile for a given agent role.
+
+    Priority: role_overrides[role] keys > base profile keys > empty dict.
+    """
+    profile_name = config.get("prompt_profile")
+    if not profile_name:
+        return {}  # no profile -> backward compat
+    base = load_prompt_profile(profile_name)
+    role_overrides = config.get("role_overrides", {}).get(role, {})
+    return {**base, **role_overrides}
+
+
+# ---------------------------------------------------------------------------
+# Template variable registry (for CI validation)
+# ---------------------------------------------------------------------------
+
+TEMPLATE_VARS: dict[str, set[str]] = {
+    "propose": {
+        "context", "causal_claim_format", "forced_uncertainty",
+        "trap_awareness", "json_output_instructions",
+        "allocation_output_instructions", "sector_constraints",
+    },
+    "critique": {"role", "context", "my_proposal", "others_text"},
+    "revise": {
+        "role", "context", "my_proposal", "critiques_text",
+        "causal_claim_format", "forced_uncertainty", "sector_constraints",
+    },
+    "judge": {
+        "context", "revisions_text", "all_critiques_text",
+        "disagreements_section", "causal_claim_format", "sector_constraints",
+    },
+}
+
+CRIT_TEMPLATE_VARS: dict[str, set[str]] = {
+    "crit_system": {"agent_role"},
+    "crit_user": {"round", "agent_role", "proposal",
+                  "critiques_received", "revised_argument"},
+}
 
 
 def _load(name: str) -> str:
@@ -32,140 +147,155 @@ def _load(name: str) -> str:
     return (_TEMPLATE_DIR / name).read_text()
 
 
+_DEFAULT_SECTION_ORDER = [
+    "preamble", "context", "agent_data", "task", "scaffolding", "output_format",
+]
+
+_SECTION_RE = re.compile(r"^---SECTION:\s*(\w+)---\s*$", re.MULTILINE)
+
+
+def _load_sectioned_template(name: str) -> dict[str, str]:
+    """Split a template file by ``---SECTION: name---`` delimiters.
+
+    Returns ``{section_name: raw_template_text}``.
+    If the file has no section markers the entire content is returned
+    under the key ``"_unsectioned"``.
+    """
+    raw = (_TEMPLATE_DIR / name).read_text()
+    markers = list(_SECTION_RE.finditer(raw))
+    if not markers:
+        return {"_unsectioned": raw}
+
+    sections: dict[str, str] = {}
+    for i, m in enumerate(markers):
+        section_name = m.group(1)
+        start = m.end()
+        end = markers[i + 1].start() if i + 1 < len(markers) else len(raw)
+        sections[section_name] = raw[start:end].strip("\n")
+    return sections
+
+
+def _assemble_user_prompt(
+    sections: dict[str, str],
+    order: list[str],
+    template_vars: dict,
+    prompt_file_overrides: dict[str, str] | None = None,
+) -> str:
+    """Render each section with Jinja2 and join in the specified order.
+
+    For each name in *order*:
+      - If it exists in *sections* dict, render with Jinja2 (template section).
+      - Otherwise, try MODULE_CATALOG (static module text, no Jinja rendering).
+      - If neither, skip silently.
+    """
+    parts: list[str] = []
+    for section_name in order:
+        raw_tmpl = sections.get(section_name)
+        if raw_tmpl is not None:
+            # Template section — render with Jinja2
+            tmpl = _env.from_string(raw_tmpl)
+            rendered = tmpl.render(**template_vars).strip()
+            if rendered:
+                parts.append(rendered)
+        else:
+            # Not a template section — try MODULE_CATALOG
+            content = load_module(section_name, prompt_file_overrides)
+            if content:
+                parts.append(content.strip())
+    return "\n\n".join(parts)
+
+
 # =============================================================================
 # ANTI-FAILURE-MODE RULES (injected into every agent prompt)
 # =============================================================================
 
-CAUSAL_CLAIM_FORMAT: str = _load("causal_claim_format.txt")
-FORCED_UNCERTAINTY: str = _load("forced_uncertainty.txt")
-TRAP_AWARENESS: str = _load("trap_awareness.txt")
-JSON_OUTPUT_INSTRUCTIONS: str = _load("json_output_instructions.txt")
+CAUSAL_CLAIM_FORMAT: str = _load("scaffolding/causal_claim_format.txt")
+FORCED_UNCERTAINTY: str = _load("scaffolding/forced_uncertainty.txt")
+TRAP_AWARENESS: str = _load("scaffolding/trap_awareness.txt")
+JSON_OUTPUT_INSTRUCTIONS: str = _load("output_format/json_output_instructions.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
 # =============================================================================
 
 ROLE_SYSTEM_PROMPTS: dict[str, str] = {
-    AgentRole.MACRO: _load("role_macro.txt"),
-    AgentRole.VALUE: _load("role_value.txt"),
-    AgentRole.RISK: _load("role_risk.txt"),
-    AgentRole.TECHNICAL: _load("role_technical.txt"),
-    AgentRole.SENTIMENT: _load("role_sentiment.txt"),
-    AgentRole.DEVILS_ADVOCATE: _load("role_devils_advocate.txt"),
+    AgentRole.MACRO: _load("roles/macro.txt"),
+    AgentRole.VALUE: _load("roles/value.txt"),
+    AgentRole.RISK: _load("roles/risk.txt"),
+    AgentRole.TECHNICAL: _load("roles/technical.txt"),
+    AgentRole.SENTIMENT: _load("roles/sentiment.txt"),
+    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate.txt"),
 }
 
 # =============================================================================
-# PIPELINE AGENT PROMPTS
+# SYSTEM-LEVEL CAUSAL CONTRACT (optional, gated by use_system_causal_contract)
 # =============================================================================
 
-NEWS_DIGEST_SYSTEM_PROMPT: str = _load("news_digest_system.txt")
-DATA_ANALYSIS_SYSTEM_PROMPT: str = _load("data_analysis_system.txt")
+SYSTEM_CAUSAL_CONTRACT: str = _load("system_contract/system_causal_contract.txt")
 
-# =============================================================================
-# AGREEABLENESS MODIFIER (injected into critique prompts)
-# =============================================================================
-
-_AGREEABLENESS_TEMPLATES = {
-    "confrontational": _load("agreeableness_confrontational.txt"),
-    "skeptical": _load("agreeableness_skeptical.txt"),
-    "balanced": _load("agreeableness_balanced.txt"),
-    "collaborative": _load("agreeableness_collaborative.txt"),
-    "agreeable": _load("agreeableness_agreeable.txt"),
+ROLE_SYSTEM_PROMPTS_SLIM: dict[str, str] = {
+    AgentRole.MACRO: _load("roles/macro_slim.txt"),
+    AgentRole.VALUE: _load("roles/value_slim.txt"),
+    AgentRole.RISK: _load("roles/risk_slim.txt"),
+    AgentRole.TECHNICAL: _load("roles/technical_slim.txt"),
+    AgentRole.SENTIMENT: _load("roles/sentiment_slim.txt"),
+    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate_slim.txt"),
 }
 
 
-def get_agreeableness_modifier(agreeableness: float) -> str:
-    """
-    Generate a system prompt modifier based on the agreeableness knob.
-
-    agreeableness=0.0 -> maximally confrontational (fights every point)
-    agreeableness=0.5 -> balanced (critiques on merit)
-    agreeableness=1.0 -> maximally agreeable/sycophantic (finds consensus)
-
-    This is a key experimental variable for RQ3 (does debate reduce sycophancy?).
-    """
-    if agreeableness < 0.2:
-        return _AGREEABLENESS_TEMPLATES["confrontational"]
-    elif agreeableness < 0.4:
-        return _AGREEABLENESS_TEMPLATES["skeptical"]
-    elif agreeableness < 0.6:
-        return _AGREEABLENESS_TEMPLATES["balanced"]
-    elif agreeableness < 0.8:
-        return _AGREEABLENESS_TEMPLATES["collaborative"]
-    else:
-        return _AGREEABLENESS_TEMPLATES["agreeable"]
-
-
-# =============================================================================
-# OBSERVATION CONTEXT BUILDER
-# =============================================================================
-
-
-def build_observation_context(
-    obs: Observation,
-    pipeline_context: str = "",
-) -> str:
-    """Build the market context string from an Observation, optionally enriched
-    with pipeline preprocessing output."""
-    prices_str = ", ".join(
-        f"{t}: ${p:.2f}" for t, p in obs.market_state.prices.items()
-    )
-
-    returns_str = "N/A"
-    if obs.market_state.returns:
-        returns_str = ", ".join(
-            f"{t}: {r * 100:.2f}%"
-            for t, r in obs.market_state.returns.items()
-        )
-
-    vol_str = ""
-    if obs.market_state.volatility:
-        vol_str = "\n- Volatility: " + ", ".join(
-            f"{t}: {v:.4f}" for t, v in obs.market_state.volatility.items()
-        )
-
-    portfolio_str = (
-        f"Cash: ${obs.portfolio_state.cash:.2f}, "
-        f"Positions: {obs.portfolio_state.positions}"
-    )
-
-    context = f"""## Market Observation
-- Timestamp: {obs.timestamp}
-- Universe: {', '.join(obs.universe)}
-- Prices: {prices_str}
-- Returns: {returns_str}{vol_str}
-- Portfolio: {portfolio_str}"""
-
-    if obs.text_context:
-        context += f"\n- News/Context: {obs.text_context}"
-
-    if obs.constraints:
-        context += (
-            f"\n- Constraints: max_leverage={obs.constraints.max_leverage}, "
-            f"max_position_size={obs.constraints.max_position_size}"
-        )
-
-    if pipeline_context:
-        context += f"\n\n## Pre-Processed Intelligence\n{pipeline_context}"
-
-    return context
-
+def get_role_prompts(use_causal_contract: bool = False) -> dict[str, str]:
+    """Return the appropriate role prompt dict based on causal contract flag."""
+    return ROLE_SYSTEM_PROMPTS_SLIM if use_causal_contract else ROLE_SYSTEM_PROMPTS
 
 # =============================================================================
 # DEBATE PHASE PROMPTS (rendered via Jinja2 templates)
 # =============================================================================
 
 
-def build_proposal_user_prompt(context: str) -> str:
+def build_proposal_user_prompt(
+    context: str,
+    use_system_causal_contract: bool = False,
+    section_order: list[str] | None = None,
+    prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
+    sector_constraints: str = "",
+) -> str:
     """User prompt sent to each role agent for their initial proposal."""
-    tmpl = _env.get_template("proposal.txt")
-    return tmpl.render(
-        context=context,
-        causal_claim_format=CAUSAL_CLAIM_FORMAT,
-        forced_uncertainty=FORCED_UNCERTAINTY,
-        trap_awareness=TRAP_AWARENESS,
-        json_output_instructions=JSON_OUTPUT_INSTRUCTIONS,
+    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
+    uncertainty = "" if use_system_causal_contract else FORCED_UNCERTAINTY
+    traps = "" if use_system_causal_contract else TRAP_AWARENESS
+
+    overrides = prompt_file_overrides or {}
+    template_name = overrides.get("proposal_template", "phases/proposal_allocation.txt")
+
+    # Allow overriding the allocation output instructions via prompt_file_overrides
+    alloc_instructions = (
+        load_module("output_allocation", overrides)
+        if "output_allocation" in overrides
+        else ALLOCATION_OUTPUT_INSTRUCTIONS
     )
+
+    template_vars = {
+        "context": context,
+        "causal_claim_format": causal,
+        "forced_uncertainty": uncertainty,
+        "trap_awareness": traps,
+        "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
+        "allocation_output_instructions": alloc_instructions,
+        "sector_constraints": sector_constraints,
+    }
+
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
+    sections = _load_sectioned_template(template_name)
+
+    if "_unsectioned" in sections:
+        # Template has no section markers — render as a single template (legacy)
+        tmpl = _env.get_template(template_name)
+        return tmpl.render(**template_vars)
+
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_critique_prompt(
@@ -173,25 +303,40 @@ def build_critique_prompt(
     context: str,
     all_proposals: list[dict],
     my_proposal: str,
-    agreeableness: float = 0.3,
+    section_order: list[str] | None = None,
+    prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
 ) -> str:
-    """Build critique prompt for a role agent in the debate."""
+    """Build critique user prompt for a role agent in the debate.
+
+    Tone/agreeableness is now handled by the system prompt via
+    ``PromptRegistry.build()`` — not injected into the user prompt.
+    """
     others = [p for p in all_proposals if p["role"] != role]
     others_text = "\n\n".join(
         f"### {p['role'].upper()} agent proposed:\n{p['proposal']}"
         for p in others
     )
 
-    agreeableness_mod = get_agreeableness_modifier(agreeableness)
+    overrides = prompt_file_overrides or {}
+    template_name = overrides.get("critique_template", "phases/critique_allocation.txt")
 
-    tmpl = _env.get_template("critique.txt")
-    return tmpl.render(
-        role=role.upper(),
-        agreeableness_mod=agreeableness_mod,
-        context=context,
-        my_proposal=my_proposal,
-        others_text=others_text,
-    )
+    template_vars = {
+        "role": role.upper(),
+        "context": context,
+        "my_proposal": my_proposal,
+        "others_text": others_text,
+    }
+
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
+    sections = _load_sectioned_template(template_name)
+
+    if "_unsectioned" in sections:
+        tmpl = _env.get_template(template_name)
+        return tmpl.render(**template_vars)
+
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_revision_prompt(
@@ -199,9 +344,14 @@ def build_revision_prompt(
     context: str,
     my_proposal: str,
     critiques_received: list[dict],
-    agreeableness: float = 0.3,
+    use_system_causal_contract: bool = False,
+    section_order: list[str] | None = None,
+    prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
-    """Build revision prompt for a role agent after receiving critiques."""
+    """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
         f"- [{c['from_role'].upper()}]: {c['objection']}"
         + (f" | Falsifier: {c.get('falsifier', 'N/A')}" if c.get("falsifier") else "")
@@ -211,15 +361,30 @@ def build_revision_prompt(
     if not critiques_text:
         critiques_text = "(No critiques targeted at you this round.)"
 
-    tmpl = _env.get_template("revision.txt")
-    return tmpl.render(
-        role=role.upper(),
-        context=context,
-        my_proposal=my_proposal,
-        critiques_text=critiques_text,
-        causal_claim_format=CAUSAL_CLAIM_FORMAT,
-        forced_uncertainty=FORCED_UNCERTAINTY,
-    )
+    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
+    uncertainty = "" if use_system_causal_contract else FORCED_UNCERTAINTY
+
+    overrides = prompt_file_overrides or {}
+    template_name = overrides.get("revision_template", "phases/revision_allocation.txt")
+
+    template_vars = {
+        "role": role.upper(),
+        "context": context,
+        "my_proposal": my_proposal,
+        "critiques_text": critiques_text,
+        "causal_claim_format": causal,
+        "forced_uncertainty": uncertainty,
+        "sector_constraints": sector_constraints,
+    }
+
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
+    sections = _load_sectioned_template(template_name)
+
+    if "_unsectioned" in sections:
+        tmpl = _env.get_template(template_name)
+        return tmpl.render(**template_vars)
+
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
 
 
 def build_judge_prompt(
@@ -227,6 +392,12 @@ def build_judge_prompt(
     revisions: list[dict],
     all_critiques_text: str,
     strongest_disagreements: str = "",
+    use_system_causal_contract: bool = False,
+    section_order: list[str] | None = None,
+    prompt_file_overrides: dict[str, str] | None = None,
+    allocation_mode: bool = True,  # kept for backward compat, always True
+    user_sections: list[str] | None = None,
+    sector_constraints: str = "",
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -241,11 +412,25 @@ def build_judge_prompt(
             f"{strongest_disagreements}"
         )
 
-    tmpl = _env.get_template("judge.txt")
-    return tmpl.render(
-        context=context,
-        revisions_text=revisions_text,
-        all_critiques_text=all_critiques_text,
-        disagreements_section=disagreements_section,
-        causal_claim_format=CAUSAL_CLAIM_FORMAT,
-    )
+    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
+
+    overrides = prompt_file_overrides or {}
+    template_name = overrides.get("judge_template", "phases/judge_allocation.txt")
+
+    template_vars = {
+        "context": context,
+        "revisions_text": revisions_text,
+        "all_critiques_text": all_critiques_text,
+        "disagreements_section": disagreements_section,
+        "causal_claim_format": causal,
+        "sector_constraints": sector_constraints,
+    }
+
+    order = user_sections or section_order or _DEFAULT_SECTION_ORDER
+    sections = _load_sectioned_template(template_name)
+
+    if "_unsectioned" in sections:
+        tmpl = _env.get_template(template_name)
+        return tmpl.render(**template_vars)
+
+    return _assemble_user_prompt(sections, order, template_vars, overrides)
