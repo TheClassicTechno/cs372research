@@ -159,6 +159,10 @@ class DebateConfig:
     crit_system_template: str = "crit_system.jinja"
     crit_user_template: str = "crit_user.jinja"
 
+    # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
+    run_command: str | None = None
+    config_paths: list[str] = field(default_factory=list)
+
     # --- Sector constraints (optional, forwarded from SimulationConfig) ---
     sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
 

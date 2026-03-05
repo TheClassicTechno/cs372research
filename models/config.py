@@ -222,6 +222,18 @@ class AgentConfig(BaseModel):
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
+    # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
+    run_command: str | None = Field(
+        default=None,
+        description="Effective CLI command used to launch this run. "
+        "Set automatically by run_simulation.py.",
+    )
+    config_paths: list[str] = Field(
+        default_factory=list,
+        description="Config file path(s) used for this run (agents, scenario). "
+        "Set automatically by run_simulation.py.",
+    )
+
     # --- Sector constraints (populated from SimulationConfig, not set in YAML) ---
     sector_config: dict | None = Field(
         default=None,

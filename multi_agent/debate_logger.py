@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -318,7 +319,10 @@ class DebateLogger:
             "debate_id": debate_id,
             "started_at": datetime.now(timezone.utc).isoformat(),
             "completed_at": None,
+            "run_command": getattr(self._config, "run_command", None),
+            "config_paths": getattr(self._config, "config_paths", []),
             "model_name": getattr(self._config, "model_name", "unknown"),
+            "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5"),
             "temperature": getattr(self._config, "temperature", 0.3),
             "roles": [r.value for r in self._config.roles],
             "max_rounds": self._config.max_rounds,
@@ -654,6 +658,13 @@ class DebateLogger:
                 (final_dir / "judge_response.txt").write_text(raw, encoding="utf-8")
                 break
 
+        # Copy config file(s) used for this run
+        config_paths = getattr(self._config, "config_paths", [])
+        for cfg_path_str in config_paths:
+            cfg_path = Path(cfg_path_str)
+            if cfg_path.exists():
+                shutil.copy2(cfg_path, final_dir / cfg_path.name)
+
         # pid_crit_all_rounds.json — consolidated PID/CRIT data for all rounds
         if pid_phase_data:
             _write_json(final_dir / "pid_crit_all_rounds.json", pid_phase_data)
@@ -975,7 +986,10 @@ class DebateLogger:
 
         parts: list[str] = []
         for r in sorted(rounds.keys()):
-            label = "ROUND 1" if r == 0 else f"ROUND {r + 1}"
+            # Proposals use round=0 (0-indexed); revisions use 1-indexed round
+            # numbers. Normalize to 1-indexed display labels.
+            display_round = 1 if r == 0 else r
+            label = f"ROUND {display_round}"
             parts.append(label)
             parts.append("")
             for turn in rounds[r]:

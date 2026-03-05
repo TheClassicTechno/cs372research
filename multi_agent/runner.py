@@ -156,7 +156,7 @@ def build_reasoning_bundle(
     Critical: critiques_received includes ONLY critiques targeting this
     agent. Critiques list is reset each round, so all entries are current.
     """
-    from eval.evidence import enrich_evidence_citations
+    from eval.evidence import enrich_evidence_citations, extract_evidence_ids
     import copy
 
     # Find this agent's proposal
@@ -201,6 +201,10 @@ def build_reasoning_bundle(
 
     # Build proposal bundle with embedded evidence
     prop_citations = copy.deepcopy(prop_action.get("evidence_citations", []))
+    if not prop_citations:
+        # Fallback: extract bracket citations from raw response text
+        raw = proposal.get("raw_response", "")
+        prop_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
         "thesis": prop_action.get("justification", ""),
@@ -211,6 +215,10 @@ def build_reasoning_bundle(
 
     # Build revision bundle with embedded evidence
     rev_citations = copy.deepcopy(rev_action.get("evidence_citations", []))
+    if not rev_citations:
+        # Fallback: extract bracket citations from raw response text
+        raw = revision.get("raw_response", "")
+        rev_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
         "thesis": rev_action.get("justification", ""),
