@@ -88,13 +88,6 @@ class DebateConfig:
     # --- Verbose mode (print full debate content to terminal) ---
     verbose: bool = False
 
-    # --- Logging levels for LLM calls ---
-    # log_system_prompts: print the system prompt sent to each agent
-    log_system_prompts: bool = False
-    # log_user_prompts: print the full rendered user prompt (includes case data)
-    log_user_prompts: bool = False
-    # log_llm_responses: print the raw LLM response text
-    log_llm_responses: bool = False
     # log_rendered_prompts: log full system + user prompts via debate.prompts logger
     log_rendered_prompts: bool = False
     # log_prompt_manifest: log prompt file names once per round (compact)
@@ -228,9 +221,6 @@ class DebateConfig:
             "llm_stagger_ms": self.llm_stagger_ms,
             "max_concurrent_llm": self.max_concurrent_llm,
             "verbose": self.verbose,
-            "log_system_prompts": self.log_system_prompts,
-            "log_user_prompts": self.log_user_prompts,
-            "log_llm_responses": self.log_llm_responses,
             "log_rendered_prompts": self.log_rendered_prompts,
             "log_prompt_manifest": self.log_prompt_manifest,
             "trace_dir": self.trace_dir,

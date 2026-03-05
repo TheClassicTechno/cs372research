@@ -138,10 +138,10 @@ agent:
   #   "standard" — responses, portfolios, critiques, CRIT scores, PID metrics
   #   "debug"    — everything in standard + prompt.txt (full system+user prompts)
   logging_mode: "debug"
-  pid_log_metrics: true
+  pid_log_metrics: false
   pid_log_llm_calls: false
   log_rendered_prompts: false
-  log_prompt_manifest: true
+  log_prompt_manifest: false
 
   # --- Parallelism ---
   parallel_agents: true

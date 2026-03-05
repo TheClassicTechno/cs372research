@@ -83,18 +83,6 @@ class AgentConfig(BaseModel):
         description="Max concurrent LLM calls. 0 = unlimited.",
     )
 
-    log_system_prompts: bool = Field(
-        default=False,
-        description="Log the system prompt sent to each agent.",
-    )
-    log_user_prompts: bool = Field(
-        default=False,
-        description="Log the full rendered user prompt (includes case data).",
-    )
-    log_llm_responses: bool = Field(
-        default=False,
-        description="Log the raw LLM response text.",
-    )
     log_rendered_prompts: bool = Field(
         default=False,
         description="Log the full rendered system + user prompts sent to the LLM "

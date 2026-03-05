@@ -119,10 +119,10 @@ agent:
   logging_mode: "debug"
 
   # PID + prompt logging
-  pid_log_metrics: true          # scalar PID stats each round (rho_bar, beta, JS, etc.)
+  pid_log_metrics: false          # scalar PID stats each round (rho_bar, beta, JS, etc.)
   pid_log_llm_calls: false       # full CRIT LLM prompts/responses (verbose)
-  log_rendered_prompts: true     # emit full prompts via debate.prompts Python logger
-  log_prompt_manifest: true      # log prompt file names once per round (compact)
+  log_rendered_prompts: false     # emit full prompts via debate.prompts Python logger
+  log_prompt_manifest: false      # log prompt file names once per round (compact)
 
   # Parallel agent execution (max 2 concurrent LLM calls). This setting seems to avoid triggering rate limits
   parallel_agents: true
