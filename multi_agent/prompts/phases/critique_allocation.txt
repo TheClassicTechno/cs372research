@@ -12,9 +12,6 @@ You are the {{ role }} agent in a multi-agent portfolio allocation debate.
 ## Other Agents' Allocations
 {{ others_text }}
 
----SECTION: sector_constraints---
-{{ sector_constraints }}
-
 ---SECTION: task---
 ## Your Task
 Evaluate each agent's proposed allocation. Consider:
@@ -26,6 +23,8 @@ Evaluate each agent's proposed allocation. Consider:
 
 IMPORTANT: All allocations must use ONLY the tickers from the allocation universe
 listed in the Financial Context above. Do not suggest adding tickers outside the universe.
+
+{{ sector_constraints }}
 
 CRITICAL — Evidence citation rules:
 - You MUST cite counter-evidence using the exact bracketed evidence IDs from the memo.
