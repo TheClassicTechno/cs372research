@@ -32,6 +32,14 @@ from typing import Any
 
 
 # ------------------------------------------------------------------
+# Diagnostic token budget — trim memo if casefile exceeds this
+# ------------------------------------------------------------------
+
+_DIAGNOSTIC_MAX_TOKENS = 50_000
+_CHARS_PER_TOKEN = 4  # conservative heuristic for mixed English/code text
+
+
+# ------------------------------------------------------------------
 # Diagnostic scaffold — inserted verbatim at top of casefile
 # ------------------------------------------------------------------
 
@@ -137,10 +145,10 @@ Focus on:
 
 Then analyze the CRIT pillars:
 
-IC — Internal Consistency
-ES — Evidence Support
-TA — Traceability of Argument
-CI — Conclusion Integrity
+LV — Logical Validity
+ES — Evidential Support
+AC — Alternative Consideration
+CA — Causal Alignment
 
 Identify:
 
@@ -720,7 +728,44 @@ class DebateLogger:
             + self._section_full_proposals_r1(state),
         ]
 
-        return _DIAGNOSTIC_SCAFFOLD + "\n".join(sections) + "\n"
+        casefile = _DIAGNOSTIC_SCAFFOLD + "\n".join(sections) + "\n"
+
+        # Trim memo if casefile exceeds token budget
+        estimated_tokens = len(casefile) // _CHARS_PER_TOKEN
+        if estimated_tokens > _DIAGNOSTIC_MAX_TOKENS:
+            excess_chars = (estimated_tokens - _DIAGNOSTIC_MAX_TOKENS) * _CHARS_PER_TOKEN
+            casefile = self._trim_memo_to_fit(casefile, excess_chars)
+
+        return casefile
+
+    # --- Token budget trimming ---
+
+    @staticmethod
+    def _trim_memo_to_fit(casefile: str, excess_chars: int) -> str:
+        """Trim the memo (Section 2) from the bottom to shed *excess_chars*.
+
+        Preserves complete lines and appends a truncation notice.
+        Returns the casefile unchanged if memo markers aren't found.
+        """
+        memo_start = "SHARED INVESTMENT MEMO"
+        memo_end = "END MEMO"
+
+        start = casefile.find(memo_start)
+        end = casefile.find(memo_end)
+        if start < 0 or end < 0:
+            return casefile
+
+        memo_text = casefile[start:end]
+        target_len = max(len(memo_text) - excess_chars, 200)
+        trimmed = memo_text[:target_len]
+
+        # Snap to last complete line
+        last_newline = trimmed.rfind("\n")
+        if last_newline > 0:
+            trimmed = trimmed[:last_newline]
+
+        trimmed += "\n\n[... MEMO TRIMMED — full memo in shared_context/memo.txt ...]\n"
+        return casefile[:start] + trimmed + casefile[end:]
 
     # --- Section builders ---
 
@@ -949,46 +994,91 @@ class DebateLogger:
         return "\n".join(parts)
 
     def _section_crit_signal(self, pid_phase_data: list[dict]) -> str:
-        """Compact CRIT signal: rho_bar table + final-round per-agent detail."""
+        """CRIT signal: per-round rho_bar + per-agent pillar table + per-round detail."""
         if not pid_phase_data:
             return "(no CRIT data — PID was not enabled)\n"
 
         parts: list[str] = []
+        pillar_abbrs = ("LV", "ES", "AC", "CA")
 
-        # --- rho_bar table ---
-        parts.append(f"{'round':<8}{'rho_bar':<10}")
+        # Collect all agent roles across rounds (stable order)
+        all_roles: list[str] = []
+        for pd in pid_phase_data:
+            for role in pd.get("crit", {}).get("agents", {}):
+                if role not in all_roles:
+                    all_roles.append(role)
+        all_roles.sort()
+
+        # --- Summary table: round | rho_bar | per-agent rho_i + pillars ---
+        agent_cols = "   ".join(
+            f"{r:<24}" for r in all_roles
+        )
+        header = f"{'round':<8}{'rho_bar':<10}{agent_cols}"
+        parts.append(header)
+
+        sub_labels = "   ".join(
+            f"{'rho_i':<6} {'LV':>4} {'ES':>4} {'AC':>4} {'CA':>4}" for _ in all_roles
+        )
+        parts.append(f"{'':8}{'':10}{sub_labels}")
+
         for pd in pid_phase_data:
             r = pd.get("round", "?")
-            rho = pd.get("crit", {}).get("rho_bar")
-            rho_str = f"{rho:.2f}" if isinstance(rho, (int, float)) else str(rho)
-            parts.append(f"{r:<8}{rho_str:<10}")
+            crit = pd.get("crit", {})
+            rho = crit.get("rho_bar")
+            rho_str = f"{rho:.2f}" if isinstance(rho, (int, float)) else "—"
+            agents = crit.get("agents", {})
+
+            agent_vals: list[str] = []
+            for role in all_roles:
+                ad = agents.get(role, {})
+                rho_i = ad.get("rho_i")
+                pillars = ad.get("pillars", {})
+                ri_str = f"{rho_i:.2f}" if isinstance(rho_i, (int, float)) else "  — "
+                pv = [
+                    f"{pillars.get(k, 0.0):.2f}" if isinstance(pillars.get(k), (int, float)) else " —  "
+                    for k in pillar_abbrs
+                ]
+                agent_vals.append(f"{ri_str:<6} {pv[0]:>4} {pv[1]:>4} {pv[2]:>4} {pv[3]:>4}")
+
+            line = f"{r:<8}{rho_str:<10}" + "   ".join(agent_vals)
+            parts.append(line)
+
         parts.append("")
 
-        # --- Per-agent detail for the FINAL round only ---
-        last = pid_phase_data[-1]
-        agents = last.get("crit", {}).get("agents", {})
-        if agents:
-            parts.append(f"--- Final round ({last.get('round', '?')}) per-agent ---")
-            parts.append("")
+        # --- Per-round detail: diagnostics + explanations ---
+        weakest_pillar = ""
+        weakest_score = 2.0
 
-            # Track weakest pillar across all agents
-            weakest_pillar = ""
-            weakest_score = 2.0
+        for pd in pid_phase_data:
+            r = pd.get("round", "?")
+            agents = pd.get("crit", {}).get("agents", {})
+            if not agents:
+                continue
+
+            parts.append(f"--- Round {r} per-agent detail ---")
+            parts.append("")
 
             for role in sorted(agents.keys()):
                 agent_data = agents[role]
                 pillars = agent_data.get("pillars", {})
-                parts.append(role)
-                for abbr in ("LV", "ES", "AC", "CA"):
+                rho_i = agent_data.get("rho_i")
+                rho_i_str = f" (rho_i={rho_i:.2f})" if isinstance(rho_i, (int, float)) else ""
+                parts.append(f"{role}{rho_i_str}")
+                for abbr in pillar_abbrs:
                     val = pillars.get(abbr)
-                    val_str = f"{val:.1f}" if isinstance(val, (int, float)) else str(val)
-                    parts.append(f"{abbr} {val_str}")
+                    val_str = f"{val:.2f}" if isinstance(val, (int, float)) else str(val)
+                    parts.append(f"  {abbr} {val_str}")
                     if isinstance(val, (int, float)) and val < weakest_score:
                         weakest_score = val
                         weakest_pillar = f"{role}/{abbr}"
-                parts.append("")
 
-                # Include explanations if present
+                # Diagnostics
+                diag = agent_data.get("diagnostics", {})
+                fired = [k for k, v in diag.items() if v]
+                if fired:
+                    parts.append(f"  flags: {', '.join(fired)}")
+
+                # Explanations
                 explanations = agent_data.get("explanations", {})
                 if explanations:
                     for pillar_key, short_name in [
@@ -999,12 +1089,13 @@ class DebateLogger:
                     ]:
                         expl = explanations.get(pillar_key)
                         if expl:
-                            parts.append(f"  {short_name}: {expl}")
-                    parts.append("")
+                            parts.append(f"    {short_name}: {expl}")
 
-            if weakest_pillar:
-                parts.append(f"weakest_pillar: {weakest_pillar} ({weakest_score:.2f})")
                 parts.append("")
+
+        if weakest_pillar:
+            parts.append(f"weakest_pillar: {weakest_pillar} ({weakest_score:.2f})")
+            parts.append("")
 
         return "\n".join(parts)
 

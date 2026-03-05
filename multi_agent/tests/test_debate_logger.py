@@ -845,6 +845,69 @@ class TestMemoPlaceholder:
 # Tests: prompt manifest
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Tests: memo trimming for token budget
+# ---------------------------------------------------------------------------
+
+class TestMemoTrimming:
+    def _make_state(self, proposals, revisions):
+        return {
+            "observation": {"universe": ["AAPL", "NVDA", "MSFT"], "timestamp": "2025Q1"},
+            "proposals": proposals,
+            "revisions": revisions,
+            "critiques": [],
+            "debate_turns": [],
+            "final_action": {
+                "allocation": {"AAPL": 0.3, "NVDA": 0.35, "MSFT": 0.35},
+                "justification": "Balanced allocation",
+                "confidence": 0.75,
+            },
+            "strongest_objection": "",
+        }
+
+    def test_memo_trimmed_when_over_token_limit(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+        monkeypatch,
+    ):
+        """When the diagnostic exceeds the token budget, the memo is trimmed."""
+        import multi_agent.debate_logger as dl_module
+
+        # Set a very low token limit to force trimming
+        monkeypatch.setattr(dl_module, "_DIAGNOSTIC_MAX_TOKENS", 100)
+
+        large_memo = "[INFO] QUARTERLY SNAPSHOT MEMO\n" + "x" * 5000
+        tmp_logger.init_run("d", sample_observation, large_memo)
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, large_memo)
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        assert "MEMO TRIMMED" in content
+        assert "shared_context/memo.txt" in content
+        # The full 5000-char block should NOT appear
+        assert "x" * 5000 not in content
+
+    def test_memo_not_trimmed_when_under_limit(
+        self, tmp_logger, sample_observation, sample_proposals, sample_revisions,
+    ):
+        """When the diagnostic is under the token budget, the memo stays intact."""
+        short_memo = "[INFO] QUARTERLY SNAPSHOT MEMO\nShort memo content."
+        tmp_logger.init_run("d", sample_observation, short_memo)
+        tmp_logger.start_round(1, 0.5)
+        state = self._make_state(sample_proposals, sample_revisions)
+
+        tmp_logger.finalize(state, [], False, short_memo)
+
+        content = (tmp_logger.run_dir / "final" / "debate_diagnostic.txt").read_text()
+        assert "MEMO TRIMMED" not in content
+        assert "Short memo content." in content
+
+
+# ---------------------------------------------------------------------------
+# Tests: prompt manifest
+# ---------------------------------------------------------------------------
+
 class TestPromptManifest:
     def test_writes_prompt_manifest(self, tmp_logger, sample_observation):
         tmp_logger.init_run("d", sample_observation, "m")

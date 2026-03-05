@@ -281,12 +281,14 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses same LLM config as debate agents) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
 
-            base_llm_fn = lambda sys, usr: _call_llm(self.config.to_dict(), sys, usr)
+            crit_config = self.config.to_dict()
+            crit_config["model_name"] = self.config.crit_model_name
+            base_llm_fn = lambda sys, usr: _call_llm(crit_config, sys, usr)
 
             def _logging_llm_fn(system_prompt: str, user_prompt: str) -> str:
                 if self._log_llm:

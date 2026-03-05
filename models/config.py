@@ -207,7 +207,12 @@ class AgentConfig(BaseModel):
         "values are dicts with 'system_blocks' and/or 'user_sections' lists.",
     )
 
-    # --- CRIT template configurability ---
+    # --- CRIT configuration ---
+    crit_llm_model: str = Field(
+        default="gpt-5",
+        description="LLM model to use for CRIT scoring calls. "
+        "Separate from llm_model so CRIT can use a stronger model.",
+    )
     crit_system_template: str = Field(
         default="crit_system.jinja",
         description="CRIT system prompt template filename (in eval/crit/prompts/).",
