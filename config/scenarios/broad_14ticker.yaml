@@ -1,0 +1,33 @@
+# ============================================================================
+# Scenario: Broad 14-Ticker Universe
+# ============================================================================
+# Full non-tech universe across 7 sectors.
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/broad_14ticker.yaml
+
+invest_quarter: "2025Q1"
+
+tickers:
+  - TSLA    # Consumer / Auto
+  - NFLX    # Comm / Media
+  - JPM     # Financials
+  - GS      # Financials
+  - BAC     # Financials
+  - UNH     # Healthcare
+  - LLY     # Healthcare
+  - JNJ     # Healthcare
+  - XOM     # Energy
+  - CAT     # Industrials
+  - DAL     # Industrials / Transport
+  - AMT     # Real Estate
+  - COST    # Consumer Staples
+  - WMT     # Consumer Staples
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 20

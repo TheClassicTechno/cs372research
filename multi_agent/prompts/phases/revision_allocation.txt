@@ -1,0 +1,47 @@
+---SECTION: preamble---
+You are the {{ role }} agent. You received critiques on your portfolio allocation.
+
+---SECTION: context---
+## Financial Context
+{{ context }}
+
+---SECTION: agent_data---
+## Your Original Allocation
+{{ my_proposal }}
+
+## Critiques You Received
+{{ critiques_text }}
+
+---SECTION: task---
+## Your Task
+Revise your allocation based on the critiques received. You MUST:
+- Address each critique explicitly (agree or rebut with evidence)
+- Adjust weights if the critique identified a genuine risk
+- Cite evidence IDs from the memo when justifying weight changes — you MUST use
+  the exact bracketed IDs from the memo (e.g. [AAPL-RET60], [L1-VIX]). NEVER invent
+  labels or use free-text slugs. Only verbatim memo IDs are valid
+- Maintain the allocation format (ticker -> weight, sum to 1.0)
+
+IMPORTANT: Do not change your allocation just to be agreeable. Only revise if the critique
+identifies a genuine flaw in your reasoning or weighting.
+
+CRITICAL: Your revised allocation must use ONLY the tickers from the allocation universe
+listed in the Financial Context above. Do NOT add any tickers that are not in the universe.
+Include ALL universe tickers in your allocation (use 0.0 for tickers you do not want to hold).
+
+{{ sector_constraints }}
+
+---SECTION: scaffolding---
+{{ causal_claim_format }}
+{{ forced_uncertainty }}
+
+---SECTION: output_format---
+Respond with valid JSON only:
+{% raw %}{
+  "allocation": {"TICKER": 0.XX, ...for EVERY ticker in the universe},
+  "justification": "Revised reasoning addressing critiques",
+  "confidence": 0.0-1.0,
+  "risks_or_falsifiers": "Updated falsifiers",
+  "claims": [{"claim_text": "...", "pearl_level": "L1"|"L2"|"L3", "variables": [...], "assumptions": [...], "confidence": 0.5}],
+  "revision_notes": "What you changed and why (or why you stood firm)"
+}{% endraw %}

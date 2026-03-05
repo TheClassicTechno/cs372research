@@ -1,0 +1,24 @@
+---SECTION: context---
+{{ context }}
+
+---SECTION: task---
+Using the data above, analyse the universe and assign weights.
+
+CRITICAL — Evidence citation rules:
+- Every claim about a ticker or macro condition MUST include at least one bracketed
+  evidence ID copied verbatim from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]).
+- Valid IDs use the exact format from the memo: [TICKER-METRIC] or [L1-METRIC].
+- NEVER invent your own labels. NEVER use free-text slugs like "aaplrevenuegrowth"
+  or "portfoliorisk" — these are INVALID and will be scored as zero evidence.
+- If you cannot find a bracketed ID for a claim, do not make that claim.
+- Uncited or incorrectly cited claims are treated as unsupported by the evaluation system.
+
+{{ sector_constraints }}
+
+---SECTION: scaffolding---
+{{ causal_claim_format }}
+{{ forced_uncertainty }}
+{{ trap_awareness }}
+
+---SECTION: output_format---
+{{ allocation_output_instructions }}

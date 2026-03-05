@@ -5,27 +5,26 @@ BLINDNESS: This scorer never sees ground truth, market outcomes, or impact
 scores. It evaluates ONLY the logical structure of the reasoning presented
 in agent traces.
 
-PER-AGENT SCORING: Per the RAudit paper (Section 3.3, Algorithm 1 lines
-7-8), CRIT scores each agent individually (ρ_i), then averages into
-ρ̄ = 1/n Σ_i ρ_i.  Each agent gets its own LLM call so the evaluation
-is independent — one agent's weak reasoning cannot inflate another's score.
+PER-AGENT SCORING: CRIT evaluates each agent independently via parallel
+LLM calls (one per agent). Each call receives only that agent's reasoning
+bundle (proposal → critiques received → revised argument) with embedded
+evidence citations. No cross-agent contamination.
 
-WHY THIS FEEDS PID: The PID controller needs a quality signal (rho_bar) to
-determine whether to push agents harder or ease off. CRIT provides this
-signal by measuring reasoning integrity, not outcome correctness.
+The per-agent results are aggregated into ρ̄ = 1/n Σ_i ρ_i for the PID
+controller.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import re
-from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
-from eval.crit.prompts import (
-    CRIT_SYSTEM_PROMPT,
-    build_crit_single_agent_prompt,
-)
+logger = logging.getLogger(__name__)
+
+from eval.crit.prompts import render_crit_prompts
 from eval.crit.schema import (
     CritResult,
     RoundCritResult,
@@ -33,103 +32,68 @@ from eval.crit.schema import (
     validate_raw_response,
 )
 
+
 class CritScorer:
     """Blind reasoning quality auditor for multi-agent debate.
 
-    Scores each agent individually (ρ_i), then aggregates into ρ̄.
+    Scores each agent independently via parallel LLM calls, then
+    aggregates into ρ̄.
 
     Usage:
         scorer = CritScorer(llm_fn=my_llm_caller)
-        result = scorer.score(case_data, agent_traces, decisions)
+        bundles = {"macro": {...}, "risk": {...}, ...}
+        result = scorer.score(bundles)
         # result.rho_bar → feed to PID controller
         # result.agent_scores["macro"].rho_bar → per-agent ρ_i
     """
 
-    def __init__(self, llm_fn: Callable[[str, str], str]) -> None:
+    def __init__(
+        self,
+        llm_fn: Callable[[str, str], str],
+        capture_fn: Callable[[str, str, str, str], None] | None = None,
+        crit_system_template: str = "crit_system.jinja",
+        crit_user_template: str = "crit_user.jinja",
+    ) -> None:
         """
         Args:
             llm_fn: Function that takes (system_prompt, user_prompt)
                      and returns raw LLM response string.
                      Dependency injection for testability.
+            capture_fn: Optional callback (role, system_prompt, user_prompt,
+                        raw_response) called after each LLM scoring call.
+                        Used to capture CRIT prompts/responses for diagnostics.
+            crit_system_template: CRIT system prompt template filename.
+            crit_user_template: CRIT user prompt template filename.
         """
         self._llm_fn = llm_fn
+        self._capture_fn = capture_fn
+        self._crit_system_template = crit_system_template
+        self._crit_user_template = crit_user_template
 
-    def score(
-        self,
-        case_data: str,
-        agent_traces: list[dict],
-        decisions: list[dict],
-    ) -> RoundCritResult:
-        """Run CRIT audit on one debate round, scoring each agent individually.
-
-        Per the RAudit paper (Algorithm 1):
-            1. For each agent i, evaluate ρ_i from their traces + decision
-            2. Compute ρ̄ = 1/n Σ_i ρ_i
+    def _score_single_agent(self, role: str, bundle: dict) -> tuple[str, CritResult]:
+        """Score a single agent's reasoning bundle via one LLM call.
 
         Args:
-            case_data: Rendered case context (what agents saw).
-            agent_traces: List of agent trace dicts from the round.
-                Each dict must have a 'role' field.
-            decisions: List of agent decision dicts (proposals or revisions).
-                Each dict must have a 'role' field.
+            role: Agent role name (e.g. "macro").
+            bundle: Reasoning bundle dict with keys: round, agent_role,
+                    proposal, critiques_received, revised_argument.
 
         Returns:
-            RoundCritResult with per-agent scores and aggregated rho_bar.
+            (role, CritResult) tuple.
 
         Raises:
-            ValueError: If no agents found or LLM response is malformed.
-            json.JSONDecodeError: If LLM response is not valid JSON.
+            ValueError: If LLM response is malformed.
         """
-        # Group traces and decisions by agent role
-        traces_by_role: dict[str, list[dict]] = defaultdict(list)
-        for trace in agent_traces:
-            role = trace.get("role", "unknown")
-            traces_by_role[role].append(trace)
-
-        decisions_by_role: dict[str, dict] = {}
-        for dec in decisions:
-            role = dec.get("role", "unknown")
-            decisions_by_role[role] = dec  # latest decision per role
-
-        # Determine all agent roles (union of traces and decisions)
-        all_roles = set(traces_by_role.keys()) | set(decisions_by_role.keys())
-        if not all_roles:
-            raise ValueError("No agent roles found in traces or decisions")
-
-        # Score each agent individually
-        agent_scores: dict[str, CritResult] = {}
-        for role in sorted(all_roles):
-            role_traces = traces_by_role.get(role, [])
-            role_decision = decisions_by_role.get(role)
-            agent_scores[role] = self._score_single_agent(
-                case_data, role, role_traces, role_decision
-            )
-
-        return aggregate_agent_scores(agent_scores)
-
-    def _score_single_agent(
-        self,
-        case_data: str,
-        role: str,
-        agent_traces: list[dict],
-        decision: dict | None,
-    ) -> CritResult:
-        """Run CRIT audit on a single agent's reasoning.
-
-        Args:
-            case_data: Rendered case context.
-            role: Agent role name.
-            agent_traces: This agent's debate turn dicts.
-            decision: This agent's decision dict, or None.
-
-        Returns:
-            CritResult (ρ_i) for this agent.
-        """
-        system_prompt = CRIT_SYSTEM_PROMPT
-        user_prompt = build_crit_single_agent_prompt(
-            case_data, role, agent_traces, decision
+        system_prompt, user_prompt = render_crit_prompts(
+            bundle,
+            system_template=self._crit_system_template,
+            user_template=self._crit_user_template,
         )
+
         raw_text = self._llm_fn(system_prompt, user_prompt)
+
+        if self._capture_fn:
+            self._capture_fn(role, system_prompt, user_prompt, raw_text)
 
         # Strip markdown code fences if present
         cleaned = raw_text.strip()
@@ -137,5 +101,68 @@ class CritScorer:
             cleaned = re.sub(r"^```(?:json)?\s*\n?", "", cleaned)
             cleaned = re.sub(r"\n?```\s*$", "", cleaned)
 
-        raw_dict = json.loads(cleaned)
-        return validate_raw_response(raw_dict)
+        try:
+            raw_dict = json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            logger.error(
+                "CRIT JSON parse failed for %s: %s\n"
+                "  prompt size: system=%d chars, user=%d chars\n"
+                "  raw LLM response (%d chars): %.500s",
+                role, e, len(system_prompt), len(user_prompt),
+                len(raw_text), raw_text,
+            )
+            raise
+
+        try:
+            result = validate_raw_response(raw_dict)
+        except (ValueError, KeyError) as e:
+            logger.error(
+                "CRIT validation failed for %s: %s\n"
+                "  prompt size: system=%d chars, user=%d chars\n"
+                "  raw LLM response (%d chars): %.500s",
+                role, e, len(system_prompt), len(user_prompt),
+                len(raw_text), raw_text,
+            )
+            raise
+
+        return role, result
+
+    def score(self, reasoning_bundles: dict[str, dict]) -> RoundCritResult:
+        """Run CRIT audit on one debate round, scoring each agent in parallel.
+
+        Makes one LLM call per agent via ThreadPoolExecutor, then validates
+        and aggregates the results.
+
+        Args:
+            reasoning_bundles: Dict mapping role name → reasoning bundle dict.
+                Each bundle has keys: round, agent_role, proposal,
+                critiques_received, revised_argument.
+
+        Returns:
+            RoundCritResult with per-agent scores and aggregated rho_bar.
+
+        Raises:
+            ValueError: If no agents or if any LLM response is malformed.
+        """
+        if not reasoning_bundles:
+            raise ValueError("reasoning_bundles must not be empty")
+
+        agent_scores: dict[str, CritResult] = {}
+
+        with ThreadPoolExecutor(max_workers=len(reasoning_bundles)) as executor:
+            futures = {
+                executor.submit(self._score_single_agent, role, bundle): role
+                for role, bundle in reasoning_bundles.items()
+            }
+            for future in futures:
+                role = futures[future]
+                try:
+                    scored_role, result = future.result()
+                    agent_scores[scored_role] = result
+                except Exception as e:
+                    logger.error(
+                        "CRIT scoring failed for agent '%s': %s", role, e,
+                    )
+                    raise
+
+        return aggregate_agent_scores(agent_scores)

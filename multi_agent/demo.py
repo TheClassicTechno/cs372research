@@ -53,7 +53,7 @@ from multi_agent.runner import MultiAgentRunner
 
 
 def generate_sample_observations() -> list[Observation]:
-    """Generate 3 diverse observations for demo purposes."""
+    """Generate 3 agents observations for demo purposes."""
     return [
         # Observation 1: Bullish environment
         Observation(

@@ -1,7 +1,7 @@
 """End-to-end integration test: run_simulation → disk output with PID events.
 
 Tests the complete simulation pipeline — the same path executed by
-``python run_simulation.py --config <yaml>``:
+``python run_simulation.py --agents <yaml>``:
 
     YAML config on disk
         → SimulationConfig.from_yaml()
@@ -37,26 +37,31 @@ from simulation.runner import AsyncSimulationRunner
 # Mock CRIT response for _call_llm (debate nodes use their own mock helpers)
 # ---------------------------------------------------------------------------
 
-MOCK_CRIT_RESPONSE = json.dumps({
+_CRIT_ENTRY = {
     "pillar_scores": {
-        "internal_consistency": 0.8,
-        "evidence_support": 0.7,
-        "trace_alignment": 0.9,
-        "causal_integrity": 0.6,
+        "logical_validity": 0.8,
+        "evidential_support": 0.7,
+        "alternative_consideration": 0.9,
+        "causal_alignment": 0.6,
     },
     "diagnostics": {
         "contradictions_detected": False,
         "unsupported_claims_detected": False,
-        "conclusion_drift_detected": False,
+        "ignored_critiques_detected": False,
+        "premature_certainty_detected": False,
         "causal_overreach_detected": False,
+        "conclusion_drift_detected": False,
     },
     "explanations": {
-        "internal_consistency": "ok",
-        "evidence_support": "ok",
-        "trace_alignment": "ok",
-        "causal_integrity": "ok",
+        "logical_validity": "ok",
+        "evidential_support": "ok",
+        "alternative_consideration": "ok",
+        "causal_alignment": "ok",
     },
-})
+}
+
+# Single-agent format: scorer now calls _llm_fn once per agent independently.
+MOCK_CRIT_RESPONSE = json.dumps(_CRIT_ENTRY)
 
 
 def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
@@ -71,25 +76,17 @@ def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Minimal case template JSON (written to disk during test setup)
+# Minimal snapshot JSON (written to disk during test setup)
+# invest_quarter=2025Q1 → loader reads prior quarter 2024Q4
 # ---------------------------------------------------------------------------
 
-CASE_TEMPLATE = {
-    "case_data": {
-        "items": [
-            {"kind": "earnings", "content": "NVDA beat earnings by 10%."},
-            {"kind": "news", "content": "AI chip demand surging."},
-        ]
-    },
-    "stock_data": {
+SNAPSHOT_2024_Q4 = {
+    "as_of_date": "2024-12-31",
+    "ticker_data": {
         "NVDA": {
-            "ticker": "NVDA",
-            "current_price": 150.0,
-            "daily_bars": [
-                {"timestamp": "2025-01-01", "close": 145.0},
-                {"timestamp": "2025-01-02", "close": 148.0},
-                {"timestamp": "2025-01-03", "close": 150.0},
-            ],
+            "asset_features": {
+                "close": 150.0,
+            }
         }
     },
 }
@@ -102,6 +99,8 @@ CASE_TEMPLATE = {
 YAML_PID_ENABLED = """\
 dataset_path: "{dataset_path}"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
+memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
@@ -117,14 +116,13 @@ agent:
   pid_kd: 0.01
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
 """
 
 YAML_PID_DISABLED = """\
 dataset_path: "{dataset_path}"
 tickers: [NVDA]
+invest_quarter: "2025Q1"
+memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
@@ -147,11 +145,11 @@ def simulation_dir():
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
 
-        # Dataset directory with one case JSON
-        dataset_dir = root / "dataset" / "NVDA"
-        dataset_dir.mkdir(parents=True)
-        case_file = dataset_dir / "2025_Q1.json"
-        case_file.write_text(json.dumps(CASE_TEMPLATE), encoding="utf-8")
+        # Snapshot JSON directory (memo loader expects json_data/)
+        json_dir = root / "dataset" / "json_data"
+        json_dir.mkdir(parents=True)
+        snapshot_file = json_dir / "snapshot_2024_Q4.json"
+        snapshot_file.write_text(json.dumps(SNAPSHOT_2024_Q4), encoding="utf-8")
 
         # Output directory
         output_dir = root / "results"
@@ -183,7 +181,7 @@ def no_pid_config_path(simulation_dir):
 def _run_simulation(config_path: str, output_dir: str) -> Path:
     """Run the full simulation pipeline and return the run output directory.
 
-    This is the same path as ``python run_simulation.py --config <yaml>``.
+    This is the same path as ``python run_simulation.py --agents <yaml>``.
     """
     config = SimulationConfig.from_yaml(config_path)
     runner = AsyncSimulationRunner(

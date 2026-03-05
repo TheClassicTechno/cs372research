@@ -2,40 +2,31 @@
 
 Covers:
     1. build_observation conversion (feature_engineering)
-    2. action_to_decision conversion (including edge cases)
-    3. DebateAgentSystem lifecycle (bind_tools / invoke)
-    4. End-to-end with mock debate runner
-    5. Registry integration
-    6. Layer boundary verification (adapter must NOT call broker)
+    2. DebateAgentSystem lifecycle (bind_tools / invoke)
+    3. End-to-end with mock debate runner (allocation mode)
+    4. Registry integration
+    5. Layer boundary verification (adapter must NOT call broker)
 """
 
 from __future__ import annotations
 
 import asyncio
-import math
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agents.multi_agent_debate import (
-    DebateAgentSystem,
-    action_to_decision,
-)
+from agents.multi_agent_debate import DebateAgentSystem
 from simulation.feature_engineering import build_observation
 from models.agents import AgentInvocation, AgentInvocationResult
 from models.case import Case, CaseData, CaseDataItem, ClosePricePoint, StockData
 from models.config import AgentConfig
-from models.decision import Decision
-from models.decision import Order as SimOrder
 from models.portfolio import PortfolioSnapshot
 from multi_agent.models import (
     Action,
     AgentTrace,
     Claim,
-    MarketState,
     Observation,
     PearlLevel,
-    PortfolioState,
 )
 from multi_agent.models import Order as DebateOrder
 
@@ -85,27 +76,6 @@ def sample_case() -> Case:
         case_id="ep_000:0",
         decision_point_idx=0,
         information_cutoff_timestamp="2025-03-15T10:00:00Z",
-    )
-
-
-@pytest.fixture
-def sample_action() -> Action:
-    """A realistic Action from the debate side."""
-    return Action(
-        orders=[
-            DebateOrder(ticker="AAPL", side="buy", size=25.0),
-            DebateOrder(ticker="GOOGL", side="sell", size=10.0),
-        ],
-        justification="Strong earnings + Fed rate cut signal.",
-        confidence=0.75,
-        claims=[
-            Claim(
-                claim_text="AAPL earnings beat drives price up",
-                pearl_level=PearlLevel.L2,
-                variables=["AAPL_earnings", "AAPL_price"],
-                confidence=0.8,
-            ),
-        ],
     )
 
 
@@ -235,82 +205,7 @@ class TestBuildObservation:
 
 
 # =============================================================================
-# 2. ACTION → DECISION CONVERSION
-# =============================================================================
-
-
-class TestActionToDecision:
-    """Test Action → Decision mapping."""
-
-    def test_basic_conversion(self, sample_action: Action):
-        decision = action_to_decision(sample_action)
-        assert len(decision.orders) == 2
-
-        buy_order = next(o for o in decision.orders if o.ticker == "AAPL")
-        assert buy_order.side == "buy"
-        assert buy_order.quantity == 25
-
-        sell_order = next(o for o in decision.orders if o.ticker == "GOOGL")
-        assert sell_order.side == "sell"
-        assert sell_order.quantity == 10
-
-    def test_float_to_int_truncation(self):
-        """Debate uses float size; simulation uses int quantity. Truncate toward zero."""
-        action = Action(
-            orders=[DebateOrder(ticker="AAPL", side="buy", size=15.7)]
-        )
-        decision = action_to_decision(action)
-        assert decision.orders[0].quantity == 15  # truncated, not rounded
-
-    def test_zero_size_skipped(self):
-        """Orders with size < 1 should be skipped."""
-        action = Action(
-            orders=[DebateOrder(ticker="AAPL", side="buy", size=0.5)]
-        )
-        decision = action_to_decision(action)
-        assert len(decision.orders) == 0
-
-    def test_negative_size_skipped(self):
-        """Negative sizes should be skipped."""
-        action = Action(
-            orders=[DebateOrder(ticker="AAPL", side="buy", size=-5.0)]
-        )
-        decision = action_to_decision(action)
-        assert len(decision.orders) == 0
-
-    def test_invalid_side_skipped(self):
-        """Invalid side values should be skipped."""
-        action = Action(
-            orders=[DebateOrder(ticker="AAPL", side="hold", size=10.0)]
-        )
-        decision = action_to_decision(action)
-        assert len(decision.orders) == 0
-
-    def test_empty_action(self):
-        """Empty orders → hold decision."""
-        action = Action(orders=[])
-        decision = action_to_decision(action)
-        assert len(decision.orders) == 0
-
-    def test_side_case_insensitive(self):
-        """Side should be lowered ('BUY' → 'buy')."""
-        action = Action(
-            orders=[DebateOrder(ticker="AAPL", side="BUY", size=10.0)]
-        )
-        decision = action_to_decision(action)
-        assert len(decision.orders) == 1
-        assert decision.orders[0].side == "buy"
-
-    def test_result_is_valid_decision(self, sample_action: Action):
-        """The resulting Decision should serialize cleanly."""
-        decision = action_to_decision(sample_action)
-        d = decision.model_dump()
-        restored = Decision(**d)
-        assert len(restored.orders) == len(decision.orders)
-
-
-# =============================================================================
-# 3. AGENT SYSTEM LIFECYCLE
+# 2. AGENT SYSTEM LIFECYCLE
 # =============================================================================
 
 
@@ -325,7 +220,7 @@ class TestDebateAgentSystemLifecycle:
 
 
 # =============================================================================
-# 4. END-TO-END WITH MOCK DEBATE
+# 3. END-TO-END WITH MOCK DEBATE
 # =============================================================================
 
 
@@ -335,7 +230,8 @@ class TestDebateAgentEndToEnd:
     @pytest.fixture
     def mock_debate_action(self) -> Action:
         return Action(
-            orders=[DebateOrder(ticker="AAPL", side="buy", size=20.0)],
+            orders=[],
+            allocation={"AAPL": 0.6, "GOOGL": 0.4},
             justification="Mock bullish signal.",
             confidence=0.7,
             claims=[
@@ -400,12 +296,14 @@ class TestDebateAgentEndToEnd:
                 agent.invoke(invocation)
             )
 
-        # Verify result
+        # Verify result — allocation produces buy orders from weights
         assert isinstance(result, AgentInvocationResult)
-        assert len(result.decision.orders) == 1
-        assert result.decision.orders[0].ticker == "AAPL"
-        assert result.decision.orders[0].side == "buy"
-        assert result.decision.orders[0].quantity == 20
+        assert len(result.decision.orders) == 2
+        tickers = {o.ticker for o in result.decision.orders}
+        assert tickers == {"AAPL", "GOOGL"}
+        for order in result.decision.orders:
+            assert order.side == "buy"
+            assert order.quantity > 0
 
         # CRITICAL: adapter must NOT call the tool (§8 layer boundary)
         mock_tool_func.assert_not_called()
@@ -416,13 +314,13 @@ class TestDebateAgentEndToEnd:
         sample_case: Case,
         mock_debate_trace: AgentTrace,
     ):
-        """When debate returns no orders (hold), decision should be empty."""
+        """When debate returns empty allocation (hold), decision should be empty."""
         agent = DebateAgentSystem(agent_config)
 
         mock_tool = MagicMock()
         agent.bind_tools(mock_tool)
 
-        hold_action = Action(orders=[], justification="Hold.", confidence=0.5)
+        hold_action = Action(orders=[], allocation={}, justification="Hold.", confidence=0.5)
 
         with patch.object(
             agent._debate_runner,
@@ -475,7 +373,7 @@ class TestDebateAgentEndToEnd:
 
 
 # =============================================================================
-# 5. REGISTRY
+# 4. REGISTRY
 # =============================================================================
 
 
@@ -496,7 +394,7 @@ class TestRegistry:
 
 
 # =============================================================================
-# 6. LAYER BOUNDARY VERIFICATION (integration_plan.md §2)
+# 5. LAYER BOUNDARY VERIFICATION (integration_plan.md §2)
 # =============================================================================
 
 

@@ -1,0 +1,83 @@
+# ============================================================================
+# Example: 2-Agent Debate — Macro + Risk only
+# ============================================================================
+# Demonstrates:
+#   - Using debate_roles to select a subset of agents (2 instead of 4)
+#   - Mixing agents role prompts with the diverse_agents profile
+#
+# Only macro and risk agents debate. Fewer agents = faster, cheaper runs.
+# Useful for focused experiments on macro-risk interaction.
+#
+# Run with:
+#   python run_simulation.py --agents config/agents/example_2agent_macro_risk.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+invest_quarter: "2025Q1"
+
+tickers:
+  - JPM
+  - GS
+  - XOM
+  - UNH
+  - CAT
+
+# Allocation constraints enforced on final portfolio output:
+#   max_weight:     max fraction any single ticker can receive (0.40 = 40%)
+#   min_holdings:   minimum number of tickers with weight > 0
+#   fully_invested: if true, weights must sum to 1.0 (no cash reserve)
+#   max_tickers:    upper bound on universe size (validation only)
+allocation_constraints:
+  max_weight: 0.40
+  min_holdings: 3
+  fully_invested: true
+  max_tickers: 10
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  # --- KEY: Only 2 agents participate ---
+  # Valid roles: macro, value, risk, technical, sentiment, devils_advocate
+  debate_roles:
+    - macro
+    - risk
+
+  max_rounds: 3
+
+  # Diverse agents profile (no shared scaffolding — reasoning in role prompts)
+  prompt_profile: "diverse_agents"
+
+  # --- Prompt overrides ---
+  # Only need to override the roles that are active.
+  # Available override keys for roles:
+  #   role_macro, role_value, role_technical, role_risk,
+  #   role_sentiment, role_devils_advocate
+  #
+  # Other overridable keys:
+  #   output_allocation  — JSON output format and allocation rules
+  #   causal_contract    — shared causal reasoning contract (system block)
+  #   proposal_template  — propose phase user prompt template
+  #   critique_template  — critique phase user prompt template
+  #   revision_template  — revision phase user prompt template
+  #   judge_template     — judge phase user prompt template
+  #   tone_critique_collaborative / _balanced / _adversarial  — tone blocks
+  #   tone_revise_collaborative  / _balanced / _adversarial   — tone blocks
+  #
+  # All paths are relative to multi_agent/prompts/
+  prompt_file_overrides:
+    role_macro: "roles/macro_diverse.txt"
+    role_risk: "roles/risk_diverse.txt"
+
+  agreeableness: 0.3
+  pid_enabled: false
+  logging_mode: "debug"
+
+broker:
+  initial_cash: 100000.0

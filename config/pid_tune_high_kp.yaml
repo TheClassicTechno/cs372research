@@ -2,7 +2,7 @@
 # PID Tuning Experiment 2: Aggressive Kp (P-only, higher gain)
 # ============================================================================
 # Run with:
-#   python run_simulation.py --config config/pid_tune_high_kp.yaml
+#   python run_simulation.py --agents config/pid_tune_high_kp.yaml
 #
 # Higher Kp=0.4: β reacts more strongly to quality gaps.
 # Expect: faster response to low ρ̄, but may overshoot.
@@ -39,15 +39,8 @@ agent:
   pid_rho_star: 0.8
   pid_initial_beta: 0.5
 
-  pid_propose: false
-  pid_critique: true
-  pid_revise: true
-
   pid_log_metrics: true
   pid_log_llm_calls: false
-  log_system_prompts: false
-  log_user_prompts: false
-  log_llm_responses: false
 
 broker:
   initial_cash: 100000.0

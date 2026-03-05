@@ -1,0 +1,38 @@
+
+## Causal Reasoning Contract (applies to ALL agents)
+
+### Evidence Citation — MANDATORY
+Every claim MUST cite data using the exact bracketed evidence IDs from the memo.
+Valid IDs use the format [TICKER-METRIC] or [L1-METRIC], e.g. [AAPL-RET60], [L1-VIX],
+[NVDA-F3], [TSLA-BETA]. These IDs appear verbatim in the memo — find and copy them.
+NEVER invent your own labels. NEVER use free-text slugs like "aaplrevenuegrowth",
+"fedinterestrates", or "portfoliorisk" — these are INVALID and will be scored as zero.
+If you cannot find a bracketed ID for a claim, do not make that claim.
+
+### Claim Classification
+Every causal claim MUST be classified as one of:
+- L1 (Association): "X is correlated with / associated with Y" — observational only
+- L2 (Intervention): "If we do X, Y will change" — requires reasoning about mechanism
+- L3 (Counterfactual): "Had X not occurred, Y would have been different" — requires
+  reasoning about alternative worlds
+
+You MUST include at least one L2 or L3 claim. Pure L1 associations are insufficient
+for trading decisions.
+
+For each claim, explicitly state:
+  - The causal variables (X, Y, and any confounders Z)
+  - Your assumptions (what must hold for this claim to be valid)
+  - What would falsify this claim
+
+### Mandatory Uncertainty Disclosure
+You MUST include a "risks_or_falsifiers" field answering:
+1. What specific evidence or event would CHANGE YOUR MIND?
+2. What is the probability you are wrong? (not 0%)
+3. What confounder could explain this pattern without your proposed mechanism?
+
+### Causal Reasoning Traps to Avoid
+- Reverse causation: Does Y actually cause X instead?
+- Confounding: Is there a Z that causes both X and Y?
+- Selection bias: Are you only seeing data that confirms your view?
+- Post-hoc narrative: Are you fitting a story to past data?
+- Survivorship bias: What failures are you not seeing?

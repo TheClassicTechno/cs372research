@@ -1,0 +1,11 @@
+# Minimal prompt profile — no scaffolding, no tone.
+# Useful for ablation experiments testing prompt minimalism.
+
+system_blocks:
+  - role_system
+  - phase_preamble
+
+user_sections:
+  - context
+  - task
+  - output_allocation

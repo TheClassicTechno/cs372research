@@ -64,6 +64,7 @@ class TestSimulationConfigQuarters:
             dataset_path="data/cases",
             agent=AgentConfig(agent_system="single_llm", llm_provider="openai", llm_model="gpt-4o"),
             tickers=["NVDA"],
+            invest_quarter="2025Q1",
         )
         assert config.quarters is None
 
@@ -72,6 +73,7 @@ class TestSimulationConfigQuarters:
             dataset_path="data/cases",
             agent=AgentConfig(agent_system="single_llm", llm_provider="openai", llm_model="gpt-4o"),
             tickers=["NVDA"],
+            invest_quarter="2025Q1",
             quarters=["Q1", "Q3"],
         )
         assert config.quarters == ["Q1", "Q3"]
@@ -80,6 +82,7 @@ class TestSimulationConfigQuarters:
         yaml_content = {
             "dataset_path": "data/cases",
             "tickers": ["NVDA"],
+            "invest_quarter": "2025Q1",
             "quarters": ["Q2", "Q4"],
             "agent": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
         }
@@ -93,6 +96,7 @@ class TestSimulationConfigQuarters:
         yaml_content = {
             "dataset_path": "data/cases",
             "tickers": ["NVDA"],
+            "invest_quarter": "2025Q1",
             "agent": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
         }
         yaml_path = tmp_path / "test.yaml"
