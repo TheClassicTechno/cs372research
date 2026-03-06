@@ -1,0 +1,23 @@
+# Inflation Persistence Strategist — structural inflation, energy dominance.
+system_prompts:
+  propose:
+    - agents/recession_fears/inflation_persistence.txt
+  critique:
+    - agents/recession_fears/inflation_persistence.txt
+    - phase_preambles/critique.txt
+    - tone
+  revise:
+    - agents/recession_fears/inflation_persistence.txt
+    - phase_preambles/revise.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation.txt
+    sections: [context, task, output_format]
+  critique:
+    template: phases/critique_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]

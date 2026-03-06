@@ -95,10 +95,39 @@ class DebateAgentSystem(AgentSystem):
             and "mock" in config.system_prompt_override.lower()
         )
 
+        # --- New agent profile system ---
+        # If config.agents is set (dict of role->profile_name), use new system.
+        loaded_agent_profiles: dict = {}
+        loaded_judge_profile: dict = {}
+        if config.agents:
+            from multi_agent.prompts.profile_loader import get_agent_profiles
+            profiles = get_agent_profiles(
+                config.agents,
+                judge_profile_name=config.judge_profile,
+            )
+            # Separate judge from agent profiles
+            loaded_judge_profile = profiles.pop("judge", {})
+            loaded_agent_profiles = profiles
+
         # Build the debate roster from YAML config, or fall back to defaults.
         # Valid role strings map to AgentRole enum values.
         roles = None
-        if config.debate_roles:
+        if config.agents:
+            # Derive roles from agents dict keys
+            roles = []
+            for role_str in config.agents.keys():
+                try:
+                    roles.append(AgentRole(role_str.lower()))
+                except ValueError:
+                    logger.warning(
+                        "Unknown agent role '%s' — skipping. Valid: %s",
+                        role_str,
+                        [r.value for r in AgentRole],
+                    )
+            if not roles:
+                logger.warning("No valid agent roles found; using defaults.")
+                roles = None
+        elif config.debate_roles:
             roles = []
             for role_str in config.debate_roles:
                 try:
@@ -139,7 +168,6 @@ class DebateAgentSystem(AgentSystem):
             log_rendered_prompts=config.log_rendered_prompts,
             log_prompt_manifest=config.log_prompt_manifest,
             prompt_logging=config.prompt_logging,
-            use_system_causal_contract=config.use_system_causal_contract,
             logging_mode=config.logging_mode,
             experiment_name=config.experiment_name,
             parallel_agents=config.parallel_agents,
@@ -157,6 +185,8 @@ class DebateAgentSystem(AgentSystem):
             config_paths=config.config_paths,
             sector_config=config.sector_config,
             allocation_constraints=config.allocation_constraints,
+            agent_profiles=loaded_agent_profiles,
+            judge_profile=loaded_judge_profile,
         )
         if roles is not None:
             debate_kwargs["roles"] = roles

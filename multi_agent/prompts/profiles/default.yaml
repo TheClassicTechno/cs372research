@@ -1,16 +1,14 @@
 # Default prompt profile — matches existing behavior.
-# All system blocks and user sections included.
+# Per-phase system blocks and user sections.
 
 system_blocks:
-  - causal_contract
-  - role_system
-  - phase_preamble
-  - tone
+  propose:  [causal_contract, role_system]
+  critique: [causal_contract, role_system, phase_preamble, tone]
+  revise:   [causal_contract, role_system, phase_preamble, tone]
+  judge:    [causal_contract, judge_system]
 
 user_sections:
-  - preamble
-  - context
-  - agent_data
-  - task
-  - scaffolding
-  - output_format
+  propose:  [context, task, scaffolding, output_format]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, scaffolding, output_format]
+  judge:    [preamble, context, agent_data, task, output_format]

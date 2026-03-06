@@ -13,7 +13,7 @@ def _base_config(**overrides) -> dict:
         "dataset_path": "data-pipeline/final_snapshots",
         "tickers": ["AAPL", "NVDA", "XOM", "JPM"],
         "invest_quarter": "2025Q1",
-        "agent": {
+        "debate_setup": {
             "agent_system": "multi_agent_debate",
             "llm_provider": "openai",
             "llm_model": "gpt-4o-mini",
@@ -63,21 +63,21 @@ class TestBackwardCompatibility:
         assert config.sectors is None
         assert config.sector_limits is None
         assert config.agent_sector_permissions is None
-        assert config.agent.sector_config is None
+        assert config.debate_setup.sector_config is None
 
     def test_existing_config_file(self):
         """Agent YAML merged with a scenario produces a valid config with no sectors."""
         import yaml
         from run_simulation import _deep_merge
 
-        with open("config/agents/debate_diverse_agents.yaml") as f:
+        with open("config/debate/debate_diverse_agents.yaml") as f:
             agent_raw = yaml.safe_load(f)
         # Agent configs don't include invest_quarter — scenarios supply it.
         scenario = {"invest_quarter": "2025Q1"}
         merged = _deep_merge(agent_raw, scenario)
         config = SimulationConfig(**merged)
         assert config.sectors is None
-        assert config.agent.sector_config is None
+        assert config.debate_setup.sector_config is None
 
 
 # ── Sector validation ───────────────────────────────────────────────────
@@ -87,8 +87,8 @@ class TestSectorValidation:
     def test_valid_sector_config(self):
         config = SimulationConfig(**_base_config(sectors=VALID_SECTORS))
         assert config.sectors == VALID_SECTORS
-        assert config.agent.sector_config is not None
-        assert config.agent.sector_config["sectors"] == VALID_SECTORS
+        assert config.debate_setup.sector_config is not None
+        assert config.debate_setup.sector_config["sectors"] == VALID_SECTORS
 
     def test_ticker_in_multiple_sectors_raises(self):
         bad_sectors = {
@@ -164,7 +164,7 @@ class TestSectorLimitsValidation:
                 "financials": {"min": 0.05, "max": 0.40},
             },
         ))
-        assert config.agent.sector_config["sector_limits"] is not None
+        assert config.debate_setup.sector_config["sector_limits"] is not None
 
 
 # ── agent_sector_permissions validation ─────────────────────────────────
@@ -196,7 +196,7 @@ class TestAgentSectorPermissions:
             sectors=VALID_SECTORS,
             agent_sector_permissions={"technical": ["*"]},
         ))
-        perms = config.agent.sector_config["agent_sector_permissions"]
+        perms = config.debate_setup.sector_config["agent_sector_permissions"]
         assert perms["technical"] == ["*"]
 
     def test_valid_permissions(self):
@@ -207,7 +207,7 @@ class TestAgentSectorPermissions:
                 "value": ["tech", "financials"],
             },
         ))
-        assert config.agent.sector_config["agent_sector_permissions"] is not None
+        assert config.debate_setup.sector_config["agent_sector_permissions"] is not None
 
 
 # ── sector_config threading ─────────────────────────────────────────────
@@ -224,7 +224,7 @@ class TestSectorConfigThreading:
             },
             agent_sector_permissions={"macro": ["tech"]},
         ))
-        sc = config.agent.sector_config
+        sc = config.debate_setup.sector_config
         assert sc is not None
         assert sc["sectors"] == VALID_SECTORS
         assert sc["sector_limits"]["tech"] == {"min": 0.10, "max": 0.50}
@@ -232,7 +232,7 @@ class TestSectorConfigThreading:
 
     def test_sectors_only_packs_nulls(self):
         config = SimulationConfig(**_base_config(sectors=VALID_SECTORS))
-        sc = config.agent.sector_config
+        sc = config.debate_setup.sector_config
         assert sc is not None
         assert sc["sectors"] == VALID_SECTORS
         assert sc["sector_limits"] is None
@@ -259,6 +259,6 @@ class TestMaxSectorWeight:
             sectors=VALID_SECTORS,
             max_sector_weight=0.35,
         ))
-        sc = config.agent.sector_config
+        sc = config.debate_setup.sector_config
         assert sc is not None
         assert sc["max_sector_weight"] == 0.35

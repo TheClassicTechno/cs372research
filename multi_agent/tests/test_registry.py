@@ -101,6 +101,7 @@ class TestPromptRegistryBuild:
         """High β critique → adversarial tone injected."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.9, user_prompt="test critique",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "ADVERSARIAL" in result.system_prompt
         assert "tone" in result.blocks_used
@@ -112,6 +113,7 @@ class TestPromptRegistryBuild:
         """Low β critique → collaborative tone injected."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.1, user_prompt="test critique",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "COLLABORATIVE" in result.system_prompt
         assert result.beta_bucket == "collaborative"
@@ -121,6 +123,7 @@ class TestPromptRegistryBuild:
         """Mid β critique → balanced tone injected."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.5, user_prompt="test critique",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "BALANCED" in result.system_prompt
         assert result.beta_bucket == "balanced"
@@ -129,6 +132,7 @@ class TestPromptRegistryBuild:
         """High β revise → firm revision tone."""
         result = self.registry.build(
             role="value", phase="revise", beta=0.8, user_prompt="test revise",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "FIRM" in result.system_prompt
         assert result.tone_file == "revise_adversarial.txt"
@@ -137,14 +141,16 @@ class TestPromptRegistryBuild:
         """Low β revise → integrative revision tone."""
         result = self.registry.build(
             role="value", phase="revise", beta=0.1, user_prompt="test revise",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "INTEGRATIVE" in result.system_prompt
         assert result.tone_file == "revise_collaborative.txt"
 
     def test_propose_no_tone(self):
-        """Propose phase gets no tone injection regardless of β."""
+        """Propose phase gets no tone injection when tone not in block_order."""
         result = self.registry.build(
             role="macro", phase="propose", beta=0.9, user_prompt="test propose",
+            block_order=["role_system"],
         )
         assert "ADVERSARIAL" not in result.system_prompt
         assert "tone" not in result.blocks_used
@@ -155,6 +161,7 @@ class TestPromptRegistryBuild:
         """Judge phase gets no tone injection."""
         result = self.registry.build(
             role="judge", phase="judge", beta=None, user_prompt="test judge",
+            block_order=["judge_system"],
         )
         assert "Judge" in result.system_prompt
         assert "tone" not in result.blocks_used
@@ -164,6 +171,7 @@ class TestPromptRegistryBuild:
         """When β is None, no tone injection even for critique/revise."""
         result = self.registry.build(
             role="macro", phase="critique", beta=None, user_prompt="test",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "tone" not in result.blocks_used
         assert result.beta_bucket == ""
@@ -173,6 +181,7 @@ class TestPromptRegistryBuild:
         for beta_val in [0.0, 0.1, 0.5, 0.9, 1.0]:
             result = self.registry.build(
                 role="macro", phase="critique", beta=beta_val, user_prompt="test",
+                block_order=["role_system", "phase_preamble", "tone"],
             )
             # Check that the numeric beta doesn't appear
             assert str(beta_val) not in result.system_prompt
@@ -181,6 +190,7 @@ class TestPromptRegistryBuild:
         """Critique system prompt includes role preamble."""
         result = self.registry.build(
             role="risk", phase="critique", beta=0.5, user_prompt="test",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
         assert "RISK" in result.system_prompt
         assert "critique" in result.system_prompt.lower() or "Provide" in result.system_prompt
@@ -189,11 +199,10 @@ class TestPromptRegistryBuild:
         """Custom block_order changes the assembly order."""
         result_default = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
+            block_order=["causal_contract", "role_system", "phase_preamble", "tone"],
         )
         result_reversed = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
             block_order=["tone", "phase_preamble", "role_system", "causal_contract"],
         )
         # Both should have same blocks but in different order
@@ -205,7 +214,6 @@ class TestPromptRegistryBuild:
         """Block order with subset of blocks — others excluded."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
             block_order=["role_system"],
         )
         assert result.blocks_used == ["role_system"]
@@ -214,10 +222,11 @@ class TestPromptRegistryBuild:
         """Override role file via prompt_file_overrides."""
         result = self.registry.build(
             role="macro", phase="propose",
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+            block_order=["role_system"],
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
         )
         assert "role_system" in result.blocks_used
-        # Should load the slim variant
+        # Should load the diverse variant
 
 
 # ---------------------------------------------------------------------------

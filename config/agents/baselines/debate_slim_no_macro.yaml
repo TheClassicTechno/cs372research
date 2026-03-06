@@ -15,33 +15,6 @@ case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
 
-tickers:
-  - TSLA    # Consumer / Auto
-  - NFLX    # Comm / Media
-  - JPM     # Financials
-  - GS      # Financials
-  - BAC     # Financials
-  - UNH     # Healthcare
-  - LLY     # Healthcare
-  - JNJ     # Healthcare
-  - XOM     # Energy
-  - CAT     # Industrials
-  - DAL     # Industrials / Transport
-  - AMT     # Real Estate
-  - COST    # Consumer Staples
-  - WMT     # Consumer Staples
-
-# Allocation constraints enforced on final portfolio output:
-#   max_weight:     max fraction any single ticker can receive (0.20 = 20%)
-#   min_holdings:   minimum number of tickers with weight > 0
-#   fully_invested: if true, weights must sum to 1.0 (no cash reserve)
-#   max_tickers:    upper bound on universe size (validation only)
-allocation_constraints:
-  max_weight: 0.20
-  min_holdings: 5
-  fully_invested: true
-  max_tickers: 20
-
 num_episodes: 1
 
 agent:
@@ -52,7 +25,7 @@ agent:
   max_retries: 3
 
   # 7 debate rounds for PID to have room to adjust
-  max_rounds: 4
+  max_rounds: 1
 
   # --- Prompt profile ---
   # Profiles live in multi_agent/prompts/profiles/<name>.yaml and define which
@@ -87,22 +60,23 @@ agent:
   #
   # System contract:
   #   causal_contract  — shared causal reasoning contract
-  prompt_profile: "diverse_agents"
+  prompt_profile: "minimal"
   prompt_file_overrides:
-    role_macro: "roles/macro_diverse.txt"
-    role_value: "roles/value_diverse.txt"
-    role_technical: "roles/technical_diverse.txt"
-    role_risk: "roles/risk_diverse.txt"
-    output_allocation: "output_format/allocation_output_diverse.txt"
+    # role_macro: "roles/macro_slim.txt"
+    role_value: "roles/value_slim.txt"
+    role_technical: "roles/technical_slim.txt"
+    role_risk: "roles/risk_slim.txt"
+    output_allocation: "output_format/allocation_output_slim.txt"
+
+  debate_roles:
+    - value
+    - risk
+    - technical
 
   # PID enabled
-  pid_enabled: true
-  pid_kp: 0.15
-  pid_ki: 0.01
-  pid_kd: 0.03
-  pid_rho_star: 0.8
-  pid_initial_beta: 0.5
-  pid_epsilon: 0.001
+  pid_enabled: false
+  propose_only: true
+  judge_type: "average"
 
   # Structured debate logging to logging/runs/<experiment>/run_<timestamp>/
   # Modes:
@@ -123,7 +97,7 @@ agent:
   # Parallel agent execution (max 2 concurrent LLM calls). This setting seems to avoid triggering rate limits
   parallel_agents: true
   llm_stagger_ms: 500
-  max_concurrent_llm: 2
+  max_concurrent_llm: 3
 
 broker:
   initial_cash: 100000.0

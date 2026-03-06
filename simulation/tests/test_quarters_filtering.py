@@ -84,7 +84,7 @@ class TestSimulationConfigQuarters:
             "tickers": ["NVDA"],
             "invest_quarter": "2025Q1",
             "quarters": ["Q2", "Q4"],
-            "agent": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
+            "debate_setup": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
         }
         yaml_path = tmp_path / "test.yaml"
         yaml_path.write_text(yaml.dump(yaml_content), encoding="utf-8")
@@ -97,7 +97,7 @@ class TestSimulationConfigQuarters:
             "dataset_path": "data/cases",
             "tickers": ["NVDA"],
             "invest_quarter": "2025Q1",
-            "agent": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
+            "debate_setup": {"agent_system": "single_llm", "llm_provider": "openai", "llm_model": "gpt-4o"},
         }
         yaml_path = tmp_path / "test.yaml"
         yaml_path.write_text(yaml.dump(yaml_content), encoding="utf-8")

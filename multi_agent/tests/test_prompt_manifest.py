@@ -12,7 +12,6 @@ import pytest
 
 from multi_agent.config import AgentRole, DebateConfig
 from multi_agent.prompts.registry import (
-    _DEFAULT_BLOCK_ORDER,
     _TONE_FILES,
     beta_to_bucket,
     build_prompt_manifest,
@@ -30,8 +29,6 @@ def _make_config(**overrides) -> dict:
     """Build a minimal LangGraph-style config dict."""
     cfg = {
         "roles": DEFAULT_ROLES,
-        "use_system_causal_contract": False,
-        "system_prompt_block_order": list(_DEFAULT_BLOCK_ORDER),
         "prompt_file_overrides": {},
     }
     cfg.update(overrides)
@@ -44,30 +41,12 @@ def _make_config(**overrides) -> dict:
 class TestBuildPromptManifest:
     """Verify file-name resolution without loading content."""
 
-    def test_block_order_matches_config(self):
+    def test_role_files_are_full_variants(self):
+        """Role files always use roles/{role}.txt (no slim variants)."""
         config = _make_config()
         m = build_prompt_manifest(config)
-        assert m["block_order"] == list(_DEFAULT_BLOCK_ORDER)
-
-    def test_custom_block_order(self):
-        order = ["role_system", "tone"]
-        config = _make_config(system_prompt_block_order=order)
-        m = build_prompt_manifest(config)
-        assert m["block_order"] == order
-
-    def test_role_files_without_causal_contract(self):
-        config = _make_config(use_system_causal_contract=False)
-        m = build_prompt_manifest(config)
-        assert "causal_contract" not in m
         for role in DEFAULT_ROLES:
             assert m["role_files"][role] == f"roles/{role}.txt"
-
-    def test_role_files_with_causal_contract(self):
-        config = _make_config(use_system_causal_contract=True)
-        m = build_prompt_manifest(config)
-        assert m["causal_contract"] == "system_contract/system_causal_contract.txt"
-        for role in DEFAULT_ROLES:
-            assert m["role_files"][role] == f"roles/{role}_slim.txt"
 
     def test_role_file_override(self):
         config = _make_config(
@@ -76,14 +55,6 @@ class TestBuildPromptManifest:
         m = build_prompt_manifest(config)
         assert m["role_files"]["macro"] == "custom/macro_v2.txt"
         assert m["role_files"]["value"] == "roles/value.txt"
-
-    def test_causal_contract_override(self):
-        config = _make_config(
-            use_system_causal_contract=True,
-            prompt_file_overrides={"causal_contract": "custom/cc.txt"},
-        )
-        m = build_prompt_manifest(config)
-        assert m["causal_contract"] == "custom/cc.txt"
 
     def test_tone_files_adversarial(self):
         config = _make_config(_current_beta=0.8)

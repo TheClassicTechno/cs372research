@@ -5,13 +5,13 @@
 # See config/debate_diverse_agents.yaml for a complete example.
 
 system_blocks:
-  - role_system
-  - phase_preamble
-  - tone
+  propose:  [role_system]
+  critique: [role_system, phase_preamble, tone]
+  revise:   [role_system, phase_preamble, tone]
+  judge:    [judge_system]
 
 user_sections:
-  - preamble
-  - context
-  - agent_data
-  - task
-  - output_format
+  propose:  [context, task, output_format]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, output_format]
+  judge:    [preamble, context, agent_data, task, output_format]
