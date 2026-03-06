@@ -58,6 +58,11 @@ def _get_user_sections_from_profile(config: dict, role: str, phase: str) -> list
     return usr.get("sections")
 
 from .allocation import normalize_allocation
+from .proposal_renderer import (
+    render_critiques_received,
+    render_others_proposals,
+    render_previous_proposal,
+)
 from .sector_constraints import (
     build_sector_constraint_text,
     build_sector_map,
@@ -322,7 +327,10 @@ def critique_node(state: DebateState) -> dict:
         role = p["role"]
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
+        others_text_v2 = render_others_proposals(source, role)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -339,6 +347,8 @@ def critique_node(state: DebateState) -> dict:
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            others_text_v2=others_text_v2,
         )
 
         if use_profiles:
@@ -422,7 +432,9 @@ def revise_node(state: DebateState) -> dict:
         role = p["role"]
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
 
         # Collect critiques targeted at this role.
         # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
@@ -435,7 +447,13 @@ def revise_node(state: DebateState) -> dict:
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
                         "falsifier": crit.get("falsifier"),
+                        "target_claim": crit.get("target_claim"),
+                        "counter_evidence": crit.get("counter_evidence"),
+                        "portfolio_implication": crit.get("portfolio_implication"),
+                        "suggested_adjustment": crit.get("suggested_adjustment"),
+                        "objection_confidence": crit.get("objection_confidence"),
                     })
+        critiques_text_v2 = render_critiques_received(critiques_received)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -452,6 +470,8 @@ def revise_node(state: DebateState) -> dict:
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            critiques_text_v2=critiques_text_v2,
         )
 
         if use_profiles:
@@ -704,7 +724,10 @@ def make_critique_node(role: str):
         i = roles.index(role) if role in roles else 0
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
+        others_text_v2 = render_others_proposals(source, role)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -721,6 +744,8 @@ def make_critique_node(role: str):
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            others_text_v2=others_text_v2,
         )
 
         if use_profiles:
@@ -817,7 +842,9 @@ def make_revise_node(role: str):
         i = roles.index(role) if role in roles else 0
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
 
         # Collect critiques targeted at this role.
         # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
@@ -830,7 +857,13 @@ def make_revise_node(role: str):
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
                         "falsifier": crit.get("falsifier"),
+                        "target_claim": crit.get("target_claim"),
+                        "counter_evidence": crit.get("counter_evidence"),
+                        "portfolio_implication": crit.get("portfolio_implication"),
+                        "suggested_adjustment": crit.get("suggested_adjustment"),
+                        "objection_confidence": crit.get("objection_confidence"),
                     })
+        critiques_text_v2 = render_critiques_received(critiques_received)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -847,6 +880,8 @@ def make_revise_node(role: str):
             prompt_file_overrides=config.get("prompt_file_overrides"),
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            critiques_text_v2=critiques_text_v2,
         )
 
         if use_profiles:

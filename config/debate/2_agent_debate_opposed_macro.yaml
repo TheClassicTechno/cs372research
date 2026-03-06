@@ -1,0 +1,80 @@
+# ============================================================================
+# Debate — Inflation Narrative Clash (Two-Agent Setup)
+# ============================================================================
+# Designed for the compact 2021 inflation emergence scenario.
+#
+# Two agents represent competing macro interpretations:
+#
+#   inflation_hawk   → structural inflation thesis
+#   growth_defender  → transitory inflation / tech leadership thesis
+#
+# Run with:
+#   python run_simulation.py --agents config/debate/debate_inflation_two_agent.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+num_episodes: 1
+
+
+# ============================================================================
+# Agents
+# ============================================================================
+
+agents:
+
+  inflation_hawk: "inflation_hawk_profile"
+  growth_defender: "growth_defender_profile"
+
+judge_profile: "judge_standard"
+
+
+# ============================================================================
+# Debate Setup
+# ============================================================================
+
+debate_setup:
+
+  agent_system: "multi_agent_debate"
+
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 4
+
+
+  # --------------------------------------------------------------------------
+  # PID Controller
+  # --------------------------------------------------------------------------
+
+  pid_enabled: true
+
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+  pid_epsilon: 0.001
+
+
+  # --------------------------------------------------------------------------
+  # Runtime settings
+  # --------------------------------------------------------------------------
+
+  logging_mode: "debug"
+
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 2
+
+
+# ============================================================================
+# Broker
+# ============================================================================
+
+broker:
+  initial_cash: 100000.0

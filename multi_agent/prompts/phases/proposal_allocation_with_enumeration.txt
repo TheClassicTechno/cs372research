@@ -1,0 +1,114 @@
+---SECTION: context---
+{{ context }}
+
+---SECTION: task---
+Using the data above, analyze the investment universe and propose a portfolio allocation.
+
+Your reasoning must be structured around **numbered causal claims** that justify your allocation decisions.
+
+Each claim should represent a **distinct hypothesis about market behavior, macro dynamics, or company fundamentals** that supports your portfolio weights.
+
+Limit yourself to **3–5 claims maximum**.
+Each claim should be materially different and provide independent reasoning.
+
+Your portfolio allocation should follow logically from these claims.
+
+---
+
+CRITICAL — Evidence citation rules:
+
+• Every factual claim about a ticker or macro condition MUST include at least one bracketed evidence ID copied verbatim from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]).
+
+• Valid IDs use the exact format from the memo:
+[TICKER-METRIC] or [L1-METRIC]
+
+• NEVER invent your own labels. NEVER use free-text slugs such as
+"aaplrevenuegrowth" or "portfoliorisk".
+
+• If you cannot find a bracketed ID supporting a claim, **do not make that claim**.
+
+• Claims without valid citations are treated as unsupported by the evaluation system.
+
+{{ sector_constraints }}
+
+---
+
+---SECTION: reasoning_structure---
+
+Your reasoning must follow this structure.
+
+First, produce **numbered claims**.
+
+Each claim must:
+
+• be labeled **C1, C2, C3, ...**
+• describe a **causal mechanism** affecting asset performance
+• include at least one valid evidence citation
+• explain why the mechanism affects expected returns or risk
+
+Example structure:
+
+C1 — Macro regime implication
+C2 — Sector or factor implication
+C3 — Company-specific thesis
+
+Claims should connect **macro → sector → security** where possible.
+
+Each claim should also include:
+
+• Assumptions — conditions required for the claim to hold
+• Falsifiers — what evidence would invalidate the claim
+
+Example:
+
+C1: Rising real yields may pressure long-duration growth equities because higher discount rates reduce the present value of distant cash flows [L1-REAL].
+
+Assumptions:
+
+* Real rates remain elevated
+* Equity risk premium does not expand enough to offset valuation compression
+
+Falsifiers:
+
+* Real yields fall materially
+* Growth earnings surprise offsets valuation pressure
+
+---
+
+---SECTION: portfolio_construction---
+
+After stating claims, construct a portfolio allocation consistent with your reasoning.
+
+For each position:
+
+• Specify ticker and weight
+• Explain which claim(s) justify the allocation
+• Explain risk considerations
+
+Portfolio weights should follow from the **strength and interaction of the claims**.
+
+Example linkage:
+
+If C1 and C2 imply technology outperformance, overweight relevant securities.
+
+If a claim highlights macro risk, reduce exposure to sensitive sectors.
+
+Follow these rules carefully:
+
+• Use **3–5 claims maximum**
+• Every claim must cite evidence
+• Every major allocation must reference at least one claim
+• Avoid unsupported narrative speculation
+• Distinguish clearly between evidence and interpretation
+
+---
+
+---SECTION: scaffolding---
+{{ causal_claim_format }}
+{{ forced_uncertainty }}
+{{ trap_awareness }}
+
+---
+
+---SECTION: output_format---
+{{ allocation_output_instructions_enumerated }}

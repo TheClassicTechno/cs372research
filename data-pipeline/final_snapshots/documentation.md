@@ -258,7 +258,7 @@ All data points are tagged with bracketed IDs for agent citation:
 | `[TICKER-BETA]` | `[NVDA-BETA]` | 1Y beta |
 | `[TICKER-SENT]` | `[MSFT-SENT]` | Mean sentiment |
 | `[TICKER-CSZ]` | `[GOOG-CSZ]` | Cross-sectional sentiment Z |
-| `[TICKER-F*]` | `[JPM-F1]` | Filing summary fields |
+| `[TICKER-F*]` | `[JPM-F1]` | Filing evidence sentences (one fact per ID) |
 | `[TICKER-EV*]` | `[DAL-EV1]` | 8-K event filings |
 
 ### Ticker Filtering

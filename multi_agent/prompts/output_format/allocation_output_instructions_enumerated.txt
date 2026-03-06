@@ -1,0 +1,239 @@
+## Output Format
+
+Respond with **valid JSON only** (no markdown, no commentary, no extra text).
+
+---
+
+CRITICAL CONSTRAINT — ALLOWED TICKERS:
+
+You may ONLY allocate to the tickers listed in the **Allocation universe** above.
+
+Do NOT include any other tickers.
+
+Your JSON `"allocation"` object must:
+
+• contain ONLY tickers from the allocation universe
+• contain **ALL tickers in the universe** (use 0.0 if not allocated)
+
+---
+
+Example — if the universe is `[AAPL, NVDA, MSFT]`
+
+{
+  "allocation": {"AAPL": 0.40, "NVDA": 0.35, "MSFT": 0.25},
+  "claims": [...],
+  "position_rationale": [...],
+  "portfolio_rationale": "...",
+  "confidence": 0.75,
+  "risks_or_falsifiers": ["..."]
+}
+
+WRONG (ticker not in universe):
+
+{
+  "allocation": {"AAPL": 0.30, "NFLX": 0.30, "MSFT": 0.40}
+}
+
+^^^ NFLX is not in the universe — this is INVALID.
+
+---
+
+## Full JSON Schema
+
+{
+  "allocation": {
+    "TICKER": 0.XX
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "... concise causal hypothesis with inline evidence citations ...",
+      "pearl_level": "L1" | "L2" | "L3",
+      "evidence": ["[EVIDENCE-ID]", "..."],
+      "variables": ["X", "Y"],
+      "assumptions": ["..."],
+      "falsifiers": ["..."],
+      "impacts_positions": ["TICKER", "..."],
+      "confidence": 0.0-1.0
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "TICKER",
+      "weight": 0.XX,
+      "supported_by_claims": ["C1", "C2"],
+      "explanation": "Explain why these claims justify the allocation and how they affect expected return or risk."
+    }
+  ],
+
+  "portfolio_rationale": "Explain how the claims jointly imply this portfolio structure, including major overweights, underweights, and risk tradeoffs.",
+
+  "confidence": 0.0-1.0,
+
+  "risks_or_falsifiers": [
+    "Portfolio-level condition that would invalidate the strategy."
+  ]
+}
+
+---
+
+## CLAIM RULES
+
+• Use **3–5 claims maximum**
+
+• Each claim must have a **unique ID**
+  C1, C2, C3, ...
+
+• Each claim must represent a **distinct causal hypothesis**
+
+• Claims should ideally follow a structure such as:
+
+  C1 — macro regime effect
+  C2 — sector or factor implication
+  C3 — company-specific thesis
+
+• Claims should be **concise and atomic**
+
+• Do NOT write long essays or bundle multiple unrelated ideas into one claim
+
+• Claims should connect **macro → sector/factor → security** where possible
+
+• Claims that do not influence any positions are INVALID
+
+---
+
+## CLAIM EVIDENCE REQUIREMENT
+
+Every claim MUST cite **at least one valid evidence ID**.
+
+Evidence IDs must appear in both:
+
+• the `"evidence"` field
+• the `"claim_text"` itself
+
+Example:
+
+{
+  "claim_id": "C1",
+  "claim_text": "Rising real yields increase discount rates and may pressure long-duration growth equities [L1-REAL].",
+  "evidence": ["[L1-REAL]"],
+  ...
+}
+
+Claims without valid citations will be scored as **unsupported reasoning**.
+
+---
+
+## CLAIM → POSITION LINK REQUIREMENT
+
+Each claim must specify which positions it affects using:
+
+"impacts_positions": ["TICKER", "..."]
+
+Rules:
+
+• Every claim must affect at least one ticker in the allocation universe
+• Every ticker with weight > 0 must appear in at least one claim’s `"impacts_positions"`
+• `"impacts_positions"` should include only tickers from the allocation universe
+
+This prevents dead reasoning that does not affect the portfolio.
+
+---
+
+## POSITION RATIONALE RULE
+
+Every ticker with weight > 0 MUST appear in `"position_rationale"` and MUST reference **at least one claim ID**.
+
+Example:
+
+{
+  "ticker": "NVDA",
+  "weight": 0.30,
+  "supported_by_claims": ["C2", "C3"],
+  "explanation": "C2 supports tech leadership while C3 supports firm-specific upside."
+}
+
+Rules:
+
+• Every ticker with weight > 0 must have a rationale entry
+• The `"weight"` in each rationale entry must match the `"allocation"` object
+• `"supported_by_claims"` must reference valid claim IDs
+• If a ticker has weight 0.0, it does not need a position_rationale entry
+
+This creates a **traceable mapping between reasoning and allocation decisions**.
+
+---
+
+## PORTFOLIO COHERENCE RULE
+
+Your portfolio must be consistent with your claims.
+
+That means:
+
+• if a claim says a sector or factor should outperform, the allocation should reflect that
+• if a claim identifies major risk, the allocation should reflect reduced exposure where appropriate
+• do NOT produce claims that are disconnected from the final weights
+• do NOT produce weights that are not justified by claims
+
+Unsupported allocations will be treated as weak reasoning.
+
+---
+
+## ALLOCATION RULES
+
+• Include EVERY ticker from the allocation universe — no more, no fewer
+• Weights must be between **0.0 and 0.40** (max 40% per ticker)
+• Weights MUST **sum to 1.0**
+• At least **3 tickers must have weight > 0**
+• A weight of **0.0 means zero allocation**
+
+Higher weight = stronger conviction.
+
+---
+
+## EVIDENCE CITATIONS
+
+When making claims about specific data, you MUST cite the evidence ID
+from the memo in square brackets.
+
+Example:
+
+"NVDA shows strong momentum [NVDA-MOM200] but elevated volatility [NVDA-VOL60]
+in a rising rate environment [L1-10Y]."
+
+Available evidence ID categories:
+
+[L1-*]         Macro metrics (e.g. [L1-FF], [L1-VIX], [L1-CPI])
+[TICKER-PX]    Close price
+[TICKER-RET*]  Returns (RET20, RET60, RET120, RET252)
+[TICKER-VOL*]  Volatility (VOL20, VOL60)
+[TICKER-BETA]  Beta
+[TICKER-SHARPE] Sharpe ratio
+[TICKER-F*] Filing evidence sentences (granular, one fact per ID)
+[TICKER-SENT]  Sentiment
+[TICKER-GM]    Gross margin
+[TICKER-ROE]   ROE
+[TICKER-DE]    Debt/Equity
+
+Cite ALL evidence you rely on.
+
+Claims without valid citations will be scored as **unsupported reasoning**.
+
+---
+
+## FINAL VALIDITY CHECKS
+
+Before responding, ensure all of the following are true:
+
+• allocation includes all and only allowed tickers
+• weights sum to 1.0
+• 3–5 claims are present
+• claim IDs are C1, C2, ... and unique
+• every claim has evidence, assumptions, falsifiers, and impacts_positions
+• every positive-weight ticker is supported by at least one claim
+• every positive-weight ticker appears in position_rationale
+• position_rationale references valid claim IDs
+• portfolio_rationale explains the overall structure
+• risks_or_falsifiers contains portfolio-level invalidation conditions

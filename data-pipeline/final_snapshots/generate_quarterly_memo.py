@@ -25,11 +25,20 @@ Examples:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+
+_SENTENCE_SPLIT_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z])')
+
+
+def _split_sentences(text: str) -> list[str]:
+    """Split filing summary text into individual sentences."""
+    sentences = _SENTENCE_SPLIT_RE.split(text.strip())
+    return [s.strip() for s in sentences if s.strip()]
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _PIPELINE_DIR = _SCRIPT_DIR.parent
@@ -345,11 +354,11 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
         if fiscal and fiscal_year_end != "12-31":
             month_str = _MONTH_NAMES.get(fiscal_year_end[:2], fiscal_year_end[:2])
             day_str = fiscal_year_end[3:]
-            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal} [FYE: {month_str} {day_str}]):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}, fiscal period: {fiscal} [FYE: {month_str} {day_str}]):")
         elif fiscal:
-            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal}):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}, fiscal period: {fiscal}):")
         else:
-            lines.append(f"  Filing Summary ({form}, filed {fdate}):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}):")
 
         fields = [
             ("operating_state", "Operations"),
@@ -360,11 +369,12 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
             ("uncertainty_profile", "Risks/Uncertainty"),
         ]
         tag_idx = 1
-        for field_key, label in fields:
+        for field_key, _label in fields:
             text = periodic.get(field_key)
             if text:
-                lines.append(f"    [{ticker}-F{tag_idx}] {label}: {text}")
-                tag_idx += 1
+                for sentence in _split_sentences(text):
+                    lines.append(f"    [{ticker}-F{tag_idx}] {sentence}")
+                    tag_idx += 1
     else:
         lines.append("  Filing summary: not available")
 

@@ -582,6 +582,9 @@ async def _main() -> None:
         _print_prompt_manifest(config)
         return
 
+    # Validate that tickers + invest_quarter are present (supplied by scenario).
+    config.validate_ready()
+
     # Validate agent profiles if using the new system
     if config.debate_setup.agents:
         from multi_agent.prompts.profile_loader import validate_all_profiles

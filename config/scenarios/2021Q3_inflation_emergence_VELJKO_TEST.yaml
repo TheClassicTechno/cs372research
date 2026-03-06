@@ -1,0 +1,162 @@
+# ============================================================================
+# Scenario: 2021 Inflation Emergence Debate (Q3 2021 Data → Q4 Investment)
+# ============================================================================
+# Reduced universe version optimized for LLM debate efficiency
+#
+# Demonstrates sector configuration features:
+#   - Ticker → sector mapping
+#   - Per-sector exposure limits (min/max)
+#   - Role-specific sector permissions
+#
+# Decision point: Start of Q4 2021
+# Data available to agents: End of Q3 2021
+#
+# Narrative tensions:
+#   - Inflation “transitory” vs structural inflation
+#   - Growth tech leadership vs rising-rate risk
+#   - Energy / commodity cycle vs demand uncertainty
+#   - Defensive stability vs reopening cyclicals
+#
+# Universe reduced to 11 tickers to minimize token cost
+# while preserving macro narrative diversity.
+#
+# Usage:
+#   python run_simulation.py \
+#     --agents config/agents/debate_diverse_agents.yaml \
+#     --scenario config/scenarios/inflation_emergence_compact.yaml
+
+invest_quarter: "2021Q4"
+
+tickers:
+  - AAPL
+  - NVDA
+  - JPM
+  - XOM
+  - SLB
+  - CAT
+  - AMZN
+  - TSLA
+  - WMT
+  - PG
+  - UNH
+
+debate_setup:
+    crit_system_template: "crit_system_enumerated.jinja"
+    crit_user_template: "crit_user_enumerated.jinja"
+
+# ============================================================================
+# Sector definitions
+# Every ticker belongs to exactly one sector
+# ============================================================================
+
+sectors:
+
+  tech:
+    - AAPL
+    - NVDA
+
+  financials:
+    - JPM
+
+  energy:
+    - XOM
+    - SLB
+
+  industrials:
+    - CAT
+
+  consumer:
+    - AMZN
+    - TSLA
+
+  defensive:
+    - WMT
+    - PG
+
+  healthcare:
+    - UNH
+
+
+# ============================================================================
+# Sector exposure limits
+# Adjusted for smaller universe
+# ============================================================================
+
+sector_limits:
+
+  tech:
+    min: 0.05
+    max: 0.35
+
+  energy:
+    min: 0.05
+    max: 0.30
+
+  financials:
+    min: 0.03
+    max: 0.25
+
+  defensive:
+    min: 0.05
+    max: 0.25
+
+  consumer:
+    min: 0.05
+    max: 0.30
+
+  healthcare:
+    min: 0.03
+    max: 0.20
+
+  industrials:
+    min: 0.03
+    max: 0.25
+
+
+# ============================================================================
+# Role-specific sector permissions
+# Encourages ideological disagreement between agents
+# ============================================================================
+
+agent_sector_permissions:
+
+  macro:
+    - energy
+    - financials
+    - industrials
+    - tech
+
+  value:
+    - financials
+    - industrials
+    - energy
+    - defensive
+
+  technical:
+    - "*"
+
+  risk:
+    - defensive
+    - healthcare
+    - financials
+
+
+# ============================================================================
+# Global sector constraint
+# Prevents single-theme portfolios
+# ============================================================================
+
+max_sector_weight: 0.40
+
+
+# ============================================================================
+# Portfolio allocation constraints
+# Tuned for smaller ticker universe
+# ============================================================================
+
+allocation_constraints:
+
+  max_weight: 0.25
+  min_holdings: 4
+  fully_invested: true
+  max_tickers: 10
