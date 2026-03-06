@@ -59,6 +59,7 @@ class AsyncSimulationRunner:
             invest_quarter=self._config.invest_quarter,
             memo_format=self._config.memo_format,
             tickers=self._config.tickers,
+            memo_override_path=self._config.memo_override_path,
         )
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))

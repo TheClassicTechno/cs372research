@@ -373,6 +373,11 @@ class SimulationConfig(BaseModel):
         description="Invest quarter for memo mode, e.g. '2025Q1'. "
         "Agents see the prior quarter's data and allocate for this quarter.",
     )
+    memo_override_path: str | None = Field(
+        default=None,
+        description="If set, load the memo from this path instead of the default "
+        "memo_data/ directory. Used for scenario-specific memo caching.",
+    )
     allocation_constraints: AllocationConstraints = Field(
         default_factory=AllocationConstraints,
         description="Allocation weight constraints (memo mode only).",
