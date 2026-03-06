@@ -131,6 +131,67 @@ def detect_columns(ds: Dataset) -> Dict[str, Optional[str]]:
     }
 
 
+def build_ticker_quarter_index(
+    ds: Dataset,
+    cols: Dict[str, Optional[str]],
+) -> Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]]:
+    """Build a (ticker, year, quarter) -> [records] index in a single pass.
+
+    Quarter may be None when it cannot be inferred from the row.
+    Returns a defaultdict so missing keys return [].
+    """
+    from collections import defaultdict
+
+    symbol_col = cols["symbol"]
+    year_col = cols["year"]
+    quarter_col = cols["quarter"]
+    date_col = cols["date"]
+
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]] = defaultdict(list)
+
+    if not symbol_col or not year_col:
+        return index
+
+    for row in ds:
+        row_dict = dict(row)
+        ticker = str(row_dict.get(symbol_col, "")).upper()
+        try:
+            year = int(row_dict.get(year_col, -1))
+        except (ValueError, TypeError):
+            continue
+        if year < 0 or not ticker:
+            continue
+
+        q_val: Optional[int] = None
+        if quarter_col:
+            q_val = _quarter_from_any(row_dict.get(quarter_col))
+        if q_val is None and date_col:
+            q_val = _quarter_from_date_string(str(row_dict.get(date_col, "")))
+
+        index[(ticker, year, q_val)].append(row_dict)
+
+    return index
+
+
+def lookup_ticker_quarter(
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]],
+    ticker: str,
+    year: int,
+    quarter: int,
+) -> List[Dict[str, Any]]:
+    """O(1) lookup from pre-built index, preserving the original quarter-inference logic."""
+    records = list(index.get((ticker, year, quarter), []))
+
+    # Original fallback: if quarter could not be inferred for a row, it is
+    # stored under (ticker, year, None).  Keep those only if there is exactly
+    # one record for that ticker-year with unknown quarter.
+    unknown_q = index.get((ticker, year, None), [])
+    if unknown_q and len(unknown_q) == 1:
+        records.extend(unknown_q)
+
+    return records
+
+
 def filter_records_for_ticker_quarter(
     ds: Dataset,
     cols: Dict[str, Optional[str]],
@@ -356,6 +417,18 @@ def main() -> None:
         print(f"Columns detected: {ds.column_names}", file=sys.stderr)
         sys.exit(1)
 
+    print("Building ticker-quarter index...", flush=True)
+    tq_index = build_ticker_quarter_index(ds, cols)
+    none_q_count = sum(1 for k in tq_index if k[2] is None)
+    print(
+        f"Indexed {len(ds)} rows into {len(tq_index)} groups "
+        f"({none_q_count} with unknown quarter).",
+        flush=True,
+    )
+    # Show a few sample keys for debugging
+    sample_keys = list(tq_index.keys())[:5]
+    print(f"Sample index keys: {sample_keys}", flush=True)
+
     print("Loading FinBERT...", flush=True)
     tokenizer, model, device = init_finbert()
     print(f"Using device: {device}", flush=True)
@@ -373,7 +446,7 @@ def main() -> None:
                 skipped += 1
                 continue
 
-            records = filter_records_for_ticker_quarter(ds, cols, ticker, year, quarter)
+            records = lookup_ticker_quarter(tq_index, ticker, year, quarter)
             if not records:
                 missing += 1
                 continue
