@@ -50,13 +50,20 @@ def render_previous_proposal(action_dict: dict) -> str:
             assumptions = claim.get("assumptions", [])
             confidence = claim.get("confidence")
 
+            evidence = claim.get("evidence", [])
+            falsifiers = claim.get("falsifiers", [])
+
             entry = f"{cid}: {text}"
             if pearl:
                 entry += f"\n  Pearl Level: {pearl}"
+            if evidence:
+                entry += f"\n  Evidence: {', '.join(str(e) for e in evidence)}"
             if variables:
                 entry += f"\n  Variables: {', '.join(str(v) for v in variables)}"
             if assumptions:
                 entry += f"\n  Assumptions: {', '.join(str(a) for a in assumptions)}"
+            if falsifiers:
+                entry += f"\n  Falsifiers: {', '.join(str(f) for f in falsifiers)}"
             if confidence is not None:
                 entry += f"\n  Confidence: {confidence}"
             claim_lines.append(entry)

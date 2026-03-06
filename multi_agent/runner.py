@@ -156,7 +156,7 @@ def build_reasoning_bundle(
     Critical: critiques_received includes ONLY critiques targeting this
     agent. Critiques list is reset each round, so all entries are current.
     """
-    from eval.evidence import enrich_evidence_citations, extract_evidence_ids
+    from eval.evidence import enrich_evidence_citations, expand_evidence_ids_inline, extract_evidence_ids
     import copy
 
     # Find this agent's proposal
@@ -232,6 +232,13 @@ def build_reasoning_bundle(
         enrich_evidence_citations(
             crit.get("evidence_citations", []), memo_evidence_lookup,
         )
+
+    # Expand evidence IDs inline in all text fields
+    for bundle_part in (proposal_bundle, revised_bundle):
+        bundle_part["thesis"] = expand_evidence_ids_inline(bundle_part["thesis"], memo_evidence_lookup)
+        bundle_part["reasoning"] = expand_evidence_ids_inline(bundle_part["reasoning"], memo_evidence_lookup)
+    for crit in critiques_received:
+        crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)
 
     return {
         "round": round_num,
