@@ -167,18 +167,18 @@ class AsyncSimulationRunner:
 
                 # Invoke the agent.
                 t0 = time.monotonic()
-                # try:
-                result = await agent.invoke(invocation)
-                decision = result.decision
-                agent_output = result.raw_output
-                # except Exception as exc:
-                #     logger.warning(
-                #         "Agent error on case %s: %s — defaulting to hold.",
-                #         case_id,
-                #         exc,
-                #     )
-                #     decision = Decision(orders=[])
-                #     agent_output = f"ERROR: {exc}"
+                try:
+                    result = await agent.invoke(invocation)
+                    decision = result.decision
+                    agent_output = result.raw_output
+                except Exception as exc:
+                    logger.warning(
+                        "Agent error on case %s: %s — defaulting to hold.",
+                        case_id,
+                        exc,
+                    )
+                    decision = Decision(orders=[])
+                    agent_output = f"ERROR: {exc}"
 
                 elapsed = time.monotonic() - t0
             logger.info(
