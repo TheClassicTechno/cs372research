@@ -26,7 +26,7 @@ def _sim_config(**overrides) -> SimulationConfig:
         "dataset_path": "data/cases",
         "tickers": ["AAPL", "MSFT", "GOOG"],
         "invest_quarter": "2025Q1",
-        "agent": _base_agent(),
+        "debate_setup": _base_agent(),
     }
     d.update(overrides)
     return SimulationConfig(**d)

@@ -9,7 +9,6 @@
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
-invest_quarter: "2025Q1"
 
 tickers:
   - AAPL
@@ -43,21 +42,22 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+# --- Who debates ---
+agents:
+  macro: "macro_growth_rebound"
+  value: "value_inflation_persistence"
+  risk: "risk_recession_strategist"
+  technical: "technical_soft_landing"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
-  llm_model: "gpt-4o-mini"
+  llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 7
-
-  # --- Agent profiles ---
-  agents:
-    macro: "macro_growth_rebound"
-    value: "value_inflation_persistence"
-    risk: "risk_recession_strategist"
-    technical: "technical_soft_landing"
-  judge_profile: "judge_standard"
 
   pid_enabled: true
   pid_kp: 0.15

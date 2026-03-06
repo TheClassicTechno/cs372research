@@ -307,7 +307,17 @@ class SimulationConfig(BaseModel):
         description="If set, filter case_data items to top N by abs(impact_score) at load time. "
         "Items without impact_score are included after scored items. Agent never sees impact_score.",
     )
-    agent: AgentConfig = Field(description="Agent system configuration.")
+    debate_setup: AgentConfig = Field(description="Agent system configuration.")
+
+    # --- Top-level agent identity (copied into debate_setup by validator) ---
+    agents: dict[str, str] | None = Field(
+        default=None,
+        description="Top-level role→profile mapping. Copied into debate_setup.agents by validator.",
+    )
+    judge_profile: str | None = Field(
+        default=None,
+        description="Top-level judge profile name. Copied into debate_setup.judge_profile by validator.",
+    )
     broker: BrokerConfig = Field(
         default_factory=BrokerConfig,
         description="Broker / execution configuration.",
@@ -370,8 +380,17 @@ class SimulationConfig(BaseModel):
     )
 
     @model_validator(mode="after")
+    def _copy_top_level_agent_identity(self) -> SimulationConfig:
+        """Copy top-level agents/judge_profile into debate_setup so AgentConfig carries them."""
+        if self.agents is not None:
+            self.debate_setup.agents = self.agents
+        if self.judge_profile is not None:
+            self.debate_setup.judge_profile = self.judge_profile
+        return self
+
+    @model_validator(mode="after")
     def _validate_sectors(self) -> SimulationConfig:
-        """Validate sector configuration and pack into agent.sector_config."""
+        """Validate sector configuration and pack into debate_setup.sector_config."""
         if self.sectors is None:
             if self.sector_limits is not None:
                 raise ValueError("sector_limits requires 'sectors' to be defined.")
@@ -442,8 +461,8 @@ class SimulationConfig(BaseModel):
                                 f"Role '{role}' references unknown sector: '{s}'"
                             )
 
-        # Pack into agent.sector_config for the debate system
-        self.agent.sector_config = {
+        # Pack into debate_setup.sector_config for the debate system
+        self.debate_setup.sector_config = {
             "sectors": self.sectors,
             "sector_limits": (
                 {k: v.model_dump() for k, v in self.sector_limits.items()}

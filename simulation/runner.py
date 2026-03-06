@@ -81,7 +81,7 @@ class AsyncSimulationRunner:
 
         for ep_idx in range(self._config.num_episodes):
             episode_id = f"ep_{ep_idx:03d}"
-            agent_id = f"{self._config.agent.agent_system}_{ep_idx:03d}"
+            agent_id = f"{self._config.debate_setup.agent_system}_{ep_idx:03d}"
 
             try:
                 episode_log = await self._run_episode(
@@ -112,7 +112,7 @@ class AsyncSimulationRunner:
     ) -> EpisodeLog:
         """Run a single episode: iterate decision points, return the log."""
         broker = Broker(self._config.broker, self._config.tickers)
-        agent = create_agent_system(self._config.agent)
+        agent = create_agent_system(self._config.debate_setup)
 
         decision_point_logs: list[DecisionPointLog] = []
         num_cases = len(templates)

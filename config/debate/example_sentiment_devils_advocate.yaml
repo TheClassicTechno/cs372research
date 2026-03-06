@@ -23,20 +23,21 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+# --- Who debates ---
+agents:
+  value: "value_standard"
+  sentiment: "sentiment_standard"
+  devils_advocate: "devils_advocate_standard"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 3
-
-  # --- Agent profiles ---
-  agents:
-    value: "value_standard"
-    sentiment: "sentiment_standard"
-    devils_advocate: "devils_advocate_standard"
-  judge_profile: "judge_standard"
 
   pid_enabled: true
 

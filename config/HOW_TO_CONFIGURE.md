@@ -100,14 +100,20 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 5
-  prompt_profile: "diverse_agents"
   logging_mode: "standard"
 
 broker:
@@ -118,7 +124,7 @@ broker:
 
 ## Agent Configuration
 
-The agent config lives under `config/agents/` and contains the full `SimulationConfig`. Every field is documented below.
+The agent config lives under `config/debate/` and contains the full `SimulationConfig`. Every field is documented below.
 
 ### Top-Level Fields
 
@@ -130,8 +136,10 @@ The agent config lives under `config/agents/` and contains the full `SimulationC
 | `invest_quarter` | string | **required** | Target quarter, e.g. `"2025Q1"` |
 | `tickers` | list | **required** | Ticker universe (non-empty) |
 | `num_episodes` | int | `1` | Number of simulation episodes |
+| `agents` | dict | `null` | Top-level role→profile mapping (e.g. `{macro: "macro_diverse", ...}`) |
+| `judge_profile` | string | `null` | Top-level judge profile name (e.g. `"judge_standard"`) |
 
-### The `agent:` Block
+### The `debate_setup:` Block
 
 This configures the debate system itself.
 
@@ -207,7 +215,7 @@ Available roles: `macro`, `value`, `risk`, `technical`, `sentiment`, `devils_adv
 ### Complete Agent Config Example
 
 ```yaml
-# config/agents/my_custom_agents.yaml
+# config/debate/my_custom_debate.yaml
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
@@ -234,24 +242,22 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+# --- Who debates ---
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 7
-
-  # Prompt style
-  prompt_profile: "diverse_agents"
-  prompt_file_overrides:
-    role_macro: "roles/macro_diverse.txt"
-    role_value: "roles/value_diverse.txt"
-    role_technical: "roles/technical_diverse.txt"
-    role_risk: "roles/risk_diverse.txt"
-    output_allocation: "output_format/allocation_output_diverse.txt"
-
-  agreeableness: 0.2
 
   # PID controller
   pid_enabled: true
@@ -439,7 +445,7 @@ base (agents) + overlay (scenario) = merged config
 
 **Merge rules:**
 - Scenario values **override** base values at every key
-- For nested dicts (like `allocation_constraints`, `agent`), merge is recursive: scenario keys override matching base keys, but base keys not in the scenario are preserved
+- For nested dicts (like `allocation_constraints`, `debate_setup`), merge is recursive: scenario keys override matching base keys, but base keys not in the scenario are preserved
 - For non-dict values (like `tickers`, `invest_quarter`), scenario completely replaces base
 
 **Example:** Agent config has `tickers: [TSLA, NFLX, JPM]` and scenario has `tickers: [AAPL, NVDA]`. Result: `tickers: [AAPL, NVDA]` (scenario wins entirely -- no concatenation).
@@ -448,7 +454,7 @@ base (agents) + overlay (scenario) = merged config
 
 | From agent config | From scenario |
 |---|---|
-| `agent:` (LLM, prompts, PID, logging) | `invest_quarter` |
+| `debate_setup:` (LLM, prompts, PID, logging) | `invest_quarter` |
 | `broker:` | `tickers` |
 | `dataset_path` | `allocation_constraints` |
 | `case_format`, `memo_format` | `sectors`, `sector_limits` |
@@ -678,7 +684,7 @@ Minimize exposure to narrative-driven reasoning.
 Then in your agent config:
 
 ```yaml
-agent:
+debate_setup:
   debate_roles: ["macro", "quant", "risk", "technical"]
   prompt_file_overrides:
     role_quant: "roles/my_quant_role.txt"
@@ -722,13 +728,16 @@ Instead of selecting a shared profile (`prompt_profile: "default"`) and then ove
 
 ```yaml
 # config/debate/debate_diverse_agents.yaml
-agent:
-  agents:
-    macro: "macro_diverse"
-    value: "value_diverse"
-    technical: "technical_diverse"
-    risk: "risk_diverse"
-  judge_profile: "judge_standard"
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+debate_setup:
+  agent_system: "multi_agent_debate"
+  # ... LLM, PID, logging settings ...
 ```
 
 Each agent profile is a self-contained YAML in `config/agent_profiles/` that declares exactly which files are concatenated for the system prompt and which template + sections are used for the user prompt, per phase.
@@ -806,15 +815,17 @@ Debate configs in `config/debate/` use the `agents:` mapping. Roles are derived 
 
 ```yaml
 # config/debate/debate_angry_agents.yaml
-agent:
-  agents:
-    macro: "macro_angry_tech_bull"
-    value: "value_angry_inflation_hawk"
-    technical: "technical_angry_soft_landing"
-    risk: "risk_angry_recession_doom"
-  judge_profile: "judge_standard"
+agents:
+  macro: "macro_angry_tech_bull"
+  value: "value_angry_inflation_hawk"
+  technical: "technical_angry_soft_landing"
+  risk: "risk_angry_recession_doom"
+judge_profile: "judge_standard"
+
+debate_setup:
   max_rounds: 5
   pid_enabled: true
+  # ... LLM settings ...
 ```
 
 ### Composition Validation
@@ -1052,7 +1063,7 @@ Each round:
 ### Recommended Settings
 
 ```yaml
-agent:
+debate_setup:
   pid_enabled: true
   max_rounds: 7          # Give PID room to adjust
   pid_kp: 0.15           # Proportional: react to current error
@@ -1127,7 +1138,7 @@ final/
 ### Additional Logging Flags
 
 ```yaml
-agent:
+debate_setup:
   pid_log_metrics: true       # PID scalar metrics each round (to console + files)
   pid_log_llm_calls: false    # Full CRIT LLM prompts/responses (very verbose)
   log_rendered_prompts: false  # Full prompts via debate.prompts Python logger
@@ -1163,7 +1174,7 @@ When `parallel_agents: true`, all agents in each phase (propose, critique, revis
 The stagger mechanism serializes call **starts** to avoid hitting rate limits:
 
 ```yaml
-agent:
+debate_setup:
   parallel_agents: true
   llm_stagger_ms: 500     # 500ms between call starts
 ```
@@ -1173,7 +1184,7 @@ With 4 agents and 500ms stagger, calls start at t=0, t=500ms, t=1000ms, t=1500ms
 ### Concurrency Limit
 
 ```yaml
-agent:
+debate_setup:
   max_concurrent_llm: 2   # Max 2 simultaneous LLM calls
 ```
 
@@ -1193,21 +1204,21 @@ The system has built-in retry logic with exponential backoff:
 **Option 1: Increase stagger**
 
 ```yaml
-agent:
+debate_setup:
   llm_stagger_ms: 1000    # 1 second between calls
 ```
 
 **Option 2: Limit concurrency**
 
 ```yaml
-agent:
+debate_setup:
   max_concurrent_llm: 2   # Only 2 calls at once
 ```
 
 **Option 3: Both (recommended for strict rate limits)**
 
 ```yaml
-agent:
+debate_setup:
   llm_stagger_ms: 500
   max_concurrent_llm: 2
 ```
@@ -1215,7 +1226,7 @@ agent:
 **Option 4: Disable parallelism entirely**
 
 ```yaml
-agent:
+debate_setup:
   parallel_agents: false   # Sequential execution
 ```
 
@@ -1224,7 +1235,7 @@ Or via CLI: `--no-parallel`
 **Option 5: Disable stagger (if you have high rate limits)**
 
 ```yaml
-agent:
+debate_setup:
   no_rate_limit: true      # Fire all calls at once
 ```
 

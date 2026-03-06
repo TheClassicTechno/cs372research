@@ -32,20 +32,21 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+# --- Who debates ---
+agents:
+  macro: "macro_standard"
+  value: "value_standard"
+  technical: "technical_standard"
+  risk: "risk_standard"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-5-mini"
   temperature: 0.3
   max_retries: 3
-
-  # --- Agent profiles ---
-  agents:
-    macro: "macro_standard"
-    value: "value_standard"
-    technical: "technical_standard"
-    risk: "risk_standard"
-  judge_profile: "judge_standard"
 
   max_rounds: 7
 

@@ -45,7 +45,7 @@ def _sim_config(**overrides) -> SimulationConfig:
         "dataset_path": "data/cases",
         "tickers": ["AAPL", "MSFT", "GOOG"],
         "invest_quarter": "2025Q1",
-        "agent": _base_agent(),
+        "debate_setup": _base_agent(),
     }
     d.update(overrides)
     return SimulationConfig(**d)
@@ -481,7 +481,7 @@ class TestScenarioSectorPropagation:
         config = SimulationConfig(**merged)
 
         # sector_config should be packed into agent
-        sc = config.agent.sector_config
+        sc = config.debate_setup.sector_config
         assert sc is not None
         assert "sectors" in sc
         assert "sector_limits" in sc
@@ -490,7 +490,7 @@ class TestScenarioSectorPropagation:
         # Now push through the adapter
         from agents.multi_agent_debate import DebateAgentSystem
 
-        system = DebateAgentSystem(config.agent)
+        system = DebateAgentSystem(config.debate_setup)
         d = system._debate_cfg.to_dict()
         assert d["sector_config"] is not None
         assert d["sector_config"]["sectors"] == sc["sectors"]
@@ -509,4 +509,4 @@ class TestScenarioSectorPropagation:
         merged = _deep_merge(base_raw, scenario_raw)
         config = SimulationConfig(**merged)
 
-        assert config.agent.sector_config is None
+        assert config.debate_setup.sector_config is None

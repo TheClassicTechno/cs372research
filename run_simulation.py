@@ -138,7 +138,7 @@ def _parse_args() -> argparse.Namespace:
         "--print-prompts",
         action="store_true",
         help="Print full system + user prompts for each agent profile, then exit. "
-        "Uses the new agent profile system (config.agent.agents).",
+        "Uses the new agent profile system (config.debate_setup.agents).",
     )
     parser.add_argument(
         "--print-prompt-manifest",
@@ -243,7 +243,7 @@ def _dump_prompts(config: SimulationConfig) -> None:
     from multi_agent.graph.sector_constraints import build_sector_constraint_text
 
     # --- Config dict (mirrors what debate nodes receive) ---
-    agent = config.agent
+    agent = config.debate_setup
     cfg = {
         "prompt_file_overrides": agent.prompt_file_overrides or {},
         "prompt_profile": agent.prompt_profile,
@@ -367,7 +367,7 @@ def _print_profile_prompts(config: SimulationConfig) -> None:
     from multi_agent.prompts import build_proposal_user_prompt
     from multi_agent.prompts.registry import get_registry, resolve_beta, beta_to_bucket
 
-    agent = config.agent
+    agent = config.debate_setup
     if not agent.agents:
         print("Error: --print-prompts requires agent.agents to be set.")
         return
@@ -429,7 +429,7 @@ def _print_prompt_manifest(config: SimulationConfig) -> None:
     import json as _json
     from multi_agent.prompts.profile_loader import get_agent_profiles
 
-    agent = config.agent
+    agent = config.debate_setup
     if not agent.agents:
         print("Error: --print-prompt-manifest requires agent.agents to be set.")
         return
@@ -480,37 +480,37 @@ async def _main() -> None:
 
     # --logging-mode: override debate logging mode from CLI.
     if args.logging_mode is not None:
-        config.agent.logging_mode = args.logging_mode
+        config.debate_setup.logging_mode = args.logging_mode
         logger.info("Logging mode overridden to '%s'", args.logging_mode)
 
     # --crit-model: override CRIT scoring model.
     if args.crit_model is not None:
-        config.agent.crit_llm_model = args.crit_model
+        config.debate_setup.crit_llm_model = args.crit_model
         logger.info("CRIT scoring model overridden to '%s'", args.crit_model)
 
     # --no-parallel: force sequential agent execution.
     if args.no_parallel:
-        config.agent.parallel_agents = False
+        config.debate_setup.parallel_agents = False
         logger.info("Parallel agents disabled (sequential mode)")
 
     # --no-rate-limit: disable LLM call stagger entirely.
     if args.no_rate_limit:
-        config.agent.no_rate_limit = True
+        config.debate_setup.no_rate_limit = True
         logger.info("LLM call stagger disabled (all calls fire at once)")
 
     # --stagger-ms: override stagger interval.
     if args.stagger_ms is not None:
-        config.agent.llm_stagger_ms = args.stagger_ms
+        config.debate_setup.llm_stagger_ms = args.stagger_ms
         logger.info("LLM stagger interval set to %dms", args.stagger_ms)
 
     # --no-display: disable Rich console display.
     if args.no_display:
-        config.agent.console_display = False
+        config.debate_setup.console_display = False
         logger.info("Rich console display disabled (plain text mode)")
 
     # --log-tokens: print per-request token counts to console.
     if args.log_tokens:
-        config.agent.log_tokens = True
+        config.debate_setup.log_tokens = True
         logger.info("Per-request token logging enabled")
 
     # --- Build effective command string with all resolved args ---
@@ -520,24 +520,24 @@ async def _main() -> None:
         cmd_parts.append(f"--scenario {args.scenario}")
     cmd_parts.append(f"--output-dir {args.output_dir}")
     cmd_parts.append(f"--log-level {args.log_level}")
-    cmd_parts.append(f"--logging-mode {config.agent.logging_mode}")
-    cmd_parts.append(f"--crit-model {config.agent.crit_llm_model}")
-    if not config.agent.parallel_agents:
+    cmd_parts.append(f"--logging-mode {config.debate_setup.logging_mode}")
+    cmd_parts.append(f"--crit-model {config.debate_setup.crit_llm_model}")
+    if not config.debate_setup.parallel_agents:
         cmd_parts.append("--no-parallel")
-    if config.agent.no_rate_limit:
+    if config.debate_setup.no_rate_limit:
         cmd_parts.append("--no-rate-limit")
     if args.stagger_ms is not None:
         cmd_parts.append(f"--stagger-ms {args.stagger_ms}")
-    if not config.agent.console_display:
+    if not config.debate_setup.console_display:
         cmd_parts.append("--no-display")
-    if config.agent.log_tokens:
+    if config.debate_setup.log_tokens:
         cmd_parts.append("--log-tokens")
-    config.agent.run_command = " ".join(cmd_parts)
+    config.debate_setup.run_command = " ".join(cmd_parts)
 
     config_paths = [str(Path(args.agents).resolve())]
     if args.scenario:
         config_paths.append(str(Path(args.scenario).resolve()))
-    config.agent.config_paths = config_paths
+    config.debate_setup.config_paths = config_paths
 
     # --list-tickers: print configured tickers and exit (no simulation).
     if args.list_tickers:
@@ -562,19 +562,19 @@ async def _main() -> None:
         return
 
     # Validate agent profiles if using the new system
-    if config.agent.agents:
+    if config.debate_setup.agents:
         from multi_agent.prompts.profile_loader import validate_all_profiles
         errors = validate_all_profiles(
-            config.agent.agents,
-            judge_profile_name=config.agent.judge_profile,
+            config.debate_setup.agents,
+            judge_profile_name=config.debate_setup.judge_profile,
         )
         if errors:
             for err in errors:
                 logger.error("Profile validation: %s", err)
             sys.exit(1)
-        logger.info("Agent profiles validated: %s", list(config.agent.agents.keys()))
+        logger.info("Agent profiles validated: %s", list(config.debate_setup.agents.keys()))
 
-    logger.info("Config loaded: agent='%s'", config.agent.agent_system)
+    logger.info("Config loaded: agent='%s'", config.debate_setup.agent_system)
 
     # --- Auto-generate snapshot data if using memo pipeline ---
     if "final_snapshots" in config.dataset_path:
