@@ -1,0 +1,33 @@
+
+# ============================================================================
+# Coca-Cola (KO) Simulation Configuration
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/ko_example.yaml
+#
+# Experiment Metadata:
+#   - Created: 2026-02-26
+#   - Author: CS372Research
+#   - Description: End-to-end test for Coca-Cola (KO) with detailed logging, timestamps, and verbose agent responses.
+#   - Purpose: Demonstrate reproducibility and auditability of the simulation pipeline.
+
+dataset_path: "data/cases"
+
+# Limit to top 2 news/cases for API quota and fast testing
+top_n_news: 2
+
+tickers:
+  - KO
+
+num_episodes: 1
+
+agent:
+  agent_system: "single_llm"
+  llm_provider: "openai"
+  llm_model: "gpt-4o"
+  temperature: 0.7
+  max_retries: 3
+  # system_prompt_override: "You are a cautious value investor. Please provide detailed, step-by-step explanations for every decision, referencing specific data and news."
+
+broker:
+  initial_cash: 100000.0

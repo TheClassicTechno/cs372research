@@ -1,0 +1,133 @@
+================================================================================
+PROGRESS REPORT — Weeks 8-9: Multi-Agent Debate → Simulation Adapter
+================================================================================
+
+GOAL: Wire the multi-agent debate system (multi_agent/) into the simulation
+      pipeline (simulation/) so `python run_simulation.py --config config/debate.yaml`
+      runs the full Propose → Critique → Revise → Judge pipeline end-to-end.
+
+--------------------------------------------------------------------------------
+1. ADAPTER BUILT (agents/multi_agent_debate.py)
+--------------------------------------------------------------------------------
+  - Implements AgentSystem ABC (bind_tools / invoke) so the simulation runner
+    can use the debate system interchangeably with single_llm
+  - Registered as @register("multi_agent_debate") in the agent registry
+  - Converts Case → Observation (simulation → debate data format)
+  - Converts Action → Decision (debate → simulation data format)
+  - Float-to-int order size truncation with validation (skips invalid/zero orders)
+  - Side validation (only "buy"/"sell" accepted, case-insensitive)
+  - Runs sync MultiAgentRunner.run() via asyncio.to_thread() to avoid blocking
+  - Supports mock mode via system_prompt_override: "mock" in YAML config
+
+--------------------------------------------------------------------------------
+2. FEATURE ENGINEERING MODULE (simulation/feature_engineering.py)
+--------------------------------------------------------------------------------
+  - Created build_observation(case) function per integration_plan.md
+  - Computes returns from daily bars: (last_close - first_close) / first_close
+  - Computes volatility: std-dev of daily log-returns over the bar window
+  - Flattens case_data items into text_context with [EARNINGS]/[NEWS]/[INFO] tags
+  - Converts portfolio positions from int → float for debate models
+  - Lives in simulation/ (Environment Layer) per architectural plan
+
+--------------------------------------------------------------------------------
+3. RUNNER MODIFIED (simulation/runner.py)
+--------------------------------------------------------------------------------
+  - Added broker fallback: when agent returns orders but didn't call the
+    submit_decision tool, the runner calls broker.execute_decision() directly
+  - This follows integration_plan.md §8: "Agent returns Decision, Runner calls
+    broker directly, No tool used"
+  - Backward compatible with single_llm (which still uses the tool pattern)
+
+--------------------------------------------------------------------------------
+4. REGISTRY UPDATED (agents/registry.py)
+--------------------------------------------------------------------------------
+  - Added import of agents.multi_agent_debate in _ensure_builtins_loaded()
+  - "multi_agent_debate" now available as an agent_system option
+
+--------------------------------------------------------------------------------
+5. CONFIG FILES CREATED
+--------------------------------------------------------------------------------
+  - config/debate.yaml — Production config (agent_system: "multi_agent_debate")
+  - config/debate_mock.yaml — Mock mode config (no API calls, for testing)
+  - data/cases/nvda_q1_2025.json — Sample case with NVDA earnings, news,
+    analyst upgrades, export restrictions, and 5-day price bars
+
+--------------------------------------------------------------------------------
+6. TESTS WRITTEN (agents/tests/test_debate_agent.py) — 28 tests, all passing
+--------------------------------------------------------------------------------
+  - TestBuildObservation (12 tests): prices, universe, portfolio, text context,
+    timestamps, returns computation, volatility computation, edge cases
+  - TestActionToDecision (8 tests): basic conversion, float truncation,
+    zero/negative sizes, invalid sides, empty action, case insensitivity
+  - TestDebateAgentSystemLifecycle (1 test): bind_tools stores tool
+  - TestDebateAgentEndToEnd (3 tests): full invoke, hold action, raw output
+  - TestRegistry (2 tests): registration check, factory creation
+  - TestLayerBoundary (2 tests): adapter doesn't import broker or eval modules
+
+--------------------------------------------------------------------------------
+7. ALIGNMENT WITH TEAMMATE'S INTEGRATION PLAN
+--------------------------------------------------------------------------------
+  Audited against documentation/integration_plan.md — all 8 gaps fixed:
+  - File naming: agents/multi_agent_debate.py (was debate_agent.py)
+  - Registration: "multi_agent_debate" (was "debate")
+  - Layer boundary: adapter does NOT call broker (runner does it)
+  - Feature engineering: separate module in simulation/ (not in adapter)
+  - Returns + volatility: computed from daily bars
+  - Config naming: config/debate.yaml per plan
+
+--------------------------------------------------------------------------------
+8. SIMULATION RESULTS (Mock Mode)
+--------------------------------------------------------------------------------
+  Command: python run_simulation.py --config config/debate_mock.yaml
+
+  Pipeline executed:
+    News Digest + Data Analysis (preprocessing)
+    → Propose (4 agents: MACRO, VALUE, RISK, TECHNICAL)
+    → Critique (each agent critiques others)
+    → Revise (each agent revises based on critiques)
+    → Judge (final synthesis)
+    → Decision sent to broker
+
+  Result:
+    - Trade: Bought 10 NVDA at $875.30
+    - Final cash: $91,247
+    - Final positions: NVDA x 10
+    - Book value: $100,000
+    - Return: 0.0%
+
+  Key log line confirming correct architecture:
+    "Runner executed decision for case ep_000:0 directly (agent did not call tool)."
+
+--------------------------------------------------------------------------------
+9. TEST RESULTS
+--------------------------------------------------------------------------------
+  - 28 adapter tests: ALL PASSED
+  - 112 existing multi-agent tests: ALL PASSED (no regressions)
+  - Total: 140 tests passing
+
+================================================================================
+FILES TO COMMIT (see bottom of file)
+================================================================================
+
+
+Math check:
+
+Starting cash: $100,000
+Bought 10 NVDA at $875.30 = $8,753.00
+Final cash: $100,000 - $8,753 = $91,247 ✅
+Position value: 10 × $875.30 = $8,753 ✅
+Book value: $91,247 + $8,753 = $100,000 ✅
+Return: 0.0% (bought at current price, no price change yet) ✅
+Pipeline check:
+
+4 agents proposed (MACRO, VALUE, RISK, TECHNICAL) ✅
+Mock judge: "Buy votes: 3, Sell votes: 0" → majority buy ✅
+Mock bought 10 shares (median size from mock proposals) ✅
+Execution status: "accepted" ✅
+Agent did NOT call tool, runner called broker directly ✅
+Feature engineering check:
+
+Returns in trace: NVDA: 0.0389 = (875.30 - 842.50) / 842.50 = 0.03893 ✅
+Volatility in trace: NVDA: 0.0126 (std-dev of daily log-returns across 5 bars) ✅
+Text context includes all 5 case_data items with correct tags ✅
+Result: 100% correct. The math is exact, the pipeline flow is correct, layer boundaries are respected, and feature engineering values are accurate.

@@ -1,0 +1,19 @@
+New files created
+config/debate_mock.yaml — Simulation config using agent_system: "debate" with mock mode
+data/cases/nvda_q1_2025.json — Sample case with NVDA earnings, news, and 5-day price data
+Mock mode support
+Updated agents/debate_agent.py so setting system_prompt_override: "mock" in the YAML enables mock mode (no API calls).
+
+Simulation result
+The full pipeline ran successfully:
+
+
+Propose (4 agents) → Critique → Revise → Judge → Decision
+Trade: Bought 10 NVDA at $875.30
+Final portfolio: $91,247 cash + 10 NVDA shares = $100,000 book value
+Output: results/debate_mock/ with episode logs, trades, and summary
+To run with real LLM calls
+Remove the system_prompt_override: "mock" line and make sure OPENAI_API_KEY is set:
+
+
+python run_simulation.py --config config/debate_mock.yaml
