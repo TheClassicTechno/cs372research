@@ -255,8 +255,15 @@ def propose_node(state: DebateState) -> dict:
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", {})
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
+
+        # Pull constraints from config
+        ac = config.get("allocation_constraints") or {}
         action_dict = {
-            "allocation": normalize_allocation(raw_alloc, universe),
+            "allocation": normalize_allocation(
+                raw_alloc, universe,
+                max_weight=ac.get("max_weight", 1.0),
+                min_holdings=ac.get("min_holdings", 1),
+            ),
             "justification": result.get("justification", ""),
             "confidence": result.get("confidence", 0.5),
             "claims": result.get("claims", []),
@@ -300,6 +307,8 @@ def propose_node(state: DebateState) -> dict:
 def critique_node(state: DebateState) -> dict:
     """All role agents critique each other's proposals (or prior revisions)."""
     config = state["config"]
+    if config.get("propose_only"):
+        return {}
     context = state["enriched_context"]
     current_round = state.get("current_round", 1)
     is_mock = config.get("mock", False)
@@ -407,6 +416,8 @@ def critique_node(state: DebateState) -> dict:
 def revise_node(state: DebateState) -> dict:
     """All role agents revise their proposals based on critiques received."""
     config = state["config"]
+    if config.get("propose_only"):
+        return {}
     context = state["enriched_context"]
     current_round = state.get("current_round", 1)
     is_mock = config.get("mock", False)
@@ -483,8 +494,15 @@ def revise_node(state: DebateState) -> dict:
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
+
+        # Pull constraints from config
+        ac = config.get("allocation_constraints") or {}
         action_dict = {
-            "allocation": normalize_allocation(raw_alloc, universe),
+            "allocation": normalize_allocation(
+                raw_alloc, universe,
+                max_weight=ac.get("max_weight", 1.0),
+                min_holdings=ac.get("min_holdings", 1),
+            ),
             "justification": result.get("justification", ""),
             "confidence": result.get("confidence", 0.5),
             "claims": result.get("claims", []),
@@ -625,8 +643,15 @@ def make_propose_node(role: str):
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", {})
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
+
+        # Pull constraints from config
+        ac = config.get("allocation_constraints") or {}
         action_dict = {
-            "allocation": normalize_allocation(raw_alloc, universe),
+            "allocation": normalize_allocation(
+                raw_alloc, universe,
+                max_weight=ac.get("max_weight", 1.0),
+                min_holdings=ac.get("min_holdings", 1),
+            ),
             "justification": result.get("justification", ""),
             "confidence": result.get("confidence", 0.5),
             "claims": result.get("claims", []),
@@ -677,6 +702,8 @@ def make_critique_node(role: str):
 
     def _critique(state: ParallelRoundState) -> dict:
         config = state["config"]
+        if config.get("propose_only"):
+            return {}
         context = state["enriched_context"]
         current_round = state.get("current_round", 1)
         is_mock = config.get("mock", False)
@@ -797,6 +824,8 @@ def make_revise_node(role: str):
 
     def _revise(state: ParallelRoundState) -> dict:
         config = state["config"]
+        if config.get("propose_only"):
+            return {}
         context = state["enriched_context"]
         current_round = state.get("current_round", 1)
         is_mock = config.get("mock", False)
@@ -878,8 +907,15 @@ def make_revise_node(role: str):
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
+
+        # Pull constraints from config
+        ac = config.get("allocation_constraints") or {}
         action_dict = {
-            "allocation": normalize_allocation(raw_alloc, universe),
+            "allocation": normalize_allocation(
+                raw_alloc, universe,
+                max_weight=ac.get("max_weight", 1.0),
+                min_holdings=ac.get("min_holdings", 1),
+            ),
             "justification": result.get("justification", ""),
             "confidence": result.get("confidence", 0.5),
             "claims": result.get("claims", []),
@@ -940,13 +976,57 @@ def should_continue(state: DebateState) -> str:
 def judge_node(state: DebateState) -> dict:
     """Judge synthesizes the debate into a single final trading decision."""
     config = state["config"]
+    judge_type = config.get("judge_type", "llm")
+
     if not config.get("console_display"):
-        print("  [Judge] Synthesizing final decision...", flush=True)
+        print(f"  [Judge] Synthesizing final decision ({judge_type})...", flush=True)
+
     context = state["enriched_context"]
-    revisions = state.get("revisions", state.get("proposals", []))
+    revisions = state.get("revisions") or state.get("proposals", [])
     all_critiques = state.get("critiques", [])
     is_mock = config.get("mock", False)
+    obs = state["observation"]
+    universe = obs.get("universe", [])
 
+    if judge_type == "average":
+        # Compute unweighted average of all allocations
+        total_alloc: dict[str, float] = {t: 0.0 for t in universe}
+        total_conf = 0.0
+        n = len(revisions)
+        for r in revisions:
+            alloc = r.get("action_dict", {}).get("allocation", {})
+            for t, w in alloc.items():
+                total_alloc[t] = total_alloc.get(t, 0.0) + w
+            total_conf += r.get("action_dict", {}).get("confidence", 0.5)
+
+        assert n > 0, f"No revisions found in state: {state}"
+        avg_alloc = {t: w / n for t, w in total_alloc.items()}
+        avg_conf = total_conf / n
+
+        # Pull constraints from config
+        ac = config.get("allocation_constraints") or {}
+        final_action = {
+            "allocation": normalize_allocation(
+                avg_alloc, universe,
+                max_weight=ac.get("max_weight", 1.0),
+                min_holdings=ac.get("min_holdings", 1),
+            ),
+            "justification": f"Simple average of {n} agent allocations.",
+            "confidence": avg_conf,
+            "claims": [],
+        }
+
+        if not config.get("console_display"):
+            _print_allocation("judge", final_action, "FINAL")
+
+        return {
+            "final_action": final_action,
+            "strongest_objection": "",
+            "audited_memo": "Simple average of agent allocations.",
+            "debate_turns": [],  # No LLM call for average
+        }
+
+    # Default: LLM judge
     # Format critiques for the judge
     critiques_text = "\n".join(
         f"[{c['role']} -> {crit.get('target_role', '?')}]: {crit.get('objection', '')}"
@@ -1010,10 +1090,15 @@ def judge_node(state: DebateState) -> dict:
     if config.get("verbose"):
         _verbose_judge(result)
 
-    obs = state["observation"]
-    universe = obs.get("universe", [])
     raw_alloc = result.get("allocation", {})
-    alloc = normalize_allocation(raw_alloc, universe)
+
+    # Pull constraints from config
+    ac = config.get("allocation_constraints") or {}
+    alloc = normalize_allocation(
+        raw_alloc, universe,
+        max_weight=ac.get("max_weight", 1.0),
+        min_holdings=ac.get("min_holdings", 1),
+    )
     alloc = _apply_sector_limits(alloc, config)
     final_action = {
         "allocation": alloc,

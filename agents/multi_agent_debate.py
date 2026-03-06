@@ -148,6 +148,8 @@ class DebateAgentSystem(AgentSystem):
             temperature=config.temperature,
             mock=use_mock,
             max_rounds=config.max_rounds,
+            propose_only=config.propose_only,
+            judge_type=config.judge_type,
             enable_adversarial=config.enable_adversarial,
             _pid_enabled_flag=config.pid_enabled,
             pid_kp=config.pid_kp,
@@ -180,6 +182,7 @@ class DebateAgentSystem(AgentSystem):
             run_command=config.run_command,
             config_paths=config.config_paths,
             sector_config=config.sector_config,
+            allocation_constraints=config.allocation_constraints,
             agent_profiles=loaded_agent_profiles,
             judge_profile=loaded_judge_profile,
         )
