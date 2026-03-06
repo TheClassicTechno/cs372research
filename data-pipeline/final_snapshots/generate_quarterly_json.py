@@ -448,7 +448,7 @@ def run_pipeline(
         tmp = out_path.with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(doc, f, indent=2)
-        tmp.rename(out_path)
+        tmp.replace(out_path)
 
         tqdm.write(f"  Wrote: {out_path}")
 

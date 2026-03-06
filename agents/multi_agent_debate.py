@@ -144,7 +144,9 @@ class DebateAgentSystem(AgentSystem):
         # PID object construction is handled inside DebateConfig.__post_init__
         # so this adapter stays decoupled and has no direct dependency on PID.
         debate_kwargs: dict[str, Any] = dict(
+            llm_provider=config.llm_provider,
             model_name=config.llm_model,
+            role_llms=config.role_llms or {},
             temperature=config.temperature,
             mock=use_mock,
             max_rounds=config.max_rounds,

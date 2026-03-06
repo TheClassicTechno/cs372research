@@ -289,7 +289,7 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer

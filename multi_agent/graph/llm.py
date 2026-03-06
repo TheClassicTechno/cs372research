@@ -110,7 +110,27 @@ def _retry_wait(exc: Exception, attempt: int) -> float:
     return 2 ** attempt  # 1s, 2s, 4s, 8s, 16s, 32s
 
 
-def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
+def _resolve_provider_model(config: dict, role: str | None) -> tuple[str, str]:
+    """Resolve provider/model for this call with optional role overrides."""
+    default_provider = str(config.get("llm_provider", "openai")).lower()
+    default_model = str(config.get("model_name", "gpt-4o-mini"))
+
+    role_cfg = {}
+    if role:
+        role_map = config.get("role_llms", {}) or {}
+        if isinstance(role_map, dict):
+            role_cfg = role_map.get(role, {}) or {}
+
+    provider = str(role_cfg.get("provider", default_provider)).lower()
+    model_name = str(role_cfg.get("model", default_model))
+
+    if provider not in {"openai", "anthropic"}:
+        # Backward-compatible fallback: infer from model naming.
+        provider = "anthropic" if model_name.startswith("claude") else "openai"
+    return provider, model_name
+
+
+def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | None = None) -> str:
     """Call LLM with the given system and user prompts. Returns raw text.
 
     Retries up to 6 times on transient errors.  For rate-limit (429)
@@ -147,9 +167,9 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
 
     import time
 
-    model_name = config.get("model_name", "gpt-4o-mini")
+    provider, model_name = _resolve_provider_model(config, role)
     temperature = config.get("temperature", 0.3)
-    use_anthropic = model_name.startswith("claude")
+    use_anthropic = provider == "anthropic"
 
     if use_anthropic:
         from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
