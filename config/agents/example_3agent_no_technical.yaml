@@ -58,9 +58,8 @@ agent:
   #   value → standard (original value prompt, includes inline scaffolding)
   #   risk  → agents (scenario tree analysis)
   #
-  # You can freely mix standard and agents role prompts.
+  # You can freely mix standard and diverse role prompts.
   # Standard prompts: roles/macro.txt, roles/value.txt, etc.
-  # Slim prompts:     roles/macro_slim.txt (pair with use_system_causal_contract)
   # Diverse prompts:  roles/macro_diverse.txt (self-contained reasoning)
   prompt_profile: "diverse_agents"
   prompt_file_overrides:

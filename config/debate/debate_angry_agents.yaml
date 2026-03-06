@@ -1,0 +1,70 @@
+# ============================================================================
+# Debate — Angry Opinionated Agents
+# ============================================================================
+# Four stubborn strategists arguing different macro narratives.
+# Run with:
+#   python run_simulation.py --agents config/debate/debate_angry_agents.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+invest_quarter: "2025Q1"
+
+tickers:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - XOM
+  - CVX
+  - COP
+  - SLB
+  - CAT
+  - WMT
+  - COST
+  - UNH
+  - JNJ
+  - JPM
+  - GS
+  - DAL
+  - PG
+  - TSLA
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 20
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 7
+
+  # --- Agent profiles ---
+  agents:
+    macro: "macro_angry_tech_bull"
+    value: "value_angry_inflation_hawk"
+    risk: "risk_angry_recession_doom"
+    technical: "technical_angry_soft_landing"
+  judge_profile: "judge_standard"
+
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.7
+
+  logging_mode: "debug"
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 2
+
+broker:
+  initial_cash: 100000.0

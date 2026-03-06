@@ -64,8 +64,8 @@ agent:
 
   # Standard prompts for sentiment and devils_advocate (no agents variants exist)
   # If you omit prompt_file_overrides for a role, it uses the default:
-  #   roles/<role>.txt     (normal mode)
-  #   roles/<role>_slim.txt (when use_system_causal_contract: true)
+  #   roles/<role>.txt     (standard mode)
+  #   roles/<role>_diverse.txt (diverse_agents profile)
   #
   # You only need to specify overrides for roles you want to customize.
   # prompt_file_overrides:

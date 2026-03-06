@@ -1,0 +1,46 @@
+# ============================================================================
+# Example: Non-Standard Roles — Sentiment + Devil's Advocate + Value
+# ============================================================================
+# Run with:
+#   python run_simulation.py --agents config/debate/example_sentiment_devils_advocate.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+tickers:
+  - TSLA
+  - NFLX
+  - JPM
+  - UNH
+  - XOM
+
+allocation_constraints:
+  max_weight: 0.30
+  min_holdings: 3
+  fully_invested: true
+  max_tickers: 10
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 3
+
+  # --- Agent profiles ---
+  agents:
+    value: "value_standard"
+    sentiment: "sentiment_standard"
+    devils_advocate: "devils_advocate_standard"
+  judge_profile: "judge_standard"
+
+  pid_enabled: true
+
+  logging_mode: "debug"
+
+broker:
+  initial_cash: 100000.0

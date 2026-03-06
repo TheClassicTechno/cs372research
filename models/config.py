@@ -168,11 +168,16 @@ class AgentConfig(BaseModel):
         "Set to false for minimal plain-text logging.",
     )
 
-    # --- System-level causal contract ---
-    use_system_causal_contract: bool = Field(
-        default=False,
-        description="When True, consolidates causal scaffolding into a shared system contract "
-        "and uses slimmed role prompts. Default False preserves existing prompts.",
+    # --- Agent profiles (new unified system) ---
+    agents: dict[str, str] | None = Field(
+        default=None,
+        description="Mapping of role name to agent profile name. "
+        "E.g. {'macro': 'macro_diverse', 'value': 'value_diverse'}. "
+        "When set, replaces debate_roles + prompt_profile + prompt_file_overrides.",
+    )
+    judge_profile: str = Field(
+        default="judge_standard",
+        description="Agent profile name for the judge.",
     )
 
     # --- Prompt block/section ordering (for ablation experiments) ---
@@ -195,9 +200,8 @@ class AgentConfig(BaseModel):
 
     # --- Prompt profile (per-agent prompt composition) ---
     prompt_profile: str = Field(
-        default="",
-        description="Prompt profile name (e.g. 'default', 'minimal'). "
-        "Empty string uses existing defaults (backward compatible).",
+        default="default",
+        description="Prompt profile name (e.g. 'default', 'minimal', 'diverse_agents').",
     )
     role_overrides: dict | None = Field(
         default=None,

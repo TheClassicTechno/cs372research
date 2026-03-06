@@ -1,0 +1,67 @@
+# ============================================================================
+# Debate — Diverse Agents + PID Controller
+# ============================================================================
+# Each agent uses a structurally different reasoning style.
+# Run with:
+#   python run_simulation.py --agents config/debate/debate_diverse_agents.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+tickers:
+  - TSLA
+  - NFLX
+  - JPM
+  - GS
+  - BAC
+  - UNH
+  - LLY
+  - JNJ
+  - XOM
+  - CAT
+  - DAL
+  - AMT
+  - COST
+  - WMT
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 20
+
+num_episodes: 1
+
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 4
+
+  # --- Agent profiles (new unified system) ---
+  agents:
+    macro: "macro_diverse"
+    value: "value_diverse"
+    technical: "technical_diverse"
+    risk: "risk_diverse"
+  judge_profile: "judge_standard"
+
+  # PID enabled
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+  pid_epsilon: 0.001
+
+  logging_mode: "debug"
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 2
+
+broker:
+  initial_cash: 100000.0

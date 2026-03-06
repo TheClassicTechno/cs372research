@@ -135,6 +135,18 @@ def _parse_args() -> argparse.Namespace:
         "Memo and inter-phase data use {{placeholders}}.",
     )
     parser.add_argument(
+        "--print-prompts",
+        action="store_true",
+        help="Print full system + user prompts for each agent profile, then exit. "
+        "Uses the new agent profile system (config.agent.agents).",
+    )
+    parser.add_argument(
+        "--print-prompt-manifest",
+        action="store_true",
+        help="Print prompt manifest JSON showing block composition for "
+        "each agent profile, then exit.",
+    )
+    parser.add_argument(
         "--log-level",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
@@ -233,9 +245,6 @@ def _dump_prompts(config: SimulationConfig) -> None:
     # --- Config dict (mirrors what debate nodes receive) ---
     agent = config.agent
     cfg = {
-        "use_system_causal_contract": agent.use_system_causal_contract,
-        "system_prompt_block_order": agent.system_prompt_block_order,
-        "user_prompt_section_order": agent.user_prompt_section_order,
         "prompt_file_overrides": agent.prompt_file_overrides or {},
         "prompt_profile": agent.prompt_profile,
         "role_overrides": agent.role_overrides or {},
@@ -255,10 +264,9 @@ def _dump_prompts(config: SimulationConfig) -> None:
         "\n{{memo}}\n"
     )
 
-    use_cc = agent.use_system_causal_contract
     beta = agent.pid_initial_beta
     tone = beta_to_bucket(beta)
-    profile_name = agent.prompt_profile or "(none)"
+    profile_name = agent.prompt_profile or "default"
 
     sep = "=" * 80
     phase_sep = "─" * 80
@@ -271,27 +279,22 @@ def _dump_prompts(config: SimulationConfig) -> None:
     registry = get_registry(cfg)
 
     for role in role_strs:
-        profile = resolve_prompt_profile(cfg, role)
-        system_blocks = profile.get("system_blocks")
-        user_secs = profile.get("user_sections")
         overrides = cfg.get("prompt_file_overrides")
         sector_text = build_sector_constraint_text(cfg.get("sector_config"), role)
 
         # ── Propose ──
+        propose_profile = resolve_prompt_profile(cfg, role, "propose")
         propose_user = build_proposal_user_prompt(
             context,
-            use_system_causal_contract=use_cc,
-            section_order=cfg.get("user_prompt_section_order"),
             prompt_file_overrides=overrides,
-            user_sections=user_secs,
+            user_sections=propose_profile.get("user_sections"),
             sector_constraints=sector_text,
         )
         propose_sys = registry.build(
             role=role, phase="propose",
             beta=resolve_beta(cfg, "propose"),
             user_prompt=propose_user,
-            use_system_causal_contract=use_cc,
-            block_order=system_blocks or cfg.get("system_prompt_block_order"),
+            block_order=propose_profile.get("system_blocks"),
             prompt_file_overrides=overrides,
         ).system_prompt
 
@@ -301,12 +304,12 @@ def _dump_prompts(config: SimulationConfig) -> None:
             for r in role_strs
         ]
         my_proposal = "{{" + role + "_proposal}}"
+        critique_profile = resolve_prompt_profile(cfg, role, "critique")
 
         critique_user = build_critique_prompt(
             role, context, all_proposals, my_proposal,
-            section_order=cfg.get("user_prompt_section_order"),
             prompt_file_overrides=overrides,
-            user_sections=user_secs,
+            user_sections=critique_profile.get("user_sections"),
         )
         # For critique/revise, set _current_beta so resolve_beta picks it up
         cfg["_current_beta"] = beta
@@ -314,8 +317,7 @@ def _dump_prompts(config: SimulationConfig) -> None:
             role=role, phase="critique",
             beta=resolve_beta(cfg, "critique"),
             user_prompt=critique_user,
-            use_system_causal_contract=use_cc,
-            block_order=system_blocks or cfg.get("system_prompt_block_order"),
+            block_order=critique_profile.get("system_blocks"),
             prompt_file_overrides=overrides,
         ).system_prompt
 
@@ -324,21 +326,19 @@ def _dump_prompts(config: SimulationConfig) -> None:
             {"from_role": r, "objection": "{{" + r + "_critique_of_" + role + "}}"}
             for r in role_strs if r != role
         ]
+        revise_profile = resolve_prompt_profile(cfg, role, "revise")
 
         revise_user = build_revision_prompt(
             role, context, my_proposal, critiques_received,
-            use_system_causal_contract=use_cc,
-            section_order=cfg.get("user_prompt_section_order"),
             prompt_file_overrides=overrides,
-            user_sections=user_secs,
+            user_sections=revise_profile.get("user_sections"),
             sector_constraints=sector_text,
         )
         revise_sys = registry.build(
             role=role, phase="revise",
             beta=resolve_beta(cfg, "revise"),
             user_prompt=revise_user,
-            use_system_causal_contract=use_cc,
-            block_order=system_blocks or cfg.get("system_prompt_block_order"),
+            block_order=revise_profile.get("system_blocks"),
             prompt_file_overrides=overrides,
         ).system_prompt
 
@@ -359,6 +359,100 @@ def _dump_prompts(config: SimulationConfig) -> None:
     print(f"\n{sep}")
     print(f"  END PROMPT DUMP")
     print(f"{sep}\n")
+
+
+def _print_profile_prompts(config: SimulationConfig) -> None:
+    """Print prompts for all agents using the new profile system."""
+    from multi_agent.prompts.profile_loader import get_agent_profiles
+    from multi_agent.prompts import build_proposal_user_prompt
+    from multi_agent.prompts.registry import get_registry, resolve_beta, beta_to_bucket
+
+    agent = config.agent
+    if not agent.agents:
+        print("Error: --print-prompts requires agent.agents to be set.")
+        return
+
+    profiles = get_agent_profiles(
+        agent.agents,
+        judge_profile_name=agent.judge_profile,
+    )
+
+    context = (
+        "## Portfolio Allocation Task\n"
+        f"- Cash to allocate: ${config.broker.initial_cash:,.2f}\n"
+        f"- Allocation universe: {', '.join(config.tickers)}\n"
+        f"- As-of: {config.invest_quarter}\n"
+        "\n{{memo}}\n"
+    )
+
+    beta = agent.pid_initial_beta
+    cfg = {"_current_beta": beta}
+    registry = get_registry(cfg)
+    sep = "=" * 80
+
+    print(f"\n{sep}")
+    print(f"  PROFILE PROMPT DUMP — {len(agent.agents)} agents")
+    print(f"  beta={beta:.3f}  tone={beta_to_bucket(beta)}")
+    print(f"{sep}")
+
+    for role, profile in profiles.items():
+        if role == "judge":
+            continue
+        for phase in ["propose", "critique", "revise"]:
+            sys_blocks = profile.get("system_prompts", {}).get(phase, [])
+            usr_config = profile.get("user_prompts", {}).get(phase, {})
+
+            user_prompt = build_proposal_user_prompt(
+                context,
+                user_sections=usr_config.get("sections"),
+            ) if phase == "propose" else f"{{{{user_prompt_{phase}}}}}"
+
+            build_result = registry.build_from_profile(
+                role=role, phase=phase, profile=profile,
+                beta=resolve_beta(cfg, phase),
+                user_prompt=user_prompt,
+            )
+
+            print(f"\n{'─' * 80}")
+            print(f"  {role.upper()} — {phase} (blocks: {build_result.blocks_used})")
+            print(f"{'─' * 80}")
+            print(f"\n┌── SYSTEM PROMPT ({len(build_result.system_prompt):,} chars) ──┐\n")
+            print(build_result.system_prompt[:2000])
+            if len(build_result.system_prompt) > 2000:
+                print(f"\n... ({len(build_result.system_prompt) - 2000} more chars)")
+
+    print(f"\n{sep}\n  END PROFILE PROMPT DUMP\n{sep}\n")
+
+
+def _print_prompt_manifest(config: SimulationConfig) -> None:
+    """Print prompt manifest JSON for all agent profiles."""
+    import json as _json
+    from multi_agent.prompts.profile_loader import get_agent_profiles
+
+    agent = config.agent
+    if not agent.agents:
+        print("Error: --print-prompt-manifest requires agent.agents to be set.")
+        return
+
+    profiles = get_agent_profiles(
+        agent.agents,
+        judge_profile_name=agent.judge_profile,
+    )
+
+    manifest = {}
+    for role, profile in profiles.items():
+        manifest[role] = {
+            "system_prompts": profile.get("system_prompts", {}),
+            "user_prompts": {
+                phase: {
+                    "template": cfg.get("template"),
+                    "sections": cfg.get("sections"),
+                }
+                for phase, cfg in profile.get("user_prompts", {}).items()
+            },
+        }
+
+    print(_json.dumps(manifest, indent=2))
 
 
 async def _main() -> None:
@@ -456,6 +550,29 @@ async def _main() -> None:
     if args.dump_prompts:
         _dump_prompts(config)
         return
+
+    # --print-prompts: print prompts using new agent profile system and exit.
+    if args.print_prompts:
+        _print_profile_prompts(config)
+        return
+
+    # --print-prompt-manifest: print prompt manifest JSON and exit.
+    if args.print_prompt_manifest:
+        _print_prompt_manifest(config)
+        return
+
+    # Validate agent profiles if using the new system
+    if config.agent.agents:
+        from multi_agent.prompts.profile_loader import validate_all_profiles
+        errors = validate_all_profiles(
+            config.agent.agents,
+            judge_profile_name=config.agent.judge_profile,
+        )
+        if errors:
+            for err in errors:
+                logger.error("Profile validation: %s", err)
+            sys.exit(1)
+        logger.info("Agent profiles validated: %s", list(config.agent.agents.keys()))
 
     logger.info("Config loaded: agent='%s'", config.agent.agent_system)
 

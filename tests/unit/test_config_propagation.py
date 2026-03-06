@@ -346,6 +346,17 @@ class TestConfigPropagation:
         cfg = self._build_debate_config(prompt_file_overrides=overrides)
         assert cfg.prompt_file_overrides["role_macro"] == "roles/macro_diverse.txt"
 
+    def test_agents_map_propagated(self):
+        agents_map = {"macro": "macro_diverse", "value": "value_diverse", "risk": "risk_diverse"}
+        cfg = self._build_debate_config(agents=agents_map)
+        assert cfg.agent_profiles != {}
+        assert cfg.judge_profile != {}
+
+    def test_judge_profile_propagated(self):
+        agents_map = {"macro": "macro_standard", "value": "value_standard"}
+        cfg = self._build_debate_config(agents=agents_map, judge_profile="judge_diverse")
+        assert cfg.judge_profile != {}
+
     def test_sector_config_propagated(self):
         sector_cfg = {
             "sectors": {"tech": ["AAPL"], "fin": ["JPM"]},
@@ -439,8 +450,9 @@ class TestDebateConfigToDict:
             "parallel_agents", "mock", "logging_mode",
             "sector_config", "log_rendered_prompts", "log_prompt_manifest",
             "pid_enabled", "console_display", "prompt_profile",
-            "prompt_file_overrides", "use_system_causal_contract",
+            "prompt_file_overrides",
             "llm_stagger_ms", "max_concurrent_llm", "no_rate_limit",
+            "agent_profiles", "judge_profile",
         ]
         for key in required_keys:
             assert key in d, f"Missing key in to_dict(): {key}"
