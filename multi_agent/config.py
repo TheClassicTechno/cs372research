@@ -62,6 +62,12 @@ class DebateConfig:
     # Number of critique-revision cycles (1 = propose -> critique -> revise -> judge)
     max_rounds: int = 1
 
+    # Skip critique and revise phases (propose -> judge only)
+    propose_only: bool = False
+
+    # Type of judge ('llm' or 'average')
+    judge_type: str = "llm"
+
     # Whether to add an explicit devil's advocate agent
     enable_adversarial: bool = False
 
@@ -123,9 +129,6 @@ class DebateConfig:
     #        log_beta_bucket, max_prompt_log_chars
     prompt_logging: dict = field(default_factory=dict)
 
-    # --- System-level causal contract ---
-    use_system_causal_contract: bool = False
-
     # --- Structured debate logging ---
     logging_mode: str = "off"  # "standard" | "debug" | "off"
     experiment_name: str | None = None  # defaults to config filename stem
@@ -133,13 +136,6 @@ class DebateConfig:
     # --- Console display ---
     console_display: bool = True  # Rich-formatted terminal output (set False for minimal logs)
 
-    # --- Prompt block/section ordering (for ablation experiments) ---
-    system_prompt_block_order: list[str] = field(
-        default_factory=lambda: ["causal_contract", "role_system", "phase_preamble", "tone"]
-    )
-    user_prompt_section_order: list[str] = field(
-        default_factory=lambda: ["preamble", "context", "agent_data", "task", "scaffolding", "output_format"]
-    )
     # Override which .txt file to load for a given block/section name.
     # Keys: "causal_contract", "role_<rolename>", "phase_preamble_critique",
     #        "phase_preamble_revise", "proposal_template", "critique_template",
@@ -148,8 +144,13 @@ class DebateConfig:
     prompt_file_overrides: dict[str, str] = field(default_factory=dict)
 
     # --- Prompt profile (per-agent prompt composition) ---
-    prompt_profile: str = ""  # profile name (e.g. "default", "minimal") or "" for backward compat
+    prompt_profile: str = "default"  # profile name (e.g. "default", "minimal", "diverse_agents")
     role_overrides: dict = field(default_factory=dict)  # per-role profile overrides
+
+    # --- Agent profiles (new unified system) ---
+    # When set, these replace prompt_profile + prompt_file_overrides + role_overrides.
+    agent_profiles: dict = field(default_factory=dict)  # {role: loaded_profile_dict}
+    judge_profile: dict = field(default_factory=dict)   # loaded judge profile dict
 
     # --- CRIT configuration ---
     crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
@@ -162,6 +163,9 @@ class DebateConfig:
 
     # --- Sector constraints (optional, forwarded from SimulationConfig) ---
     sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
+
+    # --- Allocation constraints (optional, forwarded from SimulationConfig) ---
+    allocation_constraints: dict | None = None  # {max_weight, min_holdings, fully_invested}
 
     @property
     def evaluation_mode(self) -> str:
@@ -209,6 +213,8 @@ class DebateConfig:
         return {
             "roles": [r.value for r in self.roles],
             "max_rounds": self.max_rounds,
+            "propose_only": self.propose_only,
+            "judge_type": self.judge_type,
             "enable_adversarial": self.enable_adversarial,
             "model_name": self.model_name,
             "temperature": self.temperature,
@@ -230,13 +236,13 @@ class DebateConfig:
             "skip_pipeline": True,
             "logging_mode": self.logging_mode,
             "console_display": self.console_display,
-            "use_system_causal_contract": self.use_system_causal_contract,
-            "system_prompt_block_order": self.system_prompt_block_order,
-            "user_prompt_section_order": self.user_prompt_section_order,
             "prompt_file_overrides": self.prompt_file_overrides,
             "prompt_profile": self.prompt_profile,
             "role_overrides": self.role_overrides,
+            "agent_profiles": self.agent_profiles,
+            "judge_profile": self.judge_profile,
             "crit_system_template": self.crit_system_template,
             "crit_user_template": self.crit_user_template,
             "sector_config": self.sector_config,
+            "allocation_constraints": self.allocation_constraints,
         }

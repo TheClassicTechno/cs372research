@@ -500,6 +500,11 @@ class MultiAgentRunner:
         for t in range(self.config.max_rounds):
             state["current_round"] = t + 1
 
+            # Start round in structured logger
+            if self._debate_logger:
+                beta = self._pid_controller.beta if self.config.pid_enabled and self._pid_controller else self._original_beta
+                self._debate_logger.start_round(t + 1, beta)
+
             # Prompt manifest: log file names once at round start
             # (skip when Rich console is active — avoids terminal noise)
             if state["config"].get("log_prompt_manifest") and not self.config.console_display:
@@ -528,6 +533,12 @@ class MultiAgentRunner:
                 else:
                     _print_comparison_table(state.get("proposals", []), "Allocations")
                     _print_comparison_table(state.get("revisions", []), "Revisions")
+
+                if self._debate_logger:
+                    self._debate_logger.write_proposals(state.get("proposals", []))
+                    self._debate_logger.write_critiques(state.get("critiques", []))
+                    self._debate_logger.write_revisions(state.get("revisions", []))
+                    self._debate_logger.write_round_state(state, t + 1)
 
             if self.config.parallel_agents:
                 # With operator.add, revisions accumulate (previous round's

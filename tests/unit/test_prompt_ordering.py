@@ -9,7 +9,7 @@ Tests cover:
   5. Unknown/missing sections/blocks are silently skipped
   6. _load_sectioned_template() parsing
   7. _assemble_user_prompt() rendering and ordering
-  8. DebateConfig and AgentConfig carry ordering fields
+  8. DebateConfig carries prompt_file_overrides field
   9. Prompts directory structure (files in correct subdirectories)
 """
 
@@ -30,7 +30,6 @@ from multi_agent.prompts import (
     CAUSAL_CLAIM_FORMAT,
 )
 from multi_agent.prompts.registry import (
-    _DEFAULT_BLOCK_ORDER,
     _load_prompt_file,
     PromptRegistry,
     reset_registry_cache,
@@ -57,7 +56,7 @@ class TestPromptsDirectoryStructure:
             assert path.is_dir(), f"Expected subdirectory missing: {subdir}/"
 
     @pytest.mark.parametrize("path", [
-        "roles/macro.txt", "roles/macro_slim.txt",
+        "roles/macro.txt",
         "roles/value.txt", "roles/risk.txt",
         "roles/technical.txt", "roles/sentiment.txt",
         "roles/devils_advocate.txt",
@@ -327,14 +326,11 @@ class TestSystemPromptBlockOrdering:
         reset_registry_cache()
         self.registry = PromptRegistry()
 
-    def test_default_block_order_constant(self):
-        assert _DEFAULT_BLOCK_ORDER == ["causal_contract", "role_system", "phase_preamble", "tone"]
-
-    def test_default_order_critique_with_causal_contract(self):
-        """Default order: causal_contract → role_system → phase_preamble → tone."""
+    def test_default_order_critique_with_explicit_block_order(self):
+        """Explicit order: causal_contract -> role_system -> phase_preamble -> tone."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
+            block_order=["causal_contract", "role_system", "phase_preamble", "tone"],
         )
         assert "causal_contract" in result.blocks_used
         assert "role_system" in result.blocks_used
@@ -348,10 +344,9 @@ class TestSystemPromptBlockOrdering:
         assert cc_idx < rs_idx < pp_idx < t_idx
 
     def test_tone_first_block_order(self):
-        """Custom order: tone → role_system → phase_preamble → causal_contract."""
+        """Custom order: tone -> role_system -> phase_preamble -> causal_contract."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
             block_order=["tone", "role_system", "phase_preamble", "causal_contract"],
         )
         # Tone should appear before role_system in the output
@@ -363,7 +358,6 @@ class TestSystemPromptBlockOrdering:
         """Block order with only role_system — others skipped."""
         result = self.registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
             block_order=["role_system"],
         )
         assert result.blocks_used == ["role_system"]
@@ -388,26 +382,21 @@ class TestSystemPromptBlockOrdering:
         assert "role_system" in result.blocks_used
 
     def test_judge_phase_uses_judge_system_block(self):
-        """Judge phase maps role_system to judge_system content."""
+        """Judge phase uses judge_system block."""
         result = self.registry.build(
             role="judge", phase="judge",
-            block_order=["role_system"],
+            block_order=["judge_system"],
         )
         assert "Judge" in result.system_prompt
 
-    def test_block_order_none_uses_default(self):
-        """block_order=None should use the default order."""
-        result_default = self.registry.build(
+    def test_empty_block_order_produces_empty_prompt(self):
+        """block_order=[] should produce an empty system prompt."""
+        result = self.registry.build(
             role="macro", phase="critique", beta=0.5,
-            use_system_causal_contract=True,
-            block_order=None,
+            block_order=[],
         )
-        result_explicit = self.registry.build(
-            role="macro", phase="critique", beta=0.5,
-            use_system_causal_contract=True,
-            block_order=_DEFAULT_BLOCK_ORDER,
-        )
-        assert result_default.blocks_used == result_explicit.blocks_used
+        assert result.blocks_used == []
+        assert result.system_prompt == ""
 
 
 # =============================================================================
@@ -422,32 +411,37 @@ class TestSystemPromptFileOverrides:
         self.registry = PromptRegistry()
 
     def test_role_file_override(self):
-        """Override role_macro to use slim variant."""
-        result_normal = self.registry.build(role="macro", phase="propose")
+        """Override role_macro to use diverse variant."""
+        result_normal = self.registry.build(
+            role="macro", phase="propose",
+            block_order=["role_system"],
+        )
         result_override = self.registry.build(
             role="macro", phase="propose",
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+            block_order=["role_system"],
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
         )
         # Both should have role_system block but with different content
         assert "role_system" in result_normal.blocks_used
         assert "role_system" in result_override.blocks_used
-        # Slim version should be shorter
-        assert len(result_override.system_prompt) <= len(result_normal.system_prompt)
+        # Content should differ (diverse variant has different structure)
+        assert result_normal.system_prompt != result_override.system_prompt
 
     def test_causal_contract_file_override(self):
         """Override causal_contract to a different file."""
         # Use a role file as the override just to test the mechanism
         result = self.registry.build(
             role="macro", phase="critique", beta=0.5,
-            use_system_causal_contract=True,
+            block_order=["causal_contract", "role_system", "phase_preamble", "tone"],
             prompt_file_overrides={"causal_contract": "scaffolding/causal_claim_format.txt"},
         )
         assert "causal_contract" in result.blocks_used
 
     def test_nonexistent_override_file_returns_empty(self):
-        """Override pointing to nonexistent file → block is empty, skipped."""
+        """Override pointing to nonexistent file -> block is empty, skipped."""
         result = self.registry.build(
             role="macro", phase="propose",
+            block_order=["role_system"],
             prompt_file_overrides={"role_macro": "nonexistent_file.txt"},
         )
         # role_system should not be in blocks_used since content is empty
@@ -476,48 +470,38 @@ class TestLoadPromptFile:
 
 
 # =============================================================================
-# DebateConfig ordering fields
+# DebateConfig prompt fields
 # =============================================================================
 
-class TestDebateConfigOrderingFields:
-    """Test that DebateConfig carries ordering and override fields."""
-
-    def test_default_system_prompt_block_order(self):
-        cfg = DebateConfig()
-        assert cfg.system_prompt_block_order == [
-            "causal_contract", "role_system", "phase_preamble", "tone"
-        ]
-
-    def test_default_user_prompt_section_order(self):
-        cfg = DebateConfig()
-        assert cfg.user_prompt_section_order == [
-            "preamble", "context", "agent_data", "task", "scaffolding", "output_format"
-        ]
+class TestDebateConfigPromptFields:
+    """Test that DebateConfig carries prompt_file_overrides and prompt_profile."""
 
     def test_default_prompt_file_overrides_empty(self):
         cfg = DebateConfig()
         assert cfg.prompt_file_overrides == {}
 
-    def test_custom_ordering_in_constructor(self):
-        cfg = DebateConfig(
-            system_prompt_block_order=["tone", "role_system"],
-            user_prompt_section_order=["output_format", "task"],
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
-        )
-        assert cfg.system_prompt_block_order == ["tone", "role_system"]
-        assert cfg.user_prompt_section_order == ["output_format", "task"]
-        assert cfg.prompt_file_overrides == {"role_macro": "roles/macro_slim.txt"}
+    def test_default_prompt_profile(self):
+        cfg = DebateConfig()
+        assert cfg.prompt_profile == "default"
 
-    def test_to_dict_includes_ordering_fields(self):
+    def test_custom_prompt_profile(self):
+        cfg = DebateConfig(prompt_profile="diverse_agents")
+        assert cfg.prompt_profile == "diverse_agents"
+
+    def test_custom_prompt_file_overrides(self):
         cfg = DebateConfig(
-            system_prompt_block_order=["tone", "role_system"],
-            user_prompt_section_order=["task", "context"],
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
+        )
+        assert cfg.prompt_file_overrides == {"role_macro": "roles/macro_diverse.txt"}
+
+    def test_to_dict_includes_prompt_fields(self):
+        cfg = DebateConfig(
+            prompt_profile="diverse_agents",
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
         )
         d = cfg.to_dict()
-        assert d["system_prompt_block_order"] == ["tone", "role_system"]
-        assert d["user_prompt_section_order"] == ["task", "context"]
-        assert d["prompt_file_overrides"] == {"role_macro": "roles/macro_slim.txt"}
+        assert d["prompt_profile"] == "diverse_agents"
+        assert d["prompt_file_overrides"] == {"role_macro": "roles/macro_diverse.txt"}
 
 
 # =============================================================================
@@ -546,11 +530,11 @@ class TestAgentConfigOrderingFields:
             llm_model="gpt-4o-mini",
             system_prompt_block_order=["tone", "role_system"],
             user_prompt_section_order=["task", "context"],
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
         )
         assert cfg.system_prompt_block_order == ["tone", "role_system"]
         assert cfg.user_prompt_section_order == ["task", "context"]
-        assert cfg.prompt_file_overrides == {"role_macro": "roles/macro_slim.txt"}
+        assert cfg.prompt_file_overrides == {"role_macro": "roles/macro_diverse.txt"}
 
 
 # =============================================================================
@@ -563,11 +547,6 @@ class TestDefaultOrderConstants:
     def test_default_section_order_value(self):
         assert _DEFAULT_SECTION_ORDER == [
             "preamble", "context", "agent_data", "task", "scaffolding", "output_format"
-        ]
-
-    def test_default_block_order_value(self):
-        assert _DEFAULT_BLOCK_ORDER == [
-            "causal_contract", "role_system", "phase_preamble", "tone"
         ]
 
 
@@ -586,7 +565,6 @@ class TestOrderingAndOverridesCombined:
         registry = PromptRegistry()
         result = registry.build(
             role="macro", phase="critique", beta=0.9,
-            use_system_causal_contract=True,
             block_order=["tone", "phase_preamble", "role_system", "causal_contract"],
         )
         # Verify tone comes first
@@ -608,20 +586,15 @@ class TestOrderingAndOverridesCombined:
         assert output_pos < preamble_pos
 
     def test_full_pipeline_with_debate_config(self):
-        """DebateConfig → to_dict() → use in builder functions."""
+        """DebateConfig -> to_dict() -> use in builder functions."""
         cfg = DebateConfig(
-            system_prompt_block_order=["role_system", "tone", "phase_preamble"],
-            user_prompt_section_order=["task", "context", "preamble", "output_format"],
             prompt_file_overrides={"proposal_template": "phases/proposal_allocation.txt"},
         )
         d = cfg.to_dict()
 
         result = build_proposal_user_prompt(
             "MY CONTEXT",
-            section_order=d.get("user_prompt_section_order"),
             prompt_file_overrides=d.get("prompt_file_overrides"),
         )
-        # Task section (evidence citation) should come before context
-        task_pos = result.find("Evidence citation")
-        ctx_pos = result.find("MY CONTEXT")
-        assert task_pos < ctx_pos, "task should appear before context with custom order"
+        # Allocation template should be used due to override
+        assert "MY CONTEXT" in result

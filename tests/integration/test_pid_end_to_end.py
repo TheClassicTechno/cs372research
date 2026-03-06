@@ -101,7 +101,7 @@ class TestYAMLConfigPropagation:
 dataset_path: "data/cases"
 tickers: [NVDA]
 invest_quarter: "2025Q1"
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -120,7 +120,7 @@ agent:
             f.flush()
             config = SimulationConfig.from_yaml(f.name)
 
-        agent = config.agent
+        agent = config.debate_setup
         assert agent.pid_enabled is True
         assert agent.pid_kp == 0.1
         assert agent.pid_ki == 0.02
@@ -134,7 +134,7 @@ agent:
 dataset_path: "data/cases"
 tickers: [NVDA]
 invest_quarter: "2025Q1"
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -147,7 +147,7 @@ agent:
             f.flush()
             config = SimulationConfig.from_yaml(f.name)
 
-        assert config.agent.pid_enabled is False
+        assert config.debate_setup.pid_enabled is False
 
     def test_agent_config_to_debate_config(self, pid_agent_config: AgentConfig):
         """AgentConfig with PID fields creates DebateAgentSystem with PID enabled."""

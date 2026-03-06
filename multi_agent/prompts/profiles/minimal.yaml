@@ -2,10 +2,13 @@
 # Useful for ablation experiments testing prompt minimalism.
 
 system_blocks:
-  - role_system
-  - phase_preamble
+  propose:  [role_system]
+  critique: [role_system, phase_preamble]
+  revise:   [role_system, phase_preamble]
+  judge:    [judge_system]
 
 user_sections:
-  - context
-  - task
-  - output_allocation
+  propose:  [context, task, output_allocation]
+  critique: [context, task, output_format]
+  revise:   [context, task, output_allocation]
+  judge:    [context, task, output_format]

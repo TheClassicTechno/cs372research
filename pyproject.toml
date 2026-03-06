@@ -26,3 +26,14 @@ dependencies = [
     "transformers>=5.2.0",
     "yfinance>=1.2.0",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "fast: L1/L2 unit + prompt tests (no I/O, no API)",
+    "integration: L3/L4 graph + mock + artifact tests",
+    "live: L5 real API smoke tests",
+]
+testpaths = ["tests", "multi_agent/tests", "eval/PID/tests", "eval/tests"]
+addopts = "-m 'not live' --tb=short -q"
+
+# To run live tests:  pytest -m live -o "addopts="

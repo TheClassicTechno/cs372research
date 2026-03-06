@@ -1,0 +1,23 @@
+# Angry Tech Rebound Bull — aggressive growth, dismissive of recession fears.
+system_prompts:
+  propose:
+    - roles/macro_angry_tech_bull.txt
+  critique:
+    - roles/macro_angry_tech_bull.txt
+    - phase_preambles/critique.txt
+    - tone
+  revise:
+    - roles/macro_angry_tech_bull.txt
+    - phase_preambles/revise.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation.txt
+    sections: [context, task, output_format]
+  critique:
+    template: phases/critique_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]

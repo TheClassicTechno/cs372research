@@ -1,0 +1,76 @@
+# ============================================================================
+# Debate — 2022Q2 Recession Fears Scenario
+# ============================================================================
+# Four macro strategists with competing recession interpretations.
+# Run with:
+#   python run_simulation.py --agents config/debate/debate_recession_agents.yaml \
+#     --scenario config/scenarios/2022Q2_recession_fears.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+tickers:
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMD
+  - XOM
+  - CVX
+  - COP
+  - SLB
+  - JPM
+  - GS
+  - BAC
+  - MS
+  - CAT
+  - RTX
+  - AMZN
+  - TSLA
+  - DAL
+  - WMT
+  - COST
+  - PG
+  - UNH
+  - JNJ
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 25
+
+num_episodes: 1
+
+# --- Who debates ---
+agents:
+  macro: "macro_growth_rebound"
+  value: "value_inflation_persistence"
+  risk: "risk_recession_strategist"
+  technical: "technical_soft_landing"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 7
+
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.6
+  pid_epsilon: 0.001
+
+  logging_mode: "debug"
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 2
+
+broker:
+  initial_cash: 100000.0

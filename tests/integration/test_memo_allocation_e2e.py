@@ -158,7 +158,7 @@ class TestConfigPropagation:
             dataset_path="data-pipeline/final_snapshots",
             invest_quarter="2025Q1",
             tickers=["AAPL", "MSFT", "GOOG"],
-            agent={
+            debate_setup={
                 "agent_system": "multi_agent_debate",
                 "llm_provider": "openai",
                 "llm_model": "gpt-4o-mini",

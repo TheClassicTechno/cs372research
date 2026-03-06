@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pipeline provenance tracking — shared module for run manifests and inline metadata.
+Pipeline provenance tracking â€” shared module for run manifests and inline metadata.
 
 Provides:
   - hash_file(path)           SHA-256 hex digest of a file
@@ -16,11 +16,11 @@ Usage from pipeline stages (subprocess-safe):
 
     from provenance import get_run_id, inline_provenance, StageContext, append_stage_to_manifest
 
-    # Inline provenance — always safe, returns {} fields even without orchestrator
+    # Inline provenance â€” always safe, returns {} fields even without orchestrator
     prov = inline_provenance()
     output_dict.update(prov)
 
-    # Stage reporting — only when run via orchestrator
+    # Stage reporting â€” only when run via orchestrator
     if get_run_id():
         ctx = StageContext("3_macro_data", 3, "macro/macro_quarter_builder.py")
         ctx.start()
@@ -126,7 +126,7 @@ def git_info(repo_dir: Optional[Path] = None) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# StageContext — per-stage recorder
+# StageContext â€” per-stage recorder
 # ---------------------------------------------------------------------------
 
 _DEFERRED = "__deferred__"
@@ -205,7 +205,7 @@ class StageContext:
 
 
 # ---------------------------------------------------------------------------
-# PipelineRun — top-level orchestrator context
+# PipelineRun â€” top-level orchestrator context
 # ---------------------------------------------------------------------------
 
 class PipelineRun:
@@ -320,7 +320,7 @@ class PipelineRun:
         tmp = self.manifest_path.with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
-        tmp.rename(self.manifest_path)
+        tmp.replace(self.manifest_path)
 
     def _load_manifest(self) -> Dict[str, Any]:
         if self.manifest_path.exists():
@@ -349,7 +349,7 @@ class PipelineRun:
 
 
 # ---------------------------------------------------------------------------
-# Subprocess helper — stages call this to append their data to the manifest
+# Subprocess helper â€” stages call this to append their data to the manifest
 # ---------------------------------------------------------------------------
 
 def append_stage_to_manifest(ctx: StageContext) -> None:
@@ -376,4 +376,5 @@ def append_stage_to_manifest(ctx: StageContext) -> None:
     tmp = manifest_path.with_suffix(".json.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
-    tmp.rename(manifest_path)
+    tmp.replace(manifest_path)
+
