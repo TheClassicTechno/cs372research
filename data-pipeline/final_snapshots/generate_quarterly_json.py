@@ -7,6 +7,7 @@ snapshot JSON per quarter, containing all requested tickers.
 
 Inputs:
   - EDGAR/finished_summaries/{TICKER}/{YEAR}/Q{#}.json
+  - earnings_calls/data/{TICKER}/{YEAR}_Q{#}.json
   - sentiment/data/{TICKER}/{YEAR}_Q{#}.json
   - macro/data/macro_{YEAR}_Q{#}.json
   - quarterly_asset_details/data/{TICKER}/{YEAR}_Q{#}.json
@@ -48,6 +49,7 @@ _PIPELINE_DIR = _SCRIPT_DIR.parent                      # data-pipeline/
 _SUPPORTED_TICKERS_PATH = _PIPELINE_DIR / "supported_tickers.yaml"
 
 DEFAULT_SUMMARIES_DIR = _PIPELINE_DIR / "EDGAR" / "finished_summaries"
+DEFAULT_EARNINGS_CALLS_DIR = _PIPELINE_DIR / "earnings_calls" / "data"
 DEFAULT_SENTIMENT_DIR = _PIPELINE_DIR / "sentiment" / "data"
 DEFAULT_MACRO_DIR = _PIPELINE_DIR / "macro" / "data"
 DEFAULT_ASSETS_DIR = _PIPELINE_DIR / "quarterly_asset_details" / "data"
@@ -200,6 +202,27 @@ def load_sentiment(
     return None
 
 
+def load_earnings_calls(
+    earnings_calls_dir: Path,
+    ticker: str,
+    year: int,
+    quarter: str,
+) -> Optional[Dict[str, Any]]:
+    """Load earnings-call summary + sentiment for a ticker/quarter.
+
+    File: {earnings_calls_dir}/{TICKER}/{YEAR}_{QUARTER}.json
+    """
+    per_ticker_file = earnings_calls_dir / ticker / f"{year}_{quarter}.json"
+    if not per_ticker_file.exists():
+        return None
+    try:
+        with open(per_ticker_file, "r") as f:
+            data = json.load(f)
+        return data.get("features")
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def load_macro(
     macro_dir: Path,
     year: int,
@@ -334,6 +357,7 @@ def build_quarter_snapshot(
     quarter: str,
     tickers: List[str],
     summaries_dir: Path,
+    earnings_calls_dir: Path,
     sentiment_dir: Path,
     macro_dir: Path,
     assets_dir: Path,
@@ -350,11 +374,13 @@ def build_quarter_snapshot(
     ticker_data: Dict[str, Any] = {}
     for t in tickers:
         filing_summary = load_filing_summaries(summaries_dir, t, rebal_date)
+        earnings_call = load_earnings_calls(earnings_calls_dir, t, year, quarter)
         sentiment = load_sentiment(sentiment_dir, t, year, quarter)
         asset_features = load_asset_data(assets_dir, t, year, quarter)
 
         entry: Dict[str, Any] = {
             "filing_summary": filing_summary,
+            "earnings_call": earnings_call,
             "news_sentiment": sentiment,
             "asset_features": asset_features,
         }
@@ -398,6 +424,7 @@ def run_pipeline(
     tickers: List[str],
     quarters: List[Tuple[int, str]],
     summaries_dir: Path,
+    earnings_calls_dir: Path,
     sentiment_dir: Path,
     macro_dir: Path,
     assets_dir: Path,
@@ -411,7 +438,7 @@ def run_pipeline(
     for year, quarter in tqdm(quarters, desc="Quarters", unit="qtr"):
         doc = build_quarter_snapshot(
             year, quarter, tickers,
-            summaries_dir, sentiment_dir, macro_dir, assets_dir,
+            summaries_dir, earnings_calls_dir, sentiment_dir, macro_dir, assets_dir,
             fiscal_year_ends=fiscal_year_ends,
         )
 
@@ -449,6 +476,7 @@ def main():
     p.add_argument("--supported", action="store_true", default=False,
                    help="Use all tickers from supported_tickers.yaml")
     p.add_argument("--summaries-dir", type=str, default=str(DEFAULT_SUMMARIES_DIR))
+    p.add_argument("--earnings-calls-dir", type=str, default=str(DEFAULT_EARNINGS_CALLS_DIR))
     p.add_argument("--sentiment-dir", type=str, default=str(DEFAULT_SENTIMENT_DIR))
     p.add_argument("--macro-dir", type=str, default=str(DEFAULT_MACRO_DIR))
     p.add_argument("--assets-dir", type=str, default=str(DEFAULT_ASSETS_DIR))
@@ -475,6 +503,7 @@ def main():
         tickers=tickers,
         quarters=quarters,
         summaries_dir=Path(args.summaries_dir),
+        earnings_calls_dir=Path(args.earnings_calls_dir),
         sentiment_dir=Path(args.sentiment_dir),
         macro_dir=Path(args.macro_dir),
         assets_dir=Path(args.assets_dir),
