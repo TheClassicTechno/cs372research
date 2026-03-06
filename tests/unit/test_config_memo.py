@@ -106,3 +106,7 @@ class TestValidateMemoMode:
         )
         assert cfg.allocation_constraints.max_weight == 0.25
         assert cfg.allocation_constraints.min_holdings == 5
+
+    def test_use_cash_virtual_ticker_default(self):
+        cfg = _sim_config()
+        assert cfg.use_cash_virtual_ticker is False

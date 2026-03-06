@@ -355,6 +355,10 @@ class SimulationConfig(BaseModel):
         description="Invest quarter for memo mode, e.g. '2025Q1'. "
         "Agents see the prior quarter's data and allocate for this quarter.",
     )
+    use_cash_virtual_ticker: bool = Field(
+        default=False,
+        description="If true, adds a virtual '_CASH_' ticker to the universe with a fixed price of 1.0.",
+    )
     allocation_constraints: AllocationConstraints = Field(
         default_factory=AllocationConstraints,
         description="Allocation weight constraints (memo mode only).",

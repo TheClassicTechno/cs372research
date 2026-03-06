@@ -54,11 +54,15 @@ class AsyncSimulationRunner:
 
         # Load memo case templates (shared across episodes).
         from simulation.memo_loader import load_memo_cases
+        tickers = list(self._config.tickers)
+        if self._config.use_cash_virtual_ticker and "_CASH_" not in tickers:
+            tickers.append("_CASH_")
+
         templates = load_memo_cases(
             self._config.dataset_path,
             invest_quarter=self._config.invest_quarter,
             memo_format=self._config.memo_format,
-            tickers=self._config.tickers,
+            tickers=tickers,
         )
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
