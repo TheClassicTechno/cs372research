@@ -55,8 +55,11 @@ class AsyncSimulationRunner:
         # Load memo case templates (shared across episodes).
         from simulation.memo_loader import load_memo_cases
         tickers = list(self._config.tickers)
-        if self._config.use_cash_virtual_ticker and "_CASH_" not in tickers:
-            tickers.append("_CASH_")
+        if self._config.use_cash_virtual_ticker:
+            if "CASH" in tickers:
+                raise ValueError("Ticker universe already contains 'CASH'; cannot add virtual '_CASH_' ticker.")
+            if "_CASH_" not in tickers:
+                tickers.append("_CASH_")
 
         templates = load_memo_cases(
             self._config.dataset_path,

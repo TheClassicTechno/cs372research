@@ -383,6 +383,20 @@ class MultiAgentRunner:
                 self.config.pid_config, self.config.initial_beta
             )
 
+    def _get_js_divergence(self, state: dict) -> float | None:
+        """Compute JS divergence between the latest agent allocations."""
+        from eval.divergence import generalized_js_divergence
+        decisions = state.get("revisions") or state.get("proposals", [])
+        if not decisions:
+            return None
+        allocs = [
+            d.get("action_dict", {}).get("allocation", {})
+            for d in decisions
+        ]
+        if len(allocs) < 2:
+            return None
+        return generalized_js_divergence(allocs)
+
     def _log_prompt_manifest(self, state: dict, round_num: int) -> None:
         """Log prompt file manifest once at the start of a round.
 
@@ -534,11 +548,20 @@ class MultiAgentRunner:
                     _print_comparison_table(state.get("proposals", []), "Allocations")
                     _print_comparison_table(state.get("revisions", []), "Revisions")
 
+                js = self._get_js_divergence(state)
+                if js is not None:
+                    if self.config.console_display:
+                        from .terminal_display import render_divergence_metrics
+                        render_divergence_metrics(js, 0.0) # Overlap not avail here
+                    else:
+                        print(f"\n  Round {t+1} Disagreement (JS Divergence): {js:.4f} bits")
+
                 if self._debate_logger:
                     self._debate_logger.write_proposals(state.get("proposals", []))
                     self._debate_logger.write_critiques(state.get("critiques", []))
                     self._debate_logger.write_revisions(state.get("revisions", []))
-                    self._debate_logger.write_round_state(state, t + 1)
+                    metrics = {"js_divergence": js} if js is not None else None
+                    self._debate_logger.write_round_state(state, t + 1, metrics=metrics)
 
             if self.config.parallel_agents:
                 # With operator.add, revisions accumulate (previous round's
@@ -737,6 +760,10 @@ class MultiAgentRunner:
         ov = compute_mean_overlap(evidence_sets)
         if ov is None:
             ov = 0.0
+
+        if not self.config.console_display:
+            print(f"\n  Round {round_num} Disagreement (JS Divergence): {js:.4f} bits")
+            print(f"  Round {round_num} Evidence Overlap: {ov:.4f}")
 
         # Guard rho_bar against None/NaN
         rho_bar = round_crit.rho_bar

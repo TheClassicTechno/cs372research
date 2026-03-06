@@ -712,6 +712,24 @@ class DebateLogger:
         manifest["termination_reason"] = (
             "stable_convergence" if terminated_early else "max_rounds"
         )
+
+        final_js = last_pid.get("divergence", {}).get("js")
+        if final_js is None:
+            # Fallback for non-PID path: calculate from the latest round in state
+            try:
+                from eval.divergence import generalized_js_divergence
+                decisions = state.get("revisions") or state.get("proposals", [])
+                if decisions:
+                    allocs = [
+                        d.get("action_dict", {}).get("allocation", {})
+                        for d in decisions
+                    ]
+                    if len(allocs) >= 2:
+                        final_js = generalized_js_divergence(allocs)
+            except Exception:
+                pass
+
+        manifest["final_js"] = final_js
         manifest["final_beta"] = last_pid.get("pid", {}).get("beta_new")
         _write_json(manifest_path, manifest)
 

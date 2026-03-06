@@ -49,7 +49,7 @@ _MODULE_ALIASES: dict[str, str] = {
     "scaffolding_causal": "scaffolding/causal_claim_format.txt",
     "scaffolding_uncertainty": "scaffolding/forced_uncertainty.txt",
     "scaffolding_traps": "scaffolding/trap_awareness.txt",
-    "output_allocation": "output_format/allocation_output_instructions.txt",
+    "output_allocation": "output_format/allocation_output_slim.txt",
     "output_json": "output_format/json_output_instructions.txt",
     "causal_contract": "system_contract/system_causal_contract.txt",
 }
@@ -233,7 +233,7 @@ CAUSAL_CLAIM_FORMAT: str = _load("scaffolding/causal_claim_format.txt")
 FORCED_UNCERTAINTY: str = _load("scaffolding/forced_uncertainty.txt")
 TRAP_AWARENESS: str = _load("scaffolding/trap_awareness.txt")
 JSON_OUTPUT_INSTRUCTIONS: str = _load("output_format/json_output_instructions.txt")
-ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_slim.txt")
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
