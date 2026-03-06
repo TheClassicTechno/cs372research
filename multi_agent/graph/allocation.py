@@ -10,8 +10,8 @@ logger = logging.getLogger("multi_agent.graph.allocation")
 def normalize_allocation(
     raw: dict[str, float],
     universe: list[str],
-    max_weight: float = 0.40,
-    min_holdings: int = 3,
+    max_weight: float,
+    min_holdings: int,
 ) -> dict[str, float]:
     """Validate, constrain, and normalize allocation weights.
 
@@ -52,6 +52,7 @@ def normalize_allocation(
 
     # Step 5: normalize
     alloc = {t: w / total for t, w in alloc.items()}
+    naive_alloc = dict(alloc)  # Keep for comparison
 
     # Step 6: enforce max_weight (iterative cap-and-redistribute)
     alloc = _enforce_max_weight(alloc, max_weight)
@@ -59,6 +60,7 @@ def normalize_allocation(
     # Step 7: enforce min_holdings
     non_zero = sum(1 for w in alloc.values() if w > 1e-8)
     if non_zero < min_holdings and len(universe) >= min_holdings:
+        logger.warning("Min holdings constraint violated (%d < %d). Forcing weights on zero-tickers.", non_zero, min_holdings)
         sorted_tickers = sorted(alloc.items(), key=lambda x: x[1])
         need = min_holdings - non_zero
         min_w = 0.01  # 1% floor for forced holdings
@@ -83,6 +85,15 @@ def normalize_allocation(
         recapped_total = sum(alloc.values())
         if recapped_total > 0:
             alloc = {t: w / recapped_total for t, w in alloc.items()}
+
+    # Final comparison: warn if constraints changed weights significantly
+    for t in universe:
+        diff = alloc[t] - naive_alloc[t]
+        if abs(diff) > 1e-4:
+            logger.warning(
+                "Constraint enforcement changed %s allocation: %.4f -> %.4f (diff: %+.4f)",
+                t, naive_alloc[t], alloc[t], diff
+            )
 
     return alloc
 

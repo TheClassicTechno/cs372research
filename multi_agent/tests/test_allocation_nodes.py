@@ -195,6 +195,57 @@ class TestJudgeNodeAllocation:
         assert result["final_action"]["justification"]
 
 
+# ── propose_only and average judge ──────────────────────────────────────────
+
+
+from multi_agent.graph import critique_node, revise_node
+
+class TestProposeOnlyWithAverageJudge:
+    def test_propose_only_skips_critique_and_revise(self, alloc_obs_dict):
+        config = {"propose_only": True}
+        state = _make_state(alloc_obs_dict, config)
+        
+        assert critique_node(state) == {}
+        assert revise_node(state) == {}
+
+    def test_average_judge(self, alloc_obs_dict):
+        config = {"judge_type": "average"}
+        # Two agents: Agent A (100% AAPL), Agent B (100% MSFT)
+        proposals = [
+            {
+                "role": "macro",
+                "action_dict": {
+                    "allocation": {"AAPL": 1.0, "MSFT": 0.0, "GOOG": 0.0},
+                    "confidence": 0.8,
+                }
+            },
+            {
+                "role": "value",
+                "action_dict": {
+                    "allocation": {"AAPL": 0.0, "MSFT": 1.0, "GOOG": 0.0},
+                    "confidence": 0.4,
+                }
+            }
+        ]
+        state = _make_state(
+            alloc_obs_dict, config,
+            proposals=proposals,
+            enriched_context="context"
+        )
+        
+        result = judge_node(state)
+        final_alloc = result["final_action"]["allocation"]
+        
+        # Unweighted average: (1.0+0.0)/2 = 0.5 for AAPL and MSFT
+        assert final_alloc["AAPL"] == pytest.approx(0.5)
+        assert final_alloc["MSFT"] == pytest.approx(0.5)
+        assert final_alloc["GOOG"] == pytest.approx(0.0)
+        
+        # Average confidence: (0.8+0.4)/2 = 0.6
+        assert result["final_action"]["confidence"] == pytest.approx(0.6)
+        assert "Simple average" in result["final_action"]["justification"]
+
+
 # ── _print_allocation ────────────────────────────────────────────────────────
 
 

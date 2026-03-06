@@ -62,6 +62,12 @@ class DebateConfig:
     # Number of critique-revision cycles (1 = propose -> critique -> revise -> judge)
     max_rounds: int = 1
 
+    # Skip critique and revise phases (propose -> judge only)
+    propose_only: bool = False
+
+    # Type of judge ('llm' or 'average')
+    judge_type: str = "llm"
+
     # Whether to add an explicit devil's advocate agent
     enable_adversarial: bool = False
 
@@ -163,6 +169,9 @@ class DebateConfig:
     # --- Sector constraints (optional, forwarded from SimulationConfig) ---
     sector_config: dict | None = None  # {sectors, sector_limits, agent_sector_permissions}
 
+    # --- Allocation constraints (optional, forwarded from SimulationConfig) ---
+    allocation_constraints: dict | None = None  # {max_weight, min_holdings, fully_invested}
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -209,6 +218,8 @@ class DebateConfig:
         return {
             "roles": [r.value for r in self.roles],
             "max_rounds": self.max_rounds,
+            "propose_only": self.propose_only,
+            "judge_type": self.judge_type,
             "enable_adversarial": self.enable_adversarial,
             "model_name": self.model_name,
             "temperature": self.temperature,
@@ -239,4 +250,5 @@ class DebateConfig:
             "crit_system_template": self.crit_system_template,
             "crit_user_template": self.crit_user_template,
             "sector_config": self.sector_config,
+            "allocation_constraints": self.allocation_constraints,
         }
