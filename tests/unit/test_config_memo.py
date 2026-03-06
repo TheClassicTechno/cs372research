@@ -38,8 +38,8 @@ def _sim_config(**overrides) -> SimulationConfig:
 class TestAllocationConstraints:
     def test_defaults(self):
         ac = AllocationConstraints()
-        assert ac.max_weight == 0.40
-        assert ac.min_holdings == 3
+        assert ac.max_weight == 1.0
+        assert ac.min_holdings == 1
         assert ac.fully_invested is True
         assert ac.max_tickers == 10
 

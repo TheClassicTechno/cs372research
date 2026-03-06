@@ -186,7 +186,7 @@ def _render_llm_completion(call_id: str, response: str = "") -> None:
         role = role_raw.upper()
         elapsed = info["end_time"] - info["start_time"]
 
-    preview = _extract_preview(response, max_chars=400)
+    preview = _extract_preview(response, max_chars=4000)
 
     # Spacing: completion line + optional indented snippet line for readability
     if not RICH_AVAILABLE or _console is None:

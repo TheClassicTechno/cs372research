@@ -47,6 +47,14 @@ class AgentConfig(BaseModel):
         ge=1,
         description="Number of critique-revision cycles. PID needs >= 2 to intervene between rounds.",
     )
+    propose_only: bool = Field(
+        default=False,
+        description="If true, skips critique and revise phases, running only the propose phase (0 rounds of debate).",
+    )
+    judge_type: str = Field(
+        default="llm",
+        description="Type of judge to use: 'llm' (default) or 'average' (simple unweighted average).",
+    )
     debate_roles: list[str] | None = Field(
         default=None,
         description="Agent roles for debate, e.g. ['macro', 'value', 'risk']. "
@@ -224,6 +232,12 @@ class AgentConfig(BaseModel):
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
+    @model_validator(mode="after")
+    def _validate_propose_only(self) -> AgentConfig:
+        if self.propose_only and self.max_rounds != 1:
+            raise ValueError("When propose_only is true, max_rounds must be 1.")
+        return self
+
     # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
     run_command: str | None = Field(
         default=None,
@@ -236,12 +250,17 @@ class AgentConfig(BaseModel):
         "Set automatically by run_simulation.py.",
     )
 
-    # --- Sector constraints (populated from SimulationConfig, not set in YAML) ---
+    # --- Constraints (populated from SimulationConfig, not set in YAML) ---
     sector_config: dict | None = Field(
         default=None,
         description="Sector constraints forwarded from SimulationConfig. "
         "Contains 'sectors', 'sector_limits', 'agent_sector_permissions'. "
         "Not intended to be set directly in agent YAML configs.",
+    )
+    allocation_constraints: dict | None = Field(
+        default=None,
+        description="Allocation weight constraints forwarded from SimulationConfig. "
+        "Contains 'max_weight', 'min_holdings', 'fully_invested'.",
     )
 
 
@@ -262,13 +281,13 @@ class AllocationConstraints(BaseModel):
     """Constraints on portfolio allocation weights (memo mode)."""
 
     max_weight: float = Field(
-        default=0.40,
+        default=1.0,
         gt=0.0,
         le=1.0,
-        description="Maximum weight per ticker (default 40%).",
+        description="Maximum weight per ticker (default 100%).",
     )
     min_holdings: int = Field(
-        default=3,
+        default=1,
         ge=1,
         description="Minimum number of tickers with non-zero weight.",
     )
