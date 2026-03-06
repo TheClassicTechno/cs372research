@@ -30,7 +30,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ..config import AgentRole
 from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts, load_module
 
 # Phase preambles — keyed by phase name (kept for backward compat with old profiles).

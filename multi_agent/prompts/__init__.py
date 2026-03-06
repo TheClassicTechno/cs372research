@@ -17,7 +17,6 @@ import re
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from ..config import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -241,12 +240,12 @@ ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED: str = _load("output_format/allocation
 # =============================================================================
 
 ROLE_SYSTEM_PROMPTS: dict[str, str] = {
-    AgentRole.MACRO: _load("roles/macro.txt"),
-    AgentRole.VALUE: _load("roles/value.txt"),
-    AgentRole.RISK: _load("roles/risk.txt"),
-    AgentRole.TECHNICAL: _load("roles/technical.txt"),
-    AgentRole.SENTIMENT: _load("roles/sentiment.txt"),
-    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate.txt"),
+    "macro": _load("roles/macro.txt"),
+    "value": _load("roles/value.txt"),
+    "risk": _load("roles/risk.txt"),
+    "technical": _load("roles/technical.txt"),
+    "sentiment": _load("roles/sentiment.txt"),
+    "devils_advocate": _load("roles/devils_advocate.txt"),
 }
 
 # =============================================================================

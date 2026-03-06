@@ -78,76 +78,14 @@ sectors:
 
 
 # ============================================================================
-# Sector exposure limits
-# Adjusted for smaller universe
-# ============================================================================
-
-sector_limits:
-
-  tech:
-    min: 0.05
-    max: 0.35
-
-  energy:
-    min: 0.05
-    max: 0.30
-
-  financials:
-    min: 0.03
-    max: 0.25
-
-  defensive:
-    min: 0.05
-    max: 0.25
-
-  consumer:
-    min: 0.05
-    max: 0.30
-
-  healthcare:
-    min: 0.03
-    max: 0.20
-
-  industrials:
-    min: 0.03
-    max: 0.25
-
-
-# ============================================================================
 # Role-specific sector permissions
 # Encourages ideological disagreement between agents
 # ============================================================================
-
-agent_sector_permissions:
-
-  macro:
-    - energy
-    - financials
-    - industrials
-    - tech
-
-  value:
-    - financials
-    - industrials
-    - energy
-    - defensive
-
-  technical:
-    - "*"
-
-  risk:
-    - defensive
-    - healthcare
-    - financials
-
 
 # ============================================================================
 # Global sector constraint
 # Prevents single-theme portfolios
 # ============================================================================
-
-max_sector_weight: 0.40
-
 
 # ============================================================================
 # Portfolio allocation constraints
@@ -156,7 +94,5 @@ max_sector_weight: 0.40
 
 allocation_constraints:
 
-  max_weight: 0.25
-  min_holdings: 4
   fully_invested: true
   max_tickers: 11

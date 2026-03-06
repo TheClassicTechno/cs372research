@@ -28,6 +28,7 @@ _PIPELINE_DIR = _SCRIPT_DIR.parent                     # data-pipeline/
 _ASSETS_DIR = _PIPELINE_DIR / "quarterly_asset_details" / "data"
 _MACRO_DIR = _PIPELINE_DIR / "macro" / "data"
 _SUMMARIES_DIR = _PIPELINE_DIR / "EDGAR" / "finished_summaries"
+_EARNINGS_CALLS_DIR = _PIPELINE_DIR / "earnings_calls" / "data"
 _SENTIMENT_DIR = _PIPELINE_DIR / "sentiment" / "data"
 
 # Output directories
@@ -176,6 +177,7 @@ def ensure_snapshots(
         snapshot = build_quarter_snapshot(
             year, quarter, tickers,
             summaries_dir=_SUMMARIES_DIR,
+            earnings_calls_dir=_EARNINGS_CALLS_DIR,
             sentiment_dir=_SENTIMENT_DIR,
             macro_dir=_MACRO_DIR,
             assets_dir=_ASSETS_DIR,

@@ -131,43 +131,64 @@ def detect_columns(ds: Dataset) -> Dict[str, Optional[str]]:
     }
 
 
-def filter_records_for_ticker_quarter(
+def build_transcript_index(
     ds: Dataset,
     cols: Dict[str, Optional[str]],
-    ticker: str,
-    year: int,
-    quarter: int,
-) -> List[Dict[str, Any]]:
+) -> Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]]:
+    """Scan dataset once and return a dict keyed by (TICKER, year, quarter).
+
+    Records whose quarter cannot be inferred are stored under quarter=None
+    so the lookup function can apply the single-record-year fallback.
+    """
+    from collections import defaultdict
+
     symbol_col = cols["symbol"]
     year_col = cols["year"]
     quarter_col = cols["quarter"]
     date_col = cols["date"]
 
     if not symbol_col or not year_col:
-        return []
+        return {}
 
-    subset = ds.filter(
-        lambda x: str(x.get(symbol_col, "")).upper() == ticker and int(x.get(year_col, -1)) == year
-    )
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]] = defaultdict(list)
+    for row in tqdm(ds, desc="Indexing transcripts", unit="row"):
+        ticker = str(row.get(symbol_col, "")).upper()
+        try:
+            year = int(row.get(year_col, -1))
+        except (ValueError, TypeError):
+            continue
+        if year < 0:
+            continue
 
-    items = [dict(r) for r in subset]
-    if not items:
-        return []
-
-    selected: List[Dict[str, Any]] = []
-    for r in items:
         q_val: Optional[int] = None
         if quarter_col:
-            q_val = _quarter_from_any(r.get(quarter_col))
+            q_val = _quarter_from_any(row.get(quarter_col))
         if q_val is None and date_col:
-            q_val = _quarter_from_date_string(str(r.get(date_col, "")))
-        # If we cannot infer quarter, keep record only in single-record year case.
-        if q_val is None and len(items) == 1:
-            selected.append(r)
-            continue
-        if q_val == quarter:
-            selected.append(r)
-    return selected
+            q_val = _quarter_from_date_string(str(row.get(date_col, "")))
+
+        index[(ticker, year, q_val)].append(dict(row))
+
+    return dict(index)
+
+
+def lookup_records(
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]],
+    ticker: str,
+    year: int,
+    quarter: int,
+) -> List[Dict[str, Any]]:
+    """O(1) lookup from pre-built index, with single-record-year fallback."""
+    records = index.get((ticker, year, quarter), [])
+    if records:
+        return records
+
+    # Fallback: if there's exactly one record for this ticker-year with unknown
+    # quarter, assume it matches (preserves original behavior).
+    unknown_q = index.get((ticker, year, None), [])
+    if len(unknown_q) == 1:
+        return unknown_q
+
+    return []
 
 
 def flatten_transcripts(records: List[Dict[str, Any]], text_col: str, max_chars: int = 120_000) -> str:
@@ -356,6 +377,10 @@ def main() -> None:
         print(f"Columns detected: {ds.column_names}", file=sys.stderr)
         sys.exit(1)
 
+    print("Building transcript index...", flush=True)
+    transcript_index = build_transcript_index(ds, cols)
+    print(f"Indexed {sum(len(v) for v in transcript_index.values())} records into {len(transcript_index)} groups", flush=True)
+
     print("Loading FinBERT...", flush=True)
     tokenizer, model, device = init_finbert()
     print(f"Using device: {device}", flush=True)
@@ -373,7 +398,7 @@ def main() -> None:
                 skipped += 1
                 continue
 
-            records = filter_records_for_ticker_quarter(ds, cols, ticker, year, quarter)
+            records = lookup_records(transcript_index, ticker, year, quarter)
             if not records:
                 missing += 1
                 continue

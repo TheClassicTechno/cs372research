@@ -49,7 +49,7 @@ def build_debate_config(params: dict, mock: bool = False) -> Any:
     Constructs PIDConfig directly and passes it via pid_config field.
     """
     from eval.PID.types import PIDConfig, PIDGains
-    from multi_agent.config import AgentRole, DebateConfig
+    from multi_agent.config import DebateConfig
 
     pid_config = PIDConfig(
         gains=PIDGains(
@@ -67,8 +67,7 @@ def build_debate_config(params: dict, mock: bool = False) -> Any:
         delta_beta=params.get("delta_beta", 0.1),
     )
 
-    role_map = {r.value: r for r in AgentRole}
-    roles = [role_map[r] for r in params.get("roles", ["macro", "value", "risk", "technical"])]
+    roles = params.get("roles", ["macro", "value", "risk", "technical"])
 
     return DebateConfig(
         roles=roles,

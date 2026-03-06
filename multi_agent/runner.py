@@ -59,10 +59,10 @@ HOW INVARIANTS ARE PRESERVED
    equivalence testing against the old monolithic path.
 
 Usage:
-    from multi_agent import MultiAgentRunner, DebateConfig, Observation, AgentRole
+    from multi_agent import MultiAgentRunner, DebateConfig, Observation
 
     config = DebateConfig(
-        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
+        roles=["macro", "value", "risk", "technical"],
         max_rounds=2,
         agreeableness=0.3,
         enable_adversarial=True,
@@ -103,7 +103,7 @@ def _round_floats(obj, ndigits=4):
     return obj
 
 
-from .config import AgentRole, DebateConfig
+from .config import DebateConfig
 from .prompts.registry import beta_to_bucket, build_prompt_manifest, reset_registry_cache
 from .terminal_display import (
     render_round_header,
@@ -260,8 +260,8 @@ class MultiAgentRunner:
         # Auto-inject devil's advocate if adversarial mode is enabled.
         # Copy roles to avoid mutating a shared config object.
         if self.config.enable_adversarial:
-            if AgentRole.DEVILS_ADVOCATE not in self.config.roles:
-                self.config.roles = list(self.config.roles) + [AgentRole.DEVILS_ADVOCATE]
+            if "devils_advocate" not in self.config.roles:
+                self.config.roles = list(self.config.roles) + ["devils_advocate"]
 
         self.pipeline_graph = compile_pipeline_graph(self.config)
         if self.config.parallel_agents:
@@ -620,7 +620,7 @@ class MultiAgentRunner:
 
         # --- Round header (terminal display) ---
         if use_display:
-            universe = [r.value for r in self.config.roles]
+            universe = list(self.config.roles)
             obs_universe = state.get("observation", {}).get("universe", [])
             tone = beta_to_bucket(beta)
             render_round_header(
@@ -705,8 +705,7 @@ class MultiAgentRunner:
 
         # --- Build reasoning bundles for each agent ---
         bundles = {}
-        for role_enum in self.config.roles:
-            role = role_enum.value
+        for role in self.config.roles:
             bundle = build_reasoning_bundle(
                 state, role, round_num, self._memo_evidence_lookup,
             )

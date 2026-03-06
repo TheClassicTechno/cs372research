@@ -391,6 +391,30 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
                     lines.append(f"      {text}")
                     break
 
+    # -- Earnings call --
+    # Snapshot flattens features directly under earnings_call (no nested "features" key)
+    ec = data.get("earnings_call")
+
+    lines.append("")
+    if ec and ec.get("summary"):
+        lines.append(f"  Earnings Call Evidence:")
+
+        ec_fields = [
+            "summary",
+            "management_outlook",
+            "risks",
+            "key_drivers",
+        ]
+        ec_idx = 1
+        for field_key in ec_fields:
+            text = ec.get(field_key)
+            if text:
+                for sentence in _split_sentences(text):
+                    lines.append(f"    [{ticker}-EC{ec_idx}] {sentence}")
+                    ec_idx += 1
+    else:
+        lines.append("  Earnings call: not available")
+
 
 def write_ticker_summary_table(lines: list, tickers: list, ticker_data: dict) -> None:
     """Compact cross-sectional comparison table."""

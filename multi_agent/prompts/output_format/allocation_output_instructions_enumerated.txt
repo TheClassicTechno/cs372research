@@ -51,7 +51,7 @@ WRONG (ticker not in universe):
       "claim_text": "... concise causal hypothesis with inline evidence citations ...",
       "pearl_level": "L1" | "L2" | "L3",
       "evidence": ["[EVIDENCE-ID]", "..."],
-      "variables": ["X", "Y"],
+      "variables": ["fed_rate", "AAPL_price"],
       "assumptions": ["..."],
       "falsifiers": ["..."],
       "impacts_positions": ["TICKER", "..."],
@@ -212,6 +212,7 @@ Available evidence ID categories:
 [TICKER-BETA]  Beta
 [TICKER-SHARPE] Sharpe ratio
 [TICKER-F*] Filing evidence sentences (granular, one fact per ID)
+[TICKER-EC*] Earnings call evidence sentences (granular, one fact per ID)
 [TICKER-SENT]  Sentiment
 [TICKER-GM]    Gross margin
 [TICKER-ROE]   ROE
