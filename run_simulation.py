@@ -223,9 +223,9 @@ def _setup_logging(level: str) -> None:
 
 
 def _dump_prompts(config: SimulationConfig) -> None:
-    """Print system + user prompts for all roles × 3 phases and exit.
+    """Print system + user prompts for the configured agents × 3 phases and exit.
 
-    Uses the real prompt assembly pipeline (registry, profiles, builders)
+    Uses the real prompt assembly pipeline (profiles or legacy registry)
     but substitutes {{placeholders}} for the memo and inter-phase data
     so the output shows exact prompt structure without needing real data.
     """
@@ -242,20 +242,40 @@ def _dump_prompts(config: SimulationConfig) -> None:
     )
     from multi_agent.graph.sector_constraints import build_sector_constraint_text
 
-    # --- Config dict (mirrors what debate nodes receive) ---
     agent = config.debate_setup
-    cfg = {
-        "prompt_file_overrides": agent.prompt_file_overrides or {},
-        "prompt_profile": agent.prompt_profile,
-        "role_overrides": agent.role_overrides or {},
-        "sector_config": agent.sector_config,
-    }
+    beta = agent.pid_initial_beta
+    tone = beta_to_bucket(beta)
 
-    # --- Roles ---
-    role_strs = agent.debate_roles or ["macro", "value", "risk", "technical"]
-    role_strs = [r.lower() for r in role_strs]
+    # --- Build the same config dict that the real debate pipeline uses ---
+    use_profiles = bool(agent.agents)
 
-    # --- Placeholder context (memo replaced) ---
+    if use_profiles:
+        from multi_agent.prompts.profile_loader import get_agent_profiles
+        all_profiles = get_agent_profiles(
+            agent.agents,
+            judge_profile_name=agent.judge_profile,
+        )
+        judge_profile_data = all_profiles.pop("judge", {})
+        role_strs = list(agent.agents.keys())
+
+        cfg = {
+            "agent_profiles": all_profiles,
+            "judge_profile": judge_profile_data,
+            "sector_config": agent.sector_config,
+            "prompt_file_overrides": agent.prompt_file_overrides or {},
+            "_current_beta": beta,
+        }
+    else:
+        role_strs = agent.debate_roles or ["macro", "value", "risk", "technical"]
+        role_strs = [r.lower() for r in role_strs]
+        cfg = {
+            "prompt_file_overrides": agent.prompt_file_overrides or {},
+            "prompt_profile": agent.prompt_profile,
+            "role_overrides": agent.role_overrides or {},
+            "sector_config": agent.sector_config,
+        }
+
+    # --- Placeholder context ---
     context = (
         "## Portfolio Allocation Task\n"
         f"- Cash to allocate: ${config.broker.initial_cash:,.2f}\n"
@@ -264,39 +284,55 @@ def _dump_prompts(config: SimulationConfig) -> None:
         "\n{{memo}}\n"
     )
 
-    beta = agent.pid_initial_beta
-    tone = beta_to_bucket(beta)
-    profile_name = agent.prompt_profile or "default"
-
     sep = "=" * 80
     phase_sep = "─" * 80
+    profile_label = ", ".join(f"{r}={agent.agents[r]}" for r in role_strs) if use_profiles else (agent.prompt_profile or "default")
 
     print(f"\n{sep}")
-    print(f"  PROMPT DUMP — {len(role_strs)} roles × 3 phases")
-    print(f"  profile={profile_name}  beta={beta:.3f}  tone={tone}")
+    print(f"  PROMPT DUMP — {len(role_strs)} agents × 3 phases")
+    print(f"  {profile_label}")
+    print(f"  beta={beta:.3f}  tone={tone}")
     print(f"{sep}")
 
     registry = get_registry(cfg)
+
+    def _build_system(role, phase, user_prompt):
+        if use_profiles:
+            profile_data = cfg["agent_profiles"].get(role, {})
+            return registry.build_from_profile(
+                role=role, phase=phase, profile=profile_data,
+                beta=resolve_beta(cfg, phase),
+                user_prompt=user_prompt,
+            ).system_prompt
+        else:
+            prof = resolve_prompt_profile(cfg, role, phase)
+            return registry.build(
+                role=role, phase=phase,
+                beta=resolve_beta(cfg, phase),
+                user_prompt=user_prompt,
+                block_order=prof.get("system_blocks"),
+                prompt_file_overrides=cfg.get("prompt_file_overrides"),
+            ).system_prompt
+
+    def _get_user_sections(role, phase):
+        if use_profiles:
+            profile_data = cfg["agent_profiles"].get(role, {})
+            return profile_data.get("user_prompts", {}).get(phase, {}).get("sections")
+        else:
+            return resolve_prompt_profile(cfg, role, phase).get("user_sections")
 
     for role in role_strs:
         overrides = cfg.get("prompt_file_overrides")
         sector_text = build_sector_constraint_text(cfg.get("sector_config"), role)
 
         # ── Propose ──
-        propose_profile = resolve_prompt_profile(cfg, role, "propose")
         propose_user = build_proposal_user_prompt(
             context,
             prompt_file_overrides=overrides,
-            user_sections=propose_profile.get("user_sections"),
+            user_sections=_get_user_sections(role, "propose"),
             sector_constraints=sector_text,
         )
-        propose_sys = registry.build(
-            role=role, phase="propose",
-            beta=resolve_beta(cfg, "propose"),
-            user_prompt=propose_user,
-            block_order=propose_profile.get("system_blocks"),
-            prompt_file_overrides=overrides,
-        ).system_prompt
+        propose_sys = _build_system(role, "propose", propose_user)
 
         # ── Critique ──
         all_proposals = [
@@ -304,43 +340,28 @@ def _dump_prompts(config: SimulationConfig) -> None:
             for r in role_strs
         ]
         my_proposal = "{{" + role + "_proposal}}"
-        critique_profile = resolve_prompt_profile(cfg, role, "critique")
+        cfg["_current_beta"] = beta
 
         critique_user = build_critique_prompt(
             role, context, all_proposals, my_proposal,
             prompt_file_overrides=overrides,
-            user_sections=critique_profile.get("user_sections"),
+            user_sections=_get_user_sections(role, "critique"),
+            sector_constraints=sector_text,
         )
-        # For critique/revise, set _current_beta so resolve_beta picks it up
-        cfg["_current_beta"] = beta
-        critique_sys = registry.build(
-            role=role, phase="critique",
-            beta=resolve_beta(cfg, "critique"),
-            user_prompt=critique_user,
-            block_order=critique_profile.get("system_blocks"),
-            prompt_file_overrides=overrides,
-        ).system_prompt
+        critique_sys = _build_system(role, "critique", critique_user)
 
         # ── Revise ──
         critiques_received = [
             {"from_role": r, "objection": "{{" + r + "_critique_of_" + role + "}}"}
             for r in role_strs if r != role
         ]
-        revise_profile = resolve_prompt_profile(cfg, role, "revise")
-
         revise_user = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             prompt_file_overrides=overrides,
-            user_sections=revise_profile.get("user_sections"),
+            user_sections=_get_user_sections(role, "revise"),
             sector_constraints=sector_text,
         )
-        revise_sys = registry.build(
-            role=role, phase="revise",
-            beta=resolve_beta(cfg, "revise"),
-            user_prompt=revise_user,
-            block_order=revise_profile.get("system_blocks"),
-            prompt_file_overrides=overrides,
-        ).system_prompt
+        revise_sys = _build_system(role, "revise", revise_user)
 
         # ── Print all 3 phases for this role ──
         for phase, sys_prompt, usr_prompt in [
