@@ -192,7 +192,7 @@ def _section_header(title: str) -> None:
     indent = "      "
     if RICH_AVAILABLE and _console is not None:
         _console.print(f"{indent}[bright_white]{title}[/bright_white]")
-        _console.print(f"{indent}[dim]{'─' * 23}[/dim]")
+        _console.print(f"{indent}[bright_green]{'─' * 23}[/bright_green]")
     else:
         print(f"{indent}{title}", flush=True)
         print(f"{indent}{'─' * 23}", flush=True)
@@ -256,13 +256,13 @@ def _render_proposal(parsed: dict) -> None:
                 _console.print(ct)
                 if evidence:
                     ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in evidence)
-                    _console.print(f"{indent}   [dim]Evidence: {ev_str}[/dim]")
+                    _console.print(f"{indent}   [bright_green]Evidence: {ev_str}[/bright_green]")
                 if assumptions:
-                    _console.print(f"{indent}   [dim]Assumptions: {'; '.join(str(a) for a in assumptions)}[/dim]")
+                    _console.print(f"{indent}   [bright_green]Assumptions: {'; '.join(str(a) for a in assumptions)}[/bright_green]")
                 if falsifiers:
-                    _console.print(f"{indent}   [dim]Falsifiers: {'; '.join(str(f) for f in falsifiers)}[/dim]")
+                    _console.print(f"{indent}   [bright_green]Falsifiers: {'; '.join(str(f) for f in falsifiers)}[/bright_green]")
                 if impacts:
-                    _console.print(f"{indent}   [dim]Impacts: {', '.join(str(t) for t in impacts)}[/dim]")
+                    _console.print(f"{indent}   [bright_green]Impacts: {', '.join(str(t) for t in impacts)}[/bright_green]")
             else:
                 print(f"{indent}{cid}{pearl_tag} {ctext}", flush=True)
                 if evidence:
@@ -294,7 +294,7 @@ def _render_proposal(parsed: dict) -> None:
                 line.append(f"({weight_pct})", style="bright_cyan")
                 if claims_str:
                     line.append(f" ← {claims_str}", style="bright_yellow")
-                line.append(f": {expl}", style="dim")
+                line.append(f": {expl}", style="bright_green")
                 _console.print(line)
             else:
                 claim_part = f" ← {claims_str}" if claims_str else ""
@@ -360,9 +360,9 @@ def _render_critique(parsed: dict) -> None:
                 _console.print(line)
                 if counter_ev and isinstance(counter_ev, list):
                     ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in counter_ev)
-                    _console.print(f"{indent}  [dim]Counter-evidence: {ev_str}[/dim]")
+                    _console.print(f"{indent}  [bright_green]Counter-evidence: {ev_str}[/bright_green]")
                 if falsifier:
-                    _console.print(f"{indent}  [dim]Falsifier: {falsifier}[/dim]")
+                    _console.print(f"{indent}  [bright_green]Falsifier: {falsifier}[/bright_green]")
             else:
                 print(f"{indent}→ {target}{claim_tag}: {objection}", flush=True)
                 if counter_ev and isinstance(counter_ev, list):
@@ -380,7 +380,7 @@ def _render_critique(parsed: dict) -> None:
             sc.append("Self-critique", style="bright_magenta")
             if weakest:
                 sc.append(f" ({weakest})", style="bright_magenta")
-            sc.append(f": {explanation}", style="dim")
+            sc.append(f": {explanation}", style="bright_green")
             _console.print(sc)
         else:
             wk = f" ({weakest})" if weakest else ""

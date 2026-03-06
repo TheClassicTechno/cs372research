@@ -43,7 +43,7 @@ debate_setup:
 
   temperature: 0.3
   max_retries: 3
-  max_rounds: 4
+  max_rounds: 3
 
 
   # --------------------------------------------------------------------------
@@ -52,13 +52,14 @@ debate_setup:
 
   pid_enabled: true
 
-  pid_kp: 0.15
-  pid_ki: 0.01
-  pid_kd: 0.03
+  pid_kp: 0.35
+  pid_ki: 0.03
+  pid_kd: 0.07
 
-  pid_rho_star: 0.8
-  pid_initial_beta: 0.5
-  pid_epsilon: 0.001
+  pid_rho_star: 0.83
+  pid_initial_beta: 0.4
+  pid_epsilon: 0.015
+  pid_gamma_beta: 0.5
 
 
   # --------------------------------------------------------------------------
