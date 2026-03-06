@@ -20,11 +20,11 @@ from models.config import AgentConfig, AllocationConstraints, SimulationConfig
 # ── Paths ────────────────────────────────────────────────────────────────────
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_AGENTS_DIR = _PROJECT_ROOT / "config" / "agents"
+_DEBATE_DIR = _PROJECT_ROOT / "config" / "debate"
 _SCENARIOS_DIR = _PROJECT_ROOT / "config" / "scenarios"
 
 # Use the diverse agents config as the base for scenario merge tests.
-_BASE_AGENTS_YAML = _AGENTS_DIR / "debate_diverse_agents.yaml"
+_BASE_AGENTS_YAML = _DEBATE_DIR / "debate_diverse_agents.yaml"
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -195,9 +195,11 @@ class TestAllocationFeasibility:
                 allocation_constraints={"max_weight": 0.10, "min_holdings": 5},
             )
 
-    def test_empty_tickers_raises(self):
+    def test_empty_tickers_raises_on_validate_ready(self):
+        """Empty tickers is allowed at construction (pre-merge) but fails validate_ready()."""
+        cfg = _sim_config(tickers=[])
         with pytest.raises(ValueError, match="tickers must not be empty"):
-            _sim_config(tickers=[])
+            cfg.validate_ready()
 
 
 # ═════════════════════════════════════════════════════════════════════════════

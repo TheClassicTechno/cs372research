@@ -9,32 +9,6 @@ case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
 
-tickers:
-  - AAPL
-  - MSFT
-  - NVDA
-  - AMZN
-  - XOM
-  - CVX
-  - COP
-  - SLB
-  - CAT
-  - WMT
-  - COST
-  - UNH
-  - JNJ
-  - JPM
-  - GS
-  - DAL
-  - PG
-  - TSLA
-
-allocation_constraints:
-  max_weight: 0.20
-  min_holdings: 5
-  fully_invested: true
-  max_tickers: 20
-
 num_episodes: 1
 
 # --- Who debates ---

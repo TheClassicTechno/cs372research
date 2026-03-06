@@ -411,10 +411,31 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
+def _sanitize_claims(parsed: dict) -> dict:
+    """Fix common LLM deviations in the claims structure.
+
+    Known issue: LLMs sometimes produce ``"variables": {"X": "...", "Y": "..."}``
+    (a dict) instead of ``"variables": ["X", "Y"]`` (a list).  The Pydantic
+    ``Claim`` model requires a ``list[str]``, so coerce dicts to lists here
+    to prevent a validation error from aborting the entire run.
+    """
+    claims = parsed.get("claims")
+    if not isinstance(claims, list):
+        return parsed
+    for claim in claims:
+        if not isinstance(claim, dict):
+            continue
+        variables = claim.get("variables")
+        if isinstance(variables, dict):
+            claim["variables"] = list(variables.keys())
+    return parsed
+
+
 def _parse_json(text: str) -> dict:
     """Parse JSON from LLM response, handling markdown code blocks."""
     json_str = _strip_code_fences(text)
     try:
-        return json.loads(json_str)
+        parsed = json.loads(json_str)
     except json.JSONDecodeError:
         return {}
+    return _sanitize_claims(parsed)

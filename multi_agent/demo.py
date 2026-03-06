@@ -130,7 +130,7 @@ def run_demo_config(
     print(f"\n{'='*70}")
     print(f"  {name}")
     print(f"  Architecture: {architecture}")
-    print(f"  Roles: {[r.value for r in config.roles]}")
+    print(f"  Roles: {list(config.roles)}")
     print(f"  Rounds: {config.max_rounds} | Initial Beta: {config.initial_beta}")
     print(f"  Pipeline: news={config.enable_news_pipeline}, data={config.enable_data_pipeline}")
     print(f"  Adversarial: {config.enable_adversarial}")

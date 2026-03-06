@@ -324,7 +324,7 @@ class DebateLogger:
             "model_name": getattr(self._config, "model_name", "unknown"),
             "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5-mini"),
             "temperature": getattr(self._config, "temperature", 0.3),
-            "roles": [r.value for r in self._config.roles],
+            "roles": list(self._config.roles),
             "max_rounds": self._config.max_rounds,
             "actual_rounds": None,
             "terminated_early": None,
@@ -836,7 +836,7 @@ class DebateLogger:
             else self._round_num
         )
         universe = obs.get("universe", [])
-        roles = config.get("roles", [r.value for r in self._config.roles])
+        roles = config.get("roles", list(self._config.roles))
         reason = "stable_convergence" if terminated_early else "max_rounds"
 
         lines = [

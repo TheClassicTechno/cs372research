@@ -18,7 +18,7 @@ import json
 import logging
 from pathlib import Path
 
-from models.case import Case, CaseData, CaseDataItem, StockData
+from models.case import Case, CaseData, CaseDataItem, ClosePricePoint, StockData
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +71,19 @@ def _load_snapshot_json(base_dir: Path, year: int, quarter: str) -> dict | None:
         ) from exc
 
 
-def _load_memo_text(base_dir: Path, year: int, quarter: str) -> str | None:
-    """Load memo text, returning None if file doesn't exist."""
+def _load_memo_text(
+    base_dir: Path,
+    year: int,
+    quarter: str,
+    memo_override_path: Path | None = None,
+) -> str | None:
+    """Load memo text, returning None if file doesn't exist.
+
+    If *memo_override_path* is provided and the file exists, read from that
+    path instead of the default ``memo_data/`` directory.
+    """
+    if memo_override_path and memo_override_path.exists():
+        return memo_override_path.read_text()
     path = base_dir / "memo_data" / f"memo_{year}_{quarter}.txt"
     if not path.exists():
         return None
@@ -98,13 +109,56 @@ def _extract_prices(snapshot: dict, tickers: list[str]) -> dict[str, float]:
     return prices
 
 
+def _load_daily_prices(
+    base_dir: Path,
+    year: int,
+    quarter: str,
+    tickers: list[str],
+) -> dict[str, list[ClosePricePoint]]:
+    """Load daily close prices from the daily_prices data directory.
+
+    Returns {ticker: [ClosePricePoint, ...]} for tickers that have data.
+    Tickers without daily price files are silently omitted.
+    """
+    daily_dir = base_dir.parent / "daily_prices" / "data"
+    result: dict[str, list[ClosePricePoint]] = {}
+
+    for t in tickers:
+        path = daily_dir / t / f"{year}_{quarter}.json"
+        if not path.exists():
+            continue
+        try:
+            with open(path, "r") as f:
+                doc = json.load(f)
+            bars = [
+                ClosePricePoint(timestamp=d["date"], close=d["close"])
+                for d in doc.get("daily_close", [])
+            ]
+            if bars:
+                result[t] = bars
+        except (json.JSONDecodeError, KeyError) as exc:
+            logger.warning("Failed to load daily prices for %s %s%s: %s", t, year, quarter, exc)
+
+    if result:
+        logger.info(
+            "Loaded daily prices for %d/%d tickers (%s %s)",
+            len(result), len(tickers), year, quarter,
+        )
+    return result
+
+
 def _build_stock_data(
     tickers: list[str],
     prices: dict[str, float],
+    daily_bars: dict[str, list[ClosePricePoint]] | None = None,
 ) -> dict[str, StockData]:
-    """Build per-ticker StockData with close price and empty daily_bars."""
+    """Build per-ticker StockData with close price and optional daily_bars."""
     return {
-        t: StockData(ticker=t, current_price=prices.get(t, 0.0), daily_bars=[])
+        t: StockData(
+            ticker=t,
+            current_price=prices.get(t, 0.0),
+            daily_bars=(daily_bars or {}).get(t, []),
+        )
         for t in tickers
     }
 
@@ -114,6 +168,7 @@ def load_memo_cases(
     invest_quarter: str,
     memo_format: str,
     tickers: list[str],
+    memo_override_path: str | None = None,
 ) -> list[Case]:
     """Load decision + mark-to-market cases for memo-based allocation.
 
@@ -147,8 +202,9 @@ def load_memo_cases(
         )
 
     # --- Load prior-quarter context ---
+    _override = Path(memo_override_path) if memo_override_path else None
     if memo_format == "text":
-        memo_text = _load_memo_text(base_dir, prior_year, prior_q)
+        memo_text = _load_memo_text(base_dir, prior_year, prior_q, memo_override_path=_override)
         if memo_text is None:
             raise FileNotFoundError(
                 f"Memo not found: {base_dir / 'memo_data' / f'memo_{prior_year}_{prior_q}.txt'}"
@@ -181,9 +237,11 @@ def load_memo_cases(
     inv_snap = _load_snapshot_json(base_dir, inv_year, inv_q)
     if inv_snap is not None:
         exit_prices = _extract_prices(inv_snap, tickers)
+        # Load daily prices for the invest quarter (for evaluation metrics)
+        inv_daily = _load_daily_prices(base_dir, inv_year, inv_q, tickers)
         mtm_case = Case(
             case_data=CaseData(items=[]),
-            stock_data=_build_stock_data(tickers, exit_prices),
+            stock_data=_build_stock_data(tickers, exit_prices, daily_bars=inv_daily),
             case_id=f"mtm/{invest_quarter}",
         )
         cases.append(mtm_case)

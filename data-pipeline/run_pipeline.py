@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pipeline orchestrator — runs the 5 data-gathering stages in sequence.
+Pipeline orchestrator - runs the 6 data-gathering stages in sequence.
 
 Usage:
     # Add a new ticker and run full pipeline
@@ -35,22 +35,25 @@ YAML_PATH = PIPELINE_DIR / "supported_tickers.yaml"
 STAGE_SCRIPTS = {
     1: PIPELINE_DIR / "EDGAR" / "get_sec_data.py",
     2: PIPELINE_DIR / "EDGAR" / "filing_summarization_pipeline.py",
-    3: PIPELINE_DIR / "macro" / "macro_quarter_builder.py",
-    4: PIPELINE_DIR / "quarterly_asset_details" / "asset_quarter_builder.py",
-    5: PIPELINE_DIR / "sentiment" / "sentiment.py",
+    3: PIPELINE_DIR / "earnings_calls" / "get_earring_calls_summary.py",
+    4: PIPELINE_DIR / "macro" / "macro_quarter_builder.py",
+    5: PIPELINE_DIR / "quarterly_asset_details" / "asset_quarter_builder.py",
+    6: PIPELINE_DIR / "sentiment" / "sentiment.py",
 }
 
 STAGE_NAMES = {
     1: "EDGAR download",
     2: "Filing summarization",
-    3: "Macro data",
-    4: "Asset features",
-    5: "Sentiment scoring",
+    3: "Earnings call summary",
+    4: "Macro data",
+    5: "Asset features",
+    6: "Sentiment scoring",
 }
 
 # ---------------------------------------------------------------------------
 # Quarter helpers
 # ---------------------------------------------------------------------------
+
 
 def parse_quarter(s: str) -> tuple[int, int]:
     """Parse '2024Q4' -> (2024, 4)."""
@@ -82,19 +85,21 @@ def quarter_range(start: str, end: str) -> list[tuple[int, int]]:
 def quarters_to_years_and_quarters(quarters: list[tuple[int, int]]) -> tuple[str, str]:
     """Convert quarter list to EDGAR-style --years and --quarters args.
 
-    Returns (years_csv, quarters_csv) — the cross-product over-fetches
+    Returns (years_csv, quarters_csv) - the cross-product over-fetches
     slightly but EDGAR skips existing files.
     """
     years = sorted({y for y, _ in quarters})
     qs = sorted({q for _, q in quarters})
     return ",".join(str(y) for y in years), ",".join(f"Q{q}" for q in qs)
 
+
 # ---------------------------------------------------------------------------
 # YAML helpers
 # ---------------------------------------------------------------------------
 
+
 def load_yaml() -> dict:
-    with open(YAML_PATH) as f:
+    with open(YAML_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -108,23 +113,25 @@ def ticker_exists(data: dict, ticker: str) -> bool:
 def add_ticker_to_yaml(ticker: str, sector: str, description: str, dry_run: bool):
     data = load_yaml()
     if ticker_exists(data, ticker):
-        print(f"  {ticker} already in supported_tickers.yaml — skipping YAML update")
+        print(f"  {ticker} already in supported_tickers.yaml - skipping YAML update")
         return
     new_entry = {"symbol": ticker, "sector": sector, "description": description}
     data.setdefault("supported_tickers", []).append(new_entry)
     if dry_run:
-        print(f"  [dry-run] Would add to supported_tickers.yaml:")
+        print("  [dry-run] Would add to supported_tickers.yaml:")
         print(f"    - symbol: {ticker}")
         print(f"      sector: {sector}")
         print(f"      description: {description}")
         return
-    with open(YAML_PATH, "w") as f:
+    with open(YAML_PATH, "w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
     print(f"  Added {ticker} to supported_tickers.yaml")
+
 
 # ---------------------------------------------------------------------------
 # Pre-flight checks
 # ---------------------------------------------------------------------------
+
 
 def preflight(args) -> dict[str, str | None]:
     """Check env vars and scripts exist. Returns resolved API keys."""
@@ -133,29 +140,34 @@ def preflight(args) -> dict[str, str | None]:
 
     ok = True
 
-    # API keys
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    hf_token = os.environ.get("HF_TOKEN")
     finnhub_key = os.environ.get("FINNHUB_KEY")
     fred_key = os.environ.get("FRED_API_KEY")
 
     if not anthropic_key:
-        print("  FAIL  ANTHROPIC_API_KEY not set (required for Stage 2)")
+        print("  FAIL  ANTHROPIC_API_KEY not set (required for Stage 2/3)")
         ok = False
     else:
         print("  OK    ANTHROPIC_API_KEY")
 
+    if not hf_token:
+        print("  FAIL  HF_TOKEN not set (required for Stage 3)")
+        ok = False
+    else:
+        print("  OK    HF_TOKEN")
+
     if not finnhub_key:
-        print("  FAIL  FINNHUB_KEY not set (required for Stage 5)")
+        print("  FAIL  FINNHUB_KEY not set (required for Stage 6)")
         ok = False
     else:
         print("  OK    FINNHUB_KEY")
 
     if not fred_key:
-        print("  WARN  FRED_API_KEY not set (Stage 3 will run with nulls)")
+        print("  WARN  FRED_API_KEY not set (Stage 4 will run with nulls)")
     else:
         print("  OK    FRED_API_KEY")
 
-    # Scripts exist
     for stage, script in STAGE_SCRIPTS.items():
         if not script.exists():
             print(f"  FAIL  Stage {stage} script missing: {script.relative_to(PIPELINE_DIR)}")
@@ -168,13 +180,16 @@ def preflight(args) -> dict[str, str | None]:
     print()
     return {
         "anthropic": anthropic_key,
+        "hf": hf_token,
         "finnhub": finnhub_key,
         "fred": fred_key,
     }
 
+
 # ---------------------------------------------------------------------------
 # Macro skip logic
 # ---------------------------------------------------------------------------
+
 
 def all_macro_files_exist(quarters: list[tuple[int, int]]) -> bool:
     macro_dir = PIPELINE_DIR / "macro" / "data"
@@ -184,16 +199,18 @@ def all_macro_files_exist(quarters: list[tuple[int, int]]) -> bool:
             return False
     return True
 
+
 # ---------------------------------------------------------------------------
 # Stage builders
 # ---------------------------------------------------------------------------
+
 
 def build_commands(
     args,
     keys: dict[str, str | None],
     quarters: list[tuple[int, int]],
-) -> list[tuple[int, str, list[str]]]:
-    """Build the command list for all 5 data-gathering stages.
+) -> list[tuple[int, str, list[str] | None]]:
+    """Build the command list for all 6 data-gathering stages.
 
     Returns list of (stage_num, stage_name, argv).
     """
@@ -203,7 +220,7 @@ def build_commands(
 
     stages: list[tuple[int, str, list[str] | None]] = []
 
-    # Stage 1 — EDGAR download
+    # Stage 1 - EDGAR download
     cmd = [sys.executable, str(STAGE_SCRIPTS[1])]
     if new_ticker:
         cmd += ["--tickers", new_ticker]
@@ -212,7 +229,7 @@ def build_commands(
     cmd += ["--years", years_csv, "--quarters", quarters_csv, "--parallel"]
     stages.append((1, STAGE_NAMES[1], cmd))
 
-    # Stage 2 — Filing summarization
+    # Stage 2 - Filing summarization
     cmd = [sys.executable, str(STAGE_SCRIPTS[2])]
     if new_ticker:
         cmd += ["--ticker", new_ticker]
@@ -223,43 +240,61 @@ def build_commands(
         cmd += ["--force"]
     stages.append((2, STAGE_NAMES[2], cmd))
 
-    # Stage 3 — Macro data (skip if all files exist, unless --force)
-    if not args.force and all_macro_files_exist(quarters):
-        stages.append((3, STAGE_NAMES[3], None))  # None = skip
-    else:
-        cmd = [sys.executable, str(STAGE_SCRIPTS[3])]
-        cmd += ["--start", start, "--end", end]
-        if keys["fred"]:
-            cmd += ["--fred-key", keys["fred"]]
-        stages.append((3, STAGE_NAMES[3], cmd))
-
-    # Stage 4 — Asset features
-    cmd = [sys.executable, str(STAGE_SCRIPTS[4])]
+    # Stage 3 - Earnings calls (HF transcripts + Claude + FinBERT)
+    cmd = [sys.executable, str(STAGE_SCRIPTS[3])]
     cmd += ["--start", start, "--end", end]
     if new_ticker:
         cmd += ["--tickers", new_ticker]
     else:
         cmd += ["--supported"]
-    stages.append((4, STAGE_NAMES[4], cmd))
+    if keys["hf"]:
+        cmd += ["--hf-token", keys["hf"]]
+    if keys["anthropic"]:
+        cmd += ["--api-key", keys["anthropic"]]
+    if args.force:
+        cmd += ["--force"]
+    stages.append((3, STAGE_NAMES[3], cmd))
 
-    # Stage 5 — Sentiment
+    # Stage 4 - Macro data (skip if all files exist, unless --force)
+    if not args.force and all_macro_files_exist(quarters):
+        stages.append((4, STAGE_NAMES[4], None))
+    else:
+        cmd = [sys.executable, str(STAGE_SCRIPTS[4])]
+        cmd += ["--start", start, "--end", end]
+        if keys["fred"]:
+            cmd += ["--fred-key", keys["fred"]]
+        stages.append((4, STAGE_NAMES[4], cmd))
+
+    # Stage 5 - Asset features
     cmd = [sys.executable, str(STAGE_SCRIPTS[5])]
     cmd += ["--start", start, "--end", end]
     if new_ticker:
         cmd += ["--tickers", new_ticker]
     else:
         cmd += ["--supported"]
-    cmd += ["--api-key", keys["finnhub"]] if keys["finnhub"] else []
+    stages.append((5, STAGE_NAMES[5], cmd))
+
+    # Stage 6 - Sentiment
+    cmd = [sys.executable, str(STAGE_SCRIPTS[6])]
+    cmd += ["--start", start, "--end", end]
+    if new_ticker:
+        cmd += ["--tickers", new_ticker]
+    else:
+        cmd += ["--supported"]
+    if keys["finnhub"]:
+        cmd += ["--api-key", keys["finnhub"]]
     cmd += ["--workers", "4"]
     if args.force:
         cmd += ["--force"]
-    stages.append((5, STAGE_NAMES[5], cmd))
+    stages.append((6, STAGE_NAMES[6], cmd))
 
     return stages
+
 
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
+
 
 def format_duration(seconds: float) -> str:
     if seconds < 60:
@@ -270,12 +305,12 @@ def format_duration(seconds: float) -> str:
 
 def run_stages(stages, dry_run: bool, pipeline_run=None) -> list[tuple[int, str, str, float]]:
     """Execute stages sequentially. Returns results list."""
-    results: list[tuple[int, str, str, float]] = []  # (stage, name, status, elapsed)
+    results: list[tuple[int, str, str, float]] = []
 
     for stage_num, name, cmd in stages:
         if cmd is None:
             print(f"\nStage {stage_num}: {name}")
-            print("  Skipped — all output files already exist")
+            print("  Skipped - all output files already exist")
             results.append((stage_num, name, "SKIP", 0.0))
             if pipeline_run:
                 pipeline_run.record_stage(
@@ -285,8 +320,7 @@ def run_stages(stages, dry_run: bool, pipeline_run=None) -> list[tuple[int, str,
             continue
 
         print(f"\nStage {stage_num}: {name}")
-        # Show the command with relative paths for readability
-        display_cmd = " ".join(cmd).replace(str(PIPELINE_DIR) + "/", "")
+        display_cmd = " ".join(cmd)
         print(f"  $ {display_cmd}")
 
         if dry_run:
@@ -302,12 +336,15 @@ def run_stages(stages, dry_run: bool, pipeline_run=None) -> list[tuple[int, str,
 
         if pipeline_run:
             stage_key = f"{stage_num}_{name.lower().replace(' ', '_')}"
-            script_rel = str(STAGE_SCRIPTS.get(stage_num, "")).replace(str(PIPELINE_DIR) + "/", "")
-            pipeline_run.record_stage(stage_key, {
-                "script": script_rel,
-                "status": "completed" if status == "OK" else "failed",
-                "duration_seconds": round(elapsed, 1),
-            })
+            script_rel = str(STAGE_SCRIPTS.get(stage_num, ""))
+            pipeline_run.record_stage(
+                stage_key,
+                {
+                    "script": script_rel,
+                    "status": "completed" if status == "OK" else "failed",
+                    "duration_seconds": round(elapsed, 1),
+                },
+            )
 
         if result.returncode != 0:
             print(f"\n  Stage {stage_num} failed (exit code {result.returncode})")
@@ -336,13 +373,15 @@ def print_summary(results: list[tuple[int, str, str, float]]):
         print(f"  All stages complete. Total time: {format_duration(total)}")
     print()
 
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Run the data-gathering pipeline (5 stages).",
+        description="Run the data-gathering pipeline (6 stages).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -355,14 +394,12 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Print commands without executing")
     args = parser.parse_args()
 
-    # Validate ticker args
     if args.ticker and (not args.sector or not args.description):
         parser.error("--sector and --description are required when --ticker is specified")
 
     if args.ticker:
         args.ticker = args.ticker.upper()
 
-    # Validate quarter range
     quarters = quarter_range(args.start, args.end)
     if not quarters:
         parser.error(f"Empty quarter range: {args.start} to {args.end}")
@@ -376,20 +413,16 @@ def main():
         print("Mode: DRY RUN")
     print()
 
-    # 1. Pre-flight
     keys = preflight(args)
 
-    # 2. Add ticker to YAML (if applicable)
     if args.ticker:
         print("Updating supported_tickers.yaml")
         print("-" * 40)
         add_ticker_to_yaml(args.ticker, args.sector, args.description, args.dry_run)
         print()
 
-    # 3. Build and run stages
     stages = build_commands(args, keys, quarters)
 
-    # Resolve tickers for provenance
     if args.ticker:
         resolved_tickers = [args.ticker]
     else:
@@ -417,16 +450,13 @@ def main():
             pipeline_run.finalize("interrupted")
         sys.exit(1)
 
-    # 4. Finalize provenance
     if not args.dry_run:
         final_status = "failed" if any(r[2] == "FAIL" for r in results) else "completed"
         manifest_path = pipeline_run.finalize(final_status)
         print(f"\nProvenance manifest: {manifest_path.relative_to(PIPELINE_DIR)}")
 
-    # 5. Print summary
     print_summary(results)
 
-    # Exit with failure if any stage failed
     if any(r[2] == "FAIL" for r in results):
         sys.exit(1)
 

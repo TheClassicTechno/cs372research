@@ -21,7 +21,7 @@ from typing import Any
 
 from agents.registry import create_agent_system
 from agents.tools import make_submit_decision_tool
-from eval.financial import compute_financial_metrics
+from eval.financial import compute_daily_financial_metrics, compute_financial_metrics
 from models.agents import AgentInvocation
 from models.case import Case
 from models.config import SimulationConfig
@@ -66,6 +66,7 @@ class AsyncSimulationRunner:
             invest_quarter=self._config.invest_quarter,
             memo_format=self._config.memo_format,
             tickers=tickers,
+            memo_override_path=self._config.memo_override_path,
         )
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
@@ -262,6 +263,10 @@ class AsyncSimulationRunner:
         """Build a lightweight summary dict for the run."""
         episodes = self._sim_logger.simulation_log.episode_logs
         initial_cash = self._config.broker.initial_cash
+
+        # Load daily prices once for daily metrics (if available).
+        daily_prices, spy_daily = self._load_daily_prices_for_eval()
+
         summaries = []
         for ep in episodes:
             if ep.final_portfolio is None:
@@ -277,26 +282,144 @@ class AsyncSimulationRunner:
 
             fin = compute_financial_metrics(ep, initial_cash)
 
-            summaries.append(
-                {
-                    "episode_id": ep.episode_id,
-                    "initial_cash": initial_cash,
-                    "final_cash": ep.final_portfolio.cash,
-                    "final_positions": ep.final_portfolio.positions,
-                    "final_prices": ep.final_prices,
-                    "position_values": position_values,
-                    "book_value": book_value,
-                    "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
-                    "total_trades": len(ep.trades),
-                    "sharpe_ratio": fin.sharpe_ratio,
-                    "sortino_ratio": fin.sortino_ratio,
-                    "max_drawdown": fin.max_drawdown,
-                    "max_drawdown_pct": fin.max_drawdown_pct,
-                    "calmar_ratio": fin.calmar_ratio,
-                }
-            )
+            summary: dict[str, Any] = {
+                "episode_id": ep.episode_id,
+                "initial_cash": initial_cash,
+                "final_cash": ep.final_portfolio.cash,
+                "final_positions": ep.final_portfolio.positions,
+                "final_prices": ep.final_prices,
+                "position_values": position_values,
+                "book_value": book_value,
+                "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
+                "total_trades": len(ep.trades),
+                "sharpe_ratio": fin.sharpe_ratio,
+                "sortino_ratio": fin.sortino_ratio,
+                "max_drawdown": fin.max_drawdown,
+                "max_drawdown_pct": fin.max_drawdown_pct,
+                "calmar_ratio": fin.calmar_ratio,
+            }
+
+            # Daily metrics from allocation weights + daily prices.
+            if daily_prices:
+                allocation = self._extract_allocation_weights(ep, initial_cash)
+                if allocation:
+                    daily_fin = compute_daily_financial_metrics(
+                        allocation, initial_value=initial_cash,
+                        daily_prices=daily_prices, spy_daily=spy_daily,
+                    )
+                    if daily_fin is not None:
+                        summary["daily_metrics"] = {
+                            "trading_days": daily_fin.trading_days,
+                            "total_return_pct": daily_fin.total_return_pct,
+                            "annualized_sharpe": daily_fin.annualized_sharpe,
+                            "annualized_sortino": daily_fin.annualized_sortino,
+                            "annualized_volatility": daily_fin.annualized_volatility,
+                            "max_drawdown_pct": daily_fin.max_drawdown_pct,
+                            "calmar_ratio": daily_fin.calmar_ratio,
+                            "spy_return_pct": daily_fin.spy_return_pct,
+                            "excess_return_pct": daily_fin.excess_return_pct,
+                        }
+
+            summaries.append(summary)
         return {
             "run_name": self._run_name,
             "num_episodes": len(episodes),
             "episode_summaries": summaries,
         }
+
+    def _load_daily_prices_for_eval(
+        self,
+    ) -> tuple[dict[str, list], list | None]:
+        """Load daily price data for the invest quarter (for eval metrics).
+
+        Returns (daily_prices_dict, spy_daily_bars) or ({}, None) if unavailable.
+        """
+        from pathlib import Path
+        import json
+        from models.case import ClosePricePoint
+
+        invest_quarter = self._config.invest_quarter
+        if not invest_quarter:
+            return {}, None
+
+        # Parse invest quarter
+        year = int(invest_quarter[:4])
+        q = invest_quarter[4:]
+
+        base_dir = Path(self._config.dataset_path)
+        daily_dir = base_dir.parent / "daily_prices" / "data"
+        if not daily_dir.exists():
+            return {}, None
+
+        daily_prices: dict[str, list[ClosePricePoint]] = {}
+        for t in self._config.tickers:
+            path = daily_dir / t / f"{year}_{q}.json"
+            if not path.exists():
+                continue
+            try:
+                with open(path, "r") as f:
+                    doc = json.load(f)
+                bars = [
+                    ClosePricePoint(timestamp=d["date"], close=d["close"])
+                    for d in doc.get("daily_close", [])
+                ]
+                if bars:
+                    daily_prices[t] = bars
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        # Load SPY benchmark
+        spy_daily = None
+        spy_path = daily_dir / "SPY" / f"{year}_{q}.json"
+        if spy_path.exists():
+            try:
+                with open(spy_path, "r") as f:
+                    doc = json.load(f)
+                spy_daily = [
+                    ClosePricePoint(timestamp=d["date"], close=d["close"])
+                    for d in doc.get("daily_close", [])
+                ]
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        if daily_prices:
+            logger.info(
+                "Loaded daily prices for %d tickers + SPY=%s for eval metrics",
+                len(daily_prices), "yes" if spy_daily else "no",
+            )
+
+        return daily_prices, spy_daily
+
+    @staticmethod
+    def _extract_allocation_weights(
+        episode_log: EpisodeLog, initial_cash: float,
+    ) -> dict[str, float]:
+        """Extract allocation weights from the first decision point's positions.
+
+        Converts share-count positions to weight fractions using entry prices.
+        """
+        if not episode_log.decision_point_logs:
+            return {}
+
+        # Find the first non-MTM decision point with positions
+        for dp in episode_log.decision_point_logs:
+            positions = dp.portfolio_after.positions
+            if not positions:
+                continue
+
+            # Use case_prices if available, fall back to final_prices
+            prices = dp.case_prices if dp.case_prices else (episode_log.final_prices or {})
+
+            total_value = dp.portfolio_after.cash + sum(
+                qty * prices.get(t, 0.0) for t, qty in positions.items()
+            )
+            if total_value <= 0.0:
+                continue
+
+            return {
+                t: (qty * prices.get(t, 0.0)) / total_value
+                for t, qty in positions.items()
+                if qty != 0 and prices.get(t, 0.0) > 0.0
+            }
+
+        return {}

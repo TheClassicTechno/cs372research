@@ -121,8 +121,7 @@ class TestAllocationsChangeAfterCritique:
 
     def test_revision_confidence_differs_from_proposal(self):
         state = _run_mock_debate()
-        for role_enum in ROLES_3:
-            role = role_enum.value
+        for role in ROLES_3:
             proposal = next(
                 (p for p in state["proposals"] if p["role"] == role), None
             )

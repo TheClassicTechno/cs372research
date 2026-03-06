@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from ..config import AgentRole, DebateConfig
+from ..config import DebateConfig
 from ..models import Observation
 from ..prompts import (
     ROLE_SYSTEM_PROMPTS,
@@ -57,7 +57,46 @@ def _get_user_sections_from_profile(config: dict, role: str, phase: str) -> list
     usr = profile.get("user_prompts", {}).get(phase, {})
     return usr.get("sections")
 
+
+# Map debate phase → the override key build_*_prompt() checks in prompt_file_overrides.
+_PHASE_TEMPLATE_KEY = {
+    "propose": "proposal_template",
+    "critique": "critique_template",
+    "revise": "revision_template",
+    "judge": "judge_template",
+}
+
+
+def _get_prompt_file_overrides(config: dict, role: str, phase: str) -> dict[str, str]:
+    """Merge profile-level template override into prompt_file_overrides.
+
+    Agent profiles declare a per-phase ``template`` field that selects which
+    .txt file to load for the user prompt.  This helper folds that into the
+    existing ``prompt_file_overrides`` dict so ``build_*_prompt()`` picks it up
+    without any change to the prompt-rendering code.
+    """
+    base = dict(config.get("prompt_file_overrides") or {})
+    if not _has_agent_profiles(config):
+        return base
+
+    profiles = config.get("agent_profiles", {})
+    if phase == "judge":
+        profile = config.get("judge_profile", {})
+    else:
+        profile = profiles.get(role, {})
+    template = profile.get("user_prompts", {}).get(phase, {}).get("template")
+    if template:
+        override_key = _PHASE_TEMPLATE_KEY.get(phase)
+        if override_key and override_key not in base:
+            base[override_key] = template
+    return base
+
 from .allocation import normalize_allocation
+from .proposal_renderer import (
+    render_critiques_received,
+    render_others_proposals,
+    render_previous_proposal,
+)
 from .sector_constraints import (
     build_sector_constraint_text,
     build_sector_map,
@@ -222,9 +261,10 @@ def propose_node(state: DebateState) -> dict:
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "propose")
         user_prompt = build_proposal_user_prompt(
             context,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
         )
@@ -239,7 +279,7 @@ def propose_node(state: DebateState) -> dict:
                 beta=resolve_beta(config, "propose"),
                 user_prompt=user_prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         role_system = build_result.system_prompt
 
@@ -335,7 +375,10 @@ def critique_node(state: DebateState) -> dict:
         role = p["role"]
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
+        others_text_v2 = render_others_proposals(source, role)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -347,11 +390,14 @@ def critique_node(state: DebateState) -> dict:
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "critique")
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            others_text_v2=others_text_v2,
         )
 
         if use_profiles:
@@ -364,7 +410,7 @@ def critique_node(state: DebateState) -> dict:
                 beta=resolve_beta(config, "critique"),
                 user_prompt=prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         system_msg = build_result.system_prompt
 
@@ -437,7 +483,9 @@ def revise_node(state: DebateState) -> dict:
         role = p["role"]
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
 
         # Collect critiques targeted at this role.
         # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
@@ -450,7 +498,13 @@ def revise_node(state: DebateState) -> dict:
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
                         "falsifier": crit.get("falsifier"),
+                        "target_claim": crit.get("target_claim"),
+                        "counter_evidence": crit.get("counter_evidence"),
+                        "portfolio_implication": crit.get("portfolio_implication"),
+                        "suggested_adjustment": crit.get("suggested_adjustment"),
+                        "objection_confidence": crit.get("objection_confidence"),
                     })
+        critiques_text_v2 = render_critiques_received(critiques_received)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -462,11 +516,14 @@ def revise_node(state: DebateState) -> dict:
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "revise")
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            critiques_text_v2=critiques_text_v2,
         )
 
         if use_profiles:
@@ -479,7 +536,7 @@ def revise_node(state: DebateState) -> dict:
                 beta=resolve_beta(config, "revise"),
                 user_prompt=prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         system_msg = build_result.system_prompt
 
@@ -610,9 +667,10 @@ def make_propose_node(role: str):
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "propose")
         user_prompt = build_proposal_user_prompt(
             context,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
         )
@@ -627,7 +685,7 @@ def make_propose_node(role: str):
                 beta=resolve_beta(config, "propose"),
                 user_prompt=user_prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         role_system = build_result.system_prompt
 
@@ -735,7 +793,10 @@ def make_critique_node(role: str):
         i = roles.index(role) if role in roles else 0
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Critique] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
+        others_text_v2 = render_others_proposals(source, role)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -747,11 +808,14 @@ def make_critique_node(role: str):
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "critique")
         prompt = build_critique_prompt(
             role, context, all_proposals_for_critique, my_proposal,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            others_text_v2=others_text_v2,
         )
 
         if use_profiles:
@@ -764,7 +828,7 @@ def make_critique_node(role: str):
                 beta=resolve_beta(config, "critique"),
                 user_prompt=prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         system_msg = build_result.system_prompt
 
@@ -850,7 +914,9 @@ def make_revise_node(role: str):
         i = roles.index(role) if role in roles else 0
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
-        my_proposal = json.dumps(p.get("action_dict", {}))
+        action_dict = p.get("action_dict", {})
+        my_proposal = json.dumps(action_dict)
+        my_proposal_v2 = render_previous_proposal(action_dict)
 
         # Collect critiques targeted at this role.
         # Normalize target_role: LLMs may return "MACRO", "Risk Agent", etc.
@@ -863,7 +929,13 @@ def make_revise_node(role: str):
                         "from_role": c["role"],
                         "objection": crit.get("objection", ""),
                         "falsifier": crit.get("falsifier"),
+                        "target_claim": crit.get("target_claim"),
+                        "counter_evidence": crit.get("counter_evidence"),
+                        "portfolio_implication": crit.get("portfolio_implication"),
+                        "suggested_adjustment": crit.get("suggested_adjustment"),
+                        "objection_confidence": crit.get("objection_confidence"),
                     })
+        critiques_text_v2 = render_critiques_received(critiques_received)
 
         use_profiles = _has_agent_profiles(config)
         if use_profiles:
@@ -875,11 +947,14 @@ def make_revise_node(role: str):
         sector_text = build_sector_constraint_text(
             config.get("sector_config"), role,
         )
+        overrides = _get_prompt_file_overrides(config, role, "revise")
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            my_proposal_v2=my_proposal_v2,
+            critiques_text_v2=critiques_text_v2,
         )
 
         if use_profiles:
@@ -892,7 +967,7 @@ def make_revise_node(role: str):
                 beta=resolve_beta(config, "revise"),
                 user_prompt=prompt,
                 block_order=system_blocks,
-                prompt_file_overrides=config.get("prompt_file_overrides"),
+                prompt_file_overrides=overrides,
             )
         system_msg = build_result.system_prompt
 
@@ -1057,9 +1132,10 @@ def judge_node(state: DebateState) -> dict:
     sector_text = build_sector_constraint_text(
         config.get("sector_config"), "judge", include_permissions=False,
     )
+    overrides = _get_prompt_file_overrides(config, "judge", "judge")
     prompt = build_judge_prompt(
         context, revisions_for_judge, critiques_text,
-        prompt_file_overrides=config.get("prompt_file_overrides"),
+        prompt_file_overrides=overrides,
         user_sections=user_secs,
         sector_constraints=sector_text,
     )
@@ -1074,7 +1150,7 @@ def judge_node(state: DebateState) -> dict:
             beta=resolve_beta(config, "judge"),
             user_prompt=prompt,
             block_order=system_blocks,
-            prompt_file_overrides=config.get("prompt_file_overrides"),
+            prompt_file_overrides=overrides,
         )
     system_msg = build_result.system_prompt
 

@@ -102,6 +102,19 @@ def enrich_evidence_citations(
     return citations
 
 
+def expand_evidence_ids_inline(text: str, lookup: dict[str, str]) -> str:
+    """Replace [ID] with [ID: evidence_text] inline.
+
+    Only expands IDs found in the lookup. Unknown IDs are left unchanged.
+    """
+    def _replacer(match):
+        eid = match.group(1)
+        if eid in lookup:
+            return f"[{eid}: {lookup[eid]}]"
+        return match.group(0)  # leave unknown IDs as-is
+    return _EVIDENCE_ID_RE.sub(_replacer, text)
+
+
 def normalize_variable(var: str) -> str:
     """Normalize a causal variable name for Jaccard comparison.
 
