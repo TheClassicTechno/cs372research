@@ -45,7 +45,7 @@ def _sim_config(**overrides) -> SimulationConfig:
         "dataset_path": "data/cases",
         "tickers": ["AAPL", "MSFT", "GOOG"],
         "invest_quarter": "2025Q1",
-        "agent": _base_agent(),
+        "debate_setup": _base_agent(),
     }
     d.update(overrides)
     return SimulationConfig(**d)
@@ -346,6 +346,17 @@ class TestConfigPropagation:
         cfg = self._build_debate_config(prompt_file_overrides=overrides)
         assert cfg.prompt_file_overrides["role_macro"] == "roles/macro_diverse.txt"
 
+    def test_agents_map_propagated(self):
+        agents_map = {"macro": "macro_diverse", "value": "value_diverse", "risk": "risk_diverse"}
+        cfg = self._build_debate_config(agents=agents_map)
+        assert cfg.agent_profiles != {}
+        assert cfg.judge_profile != {}
+
+    def test_judge_profile_propagated(self):
+        agents_map = {"macro": "macro_standard", "value": "value_standard"}
+        cfg = self._build_debate_config(agents=agents_map, judge_profile="judge_diverse")
+        assert cfg.judge_profile != {}
+
     def test_sector_config_propagated(self):
         sector_cfg = {
             "sectors": {"tech": ["AAPL"], "fin": ["JPM"]},
@@ -439,8 +450,9 @@ class TestDebateConfigToDict:
             "parallel_agents", "mock", "logging_mode",
             "sector_config", "log_rendered_prompts", "log_prompt_manifest",
             "pid_enabled", "console_display", "prompt_profile",
-            "prompt_file_overrides", "use_system_causal_contract",
+            "prompt_file_overrides",
             "llm_stagger_ms", "max_concurrent_llm", "no_rate_limit",
+            "agent_profiles", "judge_profile",
         ]
         for key in required_keys:
             assert key in d, f"Missing key in to_dict(): {key}"
@@ -469,7 +481,7 @@ class TestScenarioSectorPropagation:
         config = SimulationConfig(**merged)
 
         # sector_config should be packed into agent
-        sc = config.agent.sector_config
+        sc = config.debate_setup.sector_config
         assert sc is not None
         assert "sectors" in sc
         assert "sector_limits" in sc
@@ -478,7 +490,7 @@ class TestScenarioSectorPropagation:
         # Now push through the adapter
         from agents.multi_agent_debate import DebateAgentSystem
 
-        system = DebateAgentSystem(config.agent)
+        system = DebateAgentSystem(config.debate_setup)
         d = system._debate_cfg.to_dict()
         assert d["sector_config"] is not None
         assert d["sector_config"]["sectors"] == sc["sectors"]
@@ -497,4 +509,4 @@ class TestScenarioSectorPropagation:
         merged = _deep_merge(base_raw, scenario_raw)
         config = SimulationConfig(**merged)
 
-        assert config.agent.sector_config is None
+        assert config.debate_setup.sector_config is None

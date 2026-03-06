@@ -122,6 +122,7 @@ class TestQuadrantToneIntegration:
         registry = PromptRegistry()
         build_result = registry.build(
             role="macro", phase="critique", beta=result.beta_new, user_prompt="test",
+            block_order=["role_system", "phase_preamble", "tone"],
         )
 
         # Verify adversarial tone

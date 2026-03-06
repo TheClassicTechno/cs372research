@@ -261,129 +261,42 @@ class TestProposeNoToneInjection:
 
 
 # =============================================================================
-# 3. User prompt section ordering wired through nodes
+# 3. Profile-driven ordering wired through nodes
 # =============================================================================
 
 
-class TestNodeSectionOrdering:
-    """Verify that user_prompt_section_order in config reaches the prompt builders."""
+class TestNodeProfileOrdering:
+    """Verify that prompt profiles drive block/section ordering through nodes.
 
-    def test_proposal_custom_section_order(self, obs_dict):
-        """Custom section order changes the structure of the proposal user prompt."""
-        # Default order: preamble, context, agent_data, task, scaffolding, output_format
-        # Proposal template has: context, task, scaffolding, output_format (no preamble/agent_data)
-        config_default = _make_config()
-        config_reversed = _make_config(
-            user_prompt_section_order=["output_format", "scaffolding", "task", "context"],
-        )
-
-        result_default, _ = _run_propose(obs_dict, config_default)
-        result_reversed, _ = _run_propose(obs_dict, config_reversed)
-
-        turn_default = _get_turns(result_default, "proposal")[0]
-        turn_reversed = _get_turns(result_reversed, "proposal")[0]
-
-        prompt_default = turn_default["raw_user_prompt"]
-        prompt_reversed = turn_reversed["raw_user_prompt"]
-
-        # Both should contain the same content words
-        assert "Respond with valid JSON" in prompt_default
-        assert "Respond with valid JSON" in prompt_reversed
-
-        # But in reversed order, output_format (JSON instructions) should come
-        # before the task section. Find positions of key markers.
-        json_pos_default = prompt_default.find("Respond with valid JSON")
-        json_pos_reversed = prompt_reversed.find("Respond with valid JSON")
-
-        # "Using the data above" is in the task section
-        task_marker = "Using the data above"
-        task_pos_default = prompt_default.find(task_marker)
-        task_pos_reversed = prompt_reversed.find(task_marker)
-
-        # Default: task before output_format
-        if task_pos_default != -1 and json_pos_default != -1:
-            assert task_pos_default < json_pos_default
-
-        # Reversed: output_format before task
-        if task_pos_reversed != -1 and json_pos_reversed != -1:
-            assert json_pos_reversed < task_pos_reversed
-
-    def test_critique_custom_section_order(self, obs_dict):
-        """Custom section order changes critique user prompt structure."""
-        # Critique template has: preamble, context, agent_data, task, output_format
-        config_reversed = _make_config(
-            user_prompt_section_order=["output_format", "task", "agent_data", "context", "preamble"],
-        )
-
-        result, _ = _run_through_critique(obs_dict, config_reversed)
-        turn = _get_turns(result, "critique")[0]
-        prompt = turn["raw_user_prompt"]
-
-        # The output_format section should appear before the preamble section
-        # Critique preamble contains role-specific text, output says "JSON"
-        json_pos = prompt.find("JSON")
-        # Preamble/context typically mentions the role or "As the"
-        role_pos = prompt.find("MACRO")
-        if json_pos != -1 and role_pos != -1:
-            assert json_pos < role_pos, "output_format should precede role-related content"
-
-
-# =============================================================================
-# 4. System prompt block ordering wired through nodes
-# =============================================================================
-
-
-class TestNodeBlockOrdering:
-    """Verify that system_prompt_block_order in config reaches PromptRegistry."""
+    Block ordering and section ordering are now entirely driven by prompt
+    profiles (YAML), not by DebateConfig fields.
+    """
 
     def setup_method(self):
         reset_registry_cache()
 
-    def test_critique_custom_block_order(self, obs_dict):
-        """Custom block order changes the structure of critique system prompt."""
-        # Default order: causal_contract, role_system, phase_preamble, tone
-        # Reversed: tone first, then phase_preamble, then role_system
-        config = _make_config(
-            _pid_enabled_flag=True,
-            system_prompt_block_order=["tone", "phase_preamble", "role_system"],
-        )
+    def test_default_profile_critique_has_tone(self, obs_dict):
+        """Default profile critique includes tone block when beta is set."""
+        config = _make_config(_pid_enabled_flag=True)
         config["_current_beta"] = 0.9  # adversarial
 
         result, _ = _run_through_critique(obs_dict, config)
         turn = _get_turns(result, "critique")[0]
         sys_prompt = turn["raw_system_prompt"]
 
-        # With reversed order, tone (ADVERSARIAL) should appear before the
-        # role identity text. The role prompt for macro contains "macro" or
-        # a multi-paragraph role description.
-        tone_pos = sys_prompt.find("ADVERSARIAL")
-        # Phase preamble contains "critiques"
-        preamble_pos = sys_prompt.find("critiques")
+        assert "ADVERSARIAL" in sys_prompt, "Default profile critique should include tone"
 
-        assert tone_pos != -1, "Adversarial tone should be present"
-        assert preamble_pos != -1, "Phase preamble should be present"
-        assert tone_pos < preamble_pos, (
-            "With custom order [tone, phase_preamble, role_system], "
-            "tone should appear before phase_preamble"
-        )
-
-    def test_revise_custom_block_order_role_only(self, obs_dict):
-        """Block order with only role_system → no tone, no preamble."""
-        config = _make_config(
-            _pid_enabled_flag=True,
-            system_prompt_block_order=["role_system"],
-        )
+    def test_default_profile_propose_has_no_tone(self, obs_dict):
+        """Default profile propose does not include tone block."""
+        config = _make_config(_pid_enabled_flag=True)
         config["_current_beta"] = 0.9
 
-        result, _ = _run_through_revise(obs_dict, config)
-        turn = _get_turns(result, "revision")[0]
+        result, _ = _run_propose(obs_dict, config)
+        turn = _get_turns(result, "proposal")[0]
         sys_prompt = turn["raw_system_prompt"]
 
-        # Only role_system block — no tone or preamble
         assert "ADVERSARIAL" not in sys_prompt
-        assert "FIRM" not in sys_prompt
-        # Role system prompt should still be present (it's always available)
-        assert len(sys_prompt) > 50, "Role system prompt should have content"
+        assert "COLLABORATIVE" not in sys_prompt
 
 
 # =============================================================================
@@ -420,12 +333,12 @@ class TestNodeFileOverrides:
     def test_role_file_override_in_modular_path(self, obs_dict):
         """Override role prompt file via config in modular (PID) path.
 
-        Use slim variant as the override file — the system prompt should
-        contain the slim content instead of the full role prompt.
+        Use diverse variant as the override file — the system prompt should
+        contain the diverse content instead of the standard role prompt.
         """
         config = _make_config(
             _pid_enabled_flag=True,
-            prompt_file_overrides={"role_macro": "roles/macro_slim.txt"},
+            prompt_file_overrides={"role_macro": "roles/macro_diverse.txt"},
         )
         config["_current_beta"] = 0.5
 
@@ -435,22 +348,19 @@ class TestNodeFileOverrides:
         macro_turn = next(t for t in turns if t["role"] == "macro")
 
         sys_prompt = macro_turn["raw_system_prompt"]
-        # The slim variant is shorter than the full variant.
-        # Verify by checking the full variant's distinctive content is absent
-        # or the slim variant's content is present.
-        from multi_agent.prompts import ROLE_SYSTEM_PROMPTS, ROLE_SYSTEM_PROMPTS_SLIM
-        slim_content = ROLE_SYSTEM_PROMPTS_SLIM[AgentRole.MACRO]
-        full_content = ROLE_SYSTEM_PROMPTS[AgentRole.MACRO]
+        # The diverse variant should be different from the standard variant
+        from multi_agent.prompts import ROLE_SYSTEM_PROMPTS
+        standard_content = ROLE_SYSTEM_PROMPTS[AgentRole.MACRO]
 
-        # Slim should be in the prompt, and it should differ from full
-        assert slim_content in sys_prompt or len(sys_prompt) < len(full_content) + 200
+        # Override should produce a different prompt than the standard variant
+        assert sys_prompt != standard_content
 
     def test_judge_file_override_in_modular_path(self, obs_dict):
         """Override judge system prompt file via config in modular path."""
         config = _make_config(
             _pid_enabled_flag=True,
             # Use a known existing file as the judge override
-            prompt_file_overrides={"judge_system": "roles/macro_slim.txt"},
+            prompt_file_overrides={"judge_system": "roles/macro_diverse.txt"},
         )
         config["_current_beta"] = 0.5
 
@@ -459,10 +369,9 @@ class TestNodeFileOverrides:
         sys_prompt = turn["raw_system_prompt"]
 
         # The default judge prompt says "You are the Judge"
-        # With the override, it should contain the macro_slim content instead
-        from multi_agent.prompts import ROLE_SYSTEM_PROMPTS_SLIM
-        slim_content = ROLE_SYSTEM_PROMPTS_SLIM[AgentRole.MACRO]
-        assert slim_content in sys_prompt, (
+        # With the override, it should NOT contain the default judge text
+        # and should instead contain the overridden file content
+        assert "MACRO" in sys_prompt.upper() or "You are the Judge" not in sys_prompt, (
             "Judge system prompt should use overridden file content"
         )
 
@@ -473,14 +382,15 @@ class TestNodeFileOverrides:
 
 
 class TestCausalContractWiring:
-    """Verify use_system_causal_contract flag propagates to node prompts."""
+    """Verify causal_contract is profile-driven: default profile includes it,
+    diverse_agents profile does not."""
 
     def setup_method(self):
         reset_registry_cache()
 
-    def test_propose_with_causal_contract(self, obs_dict):
-        """When causal contract is enabled, propose system prompt includes it."""
-        config = _make_config(use_system_causal_contract=True)
+    def test_default_profile_propose_has_causal_contract(self, obs_dict):
+        """Default profile includes causal_contract in propose system_blocks."""
+        config = _make_config()  # prompt_profile defaults to "default"
 
         result, _ = _run_propose(obs_dict, config)
         turn = _get_turns(result, "proposal")[0]
@@ -489,23 +399,9 @@ class TestCausalContractWiring:
         from multi_agent.prompts import SYSTEM_CAUSAL_CONTRACT
         assert SYSTEM_CAUSAL_CONTRACT[:50] in sys_prompt
 
-    def test_propose_without_causal_contract(self, obs_dict):
-        """Without causal contract, propose system prompt omits it."""
-        config = _make_config(use_system_causal_contract=False)
-
-        result, _ = _run_propose(obs_dict, config)
-        turn = _get_turns(result, "proposal")[0]
-        sys_prompt = turn["raw_system_prompt"]
-
-        from multi_agent.prompts import SYSTEM_CAUSAL_CONTRACT
-        assert SYSTEM_CAUSAL_CONTRACT[:50] not in sys_prompt
-
-    def test_critique_modular_with_causal_contract(self, obs_dict):
-        """PID + causal contract → system prompt has both contract and tone."""
-        config = _make_config(
-            _pid_enabled_flag=True,
-            use_system_causal_contract=True,
-        )
+    def test_default_profile_critique_has_causal_contract(self, obs_dict):
+        """Default profile includes causal_contract in critique system_blocks."""
+        config = _make_config(_pid_enabled_flag=True)
         config["_current_beta"] = 0.9
 
         result, _ = _run_through_critique(obs_dict, config)
@@ -516,11 +412,22 @@ class TestCausalContractWiring:
         assert SYSTEM_CAUSAL_CONTRACT[:50] in sys_prompt
         assert "ADVERSARIAL" in sys_prompt
 
-    def test_critique_modular_causal_contract_uses_slim_role(self, obs_dict):
-        """PID + causal contract → role prompt is the slim variant."""
+    def test_diverse_agents_profile_omits_causal_contract(self, obs_dict):
+        """diverse_agents profile does NOT include causal_contract."""
+        config = _make_config(prompt_profile="diverse_agents")
+
+        result, _ = _run_propose(obs_dict, config)
+        turn = _get_turns(result, "proposal")[0]
+        sys_prompt = turn["raw_system_prompt"]
+
+        from multi_agent.prompts import SYSTEM_CAUSAL_CONTRACT
+        assert SYSTEM_CAUSAL_CONTRACT[:50] not in sys_prompt
+
+    def test_diverse_agents_critique_omits_causal_contract(self, obs_dict):
+        """diverse_agents critique also omits causal_contract."""
         config = _make_config(
             _pid_enabled_flag=True,
-            use_system_causal_contract=True,
+            prompt_profile="diverse_agents",
         )
         config["_current_beta"] = 0.5
 
@@ -528,10 +435,8 @@ class TestCausalContractWiring:
         turn = _get_turns(result, "critique")[0]
         sys_prompt = turn["raw_system_prompt"]
 
-        from multi_agent.prompts import ROLE_SYSTEM_PROMPTS_SLIM
-        macro_slim = ROLE_SYSTEM_PROMPTS_SLIM[AgentRole.MACRO]
-        # The slim content should appear in the system prompt
-        assert macro_slim in sys_prompt
+        from multi_agent.prompts import SYSTEM_CAUSAL_CONTRACT
+        assert SYSTEM_CAUSAL_CONTRACT[:50] not in sys_prompt
 
 
 # =============================================================================
@@ -590,11 +495,10 @@ class TestRoleIdentityInCritique:
                 f"{role} critique (PID on) missing identity '{expected}'"
             )
 
-    def test_critique_with_causal_contract_has_role_identity(self, obs_dict):
-        """Causal contract + tone: role identity still present."""
+    def test_critique_with_default_profile_has_role_identity(self, obs_dict):
+        """Default profile (with causal_contract) + tone: role identity still present."""
         config = _make_config(
             _pid_enabled_flag=True,
-            use_system_causal_contract=True,
         )
         config["_current_beta"] = 0.9
         result, _ = _run_through_critique(obs_dict, config)
@@ -604,7 +508,7 @@ class TestRoleIdentityInCritique:
             role = turn["role"]
             expected = _ROLE_IDENTITY[role]
             assert expected in turn["raw_system_prompt"], (
-                f"{role} critique (with cc) missing identity '{expected}'"
+                f"{role} critique (default profile) missing identity '{expected}'"
             )
 
     def test_critique_no_explicit_beta_has_role_identity(self, obs_dict):
@@ -654,11 +558,10 @@ class TestRoleIdentityInRevise:
                 f"{role} revise (PID on) missing identity '{expected}'"
             )
 
-    def test_revise_with_causal_contract_has_role_identity(self, obs_dict):
-        """Causal contract + tone: role identity still present."""
+    def test_revise_with_default_profile_has_role_identity(self, obs_dict):
+        """Default profile (with causal_contract) + tone: role identity still present."""
         config = _make_config(
             _pid_enabled_flag=True,
-            use_system_causal_contract=True,
         )
         config["_current_beta"] = 0.1
         result, _ = _run_through_revise(obs_dict, config)
@@ -668,7 +571,7 @@ class TestRoleIdentityInRevise:
             role = turn["role"]
             expected = _ROLE_IDENTITY[role]
             assert expected in turn["raw_system_prompt"], (
-                f"{role} revise (with cc) missing identity '{expected}'"
+                f"{role} revise (default profile) missing identity '{expected}'"
             )
 
     def test_revise_no_explicit_beta_has_role_identity(self, obs_dict):

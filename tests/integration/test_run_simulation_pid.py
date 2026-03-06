@@ -104,7 +104,7 @@ memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -126,7 +126,7 @@ memo_format: json
 num_episodes: 1
 broker:
   initial_cash: 100000.0
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini

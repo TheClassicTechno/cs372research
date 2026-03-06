@@ -9,6 +9,7 @@ unchanged.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import re
@@ -17,6 +18,8 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from ..config import AgentRole
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Jinja2 environment — templates live next to this __init__.py
@@ -101,17 +104,25 @@ def load_prompt_profile(name: str) -> dict:
     return yaml.safe_load(path.read_text()) or {}
 
 
-def resolve_prompt_profile(config: dict, role: str) -> dict:
-    """Resolve the prompt profile for a given agent role.
+def resolve_prompt_profile(config: dict, role: str, phase: str) -> dict:
+    """Resolve the prompt profile for a given agent role and phase.
 
-    Priority: role_overrides[role] keys > base profile keys > empty dict.
+    Returns phase-specific ``system_blocks`` and ``user_sections`` lists.
+    Priority: role_overrides[role] keys > base profile keys.
     """
-    profile_name = config.get("prompt_profile")
-    if not profile_name:
-        return {}  # no profile -> backward compat
+    profile_name = config.get("prompt_profile", "default")
     base = load_prompt_profile(profile_name)
     role_overrides = config.get("role_overrides", {}).get(role, {})
-    return {**base, **role_overrides}
+    merged = {**base, **role_overrides}
+
+    # Extract phase-specific lists
+    sys_blocks = merged.get("system_blocks", {})
+    usr_sections = merged.get("user_sections", {})
+
+    return {
+        "system_blocks": sys_blocks.get(phase, []),
+        "user_sections": usr_sections.get(phase, []),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -189,6 +200,7 @@ def _assemble_user_prompt(
       - If neither, skip silently.
     """
     parts: list[str] = []
+    skipped: list[str] = []
     for section_name in order:
         raw_tmpl = sections.get(section_name)
         if raw_tmpl is not None:
@@ -197,11 +209,19 @@ def _assemble_user_prompt(
             rendered = tmpl.render(**template_vars).strip()
             if rendered:
                 parts.append(rendered)
+            else:
+                skipped.append(section_name)
         else:
             # Not a template section — try MODULE_CATALOG
             content = load_module(section_name, prompt_file_overrides)
             if content:
                 parts.append(content.strip())
+            else:
+                skipped.append(section_name)
+    if skipped:
+        logger.warning(
+            "User prompt sections declared but not found: %s", skipped
+        )
     return "\n\n".join(parts)
 
 
@@ -229,24 +249,15 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
 }
 
 # =============================================================================
-# SYSTEM-LEVEL CAUSAL CONTRACT (optional, gated by use_system_causal_contract)
+# SYSTEM-LEVEL CAUSAL CONTRACT
 # =============================================================================
 
 SYSTEM_CAUSAL_CONTRACT: str = _load("system_contract/system_causal_contract.txt")
 
-ROLE_SYSTEM_PROMPTS_SLIM: dict[str, str] = {
-    AgentRole.MACRO: _load("roles/macro_slim.txt"),
-    AgentRole.VALUE: _load("roles/value_slim.txt"),
-    AgentRole.RISK: _load("roles/risk_slim.txt"),
-    AgentRole.TECHNICAL: _load("roles/technical_slim.txt"),
-    AgentRole.SENTIMENT: _load("roles/sentiment_slim.txt"),
-    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate_slim.txt"),
-}
 
-
-def get_role_prompts(use_causal_contract: bool = False) -> dict[str, str]:
-    """Return the appropriate role prompt dict based on causal contract flag."""
-    return ROLE_SYSTEM_PROMPTS_SLIM if use_causal_contract else ROLE_SYSTEM_PROMPTS
+def get_role_prompts() -> dict[str, str]:
+    """Return the full role prompt dict."""
+    return ROLE_SYSTEM_PROMPTS
 
 # =============================================================================
 # DEBATE PHASE PROMPTS (rendered via Jinja2 templates)
@@ -255,7 +266,6 @@ def get_role_prompts(use_causal_contract: bool = False) -> dict[str, str]:
 
 def build_proposal_user_prompt(
     context: str,
-    use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
@@ -263,9 +273,9 @@ def build_proposal_user_prompt(
     sector_constraints: str = "",
 ) -> str:
     """User prompt sent to each role agent for their initial proposal."""
-    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
-    uncertainty = "" if use_system_causal_contract else FORCED_UNCERTAINTY
-    traps = "" if use_system_causal_contract else TRAP_AWARENESS
+    causal = CAUSAL_CLAIM_FORMAT
+    uncertainty = FORCED_UNCERTAINTY
+    traps = TRAP_AWARENESS
 
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("proposal_template", "phases/proposal_allocation.txt")
@@ -346,7 +356,6 @@ def build_revision_prompt(
     context: str,
     my_proposal: str,
     critiques_received: list[dict],
-    use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
@@ -363,8 +372,8 @@ def build_revision_prompt(
     if not critiques_text:
         critiques_text = "(No critiques targeted at you this round.)"
 
-    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
-    uncertainty = "" if use_system_causal_contract else FORCED_UNCERTAINTY
+    causal = CAUSAL_CLAIM_FORMAT
+    uncertainty = FORCED_UNCERTAINTY
 
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("revision_template", "phases/revision_allocation.txt")
@@ -394,7 +403,6 @@ def build_judge_prompt(
     revisions: list[dict],
     all_critiques_text: str,
     strongest_disagreements: str = "",
-    use_system_causal_contract: bool = False,
     section_order: list[str] | None = None,
     prompt_file_overrides: dict[str, str] | None = None,
     allocation_mode: bool = True,  # kept for backward compat, always True
@@ -414,7 +422,7 @@ def build_judge_prompt(
             f"{strongest_disagreements}"
         )
 
-    causal = "" if use_system_causal_contract else CAUSAL_CLAIM_FORMAT
+    causal = CAUSAL_CLAIM_FORMAT
 
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("judge_template", "phases/judge_allocation.txt")

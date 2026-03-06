@@ -33,6 +33,41 @@ from typing import Any
 from ..config import AgentRole
 from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts, load_module
 
+# Phase preambles — keyed by phase name (kept for backward compat with old profiles).
+_PHASE_PREAMBLES = {
+    "critique": "Provide explicit, substantive critiques.",
+    "revise": "Revise your proposal based on critiques.",
+}
+
+
+class PromptCompositionError(Exception):
+    """Raised when prompt composition violates profile declarations."""
+
+
+def _validate_composition(
+    profile_blocks: list[str],
+    blocks_loaded: list[str],
+    phase: str,
+    beta: float | None,
+) -> None:
+    """Assert every declared block is accounted for.
+
+    Only 'tone' is allowed to be absent (when beta is None).
+    All other entries must resolve to a non-empty file.
+
+    Raises:
+        PromptCompositionError: If a declared block is missing from the
+            rendered prompt.
+    """
+    for entry in profile_blocks:
+        if entry == "tone" and beta is None:
+            continue
+        if entry not in blocks_loaded:
+            raise PromptCompositionError(
+                f"Block {entry!r} declared in profile but missing "
+                f"from rendered {phase} prompt. blocks_loaded={blocks_loaded}"
+            )
+
 logger = logging.getLogger("prompt.build")
 
 _PROMPT_DIR = Path(__file__).resolve().parent
@@ -155,23 +190,12 @@ def build_prompt_manifest(config: dict) -> dict:
         config: The LangGraph state config dict (state["config"]).
 
     Returns:
-        Dict with keys: block_order, causal_contract, role_files, tone,
-        beta, beta_bucket, phase_templates.
+        Dict with keys: role_files, tone, beta, beta_bucket, phase_templates.
     """
-    use_cc = config.get("use_system_causal_contract", False)
     overrides = config.get("prompt_file_overrides", {})
     roles = config.get("roles", [])
-    block_order = config.get(
-        "system_prompt_block_order", _DEFAULT_BLOCK_ORDER,
-    )
 
-    manifest: dict[str, Any] = {"block_order": list(block_order)}
-
-    # --- Causal contract ---
-    if use_cc:
-        manifest["causal_contract"] = overrides.get(
-            "causal_contract", "system_contract/system_causal_contract.txt",
-        )
+    manifest: dict[str, Any] = {}
 
     # --- Role files ---
     role_files: dict[str, str] = {}
@@ -180,8 +204,7 @@ def build_prompt_manifest(config: dict) -> dict:
         if override:
             role_files[role] = override
         else:
-            suffix = "_slim" if use_cc else ""
-            role_files[role] = f"roles/{role}{suffix}.txt"
+            role_files[role] = f"roles/{role}.txt"
     manifest["role_files"] = role_files
 
     # --- Tone files (critique/revise only) ---
@@ -211,17 +234,8 @@ def build_prompt_manifest(config: dict) -> dict:
 
 
 # =========================================================================
-# Prompt recipe definitions
-# =========================================================================
-
-# Each recipe defines which system-prompt blocks to assemble for a given
-# (role_pattern, phase) combination.  Blocks are assembled in order:
-#   role_system → phase_preamble → tone (tone LAST for maximum LLM attention)
-
-_CRITIQUE_PREAMBLE = "Provide explicit, substantive critiques."
-_REVISE_PREAMBLE = "Revise your proposal based on critiques."
-
 # Tone file naming convention: {phase}_{bucket}.txt
+# =========================================================================
 _TONE_FILES = {
     ("critique", "adversarial"):  "critique_adversarial.txt",
     ("critique", "balanced"):     "critique_balanced.txt",
@@ -257,114 +271,90 @@ class PromptRegistry:
     def __init__(self, prompt_logging: dict | None = None):
         self._prompt_logging = prompt_logging or {}
 
+    def _load_block(self, block_name, role, phase, beta, overrides):
+        """Unified block loader — no gates, profile is the single source of truth."""
+        # Check override first
+        override_file = overrides.get(block_name)
+        if block_name.startswith("role_") and not override_file:
+            override_file = overrides.get(f"role_{role}")
+
+        if override_file:
+            return _load_prompt_file(override_file)
+
+        # Known block types
+        if block_name == "role_system":
+            rp = get_role_prompts()
+            return rp.get(role, "")
+
+        if block_name == "judge_system":
+            return "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
+
+        if block_name == "causal_contract":
+            return SYSTEM_CAUSAL_CONTRACT
+
+        if block_name == "phase_preamble":
+            return _PHASE_PREAMBLES.get(phase, "")
+
+        if block_name == "tone":
+            if beta is None:
+                return ""  # warning logged by caller
+            bucket = beta_to_bucket(beta)
+            filename = _TONE_FILES.get((phase, bucket), "")
+            return _load_tone(filename) if filename else ""
+
+        # Fallback: MODULE_CATALOG
+        return load_module(block_name, overrides)
+
     def build(
         self,
         role: str,
         phase: str,
         beta: float | None = None,
         user_prompt: str = "",
-        use_system_causal_contract: bool = False,
         block_order: list[str] | None = None,
         prompt_file_overrides: dict[str, str] | None = None,
     ) -> PromptBuildResult:
         """Build a modular prompt for a given role and phase.
 
+        The profile YAML is the single source of truth: if a block is listed
+        in ``block_order``, it is loaded. No code gates override the profile.
+
         Args:
             role: Agent role (e.g. "macro", "value", "risk").
             phase: Debate phase ("propose", "critique", "revise", "judge").
             beta: Current PID β value. None = no tone injection.
-            user_prompt: The user/task prompt (already rendered by legacy builder).
-            use_system_causal_contract: When True, prepend shared causal contract
-                and use slimmed role prompts.
-            block_order: Custom ordering of system prompt blocks.
-                None → uses _DEFAULT_BLOCK_ORDER.
+            user_prompt: The user/task prompt (already rendered by builder).
+            block_order: Ordered list of system prompt blocks from profile.
             prompt_file_overrides: Override which .txt file to load for a block.
-                Keys like "causal_contract", "role_<rolename>", "phase_preamble_critique".
-                Values are filenames relative to the prompts directory.
 
         Returns:
             PromptBuildResult with assembled system_prompt and forwarded user_prompt.
         """
         overrides = prompt_file_overrides or {}
-        order = block_order if block_order is not None else _DEFAULT_BLOCK_ORDER
+        order = block_order or []
 
-        # --- Build a dict of block_name → content for all available blocks ---
-        available: dict[str, str] = {}
-
-        # causal_contract (only when enabled)
-        if use_system_causal_contract:
-            override_file = overrides.get("causal_contract")
-            if override_file:
-                available["causal_contract"] = _load_prompt_file(override_file)
-            else:
-                available["causal_contract"] = SYSTEM_CAUSAL_CONTRACT
-
-        # role_system / judge_system
-        if phase == "judge":
-            override_file = overrides.get("judge_system")
-            if override_file:
-                available["judge_system"] = _load_prompt_file(override_file)
-            else:
-                available["judge_system"] = (
-                    "You are the Judge. Synthesize the debate and produce final orders with an audited memo."
-                )
-            # Map role_system → judge_system so ordering with "role_system" still works
-            available["role_system"] = available["judge_system"]
-        else:
-            override_file = overrides.get(f"role_{role}")
-            if override_file:
-                available["role_system"] = _load_prompt_file(override_file)
-            else:
-                rp = get_role_prompts(use_system_causal_contract)
-                available["role_system"] = rp.get(role, rp.get(AgentRole.MACRO, ""))
-
-        # phase_preamble (critique/revise only)
-        if phase in ("critique", "revise"):
-            override_key = f"phase_preamble_{phase}"
-            override_file = overrides.get(override_key)
-            if override_file:
-                available["phase_preamble"] = _load_prompt_file(override_file)
-            else:
-                available["phase_preamble"] = (
-                    _CRITIQUE_PREAMBLE if phase == "critique" else _REVISE_PREAMBLE
-                )
-
-        # tone (critique/revise only, when β is provided)
+        parts = []
+        blocks_used = []
         tone_file = ""
         beta_bucket = ""
-        if beta is not None and phase in ("critique", "revise"):
-            beta_bucket = beta_to_bucket(beta)
-            tone_key = (phase, beta_bucket)
-            override_file = overrides.get(f"tone_{phase}_{beta_bucket}")
-            if override_file:
-                tone_text = _load_prompt_file(override_file)
-            else:
-                tone_filename = _TONE_FILES.get(tone_key, "")
-                tone_text = _load_tone(tone_filename) if tone_filename else ""
-                tone_file = tone_filename
-            if tone_text:
-                available["tone"] = tone_text
-                if not tone_file and not override_file:
-                    pass  # no tone file loaded
-                elif override_file:
-                    tone_file = override_file
 
-        # --- Assemble in specified order, skipping unavailable blocks ---
-        # Special blocks are resolved by the logic above; if absent from
-        # `available`, they were intentionally excluded (e.g. causal_contract
-        # when use_system_causal_contract=False).  Do NOT fall back to
-        # MODULE_CATALOG for these.
-        _SPECIAL_BLOCKS = {"causal_contract", "role_system", "phase_preamble", "tone", "judge_system"}
-        blocks_used = []
-        parts = []
         for block_name in order:
-            content = available.get(block_name)
-            if content is None and block_name not in _SPECIAL_BLOCKS:
-                # Try MODULE_CATALOG for explicit module names (e.g. role_macro_slim)
-                content = load_module(block_name, overrides)
+            content = self._load_block(block_name, role, phase, beta, overrides)
             if content:
                 parts.append(content)
                 blocks_used.append(block_name)
+                # Track tone metadata
+                if block_name == "tone" and beta is not None:
+                    beta_bucket = beta_to_bucket(beta)
+                    tone_file = _TONE_FILES.get((phase, beta_bucket), "")
+                    tone_override = overrides.get(f"tone_{phase}_{beta_bucket}")
+                    if tone_override:
+                        tone_file = tone_override
+            else:
+                logger.warning(
+                    "System block '%s' listed in profile but produced no content "
+                    "(phase=%s, role=%s)", block_name, phase, role,
+                )
 
         system_prompt = "\n".join(parts)
 
@@ -377,6 +367,83 @@ class PromptRegistry:
         )
 
         # Logging (config-gated)
+        if self._prompt_logging.get("enabled"):
+            self._log_build(role, phase, result)
+
+        return result
+
+    def build_from_profile(
+        self,
+        role: str,
+        phase: str,
+        profile: dict,
+        beta: float | None = None,
+        user_prompt: str = "",
+    ) -> PromptBuildResult:
+        """Build a prompt using the new agent profile format.
+
+        The profile dict contains explicit file paths under
+        ``system_prompts[phase]``. Each entry is loaded directly from
+        ``multi_agent/prompts/``, except ``"tone"`` which resolves via
+        the PID β → tone bucket mapping.
+
+        Args:
+            role: Agent role name.
+            phase: Debate phase.
+            profile: Loaded agent profile dict.
+            beta: Current PID β (None = no tone).
+            user_prompt: Pre-rendered user prompt.
+
+        Returns:
+            PromptBuildResult.
+        """
+        file_list = profile.get("system_prompts", {}).get(phase, [])
+
+        parts = []
+        blocks_used = []
+        tone_file = ""
+        beta_bucket = ""
+
+        for entry in file_list:
+            if entry == "tone":
+                if beta is None:
+                    continue
+                bucket = beta_to_bucket(beta)
+                beta_bucket = bucket
+                filename = _TONE_FILES.get((phase, bucket), "")
+                if filename:
+                    content = _load_tone(filename)
+                    tone_file = filename
+                else:
+                    content = ""
+            else:
+                # Load file directly from prompts directory
+                content = _load_prompt_file(entry)
+
+            if content:
+                parts.append(content)
+                blocks_used.append(entry)
+            else:
+                if entry == "tone" and beta is None:
+                    continue
+                logger.warning(
+                    "System block '%s' declared in profile but produced no content "
+                    "(phase=%s, role=%s)", entry, phase, role,
+                )
+
+        system_prompt = "\n".join(parts)
+
+        # Composition validation
+        _validate_composition(file_list, blocks_used, phase, beta)
+
+        result = PromptBuildResult(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            tone_file=tone_file,
+            beta_bucket=beta_bucket,
+            blocks_used=blocks_used,
+        )
+
         if self._prompt_logging.get("enabled"):
             self._log_build(role, phase, result)
 

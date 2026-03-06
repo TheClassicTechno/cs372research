@@ -1,0 +1,9 @@
+# Diverse judge profile — minimal system prompt, no causal contract.
+system_prompts:
+  judge:
+    - roles/judge.txt
+
+user_prompts:
+  judge:
+    template: phases/judge_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]

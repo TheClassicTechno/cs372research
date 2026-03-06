@@ -89,37 +89,37 @@ class TestProfileLoading:
         profile = load_prompt_profile("default")
         assert "system_blocks" in profile
         assert "user_sections" in profile
-        assert isinstance(profile["system_blocks"], list)
-        assert isinstance(profile["user_sections"], list)
+        # Per-phase format: dicts keyed by phase
+        assert isinstance(profile["system_blocks"], dict)
+        assert isinstance(profile["user_sections"], dict)
+        assert "propose" in profile["system_blocks"]
+        assert "critique" in profile["system_blocks"]
 
     def test_load_minimal_profile(self):
         from multi_agent.prompts import load_prompt_profile
         profile = load_prompt_profile("minimal")
-        assert "role_system" in profile["system_blocks"]
-        assert "tone" not in profile["system_blocks"]
+        assert "role_system" in profile["system_blocks"]["propose"]
+        assert "tone" not in profile["system_blocks"]["propose"]
 
     def test_load_no_scaffold_profile(self):
         from multi_agent.prompts import load_prompt_profile
         profile = load_prompt_profile("no_scaffold")
-        assert "tone" in profile["system_blocks"]
+        assert "tone" in profile["system_blocks"]["critique"]
 
     def test_load_nonexistent_profile_raises(self):
         from multi_agent.prompts import load_prompt_profile
         with pytest.raises(FileNotFoundError):
             load_prompt_profile("does_not_exist_xyz")
 
-    def test_resolve_no_profile_returns_empty(self):
-        from multi_agent.prompts import resolve_prompt_profile
-        config = {}  # no prompt_profile key
-        result = resolve_prompt_profile(config, "macro")
-        assert result == {}
-
     def test_resolve_with_profile(self):
         from multi_agent.prompts import resolve_prompt_profile
         config = {"prompt_profile": "default"}
-        result = resolve_prompt_profile(config, "macro")
+        result = resolve_prompt_profile(config, "macro", "propose")
         assert "system_blocks" in result
         assert "user_sections" in result
+        # Returns phase-specific lists
+        assert isinstance(result["system_blocks"], list)
+        assert isinstance(result["user_sections"], list)
 
     def test_resolve_with_role_override(self):
         from multi_agent.prompts import resolve_prompt_profile
@@ -127,15 +127,17 @@ class TestProfileLoading:
             "prompt_profile": "default",
             "role_overrides": {
                 "risk": {
-                    "user_sections": ["context", "task", "output_allocation"],
+                    "user_sections": {
+                        "propose": ["context", "task", "output_allocation"],
+                    },
                 }
             }
         }
-        result = resolve_prompt_profile(config, "risk")
-        # role_overrides should replace user_sections
+        result = resolve_prompt_profile(config, "risk", "propose")
+        # role_overrides should replace user_sections for that phase
         assert result["user_sections"] == ["context", "task", "output_allocation"]
         # system_blocks should still come from default profile
-        assert "system_blocks" in result
+        assert isinstance(result["system_blocks"], list)
 
     def test_resolve_role_override_does_not_affect_other_roles(self):
         from multi_agent.prompts import resolve_prompt_profile
@@ -143,11 +145,13 @@ class TestProfileLoading:
             "prompt_profile": "default",
             "role_overrides": {
                 "risk": {
-                    "user_sections": ["context", "task"],
+                    "user_sections": {
+                        "propose": ["context", "task"],
+                    },
                 }
             }
         }
-        result = resolve_prompt_profile(config, "macro")
+        result = resolve_prompt_profile(config, "macro", "propose")
         # macro should get the full default profile, not risk's override
         assert len(result["user_sections"]) > 2
 
@@ -335,7 +339,7 @@ class TestDebateConfigNewFields:
     def test_default_values(self):
         from multi_agent.config import DebateConfig
         cfg = DebateConfig()
-        assert cfg.prompt_profile == ""
+        assert cfg.prompt_profile == "default"
         assert cfg.role_overrides == {}
         assert cfg.crit_system_template == "crit_system.jinja"
         assert cfg.crit_user_template == "crit_user.jinja"

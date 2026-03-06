@@ -140,7 +140,7 @@ agent_sector_permissions:
   value: [tech, financials]
   risk: ["*"]
   technical: [tech, energy]
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -164,7 +164,7 @@ sectors:
   energy: [XOM]
   financials: [JPM]
 max_sector_weight: 0.40
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -198,7 +198,7 @@ sector_limits:
     min: 0.10
     max: 0.35
 max_sector_weight: 0.40
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini
@@ -231,7 +231,7 @@ sector_limits:
   financials:
     min: 0.10
     max: 0.35
-agent:
+debate_setup:
   agent_system: multi_agent_debate
   llm_provider: openai
   llm_model: gpt-4o-mini

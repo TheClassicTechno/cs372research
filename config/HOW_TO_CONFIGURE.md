@@ -11,15 +11,17 @@ This guide covers everything you need to create custom agent configs, scenarios,
 3. [Agent Configuration](#agent-configuration)
 4. [Scenario Configuration](#scenario-configuration)
 5. [How Agents and Scenarios Merge](#how-agents-and-scenarios-merge)
-6. [Prompt System](#prompt-system)
-7. [Sector Constraints](#sector-constraints)
-8. [Allocation Constraints](#allocation-constraints)
-9. [Snapshot Generation](#snapshot-generation)
-10. [PID Controller](#pid-controller)
-11. [Logging](#logging)
-12. [Parallel Execution and Rate Limiting](#parallel-execution-and-rate-limiting)
-13. [Validation Rules Reference](#validation-rules-reference)
-14. [Troubleshooting](#troubleshooting)
+6. [Prompt System (Legacy Profiles)](#prompt-system)
+7. [Agent Profile System (New)](#agent-profile-system-new)
+8. [Sector Constraints](#sector-constraints)
+9. [Allocation Constraints](#allocation-constraints)
+10. [Snapshot Generation](#snapshot-generation)
+11. [PID Controller](#pid-controller)
+12. [Logging](#logging)
+13. [Parallel Execution and Rate Limiting](#parallel-execution-and-rate-limiting)
+14. [Debugging Prompts](#debugging-prompts)
+15. [Validation Rules Reference](#validation-rules-reference)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -27,7 +29,7 @@ This guide covers everything you need to create custom agent configs, scenarios,
 
 A simulation run is configured by two YAML files:
 
-- **Agent config** (`config/agents/*.yaml`) -- defines the LLM, debate structure, prompt style, logging, and PID settings. This is the "how" of the debate.
+- **Debate config** (`config/debate/*.yaml` or `config/agents/*.yaml`) -- defines the LLM, debate structure, prompt style, logging, and PID settings. This is the "how" of the debate.
 - **Scenario config** (`config/scenarios/*.yaml`) -- defines the investment universe: which quarter, which tickers, sector constraints, and allocation rules. This is the "what" of the debate.
 
 ```
@@ -98,14 +100,20 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 5
-  prompt_profile: "diverse_agents"
   logging_mode: "standard"
 
 broker:
@@ -116,7 +124,7 @@ broker:
 
 ## Agent Configuration
 
-The agent config lives under `config/agents/` and contains the full `SimulationConfig`. Every field is documented below.
+The agent config lives under `config/debate/` and contains the full `SimulationConfig`. Every field is documented below.
 
 ### Top-Level Fields
 
@@ -128,8 +136,10 @@ The agent config lives under `config/agents/` and contains the full `SimulationC
 | `invest_quarter` | string | **required** | Target quarter, e.g. `"2025Q1"` |
 | `tickers` | list | **required** | Ticker universe (non-empty) |
 | `num_episodes` | int | `1` | Number of simulation episodes |
+| `agents` | dict | `null` | Top-level role→profile mapping (e.g. `{macro: "macro_diverse", ...}`) |
+| `judge_profile` | string | `null` | Top-level judge profile name (e.g. `"judge_standard"`) |
 
-### The `agent:` Block
+### The `debate_setup:` Block
 
 This configures the debate system itself.
 
@@ -158,11 +168,8 @@ Available roles: `macro`, `value`, `risk`, `technical`, `sentiment`, `devils_adv
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `prompt_profile` | string | `""` | Profile name: `"default"`, `"diverse_agents"`, `"minimal"`, `"no_scaffold"` |
+| `prompt_profile` | string | `"default"` | Profile name: `"default"`, `"diverse_agents"`, `"minimal"`, `"no_scaffold"` |
 | `prompt_file_overrides` | dict | `null` | Override specific prompt .txt files (see [Prompt System](#prompt-system)) |
-| `use_system_causal_contract` | bool | `false` | Move causal scaffolding to shared system contract |
-| `system_prompt_block_order` | list | `null` | Custom order of system prompt blocks |
-| `user_prompt_section_order` | list | `null` | Custom order of user prompt sections |
 
 #### Parallel Execution
 
@@ -208,7 +215,7 @@ Available roles: `macro`, `value`, `risk`, `technical`, `sentiment`, `devils_adv
 ### Complete Agent Config Example
 
 ```yaml
-# config/agents/my_custom_agents.yaml
+# config/debate/my_custom_debate.yaml
 case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
@@ -235,24 +242,22 @@ allocation_constraints:
 
 num_episodes: 1
 
-agent:
+# --- Who debates ---
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-4o-mini"
   temperature: 0.3
   max_retries: 3
   max_rounds: 7
-
-  # Prompt style
-  prompt_profile: "diverse_agents"
-  prompt_file_overrides:
-    role_macro: "roles/macro_diverse.txt"
-    role_value: "roles/value_diverse.txt"
-    role_technical: "roles/technical_diverse.txt"
-    role_risk: "roles/risk_diverse.txt"
-    output_allocation: "output_format/allocation_output_diverse.txt"
-
-  agreeableness: 0.2
 
   # PID controller
   pid_enabled: true
@@ -440,7 +445,7 @@ base (agents) + overlay (scenario) = merged config
 
 **Merge rules:**
 - Scenario values **override** base values at every key
-- For nested dicts (like `allocation_constraints`, `agent`), merge is recursive: scenario keys override matching base keys, but base keys not in the scenario are preserved
+- For nested dicts (like `allocation_constraints`, `debate_setup`), merge is recursive: scenario keys override matching base keys, but base keys not in the scenario are preserved
 - For non-dict values (like `tickers`, `invest_quarter`), scenario completely replaces base
 
 **Example:** Agent config has `tickers: [TSLA, NFLX, JPM]` and scenario has `tickers: [AAPL, NVDA]`. Result: `tickers: [AAPL, NVDA]` (scenario wins entirely -- no concatenation).
@@ -449,7 +454,7 @@ base (agents) + overlay (scenario) = merged config
 
 | From agent config | From scenario |
 |---|---|
-| `agent:` (LLM, prompts, PID, logging) | `invest_quarter` |
+| `debate_setup:` (LLM, prompts, PID, logging) | `invest_quarter` |
 | `broker:` | `tickers` |
 | `dataset_path` | `allocation_constraints` |
 | `case_format`, `memo_format` | `sectors`, `sector_limits` |
@@ -475,6 +480,8 @@ python run_simulation.py \
 
 ## Prompt System
 
+> **Note:** This section describes the legacy profile system (`prompt_profile` + `prompt_file_overrides` + `role_overrides`). For the new per-agent profile system with explicit file paths and no dispatch indirection, see [Agent Profile System (New)](#agent-profile-system-new).
+
 The prompt system assembles system and user prompts from composable text blocks. Everything lives under `multi_agent/prompts/`.
 
 ### Directory Structure
@@ -487,12 +494,12 @@ multi_agent/prompts/
         minimal.yaml
         no_scaffold.yaml
     roles/               # Role identity prompts
-        macro.txt              macro_slim.txt         macro_diverse.txt
-        value.txt              value_slim.txt         value_diverse.txt
-        risk.txt               risk_slim.txt          risk_diverse.txt
-        technical.txt          technical_slim.txt     technical_diverse.txt
-        sentiment.txt          sentiment_slim.txt
-        devils_advocate.txt    devils_advocate_slim.txt
+        macro.txt              macro_diverse.txt
+        value.txt              value_diverse.txt
+        risk.txt               risk_diverse.txt
+        technical.txt          technical_diverse.txt
+        sentiment.txt
+        devils_advocate.txt
     phases/              # Phase-specific user prompt templates
         proposal_allocation.txt
         critique_allocation.txt
@@ -516,42 +523,75 @@ multi_agent/prompts/
 
 A profile defines **which** blocks appear in the system prompt and **which** sections appear in the user prompt. Set via `prompt_profile` in the agent config.
 
+Profiles are **per-phase**: `system_blocks` and `user_sections` are dicts keyed by phase (`propose`, `critique`, `revise`, `judge`). This means each phase gets exactly the blocks/sections it needs — no silent drops.
+
 **`default`** -- Full scaffolding with causal contract and reasoning aids:
 
 ```yaml
-system_blocks:      [causal_contract, role_system, phase_preamble, tone]
-user_sections:      [preamble, context, agent_data, task, scaffolding, output_format]
+system_blocks:
+  propose:  [causal_contract, role_system]
+  critique: [causal_contract, role_system, phase_preamble, tone]
+  revise:   [causal_contract, role_system, phase_preamble, tone]
+  judge:    [causal_contract, judge_system]
+user_sections:
+  propose:  [context, task, scaffolding, output_format]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, scaffolding, output_format]
+  judge:    [preamble, context, agent_data, task, output_format]
 ```
 
 **`diverse_agents`** -- No shared scaffolding (reasoning is defined per-role in the role prompts):
 
 ```yaml
-system_blocks:      [role_system, phase_preamble, tone]
-user_sections:      [preamble, context, agent_data, task, output_format]
+system_blocks:
+  propose:  [role_system]
+  critique: [role_system, phase_preamble, tone]
+  revise:   [role_system, phase_preamble, tone]
+  judge:    [judge_system]
+user_sections:
+  propose:  [context, task, output_format]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, output_format]
+  judge:    [preamble, context, agent_data, task, output_format]
 ```
 
 **`minimal`** -- Bare minimum:
 
 ```yaml
-system_blocks:      [role_system, phase_preamble]
-user_sections:      [context, task, output_allocation]
+system_blocks:
+  propose:  [role_system]
+  critique: [role_system, phase_preamble]
+  revise:   [role_system, phase_preamble]
+  judge:    [judge_system]
+user_sections:
+  propose:  [context, task, output_allocation]
+  critique: [context, task, output_format]
+  revise:   [context, task, output_allocation]
+  judge:    [context, task, output_format]
 ```
 
 **`no_scaffold`** -- Keeps tone but removes scaffolding:
 
 ```yaml
-system_blocks:      [role_system, phase_preamble, tone]
-user_sections:      [preamble, context, agent_data, task, output_allocation]
+system_blocks:
+  propose:  [role_system]
+  critique: [role_system, phase_preamble, tone]
+  revise:   [role_system, phase_preamble, tone]
+  judge:    [judge_system]
+user_sections:
+  propose:  [context, task, output_allocation]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, output_allocation]
+  judge:    [preamble, context, agent_data, task, output_format]
 ```
 
 ### Role Prompt Variants
 
-Each role has up to 3 variants:
+Each role has up to 2 variants:
 
 | Variant | File | Use When |
 |---------|------|----------|
 | Standard | `roles/macro.txt` | `prompt_profile: "default"` with inline scaffolding |
-| Slim | `roles/macro_slim.txt` | `use_system_causal_contract: true` (scaffolding is in shared contract) |
 | Diverse | `roles/macro_diverse.txt` | `prompt_profile: "diverse_agents"` (self-contained reasoning methodology) |
 
 **Standard** role prompts define: Analytical Domain, How to Reason (Step by Step), Evidence Citation (MANDATORY), Common Reasoning Traps.
@@ -597,12 +637,13 @@ Paths are relative to `multi_agent/prompts/`.
 
 ### How Prompts Are Assembled
 
-1. The **profile** decides which blocks/sections are included
+1. The **profile** decides which blocks/sections are included **per phase** (propose, critique, revise, judge)
 2. `prompt_file_overrides` decides which .txt file loads for each named block
-3. The **system prompt** is assembled by concatenating blocks in order: `[causal_contract, role_system, phase_preamble, tone]`
-4. The **user prompt** is assembled by extracting `---SECTION: name---` delimited sections from the phase template and including only the sections listed in the profile's `user_sections`
+3. The **system prompt** is assembled by concatenating the phase's `system_blocks` in order
+4. The **user prompt** is assembled by extracting `---SECTION: name---` delimited sections from the phase template and including only the sections listed in the profile's `user_sections` for that phase
+5. If a block/section is listed in the profile, it appears. If it's not listed, it doesn't. No code gates override the profile.
 
-**Tone injection:** Only during `critique` and `revise` phases (never `propose` or `judge`). The tone block is always placed **last** in the system prompt for maximum LLM recency-bias attention.
+**Tone injection:** Controlled entirely by the profile. The default profile includes `tone` in critique and revise phases only. The tone block is always placed **last** in the system prompt for maximum LLM recency-bias attention.
 
 **Beta-to-tone mapping (from PID or static agreeableness):**
 
@@ -643,7 +684,7 @@ Minimize exposure to narrative-driven reasoning.
 Then in your agent config:
 
 ```yaml
-agent:
+debate_setup:
   debate_roles: ["macro", "quant", "risk", "technical"]
   prompt_file_overrides:
     role_quant: "roles/my_quant_role.txt"
@@ -674,6 +715,150 @@ Available template variables depend on the phase:
 | Critique | `role`, `context`, `my_proposal`, `others_text` |
 | Revision | `role`, `context`, `my_proposal`, `critiques_text`, `causal_claim_format`, `forced_uncertainty` |
 | Judge | `context`, `revisions_text`, `all_critiques_text`, `disagreements_section`, `causal_claim_format` |
+
+---
+
+## Agent Profile System (New)
+
+The agent profile system replaces the layered `prompt_profile` / `prompt_file_overrides` / `role_overrides` mechanism with a single YAML per agent that explicitly lists every prompt file per phase. No dispatch logic, no silent drops.
+
+### How It Works
+
+Instead of selecting a shared profile (`prompt_profile: "default"`) and then overriding individual files, you map each role to a named **agent profile**:
+
+```yaml
+# config/debate/debate_diverse_agents.yaml
+agents:
+  macro: "macro_diverse"
+  value: "value_diverse"
+  technical: "technical_diverse"
+  risk: "risk_diverse"
+judge_profile: "judge_standard"
+
+debate_setup:
+  agent_system: "multi_agent_debate"
+  # ... LLM, PID, logging settings ...
+```
+
+Each agent profile is a self-contained YAML in `config/agent_profiles/` that declares exactly which files are concatenated for the system prompt and which template + sections are used for the user prompt, per phase.
+
+### Agent Profile Format
+
+```yaml
+# config/agent_profiles/macro_standard.yaml
+system_prompts:
+  propose:
+    - system_contract/system_causal_contract.txt
+    - roles/macro.txt
+  critique:
+    - system_contract/system_causal_contract.txt
+    - roles/macro.txt
+    - phase_preambles/critique.txt
+    - tone
+  revise:
+    - system_contract/system_causal_contract.txt
+    - roles/macro.txt
+    - phase_preambles/revise.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation.txt
+    sections: [context, task, scaffolding, output_format]
+  critique:
+    template: phases/critique_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation.txt
+    sections: [preamble, context, agent_data, task, scaffolding, output_format]
+```
+
+- Paths under `system_prompts` are relative to `multi_agent/prompts/`
+- `tone` is the only special keyword -- resolved at runtime by the PID controller's β value
+- When `beta=None` (propose/judge phases, or PID disabled), tone entries are skipped
+
+### Judge Profiles
+
+Judge profiles only have a `judge` phase:
+
+```yaml
+# config/agent_profiles/judge_standard.yaml
+system_prompts:
+  judge:
+    - system_contract/system_causal_contract.txt
+    - roles/judge.txt
+
+user_prompts:
+  judge:
+    template: phases/judge_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+```
+
+### Available Profiles
+
+| Profile | Description |
+|---------|-------------|
+| `macro_standard` | Standard macro analyst with causal contract |
+| `macro_diverse` | Self-contained macro reasoning (no shared contract) |
+| `macro_angry_tech_bull` | Aggressive tech bull personality |
+| `macro_growth_rebound` | Growth rebound thesis specialist |
+| `value_standard`, `value_diverse`, etc. | Same variants for value analyst |
+| `risk_standard`, `risk_diverse`, etc. | Same variants for risk manager |
+| `technical_standard`, `technical_diverse`, etc. | Same variants for technical analyst |
+| `sentiment_standard` | Sentiment analysis specialist |
+| `devils_advocate_standard` | Contrarian devil's advocate |
+| `judge_standard`, `judge_diverse` | Judge profiles |
+
+### Debate Config Format
+
+Debate configs in `config/debate/` use the `agents:` mapping. Roles are derived from the keys.
+
+```yaml
+# config/debate/debate_angry_agents.yaml
+agents:
+  macro: "macro_angry_tech_bull"
+  value: "value_angry_inflation_hawk"
+  technical: "technical_angry_soft_landing"
+  risk: "risk_angry_recession_doom"
+judge_profile: "judge_standard"
+
+debate_setup:
+  max_rounds: 5
+  pid_enabled: true
+  # ... LLM settings ...
+```
+
+### Composition Validation
+
+The system validates prompt composition at runtime:
+
+- Every file path declared in a profile must exist on disk
+- Every declared block must produce non-empty content (raises `PromptCompositionError` otherwise)
+- `tone` is exempt from validation when `beta=None`
+- Startup validation (`validate_all_profiles()`) checks all profiles on launch
+
+### Backward Compatibility
+
+The old system (`prompt_profile`, `prompt_file_overrides`, `role_overrides`) still works. When `agents:` is not set in the debate config, the old system is used. When `agents:` is set, profiles are loaded and the old override fields are ignored.
+
+---
+
+## Debugging Prompts
+
+Two CLI flags help inspect what prompts agents receive:
+
+```bash
+# Print full system+user prompts for each agent, then exit
+python run_simulation.py \
+  --agents config/debate/debate_diverse_agents.yaml \
+  --scenario config/scenarios/broad_14ticker.yaml \
+  --print-prompts
+
+# Print prompt manifest JSON showing block composition, then exit
+python run_simulation.py \
+  --agents config/debate/debate_diverse_agents.yaml \
+  --print-prompt-manifest
+```
 
 ---
 
@@ -878,7 +1063,7 @@ Each round:
 ### Recommended Settings
 
 ```yaml
-agent:
+debate_setup:
   pid_enabled: true
   max_rounds: 7          # Give PID room to adjust
   pid_kp: 0.15           # Proportional: react to current error
@@ -953,7 +1138,7 @@ final/
 ### Additional Logging Flags
 
 ```yaml
-agent:
+debate_setup:
   pid_log_metrics: true       # PID scalar metrics each round (to console + files)
   pid_log_llm_calls: false    # Full CRIT LLM prompts/responses (very verbose)
   log_rendered_prompts: false  # Full prompts via debate.prompts Python logger
@@ -989,7 +1174,7 @@ When `parallel_agents: true`, all agents in each phase (propose, critique, revis
 The stagger mechanism serializes call **starts** to avoid hitting rate limits:
 
 ```yaml
-agent:
+debate_setup:
   parallel_agents: true
   llm_stagger_ms: 500     # 500ms between call starts
 ```
@@ -999,7 +1184,7 @@ With 4 agents and 500ms stagger, calls start at t=0, t=500ms, t=1000ms, t=1500ms
 ### Concurrency Limit
 
 ```yaml
-agent:
+debate_setup:
   max_concurrent_llm: 2   # Max 2 simultaneous LLM calls
 ```
 
@@ -1019,21 +1204,21 @@ The system has built-in retry logic with exponential backoff:
 **Option 1: Increase stagger**
 
 ```yaml
-agent:
+debate_setup:
   llm_stagger_ms: 1000    # 1 second between calls
 ```
 
 **Option 2: Limit concurrency**
 
 ```yaml
-agent:
+debate_setup:
   max_concurrent_llm: 2   # Only 2 calls at once
 ```
 
 **Option 3: Both (recommended for strict rate limits)**
 
 ```yaml
-agent:
+debate_setup:
   llm_stagger_ms: 500
   max_concurrent_llm: 2
 ```
@@ -1041,7 +1226,7 @@ agent:
 **Option 4: Disable parallelism entirely**
 
 ```yaml
-agent:
+debate_setup:
   parallel_agents: false   # Sequential execution
 ```
 
@@ -1050,7 +1235,7 @@ Or via CLI: `--no-parallel`
 **Option 5: Disable stagger (if you have high rate limits)**
 
 ```yaml
-agent:
+debate_setup:
   no_rate_limit: true      # Fire all calls at once
 ```
 

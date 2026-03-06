@@ -1,0 +1,26 @@
+# Standard sentiment agent profile.
+system_prompts:
+  propose:
+    - system_contract/system_causal_contract.txt
+    - roles/sentiment.txt
+  critique:
+    - system_contract/system_causal_contract.txt
+    - roles/sentiment.txt
+    - phase_preambles/critique.txt
+    - tone
+  revise:
+    - system_contract/system_causal_contract.txt
+    - roles/sentiment.txt
+    - phase_preambles/revise.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation.txt
+    sections: [context, task, scaffolding, output_format]
+  critique:
+    template: phases/critique_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation.txt
+    sections: [preamble, context, agent_data, task, scaffolding, output_format]

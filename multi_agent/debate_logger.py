@@ -369,6 +369,27 @@ class DebateLogger:
             return
         _write_json(self._run_dir / "prompt_manifest.json", manifest)
 
+    def write_round_prompt_manifest(
+        self, round_num: int, agents_manifest: dict,
+    ) -> None:
+        """Write per-round prompt manifest with composition details.
+
+        Args:
+            round_num: Current debate round.
+            agents_manifest: Dict of agent_role -> {profile_name, phase,
+                system_blocks_declared, system_blocks_loaded,
+                user_sections_declared, system_prompt_length, user_prompt_length}.
+        """
+        if self._mode == "off":
+            return
+        round_dir = self._run_dir / "rounds" / f"round_{round_num:03d}"
+        round_dir.mkdir(parents=True, exist_ok=True)
+        manifest = {
+            "round": round_num,
+            "agents": agents_manifest,
+        }
+        _write_json(round_dir / "prompt_manifest.json", manifest)
+
     # ------------------------------------------------------------------
     # Per-round: start + artifact writers
     # ------------------------------------------------------------------

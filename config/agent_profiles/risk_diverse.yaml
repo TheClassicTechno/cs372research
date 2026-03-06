@@ -1,0 +1,23 @@
+# Diverse risk agent — scenario tree analysis, self-contained reasoning.
+system_prompts:
+  propose:
+    - roles/risk_diverse.txt
+  critique:
+    - roles/risk_diverse.txt
+    - phase_preambles/critique.txt
+    - tone
+  revise:
+    - roles/risk_diverse.txt
+    - phase_preambles/revise.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation.txt
+    sections: [context, task, output_format]
+  critique:
+    template: phases/critique_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]

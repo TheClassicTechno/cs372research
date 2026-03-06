@@ -2,13 +2,13 @@
 # Useful for ablation experiments isolating the effect of scaffolding.
 
 system_blocks:
-  - role_system
-  - phase_preamble
-  - tone
+  propose:  [role_system]
+  critique: [role_system, phase_preamble, tone]
+  revise:   [role_system, phase_preamble, tone]
+  judge:    [judge_system]
 
 user_sections:
-  - preamble
-  - context
-  - agent_data
-  - task
-  - output_allocation
+  propose:  [context, task, output_allocation]
+  critique: [preamble, context, agent_data, task, output_format]
+  revise:   [preamble, context, agent_data, task, output_allocation]
+  judge:    [preamble, context, agent_data, task, output_format]
