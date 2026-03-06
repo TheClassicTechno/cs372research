@@ -1,0 +1,60 @@
+Full Analysis & Your Task Plan
+What Deveen Has Already Done
+Deveen built all three architecture runners as TypeScript + OpenAI SDK:
+
+File	What it does
+types.ts	Shared contract: Observation, Action, Claim, DebateTurn, AgentTrace
+prompts.ts	All prompts: single-agent, role-specific (macro/value/risk/technical), debate critique/revision/judge
+single-agent-runner.ts	Single agent baseline: 1 LLM call -> Action + trace
+majority-vote-runner.ts	Majority vote: 3 role agents propose independently, then aggregate by vote on direction + median size
+debate-runner.ts	Debate: Round 0 (proposals) -> Round 1 (critiques) -> Round 2 (revisions) -> Judge
+demo.ts	Demo runner with mock data for all 3 architectures
+Key observation: Deveen has already built a v1 of the multi-agent debate runner too. So your task is NOT to build it from scratch -- it's to extend, improve, and make it research-worthy.
+
+What's Missing / What YOU (Juli) Need to Do
+Based on the meeting notes, proposal, and research questions (RQ1-RQ3), here's a step-by-step breakdown:
+
+Phase 1: Extend the Role-Specific Agents
+Deveen's current roles are macro, value, risk (and technical is defined but unused). The meeting notes reference TradingAgents-style specialization:
+
+Add a sentiment agent - Analyzes the text_context (news/earnings) and produces sentiment-driven trading claims. This is critical since Alanood's data team is injecting news sentiment.
+Activate the technical agent - It's defined in AGENT_ROLES but the runners default to only 3 roles (['macro', 'value', 'risk']). Wire it in.
+Enrich role prompts - Current role prompts in prompts.ts:76-92 are thin (3-4 lines each). Each agent needs deeper specialization prompts that produce higher-quality Pearl-level causal claims (L2/L3, not just L1).
+Phase 2: Improve the Debate Orchestration
+The current debate runner is functional but basic:
+
+Add a devil's advocate / adversarial agent - Meeting notes say: "adding an explicit adversarial/devil's-advocate component (e.g., agree vs disagree, or 2 vs 2)". This is a key ablation for RQ3 (reducing sycophancy/overconfidence).
+Add a sycophancy/agreeableness knob - From meeting notes: "treat agreeableness as a tunable knob". Add a temperature-like parameter or system prompt modifier that controls how confrontational vs. agreeable agents are during critique rounds.
+Improve the judge - The current judge prompt is decent but doesn't strongly enforce disagreement preservation. Strengthen the audited memo + strongest objection logging for the eval team.
+Add configurable debate rounds - Currently hardcoded to 3 rounds (propose/critique/revise). Allow configuring N rounds of critique/revision cycles before the judge step.
+Phase 3: Pipeline Agents (Pre-Debate Processing)
+From meeting notes Option 1: "pipeline of agents before debate (e.g., one agent summarizes news, one skims 10-K/SEC filings)":
+
+Build a NewsDigester agent - Preprocesses text_context into structured sentiment signals before the debate agents see it. This creates a 2-stage architecture: pipeline -> debate.
+Build a DataAnalyst agent - Processes the numeric market data (prices, returns, volatility) into structured signals (momentum scores, volatility regime, etc.) before debate.
+Phase 4: Integration & Ablation Support
+Create a configurable MultiAgentOrchestrator - A single entry point that lets you configure: which pipeline agents run pre-debate, which debate agents participate, number of debate rounds, agreeableness level, whether adversarial agent is included. This is crucial for running ablation experiments (single vs multi, debate vs no-debate).
+Do You Need LangChain / LangGraph?
+Short answer: Not strictly necessary, but LangGraph would help and is worth considering.
+
+Here's the analysis:
+
+Current approach (raw OpenAI SDK)	LangChain/LangGraph
+What you have	Direct openai.chat.completions.create() calls, manual JSON parsing, manual orchestration loops	--
+Pros of current	Simple, no extra deps, full control, easy to debug	--
+What LangGraph adds	State machine for debate flow, built-in retry/fallback, graph visualization, easier to add new rounds/agents as nodes	More abstraction
+What LangChain adds	Output parsers (structured output), prompt templates, chain composition	Heavier, more indirection
+My recommendation:
+
+LangGraph: YES, worth adopting. Your debate flow (propose -> critique -> revise -> judge) is literally a directed graph with cycles (configurable N rounds). LangGraph models this naturally. It would also make the ablation configs much cleaner (remove a node = remove an agent).
+LangChain: OPTIONAL. The structured output parsing (JsonOutputParser) would clean up the manual regex JSON extraction in debate-runner.ts:59-82, but it's not essential.
+Key consideration: Your meeting notes say "prefer something easy/debuggable for a class project -- likely combine Claude SDK + LangChain/LangGraph rather than building from scratch." Since Deveen already built from scratch with OpenAI SDK, you could either (a) refactor to LangGraph for your multi-agent orchestrator, or (b) keep extending the current approach. Given this is a research project, I'd suggest keeping the current TypeScript + OpenAI SDK approach but structuring your orchestrator with a graph-like config rather than adding LangGraph as a dependency (which would mean a Python rewrite or adding a separate Python layer).
+Practical Next Steps (Priority Order)
+Enrich role prompts for deeper causal reasoning (quick win, high impact for eval)
+Add sentiment + technical agents to the debate roster
+Add the sycophancy/agreeableness knob (system prompt parameter)
+Add adversarial/devil's-advocate mode for ablation
+Build the configurable orchestrator for ablation experiments
+Pipeline agents (NewsDigester, DataAnalyst) if time permits
+Want me to start implementing any of these? I'd suggest beginning with enriching the role prompts and building the configurable orchestrator, since those have the highest research impact.
+

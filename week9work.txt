@@ -1,0 +1,527 @@
+ Plan: Wire Multi-Agent Debate into the Simulation Pipeline (v4)                                                                         
+ Context
+
+ The multi-agent debate system (multi_agent/) and the simulation pipeline (simulation/) are currently disconnected. Running python
+ run_simulation.py --config config/example.yaml only knows about the single_llm agent. The goal is to make python run_simulation.py
+ --config config/debate.yaml run the full pipeline end-to-end, with clean 4-layer separation that makes the system PID-ready without
+ requiring future refactoring.
+
+ ---
+
+1. Architecture Diagram (4 Layers)
+
+ ┌──────────────────────────────────────────────────────────────────────┐
+ │  ENVIRONMENT LAYER  (simulation/)                                    │
+ │                                                                      │
+ │  data/cases/.json → case_loader → runner._run_episode()             │
+ │       │                                                              │
+ │       ├── feature_engineering.build_observation(case) → Observation   │
+ │       │                                                              │
+ │  ┌────┼──────────────────────────────────────────────────────────┐   │
+ │  │  GENERATION LAYER  (agents/ + multi_agent/)                   │   │
+ │  │    │                                                          │   │
+ │  │    ▼                                                          │   │
+ │  │  agents/multi_agent_debate.py  (AgentSystem adapter)          │   │
+ │  │    │                                                          │   │
+ │  │    ▼                                                          │   │
+ │  │  multi_agent/runner.py  (debate orchestrator)                 │   │
+ │  │    │                                                          │   │
+ │  │    │  ┌─ per round ──────────────────────────────────┐        │   │
+ │  │    │  │  propose → critique → revise                 │        │   │
+ │  │    │  │       │                                      │        │   │
+ │  │    │  │       ▼                                      │        │   │
+ │  │    │  │  round_hook(RoundMetrics)                    │◄───┐   │   │
+ │  │    │  │       │                                      │    │   │   │
+ │  │    │  │       ▼                    ┌─────────────────┼────┘   │   │
+ │  │    │  │  apply ControllerOutput    │ CONTROLLER LAYER│        │   │
+ │  │    │  │  (adjust agreeableness,    │ (eval/PID/)     │        │   │
+ │  │    │  │   inject prompt modifier,  │                 │        │   │
+ │  │    │  │   force extra round)       │ PIDController   │        │   │
+ │  │    │  │                            │   .step()       │        │   │
+ │  │    │  └──────────────────────────────────────────────┘        │   │
+ │  │    │                                                          │   │
+ │  │    ▼                                                          │   │
+ │  │  judge → (Action, AgentTrace)                                 │   │
+ │  │    │                                                          │   │
+ │  │    ▼                                                          │   │
+ │  │  adapter translates Action → Decision + trace dict            │   │
+ │  │  returns AgentInvocationResult(decision, trace)               │   │
+ │  │                                                               │   │
+ │  │  NOTE: Agent does NOT call broker. Runner does.               │   │
+ │  └───────────────────────────────────────────────────────────────┘   │
+ │       │                                                              │
+ │       ▼                                                              │
+ │  runner calls broker.execute_decision(decision, case)                │
+ │  runner collects trace into trace_store                               │
+ │  runner writes episode_log, reasoning/, trades.json                  │
+ │                                                                      │
+ └──────────────────────────────────────────────────────────────────────┘
+        │
+        │  episode complete — traces handed off
+        ▼
+ ┌──────────────────────────────────────────────────────────────────────┐
+ │  EVALUATION LAYER  (eval/)                                           │
+ │                                                                      │
+ │  eval/posthoc_pipeline.py  (NEW)                                     │
+ │       │                                                              │
+ │       ├── eval/consistency.py  (existing RCA judge)                  │
+ │       │        per-turn verdicts: CONSISTENT / INCONSISTENT_        │
+ │       │                                                              │
+ │       ├── aggregate: consistency_rate, sycophancy_rate, etc.         │
+ │       │                                                              │
+ │       ▼                                                              │
+ │  eval.schema.json v1.2.0 artifact → results/{run}/eval.json         │
+ │                                                                      │
+ └──────────────────────────────────────────────────────────────────────┘
+
+ ---
+
+1. Layer Responsibilities
+
+ Generation Layer (agents/ + multi_agent/)
+
+ Takes a prepared Observation, runs the debate, returns Decision + trace dict.
+
+ Must NOT: compute financial features, call the broker, evaluate its own reasoning, write eval artifacts.
+
+ ┌──────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────────────┐
+ │            Module            │                                           Role                                           │
+ ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤
+ │ multi_agent/graph.py         │ LangGraph nodes: propose, critique, revise, judge                                        │
+ ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤
+ │ multi_agent/runner.py        │ Orchestrate the graph; expose per-round hook for controller; return (Action, AgentTrace) │
+ ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────────┤
+ │ agents/multi_agent_debate.py │ AgentSystem adapter: translate Observation ↔ debate, Action → Decision, package trace    │
+ └──────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────┘
+
+ Environment Layer (simulation/)
+
+ Loads data, builds Observation, calls agent, calls broker, logs results.
+
+ ┌────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────┐
+ │                 Module                 │                                           Role                                            │
+ ├────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ simulation/feature_engineering.py      │ build_observation(case) → Observation                                                     │
+ │ (NEW)                                  │                                                                                           │
+ ├────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ simulation/runner.py                   │ Episode loop: feat eng → agent.invoke → broker.execute → collect traces → call posthoc    │
+ │                                        │ eval                                                                                      │
+ ├────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ simulation/broker.py                   │ Validate + execute Decision orders                                                        │
+ ├────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ simulation/case_loader.py              │ Load case templates from JSON                                                             │
+ ├────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+ │ simulation/sim_logging.py              │ Write episode logs, reasoning traces, summary                                             │
+ └────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────┘
+
+ Evaluation Layer (eval/)
+
+ Post-hoc only. Scores reasoning quality blindly (no PnL, no broker state).
+
+ ┌────────────────────────────────┬────────────────────────────────────────────────────────────────────────┐
+ │             Module             │                                  Role                                  │
+ ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+ │ eval/consistency.py            │ Existing RCA judge — per-turn consistency verdicts                     │
+ ├────────────────────────────────┼────────────────────────────────────────────────────────────────────────┤
+ │ eval/posthoc_pipeline.py (NEW) │ Run RCA on traces, aggregate verdicts, build eval.schema.json artifact │
+ └────────────────────────────────┴────────────────────────────────────────────────────────────────────────┘
+
+ Controller Layer (eval/PID/)
+
+ Mid-debate intervention. Called by multi_agent/runner.py between rounds via a hook.
+
+ ┌────────────────────────┬──────────────────────────────────────────────────────┐
+ │         Module         │                         Role                         │
+ ├────────────────────────┼──────────────────────────────────────────────────────┤
+ │ eval/PID/controller.py │ PIDController.step(rho_bar, js, ov) → PIDStepResult  │
+ ├────────────────────────┼──────────────────────────────────────────────────────┤
+ │ eval/PID/sycophancy.py │ JS divergence + evidence overlap → sycophancy signal │
+ ├────────────────────────┼──────────────────────────────────────────────────────┤
+ │ eval/PID/types.py      │ PIDConfig, PIDGains, PIDState, PIDStepResult         │
+ └────────────────────────┴──────────────────────────────────────────────────────┘
+
+ The controller operates during the debate (between propose→critique→revise rounds), not after the episode. It reads RoundMetrics from the
+  just-completed round, and returns ControllerOutput that the runner applies before the next round.
+
+ ---
+
+1. RoundMetrics and ControllerOutput Definitions
+
+ RoundMetrics (what the runner sends to the controller after each round)
+
+ @dataclass
+ class RoundMetrics:
+     """Metrics extracted from one completed debate round.
+
+     Produced by: multi_agent/runner.py after each propose→critique→revise cycle.
+     Consumed by: controller hook (eval/PID/controller.py).
+     """
+     round_index: int                        # 0-based round number
+     proposal_vectors: list[dict]            # per-agent {ticker: size} from proposals
+     claim_levels: list[str]                 # Pearl levels (L1/L2/L3) across all claims
+     divergence_score: float                 # JS divergence across agent proposals
+     consistency_proxy: float                # lightweight consistency heuristic (0-1)
+     # consistency_proxy is a cheap local metric (e.g., claim-to-order alignment).
+     # The full RCA LLM-based check runs post-hoc. This proxy feeds PID in real-time.
+
+ Where divergence_score comes from: Computed from agent proposals using eval/PID/sycophancy.jensen_shannon_divergence() over the numeric
+ proposal vectors (how much agents disagree on position sizing).
+
+ Where consistency_proxy comes from: A lightweight heuristic computed locally — e.g., does each agent's order direction match their stated
+  hypothesis direction? No LLM call. This is a cheap stand-in for the full RCA check.
+
+ ControllerOutput (what the controller returns to the runner)
+
+ @dataclass
+ class ControllerOutput:
+     """Control signal applied by the runner before the next debate round.
+
+     Produced by: controller hook.
+     Consumed by: multi_agent/runner.py to modify next-round behavior.
+     """
+     new_agreeableness: float | None = None    # override agreeableness for next round
+     force_extra_round: bool = False           # extend debate by 1 round
+     inject_prompt_modifier: str | None = None # extra text appended to agent prompts
+     # e.g., "The controller detected potential groupthink.
+     #         Challenge assumptions more aggressively this round."
+
+ What PID can modify (the intervention surface):
+
+1. agreeableness — the sycophancy knob already threaded through all prompts
+2. force_extra_round — extend the debate beyond max_rounds (up to PIDConfig.T_max)
+3. inject_prompt_modifier — free-text nudge prepended to agent system prompts for the next round
+
+ What PID cannot modify: agent roster, model choice, temperature, observation data.
+
+ PID Event Logging
+
+ Each PID intervention is recorded in AgentTrace.pid_events so the trace encodes the full intervention history:
+
+ @dataclass
+ class PIDEvent:
+     """One PID intervention logged in the trace."""
+     round_index: int
+     metrics: RoundMetrics        # input to controller
+     pid_result: PIDStepResult    # raw PID output (e_t, u_t, beta_new, s_t, etc.)
+     output: ControllerOutput     # what was actually applied
+
+ AgentTrace gains: pid_events: list[PIDEvent] | None = None
+
+ This makes traces fully reproducible — you can replay exactly what the controller saw and did.
+
+ ---
+
+1. Data Flow (Updated)
+
+ data/cases/nvda_001.json
+     │
+     │  case_loader.load_case_templates("data/cases")
+     ▼
+ list[Case]
+     │
+     │  For each episode × decision point:
+     │
+     ├── broker.get_portfolio() → PortfolioSnapshot
+     ├── build_case(template, portfolio) → Case
+     │
+     │  ┌─ ENVIRONMENT: feature_engineering ──────────┐
+     │  │  build_observation(case) → Observation       │
+     │  │    universe: ["NVDA"]                        │
+     │  │    market_state.prices: {NVDA: 135.0}        │
+     │  │    market_state.returns: {NVDA: 0.023}       │
+     │  │    market_state.volatility: {NVDA: 0.31}     │
+     │  │    text_context: "NVDA Q4 earnings beat..."  │
+     │  │    portfolio_state: {cash: 100000, ...}      │
+     │  └─────────────────────────────────────────────┘
+     │
+     │  ┌─ GENERATION: agent.invoke(invocation) ──────┐
+     │  │                                              │
+     │  │  MultiAgentDebateAgent adapter:              │
+     │  │    1. Extracts Observation from invocation    │
+     │  │    2. Creates MultiAgentRunner(debate_cfg,   │
+     │  │       round_hook=controller_hook_or_None)    │
+     │  │    3. Calls runner.run(observation)           │
+     │  │                                              │
+     │  │  MultiAgentRunner (per round):               │
+     │  │    propose → critique → revise               │
+     │  │         │                                    │
+     │  │         ▼                                    │
+     │  │    compute RoundMetrics from round state      │
+     │  │         │                                    │
+     │  │    ┌────▼──── CONTROLLER (if enabled) ──┐    │
+     │  │    │ round_hook(RoundMetrics)            │    │
+     │  │    │   → PIDController.step(rho_bar,..) │    │
+     │  │    │   → ControllerOutput               │    │
+     │  │    │ log PIDEvent to trace               │    │
+     │  │    └────────────────────────────────────┘    │
+     │  │         │                                    │
+     │  │    apply ControllerOutput to next round       │
+     │  │    (adjust agreeableness, maybe add round)   │
+     │  │                                              │
+     │  │  After all rounds: judge → Action             │
+     │  │                                              │
+     │  │  Adapter:                                     │
+     │  │    Action → Decision (int orders)             │
+     │  │    AgentTrace (with pid_events if PID on)     │
+     │  │                                              │
+     │  │  Returns: AgentInvocationResult {             │
+     │  │    decision: Decision,                        │
+     │  │    trace: dict  (serialized AgentTrace)       │
+     │  │  }                                            │
+     │  │                                              │
+     │  │  NOTE: No broker call inside agent.            │
+     │  └──────────────────────────────────────────────┘
+     │
+     │  ┌─ ENVIRONMENT: broker ───────────────────────┐
+     │  │  broker.execute_decision(decision, case)     │
+     │  │    → DecisionResult (accepted/rejected)      │
+     │  └─────────────────────────────────────────────┘
+     │
+     │  trace_store.append(trace)
+     │  [repeat for all decision points]
+     │
+     ▼  Episode complete.
+     │
+     │  sim_logging: episode_log.json, reasoning/, summary.json
+     │
+     │  ┌─ EVALUATION: posthoc_pipeline ──────────────┐
+     │  │  run_posthoc_eval(trace_store)               │
+     │  │    → ConsistencyJudge per-turn verdicts       │
+     │  │    → aggregate:                               │
+     │  │        consistency_rate: 0.82                  │
+     │  │        sycophancy_rate: 0.06                   │
+     │  │        verdict: "mixed"                        │
+     │  │    → eval.schema.json v1.2.0 artifact         │
+     │  │    → results/{run}/eval.json                   │
+     │  └──────────────────────────────────────────────┘
+     ▼
+ DONE
+
+ ---
+
+1. File-by-File Change List
+
+ New Files
+
+ simulation/feature_engineering.py
+
+
+* build_observation(case: Case) → Observation
+* Computes returns from StockData.daily_bars (close-to-close pct change of last bar)
+* Computes volatility from StockData.daily_bars (std dev of daily returns)
+* Flattens case.case_data.items into text_context string (joins each item's content)
+* Sets universe from case.tickers, timestamp from case.information_cutoff_timestamp
+* Converts portfolio.positions to dict[str, float] for PortfolioState
+* This is the ONLY place features are computed — both single_llm and multi_agent_debate get identical Observation objects
+
+ agents/multi_agent_debate.py
+
+
+* @register("multi_agent_debate") class MultiAgentDebateAgent(AgentSystem)
+* init(config: AgentConfig): builds DebateConfig from config.debate_config; if PID enabled, instantiates PIDController
+* bind_tools(tool): no-op (debate agent does NOT call submit_decision — runner handles broker)
+* async invoke(invocation: AgentInvocation) → AgentInvocationResult:
+* Extracts Observation from invocation.observation (pre-built by runner)
+* Builds round_hook callback that wraps PIDController.step() if PID is enabled, else None
+* Runs MultiAgentRunner(debate_config, round_hook=hook).run(observation) synchronously (via asyncio.get_event_loop().run_in_executor)
+* Translates Action.orders → Decision.orders (int quantities — see section 7)
+* Returns AgentInvocationResult(decision=decision, trace=trace.model_dump())
+* Does NOT call broker, run eval, or write artifacts
+
+ eval/posthoc_pipeline.py
+
+
+* run_posthoc_eval(traces: list[dict], debate_id: str, run_id: str, output_path: str) → dict
+* For each trace with debate_turns: calls ConsistencyJudge per-turn methods from eval/consistency.py
+* Aggregates: trace_consistency_rate, sycophancy_rate (fraction INCONSISTENT_SYCOPHANTIC), stubborn_rate
+* Builds eval.schema.json v1.2.0 artifact:
+* evaluation_mode: "in_loop" if any trace has pid_events, else "posthoc"
+* run_summary.rca_summary: {trace_consistency_rate, verdict, notes}
+* turn_evaluations: per-turn {turn_id, rca: {verdict, confidence}}
+* control_trace: if PID was active, maps pid_events → controlStep entries
+* Writes to output_path, returns the artifact dict
+
+ config/debate.yaml
+
+
+* agent_system: "multi_agent_debate"
+* debate_config: block with roles, agreeableness, max_rounds, model, mock
+* Optional pid_config: block (disabled by default: enabled: false)
+
+ data/cases/nvda_001.json
+
+
+* Sample case: NVDA stock data with daily_bars, news items, portfolio
+* Minimal working example to test the full pipeline
+
+ Modified Files
+
+ models/agents.py
+
+
+* Add observation: Observation | None = None field to AgentInvocation (import from multi_agent.models)
+* Add trace: dict | None = None field to AgentInvocationResult (separate from raw_output)
+* trace is the canonical handoff structure — it's what eval and PID consume
+
+ models/config.py
+
+
+* Add DebateAgentConfig(BaseModel) with typed fields: roles: list[str], max_rounds: int, agreeableness: float, model_name: str, mock:
+
+ bool, enable_adversarial: bool, enable_news_pipeline: bool, enable_data_pipeline: bool, verbose: bool
+
+* Add optional PIDAgentConfig(BaseModel): enabled: bool = False, Kp: float, Ki: float, Kd: float, rho_star: float, gamma_beta: float
+* Add debate_config: DebateAgentConfig | None = None and pid_config: PIDAgentConfig | None = None to AgentConfig
+
+ agents/registry.py
+
+
+* Add import agents.multi_agent_debate to _ensure_builtins_loaded()
+
+ simulation/runner.py
+
+
+* Import feature_engineering.build_observation
+* Before agent.invoke(): call build_observation(case) and set invocation.observation = obs
+* After agent.invoke(): extract result.decision and result.trace
+* Call broker.execute_decision(result.decision, case, agent_id) — the runner calls the broker, not the agent
+* Append result.trace to trace_store
+* After all decision points: call run_posthoc_eval(trace_store, ...) and write eval artifact
+* Key change: For debate agent, the runner does NOT use submit_decision tool. It reads result.decision directly and calls the broker
+
+ itself. The make_submit_decision_tool / bind_tools flow only applies to single_llm.
+
+ multi_agent/runner.py
+
+
+* MultiAgentRunner.init gains round_hook: Callable[[RoundMetrics], ControllerOutput] | None = None
+* After each propose→critique→revise cycle, compute RoundMetrics from round state
+* If round_hook is not None: call it, get ControllerOutput, apply it (update agreeableness in config, extend max_rounds, inject prompt
+
+ modifier into next round's state)
+
+* Log each PID intervention as a PIDEvent in a list; attach to AgentTrace.pid_events
+* _compute_round_metrics(state, round_idx) → RoundMetrics helper method
+
+ multi_agent/models.py
+
+
+* Change Order.size from float to int (see section 7)
+* Add pid_events: list[dict] | None = None to AgentTrace
+
+ multi_agent/config.py
+
+
+* No structural changes needed. agreeableness is already a mutable field on DebateConfig, which the round hook can modify in-place
+
+ between rounds.
+
+ ---
+
+1. Schema Notes for PID (in_loop mode)
+
+ The existing eval.schema.json v1.2.0 already supports everything needed:
+
+
+* evaluation_mode: "in_loop" — set when PID was active during the debate
+* control_trace: controlStep[] — maps directly from PIDEvent list:
+* step_index → pid_event.round_index
+* observations → [{signal_id: "consistency_proxy", value: ...}, {signal_id: "divergence", value: ...}]
+* actions → [{actuator_id: "agreeableness", payload: {new_value: 0.25}}, ...]
+* experiment_config.control.policy.type: "pid" with parameters: {Kp, Ki, Kd, rho_star, gamma_beta}
+* run_summary.pid_summary — {retry_count_total, intervention_count_total, instability_index}
+
+
+
+
+future steps
+
+
+1. Wire PID Controller into the Debate Loop
+
+The PID controller logic is fully implemented in eval/PID/controller.py but not connected to the debate graph. You need an "actuator" that takes the PID output (beta_new) and modifies DebateConfig.agreeableness (or other prompt parameters) between rounds.
+Concretely:
+
+* Add a pid_feedback_node to multi_agent/graph.py that runs after revise_node, calls PIDController.step() with the current round's consistency/divergence scores, and updates the config for the next critique-revise loop
+* This is what makes H2 (controllability) testable
+
+2. Implement P2-P4 Evaluators
+
+You only have P1 (consistency) in eval/consistency.py. The paper promises P2 (evidential support), P3 (alternative consideration), and P4 (causal alignment / Pearl level). P4 is especially critical since H3 is entirely about regulating it.
+Concretely:
+
+* P4 is the easiest to start — you already have PearlLevel tags on every Claim in multi_agent/models.py. Build an evaluator that scores whether claims genuinely demonstrate L2/L3 reasoning (not just labeled as such)
+* P2/P3 can follow the same LLM-judge pattern as your ConsistencyJudge
+
+3. Connect Multi-Agent Debate to the Simulation Runner
+
+The simulation in simulation/runner.py uses legacy agents from agents/. It needs to call MultiAgentRunner.run() instead, so debate-generated trades execute against real price trajectories. This is Future Work item 1 in the paper.
+Concretely:
+
+* Create an adapter in agents/ that wraps MultiAgentRunner and conforms to the interface expected by AsyncSimulationRunner
+* Map case_loader output → Observation format the debate system expects
+
+4. Run the 4-Architecture Comparison
+
+You have MultiAgentRunner (debate) and MajorityVoteRunner (majority vote) already built. You need:
+
+* A single-agent runner (just one agent, no critique/revise) — trivial to create from existing code by setting roster to 1 agent and skipping critique
+* Run all four on identical cases with the same observation data
+* This directly answers the paper's ablation comparison (Future Work item 3)
+
+5. Run Eval at Scale Across All 8 Ablation Configs
+
+You have 8 configs in multi_agent/demo.py and working consistency + divergence evaluators. The missing step is a batch script that:
+
+* Runs all 8 configs against the same set of cases (live mode, not mock)
+* Pipes each trace through ConsistencyJudge and DebateDivergenceAnalyzer
+* Collects results into a table for the paper
+
+6. Finish the Data Pipeline
+
+data-pipeline/generate_cases.py is ~60% complete. You need it to produce enough cases for statistically meaningful results across your ablation configs. The impact score formula is implemented but the end-to-end pipeline (fetching → scoring → case JSON output) needs hardening.
+
+Summary Priority Order
+
+	Task
+	Unblocks
+	Effort
+
+1
+	Wire PID into debate loop
+	H2, H3 testability
+	Medium
+
+2
+	Implement P4 evaluator
+	H3, causal regulation
+	Medium
+
+3
+	Connect debate → simulation
+	PnL/Sharpe measurement
+	Medium
+
+4
+	Single-agent baseline runner
+	Full ablation comparison
+	Small
+
+5
+	Batch eval across 8 configs
+	Paper results table
+	Small
+
+6
+	Finish data pipeline
+	More cases for stats
+	Medium
+
+7
+	Implement P2, P3 evaluators
+	Complete CRIT framework
+	Medium
+
+
+
+

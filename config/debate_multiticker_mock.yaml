@@ -1,0 +1,46 @@
+# ============================================================================
+# Debate Agent Simulation — Multi-Ticker Mock Mode
+# ============================================================================
+# Run with:
+#   python run_simulation.py --config config/debate_multiticker_mock.yaml
+#
+# Tests the multi-ticker observation merging: loads NVDA + AAPL cases,
+# merges same-quarter files into one multi-ticker case.
+
+dataset_path: "data/cases"
+
+top_n_news: 3
+
+tickers:
+  - NVDA
+  - AAPL
+
+quarters:
+  - Q1
+
+merge_tickers: true
+
+num_episodes: 1
+
+# --------------------------------------------------------------------------
+# Agent Configuration — 2-Agent Debate (Mock)
+# --------------------------------------------------------------------------
+agent:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-4o-mini"
+  temperature: 0.3
+  max_retries: 3
+  system_prompt_override: "mock"
+
+  debate_roles:
+    - macro
+    - value
+
+  max_rounds: 2
+
+# --------------------------------------------------------------------------
+# Broker Configuration
+# --------------------------------------------------------------------------
+broker:
+  initial_cash: 100000.0

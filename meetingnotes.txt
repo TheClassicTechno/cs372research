@@ -1,0 +1,172 @@
+Held two group meetings: (1) initial ideation on framing the project around ‘multi-agent debate + explainable trading’, and (2) a follow-up meeting to finalize the written proposal.
+Converged on core direction: agents act as specialized trading “desks” (macro/value/momentum/risk), debate trade proposals, and produce auditable news → mechanism → action reasoning traces inside a simulator.
+Drafted and finalized the 2-page proposal, including problem statement/motivation, background/related work, system design, and evaluation plan.
+Locked the evaluation axes + metrics: financial performance (PnL, Sharpe, max drawdown) and reasoning quality via extracted Pearl-style/T³ cases (plus CRIT-style checks), with ablations (single-agent vs multi-agent; debate vs no-debate).
+Defined research questions: (RQ1) debate → causal reasoning quality, (RQ2) reasoning quality :left_right_arrow: trading outcomes correlation, (RQ3) debate reduces failure modes (overconfidence, sycophancy, hallucinated causality, unjustified intervention/counterfactual claims).
+Made key implementation choices: use ABIDES/ABIDES-Gym (or similar) for simulation realism + repeatability; use LangChain/LangGraph for multi-agent orchestration and evaluation scaffolding.
+Did initial task delegation: assigned owners for proposal sections (problem/motivation, related work, system design, evaluation/benchmarks) and established a shared repo / collaboration workflow.
+
+
+compiled our CS372 Project Group Meeting Notes from today's call!
+
+1) Big question: agent + evaluation order vs concurrency
+whether the agent work and evaluation should happen in order (sequential) or concurrently.
+
+the overall system should be concurrent so teams don’t block each other;  created early PRs to reduce “waiting on dependencies.”
+
+
+2) Proposed mental model: simulation loop (Theodore)
+• Simulation environment runs through a predetermined sequence of decision points (“cases”).
+• A case contains:
+qualitative inputs (e.g., financial reports, news articles, other text signals)
+price/market movement data (structured numeric signals)
+• At each decision point:
+simulation invokes the agent system
+agent returns a trading action: buy / sell / hold, plus amount/size
+simulation applies that decision to the portfolio
+simulation then advances time until the next decision point
+• At the end:
+produce outputs like portfolio performance metrics
+capture reasoning traces / transcript data to feed into evaluation/scoring
+
+3) Single-stock vs multi-stock scope
+Initial framing was one stock ticker with sequential cases.
+ noted it can be multi-stock and “easily extensible.”
+
+Theodore agreed multi-stock is possible later, but flagged that stock selection itself becomes a separate experimental design challenge (data volume + selection criteria).
+
+
+4) Early dataset / stock choices
+• Discussion leaned toward starting small:
+one or two stocks (fast to get a full loop working)
+then scale up after debugging and interface stabilization
+• Suggested direction:
+start with tech stocks (more abundant news coverage)
+possibly mix stable (e.g., juli mentioned Microsoft  mentioned as “more stable”) + less stable stock for contrast
+• Alanood suggested:
+start with ~5 stocks later once the system works and data handling is manageable
+
+5) Interfaces + shared “data models”
+• Theodore created Pydantic-style data models (inspired by LangChain usage) to help teams align on shared schemas.
+• Motivation:
+reduce ambiguity around how components interact
+give everyone a common target for implementation
+• He noted a gap:
+missing / unclear class interfaces and API specs
+data models are a starting point, but full component contracts still need tightening
+• He asked for feedback on whether the modeling approach is solid and how rigorous the team needs to be.
+
+6) What exactly is “passed around”?
+• Theodore’s question:
+what is the object exchanged between simulatio agent
+what is the interface between simulation results  evaluation
+• Current state:
+simulation agent contract is clearer (case → decision result)
+simulationvaluation contract is less specified and needs definition
+
+7) Debate / multi-agent behavior: inside agent or separate?
+• Veljko asked:
+is the debate (natural language back-and-forth) built into the platform/data model, or separate?
+• Theodore’s answer:
+debate is internal to the agent system
+simulation should not manage debate; it only calls agent for decisions
+however, evaluation will need access to debate transcripts + reasoning traces, so there should be a model/output format for that.
+
+8) Evaluation team initial plan (Veljko)
+• For a first pass, evaluation mainly needs:
+debate transcript (what agents said)
+a dump of reasoning / behind-the-scenes rationale (prompted output after debate)
+• Later additions:
+financial/trading metrics to compare outcomes (portfolio performance, etc.)
+• Emphasis:
+early work is mostly handling a text corpus (debate + reasoning chain) before sophisticated financial scoring
+
+9) Near-term execution strategy
+• Veljko: start with minimal working system using small data to unblock everyone and stabilize interfaces.
+• Theodore:
+simulation team can focus on 1–2 stocks
+agent team builds 1–2 simple agents
+eval team builds a simple evaluator
+then iterate + scale
+
+avoid heavy training; mostly inference + prompting
+share experiment configurations/results across the group to save cost (split runs, parallelize across people)
+
+11) “Agreeableness / sycophancy knob”
+•  Juli asked if agents should show sycophancy (over-agreeable behavior).
+• Veljko suggested:
+treat agreeableness as a tunable knob
+test whether more/less agreeableness leads to better outcomes
+
+Action items
+
+Define the simulationevaluation interface (what artifacts are emitted: transcript, reasoning traces, metrics, format).
+Review/align on data models (Pydantic schemas) + determine required rigor.
+Start with minimal end-to-end loop (1–2 stocks, simple agents, simple evaluator) to validate integration.
+Decide initial stock set + data availability (likely tech; small starter set).
+Plan around limited/no API credits (share runs, reuse configs, keep early experiments lightweight
+
+
+
+or progress - Deveen and I just had a meeting today for the agents team - I wrote a summary of our meeting notes: 
+
+• We agreed to start with a simple single-agent baseline with a standard JSON interface.
+
+Input ideas: timestamp, universe, market_state, text_context (news/filings), portfolio_state, constraints
+Output ideas: claim/action, justification, confidence, and (if trading) orders like ticker + size
+These fields aren’t final yet—expect iteration as we learn.
+
+
+• Multi-agent direction: separate roles so agents don’t duplicate work.
+
+Option 1: pipeline of agents before debate (e.g., one agent summarizes news, one skims 10-K/SEC filings, others do data gathering/processing).
+Option 2: debate stage after the pipeline, with structure (proposal → critique → revise → judge final decision).
+
+
+• Debate structure idea (from the lecture): round 1 proposals, round 2 cross-critiques, revise, then a judge picks/executes the final trade.
+
+We also discussed adding an explicit adversarial/devil’s-advocate component (e.g., agree vs disagree, or 2 vs 2).
+
+
+• Tooling: prefer something easy/debuggable for a class project—likely combine Claude SDK + LangChain/LangGraph rather than building from scratch.
+
+• Next steps / split:
+
+Deveen implement the single-agent + shared schemas/classes first.
+Juli build additional agents on top (role-specific agents + debate/orchestration).
+
+
+
+Sounds great, just a couple thoughts on the multiagent direction:
+Similar to option 1, it sounds like TradingAgents encourages the agents to come from different perspectives in the debate, e.g. Fundamentals Analyst, Sentiment Analyst, News Analyst, Technical. Just potential starting point / inspiration
+And similar to option 2, we're discussing RCA for evaluation but it really involves process control and critique as well, and perhaps could be implemented in the  "debate" infra as collaboration between teams. from pure eval perspective I think how often these control points happen might be most relevant.  cc @Veljko Skarich (CF) (ed
+
+
+
+or progress - Theodore and I have met today and below is our MoM:
+
+we discussed which type of data should we use
+How can the data be constructed 
+What information will be useful for the agents to do the reasoning. 
+We agreed on the following: 
+
+We will gather the prices data from yahoo finance focusing now on 1 stock (NVDA) for 2024 year period. (This is were Nvidia stock boomed) 
+We will also gather news data from finnhub and huggingface, these includes articles and news from (yahoo, earning calls, SeekingAlpha..etc) 
+We will perform sentiment analysis for the news and compare it with the stock trend to see which news will affect the movement of the price. And this will be injected to the agents to perform a correct reasoning. 
+We also discussed the structure of the simulation phase, and Theodore has concluded them in a document. 
+For our work distribution: Alanood will take care of gathering the dataset, performing the sentiment analysis, and structure the data in json format to plug it in the agents. Theadore is responsible for the simulation architecture which includes the CLI, simulation controls, output data, and the evaluation. 
+Next steps: we will meet next Sunday to check our progress.
+
+
+
+Here's a quick progress report for Matt and I:
+
+
+Created and triaged detailed design doc for evaluation module, available here.
+Researched RCA and CRIT in more detail, will soon propose light-weight interface agreements for rest of team.
+Compiled list of questions for Prof/Gloria; particularly to signoff on our overall eval strategy and number of datapoints required for robustness.
+First coding deliverable from Eval team is tentatively a python API client that can handle multiple models/prompts.
+Next steps: prioritize dependencies for Eval module and create Github issues; start coding this weekend and have first PR for review available by Monday.
+
+
+

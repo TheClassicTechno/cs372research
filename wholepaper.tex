@@ -1,0 +1,929 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, coxwmpress}{natbib}
+% before loading neurips_2024
+
+
+% ready for submission
+\usepackage[final]{neurips_2024}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2024}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2024}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2024}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsmath}        % for \text and other math features
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{tikz}
+\usepackage[labelfont=bf]{caption}
+
+\title{Multi-Agent Debate for Explainable Trading
+% : Reasoning, Consensus, Performance in Simulated Markets
+\thanks{GitHub repository: \url{https://github.com/TheClassicTechno/cs372research}}}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{
+\hspace{-2.5em}
+  Juli Huang, Alanood Alrassan, 
+  Deveen Harischandra, Theodore Wu, Veljko Skarich, Matthew Hayes \\
+  Deparment of Engineering, Stanford University \\
+  \texttt{\{julih, alanoodr, deveen, wutheodo, vskarich, mhayes3\}@stanford.edu}
+}
+% \author{%
+%   Juli Huang \\
+%   % \thanks{Use footnote for providing further information about author (webpage, alternative address)---\emph{not} for acknowledging funding agencies.} \\
+%   Department of Computer Science\\
+%   Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{julih@stanford.edu} \\
+%   \And
+%   Alanood Alrassan \\
+%   Department of Energy Science and Engineering \\
+%    Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{alanoodr@stanford.edu} \\
+%   \And
+%   Deveen Harischandra\\
+%   Department of Computer Science\\
+%   Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{deveen@stanford.edu} \\
+%   \AND
+%   Theodore Wu \\
+%   Department of Computer Science\\
+%   Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{wutheodo@stanford.edu} \\
+%   \And
+%   Veljko Skarich \\
+%   Department of Computer Science\\
+%   Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{vskarich@stanford.edu} \\
+%   \And
+%   Matthew Hayes \\
+%   Department of Computer Science\\
+%   Stanford University\\
+%   Stanford, CA 94305 \\
+%   \texttt{mhayes3@stanford.edu} \\
+% }
+\begin{document}
+\maketitle
+% \begin{abstract}
+%   The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
+%   both the left- and right-hand margins. Use 10~point type, with a vertical
+%   spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
+%   bold, and in point size 12. Two line spaces precede the abstract. The abstract
+%   must be limited to one paragraph.
+% \end{abstract}
+\vspace{-20pt}
+\section{Problem Statement and Motivation}
+\vspace{-8pt}
+
+% Current quantitative trading firms such as Renaissance Technologies have been integrating statistical and machine learning methods into trading, but their decision processes remain opaque, lacking visibility into how models reason about news, macro events, or resolve alpha disagreements. Investment banks also use machine learning but more discreetly for execution/risk, with discretionary desks still human-led. However, most financial firms lag behind on using modern deep learning/LLMs, favoring traditional factors/classical machine learning methods such as boosted trees due to data secrecy, non-stationarity, and reliability concerns. \cite{quantblueprint2025}
+
+% On the other hand, LLMs and multi-agent systems offer explainable alternatives: agents that debate trading decisions in natural language within realistic simulators. Early work (\cite{tradingagents2024}) shows specialized agents (fundamental, technical, risk) debating before trades improving returns/Sharpe vs single-agent baselines. Existing simulators (e.g. ABIDES, \cite{abides2019}) generate realistic dynamics but expose little agent reasoning. Live data (Yahoo Finance) lacks inspectable multi-agent processes. \cite{digitalalpha2025}
+
+% In our research, we plan to target this gap. In a stock simulator maximizing profit under risk constraints (Sharpe, drawdown), we plan to build agents as trading companies (value, momentum, macro) that (1) observe market/news data, (2) debate trades with justifications/counter-arguments, (3) articulate causal claims ("CPI surprise caused selloff"). Evaluate single vs multi-agent, debate vs no-debate using T³/CRIT on reasoning quality vs PnL(profit and loss) and Sharpe ratio correlation.
+
+% ----------------
+% Quant trading firms rely on 
+% % opaque statistical models while LLM/agentic trading products generate fluent narratives without rigorous logic. 
+% statistical/ML systems where reasoning, especially driven by news etc., remains opaque. Meanwhile, many LLM/agentic products generate fluent narratives without reliable ``alpha"--talking rather than reasoning. Markets are a harsh testbed for improving reasoning because traders often succeed by interpreting narratives (Fed communication, CPI surprises, geopolitical headlines), not just forecasting from past prices.
+
+% We target this gap by building a multi-agent debate system for explainable trading inside a stock-market simulator. Specialized agents (macro, value, momentum, risk) will 
+% % ingest market + news inputs, 
+% debate trade proposals to produce auditable explanations/
+% % with explicit claims and counterclaims, and output explanations linking news, mechanism, and trade.
+% We will compare single-agent vs. multi-agent and debate vs. no-debate, evaluating reasoning quality (via T³/CRIT-style rubric) and performance (PnL, Sharpe, drawdown), and test whether better reasoning predicts better outcomes. \cite{digitalalpha2025}
+
+
+% % Today’s LLMs can sound confident while making brittle causal stories, and many agentic trading systems fail to consistently outperform because they optimize persuasion more than calibrated reasoning.
+
+% Our motivation is to test whether structured disagreement (multi-agent debate + skepticism constraints) reduces common LLM failure modes (overconfidence, hallucinated causality, groupthink, sycophancy) and produces explanations that are both auditable and insightful. If reasoning quality improves and correlates with risk-adjusted returns, that supports debate as a mechanism for decision-making under uncertainty; if not, we can identify where debate breaks down and distill the best constraints into stronger single-agent prompts/policies. \cite{quantagents2025} \cite{tradingagents2024}
+Quant trading firms such as Jane Street rely on statistical models where reasoning, especially when it comes to news, is opaque.  Meanwhile, current LLM trading products often generate fluent narratives without reliable ``alpha", essentially ``talking" rather than reasoning (\cite{digitalalpha2025}). We target this gap by building a multi-agent debate system inside a stock-market simulator. Specialized agents (macro, value, risk) will debate trade proposals to produce auditable explanations linking news and indicators to action. Markets serve as a harsh testbed for this goal because traders must interpret complex narratives (e.g., Fed communications) rather than just forecast prices.
+
+Our motivation is to test whether structured disagreement and causal control of debate reduces common LLM failures like overconfidence, hallucinated causality, groupthink, and sycophancy, improving investment performance. Specifically our hypotheses are: \\
+\textbf{H1: Measurement Validity} Reasoning-evaluative metrics are economically predictive. \\
+\textbf{H2: Controllability} Reasoning quality can be improved by both debate and future-blind intervention. \\
+\textbf{H3: Causal Regulation} Controlling causal reasoning depth specifically (i.e. using the correct Perl level \cite{pearl2009causality}) is has significant impact.
+
+We will compare single-agent vs. multi-agent setups with and without blind intervention, evaluating whether improved reasoning quality (via T³/CRIT-style rubrics \cite{chang2023crit}, \cite{raudit} correlates with better risk-adjusted returns. If debate improves performance, it supports the mechanism for decision-making under uncertainty; if not, we can distill the most effective constraints into stronger single-agent policies (\cite{quantagents2025}, \cite{tradingagents2024}).
+% --------------\\
+
+
+
+% second version
+% Quantitative trading firms (e.g. Renaissance) rely heavily on statistical/ML systems, but the reasoning behind trades, especially when driven by news or macro events, remains largely opaque. At the same time, many “LLM/agentic trading” products generate fluent narratives without reliable, repeatable alpha, raising skepticism that current systems are mostly agents talking rather than agents reasoning. We target this gap by building a multi-agent debate system for explainable trading inside a stock-market simulator. Specialized agents (macro, value, momentum, risk) will ingest market + news inputs, debate trade proposals with explicit claims and counterclaims, and output auditable explanations linking news, mechanism, and trade. We will compare single-agent vs. multi-agent and debate vs. no-debate, evaluating both reasoning quality (via T³/CRIT-style rubric) and performance (PnL, Sharpe, drawdown), and test whether better reasoning predicts better outcomes. 
+
+
+% Our motivation is to study how multi-agent debate and explicit reasoning constraints affect both reasoning quality and trading performance in a financial context. Specifically, we will test whether debate improves causal reasoning about markets relative to single-agent baselines. We also experiment with whether debate reduces common LLM failure modes such as overconfidence and sycophancy. Additionally, we examine whether improvements in reasoning quality predict better trading performance, as measured by metrics like PnL and Sharpe ratio. We further investigate whether constraints discovered through debate can be distilled into improved prompts for single agents. Finally, we aim to produce auditable agent arguments that link reasoning directly to trading outcomes, thereby bridging modern LLM research with the cautious production systems of quantitative trading firms through explainable multi-agent AI. \cite{quantagents2025} \cite{tradingagents2024}
+
+% second version
+% Markets are a harsh testbed for the course’s central goal—better reasoning—because traders often succeed by interpreting narratives (Fed communication, CPI surprises, geopolitical headlines), not just forecasting from past prices. Today’s LLMs can sound confident while making brittle causal stories, and many agentic trading systems fail to consistently outperform because they optimize persuasion more than calibrated reasoning. Our motivation is to test whether structured disagreement (multi-agent debate + skepticism constraints) reduces common LLM failure modes (overconfidence, hallucinated causality, groupthink) and produces explanations that are both auditable and useful. If reasoning quality improves and correlates with risk-adjusted returns, that supports debate as a mechanism for decision-making under uncertainty; if not, we can identify where debate breaks down and distill the best constraints into stronger single-agent prompts/policies.
+
+
+
+\vspace{-8pt}
+\section{Background and Related Work}
+\vspace{-6pt}
+
+% Modern systematic trading is dominated by data-driven models, but many production systems prioritize robustness and operational reliability over interpret-ability, which makes it hard to audit why a model preferred one trade over another or how it reconciled conflicting “alpha” signals (\cite{fticonsulting2023}). Our project re-frames trading as an audit-able decision-making process: each LLM agent acts like a specialized “desk” (value/momentum/macro), produces explicit natural-language arguments, and then a debate protocol selects trades creating a traceable link from reasoning → action → outcome (\cite{du2023multidebate}). Industry-faced discussions of AI trading also motivate “multi-agent debate + risk viewpoints” as an analogue to real investment workflows  (\cite{digitalalpha2025}).
+ 
+
+%  A key challenge in finance research is that realism (market microstructure, latency, order-book dynamics) often conflicts with inspection (why an agent acted). ABIDES is a widely used agent-based discrete-event market simulator that models exchange protocols, messaging, and latency making it well-suited for realistic back testing of multi-agent strategies. ABIDES-Gym extends ABIDES into Gym-style environments for training/evaluating agents in a standardized RL interface, which is helpful in our project to have a repeatable experiment loops and benchmark scenarios (\cite{abidesgym2021}). Related simulation work also emphasizes how agent-based market environments can reproduce “stylized facts” and realistic behaviors, supporting our choice to evaluate debate-driven trading in simulation rather than only on static datasets (\cite{yao2024rlmarketsim}).
+
+% TradingAgents (\cite{tradingagents2024}) models a trading-firm-like organization with specialized LLM agents (fundamental/sentiment/technical, bull vs bear researchers, risk management, trader) who communicate and debate before producing trades, and it reports improved trading metrics over simpler baselines. QuantAgents (\cite{quantagents2025}) develops a multi-agent financial system explicitly centered on simulated trading and argues that current LLM agent behaviors differ from real-world fund processes (e.g., reliance on “post-reflection”), motivating careful evaluation protocols and analysis beyond raw profitability. AlphaAgents (\cite{alphaagents2025}) targets equity research and portfolio construction using role-based multi-agent collaboration and evaluates stock-picking performance against benchmarks under different risk tolerances. \cite{lopezlira2025llmtrade} evaluates LLM agents in market simulations to test financial theories and trading behaviors, which supports our argument that agent-based simulation is an appropriate evaluation setting for LLM trading policies rather than only forecasting accuracy. Multi-Agent Debate (\cite{du2023multidebate}), shows that letting multiple model instances propose and challenge reasoning over multiple rounds can improve reasoning quality and reduce certain failure modes (e.g., errors/hallucinations) compared to single-shot generation.This connects cleanly to our hypothesis that debate may reduce finance-relevant LLM failures overconfidence, one-sided narratives, and weak causal claims while producing more audit-able argument trails for post-hoc failure analysis.
+Most production trading systems prioritize robustness over interpretability, making it difficult to audit how conflicting signals are reconciled (\cite{fticonsulting2023}). To balance market realism with inspection, simulators such as ABIDES (\cite{abides2019}) and ABIDES-Gym (\cite{abidesgym2021}) are often used to model exchange latency and order-book dynamics while providing a standardized interface for repeatable experiments.
+% TradingAgents (\cite{tradingagents2024}) and QuantAgents (\cite{quantagents2025}) demonstrate the utility of role-based LLM frameworks, and AlphaAgents (\cite{alphaagents2025}) explores collaboration, we specifically leverage "Multi-Agent Debate" (\cite{du2023multidebate}). By forcing agents to challenge reasoning over multiple rounds rather than just collaborating, we aim to expose weak causal claims and produce a transparent decision trail that standard ensemble methods often lack.
+Recent financial research has begun to explore the use of multi-agent LLM systems to enhance stock trading performance in markets. \cite{tradingagents2024} models a trading firm where specialized LLM agents debate to execute trades, achieving superior metrics compared to simple baselines. Building on realistic fund processes, \cite{quantagents2025} introduces a simulated multi-agent system that emphasizes thorough evaluation protocols beyond profitability. \cite{alphaagents2025} focuses on equity research and portfolio construction, evaluating collaborative agents on stock-picking performance under varying risk constraints. Similarly, \cite{lopezlira2025llmtrade} uses market simulations to evaluate LLM agents and test financial theories, reinforcing that agent-based simulation provides a more comprehensive evaluation setting than basic forecasting accuracy. Finally, \cite{du2023multidebate} demonstrates multi-agent debate enhances reasoning and reduces hallucinations, supporting our hypothesis that structured debate mitigates financial LLM failures, such as overconfidence and weak causal claims, while ensuring auditable decision trails.
+
+RAudit \cite{raudit} scores (and controls) reasoning based on an average score ($\rho$) of four pillars: logical validity ($P_1$), evidential support ($P_2$), alternative consideration ($P_3$), and causal alignment ($P_4$). It also measures agreement using Jensen-Shannon divergence. It establishes that reasoning quality can be measured and stabilized to remove the impact of sycophancy.
+
+\vspace{-8pt}
+\section{System Design and Implementation}
+\label{sys_des}
+\vspace{-8pt}
+
+Our experimental framework is comprised of four modules that handle: (1) reasoning case generation for a range of stock tickers; (2) a market simulation environment that orchestrates multi-agent debate and actions against a stock portfolio; (3) a set of multi-agent system architectures to produce reasoned debate; and (4) an evaluation and control framework to score the quality of the debate reasoning traces. Figure~\ref{fig:system-design} illustrates the interaction among these components.
+
+\subsection{Case Generation Pipeline}
+For effective debate to occur, LLM agents require a combination of quantitative performance metrics combined with rich qualitative financial information. To consolidate this information, we built a data generation pipeline that consolidates closing price history using Yahoo Finance API (\cite{yahoofinance}), earnings call transcripts from \cite{earnings-transcripts-dataset}, and financial news article summaries from FinnHub API (\cite{finnhub_api}). Our pipeline generates these reasoning cases at a quarterly cadence to align with the availability of earnings call transcript data, which we consider to be the most valuable information for long-term portfolio management. Price history and financial news are accumulated across a sliding window between quarterly earnings calls. 
+
+Given the high volume of financial news within a quarter, we additionally compute an impact score  $I$ to estimate the effect of a piece of news on the stock price. Given a sentiment score $s \in \left[-1,1\right]$, a time-varying decay $r = (\frac{1}{2})^{t_\text{age} / t_{1/2}}$, and the daily percentage price change on the trading date $\Delta p$, we compute the impact score as
+\begin{equation}
+I = s \cdot r \cdot \left(1 + \frac{\Delta p}{100}\right)
+\end{equation}
+
+where $t_{\frac{1}{2}}$ is a half-life of 24 hours and $t_\text{age}$ represents the number of hours since publication. As part of the experimental configuration, we can select to restrict the number of news publications per case to a top-$N$ sorted by impact score $I$.
+
+\subsection{Market Simulation Environment}
+We designed a controlled, reproducible simulation environment to evaluate financial decision-making in multi-LLM debate architectures. On each experimental run, the simulation initializes a fresh cash portfolio and a precomputed sequence of reasoning cases for a set of stock tickers. The environment acts as a stockbroker, maintaining  the portfolio state of cash balances and equity positions. For each reasoning case, multi-agent debate is used to converge on a trade decision. Trade decisions are submitted to the environment via a fixed LangChain tool interface, where submitted orders are either executed (updating portfolio state) or rejected with a structured message, allowing retries within a case.
+
+The simulation terminates after all reasoning cases are exhausted. For each run, the environment records the config used to launch the experiment, the final portfolio state and complete order history. Agents are also expected to emit all intermediate reasoning traces during debate for subsequent reasoning quality evaluations. These artifacts enable quantitative evaluation of financial performance and qualitative assessment of reasoning behavior under controlled, repeatable conditions.
+
+\subsection{Multi-Agent Debate System}
+
+We implemented the multi-agent debate system in Python using LangGraph \citep{langgraph}, totaling approximately 3,100 lines across eight modules: (1) typed data models (Pydantic), (2) configuration layer, (3) role-specific prompt templates, (4) debate graph, (5) runner, (6) demo harness, (7) test suite, and (8) evaluation utilities.
+
+\textbf{Data Models and Agent Roles.}
+Pydantic models define \texttt{Observation} (market state, text context), \texttt{Action} (orders, justification, causal claims), and \texttt{AgentTrace} (auditable debate record). Each causal claim carries a \texttt{PearlLevel} tag (L1: association, L2: intervention, L3: counterfactual) following Pearl's causal hierarchy \citep{pearl2009causality}. Six specialist roles are supported---Macro Strategist, Value Analyst, Risk Manager, Technical Analyst, Sentiment Analyst, and Devil's Advocate---each with a system prompt that includes three anti-failure injections: (i) a \emph{Causal Claim Format} requiring L2/L3 claims with explicit assumptions and falsifiers, (ii) a \emph{Forced Uncertainty} block requiring the agent to state what evidence would change its mind, and (iii) a \emph{Trap Awareness} block listing common reasoning errors.
+
+\textbf{Debate Graph.}
+The orchestrator is a LangGraph \texttt{StateGraph} with eight nodes:
+
+\begin{center}
+\texttt{START} $\to$ \texttt{news\_digest} / \texttt{data\_analysis} $\to$ \texttt{build\_context} $\to$ \texttt{propose} $\to$ \texttt{critique} $\rightleftharpoons$ \texttt{revise} $\to$ \texttt{judge} $\to$ \texttt{build\_trace} $\to$ \texttt{END}
+\end{center}
+
+Optional pipeline nodes (\texttt{news\_digest}, \texttt{data\_analysis}) preprocess raw inputs in parallel. In the core loop, agents independently propose trades with causal claims, critique every other agent's proposal (including self-critique), and revise in response. A conditional edge loops critique$\to$revise for configurable rounds before a judge synthesizes a final decision. The judge preserves the strongest dissenting objection even if overruled. The \texttt{build\_trace} node packages the full debate into a JSON trace.
+
+\textbf{Experimental Knobs.}
+A \texttt{DebateConfig} dataclass centralizes all parameters: agent roster (any subset of six roles), max debate rounds (default~1), agreeableness $\in [0,1]$ (default~0.3, controlling how confrontational critiques are), adversarial mode (auto-adds Devil's Advocate), pipeline toggles, LLM model (\texttt{gpt-4o-mini}, temperature~0.3), and a mock mode for deterministic testing without API calls. In live mode, each node calls OpenAI via \texttt{langchain-openai} with retry logic (3 attempts, exponential backoff).
+
+\subsection{Evaluation \& Control Framework}
+
+In line with H1, our evaluation framework focuses on reasoning quality and treats financial performance as an external validation signal. We implemented two complementary evaluators, totaling approximately 710 lines, to systematically assess debate traces:
+
+	extbf{Trace-Output Consistency (P1).}
+Implemented in \texttt{eval/consistency.py}, the \texttt{ConsistencyJudge} evaluates whether each agent's output at every debate turn is logically consistent with its reasoning trace. The judge operates on four turn types---proposal, critique, revision, and judge decision---each with a specialized prompt template. For proposals, it checks that the hypothesis, justification, and orders are coherent and mutually supportive. Critiques are assessed for whether objections are grounded in the actual proposal text, and whether the critique addresses the correct logical points. Revisions are checked for whether the stated changes are actually reflected in the revised proposal. Judge decisions are evaluated for whether the final synthesis accurately reflects the strongest arguments and dissent.
+
+Failures are classified into three categories: \textsc{Inconsistent\_Sycophantic} (unreasonably agreeing with others), \textsc{Inconsistent\_Stubborn} (persisting despite valid critiques), and \textsc{Inconsistent\_Other} (logic errors, hallucinated objections, or off-topic reasoning). This taxonomy extends standard RCA by explicitly modeling multi-agent disagreement and sycophancy/stubbornness dynamics. The ConsistencyJudge is run automatically on all debate traces, and its outputs are aggregated to produce per-agent and per-experiment consistency scores, which are then correlated with financial performance metrics.
+
+	extbf{Portfolio Divergence (Agreement Measurement).}
+Implemented in \texttt{eval/divergence.py}, the \texttt{DebateDivergenceAnalyzer} quantifies the degree of agreement or disagreement among agents at each debate round. It computes two primary metrics:
+\begin{itemize}
+  \item \textbf{Generalized Jensen--Shannon Divergence (JSD):} Measures the information-theoretic distance between each agent's implied portfolio weight distribution and the group consensus, capturing how much agents disagree in their trade recommendations. This metric is robust to both long and short positions by operating on signed weights.
+  \item \textbf{Generalized Active Share:} Computes the mean L1 distance between each agent's portfolio and the consensus portfolio, a standard financial metric for portfolio differentiation. This provides an interpretable measure of how "different" each agent's trades are from the group average.
+\end{itemize}
+The analyzer tracks these metrics across debate rounds to assess whether debate drives convergence (increasing agreement) or persistent disagreement. It also compares the judge's final portfolio to the mean agent portfolio to quantify the judge's deviation from consensus. Both metrics are used to analyze the effects of debate configuration (e.g., agreeableness, adversarial roles) on group decision dynamics.
+
+Both evaluators are integrated into the experimental pipeline: after each debate, traces are passed to the ConsistencyJudge and DebateDivergenceAnalyzer, and their outputs are logged for downstream statistical analysis. This enables systematic study of the relationship between reasoning quality, debate structure, and financial outcomes.
+
+
+\begin{figure}[t]
+\setlength{\belowcaptionskip}{-10pt}
+\centering
+\includegraphics[keepaspectratio,width=\linewidth,height=\textheight]{TBD}
+\caption{TBD}
+\label{fig:system-design}
+\end{figure}
+
+
+\section{Hypotheses and Evaluation Framework}
+. 
+
+\textbf{R$^3$} extension investigates whether causal depth itself can be selectively regulated as an independent control objective. The central question is therefore not only whether reasoning quality can be measured and improved, but whether structured control—particularly over causal reasoning—translates into economically meaningful outcomes.
+
+
+\subsection{H1: Measurement Validity — Reasoning Quality Is Economically Predictive}
+
+We first test whether post-hoc RAudit scores capture economically relevant properties of agent reasoning. Let
+\begin{equation}
+\rho = \frac{1}{4}(P_1 + P_2 + P_3 + P_4)
+\end{equation}
+denote the composite reasoning quality score, where $P_4$ measures causal alignment.
+
+We evaluate whether $\rho$, $P_4$, and causal instability metrics correlate with downstream trading performance. Specifically, for each debate instance $i$, we estimate:
+\begin{equation}
+R_i = \beta_0 + \beta_1 \rho_i + \beta_2 P_{4,i} + \beta_3 CI_i + \epsilon_i,
+\end{equation}
+where $R_i$ denotes realized return and $CI_i$ denotes the Causal Instability Index. We report correlations with PnL, Sharpe ratio, Sortino ratio, and maximum drawdown. If higher reasoning quality predicts improved risk-adjusted returns or reduced downside risk, then RAudit captures economically meaningful structure rather than superficial coherence.
+
+This hypothesis establishes the validity of reasoning measurement.
+
+\subsection{H2: Controllability — Reasoning Quality Can Be Actively Improved}
+
+We evaluate whether reasoning quality is a controllable process variable. In closed-loop conditions, $\rho$ is treated as a regulated state with target $\rho^*$ and error
+\begin{equation}
+e_t = \rho^* - \rho_t.
+\end{equation}
+A PID controller adjusts debate constraints based on this signal.
+
+\vspace{0.3em}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{l p{3.6cm} p{3.6cm}}
+\hline
+\textbf{Condition} & \textbf{Reasoning Metrics} & \textbf{Financial Metrics} \\
+\hline
+Debate Only 
+& Baseline $\rho$, instability, adversarial robustness 
+& Sharpe, Sortino, volatility, drawdown \\
+
+Debate + RAudit (Post-hoc) 
+& Measured $\rho$ without intervention 
+& Same financial metrics (diagnostic only) \\
+
+Debate + RAudit + PID 
+& Mean $\rho$, convergence rate, oscillation variance, stability under pressure 
+& Sharpe, Sortino, volatility, drawdown under control \\
+\hline
+\end{tabular}
+\caption{Controllability evaluation regimes and associated metrics.}
+\label{tab:h2}
+\end{table}
+
+We test whether PID reduces reasoning instability and increases $\rho$, and whether such improvements coincide with improved risk-adjusted performance. If so, reasoning quality is not merely measurable but actively controllable.
+
+This hypothesis establishes reasoning controllability.
+
+\subsection{H3: Causal Regulation — Causal Depth as a Controllable Dimension}
+
+Our R$^3$ extension tests whether causal alignment (Pillar 4) can be selectively regulated rather than merely measured. In addition to global control of $\rho$, we introduce targeted regulation of $P_4$ with depth target $P_4^*$. When $P_4$ falls below threshold, the controller escalates causal justification constraints.
+
+We evaluate three regulation regimes summarized in Table~\ref{tab:r3-regimes}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}clll@{}}
+\toprule
+\textbf{\#} & \textbf{Regime} & \textbf{Reasoning Metrics} & \textbf{Economic Metrics} \\
+\midrule
+1 & Global $\rho$ Control 
+& $\bar{P}_4$, L2/L3 rate, CR, CI 
+& SR, SoR, $\sigma$, DD \\
+
+2 & Selective $P_4$ Control 
+& $\Delta P_4$, CR$\downarrow$, CI$\downarrow$ 
+& SR, DD$_{shock}$, $\sigma_{shock}$ \\
+
+3 & Dual-Variable Control (opt.) 
+& Var($\rho$), Var($P_4$), CI$\downarrow$ 
+& SR, DD, Robustness Index (RI) \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{R$^3$ causal regulation regimes and evaluation metrics.}
+\label{tab:r3-regimes}
+\end{table}
+
+\noindent\textit{Metric glossary.}
+CR = causal collapse rate; 
+CI = Causal Instability Index; 
+SR = Sharpe ratio; 
+SoR = Sortino ratio; 
+$\sigma$ = return volatility; 
+DD = maximum drawdown; 
+DD$_{shock}$ and $\sigma_{shock}$ denote drawdown and volatility during exogenous stress periods; 
+RI = robustness index measuring stability under perturbation.
+
+If selective $P_4$ regulation increases $\bar{P}_4$, reduces CR and CI, and improves SR or reduces DD under stress without degrading overall coherence ($\rho$), then causal depth is both controllable and economically meaningful.
+\subsection{Summary}
+
+Together, these hypotheses test a progression:
+
+\begin{enumerate}
+    \item Whether reasoning quality predicts economic outcomes,
+    \item Whether reasoning quality can be improved through control,
+    \item Whether causal reasoning depth can be selectively regulated to improve robustness.
+\end{enumerate}
+
+The evaluation therefore moves from measurement to control to structured causal regulation, with financial performance serving as the ultimate validation signal.
+
+\vspace{-6pt}
+\section{Preliminary Experiments and Results}
+
+Our preliminary experiments focus on validating the system's correctness and establishing the ablation infrastructure needed for our research questions. We have not yet run full simulation-integrated experiments; the results below characterize the debate system in isolation.
+
+\textbf{Test Suite.}
+We wrote 61 unit and integration tests across nine test classes covering model validation, configuration, prompt construction, mock generators, node functions, end-to-end graph execution, ablation configurations, structural integrity, and edge cases. All 61 tests pass in mock mode without API access, verifying that the graph topology, state flow, conditional looping, and output parsing are correct.
+
+\textbf{Ablation Configurations.}
+We implemented eight predefined configurations to isolate individual experimental variables (Table~\ref{tab:ablation-configs}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}clcccl@{}}
+\toprule
+\textbf{\#} & \textbf{Configuration} & \textbf{Agents} & \textbf{Agree.} & \textbf{Rounds} & \textbf{Variable Tested} \\
+\midrule
+1 & Default baseline         & 4 & 0.3 & 1 & Baseline \\
+2 & + Sentiment agent        & 5 & 0.3 & 1 & Agent count \\
+3 & + Devil's Advocate       & 3+DA & 0.3 & 1 & Adversarial mode \\
+4 & High agreeableness       & 3 & 0.9 & 1 & Sycophancy \\
+5 & Low agreeableness        & 3 & 0.1 & 1 & Confrontation \\
+6 & Three debate rounds      & 3 & 0.3 & 3 & Debate depth \\
+7 & No pipeline              & 3 & 0.3 & 1 & Preprocessing \\
+8 & Full system, risk-off    & 5+DA & 0.3 & 2 & Combined stress \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Ablation configurations for isolating experimental variables. ``Agree.'' = agreeableness knob; ``DA'' = Devil's Advocate.}
+\label{tab:ablation-configs}
+\end{table}
+
+\textbf{Preliminary Observations.}
+We ran all eight configurations against three sample market scenarios (bullish, mixed signals, risk-off) using \texttt{gpt-4o-mini}. Four patterns emerged:
+(1)~\emph{Causal depth varies by role}: the Macro Strategist and Value Analyst consistently produced L2 intervention claims, while the Risk Manager and Technical Analyst defaulted to L1 associations unless the prompt constraint was active.
+(2)~\emph{Agreeableness affects convergence}: Config~4 (0.9) produced near-unanimous first-round agreement, while Config~5 (0.1) generated disagreements persisting through the judge's memo.
+(3)~\emph{Devil's Advocate changes output}: the judge's audited memo was longer and included explicit rebuttals when the adversarial agent was present.
+(4)~\emph{Multiple rounds deepen reasoning}: Config~6 (3 rounds) showed agents upgrading claims from L1 to L2 across revisions. These observations are qualitative; systematic T\textsuperscript{3} scoring and trading-metric correlation are planned as part of the full experimental protocol.
+
+
+\vspace{-6pt}
+\section{Future Work}
+
+	extbf{1. Simulation Integration.}
+Integrate the debate system with a dynamic market simulator, enabling debate-generated trades to execute against realistic price trajectories. This will allow direct measurement of PnL, Sharpe ratio, drawdown, and other financial metrics alongside reasoning quality.
+
+	extbf{2. Automated Quantitative Reasoning Evaluation.}
+Deploy a T\textsuperscript{3}/CRIT-style rubric (\cite{chang2023crit,raudit}) to score causal claims, leveraging the Pearl level tags already present in each claim. The evaluator will check for internal consistency of variables, assumptions, and falsifiers, and verify that L2/L3 claims demonstrate genuine interventional or counterfactual reasoning.
+
+	extbf{3. Correlation and Failure-Mode Analysis.}
+Test whether reasoning quality metrics (consistency, causal depth) correlate with risk-adjusted returns (RQ2). Systematically analyze outputs across agreeableness settings and adversarial setups to measure reductions in overconfidence, sycophancy, and groupthink (RQ3).
+
+	extbf{4. Robustness to Market Regimes.}
+Evaluate the debate system across diverse market scenarios (bull, bear, sideways, high-volatility) to assess robustness and generalization. Analyze whether agent reasoning adapts to regime shifts and whether debate dynamics change under stress.
+
+	extbf{5. Distillation and Prompt Engineering.}
+If debate improves reasoning, distill the most effective constraints (mandatory falsifiers, L2/L3 requirements, self-critique) into single-agent prompts. Test whether these distilled prompts can capture multi-agent benefits with lower computational overhead.
+
+	extbf{6. Scaling Experiments.}
+Expand experiments to a broader stock universe, longer time horizons, and alternative LLM backends. Assess scalability, cost, and performance tradeoffs as the system is scaled up.
+
+	extbf{7. Human-in-the-Loop and Real-World Validation.}
+Incorporate human expert review of debate traces and trade decisions. Pilot the system on live or delayed market data to validate real-world applicability and identify gaps between simulated and actual trading environments.
+
+\newpage
+\bibliographystyle{plainnat}  % or abbrvnat, ieeetr, etc.
+\bibliography{refs}
+
+
+% \section{Citations, figures, tables, references}
+% \label{others}
+
+
+% These instructions apply to everyone.
+
+
+% \subsection{Citations within the text}
+
+
+% The \verb+natbib+ package will be loaded for you by default.  Citations may be
+% author/year or numeric, as long as you maintain internal consistency.  As to the
+% format of the references themselves, any style is acceptable as long as it is
+% used consistently.
+
+
+% The documentation for \verb+natbib+ may be found at
+% \begin{center}
+%   \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
+% \end{center}
+% Of note is the command \verb+\citet+, which produces citations appropriate for
+% use in inline text.  For example,
+% \begin{verbatim}
+%    \citet{hasselmo} investigated\dots
+% \end{verbatim}
+% produces
+% \begin{quote}
+%   Hasselmo, et al.\ (1995) investigated\dots
+% \end{quote}
+
+
+% If you wish to load the \verb+natbib+ package with options, you may add the
+% following before loading the \verb+neurips_2024+ package:
+% \begin{verbatim}
+%    \PassOptionsToPackage{options}{natbib}
+% \end{verbatim}
+
+
+% If \verb+natbib+ clashes with another package you load, you can add the optional
+% argument \verb+nonatbib+ when loading the style file:
+% \begin{verbatim}
+%    \usepackage[nonatbib]{neurips_2024}
+% \end{verbatim}
+
+
+% As submission is double blind, refer to your own published work in the third
+% person. That is, use ``In the previous work of Jones et al.\ [4],'' not ``In our
+% previous work [4].'' If you cite your other papers that are not widely available
+% (e.g., a journal paper under review), use anonymous author names in the
+% citation, e.g., an author of the form ``A.\ Anonymous'' and include a copy of the anonymized paper in the supplementary material.
+
+
+% \subsection{Footnotes}
+
+
+% Footnotes should be used sparingly.  If you do require a footnote, indicate
+% footnotes with a number\footnote{Sample of the first footnote.} in the
+% text. Place the footnotes at the bottom of the page on which they appear.
+% Precede the footnote with a horizontal rule of 2~inches (12~picas).
+
+
+% Note that footnotes are properly typeset \emph{after} punctuation
+% marks.\footnote{As in this example.}
+
+
+% \subsection{Figures}
+
+
+% \begin{figure}
+%   \centering
+%   \fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+%   \caption{Sample figure caption.}
+% \end{figure}
+
+
+% All artwork must be neat, clean, and legible. Lines should be dark enough for
+% purposes of reproduction. The figure number and caption always appear after the
+% figure. Place one line space before the figure caption and one line space after
+% the figure. The figure caption should be lower case (except for first word and
+% proper nouns); figures are numbered consecutively.
+
+
+% You may use color figures.  However, it is best for the figure captions and the
+% paper body to be legible if the paper is printed in either black/white or in
+% color.
+
+
+% \subsection{Tables}
+
+
+% All tables must be centered, neat, clean and legible.  The table number and
+% title always appear before the table.  See Table~\ref{sample-table}.
+
+
+% Place one line space before the table title, one line space after the
+% table title, and one line space after the table. The table title must
+% be lower case (except for first word and proper nouns); tables are
+% numbered consecutively.
+
+
+% Note that publication-quality tables \emph{do not contain vertical rules.} We
+% strongly suggest the use of the \verb+booktabs+ package, which allows for
+% typesetting high-quality, professional tables:
+% \begin{center}
+%   \url{https://www.ctan.org/pkg/booktabs}
+% \end{center}
+% This package was used to typeset Table~\ref{sample-table}.
+
+
+% \begin{table}
+%   \caption{Sample table title}
+%   \label{sample-table}
+%   \centering
+%   \begin{tabular}{lll}
+%     \toprule
+%     \multicolumn{2}{c}{Part}                   \\
+%     \cmidrule(r){1-2}
+%     Name     & Description     & Size ($\mu$m) \\
+%     \midrule
+%     Dendrite & Input terminal  & $\sim$100     \\
+%     Axon     & Output terminal & $\sim$10      \\
+%     Soma     & Cell body       & up to $10^6$  \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \subsection{Math}
+% Note that display math in bare TeX commands will not create correct line numbers for submission. Please use LaTeX (or AMSTeX) commands for unnumbered display math. (You really shouldn't be using \$\$ anyway; see \url{https://tex.stackexchange.com/questions/503/why-is-preferable-to} and \url{https://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath} for more information.)
+
+% \subsection{Final instructions}
+
+% Do not change any aspects of the formatting parameters in the style files.  In
+% particular, do not modify the width or length of the rectangle the text should
+% fit into, and do not change font sizes (except perhaps in the
+% \textbf{References} section; see below). Please note that pages should be
+% numbered.
+
+
+% \section{Preparing PDF files}
+
+
+% Please prepare submission files with paper size ``US Letter,'' and not, for
+% example, ``A4.''
+
+
+% Fonts were the main cause of problems in the past years. Your PDF file must only
+% contain Type 1 or Embedded TrueType fonts. Here are a few instructions to
+% achieve this.
+
+
+% \begin{itemize}
+
+
+% \item You should directly generate PDF files using \verb+pdflatex+.
+
+
+% \item You can check which fonts a PDF files uses.  In Acrobat Reader, select the
+%   menu Files$>$Document Properties$>$Fonts and select Show All Fonts. You can
+%   also use the program \verb+pdffonts+ which comes with \verb+xpdf+ and is
+%   available out-of-the-box on most Linux machines.
+
+
+% \item \verb+xfig+ "patterned" shapes are implemented with bitmap fonts.  Use
+%   "solid" shapes instead.
+
+
+% \item The \verb+\bbold+ package almost always uses bitmap fonts.  You should use
+%   the equivalent AMS Fonts:
+% \begin{verbatim}
+%    \usepackage{amsfonts}
+% \end{verbatim}
+% followed by, e.g., \verb+\mathbb{R}+, \verb+\mathbb{N}+, or \verb+\mathbb{C}+
+% for $\mathbb{R}$, $\mathbb{N}$ or $\mathbb{C}$.  You can also use the following
+% workaround for reals, natural and complex:
+% \begin{verbatim}
+%    \newcommand{\RR}{I\!\!R} %real numbers
+%    \newcommand{\Nat}{I\!\!N} %natural numbers
+%    \newcommand{\CC}{I\!\!\!\!C} %complex numbers
+% \end{verbatim}
+% Note that \verb+amsfonts+ is automatically loaded by the \verb+amssymb+ package.
+
+
+% \end{itemize}
+
+
+% If your file contains type 3 fonts or non embedded TrueType fonts, we will ask
+% you to fix it.
+
+
+% \subsection{Margins in \LaTeX{}}
+
+
+% Most of the margin problems come from figures positioned by hand using
+% \verb+\special+ or other commands. We suggest using the command
+% \verb+\includegraphics+ from the \verb+graphicx+ package. Always specify the
+% figure width as a multiple of the line width as in the example below:
+% \begin{verbatim}
+%    \usepackage[pdftex]{graphicx} ...
+%    \includegraphics[width=0.8\linewidth]{myfile.pdf}
+% \end{verbatim}
+% See Section 4.4 in the graphics bundle documentation
+% (\url{http://mirrors.ctan.org/macros/latex/required/graphics/grfguide.pdf})
+
+
+% A number of width problems arise when \LaTeX{} cannot properly hyphenate a
+% line. Please give LaTeX hyphenation hints using the \verb+\-+ command when
+% necessary.
+
+% \begin{ack}
+% Use unnumbered first level headings for the acknowledgments. All acknowledgments
+% go at the end of the paper before the list of references. Moreover, you are required to declare
+% funding (financial activities supporting the submitted work) and competing interests (related financial activities outside the submitted work).
+% More information about this disclosure can be found at: \url{https://neurips.cc/Conferences/2024/PaperInformation/FundingDisclosure}.
+
+
+% Do {\bf not} include this section in the anonymized submission, only in the final paper. You can use the \texttt{ack} environment provided in the style file to automatically hide this section in the anonymized submission.
+% \end{ack}
+
+% \section*{References}
+
+
+% References follow the acknowledgments in the camera-ready paper. Use unnumbered first-level heading for
+% the references. Any choice of citation style is acceptable as long as you are
+% consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
+% when listing the references.
+% Note that the Reference section does not count towards the page limit.
+% \medskip
+
+
+% {
+% \small
+
+
+% [1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
+% connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
+% (eds.), {\it Advances in Neural Information Processing Systems 7},
+% pp.\ 609--616. Cambridge, MA: MIT Press.
+
+
+% [2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
+%   Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
+% TELOS/Springer--Verlag.
+
+
+% [3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
+% recall at excitatory recurrent synapses and cholinergic modulation in rat
+% hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
+% }
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \appendix
+
+% \section{Appendix / supplemental material}
+
+
+% Optionally include supplemental material (complete proofs, additional experiments and plots) in appendix.
+% All such materials \textbf{SHOULD be included in the main submission.}
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \newpage
+% \section*{NeurIPS Paper Checklist}
+
+% %%% BEGIN INSTRUCTIONS %%%
+% The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
+% limit. 
+
+% Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
+% \begin{itemize}
+%     \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
+%     \item Please provide a short (1–2 sentence) justification right after your answer (even for NA). 
+%    % \item {\bf The papers not including the checklist will be desk rejected.}
+% \end{itemize}
+
+% {\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will be asked to also include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
+
+% The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While "\answerYes{}" is generally preferable to "\answerNo{}", it is perfectly acceptable to answer "\answerNo{}" provided a proper justification is given (e.g., "error bars are not reported because it would be too computationally expensive" or "we were unable to find the license for the dataset we used"). In general, answering "\answerNo{}" or "\answerNA{}" is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
+
+% IMPORTANT, please:
+% \begin{itemize}
+%     \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS paper checklist"},
+%     \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
+%     \item {\bf Do not modify the questions and only use the provided macros for your answers}.
+% \end{itemize} 
+ 
+
+% %%% END INSTRUCTIONS %%%
+
+
+% \begin{enumerate}
+
+% \item {\bf Claims}
+%     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the abstract and introduction do not include the claims made in the paper.
+%         \item The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers. 
+%         \item The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings. 
+%         \item It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper. 
+%     \end{itemize}
+
+% \item {\bf Limitations}
+%     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper. 
+%         \item The authors are encouraged to create a separate "Limitations" section in their paper.
+%         \item The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.
+%         \item The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.
+%         \item The authors should reflect on the factors that influence the performance of the approach. For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.
+%         \item The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.
+%         \item If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.
+%         \item While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
+%     \end{itemize}
+
+% \item {\bf Theory Assumptions and Proofs}
+%     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not include theoretical results. 
+%         \item All the theorems, formulas, and proofs in the paper should be numbered and cross-referenced.
+%         \item All assumptions should be clearly stated or referenced in the statement of any theorems.
+%         \item The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition. 
+%         \item Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.
+%         \item Theorems and Lemmas that the proof relies upon should be properly referenced. 
+%     \end{itemize}
+
+%     \item {\bf Experimental Result Reproducibility}
+%     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not include experiments.
+%         \item If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.
+%         \item If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable. 
+%         \item Depending on the contribution, reproducibility can be accomplished in various ways. For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.
+%         \item While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example
+%         \begin{enumerate}
+%             \item If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm.
+%             \item If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully.
+%             \item If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset).
+%             \item We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility. In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.
+%         \end{enumerate}
+%     \end{itemize}
+
+
+% \item {\bf Open access to data and code}
+%     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that paper does not include experiments requiring code.
+%         \item Please see the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+%         \item While we encourage the release of code and data, we understand that this might not be possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).
+%         \item The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
+%         \item The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.
+%         \item The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.
+%         \item At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).
+%         \item Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.
+%     \end{itemize}
+
+
+% \item {\bf Experimental Setting/Details}
+%     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not include experiments.
+%         \item The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.
+%         \item The full details can be provided either with the code, in appendix, or as supplemental material.
+%     \end{itemize}
+
+% \item {\bf Experiment Statistical Significance}
+%     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not include experiments.
+%         \item The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.
+%         \item The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).
+%         \item The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.)
+%         \item The assumptions made should be given (e.g., Normally distributed errors).
+%         \item It should be clear whether the error bar is the standard deviation or the standard error of the mean.
+%         \item It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96\% CI, if the hypothesis of Normality of errors is not verified.
+%         \item For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).
+%         \item If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.
+%     \end{itemize}
+
+% \item {\bf Experiments Compute Resources}
+%     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not include experiments.
+%         \item The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.
+%         \item The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute. 
+%         \item The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper). 
+%     \end{itemize}
+    
+% \item {\bf Code Of Ethics}
+%     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.
+%         \item If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.
+%         \item The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).
+%     \end{itemize}
+
+
+% \item {\bf Broader Impacts}
+%     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that there is no societal impact of the work performed.
+%         \item If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.
+%         \item Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.
+%         \item The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.
+%         \item The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.
+%         \item If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).
+%     \end{itemize}
+    
+% \item {\bf Safeguards}
+%     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper poses no such risks.
+%         \item Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters. 
+%         \item Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.
+%         \item We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.
+%     \end{itemize}
+
+% \item {\bf Licenses for existing assets}
+%     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not use existing assets.
+%         \item The authors should cite the original paper that produced the code package or dataset.
+%         \item The authors should state which version of the asset is used and, if possible, include a URL.
+%         \item The name of the license (e.g., CC-BY 4.0) should be included for each asset.
+%         \item For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.
+%         \item If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, \url{paperswithcode.com/datasets} has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.
+%         \item For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.
+%         \item If this information is not available online, the authors are encouraged to reach out to the asset's creators.
+%     \end{itemize}
+
+% \item {\bf New Assets}
+%     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not release new assets.
+%         \item Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc. 
+%         \item The paper should discuss whether and how consent was obtained from people whose asset is used.
+%         \item At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.
+%     \end{itemize}
+
+% \item {\bf Crowdsourcing and Research with Human Subjects}
+%     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? 
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
+%         \item Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper. 
+%         \item According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector. 
+%     \end{itemize}
+
+% \item {\bf Institutional Review Board (IRB) Approvals or Equivalent for Research with Human Subjects}
+%     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
+%     \item[] Answer: \answerTODO{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+%     \item[] Justification: \justificationTODO{}
+%     \item[] Guidelines:
+%     \begin{itemize}
+%         \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
+%         \item Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper. 
+%         \item We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution. 
+%         \item For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.
+%     \end{itemize}
+
+% \end{enumerate}
+
+
+\end{document}

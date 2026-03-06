@@ -1,0 +1,394 @@
+================================================================================
+JULI'S NEXT STEPS — Multi-Agent Debate Portion (Week 10+)
+================================================================================
+Generated: 2026-03-01
+Based on: week9work.txt, week9slack.txt, full codebase review
+
+================================================================================
+SECTION 1: WHAT TEAMMATES BUILT (Last 5 Days) — Context for Your Work
+================================================================================
+
+VELJKO (Major Changes):
+  - Decomposed multi_agent/graph.py into 3 sub-graphs:
+      Pipeline (news → data → build_context)
+      Single-round (propose → critique → revise)
+      Finalize (judge → build_trace)
+  - Built full PID controller integration (eval/PID/)
+      4-quadrant classification: STUCK/CHAOTIC/CONVERGED/HEALTHY
+      Per-phase agreeableness control (propose/critique/revise sub-graphs)
+      Fixed β-to-tone mapping: high β = adversarial (RAudit correct)
+  - Built CRIT scorer (eval/crit/) — blind reasoning quality auditor
+      4 pillars: Internal Consistency, Evidence Support, Trace Alignment, Causal Integrity
+      Per-agent scoring (ρ_i) then aggregated ρ̄ feeds PID
+  - Created modular prompt registry (multi_agent/prompts/registry.py)
+      β → tone bucket mapping (collaborative / balanced / adversarial)
+      6 tone files for critique + revise phases
+  - Added extensive tests (integration + unit)
+  - Added ticker/quarter filtering to case_loader
+  - Created sentiment_analysis scripts
+  - PR #14: Made graph per-round semantics (expose seam for PID)
+  - PR #16: Added quarter filtering to configs
+  - PR #19-24: PID core, wiring, logging, documentation, bug fixes
+
+ALANOODR:
+  - Pushed data for 8 tickers × 4 quarters
+  - Ran 20-episode simulation (8 tickers, gained 7%)
+  - Working on data pipeline: generate_cases.py, impact scores, JSON compression
+  - Truncated float precision (.2f), limited news text to 2 sentences
+
+THEODORE:
+  - Investigating P2-P4 evaluators (implementation expected by Saturday)
+  - Reviewed quarter filtering changes
+
+MATT HAYES:
+  - Proposed unified LangGraph architecture for single-agent/majority-vote/debate
+  - Reviewed graph decomposition PR
+
+================================================================================
+SECTION 2: WHAT YOU (JULI) ALREADY COMPLETED
+================================================================================
+
+  [DONE] Built agents/multi_agent_debate.py adapter
+         Case → Observation → MultiAgentRunner → Action → Decision
+  [DONE] Built simulation/feature_engineering.py (returns, volatility from daily bars)
+  [DONE] Modified simulation/runner.py (broker fallback for debate agent)
+  [DONE] Wrote 28 adapter tests (agents/tests/test_debate_agent.py)
+  [DONE] Created config files (debate.yaml, debate_mock.yaml, debate_nontech_mock.yaml)
+  [DONE] Ran mock simulations (NVDA tech + KO/BAC/CVX/AXP non-tech)
+  [DONE] Registered "multi_agent_debate" in agents/registry.py
+  [DONE] Aligned adapter with integration_plan.md (8 gaps fixed)
+
+================================================================================
+SECTION 3: YOUR NEXT TASKS — Prioritized & Actionable
+================================================================================
+
+IMPORTANT: The codebase has evolved significantly. Your adapter at
+agents/multi_agent_debate.py already works with the new PID-enabled runner
+because Veljko threaded PID config through DebateConfig.__post_init__. But
+several integration gaps and new tasks remain.
+
+------------------------------------------------------------------------
+TASK 1 (HIGH PRIORITY): Update Adapter for PID Config Passthrough
+------------------------------------------------------------------------
+STATUS: Partially done — your adapter already passes pid_* fields. Verify it works.
+
+WHY: Veljko added PID fields to AgentConfig (models/config.py:56-103) and your
+     adapter at agents/multi_agent_debate.py:110-129 already maps them. But you
+     need to verify the full chain works end-to-end with PID enabled.
+
+STEPS:
+  1. Create config/debate_pid_mock.yaml:
+     - Copy debate_mock.yaml
+     - Set pid_enabled: true, max_rounds: 3
+     - Set pid_log_metrics: true (to see PID output)
+     - Keep system_prompt_override: "mock"
+
+  2. Run: python run_simulation.py --config config/debate_pid_mock.yaml
+
+  3. VERIFY in output:
+     - episode_log.json contains pid_events in the debate trace
+     - reasoning/case_NNN.txt shows PID metric logging
+     - No crashes or unhandled exceptions
+
+  4. If PID events are NOT in the trace:
+     - Check that agents/multi_agent_debate.py:179 serializes trace.pid_events
+     - The raw_output dict should contain "debate_trace" with pid_events inside
+
+EDGE CASES TO CHECK:
+  - What happens if CRIT scorer fails mid-debate? (runner.py:298 has try/except)
+  - What happens with mock=True + pid_enabled=True? (mock LLM responses won't
+    produce valid CRIT scores — verify graceful fallback)
+
+------------------------------------------------------------------------
+TASK 2 (HIGH PRIORITY): Run Real (Non-Mock) Debate Simulation
+------------------------------------------------------------------------
+STATUS: Blocked by token limits. Velkjo identified case data is too large.
+
+WHY: Mock mode gives deterministic but unrealistic results. Need real API
+     calls to validate the pipeline produces meaningful debate.
+
+STEPS:
+  1. Pull latest main (teammates compressed case data)
+
+  2. Create config/debate_live_small.yaml:
+     tickers: [NVDA]
+     quarters: [Q1]         # Only 1 case to minimize API cost
+     num_episodes: 1
+     top_n_news: 3           # Aggressive filtering
+     agent:
+       agent_system: "multi_agent_debate"
+       llm_model: "gpt-4o-mini"
+       temperature: 0.3
+
+  3. Run: python run_simulation.py --config config/debate_live_small.yaml
+
+  4. VERIFY:
+     - No 429 rate limit errors
+     - Debate produces meaningful justification (not mock template)
+     - Token count per API call is reasonable (< 10k target per Veljko)
+     - Action contains buy/sell orders with non-trivial reasoning
+
+  5. If 429 errors occur:
+     - Check if case data is still too large
+     - May need to wait for Alanoodr's case compression changes
+     - Try: top_n_news: 1 or reduce earnings call data
+
+DEPENDENCY: Alanoodr's data compression + Veljko's case format changes
+
+------------------------------------------------------------------------
+TASK 3 (HIGH PRIORITY): Multi-Ticker Portfolio Allocation
+------------------------------------------------------------------------
+STATUS: Not started. CRITICAL gap identified by Veljko (Slack 11:53 PM).
+
+WHY: Currently the simulation presents ONE ticker per case to the agent.
+     Real portfolio allocation requires the agent to see ALL tickers
+     simultaneously and decide how to allocate across the universe.
+
+PROBLEM:
+  - case_loader loads cases per-ticker (NVDA/2025_Q1.json, KO/2025_Q1.json, etc.)
+  - Runner iterates cases one at a time (simulation/runner.py:114)
+  - Agent makes atomic buy/hold/sell per ticker, not portfolio-level allocation
+  - This means no real portfolio optimization happens
+
+STEPS:
+  1. Read how Observation.universe is used in multi_agent/graph.py:
+     - The graph already supports multi-ticker universe in the observation
+     - Market prices dict can hold multiple tickers
+
+  2. Option A: Merge same-quarter cases into one multi-ticker observation
+     - Modify build_observation() in simulation/feature_engineering.py
+     - Combine StockData from multiple Case objects into one Observation
+     - Merge case_data items from all tickers for that quarter
+     - This is the cleanest approach for portfolio-level debate
+
+  3. Option B: Modify runner to batch cases by quarter
+     - Group templates by quarter in _run_episode()
+     - Build one combined Case per quarter with all tickers
+     - Agent debates once per quarter, decides allocation across all tickers
+
+  4. DISCUSS with team first — this is an architecture decision
+
+------------------------------------------------------------------------
+TASK 4 (MEDIUM PRIORITY): Post-Hoc Evaluation Pipeline
+------------------------------------------------------------------------
+STATUS: Not started. Listed in week9work.txt as eval/posthoc_pipeline.py.
+
+WHY: After each episode, we need to run the RCA judge on all traces and
+     produce eval.json with consistency_rate, sycophancy_rate, etc.
+
+STEPS:
+  1. Create eval/posthoc_pipeline.py with:
+     def run_posthoc_eval(
+         traces: list[dict],
+         run_id: str,
+         output_path: str,
+     ) -> dict:
+
+  2. For each trace with debate_turns:
+     - Call ConsistencyJudge (eval/consistency.py) per-turn
+     - Aggregate verdicts: consistency_rate, sycophancy_rate
+
+  3. Build eval.schema.json v1.2.0 artifact:
+     - evaluation_mode: "in_loop" if any trace has pid_events, else "posthoc"
+     - run_summary.rca_summary: {consistency_rate, verdict, notes}
+     - control_trace: map pid_events → controlStep entries (if PID was active)
+
+  4. Wire into simulation/runner.py:
+     - After all decision points in _run_episode()
+     - Call run_posthoc_eval(collected_traces, ...)
+     - Write to results/{run}/eval.json
+
+  5. VERIFY: eval.json written for both mock and live runs
+
+------------------------------------------------------------------------
+TASK 5 (MEDIUM PRIORITY): Single-Agent Baseline Runner
+------------------------------------------------------------------------
+STATUS: Not started. Needed for ablation comparison.
+
+WHY: Paper needs comparison: single-agent vs. majority-vote vs. debate.
+     Matt Hayes suggested implementing all three in same LangGraph architecture.
+
+STEPS:
+  1. Option A (quick): Create config with 1 agent, skip critique/revise
+     - Set roles: [MACRO] in DebateConfig
+     - Set max_rounds: 1
+     - The propose → judge path is effectively single-agent
+
+  2. Option B (proper): Create agents/single_agent_debate.py
+     - @register("single_agent")
+     - Wraps MultiAgentRunner with single role, no critique/revise
+     - Or uses existing single_llm agent with debate-style observation
+
+  3. VERIFY: produces comparable output format for fair comparison
+
+------------------------------------------------------------------------
+TASK 6 (MEDIUM PRIORITY): Information-Theoretic Convergence Metrics
+------------------------------------------------------------------------
+STATUS: Not started. Prof Chang emphasized this strongly.
+
+WHY: Paper needs quantitative convergence proof. Prof Chang recommended:
+     mutual information, cross-entropy, earth mover distance.
+
+STEPS:
+  1. Create eval/convergence.py with metrics:
+     - JS divergence per round (already computed in PID)
+     - Cross-entropy between agent belief distributions
+     - Mutual information between rounds
+     - Earth mover distance (optimal transport) between agent proposals
+
+  2. Extract belief vectors from agent proposals each round:
+     - Each agent's proposal contains confidence + order direction
+     - Convert to probability distribution over {buy, hold, sell} per ticker
+
+  3. Track metrics across rounds:
+     - JSD(round_t) should decrease over rounds (contraction)
+     - Plot: JSD vs. round number for paper figures
+
+  4. Wire into trace output so eval pipeline can aggregate
+
+------------------------------------------------------------------------
+TASK 7 (LOWER PRIORITY): Batch Eval Across 8 Ablation Configs
+------------------------------------------------------------------------
+STATUS: Not started. Needs Tasks 2 + 4 first.
+
+WHY: Paper results table comparing 8 architectures.
+
+STEPS:
+  1. Create 8 config files (reference multi_agent/demo.py for the 8 variants):
+     - Single agent
+     - Majority vote
+     - Debate (no PID)
+     - Debate + PID
+     - Debate + adversarial
+     - Debate + high agreeableness
+     - Debate + low agreeableness
+     - Debate + PID + adversarial
+
+  2. Create scripts/run_ablation.py:
+     - Loop over 8 configs
+     - Run simulation for each
+     - Collect eval.json results
+     - Output comparison table (CSV or JSON)
+
+  3. Needs sufficient case data for statistical significance
+
+------------------------------------------------------------------------
+TASK 8 (LOWER PRIORITY): "Missing Information" Introspection
+------------------------------------------------------------------------
+STATUS: Not started. Prof Chang flagged as potential flagship contribution.
+
+WHY: Novel contribution: system identifies what evidence it needs to be
+     more confident, rather than just producing uncertain predictions.
+
+STEPS:
+  1. After judge produces final Action, add a follow-up prompt:
+     "Given your current confidence of X%, what specific information
+      would you need to raise confidence to 90%?"
+
+  2. Parse response into structured format:
+     - List of missing data points
+     - Expected impact on confidence per data point
+     - Prioritized retrieval targets
+
+  3. Log in trace for analysis
+
+  4. Could become targeted RAG retrieval in future
+
+================================================================================
+SECTION 4: GAPS & RISKS
+================================================================================
+
+GAP 1: Token Budget
+  - Current cases are 27k-67k tokens per ticker per quarter
+  - Veljko targeting 5-6k total per initial payload
+  - Until data is compressed, real API runs will fail or be expensive
+  - MITIGATION: Use top_n_news=3, wait for case format refactor
+
+GAP 2: Multi-Ticker Observation
+  - Fundamental architecture issue: agents see 1 ticker at a time
+  - No portfolio-level reasoning possible in current setup
+  - MITIGATION: Task 3 above. Discuss with team before implementing.
+
+GAP 3: Time Horizon Ambiguity
+  - Agents don't know explicit time horizon (quarterly? daily?)
+  - No rebalance schedule in simulation
+  - MITIGATION: Add time_horizon field to Observation, clarify in prompts
+
+GAP 4: Earnings Data Leakage
+  - If agents trade on earnings data before price reflects it → unrealistic
+  - Need timestamp-aware ordering of cases
+  - MITIGATION: Verify case timestamps precede price data dates
+
+GAP 5: Agent Count
+  - Currently 4 specialist agents + optional devil's advocate
+  - Prof Chang suggested 2-3 is more reasonable
+  - MITIGATION: Test with 2 agents (e.g., MACRO + VALUE) as an ablation
+
+================================================================================
+SECTION 5: RECOMMENDED EXECUTION ORDER
+================================================================================
+
+  Week 10 (This Week):
+    1. Pull latest main, run tests, verify nothing broken
+    2. Task 1: Verify PID passthrough with mock simulation
+    3. Task 2: Attempt one real (non-mock) debate run (1 ticker, 1 quarter)
+    4. Start Task 3 discussion with team (multi-ticker design)
+
+  Week 11:
+    5. Task 3: Implement multi-ticker observation (after team alignment)
+    6. Task 4: Build posthoc evaluation pipeline
+    7. Task 5: Single-agent baseline
+
+  Week 12+:
+    8. Task 6: Convergence metrics
+    9. Task 7: Batch ablation runs
+   10. Task 8: Missing information introspection (if time permits)
+
+================================================================================
+SECTION 6: FILES YOU OWN / NEED TO MODIFY
+================================================================================
+
+Files you wrote and maintain:
+  agents/multi_agent_debate.py          — Adapter (Case↔Observation↔Decision)
+  simulation/feature_engineering.py     — build_observation() with returns/volatility
+  agents/tests/test_debate_agent.py     — 28 tests for the adapter
+  config/debate_mock.yaml               — Mock config
+  config/debate_nontech_mock.yaml       — Non-tech mock config
+
+Files you may need to modify:
+  simulation/runner.py                  — Wire posthoc eval (Task 4)
+  simulation/feature_engineering.py     — Multi-ticker observation (Task 3)
+  simulation/case_loader.py             — Multi-ticker case merging (Task 3)
+  config/debate.yaml                    — PID-enabled config (Task 1)
+  multi_agent/models.py                 — Add convergence metrics (Task 6)
+
+Files teammates own (read but don't modify without discussion):
+  multi_agent/runner.py                 — Veljko: debate orchestrator + PID
+  multi_agent/graph.py                  — Veljko: LangGraph nodes
+  eval/crit/                            — Veljko: CRIT reasoning auditor
+  eval/PID/                             — Veljko: PID controller
+  multi_agent/prompts/registry.py       — Veljko: tone injection
+  data-pipeline/generate_cases.py       — Alanoodr: case generation
+  eval/consistency.py                   — Theodore: RCA judge
+
+================================================================================
+SECTION 7: KEY COMMANDS
+================================================================================
+
+  # Run mock debate simulation
+  python run_simulation.py --config config/debate_mock.yaml
+
+  # Run real debate (requires OpenAI API key)
+  python run_simulation.py --config config/debate.yaml
+
+  # List tickers and sizes
+  python run_simulation.py --config config/debate.yaml --list-tickers
+
+  # Run tests
+  python -m pytest agents/tests/test_debate_agent.py -v
+  python -m pytest tests/ -v
+  python -m pytest multi_agent/tests/ -v
+
+  # Check what's changed
+  git log --oneline -20
+  git diff main --stat
