@@ -193,7 +193,7 @@ def compute_financial_metrics(
         sharpe_ratio=sr,
         sortino_ratio=so,
         max_drawdown=dd_abs,
-        max_drawdown_pct=dd_pct,
+        max_drawdown_pct=dd_pct * 100.0,
         calmar_ratio=calmar,
     )
 
@@ -363,7 +363,7 @@ def compute_daily_financial_metrics(
         annualized_sharpe=ann_sr,
         annualized_sortino=ann_so,
         annualized_volatility=ann_vol,
-        max_drawdown_pct=dd_pct,
+        max_drawdown_pct=dd_pct * 100.0,
         calmar_ratio=calmar,
         trading_days=trading_days,
         spy_return_pct=spy_return_pct,
