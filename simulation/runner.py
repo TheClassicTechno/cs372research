@@ -41,12 +41,14 @@ class AsyncSimulationRunner:
         self,
         config: SimulationConfig,
         config_yaml_path: str,
-        output_dir: str = "results",
+        output_dir: str | None = None,
     ) -> None:
         self._config = config
         self._config_yaml_path = config_yaml_path
         self._run_name = run_name_from_config_path(config_yaml_path)
-        self._sim_logger = SimulationLogger(output_dir, config, self._run_name)
+        
+        final_output_dir = output_dir or config.output_dir
+        self._sim_logger = SimulationLogger(final_output_dir, config, self._run_name)
 
     async def run(self) -> None:
         """Execute the full simulation."""
@@ -54,11 +56,18 @@ class AsyncSimulationRunner:
 
         # Load memo case templates (shared across episodes).
         from simulation.memo_loader import load_memo_cases
+        tickers = list(self._config.tickers)
+        if self._config.use_cash_virtual_ticker:
+            if "CASH" in tickers:
+                raise ValueError("Ticker universe already contains 'CASH'; cannot add virtual '_CASH_' ticker.")
+            if "_CASH_" not in tickers:
+                tickers.append("_CASH_")
+
         templates = load_memo_cases(
             self._config.dataset_path,
             invest_quarter=self._config.invest_quarter,
             memo_format=self._config.memo_format,
-            tickers=self._config.tickers,
+            tickers=tickers,
             memo_override_path=self._config.memo_override_path,
         )
         num_cases = len(templates)

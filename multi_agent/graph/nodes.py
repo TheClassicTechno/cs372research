@@ -239,12 +239,16 @@ def build_context_node(state: DebateState) -> dict:
 
     # Memo mode: the text_context IS the financial context.
     # Prepend only portfolio state and universe.
-    header = (
-        f"## Portfolio Allocation Task\n"
-        f"- Cash to allocate: ${obs_model.portfolio_state.cash:,.2f}\n"
-        f"- Allocation universe: {', '.join(obs_model.universe)}\n"
-        f"- As-of: {obs_model.timestamp}\n"
-    )
+    header_lines = [
+        "## Portfolio Allocation Task",
+        f"- Cash to allocate: ${obs_model.portfolio_state.cash:,.2f}",
+        f"- Allocation universe: {', '.join(obs_model.universe)}",
+        f"- As-of: {obs_model.timestamp}",
+    ]
+    if "_CASH_" in obs_model.universe:
+        header_lines.append("- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).")
+
+    header = "\n".join(header_lines)
     memo_context = obs_model.text_context or ""
     enriched = header + "\n" + memo_context
 

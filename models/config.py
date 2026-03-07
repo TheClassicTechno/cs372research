@@ -320,6 +320,10 @@ class SimulationConfig(BaseModel):
     """
 
     dataset_path: str = Field(description="Path to the case dataset (directory or file).")
+    output_dir: str = Field(
+        default="results",
+        description="Top-level directory for simulation output."
+    )
     top_n_news: int | None = Field(
         default=None,
         ge=1,
@@ -377,6 +381,10 @@ class SimulationConfig(BaseModel):
         default=None,
         description="If set, load the memo from this path instead of the default "
         "memo_data/ directory. Used for scenario-specific memo caching.",
+    )
+    use_cash_virtual_ticker: bool = Field(
+        default=False,
+        description="If true, adds a virtual '_CASH_' ticker to the universe with a fixed price of 1.0.",
     )
     allocation_constraints: AllocationConstraints = Field(
         default_factory=AllocationConstraints,

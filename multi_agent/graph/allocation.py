@@ -10,8 +10,8 @@ logger = logging.getLogger("multi_agent.graph.allocation")
 def normalize_allocation(
     raw: dict[str, float],
     universe: list[str],
-    max_weight: float,
-    min_holdings: int,
+    max_weight: float = 1.0,
+    min_holdings: int = 1,
 ) -> dict[str, float]:
     """Validate, constrain, and normalize allocation weights.
 
@@ -29,6 +29,12 @@ def normalize_allocation(
     if not universe:
         logger.warning("Empty universe — returning empty allocation")
         return {}
+
+    # Step 0: Map "CASH" to "_CASH_" if agents used the wrong name
+    if "CASH" in raw and "_CASH_" in universe and "_CASH_" not in raw:
+        logger.info("Agent used 'CASH' instead of '_CASH_' — remapping")
+        raw = dict(raw)
+        raw["_CASH_"] = raw.pop("CASH")
 
     # Steps 1-3: clean up
     alloc = {}
