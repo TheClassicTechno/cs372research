@@ -320,6 +320,10 @@ class SimulationConfig(BaseModel):
     """
 
     dataset_path: str = Field(description="Path to the case dataset (directory or file).")
+    output_dir: str = Field(
+        default="results",
+        description="Top-level directory for simulation output."
+    )
     top_n_news: int | None = Field(
         default=None,
         ge=1,

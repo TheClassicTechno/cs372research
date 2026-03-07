@@ -37,7 +37,7 @@ def get_processed_runs():
 def append_result_to_csv(result):
     """Append a single result row to the CSV."""
     file_exists = os.path.exists(CSV_FILE)
-    fieldnames = ["invest_quarter", "num_tickers", "js_divergence", "log_dir", "scenario_file", "tickers", "error"]
+    fieldnames = ["invest_quarter", "num_tickers", "js_divergence", "results_dir", "log_dir", "scenario_file", "tickers", "error"]
     with open(CSV_FILE, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_exists:
@@ -123,6 +123,7 @@ def run_sweep():
             "invest_quarter": invest_quarter,
             "tickers": common_tickers,
             "use_cash_virtual_ticker": True,
+            "output_dir": "results/baseline_sweep",
             "allocation_constraints": {
                 "fully_invested": True,
                 "max_tickers": len(common_tickers)
@@ -151,12 +152,13 @@ def run_sweep():
             "tickers": ",".join(common_tickers),
             "scenario_file": str(scenario_file),
             "js_divergence": "N/A",
+            "results_dir": "N/A",
             "log_dir": "N/A",
             "error": None
         }
 
         try:
-            # Capture output to extract JS divergence
+            # Capture output to extract JS divergence and results_dir
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
             
             for line in process.stdout:
@@ -169,6 +171,12 @@ def run_sweep():
                     match = re.search(r"JS Divergence\): ([\d.]+) bits", line)
                     if match:
                         current_result["js_divergence"] = match.group(1)
+                elif "Output: " in line:
+                    print(f"  {line}", flush=True)
+                    # Extract path like 'results/baseline_sweep/debate_slim_no_macro_001'
+                    match = re.search(r"Output: (.*)", line)
+                    if match:
+                        current_result["results_dir"] = match.group(1)
                 elif "[Logged]" in line:
                     print(f"  {line}", flush=True)
                     match = re.search(r"\[Logged\] (.*)", line)

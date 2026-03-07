@@ -41,12 +41,14 @@ class AsyncSimulationRunner:
         self,
         config: SimulationConfig,
         config_yaml_path: str,
-        output_dir: str = "results",
+        output_dir: str | None = None,
     ) -> None:
         self._config = config
         self._config_yaml_path = config_yaml_path
         self._run_name = run_name_from_config_path(config_yaml_path)
-        self._sim_logger = SimulationLogger(output_dir, config, self._run_name)
+        
+        final_output_dir = output_dir or config.output_dir
+        self._sim_logger = SimulationLogger(final_output_dir, config, self._run_name)
 
     async def run(self) -> None:
         """Execute the full simulation."""

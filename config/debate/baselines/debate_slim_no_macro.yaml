@@ -19,11 +19,11 @@ num_episodes: 1
 
 agents:
   # macro: "macro_standard"
-  value: "value_standard"
-  # technical: "technical_standard"
-  risk: "risk_standard"
+  value: "value_slim"
+  technical: "technical_slim"
+  risk: "risk_slim"
 
-judge_profile: "judge_standard"
+judge_profile: "judge_slim"
 
 debate_setup:
   agent_system: "multi_agent_debate"
@@ -33,18 +33,15 @@ debate_setup:
   max_retries: 3
 
   # 7 debate rounds for PID to have room to adjust
-  max_rounds: 3
+  max_rounds: 1
+  propose_only: true
 
-  # prompt_profile: "minimal"
-  # prompt_file_overrides:
-  #   # role_macro: "roles/macro_slim.txt"
-  #   role_value: "roles/value_slim.txt"
-  #   role_technical: "roles/technical_slim.txt"
-  #   role_risk: "roles/risk_slim.txt"
-  #   output_allocation: "output_format/allocation_output_slim.txt"
+  prompt_file_overrides:
+    # causal_contract: "system_contract/system_causal_contract_slim.txt"
+    # scaffolding_causal: "scaffolding/causal_claim_format_slim.txt"
+    output_allocation: "output_format/allocation_output_slim.txt"
 
   pid_enabled: false
-  # propose_only: true
   judge_type: "average"
 
   # Structured debate logging to logging/runs/<experiment>/run_<timestamp>/
