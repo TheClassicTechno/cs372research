@@ -114,7 +114,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-dir",
-        default="results",
+        default=None,
         type=str,
         help="Directory where simulation results will be written (default: results/).",
     )
@@ -195,6 +195,18 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print per-request token counts (prompt, completion, total) to console.",
     )
+    parser.add_argument(
+        "--force-memo",
+        action="store_true",
+        help="Force-regenerate the scenario memo even if a cached copy exists.",
+    )
+    parser.add_argument(
+        "--custom-memo",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Path to a user-provided memo file. Skips memo generation entirely.",
+    )
     return parser.parse_args()
 
 
@@ -220,6 +232,37 @@ def _setup_logging(level: str) -> None:
     # Suppress noisy HTTP-level logs (e.g. "HTTP Request: POST ... 200 OK")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
+
+
+def _parse_invest_quarter(invest_quarter: str) -> tuple[int, str]:
+    """Parse '2025Q1' -> (2025, 'Q1')."""
+    year = int(invest_quarter[:4])
+    q = invest_quarter[4:]
+    return year, q
+
+
+def _prior_quarter(year: int, q: str) -> tuple[int, str]:
+    """Return the prior calendar quarter: (year, 'Qn')."""
+    labels = ["Q1", "Q2", "Q3", "Q4"]
+    idx = labels.index(q)
+    if idx == 0:
+        return year - 1, "Q4"
+    return year, labels[idx - 1]
+
+
+def _derive_scenario_memo_path(scenario_path: str, invest_quarter: str) -> Path:
+    """Derive a scenario-specific memo cache path.
+
+    Example: scenario '2021Q3_inflation_emergence.yaml' with invest_quarter '2021Q3'
+    -> scenario_memos/memo_2021_Q2_2021Q3_inflation_emergence.txt
+    """
+    scenario_name = Path(scenario_path).stem  # strip .yaml
+    year, q = _parse_invest_quarter(invest_quarter)
+    prior_year, prior_q = _prior_quarter(year, q)
+    return (
+        Path("data-pipeline/final_snapshots/scenario_memos")
+        / f"memo_{prior_year}_{prior_q}_{scenario_name}.txt"
+    )
 
 
 def _dump_prompts(config: SimulationConfig) -> None:
@@ -553,6 +596,10 @@ async def _main() -> None:
         cmd_parts.append("--no-display")
     if config.debate_setup.log_tokens:
         cmd_parts.append("--log-tokens")
+    if args.force_memo:
+        cmd_parts.append("--force-memo")
+    if args.custom_memo:
+        cmd_parts.append(f"--custom-memo {args.custom_memo}")
     config.debate_setup.run_command = " ".join(cmd_parts)
 
     config_paths = [str(Path(args.agents).resolve())]
@@ -582,6 +629,9 @@ async def _main() -> None:
         _print_prompt_manifest(config)
         return
 
+    # Validate that tickers + invest_quarter are present (supplied by scenario).
+    config.validate_ready()
+
     # Validate agent profiles if using the new system
     if config.debate_setup.agents:
         from multi_agent.prompts.profile_loader import validate_all_profiles
@@ -597,19 +647,64 @@ async def _main() -> None:
 
     logger.info("Config loaded: agent='%s'", config.debate_setup.agent_system)
 
+    # --- Scenario memo caching ---
+    memo_override_path: str | None = None
+
+    if args.custom_memo:
+        # User-provided memo — skip all generation.
+        custom = Path(args.custom_memo)
+        if not custom.exists():
+            logger.error("Custom memo file not found: %s", custom)
+            sys.exit(1)
+        memo_override_path = str(custom)
+        logger.info("Using custom memo: %s", memo_override_path)
+
     # --- Auto-generate snapshot data if using memo pipeline ---
     if "final_snapshots" in config.dataset_path:
-        logger.info("Auto-generating snapshots for %s (%d tickers)...",
-                     config.invest_quarter, len(config.tickers))
-        subprocess.run(
-            [
-                sys.executable,
-                str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
-                "--tickers", ",".join(config.tickers),
-                "--invest-quarter", config.invest_quarter,
-            ],
-            check=True,
-        )
+        scenario_memo_path: Path | None = None
+        if args.scenario and not args.custom_memo:
+            scenario_memo_path = _derive_scenario_memo_path(
+                args.scenario, config.invest_quarter,
+            )
+
+            if scenario_memo_path.exists() and not args.force_memo:
+                # Cache hit — skip snapshot_builder, just use the cached memo.
+                memo_override_path = str(scenario_memo_path)
+                logger.info("Using cached scenario memo: %s", memo_override_path)
+            else:
+                # Cache miss (or --force-memo) — generate and cache.
+                logger.info(
+                    "Auto-generating snapshots for %s (%d tickers), "
+                    "scenario memo -> %s ...",
+                    config.invest_quarter, len(config.tickers), scenario_memo_path,
+                )
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
+                        "--tickers", ",".join(config.tickers),
+                        "--invest-quarter", config.invest_quarter,
+                        "--scenario-memo-path", str(scenario_memo_path),
+                    ],
+                    check=True,
+                )
+                memo_override_path = str(scenario_memo_path)
+                logger.info("Cached scenario memo: %s", memo_override_path)
+        elif not args.custom_memo:
+            # No scenario — generate snapshots as before (no scenario memo).
+            logger.info("Auto-generating snapshots for %s (%d tickers)...",
+                         config.invest_quarter, len(config.tickers))
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
+                    "--tickers", ",".join(config.tickers),
+                    "--invest-quarter", config.invest_quarter,
+                ],
+                check=True,
+            )
+
+    config.memo_override_path = memo_override_path
 
     runner = AsyncSimulationRunner(
         config,

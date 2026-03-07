@@ -73,12 +73,14 @@ class TestAllocationConstraints:
 
 
 class TestValidateMemoMode:
-    def test_requires_invest_quarter(self):
+    def test_requires_invest_quarter_on_validate_ready(self):
+        """invest_quarter=None is allowed at construction but fails validate_ready()."""
+        cfg = _sim_config(
+            invest_quarter=None,
+            dataset_path="data-pipeline/final_snapshots",
+        )
         with pytest.raises(ValueError, match="invest_quarter is required"):
-            _sim_config(
-                invest_quarter=None,
-                dataset_path="data-pipeline/final_snapshots",
-            )
+            cfg.validate_ready()
 
     def test_ticker_count_check(self):
         tickers = [f"T{i}" for i in range(11)]  # 11 > default max_tickers=10
@@ -106,3 +108,7 @@ class TestValidateMemoMode:
         )
         assert cfg.allocation_constraints.max_weight == 0.25
         assert cfg.allocation_constraints.min_holdings == 5
+
+    def test_use_cash_virtual_ticker_default(self):
+        cfg = _sim_config()
+        assert cfg.use_cash_virtual_ticker is False

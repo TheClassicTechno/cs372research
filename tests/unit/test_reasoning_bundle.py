@@ -273,3 +273,127 @@ class TestBundleStructure:
         assert len(bundle["critiques_received"]) == 1
         assert bundle["critiques_received"][0]["from_role"] == "value"
         assert bundle["critiques_received"][0]["critique_text"] == "Overweight energy"
+
+
+# ---------------------------------------------------------------------------
+# Inline evidence expansion
+# ---------------------------------------------------------------------------
+
+class TestExpandEvidenceIdsInline:
+    """Direct unit tests for expand_evidence_ids_inline()."""
+
+    def test_single_id_expanded(self):
+        from eval.evidence import expand_evidence_ids_inline
+        text = "Strong momentum [AAPL-RET60] observed."
+        lookup = {"AAPL-RET60": "60-day return: +15.3%"}
+        result = expand_evidence_ids_inline(text, lookup)
+        assert result == "Strong momentum [AAPL-RET60: 60-day return: +15.3%] observed."
+
+    def test_unknown_id_unchanged(self):
+        from eval.evidence import expand_evidence_ids_inline
+        text = "Citing [FAKE-ID1] here."
+        result = expand_evidence_ids_inline(text, {})
+        assert result == "Citing [FAKE-ID1] here."
+
+    def test_multiple_ids_expanded(self):
+        from eval.evidence import expand_evidence_ids_inline
+        text = "Returns [AAPL-RET60] and vol [AAPL-VOL20] look good."
+        lookup = {"AAPL-RET60": "60-day return: +15.3%", "AAPL-VOL20": "20-day vol: 0.22"}
+        result = expand_evidence_ids_inline(text, lookup)
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in result
+        assert "[AAPL-VOL20: 20-day vol: 0.22]" in result
+
+    def test_mixed_known_unknown(self):
+        from eval.evidence import expand_evidence_ids_inline
+        text = "Known [AAPL-RET60] and unknown [FAKE-ID1]."
+        lookup = {"AAPL-RET60": "60-day return: +15.3%"}
+        result = expand_evidence_ids_inline(text, lookup)
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in result
+        assert "[FAKE-ID1]" in result
+
+    def test_empty_text(self):
+        from eval.evidence import expand_evidence_ids_inline
+        assert expand_evidence_ids_inline("", {"AAPL-RET60": "x"}) == ""
+
+    def test_no_ids_in_text(self):
+        from eval.evidence import expand_evidence_ids_inline
+        text = "No evidence IDs here."
+        assert expand_evidence_ids_inline(text, {"AAPL-RET60": "x"}) == text
+
+
+class TestInlineEvidenceExpansion:
+    """Test that build_reasoning_bundle expands evidence IDs inline in text fields."""
+
+    MEMO_LOOKUP = {
+        "AAPL-RET60": "60-day return: +15.3%",
+        "NVDA-F3": "Filing: revenue up 20% YoY",
+        "L1-VIX": "VIX: 17.35",
+    }
+
+    def test_thesis_evidence_expanded_inline(self):
+        """[AAPL-RET60] in thesis becomes [AAPL-RET60: 60-day return: +15.3%]."""
+        state = _make_state(justification="AAPL momentum is strong [AAPL-RET60].")
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["proposal"]["thesis"]
+
+    def test_reasoning_evidence_expanded_inline(self):
+        """Evidence IDs in reasoning field are expanded inline."""
+        state = _make_state(proposal_raw="Analysis shows [NVDA-F3] supports overweight.")
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        assert "[NVDA-F3: Filing: revenue up 20% YoY]" in bundle["proposal"]["reasoning"]
+
+    def test_revised_thesis_expanded(self):
+        """Revised argument thesis is also expanded."""
+        state = _make_state(revision_justification="After review [L1-VIX] supports risk-on.")
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        assert "[L1-VIX: VIX: 17.35]" in bundle["revised_argument"]["thesis"]
+
+    def test_revised_reasoning_expanded(self):
+        """Revised argument reasoning is also expanded."""
+        state = _make_state(revision_raw="Revised view: [AAPL-RET60] and [NVDA-F3].")
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["revised_argument"]["reasoning"]
+        assert "[NVDA-F3: Filing: revenue up 20% YoY]" in bundle["revised_argument"]["reasoning"]
+
+    def test_critique_text_evidence_expanded_inline(self):
+        """Evidence IDs in critique_text are expanded inline."""
+        state = _make_state(
+            critiques=[
+                {
+                    "role": "value",
+                    "critiques": [
+                        {
+                            "target_role": "macro",
+                            "objection": "Ignores low vol [L1-VIX] environment.",
+                        },
+                    ],
+                },
+            ],
+        )
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        crit_text = bundle["critiques_received"][0]["critique_text"]
+        assert "[L1-VIX: VIX: 17.35]" in crit_text
+
+    def test_unknown_ids_left_unchanged(self):
+        """IDs not in lookup remain as [FAKE-ID]."""
+        state = _make_state(justification="Citing [FAKE-ID] with no lookup entry.")
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        assert "[FAKE-ID]" in bundle["proposal"]["thesis"]
+
+    def test_multiple_ids_expanded(self):
+        """Multiple IDs in one string all get expanded."""
+        state = _make_state(
+            proposal_raw="Returns [AAPL-RET60] with vol [L1-VIX] and filings [NVDA-F3]."
+        )
+        bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
+
+        reasoning = bundle["proposal"]["reasoning"]
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in reasoning
+        assert "[L1-VIX: VIX: 17.35]" in reasoning
+        assert "[NVDA-F3: Filing: revenue up 20% YoY]" in reasoning

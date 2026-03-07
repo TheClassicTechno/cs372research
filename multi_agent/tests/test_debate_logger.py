@@ -19,11 +19,6 @@ from multi_agent.debate_logger import DebateLogger, _replace_memo_in_prompt
 # Minimal stub config (mirrors DebateConfig fields DebateLogger reads)
 # ---------------------------------------------------------------------------
 
-class _StubRole:
-    def __init__(self, v: str):
-        self.value = v
-
-
 @dataclass
 class _StubPIDGains:
     Kp: float = 0.15
@@ -49,7 +44,7 @@ class _StubConfig:
     logging_mode: str = "standard"
     model_name: str = "gpt-4o-mini"
     temperature: float = 0.3
-    roles: list = field(default_factory=lambda: [_StubRole("macro"), _StubRole("value")])
+    roles: list = field(default_factory=lambda: ["macro", "value"])
     max_rounds: int = 3
     agreeableness: float = 0.3
     initial_beta: float = 0.5

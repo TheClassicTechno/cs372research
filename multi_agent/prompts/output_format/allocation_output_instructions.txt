@@ -33,7 +33,7 @@ Full JSON schema:
     {
       "claim_text": "...",
       "pearl_level": "L1"|"L2"|"L3",
-      "variables": ["X", "Y"],
+      "variables": ["fed_rate", "AAPL_price"],
       "assumptions": ["..."],
       "confidence": 0.0-1.0
     }
@@ -60,7 +60,8 @@ Available evidence ID categories:
   [TICKER-RET*]  Returns (RET20, RET60, RET120, RET252)
   [TICKER-VOL*]  Volatility (VOL20, VOL60)
   [TICKER-BETA]  Beta, [TICKER-SHARPE] Sharpe ratio
-  [TICKER-F1..F6] Filing summary sections (Operations, Costs, Events, Macro, Outlook, Risks)
+  [TICKER-F*] Filing evidence sentences (granular, one fact per ID)
+  [TICKER-EC*] Earnings call evidence sentences (granular, one fact per ID)
   [TICKER-SENT]  Sentiment, [TICKER-CSZ] Cross-sectional Z
   [TICKER-GM]    Gross margin, [TICKER-ROE] ROE, [TICKER-DE] Debt/Equity
 

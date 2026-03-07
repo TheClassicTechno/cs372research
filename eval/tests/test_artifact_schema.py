@@ -54,11 +54,11 @@ def _make_mock_proposals() -> list[dict]:
     proposals = []
     for role in ROLES:
         proposals.append({
-            "role": role.value,
-            "raw_response": f"[{role.value} mock] Equal-weight proposal reasoning text.",
+            "role": role,
+            "raw_response": f"[{role} mock] Equal-weight proposal reasoning text.",
             "action_dict": {
                 "allocation": {t: eq for t in TICKERS},
-                "justification": f"[{role.value}] Equal-weight allocation",
+                "justification": f"[{role}] Equal-weight allocation",
                 "confidence": 0.5,
             },
         })
@@ -70,14 +70,14 @@ def _make_mock_critiques() -> list[dict]:
     critiques = []
     for role in ROLES:
         critiques.append({
-            "role": role.value,
+            "role": role,
             "critiques": [
                 {
-                    "target_role": ROLES[(ROLES.index(role) + 1) % len(ROLES)].value,
-                    "objection": f"[mock] {role.value} challenges allocation assumption",
+                    "target_role": ROLES[(ROLES.index(role) + 1) % len(ROLES)],
+                    "objection": f"[mock] {role} challenges allocation assumption",
                 }
             ],
-            "self_critique": f"[mock] {role.value} may be overweighting.",
+            "self_critique": f"[mock] {role} may be overweighting.",
         })
     return critiques
 
@@ -88,13 +88,13 @@ def _make_mock_revisions() -> list[dict]:
     revisions = []
     for role in ROLES:
         revisions.append({
-            "role": role.value,
-            "raw_response": f"[{role.value} mock] Revised reasoning.",
+            "role": role,
+            "raw_response": f"[{role} mock] Revised reasoning.",
             "action_dict": {
                 "allocation": {t: eq for t in TICKERS},
-                "justification": f"[{role.value}] Revised allocation",
+                "justification": f"[{role}] Revised allocation",
                 "confidence": 0.4,
-                "revision_notes": f"[mock] {role.value} lowered confidence",
+                "revision_notes": f"[mock] {role} lowered confidence",
             },
         })
     return revisions
@@ -163,7 +163,7 @@ class TestManifestSchema:
     def test_manifest_roles_match_config(self, tmp_path):
         run_dir = _run_logger_lifecycle(tmp_path)
         manifest = json.loads((run_dir / "manifest.json").read_text())
-        expected_roles = sorted(r.value for r in ROLES)
+        expected_roles = sorted(ROLES)
         actual_roles = sorted(manifest["roles"])
         assert actual_roles == expected_roles, (
             f"Manifest roles {actual_roles} != config roles {expected_roles}"
@@ -179,7 +179,7 @@ class TestPortfolioArtifacts:
         round_dir = run_dir / "rounds" / "round_001"
 
         for role in ROLES:
-            portfolio_path = round_dir / "proposals" / role.value / "portfolio.json"
+            portfolio_path = round_dir / "proposals" / role / "portfolio.json"
             assert portfolio_path.exists(), f"Missing portfolio: {portfolio_path}"
 
             portfolio = json.loads(portfolio_path.read_text())
@@ -188,12 +188,12 @@ class TestPortfolioArtifacts:
             total = 0.0
             for ticker, weight in portfolio.items():
                 assert 0.0 <= weight <= 1.0, (
-                    f"{role.value} proposal: {ticker} weight {weight} not in [0, 1]"
+                    f"{role} proposal: {ticker} weight {weight} not in [0, 1]"
                 )
                 total += weight
 
             assert abs(total - 1.0) < 0.02, (
-                f"{role.value} proposal portfolio sums to {total:.4f}, expected ~1.0"
+                f"{role} proposal portfolio sums to {total:.4f}, expected ~1.0"
             )
 
     def test_revision_portfolios_valid(self, tmp_path):
@@ -201,13 +201,13 @@ class TestPortfolioArtifacts:
         round_dir = run_dir / "rounds" / "round_001"
 
         for role in ROLES:
-            portfolio_path = round_dir / "revisions" / role.value / "portfolio.json"
+            portfolio_path = round_dir / "revisions" / role / "portfolio.json"
             assert portfolio_path.exists(), f"Missing portfolio: {portfolio_path}"
 
             portfolio = json.loads(portfolio_path.read_text())
             total = sum(portfolio.values())
             assert abs(total - 1.0) < 0.02, (
-                f"{role.value} revision portfolio sums to {total:.4f}, expected ~1.0"
+                f"{role} revision portfolio sums to {total:.4f}, expected ~1.0"
             )
 
 
@@ -246,7 +246,7 @@ class TestDirectoryStructure:
         round_dir = run_dir / "rounds" / "round_001"
 
         for role in ROLES:
-            response_path = round_dir / "critiques" / role.value / "response.json"
+            response_path = round_dir / "critiques" / role / "response.json"
             assert response_path.exists(), f"Missing: {response_path}"
 
             data = json.loads(response_path.read_text())

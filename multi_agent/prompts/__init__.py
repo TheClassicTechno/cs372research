@@ -17,7 +17,6 @@ import re
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from ..config import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -234,18 +233,19 @@ FORCED_UNCERTAINTY: str = _load("scaffolding/forced_uncertainty.txt")
 TRAP_AWARENESS: str = _load("scaffolding/trap_awareness.txt")
 JSON_OUTPUT_INSTRUCTIONS: str = _load("output_format/json_output_instructions.txt")
 ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED: str = _load("output_format/allocation_output_instructions_enumerated.txt")
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
 # =============================================================================
 
 ROLE_SYSTEM_PROMPTS: dict[str, str] = {
-    AgentRole.MACRO: _load("roles/macro.txt"),
-    AgentRole.VALUE: _load("roles/value.txt"),
-    AgentRole.RISK: _load("roles/risk.txt"),
-    AgentRole.TECHNICAL: _load("roles/technical.txt"),
-    AgentRole.SENTIMENT: _load("roles/sentiment.txt"),
-    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate.txt"),
+    "macro": _load("roles/macro.txt"),
+    "value": _load("roles/value.txt"),
+    "risk": _load("roles/risk.txt"),
+    "technical": _load("roles/technical.txt"),
+    "sentiment": _load("roles/sentiment.txt"),
+    "devils_advocate": _load("roles/devils_advocate.txt"),
 }
 
 # =============================================================================
@@ -294,6 +294,7 @@ def build_proposal_user_prompt(
         "trap_awareness": traps,
         "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
         "allocation_output_instructions": alloc_instructions,
+        "allocation_output_instructions_enumerated": ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED,
         "sector_constraints": sector_constraints,
     }
 
@@ -318,6 +319,8 @@ def build_critique_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    my_proposal_v2: str = "",
+    others_text_v2: str = "",
 ) -> str:
     """Build critique user prompt for a role agent in the debate.
 
@@ -337,7 +340,9 @@ def build_critique_prompt(
         "role": role.upper(),
         "context": context,
         "my_proposal": my_proposal,
+        "my_proposal_v2": my_proposal_v2,
         "others_text": others_text,
+        "others_text_v2": others_text_v2,
         "sector_constraints": sector_constraints,
     }
 
@@ -361,6 +366,8 @@ def build_revision_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    my_proposal_v2: str = "",
+    critiques_text_v2: str = "",
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -382,7 +389,9 @@ def build_revision_prompt(
         "role": role.upper(),
         "context": context,
         "my_proposal": my_proposal,
+        "my_proposal_v2": my_proposal_v2,
         "critiques_text": critiques_text,
+        "critiques_text_v2": critiques_text_v2,
         "causal_claim_format": causal,
         "forced_uncertainty": uncertainty,
         "sector_constraints": sector_constraints,

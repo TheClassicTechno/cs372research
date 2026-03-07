@@ -28,6 +28,7 @@ _PIPELINE_DIR = _SCRIPT_DIR.parent                     # data-pipeline/
 _ASSETS_DIR = _PIPELINE_DIR / "quarterly_asset_details" / "data"
 _MACRO_DIR = _PIPELINE_DIR / "macro" / "data"
 _SUMMARIES_DIR = _PIPELINE_DIR / "EDGAR" / "finished_summaries"
+_EARNINGS_CALLS_DIR = _PIPELINE_DIR / "earnings_calls" / "data"
 _SENTIMENT_DIR = _PIPELINE_DIR / "sentiment" / "data"
 
 # Output directories
@@ -148,6 +149,7 @@ def _preflight_check(
 def ensure_snapshots(
     tickers: list[str],
     invest_quarter: str,
+    scenario_memo_path: str | None = None,
 ) -> None:
     """Build snapshot JSONs and memos for the invest quarter and its prior quarter.
 
@@ -176,6 +178,7 @@ def ensure_snapshots(
         snapshot = build_quarter_snapshot(
             year, quarter, tickers,
             summaries_dir=_SUMMARIES_DIR,
+            earnings_calls_dir=_EARNINGS_CALLS_DIR,
             sentiment_dir=_SENTIMENT_DIR,
             macro_dir=_MACRO_DIR,
             assets_dir=_ASSETS_DIR,
@@ -206,6 +209,15 @@ def ensure_snapshots(
             f.write(memo)
         print(f"  Wrote: {out_path}")
 
+    # --- Copy prior-quarter memo to scenario-specific path if requested ---
+    if scenario_memo_path:
+        prior_memo = _MEMO_DIR / f"memo_{prior_year}_{prior_q}.txt"
+        dest = Path(scenario_memo_path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        import shutil
+        shutil.copy2(str(prior_memo), str(dest))
+        print(f"  Wrote scenario memo: {dest}")
+
     print(f"  Snapshot generation complete for {invest_quarter}.")
 
 
@@ -217,10 +229,16 @@ def main() -> None:
                    help="Comma-separated tickers (e.g. AAPL,NVDA,JPM)")
     p.add_argument("--invest-quarter", required=True, type=str,
                    help="Invest quarter (e.g. 2025Q1)")
+    p.add_argument("--scenario-memo-path", type=str, default=None,
+                   help="If set, copy the prior-quarter memo to this path (scenario cache)")
     args = p.parse_args()
 
     tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
-    ensure_snapshots(tickers=tickers, invest_quarter=args.invest_quarter)
+    ensure_snapshots(
+        tickers=tickers,
+        invest_quarter=args.invest_quarter,
+        scenario_memo_path=args.scenario_memo_path,
+    )
 
 
 if __name__ == "__main__":

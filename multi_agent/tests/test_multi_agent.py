@@ -225,10 +225,9 @@ class TestConfig:
         assert len(d["roles"]) == 4
         assert all(isinstance(r, str) for r in d["roles"])
 
-    def test_agent_role_enum(self):
-        assert AgentRole.MACRO.value == "macro"
-        assert AgentRole.DEVILS_ADVOCATE.value == "devils_advocate"
-        assert len(AgentRole) == 6  # macro, value, risk, technical, sentiment, devils_advocate
+    def test_agent_role_constants(self):
+        assert AgentRole.MACRO == "macro"
+        assert AgentRole.DEVILS_ADVOCATE == "devils_advocate"
 
 
 # =============================================================================
@@ -239,10 +238,11 @@ class TestConfig:
 class TestPrompts:
     """Test that prompts contain required elements for research quality."""
 
-    def test_all_roles_have_prompts(self):
-        """Every AgentRole must have a system prompt."""
-        for role in AgentRole:
-            assert role in ROLE_SYSTEM_PROMPTS or role.value in ROLE_SYSTEM_PROMPTS, (
+    def test_all_builtin_roles_have_prompts(self):
+        """Every built-in role must have a system prompt."""
+        builtin = ["macro", "value", "risk", "technical", "sentiment", "devils_advocate"]
+        for role in builtin:
+            assert role in ROLE_SYSTEM_PROMPTS, (
                 f"Missing prompt for role: {role}"
             )
 
@@ -310,7 +310,7 @@ class TestPrompts:
         assert "Objection about valuation" in prompt
 
     def test_devils_advocate_prompt_is_adversarial(self):
-        prompt = ROLE_SYSTEM_PROMPTS[AgentRole.DEVILS_ADVOCATE]
+        prompt = ROLE_SYSTEM_PROMPTS["devils_advocate"]
         assert "CHALLENGE" in prompt
         assert "groupthink" in prompt
         assert "STRONGEST" in prompt
@@ -569,7 +569,7 @@ class TestConfigAblations:
         )
         runner = MultiAgentRunner(config)
         # Devil's advocate should be auto-injected
-        assert AgentRole.DEVILS_ADVOCATE in runner.config.roles
+        assert "devils_advocate" in runner.config.roles
         assert len(runner.config.roles) == 4  # 3 original + 1 devil
 
         action, trace = runner.run(sample_observation)
@@ -619,9 +619,9 @@ class TestConfigAblations:
         assert isinstance(action, Action)
 
     def test_all_agents_config(self, sample_observation: Observation):
-        """Run with all 6 agent roles."""
+        """Run with all 6 built-in agent roles."""
         config = DebateConfig(
-            roles=list(AgentRole),
+            roles=list(ROLE_SYSTEM_PROMPTS.keys()),
             mock=True,
             trace_dir="/tmp/test_traces",
         )
