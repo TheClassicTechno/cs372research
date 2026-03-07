@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.14.3",
     "datasets>=4.5.0",
+    "fastapi>=0.135.1",
     "finnhub-python>=2.4.27",
     "jinja2>=3.1.0",
     "langchain-anthropic>=0.2.0",
@@ -24,8 +25,12 @@ dependencies = [
     "rich>=13.0.0",
     "torch>=2.10.0",
     "transformers>=5.2.0",
+    "uvicorn>=0.41.0",
     "yfinance>=1.2.0",
 ]
+
+[project.optional-dependencies]
+viewer = ["fastapi>=0.100", "uvicorn>=0.20"]
 
 [tool.pytest.ini_options]
 markers = [

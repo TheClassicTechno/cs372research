@@ -12,6 +12,7 @@ import re
 import threading
 
 from dotenv import load_dotenv
+from eval.utils.prompt_logger import log_prompt
 
 load_dotenv()  # auto-load .env file if present
 
@@ -110,7 +111,8 @@ def _retry_wait(exc: Exception, attempt: int) -> float:
     return 2 ** attempt  # 1s, 2s, 4s, 8s, 16s, 32s
 
 
-def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
+def _call_llm(config: dict, system_prompt: str, user_prompt: str,
+              *, role: str = "", phase: str = "", round_num: int = 0) -> str:
     """Call LLM with the given system and user prompts. Returns raw text.
 
     Retries up to 6 times on transient errors.  For rate-limit (429)
@@ -215,7 +217,10 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
                             f"total={usage.total_tokens:,}",
                             flush=True,
                         )
-            return response.content if use_anthropic else response.output_text
+            result = response.content if use_anthropic else response.output_text
+            log_prompt(system=system_prompt, user=user_prompt, model=model_name, response=result,
+                       role=role, phase=phase, round_num=round_num)
+            return result
         except Exception as e:
             wait = _retry_wait(e, attempt)
             # Build full error detail

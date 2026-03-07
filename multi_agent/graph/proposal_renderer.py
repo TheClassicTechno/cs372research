@@ -12,9 +12,8 @@ from __future__ import annotations
 def render_previous_proposal(action_dict: dict) -> str:
     """Convert an action_dict into structured text for prompt injection.
 
-    Handles missing fields gracefully.  Claims are numbered using
-    ``claim_id`` if present, otherwise deterministic C1/C2/… IDs are
-    generated from list order.
+    Claims are numbered using ``claim_id`` if present, otherwise
+    deterministic C1/C2/… IDs are generated from list order.
 
     Args:
         action_dict: The parsed JSON output from a propose or revise phase.
@@ -33,10 +32,28 @@ def render_previous_proposal(action_dict: dict) -> str:
         lines = [f"{ticker}: {weight}" for ticker, weight in sorted(allocation.items())]
         parts.append("## Previous Portfolio Allocation\n" + "\n".join(lines))
 
-    # --- Thesis / justification ---
-    justification = action_dict.get("justification")
-    if justification:
-        parts.append(f"## Previous Thesis\n{justification}")
+    # --- Thesis: portfolio_rationale (enriched) or justification (base) ---
+    thesis = action_dict.get("thesis") or action_dict.get("portfolio_rationale") or action_dict.get("justification")
+    if thesis:
+        parts.append(f"## Previous Thesis\n{thesis}")
+
+    # --- Position rationale (enriched agents: per-ticker reasoning) ---
+    position_rationale = action_dict.get("position_rationale")
+    if position_rationale and isinstance(position_rationale, list):
+        pos_lines: list[str] = []
+        for pr in position_rationale:
+            if not isinstance(pr, dict):
+                continue
+            ticker = pr.get("ticker", "?")
+            weight = pr.get("weight", "?")
+            rationale = pr.get("explanation") or pr.get("rationale") or ""
+            supported_by = pr.get("supported_by_claims", [])
+            entry = f"{ticker} ({weight}): {rationale}"
+            if supported_by:
+                entry += f"\n  Supported by claims: {', '.join(str(c) for c in supported_by)}"
+            pos_lines.append(entry)
+        if pos_lines:
+            parts.append("## Previous Position Rationale\n" + "\n\n".join(pos_lines))
 
     # --- Claims ---
     claims = action_dict.get("claims")
@@ -44,18 +61,21 @@ def render_previous_proposal(action_dict: dict) -> str:
         claim_lines: list[str] = []
         for i, claim in enumerate(claims):
             cid = claim.get("claim_id") or f"C{i + 1}"
-            text = claim.get("claim_text", "")
-            pearl = claim.get("pearl_level", "")
-            variables = claim.get("variables", [])
-            assumptions = claim.get("assumptions", [])
+            text = claim.get("claim_text") or ""
+            pearl = claim.get("pearl_level") or ""
+            variables = claim.get("variables") or []
+            assumptions = claim.get("assumptions") or []
             confidence = claim.get("confidence")
 
-            evidence = claim.get("evidence", [])
-            falsifiers = claim.get("falsifiers", [])
+            evidence = claim.get("evidence") or []
+            falsifiers = claim.get("falsifiers") or []
 
             entry = f"{cid}: {text}"
             if pearl:
                 entry += f"\n  Pearl Level: {pearl}"
+            claim_type = claim.get("claim_type")
+            if claim_type:
+                entry += f"\n  Claim Type: {claim_type}"
             if evidence:
                 entry += f"\n  Evidence: {', '.join(str(e) for e in evidence)}"
             if variables:
@@ -70,10 +90,13 @@ def render_previous_proposal(action_dict: dict) -> str:
 
         parts.append("## Previous Claims\n" + "\n\n".join(claim_lines))
 
-    # --- Falsifiers ---
+    # --- Risks / Falsifiers ---
     falsifiers = action_dict.get("risks_or_falsifiers")
     if falsifiers:
-        parts.append(f"## Previous Falsifiers\n{falsifiers}")
+        if isinstance(falsifiers, list):
+            parts.append("## Previous Risks / Falsifiers\n" + "\n".join(f"- {f}" for f in falsifiers))
+        else:
+            parts.append(f"## Previous Risks / Falsifiers\n{falsifiers}")
 
     # --- Confidence ---
     confidence = action_dict.get("confidence")
@@ -95,10 +118,10 @@ def render_others_proposals(source: list[dict], exclude_role: str) -> str:
     """
     parts: list[str] = []
     for entry in source:
-        if entry.get("role") == exclude_role:
+        role = entry["role"]
+        if role == exclude_role:
             continue
-        role = entry.get("role", "unknown")
-        action_dict = entry.get("action_dict", {})
+        action_dict = entry.get("action_dict") or {}
         rendered = render_previous_proposal(action_dict)
         parts.append(f"### {role.upper()} agent proposed:\n{rendered}")
     return "\n\n".join(parts) if parts else "(No other proposals available.)"
@@ -111,7 +134,7 @@ def render_critiques_received(critiques: list[dict]) -> str:
     etc.) and the old 3-field format (from_role, objection, falsifier).
 
     Args:
-        critiques: List of critique dicts with at least 'from_role' and 'objection'.
+        critiques: List of critique dicts with 'from_role' and 'objection'.
 
     Returns:
         Multi-line structured text suitable for ``{{ critiques_text_v2 }}``.
@@ -121,14 +144,14 @@ def render_critiques_received(critiques: list[dict]) -> str:
 
     parts: list[str] = []
     for i, c in enumerate(critiques, 1):
-        from_role = c.get("from_role", "unknown").upper()
+        from_role = c["from_role"].upper()
         lines = [f"### Critique {i} (from {from_role})"]
 
         target_claim = c.get("target_claim")
         if target_claim:
             lines.append(f"- Target claim: {target_claim}")
 
-        objection = c.get("objection", "")
+        objection = c.get("objection") or ""
         lines.append(f"- Objection: {objection}")
 
         counter_evidence = c.get("counter_evidence")

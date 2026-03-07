@@ -12,6 +12,15 @@ system_prompts:
     - roles/value_enriched.txt
     - tone
 
+# "sections" = ordered list of ---SECTION: name--- markers from the template file.
+# These control which sections are included and in what order.
+# Available Jinja2 template variables per phase (defined in multi_agent/prompts/__init__.py):
+#   propose:  {{ context }}, {{ sector_constraints }}, {{ allocation_output_instructions_enumerated }}
+#   critique: {{ role }}, {{ context }}, {{ my_proposal }}, {{ my_proposal_v2 }},
+#             {{ others_text }}, {{ others_text_v2 }}, {{ sector_constraints }}
+#   revise:   {{ role }}, {{ context }}, {{ my_proposal }}, {{ my_proposal_v2 }},
+#             {{ critiques_text }}, {{ critiques_text_v2 }}, {{ causal_claim_format }},
+#             {{ forced_uncertainty }}, {{ sector_constraints }}
 user_prompts:
   propose:
     template: phases/proposal_allocation_with_enumeration_value_enriched.txt
@@ -21,4 +30,4 @@ user_prompts:
     sections: [preamble, context, agent_data, task, output_format]
   revise:
     template: phases/revision_allocation_with_enumeration_value_enriched.txt
-    sections: [preamble, context, agent_data, task, revision_guidelines, output_format]
+    sections: [preamble, context, agent_data, task, value_revision_guidelines, output_format]

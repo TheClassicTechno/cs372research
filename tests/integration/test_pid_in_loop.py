@@ -94,7 +94,7 @@ def _make_runner_with_mock_crit(config: DebateConfig) -> MultiAgentRunner:
     if runner._crit_scorer:
         entry = _make_single_crit_entry()
 
-        def _mock_single_agent_llm(sys_prompt: str, usr_prompt: str) -> str:
+        def _mock_single_agent_llm(sys_prompt: str, usr_prompt: str, **kw) -> str:
             # Return single-agent response (not batch)
             return json.dumps(entry)
 

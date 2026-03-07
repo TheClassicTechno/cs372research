@@ -153,8 +153,8 @@ class DebateConfig:
 
     # --- CRIT configuration ---
     crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
-    crit_system_template: str = "crit_system.jinja"
-    crit_user_template: str = "crit_user.jinja"
+    crit_system_template: str = "crit_system_enumerated.jinja"
+    crit_user_template: str = "crit_user_enumerated.jinja"
 
     # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
     run_command: str | None = None

@@ -268,7 +268,7 @@ class TestAdapterInvokeWithPID:
                 },
             }
             mock_response = json.dumps(entry)
-            runner._crit_scorer._llm_fn = lambda sys, usr: mock_response
+            runner._crit_scorer._llm_fn = lambda sys, usr, **kw: mock_response
 
 
 # ---------------------------------------------------------------------------

@@ -30,7 +30,7 @@ class PillarScores(BaseModel):
 
 
 class Diagnostics(BaseModel):
-    """Binary flags for specific reasoning failure modes."""
+    """Binary flags and optional counts for specific reasoning failure modes."""
 
     contradictions_detected: bool
     unsupported_claims_detected: bool
@@ -38,6 +38,13 @@ class Diagnostics(BaseModel):
     premature_certainty_detected: bool
     causal_overreach_detected: bool
     conclusion_drift_detected: bool
+
+    # Optional severity counts — None means not reported by this CRIT run.
+    contradictions_count: int | None = Field(default=None, ge=0)
+    unsupported_claims_count: int | None = Field(default=None, ge=0)
+    ignored_critiques_count: int | None = Field(default=None, ge=0)
+    causal_overreach_count: int | None = Field(default=None, ge=0)
+    orphaned_positions_count: int | None = Field(default=None, ge=0)
 
 
 class Explanations(BaseModel):

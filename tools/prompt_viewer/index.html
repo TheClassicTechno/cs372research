@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Viewer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Courier New", Courier, monospace;
+    background: #fff;
+    color: #000;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { margin-bottom: 16px; font-size: 1.4em; }
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .controls label { font-weight: bold; font-size: 0.85em; }
+  .controls select, .controls input {
+    font-family: inherit;
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border: 1px solid #999;
+  }
+  .controls input { width: 260px; }
+  #clear-btn {
+    font-family: inherit;
+    font-size: 0.85em;
+    padding: 4px 12px;
+    border: 1px solid #999;
+    background: #fff;
+    cursor: pointer;
+  }
+  #clear-btn:hover { background: #eee; }
+  #status {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: auto;
+  }
+  .card {
+    border: 1px solid #ccc;
+    margin-bottom: 8px;
+  }
+  .card-header {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    font-size: 0.85em;
+  }
+  .card-header:hover { background: #eaeaea; }
+  .card-header .arrow { transition: transform 0.15s; }
+  .card.open .card-header .arrow { transform: rotate(90deg); }
+  .card-body {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid #ccc;
+  }
+  .card.open .card-body { display: block; }
+  .section-label {
+    font-weight: bold;
+    font-size: 0.8em;
+    margin: 12px 0 4px 0;
+    color: #333;
+  }
+  .section-label:first-child { margin-top: 0; }
+  pre.content {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.8em;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+<h1>Prompt Viewer</h1>
+<div class="controls">
+  <label for="model-filter">Model:</label>
+  <select id="model-filter"><option value="">All</option></select>
+  <label for="search-filter">Search:</label>
+  <input id="search-filter" type="text" placeholder="Filter by text...">
+  <button id="clear-btn" type="button">Clear All</button>
+  <span id="status">Loading...</span>
+</div>
+<div id="entries"></div>
+
+<script>
+(function() {
+  var allData = [];
+  var lastCount = 0;
+  var modelSelect = document.getElementById('model-filter');
+  var searchInput = document.getElementById('search-filter');
+  var entriesDiv = document.getElementById('entries');
+  var statusSpan = document.getElementById('status');
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function getOpenTimestamps() {
+    var open = {};
+    var cards = entriesDiv.querySelectorAll('.card.open');
+    for (var i = 0; i < cards.length; i++) {
+      var ts = cards[i].getAttribute('data-ts');
+      if (ts) open[ts] = true;
+    }
+    return open;
+  }
+
+  function renderEntries() {
+    var openSet = getOpenTimestamps();
+    var modelVal = modelSelect.value.toLowerCase();
+    var searchVal = searchInput.value.toLowerCase();
+    var filtered = allData.filter(function(e) {
+      if (modelVal && (e.model || '').toLowerCase().indexOf(modelVal) === -1) return false;
+      if (searchVal) {
+        var hay = (e.system || '') + ' ' + (e.user || '') + ' ' + (e.response || '');
+        if (hay.toLowerCase().indexOf(searchVal) === -1) return false;
+      }
+      return true;
+    });
+    // Newest first
+    var reversed = filtered.slice().reverse();
+    var html = '';
+    for (var i = 0; i < reversed.length; i++) {
+      var e = reversed[i];
+      var ts = e.timestamp || '';
+      var isOpen = openSet[ts] ? ' open' : '';
+      var phase = (e.phase || '').toLowerCase();
+      var label = '';
+      if (phase === 'crit') {
+        label = 'Round ' + (e.round || 0) + ' | CRIT';
+      } else {
+        var role = (e.role || 'unknown').toUpperCase();
+        var phaseName = (e.phase || 'unknown').toUpperCase();
+        label = role + ' | Round ' + (e.round || 0) + ' | ' + phaseName;
+      }
+      html += '<div class="card' + isOpen + '" data-ts="' + escapeHtml(ts) + '" onclick="this.classList.toggle(\'open\')">';
+      html += '<div class="card-header">';
+      html += '<span>' + escapeHtml(label) + ' &mdash; ' + escapeHtml(e.model) + ' &mdash; ' + escapeHtml(ts) + '</span>';
+      html += '<span class="arrow">&#9654;</span>';
+      html += '</div>';
+      html += '<div class="card-body">';
+      html += '<div class="section-label">SYSTEM MESSAGE</div>';
+      html += '<pre class="content">' + escapeHtml(e.system) + '</pre>';
+      html += '<div class="section-label">USER MESSAGE</div>';
+      html += '<pre class="content">' + escapeHtml(e.user) + '</pre>';
+      html += '<div class="section-label">RESPONSE</div>';
+      html += '<pre class="content">' + escapeHtml(e.response) + '</pre>';
+      html += '</div></div>';
+    }
+    if (reversed.length === 0) {
+      html = '<p style="color:#999;font-size:0.9em;">No entries found.</p>';
+    }
+    entriesDiv.innerHTML = html;
+  }
+
+  function updateModels() {
+    var models = {};
+    for (var i = 0; i < allData.length; i++) {
+      var m = allData[i].model || 'unknown';
+      models[m] = true;
+    }
+    var current = modelSelect.value;
+    modelSelect.innerHTML = '<option value="">All</option>';
+    Object.keys(models).sort().forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      if (m === current) opt.selected = true;
+      modelSelect.appendChild(opt);
+    });
+  }
+
+  function poll() {
+    fetch('/logs')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.length !== lastCount) {
+          allData = data;
+          lastCount = data.length;
+          updateModels();
+          renderEntries();
+        }
+        statusSpan.textContent = allData.length + ' entries | auto-refreshing';
+      })
+      .catch(function() {
+        statusSpan.textContent = 'Connection error';
+      });
+  }
+
+  modelSelect.addEventListener('change', renderEntries);
+  searchInput.addEventListener('input', renderEntries);
+  document.getElementById('clear-btn').addEventListener('click', function() {
+    if (!confirm('Clear all prompt trace entries?')) return;
+    fetch('/logs/clear', {method: 'POST'})
+      .then(function(r) {
+        if (!r.ok) throw new Error('DELETE failed: ' + r.status);
+        return r.json();
+      })
+      .then(function() {
+        allData = [];
+        lastCount = 0;
+        updateModels();
+        renderEntries();
+        statusSpan.textContent = '0 entries | cleared';
+      })
+      .catch(function(err) {
+        statusSpan.textContent = 'Clear failed: ' + err.message;
+      });
+  });
+
+  poll();
+  setInterval(poll, 2000);
+})();
+</script>
+</body>
+</html>

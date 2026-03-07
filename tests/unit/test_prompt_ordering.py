@@ -11,8 +11,10 @@ Tests cover:
   7. _assemble_user_prompt() rendering and ordering
   8. DebateConfig carries prompt_file_overrides field
   9. Prompts directory structure (files in correct subdirectories)
+  10. Empty template variable warnings
 """
 
+import logging
 import textwrap
 from pathlib import Path
 
@@ -23,6 +25,7 @@ from multi_agent.prompts import (
     _assemble_user_prompt,
     _DEFAULT_SECTION_ORDER,
     _load_sectioned_template,
+    _warn_empty_template_vars,
     build_critique_prompt,
     build_judge_prompt,
     build_proposal_user_prompt,
@@ -650,3 +653,91 @@ class TestToneRoleRendering:
         )
         assert "MACRO" in result.system_prompt
         assert "{{ role }}" not in result.system_prompt
+
+
+# =============================================================================
+# Empty template variable warnings
+# =============================================================================
+
+
+class TestEmptyTemplateVarWarnings:
+    """Test that empty template vars trigger loud warnings."""
+
+    def test_warns_on_empty_string_var(self, caplog):
+        template = "Hello {{ name }}, welcome to {{ context }}."
+        template_vars = {"name": "agent", "context": ""}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("test_section", template, template_vars, "propose")
+        assert any("EMPTY TEMPLATE VAR" in msg and "'context'" in msg for msg in caplog.messages)
+
+    def test_no_warning_for_populated_vars(self, caplog):
+        template = "Hello {{ name }}, context: {{ context }}."
+        template_vars = {"name": "macro", "context": "full context data"}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("test_section", template, template_vars, "propose")
+        assert not any("EMPTY TEMPLATE VAR" in msg for msg in caplog.messages)
+
+    def test_no_warning_for_optional_vars(self, caplog):
+        template = "Constraints: {{ sector_constraints }}"
+        template_vars = {"sector_constraints": ""}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("test_section", template, template_vars, "propose")
+        assert not any("EMPTY TEMPLATE VAR" in msg for msg in caplog.messages)
+
+    def test_warns_on_empty_my_proposal_v2(self, caplog):
+        template = "## Your proposal\n{{ my_proposal_v2 }}\n## Others\n{{ others_text_v2 }}"
+        template_vars = {"my_proposal_v2": "", "others_text_v2": "VALUE: buy tech"}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("agent_data", template, template_vars, "critique")
+        assert any("'my_proposal_v2'" in msg for msg in caplog.messages)
+        assert not any("'others_text_v2'" in msg for msg in caplog.messages)
+
+    def test_warns_on_empty_critiques_text_v2(self, caplog):
+        template = "Critiques: {{ critiques_text_v2 }}"
+        template_vars = {"critiques_text_v2": ""}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("agent_data", template, template_vars, "revise")
+        assert any("'critiques_text_v2'" in msg and "phase=revise" in msg for msg in caplog.messages)
+
+    def test_includes_phase_in_warning(self, caplog):
+        template = "{{ context }}"
+        template_vars = {"context": ""}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _warn_empty_template_vars("context", template, template_vars, "critique")
+        assert any("phase=critique" in msg for msg in caplog.messages)
+
+    def test_assemble_triggers_warning(self, caplog):
+        """_assemble_user_prompt warns on empty vars in rendered sections."""
+        sections = {"agent_data": "Proposal: {{ my_proposal_v2 }}"}
+        template_vars = {"my_proposal_v2": ""}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            _assemble_user_prompt(sections, ["agent_data"], template_vars, phase="critique")
+        assert any("EMPTY TEMPLATE VAR" in msg and "'my_proposal_v2'" in msg for msg in caplog.messages)
+
+    def test_build_critique_warns_on_empty_proposal(self, caplog):
+        """build_critique_prompt warns when my_proposal_v2 is empty (enumerated template)."""
+        overrides = {"critique_template": "phases/critique_allocation_with_enumeration.txt"}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            build_critique_prompt(
+                "macro", "CONTEXT",
+                [{"role": "value", "proposal": "buy"}],
+                "my prop json",
+                prompt_file_overrides=overrides,
+                my_proposal_v2="",
+                others_text_v2="VALUE: buy tech",
+            )
+        assert any("EMPTY TEMPLATE VAR" in msg and "'my_proposal_v2'" in msg for msg in caplog.messages)
+
+    def test_build_revision_warns_on_empty_critiques(self, caplog):
+        """build_revision_prompt warns when critiques_text_v2 is empty (enumerated template)."""
+        overrides = {"revision_template": "phases/revision_allocation_with_enumeration.txt"}
+        with caplog.at_level(logging.WARNING, logger="multi_agent.prompts"):
+            build_revision_prompt(
+                "macro", "CONTEXT",
+                "my prop json",
+                [{"from_role": "value", "objection": "bad"}],
+                prompt_file_overrides=overrides,
+                my_proposal_v2="Previous proposal text",
+                critiques_text_v2="",
+            )
+        assert any("EMPTY TEMPLATE VAR" in msg and "'critiques_text_v2'" in msg for msg in caplog.messages)

@@ -32,8 +32,25 @@ from eval.PID.sycophancy import evidence_overlap
 
 logger = logging.getLogger(__name__)
 
-# Regex to match memo evidence IDs: [L1-FF], [AAPL-RET60], [NVDA-F3], etc.
-_EVIDENCE_ID_RE = re.compile(r"\[([A-Z0-9]+-[A-Z0-9_]+|L1-[A-Z0-9]+)\]")
+# Regex to match memo evidence IDs: [L0-GROWTH-RESILIENCE], [L1-FF], [AAPL-RET60], etc.
+# Supports multi-part IDs with hyphens (e.g. L0-AI-RALLY, NVDA-F3, L2-EPS-BEAT).
+_EVIDENCE_ID_RE = re.compile(r"\[([A-Z0-9]+-[A-Z0-9_-]+)\]")
+
+
+def normalize_evidence_id(raw: str) -> str:
+    """Normalize an evidence reference to a clean ID.
+
+    Strips brackets, whitespace, and any colon-delimited text after the ID.
+
+    Examples:
+        '[L1-FF: Fed Funds: 5.08%]' → 'L1-FF'
+        '[AAPL-RET60]' → 'AAPL-RET60'
+        'NVDA-F3' → 'NVDA-F3'
+    """
+    eid = raw.strip("[] ")
+    if ":" in eid:
+        eid = eid.split(":", 1)[0].strip()
+    return eid
 
 
 def extract_evidence_ids(text: str) -> set[str]:
@@ -46,7 +63,7 @@ def extract_evidence_ids(text: str) -> set[str]:
 
 
 # Regex for memo evidence lines: "[ID]  text..." or "[ID] text..."
-_MEMO_LINE_RE = re.compile(r"^\s*\[([A-Z0-9]+-[A-Z0-9_]+|L1-[A-Z0-9]+)\]\s+(.+)$", re.MULTILINE)
+_MEMO_LINE_RE = re.compile(r"^\s*\[([A-Z0-9]+-[A-Z0-9_-]+)\]\s+(.+)$", re.MULTILINE)
 
 
 def parse_memo_evidence(enriched_context: str) -> dict[str, str]:
@@ -90,7 +107,7 @@ def enrich_evidence_citations(
         The same list, with ``evidence_text`` filled in on each dict.
     """
     for cite in citations:
-        eid = cite.get("evidence_id", "")
+        eid = cite["evidence_id"]
         if eid in lookup:
             cite["evidence_text"] = lookup[eid]
         else:
@@ -140,23 +157,25 @@ def extract_evidence_spans(decision: dict, allocation_mode: bool = False) -> set
     bracketed IDs; free-text slugs would mask citation failures.
     """
     # --- Try memo evidence IDs first (allocation mode) ---
-    action_dict = decision.get("action_dict", {})
+    action_dict = decision["action_dict"]
     if not isinstance(action_dict, dict):
-        action_dict = {}
+        raise TypeError(
+            f"decision['action_dict'] must be a dict, got {type(action_dict).__name__}"
+        )
 
     texts_to_scan: list[str] = []
 
-    justification = action_dict.get("justification", "")
+    justification = action_dict.get("justification") or action_dict.get("portfolio_rationale")
     if justification:
         texts_to_scan.append(justification)
 
-    for claim in action_dict.get("claims", []):
+    for claim in action_dict.get("claims") or []:
         if isinstance(claim, dict):
-            ct = claim.get("claim_text", "")
+            ct = claim.get("claim_text")
             if ct:
                 texts_to_scan.append(ct)
 
-    raw = decision.get("raw_response", "")
+    raw = decision.get("raw_response")
     if raw:
         texts_to_scan.append(raw)
 
@@ -173,9 +192,7 @@ def extract_evidence_spans(decision: dict, allocation_mode: bool = False) -> set
         return set()
 
     # --- Fallback: legacy claims[].variables path ---
-    claims = decision.get("claims", [])
-    if isinstance(decision.get("action_dict"), dict):
-        claims = decision["action_dict"].get("claims", claims)
+    claims = action_dict.get("claims") or []
 
     spans: set[str] = set()
     fallback_texts: list[str] = []
@@ -183,13 +200,13 @@ def extract_evidence_spans(decision: dict, allocation_mode: bool = False) -> set
     for claim in claims:
         if not isinstance(claim, dict):
             continue
-        variables = claim.get("variables", [])
+        variables = claim.get("variables") or []
         if variables:
             for v in variables:
                 normed = normalize_variable(str(v))
                 if normed:
                     spans.add(normed)
-        claim_text = claim.get("claim_text", "")
+        claim_text = claim.get("claim_text")
         if claim_text:
             fallback_texts.append(claim_text)
 
@@ -214,7 +231,7 @@ def extract_agent_evidence_spans(
     """
     result: dict[str, set[str]] = {}
     for dec in decisions:
-        role = dec.get("role", "unknown")
+        role = dec["role"]
         spans = extract_evidence_spans(dec, allocation_mode=allocation_mode)
         if role in result:
             result[role] |= spans
