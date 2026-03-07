@@ -1,0 +1,64 @@
+# ============================================================================
+# Debate — Enriched Reasoning, No Macro (Three-Agent, 1 Round + CRIT/PID)
+# ============================================================================
+# Three enriched agents with full debate (propose → critique → revise)
+# and CRIT/PID scoring in a single round.
+#
+#   value_enriched     → value/fundamentals analyst
+#   risk_enriched      → risk manager
+#   technical_enriched → technical analyst
+#
+# Run with:
+#   python run_simulation.py --agents config/debate/baselines/debate_enriched_no_macro.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+num_episodes: 1
+
+agents:
+  value: "value_enriched"
+  risk: "risk_enriched"
+  technical: "technical_enriched"
+
+judge_profile: "judge_standard"
+
+debate_setup:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  max_rounds: 1
+  propose_only: false
+
+  # --------------------------------------------------------------------------
+  # PID Controller
+  # --------------------------------------------------------------------------
+
+  pid_enabled: true
+
+  pid_kp: 0.35
+  pid_ki: 0.03
+  pid_kd: 0.07
+
+  pid_rho_star: 0.83
+  pid_initial_beta: 0.4
+  pid_epsilon: 0.015
+  pid_gamma_beta: 0.5
+
+  # --------------------------------------------------------------------------
+  # Runtime settings
+  # --------------------------------------------------------------------------
+
+  experiment_name: "enriched_no_macro_1rd_pid"
+  logging_mode: "debug"
+
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+
+broker:
+  initial_cash: 100000.0
