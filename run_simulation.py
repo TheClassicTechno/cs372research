@@ -254,14 +254,14 @@ def _derive_scenario_memo_path(scenario_path: str, invest_quarter: str) -> Path:
     """Derive a scenario-specific memo cache path.
 
     Example: scenario '2021Q3_inflation_emergence.yaml' with invest_quarter '2021Q3'
-    -> scenario_memos/memo_2021_Q2_2021Q3_inflation_emergence.txt
+    -> scenario_memos/2021Q3_inflation_emergence_memo_2021_Q2.txt
     """
     scenario_name = Path(scenario_path).stem  # strip .yaml
     year, q = _parse_invest_quarter(invest_quarter)
     prior_year, prior_q = _prior_quarter(year, q)
     return (
         Path("data-pipeline/final_snapshots/scenario_memos")
-        / f"memo_{prior_year}_{prior_q}_{scenario_name}.txt"
+        / f"{scenario_name}_memo_{prior_year}_{prior_q}.txt"
     )
 
 
@@ -672,7 +672,8 @@ async def _main() -> None:
                 memo_override_path = str(scenario_memo_path)
                 logger.info("Using cached scenario memo: %s", memo_override_path)
             else:
-                # Cache miss (or --force-memo) — generate and cache.
+                # Cache miss (or --force-memo) — generate snapshots, then
+                # build scenario memo with macro_context from the scenario YAML.
                 logger.info(
                     "Auto-generating snapshots for %s (%d tickers), "
                     "scenario memo -> %s ...",
@@ -684,7 +685,14 @@ async def _main() -> None:
                         str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
                         "--tickers", ",".join(config.tickers),
                         "--invest-quarter", config.invest_quarter,
-                        "--scenario-memo-path", str(scenario_memo_path),
+                    ],
+                    check=True,
+                )
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(Path("data-pipeline/final_snapshots/generate_scenario_memo.py")),
+                        "--scenario", args.scenario,
                     ],
                     check=True,
                 )
