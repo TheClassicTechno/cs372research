@@ -2,14 +2,25 @@
 {{ context }}
 
 ---SECTION: task---
-Using the data above, analyze the investment universe and propose a portfolio allocation.
+Using the data above, analyze the investment universe and propose a portfolio allocation **from a fundamental valuation perspective**.
 
-Your reasoning must be structured around **numbered causal claims** that justify your allocation decisions.
+Your task is to identify **companies whose market prices diverge from their underlying fundamental value**.
 
-Each claim should represent a **distinct hypothesis about market behavior, macro dynamics, or company fundamentals** that supports your portfolio weights.
+Your reasoning must be structured around **numbered causal claims** explaining why certain companies are mispriced relative to their earnings power, balance sheet strength, or long-term fundamentals.
+
+Each claim should represent a **distinct valuation or fundamental mechanism** affecting expected returns.
+
+Examples include:
+
+• valuation multiples diverging from historical norms
+• earnings growth not fully reflected in price
+• excessive optimism embedded in current valuation
+• improving or deteriorating profitability trends
+• balance sheet strength or weakness affecting long-term value
 
 Limit yourself to **3–5 claims maximum**.
-Each claim should be materially different and provide independent reasoning.
+
+Each claim should provide **independent fundamental reasoning** explaining why the market price may not reflect the company’s intrinsic value.
 
 Your portfolio allocation should follow logically from these claims.
 
@@ -42,17 +53,19 @@ First, produce **numbered claims**.
 Each claim must:
 
 • be labeled **C1, C2, C3, ...**
-• describe a **causal mechanism** affecting asset performance
+• describe a **fundamental or valuation-driven mechanism** affecting asset performance
 • include at least one valid evidence citation
-• explain why the mechanism affects expected returns or risk
+• explain why the mechanism affects expected returns or valuation
+
+Claims should generally follow the structure:
+
+**valuation signal → fundamental explanation → security implication**
 
 Example structure:
 
-C1 — Macro regime implication
-C2 — Sector or factor implication
-C3 — Company-specific thesis
-
-Claims should connect **macro → sector → security** where possible.
+C1 — Valuation dislocation
+C2 — Earnings or profitability trajectory
+C3 — Security-level mispricing thesis
 
 Each claim should also include:
 
@@ -61,17 +74,19 @@ Each claim should also include:
 
 Example:
 
-C1: Rising real yields may pressure long-duration growth equities because higher discount rates reduce the present value of distant cash flows [L1-REAL].
+C1: A company trading at a valuation multiple significantly below historical norms despite stable earnings may experience multiple expansion if the market reassesses its earnings durability [AAPL-PE].
 
 Assumptions:
 
-* Real rates remain elevated
-* Equity risk premium does not expand enough to offset valuation compression
+* Earnings remain stable or improve
+* No structural deterioration in the company’s competitive position
 
 Falsifiers:
 
-* Real yields fall materially
-* Growth earnings surprise offsets valuation pressure
+* Earnings decline materially
+* Margins compress due to competitive pressure
+
+Claims should focus primarily on **fundamental drivers of intrinsic value** rather than macro narratives.
 
 ---
 
@@ -83,15 +98,16 @@ For each position:
 
 • Specify ticker and weight
 • Explain which claim(s) justify the allocation
-• Explain risk considerations
+• Explain why the security appears mispriced relative to fundamentals
+• Explain key downside risks
 
 Portfolio weights should follow from the **strength and interaction of the claims**.
 
 Example linkage:
 
-If C1 and C2 imply technology outperformance, overweight relevant securities.
+If C1 and C2 identify a company whose earnings are improving while valuation remains depressed, overweight that security.
 
-If a claim highlights macro risk, reduce exposure to sensitive sectors.
+If a claim identifies excessive valuation relative to fundamentals, reduce exposure to that company.
 
 Follow these rules carefully:
 
@@ -100,6 +116,8 @@ Follow these rules carefully:
 • Every major allocation must reference at least one claim
 • Avoid unsupported narrative speculation
 • Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **valuation-driven investment reasoning**.
 
 ---
 

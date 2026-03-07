@@ -1,11 +1,14 @@
 # Enriched risk agent — Bayesian regime updating, self-contained reasoning.
 system_prompts:
   propose:
+    - system_contract/enriched_reasoning_debate_protocol.txt
     - roles/risk_enriched.txt
   critique:
+    - system_contract/enriched_reasoning_debate_protocol.txt
     - roles/risk_enriched.txt
     - tone
   revise:
+    - system_contract/enriched_reasoning_debate_protocol.txt
     - roles/risk_enriched.txt
     - tone
 

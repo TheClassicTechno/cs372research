@@ -2,16 +2,29 @@
 {{ context }}
 
 ---SECTION: task---
-Using the data above, analyze the investment universe and propose a portfolio allocation.
+Using the data above, analyze the investment universe and propose a portfolio allocation **from a portfolio risk management perspective.**
 
-Your reasoning must be structured around **numbered causal claims** that justify your allocation decisions.
+Your task is to identify **how portfolio allocations should be structured to control drawdown risk while maintaining strong risk-adjusted returns.**
 
-Each claim should represent a **distinct hypothesis about market behavior, macro dynamics, or company fundamentals** that supports your portfolio weights.
+Your reasoning must be structured around **numbered causal claims** explaining how risk conditions affect portfolio construction.
+
+Each claim should represent a **distinct risk mechanism** affecting portfolio stability.
+
+Examples include:
+
+• volatility regime changes
+• correlation clustering between assets
+• concentration risk across positions or sectors
+• downside volatility or drawdown exposure
+• liquidity or stress-event vulnerability
 
 Limit yourself to **3–5 claims maximum**.
-Each claim should be materially different and provide independent reasoning.
+
+Each claim should provide **independent reasoning** explaining how portfolio risk should influence allocation decisions.
 
 Your portfolio allocation should follow logically from these claims.
+
+Do NOT adopt the reasoning framework of other agents. Evaluate evidence strictly through **risk-adjusted portfolio construction.**
 
 ---
 
@@ -42,17 +55,19 @@ First, produce **numbered claims**.
 Each claim must:
 
 • be labeled **C1, C2, C3, ...**
-• describe a **causal mechanism** affecting asset performance
+• describe a **risk mechanism affecting portfolio stability**
 • include at least one valid evidence citation
-• explain why the mechanism affects expected returns or risk
+• explain why the mechanism affects portfolio risk or drawdown potential
+
+Claims should generally follow the structure:
+
+**risk driver → portfolio vulnerability → allocation adjustment**
 
 Example structure:
 
-C1 — Macro regime implication
-C2 — Sector or factor implication
-C3 — Company-specific thesis
-
-Claims should connect **macro → sector → security** where possible.
+C1 — Volatility regime implication
+C2 — Correlation or concentration risk
+C3 — Security-level risk contribution
 
 Each claim should also include:
 
@@ -61,17 +76,19 @@ Each claim should also include:
 
 Example:
 
-C1: Rising real yields may pressure long-duration growth equities because higher discount rates reduce the present value of distant cash flows [L1-REAL].
+C1: Elevated market volatility increases portfolio drawdown risk, especially for high-beta securities, which may require smaller position sizes to maintain stable risk-adjusted returns [L1-VIX].
 
 Assumptions:
 
-* Real rates remain elevated
-* Equity risk premium does not expand enough to offset valuation compression
+* Volatility remains elevated
+* Correlations increase during stress events
 
 Falsifiers:
 
-* Real yields fall materially
-* Growth earnings surprise offsets valuation pressure
+* Volatility compresses significantly
+* Correlation structure weakens rather than strengthens
+
+Claims should focus primarily on **portfolio risk dynamics** rather than expected returns alone.
 
 ---
 
@@ -83,15 +100,18 @@ For each position:
 
 • Specify ticker and weight
 • Explain which claim(s) justify the allocation
-• Explain risk considerations
+• Explain the position's contribution to portfolio risk
+• Explain how the allocation affects diversification and drawdown exposure
 
-Portfolio weights should follow from the **strength and interaction of the claims**.
+Portfolio weights should follow from the **risk profile implied by the claims**.
 
 Example linkage:
 
-If C1 and C2 imply technology outperformance, overweight relevant securities.
+If C1 identifies an elevated volatility regime, reduce exposure to high-volatility securities.
 
-If a claim highlights macro risk, reduce exposure to sensitive sectors.
+If C2 identifies strong correlation clustering within a sector, reduce concentration in that sector.
+
+If C3 identifies securities with favorable risk-adjusted characteristics, allocate modest exposure.
 
 Follow these rules carefully:
 
@@ -100,6 +120,8 @@ Follow these rules carefully:
 • Every major allocation must reference at least one claim
 • Avoid unsupported narrative speculation
 • Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **risk-aware portfolio construction**.
 
 ---
 

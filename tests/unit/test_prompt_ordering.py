@@ -598,3 +598,55 @@ class TestOrderingAndOverridesCombined:
         )
         # Allocation template should be used due to override
         assert "MY CONTEXT" in result
+
+
+# =============================================================================
+# Tone {{ role }} rendering
+# =============================================================================
+
+class TestToneRoleRendering:
+    """Test that {{ role }} in tone files is rendered to the agent's role name."""
+
+    def setup_method(self):
+        reset_registry_cache()
+        self.registry = PromptRegistry()
+
+    def test_tone_renders_role_in_build(self):
+        """build() with revise phase + balanced beta should render {{ role }} -> MACRO."""
+        result = self.registry.build(
+            role="macro", phase="revise", beta=0.4,
+            block_order=["tone"],
+        )
+        assert "MACRO" in result.system_prompt
+        assert "{{ role }}" not in result.system_prompt
+
+    def test_tone_renders_role_collaborative(self):
+        """build() with revise phase + collaborative beta renders {{ role }}."""
+        result = self.registry.build(
+            role="risk", phase="revise", beta=0.1,
+            block_order=["tone"],
+        )
+        assert "RISK" in result.system_prompt
+        assert "{{ role }}" not in result.system_prompt
+
+    def test_tone_without_role_var_unchanged(self):
+        """Critique tone files don't contain {{ role }} — should load without error."""
+        result = self.registry.build(
+            role="macro", phase="critique", beta=0.5,
+            block_order=["tone"],
+        )
+        assert "tone" in result.blocks_used
+        assert "{{ role }}" not in result.system_prompt
+
+    def test_tone_renders_role_in_build_from_profile(self):
+        """build_from_profile() with revise phase renders {{ role }} in tone."""
+        profile = {
+            "system_prompts": {
+                "revise": ["tone"],
+            },
+        }
+        result = self.registry.build_from_profile(
+            role="macro", phase="revise", profile=profile, beta=0.4,
+        )
+        assert "MACRO" in result.system_prompt
+        assert "{{ role }}" not in result.system_prompt
