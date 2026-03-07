@@ -52,6 +52,8 @@ def allocation_to_decision(
     """
     orders: list[SimOrder] = []
     for ticker, weight in allocation.items():
+        if ticker == "_CASH_":
+            continue
         if weight <= 0 or ticker not in prices:
             continue
         price = prices[ticker]

@@ -17,7 +17,15 @@ memo_format: "text"
 
 num_episodes: 1
 
-agent:
+agents:
+  # macro: "macro_standard"
+  value: "value_slim"
+  technical: "technical_slim"
+  risk: "risk_slim"
+
+judge_profile: "judge_slim"
+
+debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-5-mini"
@@ -26,56 +34,14 @@ agent:
 
   # 7 debate rounds for PID to have room to adjust
   max_rounds: 1
+  propose_only: true
 
-  # --- Prompt profile ---
-  # Profiles live in multi_agent/prompts/profiles/<name>.yaml and define which
-  # prompt blocks are assembled into the system and user prompts.
-  # Each profile specifies two lists:
-  #   system_blocks:  assembled into the system prompt (e.g., role, tone, contract)
-  #   user_sections:  assembled into the user prompt (e.g., context, task, scaffolding)
-  #
-  # Available profiles:
-  #   "default"        — full scaffolding + causal contract + tone
-  #   "diverse_agents" — no shared scaffolding (reasoning defined in role prompts)
-  #   "minimal"        — bare minimum (role + phase + context + task + output)
-  #   "no_scaffold"    — keeps tone/PID, removes scaffolding
-  #
-  # --- Prompt file overrides ---
-  # Override which .txt file loads for any prompt block. Paths are relative to
-  # multi_agent/prompts/. Only override what you need — defaults apply otherwise.
-  #
-  # Role overrides (one per agent role):
-  #   role_macro, role_value, role_technical, role_risk,
-  #   role_sentiment, role_devils_advocate
-  #
-  # Output format:
-  #   output_allocation  — JSON schema + allocation rules
-  #
-  # Phase templates (user prompt templates for each debate phase):
-  #   proposal_template, critique_template, revision_template, judge_template
-  #
-  # Tone blocks (PID β-driven, 3 buckets × 2 phases = 6 keys):
-  #   tone_critique_collaborative, tone_critique_balanced, tone_critique_adversarial
-  #   tone_revise_collaborative,   tone_revise_balanced,   tone_revise_adversarial
-  #
-  # System contract:
-  #   causal_contract  — shared causal reasoning contract
-  prompt_profile: "minimal"
   prompt_file_overrides:
-    # role_macro: "roles/macro_slim.txt"
-    role_value: "roles/value_slim.txt"
-    role_technical: "roles/technical_slim.txt"
-    role_risk: "roles/risk_slim.txt"
+    # causal_contract: "system_contract/system_causal_contract_slim.txt"
+    # scaffolding_causal: "scaffolding/causal_claim_format_slim.txt"
     output_allocation: "output_format/allocation_output_slim.txt"
 
-  debate_roles:
-    - value
-    - risk
-    - technical
-
-  # PID enabled
   pid_enabled: false
-  propose_only: true
   judge_type: "average"
 
   # Structured debate logging to logging/runs/<experiment>/run_<timestamp>/

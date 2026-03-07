@@ -114,7 +114,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-dir",
-        default="results",
+        default=None,
         type=str,
         help="Directory where simulation results will be written (default: results/).",
     )

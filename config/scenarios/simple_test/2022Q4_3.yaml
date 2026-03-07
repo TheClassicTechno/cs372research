@@ -20,15 +20,15 @@
 #     --agents config/agents/debate_diverse_agents.yaml \
 #     --scenario config/scenarios/sector_constrained.yaml
 
-invest_quarter: "2023Q1"
+invest_quarter: "2025Q1"
 
 tickers:
-  - AAPL
+  # - AAPL
   # - MSFT
-  # - NVDA
+  - NVDA
   # - AMD
 
-  - JPM
+  # - JPM
   # - GS
   # - BAC
   # - MS
@@ -41,8 +41,8 @@ tickers:
   # - CAT
   # - RTX
 
-  - AMZN
-  # - TSLA
+  # - AMZN
+  - TSLA
   # - NKE
 
   # - WMT
@@ -106,6 +106,8 @@ tickers:
 #   risk:
 #     - "*"
 
+use_cash_virtual_ticker: true
 
 allocation_constraints:
   fully_invested: true
+  max_tickers: 22
