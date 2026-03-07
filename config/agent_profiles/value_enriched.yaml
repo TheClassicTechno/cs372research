@@ -1,0 +1,21 @@
+# Enriched value agent — Bayesian regime updating, self-contained reasoning.
+system_prompts:
+  propose:
+    - roles/value_enriched.txt
+  critique:
+    - roles/value_enriched.txt
+    - tone
+  revise:
+    - roles/value_enriched.txt
+    - tone
+
+user_prompts:
+  propose:
+    template: phases/proposal_allocation_with_enumeration_value_enriched.txt
+    sections: [context, task, reasoning_structure, portfolio_construction, output_format]
+  critique:
+    template: phases/critique_allocation_with_enumeration_value_enriched.txt
+    sections: [preamble, context, agent_data, task, output_format]
+  revise:
+    template: phases/revision_allocation_with_enumeration_value_enriched.txt
+    sections: [preamble, context, agent_data, task, revision_guidelines, output_format]
