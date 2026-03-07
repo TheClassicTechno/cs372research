@@ -95,6 +95,9 @@ def _extract_prices(snapshot: dict, tickers: list[str]) -> dict[str, float]:
     ticker_data = snapshot.get("ticker_data", {})
     prices: dict[str, float] = {}
     for t in tickers:
+        if t == "_CASH_":
+            prices[t] = 1.0
+            continue
         td = ticker_data.get(t, {})
         af = td.get("asset_features", {})
         close = af.get("close")
