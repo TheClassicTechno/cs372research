@@ -1354,12 +1354,7 @@ class MultiAgentRunner:
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-<<<<<<< HEAD
                     reasoning_type=c.get("reasoning_type", "observational"),
-=======
-                    pearl_level=c.get("pearl_level", "L1"),
-                    variables=self._coerce_variables(c.get("variables", [])),
->>>>>>> 4382dd5e0004976200339e189b2bf9c1d7cc4bd0
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )
