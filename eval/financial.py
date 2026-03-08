@@ -230,6 +230,7 @@ def build_daily_equity_curve(
     Assumes buy-and-hold at the given weights starting on day 0.
     For each day t, portfolio value = sum over tickers of:
         weight_i * initial_value * (price_t / price_0)
+    plus any uninvested cash (1 - sum(weights)) * initial_value.
 
     Tickers in the allocation that lack daily price data are treated as
     earning zero return (their portion stays constant at initial weight).
@@ -237,7 +238,8 @@ def build_daily_equity_curve(
     Parameters
     ----------
     allocation:
-        {ticker: weight} where weights sum to ~1.0.
+        {ticker: weight} where weights typically sum to <= 1.0.
+        Any remainder (1 - sum) is treated as uninvested cash held flat.
     initial_value:
         Starting portfolio value (e.g. 100_000).
     daily_prices:
@@ -269,9 +271,14 @@ def build_daily_equity_curve(
         bars = daily_prices[t]
         ticker_prices[t] = [bar.close for bar in bars]
 
+    # Uninvested cash = portion of initial_value not allocated to any ticker.
+    # Weights may sum to < 1.0 due to share-rounding in order execution.
+    cash_fraction = max(0.0, 1.0 - sum(w for w in allocation.values() if w > 0.0))
+    cash_value = cash_fraction * initial_value
+
     curve: list[float] = []
     for day_idx in range(n_days):
-        day_value = 0.0
+        day_value = cash_value  # uninvested cash held flat
         for t, weight in allocation.items():
             if weight <= 0.0:
                 continue
