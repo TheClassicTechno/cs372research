@@ -1,0 +1,183 @@
+# ============================================================================
+# Scenario: 2022 Recession Fears vs Inflation Persistence Debate
+# Q2 2022 data → Q3 investment decision
+# ============================================================================
+
+invest_quarter: "2022Q3"
+
+macro_context: |
+  ## Macro Environment Overview
+
+  [L0-MACRO-REGIME] As of the end of Q2 2022, global financial markets are navigating one of the most uncertain macroeconomic environments since the global financial crisis. Inflation has surged to multi-decade highs while central banks have begun aggressive monetary tightening.
+
+  [L0-INFLATION-SHOCK] U.S. inflation remains elevated due to supply chain disruptions, strong post-pandemic demand, and rising commodity prices, particularly energy and food.
+
+  [L0-FED-TIGHTENING] The Federal Reserve has begun rapidly raising policy interest rates and signaling continued tightening in order to contain inflation.
+
+  [L0-GROWTH-SLOWDOWN] Economic growth indicators have begun to soften as higher interest rates, declining real wages, and tightening financial conditions weigh on consumption and investment.
+
+  [L0-MARKET-VOLATILITY] Equity markets experienced significant volatility during the first half of 2022 as investors attempted to reprice risk assets in response to higher interest rates and recession concerns.
+
+  These conditions create a highly uncertain macroeconomic environment in which multiple interpretations of the economic outlook are plausible.
+
+  ## Competing Macro Theses
+
+  The following interpretations represent plausible explanations for current market behavior.
+
+  Agents should evaluate which interpretation is most consistent with the available evidence.
+
+  ### Thesis A — Imminent Recession
+
+  [L0-GROWTH-SLOWDOWN] Rapid tightening in financial conditions and declining consumer sentiment may significantly reduce economic activity.
+
+  [L0-DEMAND-DESTRUCTION] Higher interest rates and reduced purchasing power could weaken consumer demand and corporate investment.
+
+  [L0-DEFENSIVE-ROTATION] Under this interpretation, defensive sectors such as consumer staples and healthcare may outperform if economic growth deteriorates.
+
+  ### Thesis B — Inflation Persistence
+
+  [L0-INFLATION-SHOCK] Structural inflation pressures from energy markets, supply chain disruptions, and labor shortages may keep inflation elevated for an extended period.
+
+  [L0-FED-TIGHTENING] Central banks may be forced to continue tightening monetary policy aggressively to restore price stability.
+
+  [L0-COMMODITY-STRENGTH] Under this interpretation, energy producers and companies with strong pricing power may benefit from sustained inflation.
+
+  ### Thesis C — Soft Landing
+
+  [L0-GROWTH-SLOWDOWN] Economic growth may moderate without collapsing if labor markets remain strong and corporate balance sheets remain healthy.
+
+  [L0-POLICY-CREDIBILITY] If monetary tightening successfully stabilizes inflation expectations, financial conditions may normalize without triggering a deep recession.
+
+  [L0-CYCLICAL-RESILIENCE] Under this interpretation, cyclical sectors such as financials and industrials may remain resilient.
+
+  ### Thesis D — Technology Valuation Reset
+
+  [L0-RATE-SHOCK] Rising real interest rates increase discount rates applied to future earnings, disproportionately impacting high-growth technology companies.
+
+  [L0-VALUATION-COMPRESSION] Growth stocks that previously benefited from ultra-low interest rates may experience valuation compression in a higher-rate regime.
+
+  [L0-TECH-RESET] Under this interpretation, technology leadership may weaken as investors rotate toward sectors with stronger near-term cash flows.
+
+  Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+  These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+tickers:
+  # Technology
+  - AAPL
+  - MSFT
+  - NVDA
+
+  # Financials
+  - JPM
+  - GS
+
+  # Energy
+  - XOM
+  - CVX
+
+  # Industrials
+  - CAT
+  - RTX
+
+  # Defensive
+  - WMT
+  - PG
+
+  # Consumer growth
+  - AMZN
+
+# ---------------------------------------------------------------------------
+# Sector definitions
+# ---------------------------------------------------------------------------
+
+sectors:
+  tech:
+    - AAPL
+    - MSFT
+    - NVDA
+
+  financials:
+    - JPM
+    - GS
+
+  energy:
+    - XOM
+    - CVX
+
+  industrials:
+    - CAT
+    - RTX
+
+  defensive:
+    - WMT
+    - PG
+
+  consumer:
+    - AMZN
+
+# ---------------------------------------------------------------------------
+# Sector exposure limits
+# ---------------------------------------------------------------------------
+
+sector_limits:
+  tech:
+    min: 0.05
+    max: 0.35
+
+  financials:
+    min: 0.05
+    max: 0.30
+
+  energy:
+    min: 0.05
+    max: 0.30
+
+  industrials:
+    min: 0.05
+    max: 0.30
+
+  defensive:
+    min: 0.05
+    max: 0.25
+
+  consumer:
+    min: 0.00
+    max: 0.25
+
+# ---------------------------------------------------------------------------
+# Role-specific sector permissions
+# ---------------------------------------------------------------------------
+
+agent_sector_permissions:
+  macro:
+    - energy
+    - financials
+    - industrials
+    - tech
+
+  value:
+    - financials
+    - industrials
+    - consumer
+    - energy
+
+  technical:
+    - "*"
+
+  risk:
+    - defensive
+    - consumer
+    - financials
+
+# Prevent extreme sector concentration
+max_sector_weight: 0.40
+
+# ---------------------------------------------------------------------------
+# Portfolio construction constraints
+# ---------------------------------------------------------------------------
+
+allocation_constraints:
+  max_weight: 0.25
+  min_holdings: 4
+  fully_invested: true
+  max_tickers: 12

@@ -23,8 +23,6 @@ LOGS_PATH = Path("logs/prompt_traces.jsonl")
 STATIC_DIR = Path(__file__).parent / "static"
 RUNS_BASE = Path("logging/runs")
 
-FILE_TRUNCATE_CHARS = 50_000
-
 
 # ------------------------------------------------------------------
 # Prompt trace endpoints (existing)
@@ -173,8 +171,10 @@ def crit_trajectory(experiment: str, run_id: str):
 
 @app.get("/runs/{experiment}/{run_id}/divergence")
 def divergence_trajectory(experiment: str, run_id: str):
-    """JS divergence and evidence overlap per round (proposed + revised)."""
-    return JSONResponse(run_scanner.get_divergence_trajectory(RUNS_BASE, experiment, run_id))
+    """JS divergence + evidence overlap per phase per round."""
+    return JSONResponse(
+        run_scanner.get_divergence_trajectory(RUNS_BASE, experiment, run_id)
+    )
 
 
 @app.get("/runs/{experiment}/{run_id}/portfolio")
@@ -209,7 +209,6 @@ def read_file(
     """Read a file from the run directory.
 
     Returns 403 on path traversal, 404 on missing file.
-    Large files (>50k chars) are truncated.
     """
     try:
         content = run_scanner.read_run_file(RUNS_BASE, experiment, run_id, path)
@@ -218,20 +217,14 @@ def read_file(
     except FileNotFoundError:
         return JSONResponse({"error": "File not found"}, status_code=404)
 
-    truncated = False
-    if len(content) > FILE_TRUNCATE_CHARS:
-        content = content[:FILE_TRUNCATE_CHARS]
-        truncated = True
-
     if path.endswith(".json"):
         try:
-            parsed = json.loads(content) if not truncated else None
-            if parsed is not None:
-                return JSONResponse({"content": parsed, "truncated": truncated})
+            parsed = json.loads(content)
+            return JSONResponse({"content": parsed, "truncated": False})
         except json.JSONDecodeError:
             pass
 
-    return JSONResponse({"content": content, "truncated": truncated})
+    return JSONResponse({"content": content, "truncated": False})
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

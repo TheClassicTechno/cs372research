@@ -1,0 +1,31 @@
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+agents:
+  technical: technical_enriched_light
+  macro: macro_enriched_light
+judge_profile: judge_standard
+debate_setup:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  max_retries: 3
+  propose_only: false
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  llm_model: gpt-5-mini
+  temperature: 0.3
+  max_rounds: 2
+  pid_enabled: true
+  experiment_name: vskarich_ablation_1
+  pid_kp: 0.2
+  pid_ki: 0.015
+  pid_kd: 0.1
+  pid_rho_star: 0.83
+  pid_initial_beta: 0.35
+  pid_epsilon: 0.02
+  pid_gamma_beta: 0.35
+broker:
+  initial_cash: 100000.0

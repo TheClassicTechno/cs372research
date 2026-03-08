@@ -76,8 +76,8 @@ def _load_trajectories(run_dir: Path) -> list[dict]:
             ("pid_state.json", "pid"),
             ("js_divergence.json", "divergence"),
             ("evidence_overlap.json", "evidence"),
-            ("js_divergence_proposed.json", "divergence_proposed"),
-            ("evidence_overlap_proposed.json", "evidence_proposed"),
+            ("js_divergence_propose.json", "divergence_propose"),
+            ("evidence_overlap_propose.json", "evidence_propose"),
         ]:
             fdata = _safe_json(metrics_dir / fname)
             if fdata is not None:
@@ -641,30 +641,64 @@ def get_divergence_trajectory(
     experiment: str = "default",
     run_id: str = "",
 ) -> list[dict]:
-    """Extract JS divergence and evidence overlap per round (proposed + revised)."""
+    """Extract JS divergence + evidence overlap per phase per round.
+
+    The aggregated ``pid_crit_all_rounds.json`` never contains propose-phase
+    data, so we always read propose metrics directly from per-round files.
+    """
     run_dir = base_path / experiment / run_id
     traj = _load_trajectories(run_dir)
 
+    # Build a lookup of propose-phase metrics from per-round files,
+    # since the aggregated file never includes them.
+    propose_by_round: dict[int, dict] = {}
+    rounds_dir = run_dir / "rounds"
+    if rounds_dir.is_dir():
+        for rd in sorted(rounds_dir.glob("round_*")):
+            try:
+                rn = int(rd.name.split("_")[1])
+            except (IndexError, ValueError):
+                continue
+            metrics_dir = rd / "metrics"
+            if not metrics_dir.is_dir():
+                continue
+            div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
+            ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
+            if div_p or ev_p:
+                propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
+
     result = []
     for entry in traj:
-        row: dict[str, Any] = {"round": entry.get("round")}
+        round_num = entry.get("round")
 
-        # Revised (existing)
-        div = entry.get("divergence") or {}
-        ev = entry.get("evidence") or {}
-        row["revised"] = {
-            "js_divergence": div.get("js") or div.get("js_divergence"),
-            "evidence_overlap": div.get("ov") or div.get("mean_overlap") or ev.get("mean_overlap"),
-        }
+        # --- Propose phase (prefer trajectory entry, fall back to per-round files) ---
+        div_p = entry.get("divergence_propose") or {}
+        ev_p = entry.get("evidence_propose") or {}
+        if not div_p and not ev_p and round_num in propose_by_round:
+            div_p = propose_by_round[round_num]["div"]
+            ev_p = propose_by_round[round_num]["ev"]
+        if div_p or ev_p:
+            result.append({
+                "round": round_num,
+                "phase": "propose",
+                "js_divergence": div_p.get("js_divergence"),
+                "mean_overlap": ev_p.get("mean_overlap"),
+                "agent_confidences": div_p.get("agent_confidences"),
+            })
 
-        # Proposed (new)
-        div_p = entry.get("divergence_proposed") or {}
-        ev_p = entry.get("evidence_proposed") or {}
-        row["proposed"] = {
-            "js_divergence": div_p.get("js") or div_p.get("js_divergence"),
-            "evidence_overlap": div_p.get("ov") or div_p.get("mean_overlap") or ev_p.get("mean_overlap"),
-        }
-        result.append(row)
+        # --- Revise phase ---
+        div_r = entry.get("divergence") or {}
+        ev_r = entry.get("evidence") or {}
+        js_r = div_r.get("js_divergence") or div_r.get("js")
+        ov_r = ev_r.get("mean_overlap") or div_r.get("ov")
+        if js_r is not None or ov_r is not None:
+            result.append({
+                "round": round_num,
+                "phase": "revise",
+                "js_divergence": js_r,
+                "mean_overlap": ov_r,
+                "agent_confidences": div_r.get("agent_confidences"),
+            })
     return result
 
 

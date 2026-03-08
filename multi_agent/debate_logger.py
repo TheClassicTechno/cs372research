@@ -527,17 +527,25 @@ class DebateLogger:
         agent_confidences: dict[str, float],
         agent_evidence: dict[str, list[str]],
         round_num: int,
-        *,
-        suffix: str = "",
+        phase: str = "revise",
     ) -> None:
-        """Write metrics/js_divergence{suffix}.json and metrics/evidence_overlap{suffix}.json."""
+        """Write metrics/js_divergence.json and metrics/evidence_overlap.json.
+
+        When *phase* is ``"propose"``, additional files are written with a
+        ``_propose`` suffix (e.g. ``js_divergence_propose.json``) so they
+        sit alongside the original revise-phase files without overwriting them.
+        """
         if self._mode == "off" or self._round_dir is None:
             return
         metrics_dir = self._round_dir / "metrics"
+
+        suffix = f"_{phase}" if phase != "revise" else ""
+
         _write_json(
             metrics_dir / f"js_divergence{suffix}.json",
             _round_floats({
                 "round": round_num,
+                "phase": phase,
                 "js_divergence": js,
                 "agent_confidences": agent_confidences,
             }),
@@ -546,6 +554,7 @@ class DebateLogger:
             metrics_dir / f"evidence_overlap{suffix}.json",
             _round_floats({
                 "round": round_num,
+                "phase": phase,
                 "mean_overlap": ov,
                 "agent_evidence_ids": agent_evidence,
             }),

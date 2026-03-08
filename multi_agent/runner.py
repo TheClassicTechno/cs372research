@@ -866,44 +866,37 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
-        # --- Proposed-phase divergence metrics (before critique/revise) ---
+        # --- Propose-phase JS divergence + evidence overlap ---
         self._proposed_divergence = None
-        if self._pid_controller and self._crit_scorer and self._debate_logger:
+        if self._debate_logger:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            proposed_decisions = state.get("revisions") or state.get("proposals", [])
-            proposed_allocs = [
+            prop_decisions = state.get("revisions") or state.get("proposals", [])
+            prop_allocs = [
                 d.get("action_dict", {}).get("allocation", {})
-                for d in proposed_decisions
+                for d in prop_decisions
             ]
-            if len(proposed_allocs) >= 2:
-                proposed_js = generalized_js_divergence(proposed_allocs)
-                proposed_ev_sets = extract_agent_evidence_spans(
-                    proposed_decisions, allocation_mode=True,
-                )
-                proposed_ov = compute_mean_overlap(proposed_ev_sets)
-                if proposed_ov is None:
-                    proposed_ov = 0.0
+            if len(prop_allocs) >= 2:
+                prop_js = generalized_js_divergence(prop_allocs)
+                prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
+                prop_ov = compute_mean_overlap(prop_ev) or 0.0
 
-                proposed_confidences = {}
-                for d in proposed_decisions:
-                    role = d.get("role", "unknown")
-                    proposed_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
-                proposed_evidence = {
-                    role: sorted(spans) for role, spans in proposed_ev_sets.items()
+                prop_confidences = {
+                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in prop_decisions
                 }
+                prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
 
                 self._debate_logger.write_divergence_metrics(
-                    proposed_js, proposed_ov,
-                    proposed_confidences, proposed_evidence,
-                    round_num, suffix="_proposed",
+                    prop_js, prop_ov, prop_confidences, prop_evidence,
+                    round_num, phase="propose",
                 )
                 self._proposed_divergence = {
-                    "js": proposed_js,
-                    "ov": proposed_ov,
-                    "agent_confidences": proposed_confidences,
-                    "agent_evidence_ids": proposed_evidence,
+                    "js": prop_js,
+                    "ov": prop_ov,
+                    "agent_confidences": prop_confidences,
+                    "agent_evidence_ids": prop_evidence,
                 }
 
         # --- Critique phase (uses PID beta for tone) ---
@@ -1124,7 +1117,7 @@ class MultiAgentRunner:
                     "agent_confidences": agent_confidences,
                     "agent_evidence_ids": agent_evidence,
                 },
-                "divergence_proposed": self._proposed_divergence,
+                "divergence_propose": self._proposed_divergence,
                 "convergence": {
                     "stable_rounds": self._stable_rounds,
                     "delta_rho_actual": (

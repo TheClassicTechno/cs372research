@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debate Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Courier New", Courier, monospace;
+    background: #fff;
+    color: #000;
+    padding: 12px;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+  }
+  h1 { margin-bottom: 8px; font-size: 1.4em; }
+  nav {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 8px;
+    font-size: 0.9em;
+  }
+  nav a {
+    color: #000;
+    text-decoration: none;
+    padding: 4px 0;
+    cursor: pointer;
+  }
+  nav a:hover { text-decoration: underline; }
+  nav a.active { font-weight: bold; text-decoration: underline; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .controls label { font-weight: bold; font-size: 0.85em; }
+  .controls select, .controls input {
+    font-family: inherit;
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border: 1px solid #999;
+  }
+  .controls input { width: 260px; }
+  button, .btn {
+    font-family: inherit;
+    font-size: 0.85em;
+    padding: 4px 12px;
+    border: 1px solid #999;
+    background: #fff;
+    cursor: pointer;
+  }
+  button:hover, .btn:hover { background: #eee; }
+  .status-text {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: auto;
+  }
+
+  /* Cards */
+  .card {
+    border: 1px solid #ccc;
+    margin-bottom: 8px;
+  }
+  .card-header {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    font-size: 0.85em;
+  }
+  .card-header:hover { background: #eaeaea; }
+  .card-header .arrow { transition: transform 0.15s; }
+  .card.open .card-header .arrow { transform: rotate(90deg); }
+  .card-body {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid #ccc;
+  }
+  .card.open .card-body { display: block; }
+  .section-label {
+    font-weight: bold;
+    font-size: 0.8em;
+    margin: 12px 0 4px 0;
+    color: #333;
+  }
+  .section-label:first-child { margin-top: 0; }
+  pre.content {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.8em;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  /* Tables */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+    margin-bottom: 16px;
+  }
+  table.data-table th, table.data-table td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.data-table th {
+    background: #f5f5f5;
+    font-weight: bold;
+  }
+  table.data-table tr:hover { background: #f9f9f9; }
+  table.data-table tr.clickable { cursor: pointer; }
+  table.data-table tr.best-run { font-weight: bold; }
+  .flag-collapse { color: #900; font-weight: bold; }
+  .status-incomplete { color: #999; }
+  .status-partial { color: #960; }
+
+  /* Run Overview */
+  .run-overview {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 0.85em;
+  }
+  .run-overview .ov-title {
+    font-weight: bold;
+    font-size: 1em;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ccc;
+  }
+  .run-overview .ov-subtitle {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin: 10px 0 4px 0;
+  }
+  table.ov-htable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    table-layout: fixed;
+  }
+  table.ov-htable th {
+    text-align: left;
+    font-weight: 600;
+    padding: 5px 8px;
+    border-bottom: 1px solid #ccc;
+    white-space: nowrap;
+    color: #000;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  table.ov-htable td {
+    padding: 5px 8px;
+    color: #111;
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status-ok { color: #2e7d32; font-weight: 600; }
+  .perf-profit { color: #2e7d32; font-weight: 600; }
+  .perf-loss { color: #c62828; font-weight: 600; }
+  .run-overview .ov-warn { color: #900; font-weight: bold; margin-top: 6px; }
+
+  /* SVG chart */
+  .chart-container {
+    margin: 12px 0;
+    overflow-x: auto;
+  }
+  svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
+
+  /* File explorer */
+  .file-tree { font-size: 0.8em; }
+  .file-tree ul { list-style: none; padding-left: 20px; }
+  .file-tree li { padding: 2px 0; }
+  .file-tree .dir-toggle { cursor: pointer; user-select: none; }
+  .file-tree .dir-toggle:hover { text-decoration: underline; }
+  .file-tree .file-link { cursor: pointer; color: #006; }
+  .file-tree .file-link:hover { text-decoration: underline; }
+
+  /* Loading */
+  .loading { color: #999; font-size: 0.85em; padding: 20px 0; }
+
+  /* Back link */
+  .back-link {
+    font-size: 0.85em;
+    margin-bottom: 12px;
+    display: block;
+    color: #000;
+    cursor: pointer;
+  }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>Debate Dashboard</h1>
+<nav id="nav">
+  <a href="#live" data-view="live">Live Debate</a>
+  <a href="#runs" data-view="runs">Runs</a>
+</nav>
+<div id="app"></div>
+
+<script>
+(function() {
+  var appDiv = document.getElementById('app');
+
+  // ===== UTILITIES =====
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmt(v, decimals) {
+    if (v == null) return '\u2014';
+    return Number(v).toFixed(decimals != null ? decimals : 4);
+  }
+
+  // ===== ROUTING =====
+  function getRoute() {
+    var h = window.location.hash || '#live';
+    if (h.indexOf('#run/') === 0) {
+      var parts = h.substring(5).split('/');
+      return {view: 'run-detail', experiment: parts[0], runId: parts.slice(1).join('/')};
+    }
+    if (h === '#runs') return {view: 'runs'};
+    if (h === '#live') return {view: 'live'};
+    return {view: 'live'};
+  }
+
+  function updateNav() {
+    var route = getRoute();
+    var links = document.querySelectorAll('#nav a');
+    for (var i = 0; i < links.length; i++) {
+      var v = links[i].getAttribute('data-view');
+      links[i].className = (v === route.view || (route.view === 'run-detail' && v === 'runs')) ? 'active' : '';
+    }
+  }
+
+  function route() {
+    updateNav();
+    var r = getRoute();
+    if (r.view === 'live') renderLiveDebateView();
+    else if (r.view === 'runs') renderRunsView();
+    else if (r.view === 'run-detail') {
+      runsViewState.lastExperiment = r.experiment;
+      try { sessionStorage.setItem('dashExp', r.experiment); } catch(e) {}
+      renderRunDetailView(r.experiment, r.runId);
+    }
+  }
+
+  window.addEventListener('hashchange', route);
+
+  // ===== LIVE DEBATE VIEW =====
+  var liveState = {renderedIds: {}, clearedIds: {}, runId: null};
+
+  function renderLiveDebateView() {
+    var html = '<div class="controls">';
+    html += '<button id="live-clear-btn" type="button">Clear</button>';
+    html += '<span class="status-text" id="live-status">Connecting...</span>';
+    html += '</div>';
+    html += '<div id="live-entries"></div>';
+    appDiv.innerHTML = html;
+
+    var entriesDiv = document.getElementById('live-entries');
+    var statusSpan = document.getElementById('live-status');
+
+    // Reset state when view loads
+    liveState.renderedIds = {};
+    liveState.clearedIds = {};
+    liveState.runId = null;
+
+    document.getElementById('live-clear-btn').addEventListener('click', function() {
+      // Tell server to hide all current events by mtime cutoff
+      fetch('/api/live_debate/clear', {method: 'POST'});
+      entriesDiv.innerHTML = '';
+      liveState.renderedIds = {};
+      liveState.clearedIds = {};
+      statusSpan.textContent = '0 events | cleared';
+    });
+
+    function buildRunHeader(data) {
+      return '<div style="font-weight:600;font-size:0.85em;padding:6px 8px;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin-top:12px;margin-bottom:6px;background:#f0f0f0;">' +
+        esc(data.experiment + ' / ' + data.run_id) + ' &mdash; ' + esc(data.status) + '</div>';
+    }
+
+    function buildEventCard(ev) {
+      var label = '[ROUND ' + ev.round + '] ' + ev.agent + ' \u2014 ' + ev.phase;
+      var h = '<div class="card" data-eid="' + esc(ev.id) + '" onclick="this.classList.toggle(\'open\')">';
+      h += '<div class="card-header">';
+      h += '<span>' + esc(label) + '</span>';
+      h += '<span class="arrow">&#9654;</span>';
+      h += '</div>';
+      h += '<div class="card-body">';
+      h += '<pre class="content">' + esc(ev.content) + '</pre>';
+      if (ev.portfolio) {
+        h += '<div class="section-label">PORTFOLIO</div>';
+        h += '<pre class="content">' + esc(JSON.stringify(ev.portfolio, null, 2)) + '</pre>';
+      }
+      h += '</div></div>';
+      return h;
+    }
+
+    function poll() {
+      if (getRoute().view !== 'live') return;
+      fetch('/api/live_debate')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var events = data.events || [];
+
+          // Detect run change — insert new run header at top
+          if (data.run_id && data.run_id !== liveState.runId) {
+            liveState.runId = data.run_id;
+            liveState.renderedIds = {};
+            liveState.clearedIds = {};
+            // Insert run header at top
+            entriesDiv.insertAdjacentHTML('afterbegin', buildRunHeader(data));
+          }
+
+          if (!data.run_id && !entriesDiv.innerHTML) {
+            entriesDiv.innerHTML = '<p style="color:#999;font-size:0.9em;">No events yet. Waiting for debate...</p>';
+            statusSpan.textContent = '0 events';
+            return;
+          }
+
+          // Insert new events at top (newest first), reversed so
+          // the most recent event ends up at the very top
+          var newEvents = [];
+          for (var i = 0; i < events.length; i++) {
+            if (!liveState.renderedIds[events[i].id] && !liveState.clearedIds[events[i].id]) {
+              newEvents.push(events[i]);
+            }
+          }
+
+          if (newEvents.length > 0) {
+            // Remove placeholder if present
+            var ph = entriesDiv.querySelector('p');
+            if (ph) ph.remove();
+
+            // Find the insertion point (right after the run header)
+            var header = entriesDiv.querySelector('div[style]');
+            var insertAfter = header || null;
+
+            // Insert events so newest (highest mtime) ends up at top.
+            // Events arrive in ascending mtime order from the API.
+            // Inserting each one right after the header pushes prior
+            // inserts down, so iterate forward (oldest first) so the
+            // last insert (newest) lands directly after the header.
+            for (var i = 0; i < newEvents.length; i++) {
+              var ev = newEvents[i];
+              liveState.renderedIds[ev.id] = true;
+              if (insertAfter) {
+                insertAfter.insertAdjacentHTML('afterend', buildEventCard(ev));
+              } else {
+                entriesDiv.insertAdjacentHTML('afterbegin', buildEventCard(ev));
+              }
+            }
+          }
+
+          var statusLabel = data.status === 'complete' ? 'complete' : 'live';
+          statusSpan.textContent = events.length + ' events | ' + statusLabel;
+        })
+        .catch(function() {
+          statusSpan.textContent = 'Connection error';
+        });
+    }
+
+    poll();
+    if (liveState._interval) clearInterval(liveState._interval);
+    liveState._interval = setInterval(poll, 1500);
+  }
+
+  // ===== RUNS VIEW =====
+  var runsViewState = {allRuns: [], experiment: ''};
+
+  function renderRunsView() {
+    appDiv.innerHTML = '<div class="controls">' +
+      '<label for="exp-select">Experiment:</label>' +
+      '<select id="exp-select"></select>' +
+      '<label for="runs-search">Search:</label>' +
+      '<input id="runs-search" type="text" placeholder="Filter runs...">' +
+      '<span class="status-text" id="runs-status">Loading...</span>' +
+      '</div>' +
+      '<div id="runs-table"></div>';
+
+    var expSelect = document.getElementById('exp-select');
+    var searchInput = document.getElementById('runs-search');
+    var tableDiv = document.getElementById('runs-table');
+    var statusSpan = document.getElementById('runs-status');
+
+    fetch('/runs/')
+      .then(function(r) { return r.json(); })
+      .then(function(exps) {
+        expSelect.innerHTML = '';
+        var targetExp = runsViewState.lastExperiment || '';
+        if (!targetExp) { try { targetExp = sessionStorage.getItem('dashExp') || ''; } catch(e) {} }
+        var foundTarget = false;
+        exps.forEach(function(e) {
+          var opt = document.createElement('option');
+          opt.value = e.experiment;
+          opt.textContent = e.experiment + ' (' + e.run_count + ' runs)';
+          if (e.experiment === targetExp) { opt.selected = true; foundTarget = true; }
+          expSelect.appendChild(opt);
+        });
+        if (exps.length > 0) loadRuns(foundTarget ? targetExp : exps[0].experiment);
+        else statusSpan.textContent = 'No experiments found';
+      })
+      .catch(function() { statusSpan.textContent = 'Failed to load experiments'; });
+
+    expSelect.addEventListener('change', function() {
+      searchInput.value = '';
+      runsViewState.lastExperiment = expSelect.value;
+      try { sessionStorage.setItem('dashExp', expSelect.value); } catch(e) {}
+      loadRuns(expSelect.value);
+    });
+
+    searchInput.addEventListener('input', function() {
+      renderRunsTable(runsViewState.allRuns, runsViewState.experiment, searchInput.value);
+    });
+
+    function loadRuns(experiment) {
+      statusSpan.textContent = 'Loading runs...';
+      fetch('/runs/' + encodeURIComponent(experiment))
+        .then(function(r) { return r.json(); })
+        .then(function(runs) {
+          runsViewState.allRuns = runs;
+          runsViewState.experiment = experiment;
+          renderRunsTable(runs, experiment, searchInput.value);
+          statusSpan.textContent = runs.length + ' runs';
+        })
+        .catch(function() { statusSpan.textContent = 'Failed to load runs'; });
+    }
+
+    function getRunSearchText(r) {
+      var parts = [r.run_id || '', r.status || '', r.model_name || ''];
+      if (r.agent_profiles && typeof r.agent_profiles === 'object') {
+        parts.push(Object.values(r.agent_profiles).join(' '));
+      } else if (r.roles) {
+        parts.push(r.roles.join(' '));
+      }
+      if (r.config_paths && r.config_paths.length > 0) {
+        parts.push(r.config_paths[0]);
+      }
+      return parts.join(' ').toLowerCase();
+    }
+
+    function renderRunsTable(runs, experiment, searchTerm) {
+      var filtered = runs;
+      if (searchTerm) {
+        var q = searchTerm.toLowerCase();
+        filtered = runs.filter(function(r) {
+          return getRunSearchText(r).indexOf(q) !== -1;
+        });
+      }
+
+      if (filtered.length === 0) {
+        tableDiv.innerHTML = '<p style="color:#999;font-size:0.9em;">No runs found.</p>';
+        return;
+      }
+      // Find best run by final_rho_bar
+      var bestIdx = -1;
+      var bestRho = -1;
+      for (var i = 0; i < filtered.length; i++) {
+        var rho = filtered[i].final_rho_bar;
+        if (rho != null && rho > bestRho) {
+          bestRho = rho;
+          bestIdx = i;
+        }
+      }
+
+      var h = '<table class="data-table">';
+      h += '<tr><th>run_id</th><th>status</th><th>agents</th><th>config</th><th>rounds</th><th>final_beta</th><th>final <span style="text-decoration:overline">\u03c1</span></th><th>js_drop</th><th>model</th><th>flags</th></tr>';
+      for (var i = 0; i < filtered.length; i++) {
+        var r = filtered[i];
+        var isBest = (i === bestIdx) ? ' best-run' : '';
+        var statusClass = r.status === 'incomplete' ? ' status-incomplete' : (r.status === 'partial' ? ' status-partial' : '');
+        var configName = '\u2014';
+        if (r.config_paths && r.config_paths.length > 0) {
+          var cp = r.config_paths[0];
+          var parts = cp.replace(/\\/g, '/').split('/');
+          var fname = parts[parts.length - 1];
+          configName = fname.replace(/\.yaml$/, '').replace(/\.yml$/, '');
+        }
+        var agentsList = '\u2014';
+        if (r.agent_profiles && typeof r.agent_profiles === 'object') {
+          agentsList = Object.values(r.agent_profiles).join(', ');
+        } else if (r.roles && r.roles.length > 0) {
+          agentsList = r.roles.join(', ');
+        }
+        h += '<tr class="clickable' + isBest + '" onclick="window.location.hash=\'#run/' + esc(experiment) + '/' + esc(r.run_id) + '\'">';
+        h += '<td>' + esc(r.run_id) + '</td>';
+        h += '<td class="' + statusClass + '">' + esc(r.status) + '</td>';
+        h += '<td>' + esc(agentsList) + '</td>';
+        h += '<td>' + esc(configName) + '</td>';
+        h += '<td>' + (r.actual_rounds != null ? r.actual_rounds : '\u2014') + '</td>';
+        h += '<td>' + fmt(r.final_beta) + '</td>';
+        h += '<td>' + fmt(r.final_rho_bar) + '</td>';
+        h += '<td>' + fmt(r.js_drop) + '</td>';
+        h += '<td>' + esc(r.model_name || '\u2014') + '</td>';
+        h += '<td>';
+        if (r.reasoning_collapse) h += '<span class="flag-collapse">COLLAPSE</span>';
+        h += '</td>';
+        h += '</tr>';
+      }
+      h += '</table>';
+      tableDiv.innerHTML = h;
+    }
+  }
+
+  // ===== RUN DETAIL VIEW =====
+  function renderRunDetailView(experiment, runId) {
+    appDiv.innerHTML = '<a class="back-link" href="#runs">&larr; Back to runs</a>' +
+      '<div class="loading">Loading run detail...</div>';
+
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId))
+      .then(function(r) { return r.json(); })
+      .then(function(detail) {
+        renderRunDetail(detail, experiment, runId);
+      })
+      .catch(function() {
+        appDiv.innerHTML = '<a class="back-link" href="#runs">&larr; Back to runs</a>' +
+          '<p style="color:#900;">Failed to load run detail.</p>';
+      });
+  }
+
+  function renderRunDetail(detail, experiment, runId) {
+    var m = detail.manifest || {};
+    var q = detail.quality || {};
+
+    var html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';
+
+    // Overview panel
+    var configName = '\u2014';
+    if (m.config_paths && m.config_paths.length > 0) {
+      var cp = m.config_paths[0].replace(/\\/g, '/').split('/');
+      configName = cp[cp.length - 1].replace(/\.yaml$/, '').replace(/\.yml$/, '');
+    }
+
+    var agentsStr = '\u2014';
+    if (m.agent_profiles && typeof m.agent_profiles === 'object') {
+      agentsStr = Object.values(m.agent_profiles).join(', ');
+    } else if (m.roles && m.roles.length > 0) {
+      agentsStr = m.roles.join(', ');
+    }
+
+    var tickersStr = '\u2014';
+    if (m.ticker_universe && m.ticker_universe.length > 0) {
+      tickersStr = m.ticker_universe.filter(function(t) { return t !== '_CASH_'; }).join(', ');
+    }
+
+    var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014') + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
+
+    var statusCls = (detail.status === 'complete' || detail.status === 'partial') ? ' class="status-ok"' : '';
+
+    html += '<div class="run-overview">';
+    html += '<div class="ov-title">RUN OVERVIEW</div>';
+
+    // Table 1 — Primary metadata (6 columns)
+    html += '<table class="ov-htable">';
+    html += '<tr><th>Run ID</th><th>Experiment</th><th>Model</th><th>CRIT Model</th><th>Config</th><th>Status</th></tr>';
+    html += '<tr>';
+    html += '<td>' + esc(runId) + '</td>';
+    html += '<td>' + esc(experiment) + '</td>';
+    html += '<td>' + esc(m.model_name || '\u2014') + '</td>';
+    html += '<td>' + esc(m.crit_model_name || '\u2014') + '</td>';
+    html += '<td>' + esc(configName) + '</td>';
+    html += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
+    html += '</tr></table>';
+
+    // Table 2 — Run details (7 columns aligned: first 6 match Table 1, 7th extra)
+    html += '<table class="ov-htable">';
+    html += '<colgroup><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:8.33%"><col style="width:8.33%"></colgroup>';
+    html += '<tr><th>Agents</th><th>Tickers</th><th>Rounds</th><th>Termination</th><th>Final \u03B2</th><th>Final <span style="text-decoration:overline">\u03c1</span></th><th>JS Drop</th></tr>';
+    html += '<tr>';
+    html += '<td>' + esc(agentsStr) + '</td>';
+    html += '<td>' + esc(tickersStr) + '</td>';
+    html += '<td>' + esc(roundsStr) + '</td>';
+    html += '<td>' + esc(m.termination_reason || '\u2014') + '</td>';
+    html += '<td>' + fmt(m.final_beta) + '</td>';
+    html += '<td>' + fmt(q.final_rho_bar) + '</td>';
+    html += '<td>' + fmt(q.js_drop) + '</td>';
+    html += '</tr></table>';
+
+    if (q.reasoning_collapse) {
+      html += '<div class="ov-warn">REASONING COLLAPSE DETECTED</div>';
+    }
+
+    // Judge Portfolio + Performance — loaded async
+    html += '<div id="judge-portfolio-section"></div>';
+
+    html += '</div>';
+
+    // Container for async sections
+    html += '<div id="detail-sections"></div>';
+    appDiv.innerHTML = html;
+
+    var sectionsDiv = document.getElementById('detail-sections');
+    var sectionsHtml = '';
+
+    // 0. PID Stats Overview — per-pillar CRIT scores per agent per round
+    sectionsHtml += '<div id="pid-stats-section"></div>';
+    // 0b. Divergence Overview — JS divergence + evidence overlap per phase per round
+    sectionsHtml += '<div id="divergence-section"></div>';
+    // 1. PID Quadrant Table + Charts — loaded async
+    sectionsHtml += '<div id="pid-section"></div>';
+    // 2. CRIT Chart — loaded async
+    sectionsHtml += '<div id="crit-section"></div>';
+    // 3. Portfolio Trajectory — loaded async
+    sectionsHtml += '<div id="portfolio-section"></div>';
+
+    // 4. Config card
+    sectionsHtml += buildCard('Config', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
+
+    // 5. Rounds (debate replay)
+    if (detail.round_summaries && detail.round_summaries.length > 0) {
+      var roundsInner = '';
+      for (var i = 0; i < detail.round_summaries.length; i++) {
+        var rs = detail.round_summaries[i];
+        roundsInner += buildRoundCard(rs, experiment, runId);
+      }
+      sectionsHtml += buildCard('Rounds (Debate Replay)', roundsInner, true);
+    }
+
+    // 6. Final Portfolio
+    if (detail.final_portfolio) {
+      var sorted = Object.entries(detail.final_portfolio).sort(function(a, b) { return b[1] - a[1]; });
+      var ptHtml = '<table class="data-table"><tr><th>Ticker</th><th>Weight</th></tr>';
+      for (var i = 0; i < sorted.length; i++) {
+        ptHtml += '<tr><td>' + esc(sorted[i][0]) + '</td><td>' + fmt(sorted[i][1]) + '</td></tr>';
+      }
+      ptHtml += '</table>';
+      sectionsHtml += buildCard('Final Portfolio', ptHtml);
+    }
+
+    // 7. File Explorer
+    sectionsHtml += '<div id="file-explorer-section"></div>';
+
+    sectionsDiv.innerHTML = sectionsHtml;
+
+    // Load async data
+    loadJudgePortfolio(experiment, runId, detail.final_portfolio, detail.manifest);
+    loadPIDStatsSection(experiment, runId);
+    loadDivergenceSection(experiment, runId);
+    loadPIDSection(experiment, runId);
+    loadCRITSection(experiment, runId);
+    loadPortfolioSection(experiment, runId);
+    loadFileExplorer(experiment, runId);
+  }
+
+  function buildCard(title, body, startOpen) {
+    return '<div class="card' + (startOpen ? ' open' : '') + '" onclick="this.classList.toggle(\'open\')">' +
+      '<div class="card-header"><span>' + esc(title) + '</span><span class="arrow">&#9654;</span></div>' +
+      '<div class="card-body" onclick="event.stopPropagation()">' + body + '</div></div>';
+  }
+
+  function buildRoundCard(rs, experiment, runId) {
+    var roundNum = rs.round || 0;
+    var metrics = rs.metrics || {};
+    var pid = rs.pid || {};
+    var crit = rs.crit || {};
+
+    var summary = 'Round ' + roundNum + ' | ';
+    summary += 'Beta: ' + fmt(pid.beta_in, 2) + ' \u2192 ' + fmt(pid.beta_new || metrics.beta_new, 2);
+    summary += ' | <span style="text-decoration:overline">\u03c1</span>: ' + fmt(metrics.rho_bar || crit.rho_bar);
+    summary += ' | ' + esc(pid.quadrant || metrics.quadrant || '\u2014');
+    summary += ' | ' + esc(pid.tone_bucket || '\u2014');
+
+    var body = '<pre class="content">' + esc(JSON.stringify(rs, null, 2)) + '</pre>';
+    body += '<div style="margin-top:8px">';
+    body += '<button onclick="loadRoundAgents(\'' + esc(experiment) + '\',\'' + esc(runId) + '\',' + roundNum + ',this.parentElement)">Load Agent Details</button>';
+    body += '</div>';
+
+    return '<div class="card" onclick="this.classList.toggle(\'open\')">' +
+      '<div class="card-header"><span>' + summary + '</span><span class="arrow">&#9654;</span></div>' +
+      '<div class="card-body" onclick="event.stopPropagation()">' + body + '</div></div>';
+  }
+
+  // Expose globally for onclick
+  window.loadRoundAgents = function(experiment, runId, roundNum, container) {
+    container.innerHTML = '<span class="loading">Loading agent details...</span>';
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/round/' + roundNum)
+      .then(function(r) { return r.json(); })
+      .then(function(detail) {
+        var agents = detail.agents || {};
+        var h = '';
+        Object.keys(agents).sort().forEach(function(role) {
+          var a = agents[role];
+          var agentBody = '';
+          if (a.proposal != null) {
+            agentBody += '<div class="section-label">PROPOSAL</div>';
+            agentBody += '<pre class="content">' + esc(typeof a.proposal === 'string' ? a.proposal : JSON.stringify(a.proposal, null, 2)) + '</pre>';
+          }
+          if (a.proposal_portfolio) {
+            agentBody += '<div class="section-label">PROPOSAL PORTFOLIO</div>';
+            agentBody += '<pre class="content">' + esc(JSON.stringify(a.proposal_portfolio, null, 2)) + '</pre>';
+          }
+          if (a.critique != null) {
+            agentBody += '<div class="section-label">CRITIQUE</div>';
+            agentBody += '<pre class="content">' + esc(typeof a.critique === 'string' ? a.critique : JSON.stringify(a.critique, null, 2)) + '</pre>';
+          }
+          if (a.revision != null) {
+            agentBody += '<div class="section-label">REVISION</div>';
+            agentBody += '<pre class="content">' + esc(typeof a.revision === 'string' ? a.revision : JSON.stringify(a.revision, null, 2)) + '</pre>';
+          }
+          if (a.revision_portfolio) {
+            agentBody += '<div class="section-label">REVISION PORTFOLIO</div>';
+            agentBody += '<pre class="content">' + esc(JSON.stringify(a.revision_portfolio, null, 2)) + '</pre>';
+          }
+
+          // CRIT pillar scores if available
+          var cs = detail.crit_scores;
+          if (cs && cs.agent_scores && cs.agent_scores[role]) {
+            var ags = cs.agent_scores[role];
+            agentBody += '<div class="section-label">CRIT SCORES</div>';
+            agentBody += '<pre class="content">rho_i: ' + fmt(ags.rho_i) + '\n';
+            if (ags.pillar_scores) {
+              Object.keys(ags.pillar_scores).forEach(function(p) {
+                agentBody += p + ': ' + fmt(ags.pillar_scores[p]) + '\n';
+              });
+            }
+            agentBody += '</pre>';
+          }
+
+          // CRIT request/response artifacts
+          if (a.crit_request != null) {
+            agentBody += '<div class="section-label">CRIT REQUEST</div>';
+            agentBody += '<pre class="content">' + esc(a.crit_request) + '</pre>';
+          }
+          if (a.crit_response != null) {
+            agentBody += '<div class="section-label">CRIT RESPONSE</div>';
+            agentBody += '<pre class="content">' + esc(a.crit_response) + '</pre>';
+          }
+
+          h += '<div class="card" onclick="this.classList.toggle(\'open\')">' +
+            '<div class="card-header"><span>' + esc(role.toUpperCase()) + '</span><span class="arrow">&#9654;</span></div>' +
+            '<div class="card-body" onclick="event.stopPropagation()">' + agentBody + '</div></div>';
+        });
+        container.innerHTML = h;
+      })
+      .catch(function() {
+        container.innerHTML = '<span style="color:#900;">Failed to load agent details.</span>';
+      });
+  };
+
+  // ===== PID STATS OVERVIEW =====
+  function loadPIDStatsSection(experiment, runId) {
+    var div = document.getElementById('pid-stats-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/crit')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) { div.innerHTML = ''; return; }
+
+        // Collect all roles across all rounds
+        var roles = {};
+        data.forEach(function(d) {
+          if (d.rho_i) Object.keys(d.rho_i).forEach(function(r) { roles[r] = true; });
+        });
+        var roleList = Object.keys(roles).sort();
+        var pillars = ['LV', 'ES', 'AC', 'CA'];
+        var pillarNames = {'LV': 'Logical Validity', 'ES': 'Evidential Support', 'AC': 'Alternative Consideration', 'CA': 'Causal Alignment'};
+
+        var h = '';
+        for (var i = 0; i < data.length; i++) {
+          var d = data[i];
+          h += '<div class="section-label">Round ' + d.round + ' \u2014 <span style="text-decoration:overline">\u03c1</span>: ' + fmt(d.rho_bar) + '</div>';
+          h += '<table class="data-table">';
+          h += '<tr><th>Agent</th><th>rho_i</th>';
+          for (var p = 0; p < pillars.length; p++) h += '<th>' + pillarNames[pillars[p]] + '</th>';
+          h += '</tr>';
+          for (var r = 0; r < roleList.length; r++) {
+            var role = roleList[r];
+            var rho_i = d.rho_i ? d.rho_i[role] : null;
+            var agentPillars = (d.pillars && d.pillars[role]) ? d.pillars[role] : {};
+            h += '<tr><td>' + esc(role) + '</td><td>' + fmt(rho_i) + '</td>';
+            for (var p = 0; p < pillars.length; p++) {
+              h += '<td>' + fmt(agentPillars[pillars[p]]) + '</td>';
+            }
+            h += '</tr>';
+          }
+          h += '</table>';
+        }
+
+        div.innerHTML = buildCard('PID Stats Overview', h, true);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card').classList.add('open');
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  // ===== DIVERGENCE OVERVIEW =====
+  function loadDivergenceSection(experiment, runId) {
+    var div = document.getElementById('divergence-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/divergence')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) { div.innerHTML = ''; return; }
+
+        // Group entries by round
+        var rounds = {};
+        data.forEach(function(d) {
+          var rn = d.round;
+          if (!rounds[rn]) rounds[rn] = {};
+          rounds[rn][d.phase] = d;
+        });
+
+        var roundNums = Object.keys(rounds).map(Number).sort(function(a, b) { return a - b; });
+
+        var h = '';
+        for (var i = 0; i < roundNums.length; i++) {
+          var rn = roundNums[i];
+          var phases = rounds[rn];
+          h += '<div class="section-label">Round ' + rn + '</div>';
+          h += '<table class="data-table">';
+          h += '<tr><th>Phase</th><th>JS Divergence</th><th>Evidence Overlap</th>';
+
+          // Collect agent names from confidences
+          var agents = [];
+          ['propose', 'revise'].forEach(function(ph) {
+            if (phases[ph] && phases[ph].agent_confidences) {
+              Object.keys(phases[ph].agent_confidences).forEach(function(a) {
+                if (agents.indexOf(a) === -1) agents.push(a);
+              });
+            }
+          });
+          agents.sort();
+          for (var a = 0; a < agents.length; a++) {
+            h += '<th>' + esc(agents[a]) + ' conf.</th>';
+          }
+          h += '</tr>';
+
+          ['propose', 'revise'].forEach(function(phase) {
+            var entry = phases[phase];
+            if (!entry) return;
+            var label = phase.charAt(0).toUpperCase() + phase.slice(1);
+            h += '<tr><td>' + label + '</td>';
+            h += '<td>' + fmt(entry.js_divergence) + '</td>';
+            h += '<td>' + fmt(entry.mean_overlap) + '</td>';
+            for (var a = 0; a < agents.length; a++) {
+              var conf = entry.agent_confidences ? entry.agent_confidences[agents[a]] : null;
+              h += '<td>' + fmt(conf) + '</td>';
+            }
+            h += '</tr>';
+          });
+
+          h += '</table>';
+        }
+
+        div.innerHTML = buildCard('Divergence Overview', h, true);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card').classList.add('open');
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  // ===== PID SECTION =====
+  function loadPIDSection(experiment, runId) {
+    var div = document.getElementById('pid-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/pid')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) {
+          div.innerHTML = '';
+          return;
+        }
+
+        // PID Quadrant Table
+        var h = '<div class="section-label">ROUND DYNAMICS</div>';
+        h += '<table class="data-table">';
+        h += '<tr><th>Round</th><th>Quadrant</th><th>Tone Bucket</th><th>Beta In</th><th>Beta Out</th><th><span style="text-decoration:overline">\u03c1</span></th></tr>';
+        for (var i = 0; i < data.length; i++) {
+          var d = data[i];
+          h += '<tr>';
+          h += '<td>' + d.round + '</td>';
+          h += '<td>' + esc(d.quadrant || '\u2014') + '</td>';
+          h += '<td>' + esc(d.tone_bucket || '\u2014') + '</td>';
+          h += '<td>' + fmt(d.beta_in) + '</td>';
+          h += '<td>' + fmt(d.beta_new) + '</td>';
+          h += '<td>' + fmt(d.rho_bar) + '</td>';
+          h += '</tr>';
+        }
+        h += '</table>';
+
+        // PID Chart
+        h += '<div class="section-label">PID TRAJECTORY</div>';
+        h += '<div class="chart-container">' + buildPIDChart(data) + '</div>';
+
+        div.innerHTML = buildCard('PID Dynamics', h, true);
+        // Remove click-to-toggle on this card since it's important
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card').classList.add('open');
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  function buildPIDChart(data) {
+    var W = 700, H = 300, pad = {top: 20, right: 60, bottom: 40, left: 60};
+    var plotW = W - pad.left - pad.right;
+    var plotH = H - pad.top - pad.bottom;
+
+    var rounds = data.map(function(d) { return d.round; });
+    var betas = data.map(function(d) { return d.beta_new != null ? d.beta_new : d.beta_in; });
+    var rhos = data.map(function(d) { return d.rho_bar; });
+
+    var allVals = betas.concat(rhos).filter(function(v) { return v != null; });
+    if (allVals.length === 0) return '';
+    var yMin = Math.max(0, Math.min.apply(null, allVals) - 0.05);
+    var yMax = Math.min(1, Math.max.apply(null, allVals) + 0.05);
+    if (yMax - yMin < 0.1) { yMin = Math.max(0, yMin - 0.05); yMax = Math.min(1, yMax + 0.05); }
+
+    var xMin = Math.min.apply(null, rounds);
+    var xMax = Math.max.apply(null, rounds);
+    if (xMax === xMin) xMax = xMin + 1;
+
+    function xPos(r) { return pad.left + (r - xMin) / (xMax - xMin) * plotW; }
+    function yPos(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * plotH; }
+
+    var svg = '<svg class="chart" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg">';
+
+    // Grid lines
+    for (var g = 0; g <= 4; g++) {
+      var gv = yMin + (yMax - yMin) * g / 4;
+      var gy = yPos(gv);
+      svg += '<line x1="' + pad.left + '" y1="' + gy + '" x2="' + (W - pad.right) + '" y2="' + gy + '" stroke="#eee" />';
+      svg += '<text x="' + (pad.left - 5) + '" y="' + (gy + 4) + '" text-anchor="end" fill="#666">' + gv.toFixed(2) + '</text>';
+    }
+
+    // X axis labels
+    for (var i = 0; i < rounds.length; i++) {
+      svg += '<text x="' + xPos(rounds[i]) + '" y="' + (H - pad.bottom + 20) + '" text-anchor="middle" fill="#666">R' + rounds[i] + '</text>';
+    }
+
+    // Beta line (solid)
+    var betaPoints = [];
+    for (var i = 0; i < data.length; i++) {
+      if (betas[i] != null) betaPoints.push(xPos(rounds[i]) + ',' + yPos(betas[i]));
+    }
+    if (betaPoints.length > 1) {
+      svg += '<polyline points="' + betaPoints.join(' ') + '" fill="none" stroke="#000" stroke-width="2" />';
+    }
+    for (var i = 0; i < data.length; i++) {
+      if (betas[i] != null) {
+        svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(betas[i]) + '" r="3" fill="#000"><title>Beta: ' + fmt(betas[i]) + '</title></circle>';
+      }
+    }
+
+    // rho_bar line (dashed)
+    var rhoPoints = [];
+    for (var i = 0; i < data.length; i++) {
+      if (rhos[i] != null) rhoPoints.push(xPos(rounds[i]) + ',' + yPos(rhos[i]));
+    }
+    if (rhoPoints.length > 1) {
+      svg += '<polyline points="' + rhoPoints.join(' ') + '" fill="none" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />';
+    }
+    for (var i = 0; i < data.length; i++) {
+      if (rhos[i] != null) {
+        svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(rhos[i]) + '" r="3" fill="none" stroke="#000" stroke-width="1.5"><title>\u03c1: ' + fmt(rhos[i]) + '</title></circle>';
+      }
+    }
+
+    // Legend
+    svg += '<line x1="' + (W - pad.right + 5) + '" y1="' + (pad.top + 10) + '" x2="' + (W - pad.right + 25) + '" y2="' + (pad.top + 10) + '" stroke="#000" stroke-width="2" />';
+    svg += '<text x="' + (W - pad.right + 28) + '" y="' + (pad.top + 14) + '" fill="#000" font-size="10">beta</text>';
+    svg += '<line x1="' + (W - pad.right + 5) + '" y1="' + (pad.top + 28) + '" x2="' + (W - pad.right + 25) + '" y2="' + (pad.top + 28) + '" stroke="#000" stroke-width="2" stroke-dasharray="8,4" />';
+    svg += '<text x="' + (W - pad.right + 28) + '" y="' + (pad.top + 32) + '" fill="#000" font-size="10">rho</text>';
+
+    svg += '</svg>';
+    return svg;
+  }
+
+  // ===== CRIT SECTION =====
+  function loadCRITSection(experiment, runId) {
+    var div = document.getElementById('crit-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/crit')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) { div.innerHTML = ''; return; }
+        var h = '<div class="section-label">CRIT SCORE TRAJECTORY</div>';
+        h += '<div class="chart-container">' + buildCRITChart(data) + '</div>';
+        div.innerHTML = buildCard('CRIT Scores', h, true);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card').classList.add('open');
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  function buildCRITChart(data) {
+    var W = 700, H = 300, pad = {top: 20, right: 60, bottom: 60, left: 60};
+    var plotW = W - pad.left - pad.right;
+    var plotH = H - pad.top - pad.bottom;
+
+    var rounds = data.map(function(d) { return d.round; });
+    var rhos = data.map(function(d) { return d.rho_bar; });
+
+    // Collect all agent roles
+    var roles = {};
+    data.forEach(function(d) {
+      if (d.rho_i) Object.keys(d.rho_i).forEach(function(r) { roles[r] = true; });
+    });
+    var roleList = Object.keys(roles).sort();
+    var dashPatterns = ['5,5', '10,5', '2,5', '15,5,5,5'];
+
+    var allVals = rhos.filter(function(v) { return v != null; });
+    data.forEach(function(d) {
+      if (d.rho_i) Object.values(d.rho_i).forEach(function(v) { if (v != null) allVals.push(v); });
+    });
+    if (allVals.length === 0) return '';
+    var yMin = Math.max(0, Math.min.apply(null, allVals) - 0.05);
+    var yMax = Math.min(1, Math.max.apply(null, allVals) + 0.05);
+    if (yMax - yMin < 0.1) { yMin = Math.max(0, yMin - 0.05); yMax = Math.min(1, yMax + 0.05); }
+
+    var xMin = Math.min.apply(null, rounds);
+    var xMax = Math.max.apply(null, rounds);
+    if (xMax === xMin) xMax = xMin + 1;
+
+    function xPos(r) { return pad.left + (r - xMin) / (xMax - xMin) * plotW; }
+    function yPos(v) { return pad.top + (1 - (v - yMin) / (yMax - yMin)) * plotH; }
+
+    var svg = '<svg class="chart" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg">';
+
+    // Grid
+    for (var g = 0; g <= 4; g++) {
+      var gv = yMin + (yMax - yMin) * g / 4;
+      var gy = yPos(gv);
+      svg += '<line x1="' + pad.left + '" y1="' + gy + '" x2="' + (W - pad.right) + '" y2="' + gy + '" stroke="#eee" />';
+      svg += '<text x="' + (pad.left - 5) + '" y="' + (gy + 4) + '" text-anchor="end" fill="#666">' + gv.toFixed(2) + '</text>';
+    }
+    for (var i = 0; i < rounds.length; i++) {
+      svg += '<text x="' + xPos(rounds[i]) + '" y="' + (pad.top + plotH + 20) + '" text-anchor="middle" fill="#666">R' + rounds[i] + '</text>';
+    }
+
+    // rho_bar line (solid)
+    var rhoPoints = [];
+    for (var i = 0; i < data.length; i++) {
+      if (rhos[i] != null) rhoPoints.push(xPos(rounds[i]) + ',' + yPos(rhos[i]));
+    }
+    if (rhoPoints.length > 1) {
+      svg += '<polyline points="' + rhoPoints.join(' ') + '" fill="none" stroke="#000" stroke-width="2" />';
+    }
+    for (var i = 0; i < data.length; i++) {
+      if (rhos[i] != null) {
+        svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(rhos[i]) + '" r="3" fill="#000"><title>\u03c1: ' + fmt(rhos[i]) + '</title></circle>';
+      }
+    }
+
+    // Per-agent lines (dashed)
+    roleList.forEach(function(role, ri) {
+      var dash = dashPatterns[ri % dashPatterns.length];
+      var pts = [];
+      for (var i = 0; i < data.length; i++) {
+        var v = data[i].rho_i ? data[i].rho_i[role] : null;
+        if (v != null) pts.push(xPos(rounds[i]) + ',' + yPos(v));
+      }
+      if (pts.length > 1) {
+        svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="' + dash + '" />';
+      }
+      for (var i = 0; i < data.length; i++) {
+        var v = data[i].rho_i ? data[i].rho_i[role] : null;
+        if (v != null) {
+          svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(v) + '" r="2" fill="none" stroke="#000"><title>' + role + ' rho_i: ' + fmt(v) + '</title></circle>';
+        }
+      }
+    });
+
+    // Legend below chart
+    var legendY = pad.top + plotH + 35;
+    svg += '<line x1="' + pad.left + '" y1="' + legendY + '" x2="' + (pad.left + 20) + '" y2="' + legendY + '" stroke="#000" stroke-width="2" />';
+    svg += '<text x="' + (pad.left + 23) + '" y="' + (legendY + 4) + '" fill="#000" font-size="10">\u03c1</text>';
+    var lx = pad.left + 80;
+    roleList.forEach(function(role, ri) {
+      var dash = dashPatterns[ri % dashPatterns.length];
+      svg += '<line x1="' + lx + '" y1="' + legendY + '" x2="' + (lx + 20) + '" y2="' + legendY + '" stroke="#000" stroke-width="1.5" stroke-dasharray="' + dash + '" />';
+      svg += '<text x="' + (lx + 23) + '" y="' + (legendY + 4) + '" fill="#000" font-size="10">' + role + '</text>';
+      lx += 80;
+    });
+
+    svg += '</svg>';
+    return svg;
+  }
+
+  // ===== PORTFOLIO SECTION =====
+  function loadPortfolioSection(experiment, runId) {
+    var div = document.getElementById('portfolio-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/portfolio')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) { div.innerHTML = ''; return; }
+
+        // Collect all tickers, sort by final consensus weight
+        var lastConsensus = data[data.length - 1].consensus || {};
+        var tickers = Object.keys(lastConsensus).sort(function(a, b) {
+          return (lastConsensus[b] || 0) - (lastConsensus[a] || 0);
+        });
+
+        var h = '<div class="section-label">PORTFOLIO TRAJECTORY (Consensus)</div>';
+        h += '<table class="data-table"><tr><th>Ticker</th>';
+        for (var i = 0; i < data.length; i++) {
+          h += '<th>R' + data[i].round + '</th>';
+        }
+        h += '</tr>';
+        for (var t = 0; t < tickers.length; t++) {
+          h += '<tr><td>' + esc(tickers[t]) + '</td>';
+          for (var i = 0; i < data.length; i++) {
+            var w = data[i].consensus[tickers[t]];
+            h += '<td>' + (w != null ? fmt(w) : '\u2014') + '</td>';
+          }
+          h += '</tr>';
+        }
+        h += '</table>';
+
+        div.innerHTML = buildCard('Portfolio Trajectory', h, false);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  // ===== FILE EXPLORER =====
+  function loadFileExplorer(experiment, runId) {
+    var div = document.getElementById('file-explorer-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/tree')
+      .then(function(r) { return r.json(); })
+      .then(function(tree) {
+        if (!tree || tree.length === 0) { div.innerHTML = ''; return; }
+        var h = '<div class="file-tree">' + buildTree(tree, experiment, runId) + '</div>';
+        h += '<div id="file-content-display"></div>';
+        div.innerHTML = buildCard('File Explorer', h, false);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  function buildTree(items, experiment, runId) {
+    var h = '<ul>';
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item.type === 'dir') {
+        h += '<li><span class="dir-toggle" onclick="this.parentElement.classList.toggle(\'collapsed\')">[+] ' + esc(item.name) + '/</span>';
+        if (item.children) h += buildTree(item.children, experiment, runId);
+        h += '</li>';
+      } else {
+        h += '<li><span class="file-link" onclick="loadFileContent(\'' + esc(experiment) + '\',\'' + esc(runId) + '\',\'' + esc(item.path) + '\')">' + esc(item.name) + '</span>';
+        if (item.size_bytes != null) h += ' <span style="color:#999">(' + item.size_bytes + 'b)</span>';
+        h += '</li>';
+      }
+    }
+    h += '</ul>';
+    return h;
+  }
+
+  window.loadFileContent = function(experiment, runId, filePath) {
+    var display = document.getElementById('file-content-display');
+    if (!display) return;
+    display.innerHTML = '<span class="loading">Loading ' + esc(filePath) + '...</span>';
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/file?path=' + encodeURIComponent(filePath))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var content = typeof data.content === 'string' ? data.content : JSON.stringify(data.content, null, 2);
+        var fullPath = 'logging/runs/' + experiment + '/' + runId + '/' + filePath;
+        var h = '<div class="section-label">' + esc(fullPath) + '</div>';
+        if (data.truncated) {
+          h += '<p style="color:#960;font-size:0.8em;">[truncated \u2014 showing first 50,000 chars]</p>';
+        }
+        h += '<pre class="content">' + esc(content) + '</pre>';
+        display.innerHTML = h;
+      })
+      .catch(function() {
+        display.innerHTML = '<span style="color:#900;">Failed to load file.</span>';
+      });
+  };
+
+  // ===== JUDGE PORTFOLIO + PERFORMANCE =====
+  function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest) {
+    var div = document.getElementById('judge-portfolio-section');
+    if (!div) return;
+    if (!finalPortfolio || Object.keys(finalPortfolio).length === 0) {
+      div.innerHTML = '';
+      return;
+    }
+
+    var h = '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
+    h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';
+    // Allocation table placeholder — filled once portfolio trajectory loads
+    h += '<div id="judge-alloc-wrap"><span style="color:#666;font-size:0.85em;">Loading allocations...</span></div>';
+    // Performance metrics placeholder
+    h += '<div id="perf-metrics"><span style="color:#666;font-size:0.85em;">Loading performance...</span></div>';
+    h += '</div>';
+    div.innerHTML = h;
+
+    // Resolve agent display names from manifest.agent_profiles
+    var m = manifest || {};
+    var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
+    function agentLabel(role) {
+      if (profileMap && profileMap[role]) return profileMap[role];
+      return role;
+    }
+
+    // --- Fetch per-agent allocations from last round ---
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/portfolio')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var wrap = document.getElementById('judge-alloc-wrap');
+        if (!wrap) return;
+        if (!data || data.length === 0) {
+          // Fallback: simple judge-only table
+          wrap.innerHTML = buildSimpleAllocTable(finalPortfolio);
+          return;
+        }
+        var last = data[data.length - 1];
+        var agents = last.allocations || {};
+        var agentNames = Object.keys(agents).sort();
+
+        // Collect all tickers, sort by judge weight descending
+        var tickers = Object.keys(finalPortfolio).sort(function(a, b) {
+          return (finalPortfolio[b] || 0) - (finalPortfolio[a] || 0);
+        });
+
+        var th = '<table class="data-table" id="judge-alloc-table">';
+        th += '<tr><th></th>';
+        for (var a = 0; a < agentNames.length; a++) {
+          th += '<th>' + esc(agentLabel(agentNames[a]).toUpperCase()) + '</th>';
+        }
+        th += '<th>JUDGE</th></tr>';
+
+        for (var t = 0; t < tickers.length; t++) {
+          var ticker = tickers[t];
+          th += '<tr><td style="font-weight:600;">' + esc(ticker) + '</td>';
+          for (var a = 0; a < agentNames.length; a++) {
+            var w = agents[agentNames[a]] ? agents[agentNames[a]][ticker] : null;
+            th += '<td>' + fmtPct(w) + '</td>';
+          }
+          th += '<td style="font-weight:600;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
+          th += '</tr>';
+        }
+        th += '</table>';
+        wrap.innerHTML = th;
+      })
+      .catch(function() {
+        var wrap = document.getElementById('judge-alloc-wrap');
+        if (wrap) wrap.innerHTML = buildSimpleAllocTable(finalPortfolio);
+      });
+
+    // --- Fetch performance data ---
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance')
+      .then(function(r) { return r.json(); })
+      .then(function(perf) {
+        var perfDiv = document.getElementById('perf-metrics');
+        if (!perfDiv) return;
+
+        if (perf.error) {
+          perfDiv.innerHTML = '<span style="color:#666;font-size:0.85em;">' + esc(perf.error) + '</span>';
+          return;
+        }
+
+        var profitCls = perf.profit >= 0 ? 'perf-profit' : 'perf-loss';
+        var profitSign = perf.profit >= 0 ? '+' : '';
+        var returnPct = perf.return_pct;
+
+        var ph = '<table class="data-table" id="perf-table">';
+        ph += '<tr><th>Metric</th><th>Value</th></tr>';
+        ph += '<tr><td>Initial Capital</td><td>$' + numFmt(perf.initial_capital) + '</td></tr>';
+        ph += '<tr><td>Final Value</td><td class="' + profitCls + '">$' + numFmt(perf.final_value) + '</td></tr>';
+        ph += '<tr><td>Profit/Loss</td><td class="' + profitCls + '">' + profitSign + '$' + numFmt(Math.abs(perf.profit)) + '</td></tr>';
+        ph += '<tr><td>Return</td><td class="' + profitCls + '">' + profitSign + returnPct.toFixed(2) + '%</td></tr>';
+        ph += '</table>';
+        perfDiv.innerHTML = ph;
+      })
+      .catch(function() {
+        var perfDiv = document.getElementById('perf-metrics');
+        if (perfDiv) perfDiv.innerHTML = '<span style="color:#666;font-size:0.85em;">Performance data unavailable</span>';
+      });
+  }
+
+  function buildSimpleAllocTable(portfolio) {
+    var sorted = Object.entries(portfolio)
+      .sort(function(a, b) { return b[1] - a[1]; });
+    var h = '<table class="data-table" id="judge-alloc-table">';
+    h += '<tr><th>Ticker</th><th>JUDGE</th></tr>';
+    for (var i = 0; i < sorted.length; i++) {
+      h += '<tr><td style="font-weight:600;">' + esc(sorted[i][0]) + '</td>';
+      h += '<td style="font-weight:600;">' + fmtPct(sorted[i][1]) + '</td></tr>';
+    }
+    h += '</table>';
+    return h;
+  }
+
+  function fmtPct(v) {
+    if (v == null) return '\u00b7';
+    if (v === 0) return '\u00b7';
+    return v.toFixed(2);
+  }
+
+  function numFmt(n) {
+    if (n == null) return '\u2014';
+    return n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+
+  // ===== INIT =====
+  route();
+})();
+</script>
+</body>
+</html>
