@@ -478,7 +478,7 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
@@ -1324,6 +1324,19 @@ class MultiAgentRunner:
         self._reset_per_invocation_state()
         return self._run_pipeline(observation)
 
+    @staticmethod
+    def _coerce_variables(raw) -> list[str]:
+        """Coerce LLM-returned variables to list[str].
+
+        LLMs sometimes return a dict like {"X": "desc", "Y": "desc"}
+        instead of ["X", "Y"]. Convert gracefully.
+        """
+        if isinstance(raw, list):
+            return [str(v) for v in raw]
+        if isinstance(raw, dict):
+            return [str(k) for k in raw]
+        return []
+
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
@@ -1343,7 +1356,7 @@ class MultiAgentRunner:
                 Claim(
                     claim_text=c.get("claim_text", ""),
                     pearl_level=c.get("pearl_level", "L1"),
-                    variables=c.get("variables", []),
+                    variables=self._coerce_variables(c.get("variables", [])),
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

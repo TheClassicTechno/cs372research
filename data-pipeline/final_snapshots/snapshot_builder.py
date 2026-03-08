@@ -190,7 +190,7 @@ def ensure_snapshots(
         tmp = out_path.with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(snapshot, f, indent=2)
-        tmp.rename(out_path)
+        tmp.replace(out_path)
         print(f"  Wrote: {out_path}")
 
     # --- Stage 7: memos ---

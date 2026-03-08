@@ -89,6 +89,8 @@ def _is_rate_limit_error(exc: Exception) -> bool:
     name = type(exc).__name__
     if "RateLimit" in name:
         return True
+    if "ResourceExhausted" in name:  # Google Gemini rate limit
+        return True
     if hasattr(exc, "status_code") and exc.status_code == 429:
         return True
     if "429" in str(exc)[:200]:
@@ -111,8 +113,59 @@ def _retry_wait(exc: Exception, attempt: int) -> float:
     return 2 ** attempt  # 1s, 2s, 4s, 8s, 16s, 32s
 
 
-def _call_llm(config: dict, system_prompt: str, user_prompt: str,
-              *, role: str = "", phase: str = "", round_num: int = 0) -> str:
+def _resolve_provider_model(
+    config: dict,
+    role: str | None = None,
+    phase: str | None = None,
+) -> tuple[str, str]:
+    """Resolve (provider, model) with override priority: phase > role > global.
+
+    Lookup order (first non-empty match wins per field):
+      1. ``phase_llms[phase]``  — per-phase override
+      2. ``role_llms[role]``    — per-role override
+      3. global ``llm_provider`` / ``model_name``
+    """
+    default_provider = str(config.get("llm_provider", "openai")).lower()
+    default_model = str(config.get("model_name", "gpt-4o-mini"))
+
+    # Phase-level override (highest priority)
+    phase_cfg: dict = {}
+    if phase:
+        phase_map = config.get("phase_llms") or {}
+        if isinstance(phase_map, dict):
+            phase_cfg = phase_map.get(phase, {}) or {}
+
+    # Role-level override (medium priority)
+    role_cfg: dict = {}
+    if role:
+        role_map = config.get("role_llms") or {}
+        if isinstance(role_map, dict):
+            role_cfg = role_map.get(role, {}) or {}
+
+    # Merge: phase > role > global
+    model_name = str(
+        phase_cfg.get("model")
+        or role_cfg.get("model")
+        or default_model
+    )
+    provider = str(
+        phase_cfg.get("provider")
+        or role_cfg.get("provider")
+        or default_provider
+    ).lower()
+
+    # Auto-infer provider from model name if unrecognized
+    if provider not in {"openai", "anthropic", "google"}:
+        if model_name.startswith("claude"):
+            provider = "anthropic"
+        elif model_name.startswith("gemini"):
+            provider = "google"
+        else:
+            provider = "openai"
+    return provider, model_name
+
+
+def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | None = None, phase: str | None = None, round_num: int = 0) -> str:
     """Call LLM with the given system and user prompts. Returns raw text.
 
     Retries up to 6 times on transient errors.  For rate-limit (429)
@@ -149,15 +202,19 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str,
 
     import time
 
-    model_name = config.get("model_name", "gpt-4o-mini")
+    provider, model_name = _resolve_provider_model(config, role, phase)
     temperature = config.get("temperature", 0.3)
-    use_anthropic = model_name.startswith("claude")
 
-    if use_anthropic:
+    if provider == "anthropic":
         from langchain_anthropic import ChatAnthropic  # type: ignore[import-not-found]
         from langchain_core.messages import HumanMessage, SystemMessage  # type: ignore[import-not-found]
         llm = ChatAnthropic(model=model_name, temperature=temperature, timeout=60)
-    else:
+    elif provider == "google":
+        from google import genai  # type: ignore[import-not-found]
+        gemini_client = genai.Client(
+            api_key=os.environ.get("GOOGLE_API_KEY", ""),
+        )
+    else:  # openai (default)
         from openai import OpenAI
         client = OpenAI(
             api_key=os.environ.get("OPENAI_API_KEY", "sk-dummy"),
@@ -175,11 +232,20 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str,
             if sem is not None:
                 sem.acquire()
             try:
-                if use_anthropic:
+                if provider == "anthropic":
                     response = llm.invoke([
                         SystemMessage(content=system_prompt),
                         HumanMessage(content=user_prompt),
                     ])
+                elif provider == "google":
+                    response = gemini_client.models.generate_content(
+                        model=model_name,
+                        contents=user_prompt,
+                        config=genai.types.GenerateContentConfig(
+                            system_instruction=system_prompt,
+                            temperature=temperature,
+                        ),
+                    )
                 else:
                     # Reasoning models (o-series, gpt-5-mini, etc.) reject
                     # the temperature parameter — only pass it for models
@@ -199,13 +265,22 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str,
                     sem.release()
             # Log token usage if enabled
             if config.get("log_tokens"):
-                if use_anthropic:
+                if provider == "anthropic":
                     usage = response.response_metadata.get("token_usage", {})
                     if usage:
                         print(
                             f"  [TOKENS] prompt={usage.get('prompt_tokens', 0):,}  "
                             f"completion={usage.get('completion_tokens', 0):,}  "
                             f"total={usage.get('total_tokens', 0):,}",
+                            flush=True,
+                        )
+                elif provider == "google":
+                    usage = getattr(response, "usage_metadata", None)
+                    if usage and hasattr(usage, "prompt_token_count"):
+                        print(
+                            f"  [TOKENS] prompt={usage.prompt_token_count:,}  "
+                            f"completion={usage.candidates_token_count:,}  "
+                            f"total={usage.total_token_count:,}",
                             flush=True,
                         )
                 else:
@@ -217,9 +292,15 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str,
                             f"total={usage.total_tokens:,}",
                             flush=True,
                         )
-            result = response.content if use_anthropic else response.output_text
+            # Extract text from response
+            if provider == "anthropic":
+                result = response.content
+            elif provider == "google":
+                result = response.text
+            else:
+                result = response.output_text
             log_prompt(system=system_prompt, user=user_prompt, model=model_name, response=result,
-                       role=role, phase=phase, round_num=round_num)
+                       role=role or "", phase=phase or "", round_num=round_num)
             return result
         except Exception as e:
             wait = _retry_wait(e, attempt)
@@ -416,31 +497,10 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-def _sanitize_claims(parsed: dict) -> dict:
-    """Fix common LLM deviations in the claims structure.
-
-    Known issue: LLMs sometimes produce ``"variables": {"X": "...", "Y": "..."}``
-    (a dict) instead of ``"variables": ["X", "Y"]`` (a list).  The Pydantic
-    ``Claim`` model requires a ``list[str]``, so coerce dicts to lists here
-    to prevent a validation error from aborting the entire run.
-    """
-    claims = parsed.get("claims")
-    if not isinstance(claims, list):
-        return parsed
-    for claim in claims:
-        if not isinstance(claim, dict):
-            continue
-        variables = claim.get("variables")
-        if isinstance(variables, dict):
-            claim["variables"] = list(variables.keys())
-    return parsed
-
-
 def _parse_json(text: str) -> dict:
     """Parse JSON from LLM response, handling markdown code blocks."""
     json_str = _strip_code_fences(text)
     try:
-        parsed = json.loads(json_str)
+        return json.loads(json_str)
     except json.JSONDecodeError:
         return {}
-    return _sanitize_claims(parsed)
