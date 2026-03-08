@@ -30,12 +30,15 @@ Components are **pure functions**: data in → HTML string out. No DOM access, n
 
 ## Mandatory Workflow
 
-After every code change:
-1. Run architecture checker: `python tools/dashboard/rules/check_dashboard_architecture.py`
-2. Run integration tests: `pytest tests/integration/dashboard/ -v -o "addopts="`
-3. Fix all violations before continuing
+**MANDATORY — After finishing ANY code change, you MUST run the local CI pipeline before considering the task complete. This is non-negotiable. Do not skip this step.**
 
-No new warnings allowed — the checker enforces a baseline. Use `--update-baseline` only when intentionally accepting new warnings.
+```bash
+./ci/run_ci.sh    # from tools/dashboard/
+```
+
+All 7 stages must pass: eslint, dependency-cruiser, semgrep, architecture, structure-drift, rewrite-guard, tests. Fix all failures before reporting the task as done.
+
+No new warnings allowed — the architecture checker enforces a baseline. Use `--update-baseline` only when intentionally accepting new warnings. If structure-drift or rewrite-guard fails due to intentional changes, run `python ci/check_structure.py --update` to accept the new baseline.
 
 ## Testing Requirements
 

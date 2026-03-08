@@ -206,7 +206,7 @@ def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
         normalized.append({
             "ticker": entry.get("ticker", ""),
             "weight": entry.get("weight", 0.0),
-            "supporting_claims": entry.get("supported_by_claims", []),
+            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
             "explanation": entry.get("explanation") or entry.get("rationale") or "",
         })
     return normalized
@@ -387,7 +387,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
-        "thesis": _extract_thesis(prop_action, role=role, phase="propose"),
         "portfolio_allocation": prop_action["allocation"],
         "reasoning": _extract_reasoning(prop_action, normalize_evidence_id),
         "raw_response": proposal.get("raw_response") or "",
@@ -401,7 +400,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
-        "thesis": _extract_thesis(rev_action, role=role, phase="revise"),
         "portfolio_allocation": rev_action["allocation"],
         "reasoning": _extract_reasoning(
             rev_action, normalize_evidence_id,
@@ -419,7 +417,7 @@ def build_reasoning_bundle(
 
     # Expand evidence IDs inline in text fields
     for bundle_part in (proposal_bundle, revised_bundle):
-        bundle_part["thesis"] = expand_evidence_ids_inline(bundle_part["thesis"], memo_evidence_lookup)
+        bundle_part["reasoning"]["thesis"] = expand_evidence_ids_inline(bundle_part["reasoning"]["thesis"], memo_evidence_lookup)
         bundle_part["raw_response"] = expand_evidence_ids_inline(bundle_part["raw_response"], memo_evidence_lookup)
     for crit in critiques_received:
         crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)

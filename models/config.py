@@ -224,11 +224,11 @@ class AgentConfig(BaseModel):
         "Separate from llm_model so CRIT can use a stronger model.",
     )
     crit_system_template: str = Field(
-        default="crit_system_enumerated.jinja",
+        default="crit_system_master.jinja",
         description="CRIT system prompt template filename (in eval/crit/prompts/).",
     )
     crit_user_template: str = Field(
-        default="crit_user_enumerated.jinja",
+        default="crit_user_master.jinja",
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
