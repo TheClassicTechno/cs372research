@@ -138,6 +138,54 @@ class TestDiagnostics:
                 # missing other fields
             )
 
+    def test_count_fields_default_none(self):
+        """Optional count fields default to None."""
+        d = Diagnostics(
+            contradictions_detected=False,
+            unsupported_claims_detected=False,
+            ignored_critiques_detected=False,
+            premature_certainty_detected=False,
+            causal_overreach_detected=False,
+            conclusion_drift_detected=False,
+        )
+        assert d.contradictions_count is None
+        assert d.unsupported_claims_count is None
+        assert d.ignored_critiques_count is None
+        assert d.causal_overreach_count is None
+        assert d.orphaned_positions_count is None
+
+    def test_count_fields_accept_values(self):
+        """Count fields accept non-negative integers."""
+        d = Diagnostics(
+            contradictions_detected=True,
+            unsupported_claims_detected=True,
+            ignored_critiques_detected=False,
+            premature_certainty_detected=False,
+            causal_overreach_detected=True,
+            conclusion_drift_detected=False,
+            contradictions_count=2,
+            unsupported_claims_count=1,
+            ignored_critiques_count=0,
+            causal_overreach_count=3,
+            orphaned_positions_count=1,
+        )
+        assert d.contradictions_count == 2
+        assert d.unsupported_claims_count == 1
+        assert d.orphaned_positions_count == 1
+
+    def test_negative_count_raises(self):
+        """Negative counts are rejected."""
+        with pytest.raises(ValidationError):
+            Diagnostics(
+                contradictions_detected=False,
+                unsupported_claims_detected=False,
+                ignored_critiques_detected=False,
+                premature_certainty_detected=False,
+                causal_overreach_detected=False,
+                conclusion_drift_detected=False,
+                contradictions_count=-1,
+            )
+
 
 # ---------------------------------------------------------------------------
 # validate_raw_response tests

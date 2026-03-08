@@ -12,6 +12,7 @@ import re
 import threading
 
 from dotenv import load_dotenv
+from eval.utils.prompt_logger import log_prompt
 
 load_dotenv()  # auto-load .env file if present
 
@@ -164,7 +165,7 @@ def _resolve_provider_model(
     return provider, model_name
 
 
-def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | None = None, phase: str | None = None) -> str:
+def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | None = None, phase: str | None = None, round_num: int = 0) -> str:
     """Call LLM with the given system and user prompts. Returns raw text.
 
     Retries up to 6 times on transient errors.  For rate-limit (429)
@@ -293,11 +294,14 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
                         )
             # Extract text from response
             if provider == "anthropic":
-                return response.content
+                result = response.content
             elif provider == "google":
-                return response.text
+                result = response.text
             else:
-                return response.output_text
+                result = response.output_text
+            log_prompt(system=system_prompt, user=user_prompt, model=model_name, response=result,
+                       role=role or "", phase=phase or "", round_num=round_num)
+            return result
         except Exception as e:
             wait = _retry_wait(e, attempt)
             # Build full error detail

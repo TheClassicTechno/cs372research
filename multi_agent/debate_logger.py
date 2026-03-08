@@ -324,7 +324,8 @@ class DebateLogger:
             "model_name": getattr(self._config, "model_name", "unknown"),
             "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5-mini"),
             "temperature": getattr(self._config, "temperature", 0.3),
-            "roles": [r.value for r in self._config.roles],
+            "roles": list(self._config.roles),
+            "agent_profiles": getattr(self._config, "agent_profile_names", None) or None,
             "max_rounds": self._config.max_rounds,
             "actual_rounds": None,
             "terminated_early": None,
@@ -526,23 +527,34 @@ class DebateLogger:
         agent_confidences: dict[str, float],
         agent_evidence: dict[str, list[str]],
         round_num: int,
+        phase: str = "revise",
     ) -> None:
-        """Write metrics/js_divergence.json and metrics/evidence_overlap.json."""
+        """Write metrics/js_divergence.json and metrics/evidence_overlap.json.
+
+        When *phase* is ``"propose"``, additional files are written with a
+        ``_propose`` suffix (e.g. ``js_divergence_propose.json``) so they
+        sit alongside the original revise-phase files without overwriting them.
+        """
         if self._mode == "off" or self._round_dir is None:
             return
         metrics_dir = self._round_dir / "metrics"
+
+        suffix = f"_{phase}" if phase != "revise" else ""
+
         _write_json(
-            metrics_dir / "js_divergence.json",
+            metrics_dir / f"js_divergence{suffix}.json",
             _round_floats({
                 "round": round_num,
+                "phase": phase,
                 "js_divergence": js,
                 "agent_confidences": agent_confidences,
             }),
         )
         _write_json(
-            metrics_dir / "evidence_overlap.json",
+            metrics_dir / f"evidence_overlap{suffix}.json",
             _round_floats({
                 "round": round_num,
+                "phase": phase,
                 "mean_overlap": ov,
                 "agent_evidence_ids": agent_evidence,
             }),
@@ -712,6 +724,24 @@ class DebateLogger:
         manifest["termination_reason"] = (
             "stable_convergence" if terminated_early else "max_rounds"
         )
+
+        final_js = last_pid.get("divergence", {}).get("js")
+        if final_js is None:
+            # Fallback for non-PID path: calculate from the latest round in state
+            try:
+                from eval.divergence import generalized_js_divergence
+                decisions = state.get("revisions") or state.get("proposals", [])
+                if decisions:
+                    allocs = [
+                        d.get("action_dict", {}).get("allocation", {})
+                        for d in decisions
+                    ]
+                    if len(allocs) >= 2:
+                        final_js = generalized_js_divergence(allocs)
+            except Exception:
+                pass
+
+        manifest["final_js"] = final_js
         manifest["final_beta"] = last_pid.get("pid", {}).get("beta_new")
         _write_json(manifest_path, manifest)
 
@@ -818,7 +848,7 @@ class DebateLogger:
             else self._round_num
         )
         universe = obs.get("universe", [])
-        roles = config.get("roles", [r.value for r in self._config.roles])
+        roles = config.get("roles", list(self._config.roles))
         reason = "stable_convergence" if terminated_early else "max_rounds"
 
         lines = [

@@ -238,11 +238,11 @@ class AgentConfig(BaseModel):
         "Separate from llm_model so CRIT can use a stronger model.",
     )
     crit_system_template: str = Field(
-        default="crit_system.jinja",
+        default="crit_system_master.jinja",
         description="CRIT system prompt template filename (in eval/crit/prompts/).",
     )
     crit_user_template: str = Field(
-        default="crit_user.jinja",
+        default="crit_user_master.jinja",
         description="CRIT user prompt template filename (in eval/crit/prompts/).",
     )
 
@@ -334,6 +334,10 @@ class SimulationConfig(BaseModel):
     """
 
     dataset_path: str = Field(description="Path to the case dataset (directory or file).")
+    output_dir: str = Field(
+        default="results",
+        description="Top-level directory for simulation output."
+    )
     top_n_news: int | None = Field(
         default=None,
         ge=1,
@@ -355,7 +359,11 @@ class SimulationConfig(BaseModel):
         default_factory=BrokerConfig,
         description="Broker / execution configuration.",
     )
-    tickers: list[str] = Field(description="Universe of ticker symbols for this run.")
+    tickers: list[str] = Field(
+        default_factory=list,
+        description="Universe of ticker symbols for this run. "
+        "Required after scenario merge, but optional in debate-only configs.",
+    )
     quarters: list[str] | None = Field(
         default=None,
         description="If set, only load cases matching these quarters (e.g. ['Q1', 'Q3']). "
@@ -382,6 +390,15 @@ class SimulationConfig(BaseModel):
         default=None,
         description="Invest quarter for memo mode, e.g. '2025Q1'. "
         "Agents see the prior quarter's data and allocate for this quarter.",
+    )
+    memo_override_path: str | None = Field(
+        default=None,
+        description="If set, load the memo from this path instead of the default "
+        "memo_data/ directory. Used for scenario-specific memo caching.",
+    )
+    use_cash_virtual_ticker: bool = Field(
+        default=False,
+        description="If true, adds a virtual '_CASH_' ticker to the universe with a fixed price of 1.0.",
     )
     allocation_constraints: AllocationConstraints = Field(
         default_factory=AllocationConstraints,
@@ -510,11 +527,14 @@ class SimulationConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_memo_mode(self) -> SimulationConfig:
-        """Validate memo/allocation mode constraints."""
-        if not self.tickers:
-            raise ValueError("tickers must not be empty.")
-        if self.invest_quarter is None:
-            raise ValueError("invest_quarter is required.")
+        """Validate memo/allocation mode constraints.
+
+        Skips ticker/quarter checks when they are absent (debate-only config
+        loaded before scenario merge).  run_simulation.py calls
+        ``validate_ready()`` after merging to enforce these at runtime.
+        """
+        if not self.tickers or self.invest_quarter is None:
+            return self
         if len(self.tickers) > self.allocation_constraints.max_tickers:
             raise ValueError(
                 f"Too many tickers ({len(self.tickers)}) for allocation mode "
@@ -528,6 +548,16 @@ class SimulationConfig(BaseModel):
                 f"Cannot satisfy both constraints simultaneously."
             )
         return self
+
+    def validate_ready(self) -> None:
+        """Raise if the config is missing fields required for a simulation run.
+
+        Call after scenario merge to enforce tickers + invest_quarter.
+        """
+        if not self.tickers:
+            raise ValueError("tickers must not be empty.")
+        if self.invest_quarter is None:
+            raise ValueError("invest_quarter is required.")
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> SimulationConfig:

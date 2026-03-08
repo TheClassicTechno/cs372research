@@ -17,7 +17,6 @@ import re
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from ..config import AgentRole
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +163,15 @@ _DEFAULT_SECTION_ORDER = [
 
 _SECTION_RE = re.compile(r"^---SECTION:\s*(\w+)---\s*$", re.MULTILINE)
 
+# Regex to find Jinja2 variable references like {{ var_name }}
+_VAR_REF_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+
+# Vars that are legitimately empty in some configurations — no warning needed.
+_OPTIONAL_VARS = frozenset({
+    "sector_constraints",
+    "disagreements_section",
+})
+
 
 def _load_sectioned_template(name: str) -> dict[str, str]:
     """Split a template file by ``---SECTION: name---`` delimiters.
@@ -186,11 +194,40 @@ def _load_sectioned_template(name: str) -> dict[str, str]:
     return sections
 
 
+def _warn_empty_template_vars(
+    section_name: str,
+    raw_template: str,
+    template_vars: dict,
+    phase: str = "",
+) -> None:
+    """Warn loudly when a template section references an empty variable.
+
+    Scans the raw Jinja2 template for ``{{ var_name }}`` references and
+    checks whether the corresponding value in *template_vars* is falsy
+    (empty string, empty list, etc.).  Skips vars in ``_OPTIONAL_VARS``.
+    """
+    referenced = set(_VAR_REF_RE.findall(raw_template))
+    for var_name in sorted(referenced):
+        if var_name in _OPTIONAL_VARS:
+            continue
+        val = template_vars.get(var_name)
+        # val is None → StrictUndefined will already crash.
+        # val is falsy but present → silent blank in rendered prompt.
+        if val is not None and not val:
+            tag = f" (phase={phase})" if phase else ""
+            logger.warning(
+                "EMPTY TEMPLATE VAR: '%s' is empty in section '%s'%s. "
+                "The rendered prompt will have a blank where agent data should be.",
+                var_name, section_name, tag,
+            )
+
+
 def _assemble_user_prompt(
     sections: dict[str, str],
     order: list[str],
     template_vars: dict,
     prompt_file_overrides: dict[str, str] | None = None,
+    phase: str = "",
 ) -> str:
     """Render each section with Jinja2 and join in the specified order.
 
@@ -204,6 +241,8 @@ def _assemble_user_prompt(
     for section_name in order:
         raw_tmpl = sections.get(section_name)
         if raw_tmpl is not None:
+            # Check for empty vars BEFORE rendering
+            _warn_empty_template_vars(section_name, raw_tmpl, template_vars, phase)
             # Template section — render with Jinja2
             tmpl = _env.from_string(raw_tmpl)
             rendered = tmpl.render(**template_vars).strip()
@@ -234,18 +273,19 @@ FORCED_UNCERTAINTY: str = _load("scaffolding/forced_uncertainty.txt")
 TRAP_AWARENESS: str = _load("scaffolding/trap_awareness.txt")
 JSON_OUTPUT_INSTRUCTIONS: str = _load("output_format/json_output_instructions.txt")
 ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED: str = _load("output_format/allocation_output_instructions_enumerated.txt")
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
 # =============================================================================
 
 ROLE_SYSTEM_PROMPTS: dict[str, str] = {
-    AgentRole.MACRO: _load("roles/macro.txt"),
-    AgentRole.VALUE: _load("roles/value.txt"),
-    AgentRole.RISK: _load("roles/risk.txt"),
-    AgentRole.TECHNICAL: _load("roles/technical.txt"),
-    AgentRole.SENTIMENT: _load("roles/sentiment.txt"),
-    AgentRole.DEVILS_ADVOCATE: _load("roles/devils_advocate.txt"),
+    "macro": _load("roles/macro.txt"),
+    "value": _load("roles/value.txt"),
+    "risk": _load("roles/risk.txt"),
+    "technical": _load("roles/technical.txt"),
+    "sentiment": _load("roles/sentiment.txt"),
+    "devils_advocate": _load("roles/devils_advocate.txt"),
 }
 
 # =============================================================================
@@ -294,6 +334,7 @@ def build_proposal_user_prompt(
         "trap_awareness": traps,
         "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
         "allocation_output_instructions": alloc_instructions,
+        "allocation_output_instructions_enumerated": ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED,
         "sector_constraints": sector_constraints,
     }
 
@@ -302,10 +343,11 @@ def build_proposal_user_prompt(
 
     if "_unsectioned" in sections:
         # Template has no section markers — render as a single template (legacy)
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "propose")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="propose")
 
 
 def build_critique_prompt(
@@ -318,6 +360,8 @@ def build_critique_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    my_proposal_v2: str = "",
+    others_text_v2: str = "",
 ) -> str:
     """Build critique user prompt for a role agent in the debate.
 
@@ -337,7 +381,9 @@ def build_critique_prompt(
         "role": role.upper(),
         "context": context,
         "my_proposal": my_proposal,
+        "my_proposal_v2": my_proposal_v2,
         "others_text": others_text,
+        "others_text_v2": others_text_v2,
         "sector_constraints": sector_constraints,
     }
 
@@ -345,10 +391,11 @@ def build_critique_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "critique")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="critique")
 
 
 def build_revision_prompt(
@@ -361,6 +408,8 @@ def build_revision_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    my_proposal_v2: str = "",
+    critiques_text_v2: str = "",
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -382,7 +431,9 @@ def build_revision_prompt(
         "role": role.upper(),
         "context": context,
         "my_proposal": my_proposal,
+        "my_proposal_v2": my_proposal_v2,
         "critiques_text": critiques_text,
+        "critiques_text_v2": critiques_text_v2,
         "causal_claim_format": causal,
         "forced_uncertainty": uncertainty,
         "sector_constraints": sector_constraints,
@@ -392,10 +443,11 @@ def build_revision_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "revise")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="revise")
 
 
 def build_judge_prompt(
@@ -440,7 +492,8 @@ def build_judge_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "judge")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="judge")

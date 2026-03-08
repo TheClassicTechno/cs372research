@@ -10,8 +10,8 @@ logger = logging.getLogger("multi_agent.graph.allocation")
 def normalize_allocation(
     raw: dict[str, float],
     universe: list[str],
-    max_weight: float,
-    min_holdings: int,
+    max_weight: float = 1.0,
+    min_holdings: int = 1,
 ) -> dict[str, float]:
     """Validate, constrain, and normalize allocation weights.
 
@@ -30,6 +30,12 @@ def normalize_allocation(
         logger.warning("Empty universe — returning empty allocation")
         return {}
 
+    # Step 0: Map "CASH" to "_CASH_" if agents used the wrong name
+    if "CASH" in raw and "_CASH_" in universe and "_CASH_" not in raw:
+        logger.info("Agent used 'CASH' instead of '_CASH_' — remapping")
+        raw = dict(raw)
+        raw["_CASH_"] = raw.pop("CASH")
+
     # Steps 1-3: clean up
     alloc = {}
     for t in universe:
@@ -47,8 +53,11 @@ def normalize_allocation(
     total = sum(alloc.values())
     if total < 1e-8:
         logger.warning("All weights zero, defaulting to equal-weight")
-        eq = 1.0 / len(universe)
-        return {t: eq for t in universe}
+        eq_alloc = {t: round(1.0 / len(universe), 2) for t in universe}
+        residual = round(1.0 - sum(eq_alloc.values()), 2)
+        if residual != 0.0:
+            eq_alloc[universe[0]] = round(eq_alloc[universe[0]] + residual, 2)
+        return eq_alloc
 
     # Step 5: normalize
     alloc = {t: w / total for t, w in alloc.items()}
@@ -94,6 +103,13 @@ def normalize_allocation(
                 "Constraint enforcement changed %s allocation: %.4f -> %.4f (diff: %+.4f)",
                 t, naive_alloc[t], alloc[t], diff
             )
+
+    # Round to 2 decimal places; adjust largest weight to keep sum == 1.0
+    alloc = {t: round(w, 2) for t, w in alloc.items()}
+    residual = round(1.0 - sum(alloc.values()), 2)
+    if residual != 0.0 and alloc:
+        largest = max(alloc, key=alloc.get)
+        alloc[largest] = round(alloc[largest] + residual, 2)
 
     return alloc
 

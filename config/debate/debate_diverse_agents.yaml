@@ -9,28 +9,6 @@ case_format: "memo"
 dataset_path: "data-pipeline/final_snapshots"
 memo_format: "text"
 
-tickers:
-  - TSLA
-  - NFLX
-  - JPM
-  - GS
-  - BAC
-  - UNH
-  - LLY
-  - JNJ
-  - XOM
-  - CAT
-  - DAL
-  - AMT
-  - COST
-  - WMT
-
-allocation_constraints:
-  max_weight: 0.20
-  min_holdings: 5
-  fully_invested: true
-  max_tickers: 20
-
 num_episodes: 1
 
 # --- Who debates ---

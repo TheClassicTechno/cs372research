@@ -1,0 +1,187 @@
+---SECTION: preamble---
+You are the {{ role }} agent. You received critiques on your portfolio allocation and reasoning.
+
+Your previous proposal contained **enumerated causal claims (C1, C2, …)** and a portfolio allocation derived from those claims.
+
+Your revision must update both:
+• the **claims themselves** if critiques identify flaws
+• the **portfolio allocation** if those claim revisions imply different positions
+
+The goal is to improve reasoning quality — not simply to concede to critiques.
+
+---
+
+---SECTION: context---
+## Financial Context
+{{ context }}
+
+---
+
+---SECTION: agent_data---
+## Your Original Proposal
+{{ my_proposal_v2 }}
+
+## Critiques You Received
+{{ critiques_text_v2 }}
+
+Critiques reference your claims using their **claim IDs (C1, C2, …)**.
+
+---
+
+---SECTION: task---
+## Your Task
+
+Revise your proposal based on the critiques.
+
+You MUST:
+
+• Address **each critique explicitly**
+• Either **accept the critique and revise your claim**, or **rebut it with evidence**
+
+You may revise in the following ways:
+
+• Modify a claim (update assumptions, evidence, or confidence)
+• Add a new claim (if critiques revealed missing reasoning)
+• Remove a claim (if the critique exposed a serious flaw)
+• Adjust portfolio weights if claim revisions change the investment thesis
+
+However:
+
+• Do NOT revise simply to be agreeable
+• Only change claims or weights if critiques expose **real weaknesses**
+
+---
+
+CRITICAL — Evidence citation rules:
+
+When making claims about specific data, you MUST cite the **exact bracketed evidence IDs** from the memo.
+
+Examples:
+[AAPL-RET60], [NVDA-VOL60], [L1-VIX]
+
+Rules:
+
+• NEVER invent evidence labels
+• NEVER use free-text slugs like "aaplrevenuegrowth"
+• ONLY copy verbatim evidence IDs from the memo
+
+Claims without valid citations will be treated as **unsupported reasoning**.
+
+---
+
+CRITICAL — Allocation universe constraint
+
+Your revised allocation must use **ONLY tickers from the allocation universe** in the Financial Context.
+
+Rules:
+
+• Do NOT add new tickers
+• Include **ALL universe tickers** in the allocation
+• Use **0.0 weight** for tickers you choose not to hold
+
+Weights must:
+
+• sum to **1.0**
+• remain within **0.0–0.40 per ticker**
+
+---
+
+{{ sector_constraints }}
+
+---
+
+---SECTION: revision_guidelines---
+
+### Claim Revision Rules
+
+• Maintain **3–5 claims maximum**
+
+• Claims must retain **stable IDs** where possible (C1, C2, C3…)
+
+If you change a claim:
+
+• update its text
+• update its evidence
+• update assumptions or falsifiers if needed
+
+If you remove a claim:
+
+• explain why in `revision_notes`
+
+If you add a new claim:
+
+• assign the next ID (e.g., C4)
+
+---
+
+### Claim → Allocation Consistency
+
+Your portfolio allocation must remain **consistent with your claims**.
+
+Rules:
+
+• Each claim must affect at least one ticker using `"impacts_positions"`
+• Every ticker with **weight > 0** must be supported by at least one claim
+• Do NOT keep claims that have no effect on the portfolio
+
+---
+
+### Position Rationale Update
+
+For each ticker with **weight > 0**:
+
+• explain which claims justify the position
+• ensure `"supported_by_claims"` references valid claim IDs
+
+If weights changed:
+
+• explain why in `"revision_notes"`
+
+
+---
+
+---SECTION: output_format---
+
+Respond with **valid JSON only**.
+
+{% raw %}
+{
+  "allocation": {
+    "TICKER": 0.XX
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "... revised causal hypothesis with evidence citations ...",
+      "claim_type": "macro | sector | firm",
+      "pearl_level": "L1 | L2 | L3",
+      "evidence": ["[EVIDENCE-ID]", "..."],
+      "variables": ["X", "Y"],
+      "assumptions": ["..."],
+      "falsifiers": ["..."],
+      "impacts_positions": ["TICKER", "..."],
+      "confidence": 0.0-1.0
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "TICKER",
+      "weight": 0.XX,
+      "supported_by_claims": ["C1", "C2"],
+      "explanation": "Explain why these claims justify the position."
+    }
+  ],
+
+  "portfolio_rationale": "Explain how the claims jointly imply the revised portfolio.",
+
+  "confidence": 0.0-1.0,
+
+  "risks_or_falsifiers": [
+    "Portfolio-level condition that would invalidate the strategy."
+  ],
+
+  "revision_notes": "Explain what changed in response to critiques. Reference claim IDs (e.g., 'C2 revised due to critique about evidence misuse; reduced NVDA weight accordingly')."
+}
+{% endraw %}

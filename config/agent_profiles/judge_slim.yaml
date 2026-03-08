@@ -1,0 +1,10 @@
+# Slim judge profile — uses slim causal contract.
+system_prompts:
+  judge:
+    # - system_contract/system_causal_contract_slim.txt
+    - roles/judge.txt
+
+user_prompts:
+  judge:
+    template: phases/judge_allocation.txt
+    sections: [preamble, context, agent_data, task, output_format]

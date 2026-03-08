@@ -71,8 +71,19 @@ def _load_snapshot_json(base_dir: Path, year: int, quarter: str) -> dict | None:
         ) from exc
 
 
-def _load_memo_text(base_dir: Path, year: int, quarter: str) -> str | None:
-    """Load memo text, returning None if file doesn't exist."""
+def _load_memo_text(
+    base_dir: Path,
+    year: int,
+    quarter: str,
+    memo_override_path: Path | None = None,
+) -> str | None:
+    """Load memo text, returning None if file doesn't exist.
+
+    If *memo_override_path* is provided and the file exists, read from that
+    path instead of the default ``memo_data/`` directory.
+    """
+    if memo_override_path and memo_override_path.exists():
+        return memo_override_path.read_text()
     path = base_dir / "memo_data" / f"memo_{year}_{quarter}.txt"
     if not path.exists():
         return None
@@ -84,6 +95,9 @@ def _extract_prices(snapshot: dict, tickers: list[str]) -> dict[str, float]:
     ticker_data = snapshot.get("ticker_data", {})
     prices: dict[str, float] = {}
     for t in tickers:
+        if t == "_CASH_":
+            prices[t] = 1.0
+            continue
         td = ticker_data.get(t, {})
         af = td.get("asset_features", {})
         close = af.get("close")
@@ -154,6 +168,7 @@ def load_memo_cases(
     invest_quarter: str,
     memo_format: str,
     tickers: list[str],
+    memo_override_path: str | None = None,
 ) -> list[Case]:
     """Load decision + mark-to-market cases for memo-based allocation.
 
@@ -187,8 +202,9 @@ def load_memo_cases(
         )
 
     # --- Load prior-quarter context ---
+    _override = Path(memo_override_path) if memo_override_path else None
     if memo_format == "text":
-        memo_text = _load_memo_text(base_dir, prior_year, prior_q)
+        memo_text = _load_memo_text(base_dir, prior_year, prior_q, memo_override_path=_override)
         if memo_text is None:
             raise FileNotFoundError(
                 f"Memo not found: {base_dir / 'memo_data' / f'memo_{prior_year}_{prior_q}.txt'}"

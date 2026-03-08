@@ -64,7 +64,7 @@ _CRIT_ENTRY = {
 MOCK_CRIT_RESPONSE = json.dumps(_CRIT_ENTRY)
 
 
-def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str) -> str:
+def _mock_call_llm(config: dict, system_prompt: str, user_prompt: str, **kw) -> str:
     """Drop-in replacement for ``multi_agent.graph._call_llm``.
 
     Debate graph nodes never reach _call_llm in mock mode (they short-circuit

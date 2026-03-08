@@ -30,8 +30,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ..config import AgentRole
-from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, get_role_prompts, load_module
+from . import ROLE_SYSTEM_PROMPTS, SYSTEM_CAUSAL_CONTRACT, _env, get_role_prompts, load_module
 
 # Phase preambles — keyed by phase name (kept for backward compat with old profiles).
 _PHASE_PREAMBLES = {
@@ -110,6 +109,14 @@ def _load_tone(filename: str) -> str:
             return ""
         _tone_cache[filename] = path.read_text()
     return _tone_cache[filename]
+
+
+def _render_tone(content: str, role: str) -> str:
+    """Render Jinja2 template variables in tone file content."""
+    if "{{" not in content:
+        return content
+    tmpl = _env.from_string(content)
+    return tmpl.render(role=role.upper())
 
 
 def beta_to_bucket(beta: float) -> str:
@@ -300,7 +307,8 @@ class PromptRegistry:
                 return ""  # warning logged by caller
             bucket = beta_to_bucket(beta)
             filename = _TONE_FILES.get((phase, bucket), "")
-            return _load_tone(filename) if filename else ""
+            raw = _load_tone(filename) if filename else ""
+            return _render_tone(raw, role) if raw else ""
 
         # Fallback: MODULE_CATALOG
         return load_module(block_name, overrides)
@@ -412,7 +420,7 @@ class PromptRegistry:
                 beta_bucket = bucket
                 filename = _TONE_FILES.get((phase, bucket), "")
                 if filename:
-                    content = _load_tone(filename)
+                    content = _render_tone(_load_tone(filename), role)
                     tone_file = filename
                 else:
                     content = ""

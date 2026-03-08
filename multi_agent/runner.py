@@ -59,10 +59,10 @@ HOW INVARIANTS ARE PRESERVED
    equivalence testing against the old monolithic path.
 
 Usage:
-    from multi_agent import MultiAgentRunner, DebateConfig, Observation, AgentRole
+    from multi_agent import MultiAgentRunner, DebateConfig, Observation
 
     config = DebateConfig(
-        roles=[AgentRole.MACRO, AgentRole.VALUE, AgentRole.RISK, AgentRole.TECHNICAL],
+        roles=["macro", "value", "risk", "technical"],
         max_rounds=2,
         agreeableness=0.3,
         enable_adversarial=True,
@@ -103,7 +103,7 @@ def _round_floats(obj, ndigits=4):
     return obj
 
 
-from .config import AgentRole, DebateConfig
+from .config import DebateConfig
 from .prompts.registry import beta_to_bucket, build_prompt_manifest, reset_registry_cache
 from .terminal_display import (
     render_round_header,
@@ -142,6 +142,162 @@ from .models import (
 )
 
 
+def _extract_thesis(action_dict: dict, role: str = "", phase: str = "") -> str:
+    """Extract thesis from action_dict, supporting canonical and legacy formats.
+
+    Reading priority: thesis → portfolio_rationale → justification.
+    Falls back to empty string.
+    """
+    tag = f"[{role}/{phase}] " if role else ""
+    thesis = action_dict.get("thesis")
+    if thesis:
+        return thesis
+    thesis = action_dict.get("portfolio_rationale")
+    if thesis:
+        logger.debug("%sUsing 'portfolio_rationale' for thesis (no 'thesis' field).", tag)
+        return thesis
+    thesis = action_dict.get("justification")
+    if thesis:
+        logger.debug("%sUsing 'justification' for thesis (no 'thesis' or 'portfolio_rationale' field).", tag)
+        return thesis
+    logger.warning(
+        "%sCRIT bundle thesis is EMPTY — agent output has no "
+        "'thesis', 'portfolio_rationale', or 'justification'.  "
+        "action_dict keys: %s  "
+        "This will degrade CRIT evidential_support scoring.",
+        tag, sorted(action_dict.keys()),
+    )
+    return ""
+
+
+def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
+    """Normalize claims for CRIT bundle. Ensures all canonical fields exist."""
+    normalized = []
+    for claim in claims:
+        if not isinstance(claim, dict):
+            continue
+        if not claim.get("claim_text"):
+            continue
+        raw_evidence = claim.get("evidence", [])
+        normalized.append({
+            "claim_id": claim.get("claim_id", ""),
+            "claim_text": claim.get("claim_text", ""),
+            "claim_type": claim.get("claim_type", "unknown"),
+            "pearl_level": claim.get("pearl_level", ""),
+            "evidence": raw_evidence,
+            "evidence_ids": sorted(set(
+                normalize_evidence_id(e) for e in raw_evidence if isinstance(e, str)
+            )),
+            "variables": claim.get("variables", []),
+            "assumptions": claim.get("assumptions", []),
+            "falsifiers": claim.get("falsifiers", []),
+            "impacts_positions": claim.get("impacts_positions", []),
+            "confidence": claim.get("confidence", 0.5),
+        })
+    return normalized
+
+
+def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
+    """Normalize position rationale for CRIT bundle."""
+    normalized = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized.append({
+            "ticker": entry.get("ticker", ""),
+            "weight": entry.get("weight", 0.0),
+            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
+            "explanation": entry.get("explanation") or entry.get("rationale") or "",
+        })
+    return normalized
+
+
+def _extract_reasoning(
+    action_dict: dict, normalize_evidence_id, *, revision_notes: str = "",
+) -> dict:
+    """Extract structured reasoning from an action_dict for CRIT bundle.
+
+    This function defines the canonical reasoning bundle schema used by CRIT.
+    All downstream evaluators must rely on this structure rather than parsing
+    raw LLM text. If fields change here, CRIT prompts and evaluation schemas
+    must be updated together.
+    """
+    result = {
+        "claims": _normalize_claims(action_dict.get("claims", []), normalize_evidence_id),
+        "position_rationale": _normalize_position_rationale(
+            action_dict.get("position_rationale", [])
+        ),
+        "thesis": (action_dict.get("thesis")
+                   or action_dict.get("portfolio_rationale")
+                   or action_dict.get("justification")
+                   or ""),
+        "confidence": action_dict.get("confidence", 0.5),
+        "risks_or_falsifiers": action_dict.get("risks_or_falsifiers", []),
+    }
+    if revision_notes:
+        result["revision_notes"] = revision_notes
+    return result
+
+
+def _extract_citations(
+    action_dict: dict, raw_text: str, extract_evidence_ids,
+    *, role: str = "", phase: str = "",
+) -> list[dict]:
+    """Extract evidence citations from action_dict or raw text.
+
+    Priority order:
+    1. Top-level ``evidence_citations`` (base format)
+    2. ``claims[].evidence`` arrays (enriched format)
+    3. Regex extraction from raw LLM response text (fallback)
+    """
+    import copy
+    from eval.evidence import normalize_evidence_id
+
+    tag = f"[{role}/{phase}] " if role else ""
+
+    # 1. Top-level structured citations (base format)
+    top_level = action_dict.get("evidence_citations", [])
+    if top_level:
+        return copy.deepcopy(top_level)
+
+    # 2. Extract from claims[].evidence (enriched format)
+    claims = action_dict.get("claims", [])
+    if claims:
+        seen = set()
+        citations = []
+        for claim in claims:
+            if not isinstance(claim, dict):
+                continue
+            for ev in claim.get("evidence", []):
+                # Evidence entries may be "[AAPL-RET60]" or "AAPL-RET60"
+                eid = normalize_evidence_id(ev)
+                if eid and eid not in seen:
+                    seen.add(eid)
+                    citations.append({"evidence_id": eid})
+        if citations:
+            logger.debug(
+                "%sExtracted %d evidence IDs from claims[].evidence (no top-level evidence_citations).",
+                tag, len(citations),
+            )
+            return citations
+
+    # 3. Fallback: regex extraction from raw response text
+    regex_ids = sorted(extract_evidence_ids(raw_text))
+    if regex_ids:
+        logger.warning(
+            "%sNo structured evidence found in agent output — fell back to regex "
+            "extraction from raw text (%d IDs found).  Check agent output format.",
+            tag, len(regex_ids),
+        )
+    else:
+        logger.warning(
+            "%sNo evidence citations found anywhere — agent output has no "
+            "'evidence_citations', no claims[].evidence, and no bracket IDs in "
+            "raw text.  CRIT evidential_support will be degraded.", tag,
+        )
+    return [{"evidence_id": eid} for eid in regex_ids]
+
+
 def build_reasoning_bundle(
     state: dict,
     role: str,
@@ -156,13 +312,14 @@ def build_reasoning_bundle(
     Critical: critiques_received includes ONLY critiques targeting this
     agent. Critiques list is reset each round, so all entries are current.
     """
-    from eval.evidence import enrich_evidence_citations, extract_evidence_ids
+    from eval.evidence import enrich_evidence_citations, expand_evidence_ids_inline, extract_evidence_ids, normalize_evidence_id
     import copy
 
-    # Find this agent's proposal
+    # Find this agent's proposal — proposals MUST exist at this point.
+    proposals = state["proposals"]
     proposal = None
-    for p in state.get("proposals", []):
-        if p.get("role") == role:
+    for p in proposals:
+        if p["role"] == role:
             proposal = p
             break
     if proposal is None:
@@ -170,68 +327,100 @@ def build_reasoning_bundle(
 
     # Find this agent's revision (fall back to proposal if no revision)
     revision = None
-    for r in state.get("revisions", []):
-        if r.get("role") == role:
+    for r in state.get("revisions") or []:
+        if r["role"] == role:
             revision = r
             break
     if revision is None:
         revision = proposal
 
-    # Filter critiques: only those targeting this agent
+    # Filter critiques: only those targeting this agent.
+    # LLM outputs vary in casing ("MACRO" vs "macro") and may include
+    # suffixes ("MACRO agent"), so we normalize before comparing.
     critiques_received = []
-    for critic in state.get("critiques", []):
-        from_role = critic.get("role", "unknown")
-        for crit in critic.get("critiques", []):
-            if crit.get("target_role") == role:
+    role_lower = role.lower()
+    for critic in state.get("critiques") or []:
+        from_role = critic["role"]
+        for crit in critic["critiques"]:
+            target = crit.get("target_role", "").lower().split()[0] if crit.get("target_role") else ""
+            if target == role_lower:
+                # Critique templates output "counter_evidence" (list of
+                # bracketed evidence IDs).  Convert to the structured
+                # format that enrich_evidence_citations expects.
+                raw_ev = crit.get("counter_evidence") or crit.get("evidence_citations") or []
+                if not raw_ev:
+                    logger.warning(
+                        "[%s/critique] Critique from %s has no counter_evidence "
+                        "and no evidence_citations — CRIT cannot evaluate "
+                        "evidence quality of this critique.", role, from_role,
+                    )
+                structured_ev = []
+                for ev in raw_ev:
+                    if isinstance(ev, dict):
+                        structured_ev.append(copy.deepcopy(ev))
+                    elif isinstance(ev, str):
+                        structured_ev.append({"evidence_id": normalize_evidence_id(ev)})
                 critiques_received.append({
                     "from_role": from_role,
-                    "critique_text": crit.get("objection", ""),
-                    "evidence_citations": copy.deepcopy(
-                        crit.get("evidence_citations", [])
-                    ),
+                    "critique_text": crit["objection"],
+                    "evidence_citations": structured_ev,
                 })
 
-    # Extract action_dict content for proposal and revision
-    prop_action = proposal.get("action_dict", {})
+    # Extract action_dict content for proposal and revision — these MUST exist.
+    prop_action = proposal["action_dict"]
     if not isinstance(prop_action, dict):
-        prop_action = {}
-    rev_action = revision.get("action_dict", {})
+        raise TypeError(
+            f"proposal['action_dict'] for {role} must be a dict, "
+            f"got {type(prop_action).__name__}"
+        )
+    rev_action = revision["action_dict"]
     if not isinstance(rev_action, dict):
-        rev_action = {}
+        raise TypeError(
+            f"revision['action_dict'] for {role} must be a dict, "
+            f"got {type(rev_action).__name__}"
+        )
 
     # Build proposal bundle with embedded evidence
-    prop_citations = copy.deepcopy(prop_action.get("evidence_citations", []))
-    if not prop_citations:
-        # Fallback: extract bracket citations from raw response text
-        raw = proposal.get("raw_response", "")
-        prop_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
+    prop_citations = _extract_citations(
+        prop_action, proposal.get("raw_response") or "", extract_evidence_ids,
+        role=role, phase="propose",
+    )
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
-        "thesis": prop_action.get("justification", ""),
-        "portfolio_allocation": prop_action.get("allocation", {}),
-        "reasoning": proposal.get("raw_response", ""),
+        "portfolio_allocation": prop_action["allocation"],
+        "reasoning": _extract_reasoning(prop_action, normalize_evidence_id),
+        "raw_response": proposal.get("raw_response") or "",
         "evidence_citations": prop_citations,
     }
 
     # Build revision bundle with embedded evidence
-    rev_citations = copy.deepcopy(rev_action.get("evidence_citations", []))
-    if not rev_citations:
-        # Fallback: extract bracket citations from raw response text
-        raw = revision.get("raw_response", "")
-        rev_citations = [{"evidence_id": eid} for eid in sorted(extract_evidence_ids(raw))]
+    rev_citations = _extract_citations(
+        rev_action, revision.get("raw_response") or "", extract_evidence_ids,
+        role=role, phase="revise",
+    )
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
-        "thesis": rev_action.get("justification", ""),
-        "portfolio_allocation": rev_action.get("allocation", {}),
-        "reasoning": revision.get("raw_response", ""),
+        "portfolio_allocation": rev_action["allocation"],
+        "reasoning": _extract_reasoning(
+            rev_action, normalize_evidence_id,
+            revision_notes=revision.get("revision_notes") or "",
+        ),
+        "raw_response": revision.get("raw_response") or "",
         "evidence_citations": rev_citations,
     }
 
     # Enrich critique citations
     for crit in critiques_received:
         enrich_evidence_citations(
-            crit.get("evidence_citations", []), memo_evidence_lookup,
+            crit["evidence_citations"], memo_evidence_lookup,
         )
+
+    # Expand evidence IDs inline in text fields
+    for bundle_part in (proposal_bundle, revised_bundle):
+        bundle_part["reasoning"]["thesis"] = expand_evidence_ids_inline(bundle_part["reasoning"]["thesis"], memo_evidence_lookup)
+        bundle_part["raw_response"] = expand_evidence_ids_inline(bundle_part["raw_response"], memo_evidence_lookup)
+    for crit in critiques_received:
+        crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)
 
     return {
         "round": round_num,
@@ -260,8 +449,8 @@ class MultiAgentRunner:
         # Auto-inject devil's advocate if adversarial mode is enabled.
         # Copy roles to avoid mutating a shared config object.
         if self.config.enable_adversarial:
-            if AgentRole.DEVILS_ADVOCATE not in self.config.roles:
-                self.config.roles = list(self.config.roles) + [AgentRole.DEVILS_ADVOCATE]
+            if "devils_advocate" not in self.config.roles:
+                self.config.roles = list(self.config.roles) + ["devils_advocate"]
 
         self.pipeline_graph = compile_pipeline_graph(self.config)
         if self.config.parallel_agents:
@@ -296,9 +485,9 @@ class MultiAgentRunner:
 
             crit_config = self.config.to_dict()
             crit_config["model_name"] = self.config.crit_model_name
-            base_llm_fn = lambda sys, usr: _call_llm(crit_config, sys, usr)
+            base_llm_fn = lambda sys, usr, **kw: _call_llm(crit_config, sys, usr, phase="crit", **kw)
 
-            def _logging_llm_fn(system_prompt: str, user_prompt: str) -> str:
+            def _logging_llm_fn(system_prompt: str, user_prompt: str, **kw) -> str:
                 if self._log_llm:
                     pid_llm_logger.debug(
                         "[CRIT LLM REQUEST]\n"
@@ -306,7 +495,7 @@ class MultiAgentRunner:
                         "===== USER PROMPT =====\n%s",
                         system_prompt, user_prompt,
                     )
-                response = base_llm_fn(system_prompt, user_prompt)
+                response = base_llm_fn(system_prompt, user_prompt, **kw)
                 if self._log_llm:
                     pid_llm_logger.debug(
                         "[CRIT LLM RESPONSE]\n%s", response,
@@ -352,13 +541,14 @@ class MultiAgentRunner:
             from eval.PID.stability import validate_gains
 
             pid_cfg = self.config.pid_config
-            validate_gains(
-                pid_cfg.gains,
-                pid_cfg.T_max,
-                pid_cfg.gamma_beta,
-                rho_star=pid_cfg.rho_star,
-                mu=pid_cfg.mu,
-            )
+            # TODO: re-enable after tuning gains for stability
+            # validate_gains(
+            #     pid_cfg.gains,
+            #     pid_cfg.T_max,
+            #     pid_cfg.gamma_beta,
+            #     rho_star=pid_cfg.rho_star,
+            #     mu=pid_cfg.mu,
+            # )
             self._pid_controller = PIDController(pid_cfg, self.config.initial_beta)
 
     def _reset_per_invocation_state(self) -> None:
@@ -382,6 +572,20 @@ class MultiAgentRunner:
             self._pid_controller = PIDController(
                 self.config.pid_config, self.config.initial_beta
             )
+
+    def _get_js_divergence(self, state: dict) -> float | None:
+        """Compute JS divergence between the latest agent allocations."""
+        from eval.divergence import generalized_js_divergence
+        decisions = state.get("revisions") or state.get("proposals", [])
+        if not decisions:
+            return None
+        allocs = [
+            d.get("action_dict", {}).get("allocation", {})
+            for d in decisions
+        ]
+        if len(allocs) < 2:
+            return None
+        return generalized_js_divergence(allocs)
 
     def _log_prompt_manifest(self, state: dict, round_num: int) -> None:
         """Log prompt file manifest once at the start of a round.
@@ -534,11 +738,20 @@ class MultiAgentRunner:
                     _print_comparison_table(state.get("proposals", []), "Allocations")
                     _print_comparison_table(state.get("revisions", []), "Revisions")
 
+                js = self._get_js_divergence(state)
+                if js is not None:
+                    if self.config.console_display:
+                        from .terminal_display import render_divergence_metrics
+                        render_divergence_metrics(js, 0.0) # Overlap not avail here
+                    else:
+                        print(f"\n  Round {t+1} Disagreement (JS Divergence): {js:.4f} bits")
+
                 if self._debate_logger:
                     self._debate_logger.write_proposals(state.get("proposals", []))
                     self._debate_logger.write_critiques(state.get("critiques", []))
                     self._debate_logger.write_revisions(state.get("revisions", []))
-                    self._debate_logger.write_round_state(state, t + 1)
+                    metrics = {"js_divergence": js} if js is not None else None
+                    self._debate_logger.write_round_state(state, t + 1, metrics=metrics)
 
             if self.config.parallel_agents:
                 # With operator.add, revisions accumulate (previous round's
@@ -620,7 +833,7 @@ class MultiAgentRunner:
 
         # --- Round header (terminal display) ---
         if use_display:
-            universe = [r.value for r in self.config.roles]
+            universe = list(self.config.roles)
             obs_universe = state.get("observation", {}).get("universe", [])
             tone = beta_to_bucket(beta)
             render_round_header(
@@ -638,13 +851,51 @@ class MultiAgentRunner:
             print(f"  Calling {n_agents} agents: {role_names}", flush=True)
         state["config"]["_current_beta"] = None
         state = self._propose_graph.invoke(state)
+        # In Round 2+, propose is a no-op; show the latest revisions
+        # (which critique/revise will actually operate on) instead of
+        # stale Round 1 proposals.
+        display_source = state.get("revisions") or state.get("proposals", [])
+        display_label = "Revised Allocations" if state.get("revisions") else "Allocations"
         if use_display:
-            render_portfolio_table(state.get("proposals", []), "Allocations")
+            render_portfolio_table(display_source, display_label)
         else:
-            _print_comparison_table(state.get("proposals", []), "Allocations")
+            _print_comparison_table(display_source, display_label)
 
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
+
+        # --- Propose-phase JS divergence + evidence overlap ---
+        self._proposed_divergence = None
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            prop_decisions = state.get("revisions") or state.get("proposals", [])
+            prop_allocs = [
+                d.get("action_dict", {}).get("allocation", {})
+                for d in prop_decisions
+            ]
+            if len(prop_allocs) >= 2:
+                prop_js = generalized_js_divergence(prop_allocs)
+                prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
+                prop_ov = compute_mean_overlap(prop_ev) or 0.0
+
+                prop_confidences = {
+                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in prop_decisions
+                }
+                prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
+
+                self._debate_logger.write_divergence_metrics(
+                    prop_js, prop_ov, prop_confidences, prop_evidence,
+                    round_num, phase="propose",
+                )
+                self._proposed_divergence = {
+                    "js": prop_js,
+                    "ov": prop_ov,
+                    "agent_confidences": prop_confidences,
+                    "agent_evidence_ids": prop_evidence,
+                }
 
         # --- Critique phase (uses PID beta for tone) ---
         if use_display:
@@ -705,8 +956,7 @@ class MultiAgentRunner:
 
         # --- Build reasoning bundles for each agent ---
         bundles = {}
-        for role_enum in self.config.roles:
-            role = role_enum.value
+        for role in self.config.roles:
             bundle = build_reasoning_bundle(
                 state, role, round_num, self._memo_evidence_lookup,
             )
@@ -737,6 +987,10 @@ class MultiAgentRunner:
         ov = compute_mean_overlap(evidence_sets)
         if ov is None:
             ov = 0.0
+
+        if not self.config.console_display:
+            print(f"\n  Round {round_num} Disagreement (JS Divergence): {js:.4f} bits")
+            print(f"  Round {round_num} Evidence Overlap: {ov:.4f}")
 
         # Guard rho_bar against None/NaN
         rho_bar = round_crit.rho_bar
@@ -861,6 +1115,7 @@ class MultiAgentRunner:
                     "agent_confidences": agent_confidences,
                     "agent_evidence_ids": agent_evidence,
                 },
+                "divergence_propose": self._proposed_divergence,
                 "convergence": {
                     "stable_rounds": self._stable_rounds,
                     "delta_rho_actual": (

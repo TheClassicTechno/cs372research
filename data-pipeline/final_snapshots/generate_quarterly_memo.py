@@ -25,11 +25,20 @@ Examples:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
+
+_SENTENCE_SPLIT_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z])')
+
+
+def _split_sentences(text: str) -> list[str]:
+    """Split filing summary text into individual sentences."""
+    sentences = _SENTENCE_SPLIT_RE.split(text.strip())
+    return [s.strip() for s in sentences if s.strip()]
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _PIPELINE_DIR = _SCRIPT_DIR.parent
@@ -293,15 +302,6 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
         lines.append(f"    [{ticker}-IDMOM]    Idiosyncratic Momentum 60D: {_f(af.get('idiosyncratic_momentum'), 4)}")
         lines.append(f"    [{ticker}-TREND]    Trend Consistency: {_f(af.get('trend_consistency'))}")
         lines.append(f"    [{ticker}-RS60]     Relative Strength 60D: {_pct(af.get('relative_strength_60d'))}")
-
-        lines.append("")
-        lines.append(f"  Fundamentals:")
-        lines.append(f"    [{ticker}-MCAP]     Log Market Cap: {_f(af.get('size_log_mcap'))}")
-        lines.append(f"    [{ticker}-BM]       Book-to-Market: {_f(af.get('value_book_to_market'), 4)}")
-        lines.append(f"    [{ticker}-GM]       Gross Margin: {_pct_level(af.get('gross_margin'))}")
-        lines.append(f"    [{ticker}-ROE]      ROE: {_pct(af.get('roe'))}")
-        lines.append(f"    [{ticker}-FCFY]     FCF Yield: {_pct(af.get('free_cash_flow_yield'))}")
-        lines.append(f"    [{ticker}-DE]       Debt/Equity: {_f(af.get('debt_to_equity'))}")
         lines.append(f"    [{ticker}-ESURP]    Earnings Surprise: {_pct(af.get('earnings_surprise_pct'))}")
 
         dvol = af.get("avg_dollar_volume_20d")
@@ -317,17 +317,20 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
     sent = data.get("news_sentiment")
     lines.append("")
     if sent:
+        is_ec = sent.get("source") == "earnings_call"
+        label = "Sentiment (from earnings call)" if is_ec else "Sentiment"
         z = sent.get("cross_sectional_z")
-        lines.append(f"  Sentiment:")
+        lines.append(f"  {label}:")
         lines.append(f"    [{ticker}-SENT]     Mean Sentiment: {_f(sent.get('mean_sentiment'), 4)}")
         lines.append(f"    [{ticker}-SVOL]     Sentiment Volatility: {_f(sent.get('sentiment_volatility'), 4)}")
-        surprise = sent.get("surprise_sentiment")
-        if surprise is not None:
-            lines.append(f"    [{ticker}-SSURP]    Surprise (QoQ): {_f(surprise, 4)}{_arrow(surprise)}")
-        else:
-            lines.append(f"    [{ticker}-SSURP]    Surprise (QoQ): n/a (first quarter)")
-        lines.append(f"    [{ticker}-CSZ]      Cross-Sectional Z: {_f(z, 4)}")
-        lines.append(f"    [{ticker}-ACNT]     Article Count: {sent.get('article_count', 'n/a')}")
+        if not is_ec:
+            surprise = sent.get("surprise_sentiment")
+            if surprise is not None:
+                lines.append(f"    [{ticker}-SSURP]    Surprise (QoQ): {_f(surprise, 4)}{_arrow(surprise)}")
+            else:
+                lines.append(f"    [{ticker}-SSURP]    Surprise (QoQ): n/a (first quarter)")
+            lines.append(f"    [{ticker}-CSZ]      Cross-Sectional Z: {_f(z, 4)}")
+            lines.append(f"    [{ticker}-ACNT]     Article Count: {sent.get('article_count', 'n/a')}")
     else:
         lines.append("  Sentiment: not available")
 
@@ -345,11 +348,11 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
         if fiscal and fiscal_year_end != "12-31":
             month_str = _MONTH_NAMES.get(fiscal_year_end[:2], fiscal_year_end[:2])
             day_str = fiscal_year_end[3:]
-            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal} [FYE: {month_str} {day_str}]):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}, fiscal period: {fiscal} [FYE: {month_str} {day_str}]):")
         elif fiscal:
-            lines.append(f"  Filing Summary ({form}, filed {fdate}, fiscal period: {fiscal}):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}, fiscal period: {fiscal}):")
         else:
-            lines.append(f"  Filing Summary ({form}, filed {fdate}):")
+            lines.append(f"  Filing Evidence ({form}, filed {fdate}):")
 
         fields = [
             ("operating_state", "Operations"),
@@ -360,11 +363,12 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
             ("uncertainty_profile", "Risks/Uncertainty"),
         ]
         tag_idx = 1
-        for field_key, label in fields:
+        for field_key, _label in fields:
             text = periodic.get(field_key)
             if text:
-                lines.append(f"    [{ticker}-F{tag_idx}] {label}: {text}")
-                tag_idx += 1
+                for sentence in _split_sentences(text):
+                    lines.append(f"    [{ticker}-F{tag_idx}] {sentence}")
+                    tag_idx += 1
     else:
         lines.append("  Filing summary: not available")
 
@@ -381,48 +385,40 @@ def write_ticker(lines: list, ticker: str, data: dict, fiscal_year_end: str = "1
                     lines.append(f"      {text}")
                     break
 
+    # -- Earnings call --
+    # Snapshot flattens features directly under earnings_call (no nested "features" key)
+    ec = data.get("earnings_call")
 
-def write_ticker_summary_table(lines: list, tickers: list, ticker_data: dict) -> None:
-    """Compact cross-sectional comparison table."""
     lines.append("")
-    lines.append("=" * 70)
-    lines.append("CROSS-SECTIONAL SUMMARY")
-    lines.append("=" * 70)
-    lines.append("")
+    if ec and ec.get("summary"):
+        lines.append(f"  Earnings Call Evidence:")
 
-    header = f"  {'TICKER':<7} {'CLOSE':>8} {'60D RET':>8} {'60D VOL':>8} {'BETA':>6} {'SHARPE':>7} {'SENT_Z':>7} {'GM':>7}"
-    lines.append(header)
-    lines.append("  " + "-" * (len(header) - 2))
-
-    for t in tickers:
-        td = ticker_data.get(t, {})
-        af = td.get("asset_features") or {}
-        sent = td.get("news_sentiment") or {}
-
-        close = af.get("close")
-        ret60 = af.get("ret_60d")
-        vol60 = af.get("vol_60d")
-        beta = af.get("beta_1y")
-        sharpe = af.get("sharpe_60d")
-        csz = sent.get("cross_sectional_z")
-        gm = af.get("gross_margin")
-
-        row = f"  {t:<7}"
-        row += f" {_f(close, 2):>8}" if close is not None else f" {'n/a':>8}"
-        row += f" {_pct(ret60):>8}" if ret60 is not None else f" {'n/a':>8}"
-        row += f" {_pct_level(vol60):>8}" if vol60 is not None else f" {'n/a':>8}"
-        row += f" {_f(beta):>6}" if beta is not None else f" {'n/a':>6}"
-        row += f" {_f(sharpe):>7}" if sharpe is not None else f" {'n/a':>7}"
-        row += f" {_f(csz, 2):>7}" if csz is not None else f" {'n/a':>7}"
-        row += f" {_pct_level(gm):>7}" if gm is not None else f" {'n/a':>7}"
-        lines.append(row)
+        ec_fields = [
+            "summary",
+            "management_outlook",
+            "risks",
+            "key_drivers",
+        ]
+        ec_idx = 1
+        for field_key in ec_fields:
+            text = ec.get(field_key)
+            if text:
+                for sentence in _split_sentences(text):
+                    lines.append(f"    [{ticker}-EC{ec_idx}] {sentence}")
+                    ec_idx += 1
+    else:
+        lines.append("  Earnings call: not available")
 
 
 # ==========================
 # Main memo builder
 # ==========================
 
-def build_memo(doc: dict, filter_tickers: Optional[List[str]] = None) -> str:
+def build_memo(
+    doc: dict,
+    filter_tickers: Optional[List[str]] = None,
+    macro_context: Optional[str] = None,
+) -> str:
     lines: list = []
 
     # Load fiscal year-end data for annotations
@@ -446,11 +442,18 @@ def build_memo(doc: dict, filter_tickers: Optional[List[str]] = None) -> str:
     filtered_doc = {**doc, "tickers": tickers}
 
     write_header(lines, filtered_doc)
+
+    if macro_context:
+        lines.append("")
+        lines.append("=" * 70)
+        lines.append("LAYER 0 — SCENARIO CONTEXT")
+        lines.append("=" * 70)
+        lines.append("")
+        lines.append(macro_context.strip())
+
     write_macro(lines, doc.get("macro_regime"))
 
     ticker_data = doc.get("ticker_data", {})
-
-    write_ticker_summary_table(lines, tickers, ticker_data)
 
     for t in tickers:
         td = ticker_data.get(t, {})

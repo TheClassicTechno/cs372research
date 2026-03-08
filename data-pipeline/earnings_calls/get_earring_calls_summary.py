@@ -36,7 +36,9 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 DATASET_NAME = "kurry/sp500_earnings_transcripts"
 FINBERT_MODEL_NAME = "ProsusAI/finbert"
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-20250514"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PIPELINE_DIR = SCRIPT_DIR.parent
@@ -131,43 +133,64 @@ def detect_columns(ds: Dataset) -> Dict[str, Optional[str]]:
     }
 
 
-def filter_records_for_ticker_quarter(
+def build_transcript_index(
     ds: Dataset,
     cols: Dict[str, Optional[str]],
-    ticker: str,
-    year: int,
-    quarter: int,
-) -> List[Dict[str, Any]]:
+) -> Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]]:
+    """Scan dataset once and return a dict keyed by (TICKER, year, quarter).
+
+    Records whose quarter cannot be inferred are stored under quarter=None
+    so the lookup function can apply the single-record-year fallback.
+    """
+    from collections import defaultdict
+
     symbol_col = cols["symbol"]
     year_col = cols["year"]
     quarter_col = cols["quarter"]
     date_col = cols["date"]
 
     if not symbol_col or not year_col:
-        return []
+        return {}
 
-    subset = ds.filter(
-        lambda x: str(x.get(symbol_col, "")).upper() == ticker and int(x.get(year_col, -1)) == year
-    )
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]] = defaultdict(list)
+    for row in tqdm(ds, desc="Indexing transcripts", unit="row"):
+        ticker = str(row.get(symbol_col, "")).upper()
+        try:
+            year = int(row.get(year_col, -1))
+        except (ValueError, TypeError):
+            continue
+        if year < 0:
+            continue
 
-    items = [dict(r) for r in subset]
-    if not items:
-        return []
-
-    selected: List[Dict[str, Any]] = []
-    for r in items:
         q_val: Optional[int] = None
         if quarter_col:
-            q_val = _quarter_from_any(r.get(quarter_col))
+            q_val = _quarter_from_any(row.get(quarter_col))
         if q_val is None and date_col:
-            q_val = _quarter_from_date_string(str(r.get(date_col, "")))
-        # If we cannot infer quarter, keep record only in single-record year case.
-        if q_val is None and len(items) == 1:
-            selected.append(r)
-            continue
-        if q_val == quarter:
-            selected.append(r)
-    return selected
+            q_val = _quarter_from_date_string(str(row.get(date_col, "")))
+
+        index[(ticker, year, q_val)].append(dict(row))
+
+    return dict(index)
+
+
+def lookup_records(
+    index: Dict[Tuple[str, int, Optional[int]], List[Dict[str, Any]]],
+    ticker: str,
+    year: int,
+    quarter: int,
+) -> List[Dict[str, Any]]:
+    """O(1) lookup from pre-built index, with single-record-year fallback."""
+    records = index.get((ticker, year, quarter), [])
+    if records:
+        return records
+
+    # Fallback: if there's exactly one record for this ticker-year with unknown
+    # quarter, assume it matches (preserves original behavior).
+    unknown_q = index.get((ticker, year, None), [])
+    if len(unknown_q) == 1:
+        return unknown_q
+
+    return []
 
 
 def flatten_transcripts(records: List[Dict[str, Any]], text_col: str, max_chars: int = 120_000) -> str:
@@ -220,6 +243,52 @@ def call_claude_summary(
             lines = lines[:-1]
         text = "\n".join(lines)
     parsed = json.loads(text)
+    return _extract_summary_fields(parsed)
+
+
+def call_openai_summary(
+    transcript_text: str,
+    api_key: str,
+    model: str = DEFAULT_OPENAI_MODEL,
+) -> Dict[str, Any]:
+    system = (
+        "You summarize earnings call transcripts into concise, factual quarterly notes "
+        "for quantitative trading research."
+    )
+    prompt = (
+        "Return ONLY valid JSON with keys: "
+        "summary, management_outlook, risks, key_drivers.\n"
+        "Each value is a short paragraph (2-4 sentences), no bullet points.\n\n"
+        f"TRANSCRIPT:\n{transcript_text}"
+    )
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "model": model,
+        "max_tokens": 1300,
+        "temperature": 0.0,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+    }
+    resp = requests.post(OPENAI_API_URL, headers=headers, json=body, timeout=180)
+    resp.raise_for_status()
+    text = resp.json()["choices"][0]["message"]["content"].strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        text = "\n".join(lines)
+    parsed = json.loads(text)
+    return _extract_summary_fields(parsed)
+
+
+def _extract_summary_fields(parsed: Dict[str, Any]) -> Dict[str, Any]:
     out: Dict[str, Any] = {}
     for key in ("summary", "management_outlook", "risks", "key_drivers"):
         val = parsed.get(key)
@@ -311,11 +380,13 @@ def main() -> None:
     p.add_argument("--supported", action="store_true", help="Use supported_tickers.yaml")
     p.add_argument("--dataset", type=str, default=DATASET_NAME, help="Hugging Face dataset ID")
     p.add_argument("--hf-token", type=str, default=None, help="Hugging Face token (or HF_TOKEN env var)")
-    p.add_argument("--api-key", type=str, default=None, help="Anthropic API key (or ANTHROPIC_API_KEY env var)")
-    p.add_argument("--model", type=str, default=DEFAULT_CLAUDE_MODEL, help="Claude model")
+    p.add_argument("--provider", type=str, default="anthropic", choices=["anthropic", "openai"], help="LLM provider for summaries")
+    p.add_argument("--api-key", type=str, default=None, help="LLM API key (or ANTHROPIC_API_KEY / OPENAI_API_KEY env var)")
+    p.add_argument("--model", type=str, default=None, help="LLM model (defaults: claude-sonnet-4-20250514 / gpt-4o-mini)")
     p.add_argument("--output-dir", type=str, default=str(DEFAULT_OUTPUT_DIR), help="Per-ticker output directory")
     p.add_argument("--force", action="store_true", help="Rebuild existing files")
-    p.add_argument("--sleep-seconds", type=float, default=0.8, help="Delay between Claude calls")
+    p.add_argument("--workers", type=int, default=1, help="Parallel LLM summary workers (default: 1 = serial)")
+    p.add_argument("--sleep-seconds", type=float, default=0.8, help="Delay between LLM calls (per-worker)")
     args = p.parse_args()
 
     if args.start and args.end:
@@ -333,13 +404,22 @@ def main() -> None:
         p.error("Either --tickers or --supported is required")
 
     hf_token = args.hf_token or os.environ.get("HF_TOKEN")
-    api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+    provider = args.provider
+    if provider == "openai":
+        api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
+        model = args.model or DEFAULT_OPENAI_MODEL
+        env_hint = "OPENAI_API_KEY"
+    else:
+        api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+        model = args.model or DEFAULT_CLAUDE_MODEL
+        env_hint = "ANTHROPIC_API_KEY"
     if not hf_token:
         print("ERROR: missing HF token. Set HF_TOKEN or pass --hf-token", file=sys.stderr)
         sys.exit(1)
     if not api_key:
-        print("ERROR: missing Anthropic key. Set ANTHROPIC_API_KEY or pass --api-key", file=sys.stderr)
+        print(f"ERROR: missing API key. Set {env_hint} or pass --api-key", file=sys.stderr)
         sys.exit(1)
+    print(f"Using LLM provider: {provider} ({model})", flush=True)
 
     print(f"Loading dataset: {args.dataset}", flush=True)
     ds_dict = load_dataset(args.dataset, token=hf_token)
@@ -356,16 +436,23 @@ def main() -> None:
         print(f"Columns detected: {ds.column_names}", file=sys.stderr)
         sys.exit(1)
 
+    print("Building transcript index...", flush=True)
+    transcript_index = build_transcript_index(ds, cols)
+    print(f"Indexed {sum(len(v) for v in transcript_index.values())} records into {len(transcript_index)} groups", flush=True)
+
     print("Loading FinBERT...", flush=True)
-    tokenizer, model, device = init_finbert()
+    tokenizer, finbert_model, device = init_finbert()
     print(f"Using device: {device}", flush=True)
 
     output_dir = Path(args.output_dir)
     written = 0
     skipped = 0
     missing = 0
+    workers = max(1, args.workers)
 
-    for year, quarter in tqdm(quarters, desc="Quarters", unit="qtr"):
+    # --- Collect work items: (ticker, year, quarter, transcript_text, out_path, record_count) ---
+    work_items: List[Tuple[str, int, int, str, Path, int]] = []
+    for year, quarter in quarters:
         qlabel = f"Q{quarter}"
         for ticker in tickers:
             out_path = output_dir / ticker / f"{year}_{qlabel}.json"
@@ -373,7 +460,7 @@ def main() -> None:
                 skipped += 1
                 continue
 
-            records = filter_records_for_ticker_quarter(ds, cols, ticker, year, quarter)
+            records = lookup_records(transcript_index, ticker, year, quarter)
             if not records:
                 missing += 1
                 continue
@@ -383,41 +470,93 @@ def main() -> None:
                 missing += 1
                 continue
 
-            try:
-                summary_obj = call_claude_summary(transcript_text, api_key=api_key, model=args.model)
-                if args.sleep_seconds > 0:
-                    time.sleep(args.sleep_seconds)
-            except Exception as e:
-                print(f"WARNING: Claude summary failed for {ticker} {year} {qlabel}: {e}", file=sys.stderr)
-                summary_obj = {
-                    "summary": None,
-                    "management_outlook": None,
-                    "risks": None,
-                    "key_drivers": None,
-                }
+            work_items.append((ticker, year, quarter, transcript_text, out_path, len(records)))
 
-            sentiment_obj = finbert_score_text(transcript_text, tokenizer, model, device)
+    if not work_items:
+        print(
+            f"Done: wrote 0 file(s), skipped {skipped}, missing {missing} ticker-quarter(s).",
+            flush=True,
+        )
+        return
+
+    print(f"Processing {len(work_items)} ticker-quarters with {workers} worker(s)...", flush=True)
+
+    # --- LLM summary function (called per work item, safe for threads) ---
+    _EMPTY_SUMMARY: Dict[str, Any] = {
+        "summary": None, "management_outlook": None,
+        "risks": None, "key_drivers": None,
+    }
+
+    def _fetch_summary(transcript_text: str, label: str) -> Dict[str, Any]:
+        try:
+            if provider == "openai":
+                result = call_openai_summary(transcript_text, api_key=api_key, model=model)
+            else:
+                result = call_claude_summary(transcript_text, api_key=api_key, model=model)
+            if args.sleep_seconds > 0:
+                time.sleep(args.sleep_seconds)
+            return result
+        except Exception as e:
+            print(f"WARNING: {provider} summary failed for {label}: {e}", file=sys.stderr)
+            return dict(_EMPTY_SUMMARY)
+
+    # --- Fan out LLM calls, then run FinBERT + write serially ---
+    import concurrent.futures as cf
+
+    if workers == 1:
+        # Serial path — no thread overhead
+        for ticker, year, quarter, transcript_text, out_path, record_count in tqdm(work_items, desc="Processing", unit="item"):
+            qlabel = f"Q{quarter}"
+            summary_obj = _fetch_summary(transcript_text, f"{ticker} {year} {qlabel}")
+            sentiment_obj = finbert_score_text(transcript_text, tokenizer, finbert_model, device)
 
             payload: Dict[str, Any] = {
                 "schema_version": "earnings_calls_v1",
-                "ticker": ticker,
-                "year": year,
-                "quarter": qlabel,
-                "source_dataset": args.dataset,
-                "record_count": len(records),
-                "features": {
-                    **summary_obj,
-                    **sentiment_obj,
-                    "transcript_char_count": len(transcript_text),
-                },
+                "ticker": ticker, "year": year, "quarter": qlabel,
+                "source_dataset": args.dataset, "record_count": record_count,
+                "features": {**summary_obj, **sentiment_obj, "transcript_char_count": len(transcript_text)},
             }
             try:
                 from provenance import inline_provenance
-
                 payload.update(inline_provenance())
             except ImportError:
                 pass
+            atomic_write_json(out_path, payload)
+            written += 1
+    else:
+        # Parallel path — fan out LLM calls, collect results, then FinBERT serially
+        summaries: Dict[int, Dict[str, Any]] = {}
+        with cf.ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(
+                    _fetch_summary, transcript_text,
+                    f"{ticker} {year} Q{quarter}",
+                ): idx
+                for idx, (ticker, year, quarter, transcript_text, out_path, record_count) in enumerate(work_items)
+            }
+            for future in tqdm(cf.as_completed(futures), total=len(futures), desc="LLM summaries", unit="call"):
+                idx = futures[future]
+                summaries[idx] = future.result()
 
+        # FinBERT + write (serial — GPU bound)
+        for idx, (ticker, year, quarter, transcript_text, out_path, record_count) in enumerate(
+            tqdm(work_items, desc="FinBERT + write", unit="item")
+        ):
+            qlabel = f"Q{quarter}"
+            summary_obj = summaries[idx]
+            sentiment_obj = finbert_score_text(transcript_text, tokenizer, finbert_model, device)
+
+            payload: Dict[str, Any] = {
+                "schema_version": "earnings_calls_v1",
+                "ticker": ticker, "year": year, "quarter": qlabel,
+                "source_dataset": args.dataset, "record_count": record_count,
+                "features": {**summary_obj, **sentiment_obj, "transcript_char_count": len(transcript_text)},
+            }
+            try:
+                from provenance import inline_provenance
+                payload.update(inline_provenance())
+            except ImportError:
+                pass
             atomic_write_json(out_path, payload)
             written += 1
 

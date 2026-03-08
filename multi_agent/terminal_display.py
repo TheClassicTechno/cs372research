@@ -132,50 +132,263 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-def _extract_preview(response: str, max_chars: int = 400) -> str:
-    """Return a clean, human-readable snippet from a model response.
-
-    - Strips markdown code fences before parsing.
-    - If response is JSON, prefer: justification, revision_notes,
-      or first critique objection targeting another agent.
-    - Otherwise treat as plain text.
-    - Single-line, trimmed, truncated.
-    """
-    if not response:
-        return ""
-
-    text = response
-    try:
-        parsed = json.loads(_strip_code_fences(response))
-        if isinstance(parsed, dict):
-            # For critique responses, prefer showing an objection of another agent
-            text = (
-                parsed.get("justification", "")
-                or parsed.get("revision_notes", "")
-                or ""
-            )
-            if not text and "critiques" in parsed and isinstance(parsed["critiques"], list):
-                for c in parsed["critiques"]:
-                    if isinstance(c, dict):
-                        obj = c.get("objection", "")
-                        if obj:
-                            target = c.get("target_role", "").upper()
-                            text = f"→ {target}: {obj}" if target else obj
-                            break
-            if not text:
-                # fall back but still avoid printing raw json if possible
-                text = response
-    except Exception:
-        pass
-
-    clean = str(text).replace("\n", " ").strip()
+def _truncate(text: str, max_chars: int = 200) -> str:
+    """Collapse whitespace and truncate a string for display."""
+    clean = " ".join(str(text).split())
     if len(clean) > max_chars:
-        clean = clean[: max_chars - 3] + "..."
+        return clean[: max_chars - 3] + "..."
     return clean
 
 
+# ---------------------------------------------------------------------------
+# Structured response rendering — proposals, critiques, revisions
+# ---------------------------------------------------------------------------
+
+def _render_structured_response(response: str) -> None:
+    """Parse an agent JSON response and render it as structured terminal output.
+
+    Detects response type by key fields:
+      - ``allocation`` → proposal or revision
+      - ``critiques``  → critique
+    Falls back to a truncated text preview for unrecognized formats.
+    """
+    if not response:
+        return
+
+    try:
+        parsed = json.loads(_strip_code_fences(response))
+    except Exception:
+        # Not JSON — show truncated plain text
+        _print_fallback(response)
+        return
+
+    if not isinstance(parsed, dict):
+        _print_fallback(response)
+        return
+
+    if "allocation" in parsed:
+        _render_proposal(parsed)
+    elif "critiques" in parsed:
+        _render_critique(parsed)
+    else:
+        _print_fallback(response)
+
+
+def _print_fallback(text: str) -> None:
+    """Print a truncated single-line fallback preview."""
+    preview = _truncate(text, max_chars=400)
+    if not preview:
+        return
+    if RICH_AVAILABLE and _console is not None:
+        snippet = Text("      ")
+        snippet.append(preview, style="bright_green")
+        _console.print(snippet)
+    else:
+        print(f"      {preview}", flush=True)
+
+
+def _section_header(title: str) -> None:
+    """Print a dim section header with underline."""
+    indent = "      "
+    if RICH_AVAILABLE and _console is not None:
+        _console.print(f"{indent}[bright_white]{title}[/bright_white]")
+        _console.print(f"{indent}[bright_green]{'─' * 23}[/bright_green]")
+    else:
+        print(f"{indent}{title}", flush=True)
+        print(f"{indent}{'─' * 23}", flush=True)
+
+
+def _render_proposal(parsed: dict) -> None:
+    """Render a proposal or revision response."""
+    indent = "      "
+    alloc = parsed.get("allocation", {})
+    conf = parsed.get("confidence", "")
+    claims = parsed.get("claims", [])
+    pos_rationale = parsed.get("position_rationale", [])
+    port_rationale = parsed.get("portfolio_rationale", "")
+    risks = parsed.get("risks_or_falsifiers", [])
+    revision_notes = parsed.get("revision_notes", "")
+    justification = parsed.get("justification", "")
+
+    # --- Allocation row ---
+    sorted_alloc = sorted(alloc.items(), key=lambda x: -x[1])
+    active = [(t, w) for t, w in sorted_alloc if w > 0.005]
+
+    conf_str = f" (conf {int(float(conf) * 100)}%)" if conf else ""
+    _section_header(f"Allocation{conf_str}")
+
+    # Render allocation as compact multi-column rows (5 per line)
+    cols_per_row = 5
+    if RICH_AVAILABLE and _console is not None:
+        for i in range(0, len(active), cols_per_row):
+            chunk = active[i : i + cols_per_row]
+            line = Text(indent)
+            for t, w in chunk:
+                line.append(f"{t:<5}", style="white")
+                line.append(f"{int(w * 100):>3}%", style="bright_cyan")
+                line.append("    ", style="white")
+            _console.print(line)
+    else:
+        for i in range(0, len(active), cols_per_row):
+            chunk = active[i : i + cols_per_row]
+            parts = [f"{t:<5}{int(w * 100):>3}%" for t, w in chunk]
+            print(f"{indent}{'    '.join(parts)}", flush=True)
+
+    # --- Claims ---
+    if claims and isinstance(claims, list):
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        _section_header("Claims")
+        for claim in claims:
+            if not isinstance(claim, dict):
+                continue
+            cid = claim.get("claim_id", "?")
+            pearl = claim.get("pearl_level", "")
+            ctext = _truncate(claim.get("claim_text", ""), 300)
+            evidence = claim.get("evidence", [])
+            assumptions = claim.get("assumptions", [])
+            falsifiers = claim.get("falsifiers", [])
+            impacts = claim.get("impacts_positions", [])
+
+            pearl_tag = f" [{pearl}]" if pearl else ""
+            if RICH_AVAILABLE and _console is not None:
+                ct = Text(f"{indent}{cid}{pearl_tag} ", style="bright_yellow")
+                ct.append(ctext, style="white")
+                _console.print(ct)
+                if evidence:
+                    ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in evidence)
+                    _console.print(f"{indent}   [bright_green]Evidence: {ev_str}[/bright_green]")
+                if assumptions:
+                    _console.print(f"{indent}   [bright_green]Assumptions: {'; '.join(str(a) for a in assumptions)}[/bright_green]")
+                if falsifiers:
+                    _console.print(f"{indent}   [bright_green]Falsifiers: {'; '.join(str(f) for f in falsifiers)}[/bright_green]")
+                if impacts:
+                    _console.print(f"{indent}   [bright_green]Impacts: {', '.join(str(t) for t in impacts)}[/bright_green]")
+            else:
+                print(f"{indent}{cid}{pearl_tag} {ctext}", flush=True)
+                if evidence:
+                    ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in evidence)
+                    print(f"{indent}   Evidence: {ev_str}", flush=True)
+                if assumptions:
+                    print(f"{indent}   Assumptions: {'; '.join(str(a) for a in assumptions)}", flush=True)
+                if falsifiers:
+                    print(f"{indent}   Falsifiers: {'; '.join(str(f) for f in falsifiers)}", flush=True)
+                if impacts:
+                    print(f"{indent}   Impacts: {', '.join(str(t) for t in impacts)}", flush=True)
+
+    # --- Position Rationale ---
+    if pos_rationale and isinstance(pos_rationale, list):
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        _section_header("Position Rationale")
+        for pr in pos_rationale:
+            if not isinstance(pr, dict):
+                continue
+            ticker = pr.get("ticker", "?")
+            weight = pr.get("weight", 0)
+            supported = pr.get("supported_by_claims", [])
+            expl = _truncate(pr.get("explanation", ""), 200)
+            claims_str = ", ".join(str(c) for c in supported) if supported else ""
+            weight_pct = f"{int(float(weight) * 100)}%"
+            if RICH_AVAILABLE and _console is not None:
+                line = Text(indent)
+                line.append(f"{ticker} ", style="white")
+                line.append(f"({weight_pct})", style="bright_cyan")
+                if claims_str:
+                    line.append(f" ← {claims_str}", style="bright_yellow")
+                line.append(f": {expl}", style="bright_green")
+                _console.print(line)
+            else:
+                claim_part = f" ← {claims_str}" if claims_str else ""
+                print(f"{indent}{ticker} ({weight_pct}){claim_part}: {expl}", flush=True)
+
+    # --- Portfolio Rationale ---
+    rationale_text = port_rationale or justification
+    if rationale_text:
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        _section_header("Portfolio Rationale")
+        summary = _truncate(str(rationale_text), 400)
+        if RICH_AVAILABLE and _console is not None:
+            _console.print(f"{indent}[green]{summary}[/green]")
+        else:
+            print(f"{indent}{summary}", flush=True)
+
+    # --- Revision Notes ---
+    if revision_notes:
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        _section_header("Revision Notes")
+        notes = _truncate(str(revision_notes), 300)
+        if RICH_AVAILABLE and _console is not None:
+            _console.print(f"{indent}[bright_magenta]{notes}[/bright_magenta]")
+        else:
+            print(f"{indent}{notes}", flush=True)
+
+    # --- Risks ---
+    if risks:
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        if isinstance(risks, list):
+            risks_str = "; ".join(str(r) for r in risks)
+        else:
+            risks_str = str(risks)
+        risks_display = _truncate(risks_str, 300)
+        if RICH_AVAILABLE and _console is not None:
+            _console.print(f"{indent}[red]Risks: {risks_display}[/red]")
+        else:
+            print(f"{indent}Risks: {risks_display}", flush=True)
+
+
+def _render_critique(parsed: dict) -> None:
+    """Render a critique response."""
+    indent = "      "
+    critiques = parsed.get("critiques", [])
+    self_critique = parsed.get("self_critique", {})
+
+    if critiques and isinstance(critiques, list):
+        _section_header("Critiques")
+        for crit in critiques:
+            if not isinstance(crit, dict):
+                continue
+            target = crit.get("target_role", "").upper()
+            target_claim = crit.get("target_claim", "")
+            objection = _truncate(crit.get("objection", ""), 300)
+            falsifier = _truncate(crit.get("falsifier", ""), 200)
+            counter_ev = crit.get("counter_evidence", [])
+
+            claim_tag = f" ({target_claim})" if target_claim else ""
+            if RICH_AVAILABLE and _console is not None:
+                line = Text(indent)
+                line.append(f"→ {target}{claim_tag}: ", style="bright_yellow")
+                line.append(objection, style="white")
+                _console.print(line)
+                if counter_ev and isinstance(counter_ev, list):
+                    ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in counter_ev)
+                    _console.print(f"{indent}  [bright_green]Counter-evidence: {ev_str}[/bright_green]")
+                if falsifier:
+                    _console.print(f"{indent}  [bright_green]Falsifier: {falsifier}[/bright_green]")
+            else:
+                print(f"{indent}→ {target}{claim_tag}: {objection}", flush=True)
+                if counter_ev and isinstance(counter_ev, list):
+                    ev_str = " ".join(e if e.startswith("[") else f"[{e}]" for e in counter_ev)
+                    print(f"{indent}  Counter-evidence: {ev_str}", flush=True)
+                if falsifier:
+                    print(f"{indent}  Falsifier: {falsifier}", flush=True)
+
+    if self_critique and isinstance(self_critique, dict):
+        _console.print() if (RICH_AVAILABLE and _console) else print()
+        weakest = self_critique.get("weakest_claim", "")
+        explanation = _truncate(self_critique.get("explanation", ""), 200)
+        if RICH_AVAILABLE and _console is not None:
+            sc = Text(indent)
+            sc.append("Self-critique", style="bright_magenta")
+            if weakest:
+                sc.append(f" ({weakest})", style="bright_magenta")
+            sc.append(f": {explanation}", style="bright_green")
+            _console.print(sc)
+        else:
+            wk = f" ({weakest})" if weakest else ""
+            print(f"{indent}Self-critique{wk}: {explanation}", flush=True)
+
+
 def _render_llm_completion(call_id: str, response: str = "") -> None:
-    """Print a single completion line for one agent with optional response preview."""
+    """Print a completion line for one agent, then render structured response."""
     with _llm_lock:
         info = _llm_calls.get(call_id)
         if not info or info["end_time"] is None:
@@ -186,26 +399,23 @@ def _render_llm_completion(call_id: str, response: str = "") -> None:
         role = role_raw.upper()
         elapsed = info["end_time"] - info["start_time"]
 
-    preview = _extract_preview(response, max_chars=4000)
-
-    # Spacing: completion line + optional indented snippet line for readability
     if not RICH_AVAILABLE or _console is None:
-        print(f"  [{done}/{total}] {role:<12} {elapsed:5.1f}s", flush=True)
-        if preview:
-            print(f"      {preview}", flush=True)
-        return
-
-    line = Text()
-    line.append(f"  [{done}/{total}] ", style="white")
-    line.append(f"{role:<12}", style=_agent_color(role_raw))
-    line.append(f" {elapsed:5.1f}s", style="bright_white")
-    _console.print(line)
-
-    if preview:
-        snippet = Text("      ")
-        snippet.append(preview, style="bright_green")
-        _console.print(snippet)
+        print(f"\n  [{done}/{total}] {role:<12} {elapsed:5.1f}s", flush=True)
+    else:
         _console.print()
+        line = Text()
+        line.append(f"  [{done}/{total}] ", style="white")
+        line.append(f"{role:<12}", style=_agent_color(role_raw))
+        line.append(f" {elapsed:5.1f}s", style="bright_white")
+        _console.print(line)
+
+    _render_structured_response(response)
+
+    # Trailing blank line for breathing room
+    if RICH_AVAILABLE and _console is not None:
+        _console.print()
+    else:
+        print(flush=True)
 
 
 # ---------------------------------------------------------------------------

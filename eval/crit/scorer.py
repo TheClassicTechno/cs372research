@@ -51,8 +51,8 @@ class CritScorer:
         self,
         llm_fn: Callable[[str, str], str],
         capture_fn: Callable[[str, str, str, str], None] | None = None,
-        crit_system_template: str = "crit_system.jinja",
-        crit_user_template: str = "crit_user.jinja",
+        crit_system_template: str = "crit_system_enumerated.jinja",
+        crit_user_template: str = "crit_user_master.jinja",
     ) -> None:
         """
         Args:
@@ -90,7 +90,10 @@ class CritScorer:
             user_template=self._crit_user_template,
         )
 
-        raw_text = self._llm_fn(system_prompt, user_prompt)
+        raw_text = self._llm_fn(
+            system_prompt, user_prompt,
+            role=role, round_num=bundle.get("round", 0),
+        )
 
         if self._capture_fn:
             self._capture_fn(role, system_prompt, user_prompt, raw_text)

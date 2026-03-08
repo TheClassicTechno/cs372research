@@ -1,0 +1,18 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "description": "Debate Dashboard — static analysis and architecture enforcement",
+  "type": "commonjs",
+  "scripts": {
+    "lint": "eslint static/js",
+    "depcheck": "depcruise static/js --config .dependency-cruiser.cjs",
+    "semgrep": "semgrep --config semgrep/dashboard_rules.yml static/js",
+    "check-architecture": "npm run lint && npm run depcheck && python3 rules/check_dashboard_architecture.py",
+    "check-all": "npm run lint && npm run depcheck && npm run semgrep && python3 rules/check_dashboard_architecture.py"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^17.3.8",
+    "eslint": "^10.0.3",
+    "eslint-plugin-security": "^4.0.0"
+  }
+}

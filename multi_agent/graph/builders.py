@@ -50,7 +50,7 @@ def build_parallel_single_round_graph(config: DebateConfig) -> StateGraph:
     The runner resets critiques/revisions to [] between rounds because
     operator.add would otherwise accumulate across rounds.
     """
-    roles = [r.value for r in config.roles]
+    roles = list(config.roles)
     graph = StateGraph(ParallelRoundState)
 
     # Sync barriers (no-op pass-throughs for fan-in)
@@ -145,7 +145,7 @@ def build_parallel_propose_graph(config: DebateConfig) -> StateGraph:
 
     Uses ParallelRoundState for operator.add on proposals.
     """
-    roles = [r.value for r in config.roles]
+    roles = list(config.roles)
     graph = StateGraph(ParallelRoundState)
     for role in roles:
         graph.add_node(f"propose_{role}", make_propose_node(role))
@@ -159,7 +159,7 @@ def build_parallel_critique_graph(config: DebateConfig) -> StateGraph:
 
     Uses ParallelRoundState for operator.add on critiques.
     """
-    roles = [r.value for r in config.roles]
+    roles = list(config.roles)
     graph = StateGraph(ParallelRoundState)
     for role in roles:
         graph.add_node(f"critique_{role}", make_critique_node(role))
@@ -173,7 +173,7 @@ def build_parallel_revise_graph(config: DebateConfig) -> StateGraph:
 
     Uses ParallelRoundState for operator.add on revisions.
     """
-    roles = [r.value for r in config.roles]
+    roles = list(config.roles)
     graph = StateGraph(ParallelRoundState)
     for role in roles:
         graph.add_node(f"revise_{role}", make_revise_node(role))

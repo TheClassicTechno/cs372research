@@ -6,15 +6,14 @@ All experimental knobs in one place for ablation studies.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from eval.PID.types import PIDConfig
 
 
-class AgentRole(str, Enum):
-    """Available agent roles for the trading desk."""
+class AgentRole:
+    """Built-in role constants. Any string is a valid role."""
 
     MACRO = "macro"
     VALUE = "value"
@@ -25,7 +24,7 @@ class AgentRole(str, Enum):
 
 
 # Default debate roster (4 specialist agents)
-DEFAULT_ROLES: list[AgentRole] = [
+DEFAULT_ROLES: list[str] = [
     AgentRole.MACRO,
     AgentRole.VALUE,
     AgentRole.RISK,
@@ -56,7 +55,7 @@ class DebateConfig:
     """
 
     # --- Agent roster ---
-    roles: list[AgentRole] = field(default_factory=lambda: list(DEFAULT_ROLES))
+    roles: list[str] = field(default_factory=lambda: list(DEFAULT_ROLES))
 
     # --- Debate structure ---
     # Number of critique-revision cycles (1 = propose -> critique -> revise -> judge)
@@ -158,12 +157,13 @@ class DebateConfig:
     # --- Agent profiles (new unified system) ---
     # When set, these replace prompt_profile + prompt_file_overrides + role_overrides.
     agent_profiles: dict = field(default_factory=dict)  # {role: loaded_profile_dict}
+    agent_profile_names: dict = field(default_factory=dict)  # {role: profile_name_str}
     judge_profile: dict = field(default_factory=dict)   # loaded judge profile dict
 
     # --- CRIT configuration ---
     crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
-    crit_system_template: str = "crit_system.jinja"
-    crit_user_template: str = "crit_user.jinja"
+    crit_system_template: str = "crit_system_enumerated.jinja"
+    crit_user_template: str = "crit_user_master.jinja"
 
     # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
     run_command: str | None = None
@@ -219,7 +219,7 @@ class DebateConfig:
     def to_dict(self) -> dict:
         """Serialize config to dict for LangGraph state."""
         return {
-            "roles": [r.value for r in self.roles],
+            "roles": list(self.roles),
             "max_rounds": self.max_rounds,
             "propose_only": self.propose_only,
             "judge_type": self.judge_type,

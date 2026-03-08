@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.14.3",
     "datasets>=4.5.0",
+    "fastapi>=0.135.1",
     "finnhub-python>=2.4.27",
     "google-genai>=1.0.0",
     "jinja2>=3.1.0",
@@ -25,16 +26,22 @@ dependencies = [
     "rich>=13.0.0",
     "torch>=2.10.0",
     "transformers>=5.2.0",
+    "uvicorn>=0.41.0",
     "yfinance>=1.2.0",
+    "pytest-playwright>=0.6.2",
 ]
+
+[project.optional-dependencies]
+viewer = ["fastapi>=0.100", "uvicorn>=0.20"]
 
 [tool.pytest.ini_options]
 markers = [
     "fast: L1/L2 unit + prompt tests (no I/O, no API)",
     "integration: L3/L4 graph + mock + artifact tests",
     "live: L5 real API smoke tests",
+    "dashboard: Playwright dashboard integration tests",
 ]
 testpaths = ["tests", "multi_agent/tests", "eval/PID/tests", "eval/tests"]
-addopts = "-m 'not live' --tb=short -q"
+addopts = "-m 'not live and not dashboard' --tb=short -q"
 
 # To run live tests:  pytest -m live -o "addopts="

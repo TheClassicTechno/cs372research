@@ -26,7 +26,7 @@ from models.agents import AgentInvocation, AgentInvocationResult
 from models.config import AgentConfig
 from models.decision import Decision
 from models.decision import Order as SimOrder
-from multi_agent.config import AgentRole, DebateConfig
+from multi_agent.config import DebateConfig
 from multi_agent.models import Action
 from multi_agent.runner import MultiAgentRunner
 from simulation.feature_engineering import build_observation
@@ -52,6 +52,8 @@ def allocation_to_decision(
     """
     orders: list[SimOrder] = []
     for ticker, weight in allocation.items():
+        if ticker == "_CASH_":
+            continue
         if weight <= 0 or ticker not in prices:
             continue
         price = prices[ticker]
@@ -108,37 +110,12 @@ class DebateAgentSystem(AgentSystem):
             loaded_agent_profiles = profiles
 
         # Build the debate roster from YAML config, or fall back to defaults.
-        # Valid role strings map to AgentRole enum values.
+        # Any string is a valid role — no enum validation needed.
         roles = None
         if config.agents:
-            # Derive roles from agents dict keys
-            roles = []
-            for role_str in config.agents.keys():
-                try:
-                    roles.append(AgentRole(role_str.lower()))
-                except ValueError:
-                    logger.warning(
-                        "Unknown agent role '%s' — skipping. Valid: %s",
-                        role_str,
-                        [r.value for r in AgentRole],
-                    )
-            if not roles:
-                logger.warning("No valid agent roles found; using defaults.")
-                roles = None
+            roles = [r.lower() for r in config.agents.keys()]
         elif config.debate_roles:
-            roles = []
-            for role_str in config.debate_roles:
-                try:
-                    roles.append(AgentRole(role_str.lower()))
-                except ValueError:
-                    logger.warning(
-                        "Unknown debate role '%s' — skipping. Valid: %s",
-                        role_str,
-                        [r.value for r in AgentRole],
-                    )
-            if not roles:
-                logger.warning("No valid debate_roles found; using defaults.")
-                roles = None
+            roles = [r.lower() for r in config.debate_roles]
 
         # Build DebateConfig with all simulation-layer fields.
         # PID object construction is handled inside DebateConfig.__post_init__
@@ -187,6 +164,7 @@ class DebateAgentSystem(AgentSystem):
             sector_config=config.sector_config,
             allocation_constraints=config.allocation_constraints,
             agent_profiles=loaded_agent_profiles,
+            agent_profile_names=config.agents or {},
             judge_profile=loaded_judge_profile,
         )
         if roles is not None:
