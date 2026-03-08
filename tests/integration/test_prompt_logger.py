@@ -249,12 +249,12 @@ class TestServerAPI:
     @pytest.fixture()
     def client(self):
         from fastapi.testclient import TestClient
-        from tools.prompt_viewer.server import app
+        from tools.dashboard.server import app
         return TestClient(app)
 
     def test_get_logs_empty_when_no_file(self, client, tmp_path, monkeypatch):
         """GET /logs returns [] when JSONL file doesn't exist."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
         monkeypatch.setattr(srv, "LOGS_PATH", Path(tmp_path / "nonexistent.jsonl"))
         resp = client.get("/logs")
@@ -263,7 +263,7 @@ class TestServerAPI:
 
     def test_get_logs_returns_all_entries(self, client, tmp_path, monkeypatch):
         """GET /logs returns all entries from JSONL file."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"
@@ -276,7 +276,7 @@ class TestServerAPI:
 
     def test_get_logs_filter_by_model(self, client, tmp_path, monkeypatch):
         """GET /logs?model=claude filters to matching entries."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"
@@ -294,7 +294,7 @@ class TestServerAPI:
 
     def test_get_logs_filter_by_search(self, client, tmp_path, monkeypatch):
         """GET /logs?search=keyword filters by text content."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"
@@ -311,7 +311,7 @@ class TestServerAPI:
 
     def test_post_clear_removes_file(self, client, tmp_path, monkeypatch):
         """POST /logs/clear removes the JSONL file."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"
@@ -325,7 +325,7 @@ class TestServerAPI:
 
     def test_post_clear_then_get_returns_empty(self, client, tmp_path, monkeypatch):
         """After POST /logs/clear, GET /logs returns []."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"
@@ -338,7 +338,7 @@ class TestServerAPI:
 
     def test_post_clear_when_no_file(self, client, tmp_path, monkeypatch):
         """POST /logs/clear succeeds even when file doesn't exist."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
         monkeypatch.setattr(srv, "LOGS_PATH", Path(tmp_path / "nonexistent.jsonl"))
         resp = client.post("/logs/clear")
@@ -353,7 +353,7 @@ class TestHTMLViewer:
     @pytest.fixture()
     def client(self):
         from fastapi.testclient import TestClient
-        from tools.prompt_viewer.server import app
+        from tools.dashboard.server import app
         return TestClient(app)
 
     # -- Static element presence --
@@ -442,7 +442,7 @@ class TestHTMLViewer:
 
     def test_entries_have_metadata_fields(self, client, tmp_path, monkeypatch):
         """Entries returned by /logs include role, phase, round fields."""
-        import tools.prompt_viewer.server as srv
+        import tools.dashboard.server as srv
         from pathlib import Path
 
         jsonl_path = tmp_path / "traces.jsonl"

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tools.prompt_viewer.run_scanner import (
+from tools.dashboard.run_scanner import (
     _get_run_status,
     _load_trajectories,
     _extract_quality_metrics,
