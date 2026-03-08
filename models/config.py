@@ -28,9 +28,16 @@ class AgentConfig(BaseModel):
     role_llms: dict[str, dict[str, str]] | None = Field(
         default=None,
         description="Optional per-role LLM overrides. "
-        "Format: {role: {provider: 'openai'|'anthropic', model: '<model-name>'}}. "
+        "Format: {role: {provider: 'openai'|'anthropic'|'google', model: '<model-name>'}}. "
         "Example: {'macro': {'provider': 'openai', 'model': 'gpt-5-mini'}, "
         "'risk': {'provider': 'anthropic', 'model': 'claude-sonnet-4-20250514'}}.",
+    )
+    phase_llms: dict[str, dict[str, str]] | None = Field(
+        default=None,
+        description="Optional per-phase LLM overrides (takes priority over role_llms). "
+        "Format: {phase: {provider: '...', model: '...'}} where phase is "
+        "'propose', 'critique', 'revise', or 'judge'. "
+        "Example: {'judge': {'provider': 'openai', 'model': 'gpt-5'}}.",
     )
     temperature: float = Field(
         default=0.7,

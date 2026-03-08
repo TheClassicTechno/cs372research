@@ -75,8 +75,12 @@ class DebateConfig:
     llm_provider: str = "openai"
     model_name: str = "gpt-4o-mini"
     # Optional per-role overrides:
-    # {role: {"provider": "openai"|"anthropic", "model": "<name>"}}
+    # {role: {"provider": "openai"|"anthropic"|"google", "model": "<name>"}}
     role_llms: dict[str, dict[str, str]] = field(default_factory=dict)
+    # Optional per-phase overrides (takes priority over role_llms):
+    # {phase: {"provider": "...", "model": "..."}} where phase is
+    # "propose", "critique", "revise", or "judge"
+    phase_llms: dict[str, dict[str, str]] = field(default_factory=dict)
     temperature: float = 0.3
 
     # --- Parallel agents (per-agent LangGraph nodes for concurrent LLM calls) ---
@@ -223,6 +227,7 @@ class DebateConfig:
             "model_name": self.model_name,
             "llm_provider": self.llm_provider,
             "role_llms": self.role_llms,
+            "phase_llms": self.phase_llms,
             "temperature": self.temperature,
             "parallel_agents": self.parallel_agents,
             "mock": self.mock,

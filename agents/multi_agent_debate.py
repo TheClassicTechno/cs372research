@@ -147,6 +147,7 @@ class DebateAgentSystem(AgentSystem):
             llm_provider=config.llm_provider,
             model_name=config.llm_model,
             role_llms=config.role_llms or {},
+            phase_llms=config.phase_llms or {},
             temperature=config.temperature,
             mock=use_mock,
             max_rounds=config.max_rounds,

@@ -82,14 +82,14 @@ def _call_llm_with_lifecycle(config: dict, system_prompt: str, user_prompt: str,
     """Wrap _call_llm with optional lifecycle callbacks for terminal display."""
     lifecycle = config.get("_llm_lifecycle")
     if not lifecycle:
-        return _call_llm(config, system_prompt, user_prompt, role=role)
+        return _call_llm(config, system_prompt, user_prompt, role=role, phase=phase)
 
     start_fn, end_fn, _ = lifecycle
     call_id = f"{phase}_{role}"
     start_fn(call_id, role, phase)
     result = ""
     try:
-        result = _call_llm(config, system_prompt, user_prompt, role=role)
+        result = _call_llm(config, system_prompt, user_prompt, role=role, phase=phase)
     finally:
         end_fn(call_id, result)
     return result
