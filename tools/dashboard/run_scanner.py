@@ -618,17 +618,32 @@ def get_crit_trajectory(
             "round": entry.get("round"),
             "rho_bar": crit.get("rho_bar"),
         }
-        # Per-agent rho_i
+        # Per-agent rho_i — try flat format first, then agent_scores format
         rho_i = crit.get("rho_i")
         if isinstance(rho_i, dict):
             row["rho_i"] = rho_i
 
-        # Per-agent pillar scores
+        # Per-agent pillar scores — try agents.{role}.pillars first
         agents = crit.get("agents") or {}
         pillars: dict[str, dict] = {}
         for role, agent_data in agents.items():
             if isinstance(agent_data, dict) and "pillars" in agent_data:
                 pillars[role] = agent_data["pillars"]
+
+        # Fallback: agent_scores.{role}.rho_i / .pillar_scores format
+        agent_scores = crit.get("agent_scores") or {}
+        if isinstance(agent_scores, dict) and agent_scores:
+            if not isinstance(rho_i, dict):
+                row["rho_i"] = {
+                    role: ad["rho_i"]
+                    for role, ad in agent_scores.items()
+                    if isinstance(ad, dict) and "rho_i" in ad
+                }
+            if not pillars:
+                for role, ad in agent_scores.items():
+                    if isinstance(ad, dict) and "pillar_scores" in ad:
+                        pillars[role] = ad["pillar_scores"]
+
         if pillars:
             row["pillars"] = pillars
 

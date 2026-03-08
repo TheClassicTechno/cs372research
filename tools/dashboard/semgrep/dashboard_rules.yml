@@ -7,7 +7,7 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/components/**
+      - "**/components/**"
 
 - id: no-dom-in-utils
   pattern-either:
@@ -18,7 +18,7 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/utils/**
+      - "**/utils/**"
 
 - id: no-window-in-utils
   pattern-either:
@@ -29,7 +29,7 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/utils/**
+      - "**/utils/**"
 
 - id: no-inline-onclick
   pattern-regex: onclick\s*=
@@ -51,7 +51,7 @@ rules:
   severity: WARNING
   languages: [js]
 
-- id: no-fetch-in-api-layer-dom
+- id: no-dom-in-api
   pattern-either:
     - pattern: document.$X
     - pattern: document.$X(...)
@@ -60,7 +60,7 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/api/**
+      - "**/api/**"
 
 - id: no-innerhtml-in-components
   pattern: $X.innerHTML = ...
@@ -69,7 +69,7 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/components/**
+      - "**/components/**"
 
 - id: no-addeventlistener-in-components
   pattern: $X.addEventListener(...)
@@ -78,4 +78,4 @@ rules:
   languages: [js]
   paths:
     include:
-      - /static/js/components/**
+      - "**/components/**"
