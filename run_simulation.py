@@ -163,7 +163,7 @@ def _parse_args() -> argparse.Namespace:
         "--crit-model",
         default=None,
         metavar="MODEL",
-        help="Override LLM model used for CRIT scoring (default: gpt-5).",
+        help="Override LLM model used for CRIT scoring (default: gpt-5-mini).",
     )
     parser.add_argument(
         "--no-parallel",

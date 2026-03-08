@@ -195,11 +195,7 @@ def ensure_snapshots(
         tmp = out_path.with_suffix(f".json.tmp.{os.getpid()}")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(snapshot, f, indent=2)
-        try:
-            tmp.rename(out_path)
-        except OSError:
-            # Another worker already wrote this file — clean up our temp copy
-            tmp.unlink(missing_ok=True)
+        tmp.replace(out_path)
         print(f"  Wrote: {out_path}")
 
     # --- Stage 7: memos ---

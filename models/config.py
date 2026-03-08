@@ -25,6 +25,20 @@ class AgentConfig(BaseModel):
     llm_model: str = Field(
         description="Model name, e.g. 'gpt-4o', 'claude-sonnet-4-20250514'."
     )
+    role_llms: dict[str, dict[str, str]] | None = Field(
+        default=None,
+        description="Optional per-role LLM overrides. "
+        "Format: {role: {provider: 'openai'|'anthropic'|'google', model: '<model-name>'}}. "
+        "Example: {'macro': {'provider': 'openai', 'model': 'gpt-5-mini'}, "
+        "'risk': {'provider': 'anthropic', 'model': 'claude-sonnet-4-20250514'}}.",
+    )
+    phase_llms: dict[str, dict[str, str]] | None = Field(
+        default=None,
+        description="Optional per-phase LLM overrides (takes priority over role_llms). "
+        "Format: {phase: {provider: '...', model: '...'}} where phase is "
+        "'propose', 'critique', 'revise', or 'judge'. "
+        "Example: {'judge': {'provider': 'openai', 'model': 'gpt-5'}}.",
+    )
     temperature: float = Field(
         default=0.7,
         ge=0.0,
@@ -219,7 +233,7 @@ class AgentConfig(BaseModel):
 
     # --- CRIT configuration ---
     crit_llm_model: str = Field(
-        default="gpt-5",
+        default="gpt-5-mini",
         description="LLM model to use for CRIT scoring calls. "
         "Separate from llm_model so CRIT can use a stronger model.",
     )
