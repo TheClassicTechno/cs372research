@@ -41,6 +41,7 @@ Exit code
 
 from __future__ import annotations
 
+import argparse
 import pathlib
 import re
 import sys
@@ -513,8 +514,35 @@ def print_report() -> None:
         print(f"\nRESULT: PASS ({len(warnings)} warnings)")
 
 
+BASELINE_FILE = pathlib.Path(__file__).resolve().parent / "warning_baseline.json"
+
+
+def _load_baseline() -> set[str]:
+    """Load the set of known/accepted warnings from the baseline file."""
+    if not BASELINE_FILE.exists():
+        return set()
+    import json
+    return set(json.loads(BASELINE_FILE.read_text(encoding="utf-8")))
+
+
+def _save_baseline(current_warnings: list[str]) -> None:
+    """Snapshot current warnings as the new baseline."""
+    import json
+    BASELINE_FILE.write_text(
+        json.dumps(sorted(current_warnings), indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     """Run the checker and exit with the correct status code."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--update-baseline", action="store_true",
+        help="Snapshot current warnings as the accepted baseline.",
+    )
+    args = parser.parse_args()
+
     if not ROOT.exists():
         print(f"ERROR: JS root does not exist: {ROOT}")
         sys.exit(1)
@@ -537,8 +565,30 @@ def main() -> None:
     check_duplicate_function_names()
     print_report()
 
+    # --- Baseline enforcement ---
+    if args.update_baseline:
+        _save_baseline(warnings)
+        print(f"\nBaseline updated: {len(warnings)} warnings saved to {BASELINE_FILE.name}")
+        sys.exit(1 if failures else 0)
+
+    baseline = _load_baseline()
+    new_warnings = [w for w in warnings if w not in baseline]
+    resolved = sorted(baseline - set(warnings))
+
+    if resolved:
+        print(f"\nRESOLVED ({len(resolved)} warnings fixed since baseline):")
+        for w in resolved:
+            print(f"  ✓ {w}")
+
+    if new_warnings:
+        print(f"\nNEW WARNINGS ({len(new_warnings)}) — these must be fixed or baseline updated:")
+        for w in new_warnings:
+            print(f"  ✗ {w}")
+        sys.exit(1)
+
     if failures:
         sys.exit(1)
+
     sys.exit(0)
 
 

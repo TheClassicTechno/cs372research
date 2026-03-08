@@ -13,3 +13,12 @@ export function numFmt(n) {
   if (n == null) return '\u2014';
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+/** Return a CSS class encoding score magnitude as grayscale shading. */
+export function scoreClass(v) {
+  if (v == null) return '';
+  if (v >= 0.80) return 'score-high';
+  if (v >= 0.70) return 'score-mid';
+  if (v >= 0.60) return 'score-low';
+  return 'score-bad';
+}

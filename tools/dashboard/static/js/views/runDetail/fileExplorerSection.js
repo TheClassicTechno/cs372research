@@ -20,11 +20,13 @@ export function loadFileExplorer(experiment, runId, token) {
 export function loadFileContent(experiment, runId, filePath) {
   var display = document.getElementById('file-content-display');
   if (!display) return;
-  display.innerHTML = '<span class="loading">Loading ' + esc(filePath) + '...</span>';
+  var fullPath = 'logging/runs/' + experiment + '/' + runId + '/' + filePath;
+  display.innerHTML = '<span class="loading">Loading ' + esc(fullPath) + '...</span>';
   fetchFile(experiment, runId, filePath)
     .then(function (data) {
       var content = typeof data.content === 'string' ? data.content : JSON.stringify(data.content, null, 2);
-      var h = '<div class="section-label">' + esc(filePath) + '</div>';
+      var fullPath = 'logging/runs/' + experiment + '/' + runId + '/' + filePath;
+      var h = '<div class="section-label">' + esc(fullPath) + '</div>';
       if (data.truncated) {
         h += '<p style="color:#960;font-size:0.8em;">[truncated \u2014 showing first 50,000 chars]</p>';
       }

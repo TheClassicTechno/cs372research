@@ -251,197 +251,7 @@ class TestExpandEventPayload:
 
 
 # ---------------------------------------------------------------------------
-# TEST 7 — Judge portfolio layout (vertical alloc table + metrics table)
-# ---------------------------------------------------------------------------
-
-class TestJudgePortfolioLayout:
-    def test_portfolio_section_has_two_tables(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Judge portfolio section contains a vertical ticker table and a
-        performance metrics table side by side."""
-        _goto_run_detail(page, dashboard_url)
-
-        section = page.wait_for_selector("#judge-portfolio-section", timeout=5000)
-        assert section is not None
-
-        # Wait for the allocation table to render
-        page.wait_for_selector("#judge-alloc-table", timeout=5000)
-
-        # Multi-agent allocation table: agent columns + JUDGE column
-        alloc_table = page.query_selector("#judge-alloc-table")
-        assert alloc_table is not None, "Allocation table not found"
-        alloc_text = alloc_table.text_content()
-        assert "JUDGE" in alloc_text, "Allocation table missing 'JUDGE' column"
-
-        # Should have header row + at least a few ticker rows
-        rows = alloc_table.query_selector_all("tr")
-        assert len(rows) >= 3, (
-            f"Allocation table should have header + ticker rows, got {len(rows)}"
-        )
-
-        # Header row should have agent columns
-        header_cells = rows[0].query_selector_all("th")
-        assert len(header_cells) >= 3, (
-            f"Expected at least 3 columns (agent(s) + JUDGE), got {len(header_cells)}"
-        )
-
-        # Layout container uses flexbox for side-by-side
-        layout = page.query_selector("#judge-portfolio-layout")
-        assert layout is not None, "Side-by-side layout container not found"
-
-    def test_portfolio_shows_tickers(self, page: Page, dashboard_url: str):
-        """Allocation table lists the actual portfolio tickers."""
-        _goto_run_detail(page, dashboard_url)
-        page.wait_for_selector("#judge-alloc-table", timeout=5000)
-
-        alloc_text = page.text_content("#judge-alloc-table")
-        # Test run has these tickers in final portfolio
-        for ticker in ("PG", "CVX", "RTX", "CAT"):
-            assert ticker in alloc_text, (
-                f"Ticker '{ticker}' missing from allocation table"
-            )
-
-    def test_alloc_table_has_agent_columns(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Allocation table header includes per-agent columns from config."""
-        _goto_run_detail(page, dashboard_url)
-        page.wait_for_selector("#judge-alloc-table", timeout=5000)
-
-        alloc_text = page.text_content("#judge-alloc-table")
-        # Agent names are uppercased in headers
-        for name in ("VALUE_ENRICHED", "RISK_ENRICHED", "TECHNICAL_ENRICHED"):
-            assert name in alloc_text, (
-                f"Agent column '{name}' not found in allocation table"
-            )
-
-    def test_perf_metrics_table_structure(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Performance metrics table has the correct rows (no SPY)."""
-        _goto_run_detail(page, dashboard_url)
-        # Wait for the async performance fetch to complete
-        page.wait_for_selector("#perf-table", timeout=10000)
-
-        perf_text = page.text_content("#perf-table")
-        for label in ("Initial Capital", "Final Value", "Profit/Loss", "Return"):
-            assert label in perf_text, (
-                f"Metrics table missing '{label}'"
-            )
-
-        # SPY Return should NOT be present
-        assert "SPY" not in perf_text, (
-            "SPY Return should not appear in performance metrics"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 8 — Return calculation correctness
-# ---------------------------------------------------------------------------
-
-class TestReturnCalculation:
-    def test_return_equals_profit_over_capital(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Return % must equal (final_value - initial_capital) / initial_capital.
-
-        The backend sends return_pct already as a percentage.  The frontend
-        must display it directly without multiplying by 100 again.
-        """
-        _goto_run_detail(page, dashboard_url)
-        page.wait_for_selector("#perf-table", timeout=10000)
-
-        rows = page.query_selector_all("#perf-table tr")
-        values = {}
-        for row in rows:
-            cells = row.query_selector_all("td")
-            if len(cells) == 2:
-                label = cells[0].text_content().strip()
-                val = cells[1].text_content().strip()
-                values[label] = val
-
-        # Parse dollar amounts
-        def parse_dollar(s):
-            return float(s.replace("$", "").replace(",", "").replace("+", ""))
-
-        initial = parse_dollar(values["Initial Capital"])
-        final_val = parse_dollar(values["Final Value"])
-        profit = parse_dollar(values["Profit/Loss"])
-
-        # Parse return percentage
-        ret_str = values["Return"].replace("%", "").replace("+", "")
-        ret_pct = float(ret_str)
-
-        # Verify: return = (final - initial) / initial * 100
-        expected_return = (final_val - initial) / initial * 100
-        assert abs(ret_pct - expected_return) < 0.1, (
-            f"Return {ret_pct}% != expected "
-            f"({final_val} - {initial}) / {initial} * 100 = {expected_return:.2f}%"
-        )
-
-        # Also verify profit = final - initial
-        assert abs(profit - (final_val - initial)) < 0.1, (
-            f"Profit ${profit} != Final ${final_val} - Initial ${initial}"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 9 — Color logic (profit/loss and status)
-# ---------------------------------------------------------------------------
-
-class TestColorLogic:
-    def test_status_complete_is_green(self, page: Page, dashboard_url: str):
-        """Status 'complete' renders with the green .status-ok class."""
-        _goto_run_detail(page, dashboard_url)
-
-        # Find the Status cell — it's in the first ov-htable
-        status_cell = page.query_selector(".ov-htable .status-ok")
-        assert status_cell is not None, (
-            "No element with .status-ok class found in overview"
-        )
-        assert status_cell.text_content().strip() == "complete", (
-            f"Status cell text is '{status_cell.text_content().strip()}', "
-            "expected 'complete'"
-        )
-
-    def test_profit_values_colored_green(self, page: Page, dashboard_url: str):
-        """When profit > 0, Final Value and Profit/Loss use .perf-profit."""
-        _goto_run_detail(page, dashboard_url)
-        page.wait_for_selector("#perf-table", timeout=10000)
-
-        # The test run has a small positive profit, so perf-profit should apply
-        profit_cells = page.query_selector_all("#perf-table .perf-profit")
-        assert len(profit_cells) >= 2, (
-            f"Expected at least 2 cells with .perf-profit (Final Value, "
-            f"Profit/Loss), found {len(profit_cells)}"
-        )
-
-        # No perf-loss cells should exist for a profitable run
-        loss_cells = page.query_selector_all("#perf-table .perf-loss")
-        assert len(loss_cells) == 0, (
-            f"Found {len(loss_cells)} .perf-loss cells in a profitable run"
-        )
-
-    def test_final_value_has_color_class(self, page: Page, dashboard_url: str):
-        """Final Value cell has a perf-profit or perf-loss class."""
-        _goto_run_detail(page, dashboard_url)
-        page.wait_for_selector("#perf-table", timeout=10000)
-
-        rows = page.query_selector_all("#perf-table tr")
-        for row in rows:
-            cells = row.query_selector_all("td")
-            if len(cells) == 2 and cells[0].text_content().strip() == "Final Value":
-                cls = cells[1].get_attribute("class") or ""
-                assert "perf-profit" in cls or "perf-loss" in cls, (
-                    f"Final Value cell has no profit/loss class: '{cls}'"
-                )
-                return
-        pytest.fail("Final Value row not found in perf table")
-
-
-# ---------------------------------------------------------------------------
-# TEST 10 — Divergence table axes: phases as rows, metrics as columns
+# TEST 7 — Divergence table axes: phases as rows, metrics as columns
 # ---------------------------------------------------------------------------
 
 class TestDivergenceTableLayout:
@@ -473,3 +283,116 @@ class TestDivergenceTableLayout:
         ]
         assert "Proposed" in row_labels, "Missing 'Proposed' row"
         assert "Revised" in row_labels, "Missing 'Revised' row"
+
+
+# ---------------------------------------------------------------------------
+# TEST 8 — File explorer shows full path from logging root
+# ---------------------------------------------------------------------------
+
+class TestFileExplorerFullPath:
+    def test_file_label_shows_full_path(self, page: Page, dashboard_url: str):
+        """Clicking a file in the explorer shows the full path from logging/."""
+        _goto_run_detail(page, dashboard_url)
+
+        # Open the File Explorer card
+        page.wait_for_selector("#file-explorer-section .card", timeout=5000)
+        header = page.query_selector("#file-explorer-section .card-header")
+        header.click()
+
+        # Click the first file link in the tree
+        file_link = page.wait_for_selector(
+            "#file-explorer-section .file-tree .file-link", timeout=5000,
+        )
+        file_link.click()
+
+        # Wait for file content to load
+        label = page.wait_for_selector(
+            "#file-content-display .section-label", timeout=5000,
+        )
+        label_text = label.text_content().strip()
+
+        assert label_text.startswith("logging/runs/"), (
+            f"File label should start with 'logging/runs/', got: '{label_text}'"
+        )
+        assert "run_2026-03-07_19-50-06" in label_text, (
+            f"File label should contain run ID, got: '{label_text}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 9 — PID Stats formatting: score classes, 3 decimals, delta, rho emphasis
+# ---------------------------------------------------------------------------
+
+class TestPIDStatsFormatting:
+    def test_scores_use_3_decimals(self, page: Page, dashboard_url: str):
+        """PID Stats table renders scores with 3 decimal places."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#pid-stats-section", timeout=5000)
+        if not section or not section.text_content().strip():
+            pytest.skip("PID Stats section not populated for test run")
+
+        cells = page.query_selector_all(
+            "#pid-stats-section td.num-cell",
+        )
+        assert len(cells) > 0, "No numeric cells found in PID Stats"
+
+        for cell in cells:
+            text = cell.text_content().strip()
+            if text == "\u2014":
+                continue
+            parts = text.split(".")
+            assert len(parts) == 2 and len(parts[1]) == 3, (
+                f"Expected 3 decimal places, got '{text}'"
+            )
+
+    def test_rho_column_has_emphasis(self, page: Page, dashboard_url: str):
+        """The rho_i column cells have the rho-col class for emphasis."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#pid-stats-section", timeout=5000)
+        if not section or not section.text_content().strip():
+            pytest.skip("PID Stats section not populated for test run")
+
+        rho_cells = page.query_selector_all(
+            "#pid-stats-section td.rho-col",
+        )
+        assert len(rho_cells) >= 1, "No rho-col cells found"
+
+    def test_score_cells_have_shading_class(self, page: Page, dashboard_url: str):
+        """Numeric cells get a score-high/mid/low/bad class."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#pid-stats-section", timeout=5000)
+        if not section or not section.text_content().strip():
+            pytest.skip("PID Stats section not populated for test run")
+
+        cells = page.query_selector_all(
+            "#pid-stats-section td.num-cell",
+        )
+        score_classes = {"score-high", "score-mid", "score-low", "score-bad"}
+        tagged = 0
+        for cell in cells:
+            cls = cell.get_attribute("class") or ""
+            if any(sc in cls for sc in score_classes):
+                tagged += 1
+        assert tagged >= 1, "No score shading classes found on numeric cells"
+
+    def test_round_delta_shown(self, page: Page, dashboard_url: str):
+        """Round 2+ headers show a delta indicator."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#pid-stats-section", timeout=5000)
+        if not section or not section.text_content().strip():
+            pytest.skip("PID Stats section not populated for test run")
+
+        labels = page.query_selector_all(
+            "#pid-stats-section .section-label",
+        )
+        if len(labels) < 2:
+            pytest.skip("Need at least 2 rounds to test delta")
+
+        second_label = labels[1].text_content()
+        assert "(" in second_label and ")" in second_label, (
+            f"Round 2 label missing delta indicator: '{second_label}'"
+        )

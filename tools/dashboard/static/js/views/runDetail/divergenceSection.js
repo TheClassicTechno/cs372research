@@ -32,14 +32,14 @@ export function loadDivergenceSection(experiment, runId, token) {
 
         h += '<div class="section-label">Round ' + rn + '</div>';
         h += '<table class="data-table">';
-        h += '<tr><th>Metric</th><th>Proposed</th><th>Revised</th></tr>';
+        h += '<tr><th>Phase</th><th>JS Divergence</th><th>Evidence Overlap</th></tr>';
 
-        h += '<tr><td>JS Divergence</td>';
+        h += '<tr><td>Proposed</td>';
         h += '<td>' + fmt(propose.js_divergence) + '</td>';
-        h += '<td>' + fmt(revise.js_divergence) + '</td></tr>';
+        h += '<td>' + fmt(propose.mean_overlap) + '</td></tr>';
 
-        h += '<tr><td>Evidence Overlap</td>';
-        h += '<td>' + fmt(propose.mean_overlap) + '</td>';
+        h += '<tr><td>Revised</td>';
+        h += '<td>' + fmt(revise.js_divergence) + '</td>';
         h += '<td>' + fmt(revise.mean_overlap) + '</td></tr>';
 
         h += '</table>';

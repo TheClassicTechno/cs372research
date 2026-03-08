@@ -127,3 +127,21 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 .file-tree .dir-toggle:hover { text-decoration: underline; }
 .file-tree .file-link { cursor: pointer; color: #006; }
 .file-tree .file-link:hover { text-decoration: underline; }
+
+/* PID Stats: score shading */
+.score-high { color: #111; font-weight: 600; }
+.score-mid  { color: #333; }
+.score-low  { color: #666; }
+.score-bad  { color: #999; }
+.rho-col    { font-weight: 600; }
+.delta-up   { color: #111; }
+.delta-down { color: #666; }
+
+/* PID Stats: numeric alignment */
+table.data-table td.num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table.data-table th.num-col {
+  text-align: right;
+}
