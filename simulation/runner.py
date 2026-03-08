@@ -21,6 +21,7 @@ from typing import Any
 
 from agents.registry import create_agent_system
 from agents.tools import make_submit_decision_tool
+from eval.evidence import parse_memo_evidence
 from eval.financial import compute_daily_financial_metrics, compute_financial_metrics
 from models.agents import AgentInvocation
 from models.case import Case
@@ -46,6 +47,7 @@ class AsyncSimulationRunner:
         self._config = config
         self._config_yaml_path = config_yaml_path
         self._run_name = run_name_from_config_path(config_yaml_path)
+        self._templates: list[Case] = []
         
         final_output_dir = output_dir or config.output_dir
         self._sim_logger = SimulationLogger(final_output_dir, config, self._run_name)
@@ -70,6 +72,7 @@ class AsyncSimulationRunner:
             tickers=tickers,
             memo_override_path=self._config.memo_override_path,
         )
+        self._templates = templates
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
         num_mtm = num_cases - num_decision
@@ -267,6 +270,29 @@ class AsyncSimulationRunner:
         episodes = self._sim_logger.simulation_log.episode_logs
         initial_cash = self._config.broker.initial_cash
 
+        # Extract risk-free rate from the first decision case's memo if available.
+        risk_free_rate = 0.0
+        if self._templates:
+            # First template item content should be the memo
+            memo_text = self._templates[0].case_data.items[0].content
+            evidence = parse_memo_evidence(memo_text)
+            if "L1-FF" in evidence:
+                import re
+                try:
+                    # Memo text looks like "Fed Funds: 4.33%"
+                    match = re.search(r"([\d\.]+)", evidence["L1-FF"])
+                    if match:
+                        risk_free_rate = float(match.group(1)) / 100.0
+                        logger.info("Extracted risk-free rate from memo: %.4f", risk_free_rate)
+                    else:
+                        logger.warning("Could not find numeric rate in 'L1-FF' memo text: %s", evidence["L1-FF"])
+                except (ValueError, TypeError):
+                    logger.warning("Failed to parse risk-free rate 'L1-FF' from memo.")
+            else:
+                logger.warning("Risk-free rate 'L1-FF' not found in memo evidence; defaulting to 0.0.")
+        else:
+            logger.warning("No case templates found; cannot extract risk-free rate for summary metrics.")
+
         # Load daily prices once for daily metrics (if available).
         daily_prices, spy_daily = self._load_daily_prices_for_eval()
 
@@ -282,8 +308,10 @@ class AsyncSimulationRunner:
                 for ticker, qty in ep.final_portfolio.positions.items()
             }
             book_value = ep.book_value or 0.0
-
-            fin = compute_financial_metrics(ep, initial_cash)
+            
+            fin_ep = ep.copy()
+            fin_ep.decision_point_logs = fin_ep.decision_point_logs[:-1]  # Exclude MTM point for financial metrics
+            fin = compute_financial_metrics(fin_ep, initial_cash, risk_free_rate=risk_free_rate)
 
             summary: dict[str, Any] = {
                 "episode_id": ep.episode_id,
@@ -294,6 +322,7 @@ class AsyncSimulationRunner:
                 "position_values": position_values,
                 "book_value": book_value,
                 "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
+                "return_pct_with_cash_interest": fin.returns[-1] * 100 if fin.returns else None,
                 "total_trades": len(ep.trades),
                 "sharpe_ratio": fin.sharpe_ratio,
                 "sortino_ratio": fin.sortino_ratio,
@@ -316,6 +345,7 @@ class AsyncSimulationRunner:
 
                 daily_fin = compute_daily_financial_metrics(
                     positions, cash,  initial_value=initial_cash, daily_prices=daily_prices, spy_daily=spy_daily,
+                    risk_free_rate=risk_free_rate,
                 )
                 if daily_fin is not None:
                         summary["daily_metrics"] = {

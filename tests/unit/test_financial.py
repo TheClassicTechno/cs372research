@@ -6,13 +6,16 @@ import pytest
 
 from eval.financial import (
     FinancialMetrics,
+    build_daily_equity_curve,
     build_equity_curve,
+    compute_daily_financial_metrics,
     compute_financial_metrics,
     compute_returns,
     max_drawdown,
     sharpe_ratio,
     sortino_ratio,
 )
+from models.case import ClosePricePoint
 from models.decision import Decision
 from models.log import DecisionPointLog, EpisodeLog
 from models.portfolio import PortfolioSnapshot
@@ -231,3 +234,92 @@ class TestComputeFinancialMetrics:
         metrics = compute_financial_metrics(ep, 100_000)
         assert metrics.total_return_pct == 0.0
         assert metrics.max_drawdown == 0.0
+
+
+# ---------------------------------------------------------------------------
+# risk-free compounding
+# ---------------------------------------------------------------------------
+
+class TestRiskFreeCompounding:
+    def test_quarterly_compounding_cash_only(self):
+        # 4% annualized -> ~1% per quarter
+        rf = 0.04
+        q_factor = (1.0 + rf) ** 0.25  # approx 1.00985
+        
+        dp0 = _dp(0, 100_000, {}, 100_000, {}, {}) # Invest 100k cash
+        dp1 = _dp(1, 100_000, {}, 100_000, {}, {}) # Stay in cash
+        ep = _episode([dp0, dp1])
+        
+        curve = build_equity_curve(ep, 100_000, risk_free_rate=rf)
+        
+        # Start: 100,000
+        # DP0: BV = 100,000 + interest = 100,000 * q_factor
+        # DP1: BV = (100,000 + interest_prev) + (100,000 + interest_prev)*q_factor - 100,000
+        # Simplifies to initial_cash * q_factor^2
+        
+        expected_bv0 = 100_000 * q_factor
+        expected_bv1 = expected_bv0 * q_factor
+        
+        assert len(curve) == 3
+        assert pytest.approx(curve[0]) == 100_000
+        assert pytest.approx(curve[1]) == expected_bv0
+        assert pytest.approx(curve[2]) == expected_bv1
+
+    def test_quarterly_compounding_with_positions(self):
+        rf = 0.08
+        q_factor = (1.0 + rf) ** 0.25
+        
+        # Start with 100k. 
+        # DP0: buy 50k NVDA, keep 50k cash.
+        dp0 = _dp(0, 100_000, {}, 50_000, {"NVDA": 500}, {"NVDA": 100.0})
+        # DP1: price stays same.
+        dp1 = _dp(1, 50_000, {"NVDA": 500}, 50_000, {"NVDA": 500}, {"NVDA": 100.0})
+        ep = _episode([dp0, dp1])
+        
+        curve = build_equity_curve(ep, 100_000, risk_free_rate=rf)
+        
+        # BV0: 50k stock + (50k cash * q_factor)
+        expected_bv0 = 50_000 + 50_000 * q_factor
+        
+        # BV1: 50k stock + (50k cash + interest_prev) * q_factor
+        # interest_prev = 50_000 * q_factor - 50_000
+        expected_bv1 = 50_000 + (50_000 * q_factor) * q_factor
+        
+        assert pytest.approx(curve[1]) == expected_bv0
+        assert pytest.approx(curve[2]) == expected_bv1
+
+    def test_daily_compounding_with_positions(self):
+        rf = 0.05
+        d_factor = (1.0 + rf) ** (1.0 / 252.0)
+        
+        # 3 days of daily prices: flat at 100, then up to 110, then down to 90
+        daily_prices = {"NVDA": [
+            ClosePricePoint(timestamp="2025-01-01", close=100.0),
+            ClosePricePoint(timestamp="2025-01-02", close=110.0),
+            ClosePricePoint(timestamp="2025-01-03", close=90.0),
+        ]}
+        
+        # 50% cash, 50% NVDA
+        curve = build_daily_equity_curve(
+            positions={"NVDA": 500},
+            cash=50_000,
+            initial_value=100_000,
+            daily_prices=daily_prices,
+            risk_free_rate=rf
+        )
+        
+        assert len(curve) == 4 # initial + 3 days
+        assert curve[0] == 100_000
+        
+        # Day 1: stock = 50k, cash = 50k * d_factor^1
+        expected_d1 = 50_000 + 50_000 * d_factor
+        assert pytest.approx(curve[1]) == expected_d1
+        
+        # Day 2: stock = 55k, cash = 50k * d_factor^2
+        expected_d2 = 55_000 + 50_000 * (d_factor ** 2)
+        assert pytest.approx(curve[2]) == expected_d2
+        
+        # Day 3: stock = 45k, cash = 50k * d_factor^3
+        expected_d3 = 45_000 + 50_000 * (d_factor ** 3)
+        assert pytest.approx(curve[3]) == expected_d3
+
