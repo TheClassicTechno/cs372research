@@ -221,25 +221,27 @@ class DailyFinancialMetrics(BaseModel):
 
 
 def build_daily_equity_curve(
-    allocation: dict[str, float],
+    positions: dict[str, int],
+    cash: float,
     initial_value: float,
     daily_prices: dict[str, list[ClosePricePoint]],
 ) -> list[float]:
-    """Build a daily equity curve from allocation weights and daily prices.
+    """Build a daily equity curve from actual share positions and cash.
 
     Assumes buy-and-hold at the given weights starting on day 0.
     For each day t, portfolio value = sum over tickers of:
         weight_i * initial_value * (price_t / price_0)
 
-    Tickers in the allocation that lack daily price data are treated as
+    Tickers in the positions that lack daily price data are treated as
     earning zero return (their portion stays constant at initial weight).
-
     Parameters
     ----------
-    allocation:
-        {ticker: weight} where weights sum to ~1.0.
+    positions:
+        {ticker: share_count} from the simulation decision point.
+    cash:
+        Remaining cash balance after trades.
     initial_value:
-        Starting portfolio value (e.g. 100_000).
+        The initial value of the portfolio.
     daily_prices:
         {ticker: [ClosePricePoint, ...]} sorted by date ascending.
 
@@ -247,12 +249,12 @@ def build_daily_equity_curve(
     -------
     List of daily portfolio values, starting from day 0.
     """
-    if not allocation or initial_value <= 0.0:
+    if not positions or initial_value <= 0.0:
         return [initial_value]
 
     # Find common trading dates across all tickers that have prices
     tickers_with_prices = [
-        t for t in allocation if t in daily_prices and daily_prices[t]
+        t for t in positions if t in daily_prices and daily_prices[t]
     ]
 
     if not tickers_with_prices:
@@ -265,45 +267,55 @@ def build_daily_equity_curve(
     # Build per-ticker price arrays indexed by day
     # For tickers without data, their contribution stays flat
     ticker_prices: dict[str, list[float]] = {}
-    for t in tickers_with_prices:
+    for t in positions:
         bars = daily_prices[t]
         ticker_prices[t] = [bar.close for bar in bars]
 
-    curve: list[float] = []
+    curve: list[float] = [initial_value]
     for day_idx in range(n_days):
-        day_value = 0.0
-        for t, weight in allocation.items():
-            if weight <= 0.0:
+        day_value = cash
+        for t, qty in positions.items():
+            if qty == 0:
                 continue
             if t in ticker_prices:
                 prices = ticker_prices[t]
-                if day_idx < len(prices) and prices[0] > 0.0:
-                    day_value += weight * initial_value * (prices[day_idx] / prices[0])
+                
+                if day_idx < len(prices):
+                    price = prices[day_idx]
+                    # If you want exact match with quarterly metrics, comment this in.
+                    # if day_idx == n_days -1:
+                    #     price = round(price, 2)
+                    day_value += qty * price
                 else:
-                    # Beyond available data or zero start price — hold flat
-                    day_value += weight * initial_value
+                    print("WARN: Missing price for ticker %s on day %d, using last available price" % (t, day_idx))
+                    # Beyond available data — hold at last seen price
+                    day_value += qty * prices[-1]
             else:
-                # No daily data for this ticker — hold flat
-                day_value += weight * initial_value
+                # No daily data for this ticker — value is 0 (conservative)
+                print("ERROR: Missing all price for ticker %s, treating as zero" % t)
+                pass
         curve.append(day_value)
 
     return curve
 
 
 def compute_daily_financial_metrics(
-    allocation: dict[str, float],
+    positions: dict[str, int],
+    cash: float,
     initial_value: float,
     daily_prices: dict[str, list[ClosePricePoint]],
     spy_daily: list[ClosePricePoint] | None = None,
 ) -> DailyFinancialMetrics | None:
-    """Compute daily-granularity financial metrics for an allocation.
+    """Compute daily-granularity financial metrics for actual positions.
 
     Returns None if insufficient daily price data is available.
 
     Parameters
     ----------
-    allocation:
-        {ticker: weight} from the debate output.
+    positions:
+        {ticker: share_count} resulting from simulation trades.
+    cash:
+        Cash balance after trades.
     initial_value:
         Starting portfolio value.
     daily_prices:
@@ -311,8 +323,7 @@ def compute_daily_financial_metrics(
     spy_daily:
         Optional SPY daily prices for benchmark comparison.
     """
-    curve = build_daily_equity_curve(allocation, initial_value, daily_prices)
-
+    curve = build_daily_equity_curve(positions, cash, initial_value,daily_prices)
     if len(curve) < 2:
         return None
 
