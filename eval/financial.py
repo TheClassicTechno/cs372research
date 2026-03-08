@@ -282,8 +282,9 @@ def build_daily_equity_curve(
                 
                 if day_idx < len(prices):
                     price = prices[day_idx]
-                    if day_idx == n_days -1:
-                        price = round(price, 2)
+                    # If you want exact match with quarterly metrics, comment this in.
+                    # if day_idx == n_days -1:
+                    #     price = round(price, 2)
                     day_value += qty * price
                 else:
                     print("WARN: Missing price for ticker %s on day %d, using last available price" % (t, day_idx))
@@ -325,12 +326,6 @@ def compute_daily_financial_metrics(
     curve = build_daily_equity_curve(positions, cash, initial_value,daily_prices)
     if len(curve) < 2:
         return None
-    # print("Daily equity curve[0]:", curve[0])
-    # print("Daily equity curve[-1]:", curve[-1])
-    # print("Daily prices[0]:", {t: daily_prices[t][0].close for t in daily_prices})
-    # print("Daily dates[0]:", {t: daily_prices[t][0].timestamp for t in daily_prices})
-    # print("Daily prices[-1]:", {t: daily_prices[t][-1].close for t in daily_prices})
-    # print("Daily dates[-1]:", {t: daily_prices[t][-1].timestamp for t in daily_prices})
 
     rets = compute_returns(curve)
     trading_days = len(rets)
