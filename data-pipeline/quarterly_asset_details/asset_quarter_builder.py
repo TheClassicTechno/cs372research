@@ -420,9 +420,13 @@ def build_asset_state(year, quarter, tickers):
     # batch call and slice per-ticker afterwards.
     all_symbols = list(tickers) + (["SPY"] if "SPY" not in tickers else [])
     print(f"  Downloading price data ({len(all_symbols)} symbols)...", flush=True)
+    
+    # yfinance end date is exclusive, so add 1 day
+    dl_end = q_end + dt.timedelta(days=1)
+    
     try:
         raw = yf.download(
-            all_symbols, start=iso(start), end=iso(q_end),
+            all_symbols, start=iso(start), end=iso(dl_end),
             group_by="ticker", progress=False,
         )
     except Exception as e:
