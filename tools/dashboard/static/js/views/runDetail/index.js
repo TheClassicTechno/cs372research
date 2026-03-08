@@ -2,6 +2,7 @@ import { fetchRunDetail } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { buildRoundCard } from '../../components/card.js';
 import { buildOverviewPanel } from './overviewSection.js';
+import { loadDivergenceSection } from './divergenceSection.js';
 import { loadPIDStatsSection } from './pidStatsSection.js';
 import { loadPIDSection } from './pidSection.js';
 import { loadCRITSection } from './critSection.js';
@@ -45,6 +46,7 @@ function renderRunDetail(detail, experiment, runId, token) {
   var sectionsDiv = document.getElementById('detail-sections');
   var sectionsHtml = '';
 
+  sectionsHtml += '<div id="divergence-section"></div>';
   sectionsHtml += '<div id="pid-stats-section"></div>';
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';
@@ -81,6 +83,7 @@ function renderRunDetail(detail, experiment, runId, token) {
 
   // Load async data
   loadJudgePortfolio(experiment, runId, detail.final_portfolio, detail.manifest, token);
+  loadDivergenceSection(experiment, runId, token);
   loadPIDStatsSection(experiment, runId, token);
   loadPIDSection(experiment, runId, token);
   loadCRITSection(experiment, runId, token);

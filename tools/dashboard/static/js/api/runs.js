@@ -24,6 +24,10 @@ export function fetchCRIT(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/crit');
 }
 
+export function fetchDivergence(experiment, runId) {
+  return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/divergence');
+}
+
 export function fetchPortfolio(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/portfolio');
 }

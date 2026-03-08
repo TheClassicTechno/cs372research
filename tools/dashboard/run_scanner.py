@@ -76,6 +76,8 @@ def _load_trajectories(run_dir: Path) -> list[dict]:
             ("pid_state.json", "pid"),
             ("js_divergence.json", "divergence"),
             ("evidence_overlap.json", "evidence"),
+            ("js_divergence_proposed.json", "divergence_proposed"),
+            ("evidence_overlap_proposed.json", "evidence_proposed"),
         ]:
             fdata = _safe_json(metrics_dir / fname)
             if fdata is not None:
@@ -630,6 +632,38 @@ def get_crit_trajectory(
         if pillars:
             row["pillars"] = pillars
 
+        result.append(row)
+    return result
+
+
+def get_divergence_trajectory(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "default",
+    run_id: str = "",
+) -> list[dict]:
+    """Extract JS divergence and evidence overlap per round (proposed + revised)."""
+    run_dir = base_path / experiment / run_id
+    traj = _load_trajectories(run_dir)
+
+    result = []
+    for entry in traj:
+        row: dict[str, Any] = {"round": entry.get("round")}
+
+        # Revised (existing)
+        div = entry.get("divergence") or {}
+        ev = entry.get("evidence") or {}
+        row["revised"] = {
+            "js_divergence": div.get("js") or div.get("js_divergence"),
+            "evidence_overlap": div.get("ov") or div.get("mean_overlap") or ev.get("mean_overlap"),
+        }
+
+        # Proposed (new)
+        div_p = entry.get("divergence_proposed") or {}
+        ev_p = entry.get("evidence_proposed") or {}
+        row["proposed"] = {
+            "js_divergence": div_p.get("js") or div_p.get("js_divergence"),
+            "evidence_overlap": div_p.get("ov") or div_p.get("mean_overlap") or ev_p.get("mean_overlap"),
+        }
         result.append(row)
     return result
 

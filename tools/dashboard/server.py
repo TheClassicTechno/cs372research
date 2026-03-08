@@ -171,6 +171,12 @@ def crit_trajectory(experiment: str, run_id: str):
     return JSONResponse(run_scanner.get_crit_trajectory(RUNS_BASE, experiment, run_id))
 
 
+@app.get("/runs/{experiment}/{run_id}/divergence")
+def divergence_trajectory(experiment: str, run_id: str):
+    """JS divergence and evidence overlap per round (proposed + revised)."""
+    return JSONResponse(run_scanner.get_divergence_trajectory(RUNS_BASE, experiment, run_id))
+
+
 @app.get("/runs/{experiment}/{run_id}/portfolio")
 def portfolio_trajectory(experiment: str, run_id: str):
     """Portfolio trajectory across rounds."""

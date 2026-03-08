@@ -527,13 +527,15 @@ class DebateLogger:
         agent_confidences: dict[str, float],
         agent_evidence: dict[str, list[str]],
         round_num: int,
+        *,
+        suffix: str = "",
     ) -> None:
-        """Write metrics/js_divergence.json and metrics/evidence_overlap.json."""
+        """Write metrics/js_divergence{suffix}.json and metrics/evidence_overlap{suffix}.json."""
         if self._mode == "off" or self._round_dir is None:
             return
         metrics_dir = self._round_dir / "metrics"
         _write_json(
-            metrics_dir / "js_divergence.json",
+            metrics_dir / f"js_divergence{suffix}.json",
             _round_floats({
                 "round": round_num,
                 "js_divergence": js,
@@ -541,7 +543,7 @@ class DebateLogger:
             }),
         )
         _write_json(
-            metrics_dir / "evidence_overlap.json",
+            metrics_dir / f"evidence_overlap{suffix}.json",
             _round_floats({
                 "round": round_num,
                 "mean_overlap": ov,
