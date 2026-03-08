@@ -22,8 +22,6 @@ LOGS_PATH = Path("logs/prompt_traces.jsonl")
 HTML_PATH = Path(__file__).parent / "index.html"
 RUNS_BASE = Path("logging/runs")
 
-FILE_TRUNCATE_CHARS = 50_000
-
 
 # ------------------------------------------------------------------
 # Prompt trace endpoints (existing)
@@ -210,7 +208,6 @@ def read_file(
     """Read a file from the run directory.
 
     Returns 403 on path traversal, 404 on missing file.
-    Large files (>50k chars) are truncated.
     """
     try:
         content = run_scanner.read_run_file(RUNS_BASE, experiment, run_id, path)
@@ -219,20 +216,14 @@ def read_file(
     except FileNotFoundError:
         return JSONResponse({"error": "File not found"}, status_code=404)
 
-    truncated = False
-    if len(content) > FILE_TRUNCATE_CHARS:
-        content = content[:FILE_TRUNCATE_CHARS]
-        truncated = True
-
     if path.endswith(".json"):
         try:
-            parsed = json.loads(content) if not truncated else None
-            if parsed is not None:
-                return JSONResponse({"content": parsed, "truncated": truncated})
+            parsed = json.loads(content)
+            return JSONResponse({"content": parsed, "truncated": False})
         except json.JSONDecodeError:
             pass
 
-    return JSONResponse({"content": content, "truncated": truncated})
+    return JSONResponse({"content": content, "truncated": False})
 
 
 if __name__ == "__main__":

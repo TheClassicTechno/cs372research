@@ -641,17 +641,42 @@ def get_divergence_trajectory(
     experiment: str = "default",
     run_id: str = "",
 ) -> list[dict]:
-    """Extract JS divergence + evidence overlap per phase per round."""
+    """Extract JS divergence + evidence overlap per phase per round.
+
+    The aggregated ``pid_crit_all_rounds.json`` never contains propose-phase
+    data, so we always read propose metrics directly from per-round files.
+    """
     run_dir = base_path / experiment / run_id
     traj = _load_trajectories(run_dir)
+
+    # Build a lookup of propose-phase metrics from per-round files,
+    # since the aggregated file never includes them.
+    propose_by_round: dict[int, dict] = {}
+    rounds_dir = run_dir / "rounds"
+    if rounds_dir.is_dir():
+        for rd in sorted(rounds_dir.glob("round_*")):
+            try:
+                rn = int(rd.name.split("_")[1])
+            except (IndexError, ValueError):
+                continue
+            metrics_dir = rd / "metrics"
+            if not metrics_dir.is_dir():
+                continue
+            div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
+            ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
+            if div_p or ev_p:
+                propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
 
     result = []
     for entry in traj:
         round_num = entry.get("round")
 
-        # --- Propose phase ---
+        # --- Propose phase (prefer trajectory entry, fall back to per-round files) ---
         div_p = entry.get("divergence_propose") or {}
         ev_p = entry.get("evidence_propose") or {}
+        if not div_p and not ev_p and round_num in propose_by_round:
+            div_p = propose_by_round[round_num]["div"]
+            ev_p = propose_by_round[round_num]["ev"]
         if div_p or ev_p:
             result.append({
                 "round": round_num,

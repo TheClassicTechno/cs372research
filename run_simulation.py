@@ -196,11 +196,6 @@ def _parse_args() -> argparse.Namespace:
         help="Print per-request token counts (prompt, completion, total) to console.",
     )
     parser.add_argument(
-        "--force-memo",
-        action="store_true",
-        help="Force-regenerate the scenario memo even if a cached copy exists.",
-    )
-    parser.add_argument(
         "--custom-memo",
         type=str,
         default=None,
@@ -596,8 +591,6 @@ async def _main() -> None:
         cmd_parts.append("--no-display")
     if config.debate_setup.log_tokens:
         cmd_parts.append("--log-tokens")
-    if args.force_memo:
-        cmd_parts.append("--force-memo")
     if args.custom_memo:
         cmd_parts.append(f"--custom-memo {args.custom_memo}")
     config.debate_setup.run_command = " ".join(cmd_parts)
@@ -667,37 +660,31 @@ async def _main() -> None:
                 args.scenario, config.invest_quarter,
             )
 
-            if scenario_memo_path.exists() and not args.force_memo:
-                # Cache hit — skip snapshot_builder, just use the cached memo.
-                memo_override_path = str(scenario_memo_path)
-                logger.info("Using cached scenario memo: %s", memo_override_path)
-            else:
-                # Cache miss (or --force-memo) — generate snapshots, then
-                # build scenario memo with macro_context from the scenario YAML.
-                logger.info(
-                    "Auto-generating snapshots for %s (%d tickers), "
-                    "scenario memo -> %s ...",
-                    config.invest_quarter, len(config.tickers), scenario_memo_path,
-                )
-                subprocess.run(
-                    [
-                        sys.executable,
-                        str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
-                        "--tickers", ",".join(config.tickers),
-                        "--invest-quarter", config.invest_quarter,
-                    ],
-                    check=True,
-                )
-                subprocess.run(
-                    [
-                        sys.executable,
-                        str(Path("data-pipeline/final_snapshots/generate_scenario_memo.py")),
-                        "--scenario", args.scenario,
-                    ],
-                    check=True,
-                )
-                memo_override_path = str(scenario_memo_path)
-                logger.info("Cached scenario memo: %s", memo_override_path)
+            # Always regenerate snapshot + memo to avoid stale cache issues.
+            logger.info(
+                "Auto-generating snapshots for %s (%d tickers), "
+                "scenario memo -> %s ...",
+                config.invest_quarter, len(config.tickers), scenario_memo_path,
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(Path("data-pipeline/final_snapshots/snapshot_builder.py")),
+                    "--tickers", ",".join(config.tickers),
+                    "--invest-quarter", config.invest_quarter,
+                ],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(Path("data-pipeline/final_snapshots/generate_scenario_memo.py")),
+                    "--scenario", args.scenario,
+                ],
+                check=True,
+            )
+            memo_override_path = str(scenario_memo_path)
+            logger.info("Generated scenario memo: %s", memo_override_path)
         elif not args.custom_memo:
             # No scenario — generate snapshots as before (no scenario memo).
             logger.info("Auto-generating snapshots for %s (%d tickers)...",
