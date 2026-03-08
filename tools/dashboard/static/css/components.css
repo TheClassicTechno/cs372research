@@ -5,7 +5,7 @@
 }
 .card-header {
   padding: 8px 12px;
-  background: #f5f5f5;
+  background: #f8f5ef;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -26,7 +26,7 @@
   font-weight: bold;
   font-size: 0.8em;
   margin: 12px 0 4px 0;
-  color: #333;
+  color: #5c4632;
 }
 .section-label:first-child { margin-top: 0; }
 pre.content {
@@ -49,13 +49,16 @@ table.data-table {
 }
 table.data-table th, table.data-table td {
   border: 1px solid #ccc;
-  padding: 4px 8px;
+  padding: 5px 10px;
   text-align: left;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
 }
 table.data-table th {
-  background: #f5f5f5;
+  background: #f5f0e8;
   font-weight: bold;
+  color: #5c4632;
 }
 table.data-table tr:hover { background: #f9f9f9; }
 table.data-table tr.clickable { cursor: pointer; }
@@ -66,8 +69,8 @@ table.data-table tr.best-run { font-weight: bold; }
 
 /* Run Overview */
 .run-overview {
-  background: #f5f5f5;
-  border: 1px solid #ccc;
+  background: #faf8f4;
+  border: 1px solid #d6c4a1;
   padding: 16px 20px;
   margin-bottom: 16px;
   font-size: 0.85em;
@@ -77,7 +80,8 @@ table.data-table tr.best-run { font-weight: bold; }
   font-size: 1em;
   margin-bottom: 10px;
   padding-bottom: 6px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #d6c4a1;
+  color: #5c4632;
 }
 .run-overview .ov-subtitle {
   font-weight: 600;
@@ -93,19 +97,22 @@ table.ov-htable {
 table.ov-htable th {
   text-align: left;
   font-weight: 600;
-  padding: 5px 8px;
+  padding: 5px 10px;
   border-bottom: 1px solid #ccc;
-  white-space: nowrap;
-  color: #000;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  color: #5c4632;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 table.ov-htable td {
-  padding: 5px 8px;
+  padding: 5px 10px;
   color: #111;
   vertical-align: top;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-variant-numeric: tabular-nums;
 }
 .status-ok { color: #2e7d32; font-weight: 600; }
 .perf-profit { color: #2e7d32; font-weight: 600; }
@@ -129,11 +136,11 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 .file-tree .file-link:hover { text-decoration: underline; }
 
 /* PID Stats: score shading */
-.score-high { color: #111; font-weight: 600; }
+.score-high { color: #a07b2d; font-weight: 600; }
 .score-mid  { color: #333; }
 .score-low  { color: #666; }
 .score-bad  { color: #999; }
-.rho-col    { font-weight: 600; }
+.rho-col    { font-weight: 600; color: #a07b2d; }
 .delta-up   { color: #111; }
 .delta-down { color: #666; }
 

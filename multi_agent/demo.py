@@ -147,7 +147,7 @@ def run_demo_config(
     print(f"  Orders: {[f'{o.side} {o.size} {o.ticker}' for o in action.orders] or 'HOLD'}")
     print(f"  # Claims: {len(action.claims)}")
     for claim in action.claims[:3]:
-        print(f"    [{claim.pearl_level.value}] {claim.claim_text[:80]}")
+        print(f"    [{claim.reasoning_type.value}] {claim.claim_text[:80]}")
     if trace.strongest_objection:
         print(f"  Strongest objection: {trace.strongest_objection[:100]}")
     print(f"  Justification: {action.justification[:120]}...")

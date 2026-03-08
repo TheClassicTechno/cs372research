@@ -18,8 +18,7 @@ def _mock_proposal(role: str, obs_dict: dict, config: dict | None = None) -> dic
         "claims": [
             {
                 "claim_text": f"[{role}] Equal-weight is optimal given balanced signals [{tickers[0]}-RET60] [L1-VIX]",
-                "pearl_level": "L2",
-                "variables": tickers[:2],
+                "reasoning_type": "causal",
                 "confidence": 0.55,
             }
         ],
@@ -82,8 +81,7 @@ def _mock_judge(revisions: list, config: dict | None = None) -> dict:
         "claims": [
             {
                 "claim_text": "Averaged allocation reduces individual agent bias [L1-VIX]",
-                "pearl_level": "L2",
-                "variables": ["consensus", "allocation"],
+                "reasoning_type": "causal",
                 "confidence": 0.6,
             }
         ],

@@ -51,9 +51,9 @@ The revised argument contains structured reasoning with the following fields:
 
 • reasoning.claims — numbered causal claims, each with:
   - claim_id, claim_text, claim_type (macro/sector/firm)
-  - pearl_level (L1/L2/L3)
+  - reasoning_type (causal/observational/risk_assessment/pattern)
   - evidence (legacy citation list) + evidence_ids (normalized IDs)
-  - variables, assumptions, falsifiers
+  - assumptions, falsifiers
   - impacts_positions (tickers affected by this claim)
   - confidence (per-claim)
 • reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
@@ -208,19 +208,33 @@ PILLAR 4 — CAUSAL ALIGNMENT
 
 Are causal claims justified by the evidence?
 
-Use Pearl's causal hierarchy adapted for financial domain:
+PRIMARY EVALUATION — Pearl's Causal Hierarchy
 
-L1 — association/correlation: may cite correlational evidence
-L2 — intervention: must describe a plausible intervention or policy transmission mechanism, and evidence must be consistent with that mechanism (not literal experimental evidence)
-L3 — counterfactual reasoning: must explicitly reason about an alternative state or counterfactual scenario
+You must independently classify each claim's reasoning depth using Pearl's ladder:
 
-Detect **causal overreach**:
+L1 — Association / correlation: the claim cites data patterns or statistical relationships.
+L2 — Intervention / mechanism: the claim describes a plausible causal pathway or transmission mechanism (e.g., "Fed raises rates → higher discount rates → lower equity valuations"). Evidence must be consistent with the described mechanism (not literal experimental evidence).
+L3 — Counterfactual reasoning: the claim explicitly reasons about an alternative state or counterfactual scenario (e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** — higher-level conclusions supported only by lower-level evidence:
 
 • L2 claim with only associational evidence and no mechanism described
-• L3 claim without counterfactual structure
+• L3 claim without explicit counterfactual structure
 • causal conclusions drawn from purely correlational evidence
-• macro claims directly mapped to asset outcomes without mechanism
+• macro claims directly mapped to asset outcomes without transmission mechanism
 • missing causal pathway between variables
+
+SECONDARY DIAGNOSTIC — Reasoning Type Consistency
+
+Claims include an agent-declared reasoning_type field (causal / observational / risk_assessment / pattern).
+
+As a secondary check, compare the agent's self-declared reasoning_type against the actual reasoning structure in the claim text. Note mismatches such as:
+
+• "observational" label but the claim asserts causal effects
+• "causal" label but the reasoning is purely correlational
+• "pattern" label used to justify causal conclusions
+
+These mismatches should be recorded in the causal_overreach diagnostic but must NOT determine the pillar score directly. The causal_alignment score must reflect Pearl ladder evaluation, not label consistency.
 
 Also check whether critiques successfully expose **causal weaknesses in specific claims**.
 
@@ -235,7 +249,7 @@ Before scoring, you must internally perform these checks (do NOT include this tr
 3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
 4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
 5. Check for contradictions between claim pairs
-6. Verify Pearl level matches the type of reasoning used
+6. For each claim, independently assess its causal level (L1/L2/L3) and detect rung collapse; also note reasoning_type label mismatches
 7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
 
 ---

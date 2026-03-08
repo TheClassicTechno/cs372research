@@ -53,6 +53,7 @@ from multi_agent.models import (
     Observation,
     Order,
     PearlLevel,
+    ReasoningType,
     PipelineOutput,
     PortfolioState,
 )
@@ -145,13 +146,11 @@ class TestModels:
     def test_claim_creation(self):
         claim = Claim(
             claim_text="If Fed cuts rates, AAPL rises",
-            pearl_level=PearlLevel.L2,
-            variables=["fed_rate", "AAPL_price"],
+            reasoning_type=ReasoningType.CAUSAL,
             assumptions=["Normal market conditions"],
             confidence=0.7,
         )
-        assert claim.pearl_level == PearlLevel.L2
-        assert len(claim.variables) == 2
+        assert claim.reasoning_type == ReasoningType.CAUSAL
 
     def test_action_creation(self):
         action = Action(
@@ -161,8 +160,7 @@ class TestModels:
             claims=[
                 Claim(
                     claim_text="Earnings drive price",
-                    pearl_level=PearlLevel.L1,
-                    variables=["earnings", "price"],
+                    reasoning_type=ReasoningType.OBSERVATIONAL,
                 )
             ],
         )
@@ -186,10 +184,13 @@ class TestModels:
         assert po.agent_type == "news_digest"
         assert len(po.key_signals) == 2
 
-    def test_pearl_level_enum(self):
-        assert PearlLevel.L1.value == "L1"
-        assert PearlLevel.L2.value == "L2"
-        assert PearlLevel.L3.value == "L3"
+    def test_reasoning_type_enum(self):
+        assert ReasoningType.CAUSAL.value == "causal"
+        assert ReasoningType.OBSERVATIONAL.value == "observational"
+        assert ReasoningType.RISK_ASSESSMENT.value == "risk_assessment"
+        assert ReasoningType.PATTERN.value == "pattern"
+        # PearlLevel alias still works
+        assert PearlLevel is ReasoningType
 
 
 # =============================================================================
@@ -246,11 +247,13 @@ class TestPrompts:
                 f"Missing prompt for role: {role}"
             )
 
-    def test_prompts_contain_pearl_levels(self):
-        """Each role prompt must mention L2 and L3 reasoning."""
-        for role, prompt in ROLE_SYSTEM_PROMPTS.items():
-            assert "L2" in prompt, f"{role} prompt missing L2 guidance"
-            assert "L3" in prompt, f"{role} prompt missing L3 guidance"
+    def test_causal_contract_contains_reasoning_types(self):
+        """System causal contract must contain reasoning_type guidance."""
+        from multi_agent.prompts import SYSTEM_CAUSAL_CONTRACT
+        assert "reasoning_type" in SYSTEM_CAUSAL_CONTRACT
+        assert "causal" in SYSTEM_CAUSAL_CONTRACT
+        assert "observational" in SYSTEM_CAUSAL_CONTRACT
+        assert "risk_assessment" in SYSTEM_CAUSAL_CONTRACT
 
     def test_prompts_contain_falsifiers(self):
         """Each role prompt must ask what would change the agent's mind."""
@@ -547,7 +550,10 @@ class TestFullGraph:
 
         assert len(action.claims) > 0
         for claim in action.claims:
-            assert claim.pearl_level in (PearlLevel.L1, PearlLevel.L2, PearlLevel.L3)
+            assert claim.reasoning_type in (
+                ReasoningType.CAUSAL, ReasoningType.OBSERVATIONAL,
+                ReasoningType.RISK_ASSESSMENT, ReasoningType.PATTERN,
+            )
             assert len(claim.claim_text) > 0
 
 
@@ -777,7 +783,7 @@ class TestPromptTemplates:
     def test_proposal_template_renders(self):
         result = build_proposal_user_prompt("Test market context")
         assert "Test market context" in result
-        assert "Causal Claim" in result
+        assert "Claim Reasoning" in result
         assert "Uncertainty" in result
 
     def test_critique_template_renders(self):
@@ -800,7 +806,7 @@ class TestPromptTemplates:
         )
         assert "RISK" in result
         assert "Too risky" in result
-        assert "Causal Claim" in result
+        assert "Claim Reasoning" in result
 
     def test_judge_template_renders(self):
         result = build_judge_prompt(
@@ -830,7 +836,7 @@ class TestMajorityVoteAggregation:
                 "orders": [{"ticker": ticker, "side": side, "size": size}],
                 "justification": f"{role} says {side} {ticker}",
                 "confidence": confidence,
-                "claims": [{"claim_text": f"{role} claim on {ticker}", "pearl_level": "L2", "variables": [ticker]}],
+                "claims": [{"claim_text": f"{role} claim on {ticker}", "reasoning_type": "causal"}],
             },
         }
 
@@ -931,7 +937,7 @@ class TestMajorityVoteAggregation:
         p2 = self._make_proposal("value", "AAPL", "buy", 10)
         # Give both the same claim text
         p2["action_dict"]["claims"] = [
-            {"claim_text": "macro claim on AAPL", "pearl_level": "L2", "variables": ["AAPL"]}
+            {"claim_text": "macro claim on AAPL", "reasoning_type": "causal"}
         ]
         state = {
             "observation": sample_obs_dict,
@@ -1044,7 +1050,10 @@ class TestMajorityVoteRunner:
         action, _ = runner.run(sample_observation)
         assert len(action.claims) > 0
         for claim in action.claims:
-            assert claim.pearl_level in (PearlLevel.L1, PearlLevel.L2, PearlLevel.L3)
+            assert claim.reasoning_type in (
+                ReasoningType.CAUSAL, ReasoningType.OBSERVATIONAL,
+                ReasoningType.RISK_ASSESSMENT, ReasoningType.PATTERN,
+            )
 
     def test_two_agent_config(self, sample_observation):
         config = DebateConfig(

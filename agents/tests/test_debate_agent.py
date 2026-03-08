@@ -26,7 +26,7 @@ from multi_agent.models import (
     AgentTrace,
     Claim,
     Observation,
-    PearlLevel,
+    ReasoningType,
 )
 from multi_agent.models import Order as DebateOrder
 
@@ -237,8 +237,7 @@ class TestDebateAgentEndToEnd:
             claims=[
                 Claim(
                     claim_text="Test claim",
-                    pearl_level=PearlLevel.L1,
-                    variables=["AAPL"],
+                    reasoning_type=ReasoningType.OBSERVATIONAL,
                     confidence=0.6,
                 )
             ],

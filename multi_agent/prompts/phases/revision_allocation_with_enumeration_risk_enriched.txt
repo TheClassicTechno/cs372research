@@ -85,26 +85,6 @@ However:
 
 ---
 
-CRITICAL — Evidence citation rules:
-
-When making claims about specific data, you MUST cite the **exact bracketed evidence IDs** from the memo.
-
-Examples:
-
-[AAPL-RET60]
-[NVDA-VOL60]
-[L1-VIX]
-
-Rules:
-
-• NEVER invent evidence labels
-• NEVER use free-text slugs like "aaplrevenuegrowth"
-• ONLY copy verbatim evidence IDs from the memo
-
-Claims without valid citations will be treated as **unsupported reasoning**.
-
----
-
 CRITICAL — Allocation universe constraint
 
 Your revised allocation must use **ONLY tickers from the allocation universe** in the Financial Context.
@@ -118,7 +98,7 @@ Rules:
 Weights must:
 
 • sum to **1.0**
-• remain within **0.0–0.40 per ticker**
+• remain within **0.0–{{ max_weight }} per ticker**
 
 ---
 
@@ -211,11 +191,10 @@ Respond with **valid JSON only**.
   "claims": [
     {
       "claim_id": "C1",
-      "claim_text": "... revised risk-based causal hypothesis with evidence citations ...",
-      "claim_type": "macro | sector | firm",
-      "pearl_level": "L1 | L2 | L3",
+      "claim_text": "... revised risk-based hypothesis with evidence citations ...",
+      "claim_type": "macro | sector | firm | risk | technical",
+      "reasoning_type": "causal | observational | risk_assessment | pattern",
       "evidence": ["[EVIDENCE-ID]", "..."],
-      "variables": ["X", "Y"],
       "assumptions": ["..."],
       "falsifiers": ["..."],
       "impacts_positions": ["TICKER", "..."],

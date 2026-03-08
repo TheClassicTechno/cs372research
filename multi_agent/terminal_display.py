@@ -242,16 +242,16 @@ def _render_proposal(parsed: dict) -> None:
             if not isinstance(claim, dict):
                 continue
             cid = claim.get("claim_id", "?")
-            pearl = claim.get("pearl_level", "")
+            rtype = claim.get("reasoning_type", "")
             ctext = _truncate(claim.get("claim_text", ""), 300)
             evidence = claim.get("evidence", [])
             assumptions = claim.get("assumptions", [])
             falsifiers = claim.get("falsifiers", [])
             impacts = claim.get("impacts_positions", [])
 
-            pearl_tag = f" [{pearl}]" if pearl else ""
+            rtype_tag = f" [{rtype}]" if rtype else ""
             if RICH_AVAILABLE and _console is not None:
-                ct = Text(f"{indent}{cid}{pearl_tag} ", style="bright_yellow")
+                ct = Text(f"{indent}{cid}{rtype_tag} ", style="bright_yellow")
                 ct.append(ctext, style="white")
                 _console.print(ct)
                 if evidence:
