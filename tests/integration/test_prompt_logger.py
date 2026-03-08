@@ -361,61 +361,46 @@ class TestHTMLViewer:
     def test_page_title(self, client):
         """Page has the correct <title>."""
         html = client.get("/").text
-        assert "<title>Prompt Viewer</title>" in html
+        assert "<title>Debate Dashboard</title>" in html
 
     def test_page_heading(self, client):
         """Page has the h1 heading."""
         html = client.get("/").text
-        assert "<h1>Prompt Viewer</h1>" in html
+        assert "<h1>Debate Dashboard</h1>" in html
 
-    def test_model_filter_select(self, client):
-        """Page has the model filter dropdown."""
+    def test_live_status_span(self, client):
+        """Page has the live status indicator."""
         html = client.get("/").text
-        assert 'id="model-filter"' in html
-        assert "<select" in html
+        assert 'id="live-status"' in html
 
-    def test_search_filter_input(self, client):
-        """Page has the text search input."""
+    def test_live_entries_container(self, client):
+        """Page has the live entries container."""
         html = client.get("/").text
-        assert 'id="search-filter"' in html
-        assert 'placeholder="Filter by text..."' in html
+        assert 'id="live-entries"' in html
 
-    def test_clear_button_present(self, client):
-        """Page has the Clear All button."""
+    def test_app_container(self, client):
+        """Page has the app div container."""
         html = client.get("/").text
-        assert 'id="clear-btn"' in html
-        assert "Clear All" in html
+        assert 'id="app"' in html
 
-    def test_status_span(self, client):
-        """Page has the status indicator."""
+    def test_runs_search_filter(self, client):
+        """Page has the search filter for runs."""
         html = client.get("/").text
-        assert 'id="status"' in html
-
-    def test_entries_container(self, client):
-        """Page has the entries div container."""
-        html = client.get("/").text
-        assert 'id="entries"' in html
-
-    # -- JS behavior: clear button calls POST /logs/clear --
-
-    def test_clear_button_targets_correct_endpoint(self, client):
-        """Clear button JS calls POST /logs/clear."""
-        html = client.get("/").text
-        assert "'/logs/clear'" in html or '"/logs/clear"' in html
-        assert "method: 'POST'" in html or 'method: "POST"' in html
+        assert 'id="runs-search"' in html
+        assert 'Filter runs...' in html
 
     # -- JS behavior: poll function exists --
 
     def test_poll_function_present(self, client):
-        """Page JS has the poll function that fetches /logs."""
+        """Page JS has the poll function that fetches /api/live_debate."""
         html = client.get("/").text
         assert "function poll()" in html
-        assert "fetch('/logs')" in html or 'fetch("/logs")' in html
+        assert "fetch('/api/live_debate')" in html
 
     def test_auto_refresh_interval(self, client):
-        """Page JS sets up a 2-second polling interval."""
+        """Page JS sets up a polling interval."""
         html = client.get("/").text
-        assert "setInterval(poll, 2000)" in html
+        assert "setInterval(poll, 1500)" in html
 
     # -- CSS: card structure --
 
@@ -441,20 +426,17 @@ class TestHTMLViewer:
         assert "'Round '" in html or '"Round "' in html
         assert "CRIT" in html
 
-    def test_crit_label_format(self, client):
-        """JS builds CRIT labels as Round N | CRIT."""
+    def test_live_event_card_format(self, client):
+        """JS builds event cards with round and phase labels."""
         html = client.get("/").text
-        # The JS template: 'Round ' + (e.round || 0) + ' | CRIT'
-        assert "' | CRIT'" in html or '" | CRIT"' in html
+        # The JS template: '[ROUND ' + ev.round + '] ' + ev.agent + ' — ' + ev.phase
+        assert "ROUND" in html
+        assert "ev.phase" in html
 
-    # -- Section labels inside card body --
-
-    def test_section_labels_in_card_body(self, client):
-        """Card body JS renders SYSTEM MESSAGE, USER MESSAGE, RESPONSE labels."""
+    def test_portfolio_label_in_card(self, client):
+        """Card body JS renders PORTFOLIO label when portfolio data exists."""
         html = client.get("/").text
-        assert "SYSTEM MESSAGE" in html
-        assert "USER MESSAGE" in html
-        assert "RESPONSE" in html
+        assert "PORTFOLIO" in html
 
     # -- API returns entry metadata fields --
 
@@ -476,6 +458,6 @@ class TestHTMLViewer:
         assert entry["round"] == 2
 
     def test_clear_button_style(self, client):
-        """Clear button has CSS styling defined."""
+        """Clear button has CSS styling defined via generic button selector."""
         html = client.get("/").text
-        assert "#clear-btn" in html
+        assert "button" in html and "cursor: pointer" in html

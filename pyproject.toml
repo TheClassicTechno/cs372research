@@ -27,6 +27,7 @@ dependencies = [
     "transformers>=5.2.0",
     "uvicorn>=0.41.0",
     "yfinance>=1.2.0",
+    "pytest-playwright>=0.6.2",
 ]
 
 [project.optional-dependencies]
@@ -37,8 +38,9 @@ markers = [
     "fast: L1/L2 unit + prompt tests (no I/O, no API)",
     "integration: L3/L4 graph + mock + artifact tests",
     "live: L5 real API smoke tests",
+    "dashboard: Playwright dashboard integration tests",
 ]
 testpaths = ["tests", "multi_agent/tests", "eval/PID/tests", "eval/tests"]
-addopts = "-m 'not live' --tb=short -q"
+addopts = "-m 'not live and not dashboard' --tb=short -q"
 
 # To run live tests:  pytest -m live -o "addopts="

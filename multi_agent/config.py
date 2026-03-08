@@ -149,6 +149,7 @@ class DebateConfig:
     # --- Agent profiles (new unified system) ---
     # When set, these replace prompt_profile + prompt_file_overrides + role_overrides.
     agent_profiles: dict = field(default_factory=dict)  # {role: loaded_profile_dict}
+    agent_profile_names: dict = field(default_factory=dict)  # {role: profile_name_str}
     judge_profile: dict = field(default_factory=dict)   # loaded judge profile dict
 
     # --- CRIT configuration ---
