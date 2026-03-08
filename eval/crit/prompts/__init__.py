@@ -24,8 +24,8 @@ _JINJA_ENV = jinja2.Environment(
 
 def render_crit_prompts(
     bundle: dict,
-    system_template: str = "crit_system.jinja",
-    user_template: str = "crit_user.jinja",
+    system_template: str = "crit_system_enumerated.jinja",
+    user_template: str = "crit_user_enumerated.jinja",
 ) -> tuple[str, str]:
     """Render CRIT system + user prompts from a reasoning bundle.
 
@@ -41,12 +41,20 @@ def render_crit_prompts(
     system_tmpl = _JINJA_ENV.get_template(system_template)
     user_tmpl = _JINJA_ENV.get_template(user_template)
     system_prompt = system_tmpl.render(agent_role=bundle["agent_role"])
+
+    # Strip raw_response from bundle sections before rendering — it duplicates
+    # the structured reasoning field and wastes tokens in the CRIT prompt.
+    def _strip_raw(d):
+        if isinstance(d, dict):
+            return {k: v for k, v in d.items() if k != "raw_response"}
+        return d
+
     user_prompt = user_tmpl.render(
         round=bundle["round"],
         agent_role=bundle["agent_role"],
-        proposal=bundle["proposal"],
+        proposal=_strip_raw(bundle["proposal"]),
         critiques_received=bundle["critiques_received"],
-        revised_argument=bundle["revised_argument"],
+        revised_argument=_strip_raw(bundle["revised_argument"]),
     )
     return system_prompt, user_prompt
 
@@ -152,8 +160,8 @@ def build_crit_user_prompt(
 
     sections.append("## Agent Arguments\n")
     for i, arg in enumerate(agent_arguments, 1):
-        role = arg.get("role", f"agent_{i}")
-        content = arg.get("content", arg)
+        role = arg["role"]
+        content = arg.get("content") or arg
         sections.append(f"### Agent: {role}")
         if isinstance(content, dict):
             sections.append(json.dumps(content, indent=2))
@@ -163,8 +171,8 @@ def build_crit_user_prompt(
 
     sections.append("## Agent Decisions\n")
     for i, dec in enumerate(decisions, 1):
-        role = dec.get("role", f"agent_{i}")
-        action = dec.get("action_dict", dec)
+        role = dec["role"]
+        action = dec.get("action_dict") or dec
         sections.append(f"### Decision by {role}")
         if isinstance(action, dict):
             sections.append(json.dumps(action, indent=2))
@@ -290,11 +298,11 @@ def build_crit_batch_prompt(
         sections.append(f"## Agent: {role.upper()}\n")
 
         sections.append("### Reasoning Trace\n")
-        role_traces = traces_by_role.get(role, [])
+        role_traces = traces_by_role.get(role) or []
         if role_traces:
             for trace in role_traces:
-                trace_type = trace.get("type", "unknown")
-                content = trace.get("content", trace)
+                trace_type = trace["type"]
+                content = trace.get("content") or trace
                 sections.append(f"**{trace_type.capitalize()}:**")
                 if isinstance(content, dict):
                     sections.append(json.dumps(content, indent=2))
@@ -308,7 +316,7 @@ def build_crit_batch_prompt(
         sections.append("### Trading Decision\n")
         decision = decisions_by_role.get(role)
         if decision:
-            action = decision.get("action_dict", decision)
+            action = decision.get("action_dict") or decision
             if isinstance(action, dict):
                 sections.append(json.dumps(action, indent=2))
             else:
@@ -366,8 +374,8 @@ def build_crit_single_agent_prompt(
     sections.append("### Reasoning Trace\n")
     if agent_traces:
         for trace in agent_traces:
-            trace_type = trace.get("type", "unknown")
-            content = trace.get("content", trace)
+            trace_type = trace["type"]
+            content = trace.get("content") or trace
             sections.append(f"**{trace_type.capitalize()}:**")
             if isinstance(content, dict):
                 sections.append(json.dumps(content, indent=2))
@@ -380,7 +388,7 @@ def build_crit_single_agent_prompt(
 
     sections.append("### Trading Decision\n")
     if decision:
-        action = decision.get("action_dict", decision)
+        action = decision.get("action_dict") or decision
         if isinstance(action, dict):
             sections.append(json.dumps(action, indent=2))
         else:

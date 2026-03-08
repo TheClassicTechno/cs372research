@@ -161,6 +161,7 @@ class DebateAgentSystem(AgentSystem):
             sector_config=config.sector_config,
             allocation_constraints=config.allocation_constraints,
             agent_profiles=loaded_agent_profiles,
+            agent_profile_names=config.agents or {},
             judge_profile=loaded_judge_profile,
         )
         if roles is not None:

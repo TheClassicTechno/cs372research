@@ -71,18 +71,19 @@ class TestNormalizeAllocation:
             {"AAPL": 0, "MSFT": 0, "GOOG": 0},
             UNIVERSE_3, max_weight=1.0, min_holdings=1,
         )
-        eq = 1.0 / 3
+        # Equal-weight rounded to 2dp; one ticker absorbs rounding residual
+        assert sum(result.values()) == pytest.approx(1.0)
         for t in UNIVERSE_3:
-            assert result[t] == pytest.approx(eq)
+            assert result[t] == pytest.approx(1.0 / 3, abs=0.01)
 
     def test_empty_input_fallback(self):
         result = normalize_allocation(
             {},
             UNIVERSE_3, max_weight=1.0, min_holdings=1,
         )
-        eq = 1.0 / 3
+        assert sum(result.values()) == pytest.approx(1.0)
         for t in UNIVERSE_3:
-            assert result[t] == pytest.approx(eq)
+            assert result[t] == pytest.approx(1.0 / 3, abs=0.01)
 
     # ── max_weight cap ───────────────────────────────────────────────────
 

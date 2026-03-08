@@ -325,6 +325,7 @@ class DebateLogger:
             "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5-mini"),
             "temperature": getattr(self._config, "temperature", 0.3),
             "roles": list(self._config.roles),
+            "agent_profiles": getattr(self._config, "agent_profile_names", None) or None,
             "max_rounds": self._config.max_rounds,
             "actual_rounds": None,
             "terminated_early": None,

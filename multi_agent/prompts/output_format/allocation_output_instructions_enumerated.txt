@@ -50,6 +50,7 @@ WRONG (ticker not in universe):
       "claim_id": "C1",
       "claim_text": "... concise causal hypothesis with inline evidence citations ...",
       "pearl_level": "L1" | "L2" | "L3",
+      "claim_type": "macro" | "sector" | "firm",
       "evidence": ["[EVIDENCE-ID]", "..."],
       "variables": ["fed_rate", "AAPL_price"],
       "assumptions": ["..."],
@@ -101,6 +102,18 @@ WRONG (ticker not in universe):
 • Claims should connect **macro → sector/factor → security** where possible
 
 • Claims that do not influence any positions are INVALID
+
+---
+
+## CLAIM TYPE RULE
+
+Every claim MUST include a `"claim_type"` field:
+
+• `"macro"` — macro regime, rates, inflation, economic environment
+• `"sector"` — sector/industry dynamics, factor exposure
+• `"firm"` — company-specific fundamentals, filings, earnings
+
+`claim_type` is REQUIRED for each claim.
 
 ---
 

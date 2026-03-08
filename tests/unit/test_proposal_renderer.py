@@ -1,5 +1,7 @@
 """Tests for multi_agent.graph.proposal_renderer."""
 
+import pytest
+
 from multi_agent.graph.proposal_renderer import (
     render_critiques_received,
     render_others_proposals,
@@ -62,7 +64,7 @@ class TestRenderPreviousProposal:
         assert "## Previous Portfolio Allocation" in result
         assert "## Previous Thesis" in result
         assert "## Previous Claims" in result
-        assert "## Previous Falsifiers" in result
+        assert "## Previous Risks / Falsifiers" in result
         assert "## Previous Confidence" in result
 
     def test_allocation_sorted_by_ticker(self):
@@ -224,3 +226,132 @@ class TestRenderCritiquesReceived:
     def test_empty_list(self):
         result = render_critiques_received([])
         assert result == "(No critiques targeted at you this round.)"
+
+    def test_missing_from_role_crashes(self):
+        """Critique without from_role must crash, not silently say 'unknown'."""
+        with pytest.raises(KeyError, match="from_role"):
+            render_critiques_received([{"objection": "bad"}])
+
+
+# ---------------------------------------------------------------------------
+# Enriched format — portfolio_rationale, position_rationale
+# ---------------------------------------------------------------------------
+
+ENRICHED_ACTION_DICT = {
+    "allocation": {"AAPL": 0.40, "NVDA": 0.35, "JPM": 0.25},
+    "portfolio_rationale": "Overweight tech on datacenter demand; financials hedge.",
+    "position_rationale": [
+        {
+            "ticker": "AAPL",
+            "weight": 0.40,
+            "explanation": "Services revenue growth supports premium valuation.",
+            "supported_by_claims": ["C1", "C3"],
+        },
+        {
+            "ticker": "NVDA",
+            "weight": 0.35,
+            "explanation": "Datacenter GPU demand accelerating.",
+            "supported_by_claims": ["C2"],
+        },
+        {
+            "ticker": "JPM",
+            "weight": 0.25,
+            "explanation": "NII benefiting from higher rates.",
+            "supported_by_claims": ["C1"],
+        },
+    ],
+    "confidence": 0.78,
+    "claims": [
+        {
+            "claim_id": "C1",
+            "claim_text": "Higher-for-longer rates benefit financials.",
+            "pearl_level": "L1",
+            "evidence": ["[L1-FF]", "[JPM-NII]"],
+        },
+        {
+            "claim_id": "C2",
+            "claim_text": "AI infrastructure buildout accelerating.",
+            "pearl_level": "L2",
+            "evidence": ["[NVDA-F1]", "[L1-CAPEX]"],
+        },
+    ],
+    "risks_or_falsifiers": [
+        "Fed pivots to rate cuts before H2 — removes financials tailwind.",
+        "AI capex cycle stalls on ROI concerns.",
+    ],
+}
+
+
+class TestRenderEnrichedProposal:
+    def test_portfolio_rationale_used_as_thesis(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "## Previous Thesis" in result
+        assert "Overweight tech on datacenter demand" in result
+
+    def test_portfolio_rationale_preferred_over_justification(self):
+        """When both exist, portfolio_rationale wins."""
+        both = {
+            "allocation": {"AAPL": 1.0},
+            "justification": "Old thesis.",
+            "portfolio_rationale": "Enriched thesis.",
+        }
+        result = render_previous_proposal(both)
+        assert "Enriched thesis." in result
+
+    def test_justification_fallback_when_no_portfolio_rationale(self):
+        """Base agents use justification — still works."""
+        base = {"allocation": {"AAPL": 1.0}, "justification": "Base thesis."}
+        result = render_previous_proposal(base)
+        assert "Base thesis." in result
+
+    def test_position_rationale_rendered(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "## Previous Position Rationale" in result
+        assert "AAPL (0.4)" in result
+        assert "Services revenue growth" in result
+        assert "Supported by claims: C1, C3" in result
+
+    def test_position_rationale_all_tickers(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "NVDA (0.35)" in result
+        assert "JPM (0.25)" in result
+
+    def test_risks_as_list_rendered(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "## Previous Risks / Falsifiers" in result
+        assert "- Fed pivots to rate cuts" in result
+        assert "- AI capex cycle stalls" in result
+
+    def test_enriched_claims_with_evidence(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "[L1-FF]" in result
+        assert "[NVDA-F1]" in result
+
+    def test_all_enriched_sections_present(self):
+        result = render_previous_proposal(ENRICHED_ACTION_DICT)
+        assert "## Previous Portfolio Allocation" in result
+        assert "## Previous Thesis" in result
+        assert "## Previous Position Rationale" in result
+        assert "## Previous Claims" in result
+        assert "## Previous Risks / Falsifiers" in result
+        assert "## Previous Confidence" in result
+
+
+class TestRenderOthersProposalsCrashOnMissing:
+    def test_missing_role_crashes(self):
+        """Entry without 'role' must crash, not silently say 'unknown'."""
+        entries = [{"action_dict": {"allocation": {"AAPL": 1.0}}}]
+        with pytest.raises(KeyError, match="role"):
+            render_others_proposals(entries, "macro")
+
+    def test_enriched_proposals_rendered(self):
+        """Enriched proposals flow through render_others correctly."""
+        entries = [
+            {"role": "technical", "action_dict": ENRICHED_ACTION_DICT},
+            {"role": "macro", "action_dict": {"allocation": {"JPM": 1.0}, "justification": "Rates."}},
+        ]
+        result = render_others_proposals(entries, "value")
+        assert "TECHNICAL agent proposed" in result
+        assert "Overweight tech on datacenter demand" in result
+        assert "Position Rationale" in result
+        assert "MACRO agent proposed" in result

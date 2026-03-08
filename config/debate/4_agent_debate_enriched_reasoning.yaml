@@ -1,0 +1,84 @@
+# ============================================================================
+# Debate — Enriched Reasoning (Four-Agent Setup)
+# ============================================================================
+# Four agents with enriched role prompts: narrative commitment, Bayesian
+# regime updating, conviction ranking, anti-convergence rules, etc.
+#
+#   macro_enriched     → macro regime strategist
+#   value_enriched     → value/fundamentals analyst
+#   risk_enriched      → risk manager
+#   technical_enriched → technical analyst
+#
+# Run with:
+#   python run_simulation.py --agents config/debate/4_agent_debate_enriched_reasoning.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+num_episodes: 1
+
+
+# ============================================================================
+# Agents
+# ============================================================================
+
+agents:
+
+  macro: "macro_enriched"
+  value: "value_enriched"
+  risk: "risk_enriched"
+  technical: "technical_enriched"
+
+judge_profile: "judge_standard"
+
+
+# ============================================================================
+# Debate Setup
+# ============================================================================
+
+debate_setup:
+
+  agent_system: "multi_agent_debate"
+
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 5
+
+
+  # --------------------------------------------------------------------------
+  # PID Controller
+  # --------------------------------------------------------------------------
+
+  pid_enabled: true
+
+  pid_kp: 0.35
+  pid_ki: 0.03
+  pid_kd: 0.07
+
+  pid_rho_star: 0.83
+  pid_initial_beta: 0.4
+  pid_epsilon: 0.015
+  pid_gamma_beta: 0.5
+
+
+  # --------------------------------------------------------------------------
+  # Runtime settings
+  # --------------------------------------------------------------------------
+
+  logging_mode: "debug"
+
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 4
+
+
+# ============================================================================
+# Broker
+# ============================================================================
+
+broker:
+  initial_cash: 100000.0
