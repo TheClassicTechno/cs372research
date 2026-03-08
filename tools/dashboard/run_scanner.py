@@ -696,8 +696,8 @@ def get_divergence_trajectory(
             result.append({
                 "round": round_num,
                 "phase": "propose",
-                "js_divergence": div_p.get("js_divergence"),
-                "mean_overlap": ev_p.get("mean_overlap"),
+                "js_divergence": div_p.get("js_divergence") or div_p.get("js"),
+                "mean_overlap": ev_p.get("mean_overlap") or div_p.get("mean_overlap") or div_p.get("ov"),
                 "agent_confidences": div_p.get("agent_confidences"),
             })
 

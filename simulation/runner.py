@@ -109,6 +109,7 @@ class AsyncSimulationRunner:
         summary = self._build_summary()
         self._sim_logger.finalize(summary)
         logger.info("Simulation '%s' complete. Output: %s", self._run_name, self._sim_logger.run_dir)
+        print(f"RESULTS_DIR: {self._sim_logger.run_dir}", flush=True)
 
     # ------------------------------------------------------------------
     # Episode execution
@@ -301,15 +302,22 @@ class AsyncSimulationRunner:
                 "calmar_ratio": fin.calmar_ratio,
             }
 
-            # Daily metrics from allocation weights + daily prices.
+            # Daily metrics from actual positions + daily prices.
             if daily_prices:
-                allocation = self._extract_allocation_weights(ep, initial_cash)
-                if allocation:
-                    daily_fin = compute_daily_financial_metrics(
-                        allocation, initial_value=initial_cash,
-                        daily_prices=daily_prices, spy_daily=spy_daily,
-                    )
-                    if daily_fin is not None:
+                # Find positions and cash from the first non-MTM decision point
+                # TODO daily metrics likely need to be rewritten if we add multi-step episodes.
+                positions = {}
+                cash = initial_cash
+                for dp in ep.decision_point_logs:
+                    if not dp.case_id.startswith("mtm/"):
+                        positions = dp.portfolio_after.positions
+                        cash = dp.portfolio_after.cash
+                        break
+
+                daily_fin = compute_daily_financial_metrics(
+                    positions, cash,  initial_value=initial_cash, daily_prices=daily_prices, spy_daily=spy_daily,
+                )
+                if daily_fin is not None:
                         summary["daily_metrics"] = {
                             "trading_days": daily_fin.trading_days,
                             "total_return_pct": daily_fin.total_return_pct,
@@ -392,36 +400,3 @@ class AsyncSimulationRunner:
 
         return daily_prices, spy_daily
 
-    @staticmethod
-    def _extract_allocation_weights(
-        episode_log: EpisodeLog, initial_cash: float,
-    ) -> dict[str, float]:
-        """Extract allocation weights from the first decision point's positions.
-
-        Converts share-count positions to weight fractions using entry prices.
-        """
-        if not episode_log.decision_point_logs:
-            return {}
-
-        # Find the first non-MTM decision point with positions
-        for dp in episode_log.decision_point_logs:
-            positions = dp.portfolio_after.positions
-            if not positions:
-                continue
-
-            # Use case_prices if available, fall back to final_prices
-            prices = dp.case_prices if dp.case_prices else (episode_log.final_prices or {})
-
-            total_value = dp.portfolio_after.cash + sum(
-                qty * prices.get(t, 0.0) for t, qty in positions.items()
-            )
-            if total_value <= 0.0:
-                continue
-
-            return {
-                t: (qty * prices.get(t, 0.0)) / total_value
-                for t, qty in positions.items()
-                if qty != 0 and prices.get(t, 0.0) > 0.0
-            }
-
-        return {}
