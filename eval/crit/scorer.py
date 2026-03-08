@@ -52,7 +52,7 @@ class CritScorer:
         llm_fn: Callable[[str, str], str],
         capture_fn: Callable[[str, str, str, str], None] | None = None,
         crit_system_template: str = "crit_system_enumerated.jinja",
-        crit_user_template: str = "crit_user_enumerated.jinja",
+        crit_user_template: str = "crit_user_master.jinja",
     ) -> None:
         """
         Args:

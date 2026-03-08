@@ -25,7 +25,7 @@ _JINJA_ENV = jinja2.Environment(
 def render_crit_prompts(
     bundle: dict,
     system_template: str = "crit_system_enumerated.jinja",
-    user_template: str = "crit_user_enumerated.jinja",
+    user_template: str = "crit_user_master.jinja",
 ) -> tuple[str, str]:
     """Render CRIT system + user prompts from a reasoning bundle.
 

@@ -9,7 +9,7 @@ The memo filename includes the scenario name and quarter:
   scenario_memos/{scenario_name}_memo_{YEAR}_{QUARTER}.txt
 
 Usage:
-  python generate_scenario_memo.py --scenario config/scenarios/2023Q2_higher_for_longer_insanity_enriched.yaml
+  python generate_scenario_memo.py --scenario config/scenarios/2023Q2_higher_for_longer_insanity_no_constraints.yaml
 
   # Explicit path to scenario (absolute or relative)
   python generate_scenario_memo.py --scenario /path/to/scenario.yaml

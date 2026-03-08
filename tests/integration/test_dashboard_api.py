@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from tools.prompt_viewer.server import app, RUNS_BASE
+from tools.dashboard.server import app, RUNS_BASE
 
 
 # ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ def test_base():
 def client(test_base, monkeypatch):
     _build_run(test_base, "test_exp", "run_001")
     _build_run(test_base, "test_exp", "run_002")
-    monkeypatch.setattr("tools.prompt_viewer.server.RUNS_BASE", test_base)
+    monkeypatch.setattr("tools.dashboard.server.RUNS_BASE", test_base)
     return TestClient(app)
 
 
@@ -124,7 +124,7 @@ def client_with_incomplete(test_base, monkeypatch):
     _build_run(test_base, "test_exp", "run_complete")
     incomplete = test_base / "test_exp" / "run_incomplete"
     incomplete.mkdir(parents=True)
-    monkeypatch.setattr("tools.prompt_viewer.server.RUNS_BASE", test_base)
+    monkeypatch.setattr("tools.dashboard.server.RUNS_BASE", test_base)
     return TestClient(app)
 
 
@@ -190,7 +190,7 @@ class TestExperimentsAPI:
         assert data[0]["run_count"] == 2
 
     def test_empty_base(self, test_base, monkeypatch):
-        monkeypatch.setattr("tools.prompt_viewer.server.RUNS_BASE", test_base)
+        monkeypatch.setattr("tools.dashboard.server.RUNS_BASE", test_base)
         c = TestClient(app)
         r = c.get("/runs/")
         assert r.json() == []
@@ -369,7 +369,7 @@ class TestPromptEndpointsUnchanged:
     def test_logs_endpoint(self, client, monkeypatch, tmp_path):
         log_file = tmp_path / "traces.jsonl"
         log_file.write_text('{"model":"test","system":"s","user":"u","response":"r"}\n')
-        monkeypatch.setattr("tools.prompt_viewer.server.LOGS_PATH", log_file)
+        monkeypatch.setattr("tools.dashboard.server.LOGS_PATH", log_file)
         r = client.get("/logs")
         assert r.status_code == 200
         assert len(r.json()) == 1
@@ -377,7 +377,7 @@ class TestPromptEndpointsUnchanged:
     def test_logs_clear(self, client, monkeypatch, tmp_path):
         log_file = tmp_path / "traces.jsonl"
         log_file.write_text('{"test": true}\n')
-        monkeypatch.setattr("tools.prompt_viewer.server.LOGS_PATH", log_file)
+        monkeypatch.setattr("tools.dashboard.server.LOGS_PATH", log_file)
         r = client.post("/logs/clear")
         assert r.status_code == 200
         assert not log_file.exists()

@@ -281,28 +281,28 @@ class TestBundleStructure:
         assert "revised_argument" in bundle
 
     def test_proposal_has_all_fields(self):
-        """Proposal sub-dict must have thesis, portfolio_allocation, reasoning, raw_response, evidence_citations."""
+        """Proposal sub-dict must have portfolio_allocation, reasoning, raw_response, evidence_citations."""
         state = _make_state()
         bundle = build_reasoning_bundle(state, "macro", 1, {})
 
         prop = bundle["proposal"]
-        assert "thesis" in prop
         assert "portfolio_allocation" in prop
         assert "reasoning" in prop
         assert "raw_response" in prop
         assert "evidence_citations" in prop
+        assert "thesis" in prop["reasoning"]
 
     def test_revised_argument_has_all_fields(self):
-        """Revised argument sub-dict must have thesis, portfolio_allocation, reasoning, raw_response, evidence_citations."""
+        """Revised argument sub-dict must have portfolio_allocation, reasoning, raw_response, evidence_citations."""
         state = _make_state()
         bundle = build_reasoning_bundle(state, "macro", 1, {})
 
         rev = bundle["revised_argument"]
-        assert "thesis" in rev
         assert "portfolio_allocation" in rev
         assert "reasoning" in rev
         assert "raw_response" in rev
         assert "evidence_citations" in rev
+        assert "thesis" in rev["reasoning"]
 
     def test_returns_none_for_unknown_role(self):
         """Bundle returns None when the requested role has no proposal."""
@@ -555,7 +555,7 @@ class TestInlineEvidenceExpansion:
         state = _make_state(justification="AAPL momentum is strong [AAPL-RET60].")
         bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
 
-        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["proposal"]["thesis"]
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["proposal"]["reasoning"]["thesis"]
 
     def test_raw_response_evidence_expanded_inline(self):
         """Evidence IDs in raw_response field are expanded inline."""
@@ -569,7 +569,7 @@ class TestInlineEvidenceExpansion:
         state = _make_state(revision_justification="After review [L1-VIX] supports risk-on.")
         bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
 
-        assert "[L1-VIX: VIX: 17.35]" in bundle["revised_argument"]["thesis"]
+        assert "[L1-VIX: VIX: 17.35]" in bundle["revised_argument"]["reasoning"]["thesis"]
 
     def test_revised_raw_response_expanded(self):
         """Revised argument raw_response is also expanded."""
@@ -604,7 +604,7 @@ class TestInlineEvidenceExpansion:
         state = _make_state(justification="Citing [FAKE-ID] with no lookup entry.")
         bundle = build_reasoning_bundle(state, "macro", 1, self.MEMO_LOOKUP)
 
-        assert "[FAKE-ID]" in bundle["proposal"]["thesis"]
+        assert "[FAKE-ID]" in bundle["proposal"]["reasoning"]["thesis"]
 
     def test_multiple_ids_expanded(self):
         """Multiple IDs in one string all get expanded."""
@@ -769,8 +769,8 @@ class TestEnrichedFormatBundle:
         )
         bundle = build_reasoning_bundle(state, "macro", 1, {})
 
-        assert bundle["proposal"]["thesis"] != ""
-        assert "AAPL underpriced" in bundle["proposal"]["thesis"]
+        assert bundle["proposal"]["reasoning"]["thesis"] != ""
+        assert "AAPL underpriced" in bundle["proposal"]["reasoning"]["thesis"]
 
     def test_enriched_revision_thesis_not_empty(self):
         """CRITICAL: revised thesis must NOT be empty for enriched agents."""
@@ -779,8 +779,8 @@ class TestEnrichedFormatBundle:
         )
         bundle = build_reasoning_bundle(state, "macro", 1, {})
 
-        assert bundle["revised_argument"]["thesis"] != ""
-        assert "maintained AAPL" in bundle["revised_argument"]["thesis"]
+        assert bundle["revised_argument"]["reasoning"]["thesis"] != ""
+        assert "maintained AAPL" in bundle["revised_argument"]["reasoning"]["thesis"]
 
     def test_enriched_evidence_from_claims(self):
         """CRITICAL: evidence must be extracted from claims[].evidence for enriched agents."""
@@ -829,7 +829,7 @@ class TestEnrichedFormatBundle:
         )
         bundle = build_reasoning_bundle(state, "macro", 1, memo_lookup)
 
-        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["proposal"]["thesis"]
+        assert "[AAPL-RET60: 60-day return: +15.3%]" in bundle["proposal"]["reasoning"]["thesis"]
 
     def test_no_justification_field_in_enriched(self):
         """Enriched state has no 'justification' key — thesis must still be populated."""
@@ -839,7 +839,7 @@ class TestEnrichedFormatBundle:
         assert "justification" not in prop_action, "Test fixture should not have justification"
 
         bundle = build_reasoning_bundle(state, "macro", 1, {})
-        assert bundle["proposal"]["thesis"] != "", \
+        assert bundle["proposal"]["reasoning"]["thesis"] != "", \
             "Thesis empty — build_reasoning_bundle ignores portfolio_rationale"
 
     def test_no_evidence_citations_field_in_enriched(self):

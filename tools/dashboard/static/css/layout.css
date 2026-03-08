@@ -1,0 +1,47 @@
+nav {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 8px;
+  font-size: 0.9em;
+}
+nav a {
+  color: #000;
+  text-decoration: none;
+  padding: 4px 0;
+  cursor: pointer;
+}
+nav a:hover { text-decoration: underline; }
+nav a.active { font-weight: bold; text-decoration: underline; }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.controls label { font-weight: bold; font-size: 0.85em; }
+.controls select, .controls input {
+  font-family: inherit;
+  font-size: 0.85em;
+  padding: 4px 8px;
+  border: 1px solid #999;
+}
+.controls input { width: 260px; }
+button, .btn {
+  font-family: inherit;
+  font-size: 0.85em;
+  padding: 4px 12px;
+  border: 1px solid #999;
+  background: #fff;
+  cursor: pointer;
+}
+button:hover, .btn:hover { background: #eee; }
+.status-text {
+  font-size: 0.8em;
+  color: #666;
+  margin-left: auto;
+}

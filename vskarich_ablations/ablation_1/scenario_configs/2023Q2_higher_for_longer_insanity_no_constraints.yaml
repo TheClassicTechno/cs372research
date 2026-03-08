@@ -1,0 +1,93 @@
+# ============================================================================
+# Scenario: 2023 Higher-for-Longer Rates Debate
+# Q2 2023 data → Q3 investment decision
+# ============================================================================
+
+invest_quarter: "2023Q3"
+
+macro_context: |
+  ## Macro Environment Overview
+
+  [L0-MACRO-REGIME] As of the end of Q2 2023, financial markets are attempting to interpret a complex macro environment characterized by persistent inflation, resilient economic growth, and rapidly rising interest rates.
+
+  [L0-INFLATION-PERSISTENCE] Inflation has moderated from its 2022 peak but remains above the Federal Reserve’s long-run target, raising the possibility that policy rates may remain elevated for an extended period.
+
+  [L0-GROWTH-RESILIENCE] Economic activity and labor markets have remained more resilient than many forecasters expected despite aggressive monetary tightening during 2022–2023.
+
+  [L0-RATE-SHOCK] Long-term Treasury yields and real interest rates have increased significantly over the past year, tightening financial conditions and raising discount rates applied to future corporate earnings.
+
+  [L0-AI-RALLY] Equity markets have nevertheless rallied during 2023, led primarily by large-cap technology companies benefiting from strong investor enthusiasm surrounding artificial intelligence.
+
+  These conditions create several competing interpretations of the current macroeconomic regime.
+
+  ## Competing Macro Theses
+
+  The following interpretations represent plausible explanations for current market behavior.
+
+  Agents should evaluate which interpretation is most consistent with the available evidence.
+
+  ### Thesis A — Higher-for-Longer Interest Rates
+
+  [L0-INFLATION-PERSISTENCE] Persistent inflation may require central banks to maintain elevated policy rates for longer than markets previously expected.
+
+  [L0-RATE-SHOCK] Higher real interest rates increase discount rates applied to future earnings, placing structural pressure on long-duration growth assets.
+
+  [L0-CASHFLOW-PREMIUM] Under this interpretation, sectors with strong current cash flows and inflation sensitivity may outperform more duration-sensitive sectors.
+
+  ### Thesis B — Growth Resilience
+
+  [L0-GROWTH-RESILIENCE] Economic activity has remained stronger than expected despite tighter monetary policy and rising borrowing costs.
+
+  [L0-CYCLICAL-DEMAND] If growth continues to exceed expectations, corporate earnings may remain robust across cyclical sectors.
+
+  [L0-RISK-APPETITE] Under this interpretation, markets may sustain risk-taking behavior despite higher interest rates.
+
+  ### Thesis C — AI Productivity Boom
+
+  [L0-AI-RALLY] Rapid advances in artificial intelligence have generated strong investor demand for semiconductor and cloud infrastructure companies.
+
+  [L0-AI-PRODUCTIVITY] If AI adoption produces meaningful productivity gains across the economy, technology earnings growth may justify elevated valuations even in a higher-rate environment.
+
+  [L0-TECH-LEADERSHIP] Under this interpretation, technology leadership could persist despite macro headwinds.
+
+  ### Thesis D — Delayed Recession Risk
+
+  [L0-POLICY-LAGS] Monetary policy operates with long and variable lags, meaning the full economic impact of higher interest rates may not yet be reflected in current economic data.
+
+  [L0-DEMAND-SLOWDOWN] If tighter financial conditions eventually slow consumption and investment, economic growth could weaken in coming quarters.
+
+  [L0-DEFENSIVE-ROTATION] Under this interpretation, defensive sectors may outperform if economic conditions deteriorate.
+
+  Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+  These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+tickers:
+  # AI / tech momentum
+  - AAPL
+  - MSFT
+  - NVDA
+
+  # Financials
+  - JPM
+  - GS
+
+  # Energy
+  - XOM
+  - CVX
+
+  # Industrials
+  - CAT
+  - RTX
+
+  # Defensive
+  - WMT
+  - PG
+
+  # Consumer growth
+  - AMZN
+
+allocation_constraints:
+  max_weight: 0.25
+  min_holdings: 4
+  fully_invested: true
+  max_tickers: 12

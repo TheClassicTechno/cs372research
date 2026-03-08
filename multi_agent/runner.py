@@ -206,7 +206,7 @@ def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
         normalized.append({
             "ticker": entry.get("ticker", ""),
             "weight": entry.get("weight", 0.0),
-            "supporting_claims": entry.get("supported_by_claims", []),
+            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
             "explanation": entry.get("explanation") or entry.get("rationale") or "",
         })
     return normalized
@@ -387,7 +387,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
-        "thesis": _extract_thesis(prop_action, role=role, phase="propose"),
         "portfolio_allocation": prop_action["allocation"],
         "reasoning": _extract_reasoning(prop_action, normalize_evidence_id),
         "raw_response": proposal.get("raw_response") or "",
@@ -401,7 +400,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
-        "thesis": _extract_thesis(rev_action, role=role, phase="revise"),
         "portfolio_allocation": rev_action["allocation"],
         "reasoning": _extract_reasoning(
             rev_action, normalize_evidence_id,
@@ -419,7 +417,7 @@ def build_reasoning_bundle(
 
     # Expand evidence IDs inline in text fields
     for bundle_part in (proposal_bundle, revised_bundle):
-        bundle_part["thesis"] = expand_evidence_ids_inline(bundle_part["thesis"], memo_evidence_lookup)
+        bundle_part["reasoning"]["thesis"] = expand_evidence_ids_inline(bundle_part["reasoning"]["thesis"], memo_evidence_lookup)
         bundle_part["raw_response"] = expand_evidence_ids_inline(bundle_part["raw_response"], memo_evidence_lookup)
     for crit in critiques_received:
         crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)
@@ -480,7 +478,7 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
@@ -866,6 +864,39 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
+        # --- Propose-phase JS divergence + evidence overlap ---
+        self._proposed_divergence = None
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            prop_decisions = state.get("revisions") or state.get("proposals", [])
+            prop_allocs = [
+                d.get("action_dict", {}).get("allocation", {})
+                for d in prop_decisions
+            ]
+            if len(prop_allocs) >= 2:
+                prop_js = generalized_js_divergence(prop_allocs)
+                prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
+                prop_ov = compute_mean_overlap(prop_ev) or 0.0
+
+                prop_confidences = {
+                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in prop_decisions
+                }
+                prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
+
+                self._debate_logger.write_divergence_metrics(
+                    prop_js, prop_ov, prop_confidences, prop_evidence,
+                    round_num, phase="propose",
+                )
+                self._proposed_divergence = {
+                    "js": prop_js,
+                    "ov": prop_ov,
+                    "agent_confidences": prop_confidences,
+                    "agent_evidence_ids": prop_evidence,
+                }
+
         # --- Critique phase (uses PID beta for tone) ---
         if use_display:
             render_phase_label("Critique")
@@ -1084,6 +1115,7 @@ class MultiAgentRunner:
                     "agent_confidences": agent_confidences,
                     "agent_evidence_ids": agent_evidence,
                 },
+                "divergence_propose": self._proposed_divergence,
                 "convergence": {
                     "stable_rounds": self._stable_rounds,
                     "delta_rho_actual": (
@@ -1292,6 +1324,19 @@ class MultiAgentRunner:
         self._reset_per_invocation_state()
         return self._run_pipeline(observation)
 
+    @staticmethod
+    def _coerce_variables(raw) -> list[str]:
+        """Coerce LLM-returned variables to list[str].
+
+        LLMs sometimes return a dict like {"X": "desc", "Y": "desc"}
+        instead of ["X", "Y"]. Convert gracefully.
+        """
+        if isinstance(raw, list):
+            return [str(v) for v in raw]
+        if isinstance(raw, dict):
+            return [str(k) for k in raw]
+        return []
+
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
@@ -1311,7 +1356,7 @@ class MultiAgentRunner:
                 Claim(
                     claim_text=c.get("claim_text", ""),
                     pearl_level=c.get("pearl_level", "L1"),
-                    variables=c.get("variables", []),
+                    variables=self._coerce_variables(c.get("variables", [])),
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

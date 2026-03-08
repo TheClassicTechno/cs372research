@@ -184,7 +184,7 @@ class TestBundleToCritPrompt:
         _, user_prompt = render_crit_prompts(
             bundle,
             system_template="crit_system_enumerated.jinja",
-            user_template="crit_user_enumerated.jinja",
+            user_template="crit_user_master.jinja",
         )
 
         # Structured reasoning should appear in the rendered prompt
@@ -202,7 +202,7 @@ class TestBundleToCritPrompt:
         _, user_prompt = render_crit_prompts(
             bundle,
             system_template="crit_system_enumerated.jinja",
-            user_template="crit_user_enumerated.jinja",
+            user_template="crit_user_master.jinja",
         )
 
         assert "Accepted critique K1" in user_prompt

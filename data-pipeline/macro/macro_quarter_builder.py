@@ -405,7 +405,8 @@ def main():
     fred_key = args.fred_key or os.environ.get("FRED_API_KEY")
 
     if not fred_key:
-        print("WARNING: No FRED API key. Set FRED_API_KEY or use --fred-key.", file=sys.stderr)
+        print("ERROR: No FRED API key. Set FRED_API_KEY or use --fred-key.", file=sys.stderr)
+        sys.exit(1)
 
     # Determine quarters to build
     if args.start and args.end:
