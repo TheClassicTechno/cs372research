@@ -341,8 +341,8 @@ class TestDebateConfigNewFields:
         cfg = DebateConfig()
         assert cfg.prompt_profile == "default"
         assert cfg.role_overrides == {}
-        assert cfg.crit_system_template == "crit_system.jinja"
-        assert cfg.crit_user_template == "crit_user.jinja"
+        assert cfg.crit_system_template == "crit_system_enumerated.jinja"
+        assert cfg.crit_user_template == "crit_user_enumerated.jinja"
 
     def test_to_dict_includes_new_fields(self):
         from multi_agent.config import DebateConfig
@@ -365,8 +365,8 @@ class TestCritScorerTemplateParams:
     def test_scorer_init_with_defaults(self):
         from eval.crit.scorer import CritScorer
         scorer = CritScorer(llm_fn=lambda s, u: "{}")
-        assert scorer._crit_system_template == "crit_system.jinja"
-        assert scorer._crit_user_template == "crit_user.jinja"
+        assert scorer._crit_system_template == "crit_system_enumerated.jinja"
+        assert scorer._crit_user_template == "crit_user_enumerated.jinja"
 
     def test_scorer_init_with_custom_templates(self):
         from eval.crit.scorer import CritScorer

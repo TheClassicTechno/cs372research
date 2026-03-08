@@ -1,0 +1,125 @@
+---SECTION: context---
+{{ context }}
+
+---SECTION: task---
+Using the data above, analyze the investment universe and propose a portfolio allocation **from a fundamental valuation perspective**.
+
+Your task is to identify **companies whose market prices diverge from their underlying fundamental value**.
+
+Your reasoning must be structured around **numbered causal claims** explaining why certain companies are mispriced relative to their earnings power, balance sheet strength, or long-term fundamentals.
+
+Each claim should represent a **distinct valuation or fundamental mechanism** affecting expected returns.
+
+Examples include:
+
+• valuation multiples diverging from historical norms
+• earnings growth not fully reflected in price
+• excessive optimism embedded in current valuation
+• improving or deteriorating profitability trends
+• balance sheet strength or weakness affecting long-term value
+
+Limit yourself to **3–5 claims maximum**.
+
+Each claim should provide **independent fundamental reasoning** explaining why the market price may not reflect the company’s intrinsic value.
+
+Your portfolio allocation should follow logically from these claims.
+
+---
+
+CRITICAL — Evidence citation rules:
+
+• Every factual claim about a ticker or macro condition MUST include at least one bracketed evidence ID copied verbatim from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]).
+
+• Valid IDs use the exact format from the memo:
+[TICKER-METRIC] or [L1-METRIC]
+
+• NEVER invent your own labels. NEVER use free-text slugs such as
+"aaplrevenuegrowth" or "portfoliorisk".
+
+• If you cannot find a bracketed ID supporting a claim, **do not make that claim**.
+
+• Claims without valid citations are treated as unsupported by the evaluation system.
+
+{{ sector_constraints }}
+
+---
+
+---SECTION: reasoning_structure---
+
+Your reasoning must follow this structure.
+
+First, produce **numbered claims**.
+
+Each claim must:
+
+• be labeled **C1, C2, C3, ...**
+• describe a **fundamental or valuation-driven mechanism** affecting asset performance
+• include at least one valid evidence citation
+• explain why the mechanism affects expected returns or valuation
+
+Claims should generally follow the structure:
+
+**valuation signal → fundamental explanation → security implication**
+
+Example structure:
+
+C1 — Valuation dislocation
+C2 — Earnings or profitability trajectory
+C3 — Security-level mispricing thesis
+
+Each claim should also include:
+
+• Assumptions — conditions required for the claim to hold
+• Falsifiers — what evidence would invalidate the claim
+
+Example:
+
+C1: A company trading at a valuation multiple significantly below historical norms despite stable earnings may experience multiple expansion if the market reassesses its earnings durability [AAPL-PE].
+
+Assumptions:
+
+* Earnings remain stable or improve
+* No structural deterioration in the company’s competitive position
+
+Falsifiers:
+
+* Earnings decline materially
+* Margins compress due to competitive pressure
+
+Claims should focus primarily on **fundamental drivers of intrinsic value** rather than macro narratives.
+
+---
+
+---SECTION: portfolio_construction---
+
+After stating claims, construct a portfolio allocation consistent with your reasoning.
+
+For each position:
+
+• Specify ticker and weight
+• Explain which claim(s) justify the allocation
+• Explain why the security appears mispriced relative to fundamentals
+• Explain key downside risks
+
+Portfolio weights should follow from the **strength and interaction of the claims**.
+
+Example linkage:
+
+If C1 and C2 identify a company whose earnings are improving while valuation remains depressed, overweight that security.
+
+If a claim identifies excessive valuation relative to fundamentals, reduce exposure to that company.
+
+Follow these rules carefully:
+
+• Use **3–5 claims maximum**
+• Every claim must cite evidence
+• Every major allocation must reference at least one claim
+• Avoid unsupported narrative speculation
+• Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **valuation-driven investment reasoning**.
+
+---
+
+---SECTION: output_format---
+{{ allocation_output_instructions_enumerated }}

@@ -2,7 +2,7 @@
 
 import pytest
 
-from eval.evidence import extract_evidence_ids, extract_evidence_spans
+from eval.evidence import extract_evidence_ids, extract_evidence_spans, parse_memo_evidence
 
 
 # ── extract_evidence_ids ─────────────────────────────────────────────────────
@@ -36,6 +36,28 @@ class TestExtractEvidenceIds:
 
     def test_empty_string(self):
         assert extract_evidence_ids("") == set()
+
+    def test_l0_narrative_ids(self):
+        text = "Growth outlook [L0-GROWTH-RESILIENCE] supports risk-on [L0-AI-RALLY]."
+        assert extract_evidence_ids(text) == {"L0-GROWTH-RESILIENCE", "L0-AI-RALLY"}
+
+    def test_l0_inflation(self):
+        assert extract_evidence_ids("[L0-INFLATION-PERSISTENCE] drives caution") == {
+            "L0-INFLATION-PERSISTENCE"
+        }
+
+    def test_l2_earnings_ids(self):
+        text = "EPS beat rate [L2-EPS-BEAT] and revision breadth [L2-REV-BREADTH]."
+        assert extract_evidence_ids(text) == {"L2-EPS-BEAT", "L2-REV-BREADTH"}
+
+    def test_l3_positioning_ids(self):
+        text = "CTA flows [L3-CTA] and gamma exposure [L3-GAMMA]."
+        assert extract_evidence_ids(text) == {"L3-CTA", "L3-GAMMA"}
+
+    def test_mixed_levels(self):
+        text = "[L0-MACRO-REGIME] [L1-VIX] [L2-DISPERSION] [L3-HF-LEV] [AAPL-RET60]"
+        expected = {"L0-MACRO-REGIME", "L1-VIX", "L2-DISPERSION", "L3-HF-LEV", "AAPL-RET60"}
+        assert extract_evidence_ids(text) == expected
 
 
 # ── extract_evidence_spans (memo path) ───────────────────────────────────────
@@ -103,10 +125,58 @@ class TestExtractEvidenceSpansMemo:
         # Legacy variable should not be present (early return on memo IDs)
         assert "legacyvar" not in result
 
-    def test_empty_decision(self):
-        result = extract_evidence_spans({})
-        assert result == set()
+    def test_empty_decision_crashes(self):
+        """Empty decision dict must crash — action_dict is required."""
+        with pytest.raises(KeyError, match="action_dict"):
+            extract_evidence_spans({})
 
-    def test_missing_action_dict(self):
-        result = extract_evidence_spans({"raw_response": ""})
-        assert result == set()
+    def test_missing_action_dict_crashes(self):
+        """Decision without action_dict must crash."""
+        with pytest.raises(KeyError, match="action_dict"):
+            extract_evidence_spans({"raw_response": ""})
+
+    def test_l0_ids_extracted_from_portfolio_rationale(self):
+        """L0 narrative IDs in portfolio_rationale are extracted."""
+        decision = {
+            "action_dict": {
+                "portfolio_rationale": "Growth [L0-GROWTH-RESILIENCE] and AI [L0-AI-RALLY] drive overweight.",
+                "claims": [],
+            },
+        }
+        result = extract_evidence_spans(decision)
+        assert "L0-GROWTH-RESILIENCE" in result
+        assert "L0-AI-RALLY" in result
+
+
+# ── parse_memo_evidence (L0 lines) ───────────────────────────────────────────
+
+
+class TestParseMemoEvidenceMultiLevel:
+    def test_l0_lines_parsed(self):
+        memo = (
+            "[L0-GROWTH-RESILIENCE]  GDP growth remains above trend at 2.4%.\n"
+            "[L0-AI-RALLY]  AI infrastructure spend accelerating.\n"
+        )
+        lookup = parse_memo_evidence(memo)
+        assert "L0-GROWTH-RESILIENCE" in lookup
+        assert "L0-AI-RALLY" in lookup
+        assert "GDP growth" in lookup["L0-GROWTH-RESILIENCE"]
+
+    def test_l2_lines_parsed(self):
+        memo = "[L2-EPS-BEAT]  EPS beat rate 72% across S&P 500.\n"
+        lookup = parse_memo_evidence(memo)
+        assert "L2-EPS-BEAT" in lookup
+
+    def test_mixed_levels(self):
+        memo = (
+            "[L0-MACRO-REGIME]  Higher for longer.\n"
+            "[L1-VIX]  VIX: 17.35\n"
+            "[L2-DISPERSION]  Return dispersion elevated.\n"
+            "[AAPL-RET60]  60D Return: +11.9%\n"
+        )
+        lookup = parse_memo_evidence(memo)
+        assert len(lookup) == 4
+        assert "L0-MACRO-REGIME" in lookup
+        assert "L1-VIX" in lookup
+        assert "L2-DISPERSION" in lookup
+        assert "AAPL-RET60" in lookup

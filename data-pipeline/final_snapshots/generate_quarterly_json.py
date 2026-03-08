@@ -378,6 +378,17 @@ def build_quarter_snapshot(
         sentiment = load_sentiment(sentiment_dir, t, year, quarter)
         asset_features = load_asset_data(assets_dir, t, year, quarter)
 
+        # Fall back to earnings call sentiment if news sentiment is missing
+        if sentiment is None and earnings_call is not None:
+            ec_mean = earnings_call.get("mean_sentiment")
+            ec_vol = earnings_call.get("sentiment_volatility")
+            if ec_mean is not None:
+                sentiment = {
+                    "mean_sentiment": ec_mean,
+                    "sentiment_volatility": ec_vol,
+                    "source": "earnings_call",
+                }
+
         entry: Dict[str, Any] = {
             "filing_summary": filing_summary,
             "earnings_call": earnings_call,

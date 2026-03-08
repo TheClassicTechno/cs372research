@@ -1,0 +1,129 @@
+---SECTION: context---
+{{ context }}
+
+---SECTION: task---
+Using the data above, analyze the investment universe and propose a portfolio allocation **from a portfolio risk management perspective.**
+
+Your task is to identify **how portfolio allocations should be structured to control drawdown risk while maintaining strong risk-adjusted returns.**
+
+Your reasoning must be structured around **numbered causal claims** explaining how risk conditions affect portfolio construction.
+
+Each claim should represent a **distinct risk mechanism** affecting portfolio stability.
+
+Examples include:
+
+• volatility regime changes
+• correlation clustering between assets
+• concentration risk across positions or sectors
+• downside volatility or drawdown exposure
+• liquidity or stress-event vulnerability
+
+Limit yourself to **3–5 claims maximum**.
+
+Each claim should provide **independent reasoning** explaining how portfolio risk should influence allocation decisions.
+
+Your portfolio allocation should follow logically from these claims.
+
+Do NOT adopt the reasoning framework of other agents. Evaluate evidence strictly through **risk-adjusted portfolio construction.**
+
+---
+
+CRITICAL — Evidence citation rules:
+
+• Every factual claim about a ticker or macro condition MUST include at least one bracketed evidence ID copied verbatim from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]).
+
+• Valid IDs use the exact format from the memo:
+[TICKER-METRIC] or [L1-METRIC]
+
+• NEVER invent your own labels. NEVER use free-text slugs such as
+"aaplrevenuegrowth" or "portfoliorisk".
+
+• If you cannot find a bracketed ID supporting a claim, **do not make that claim**.
+
+• Claims without valid citations are treated as unsupported by the evaluation system.
+
+{{ sector_constraints }}
+
+---
+
+---SECTION: reasoning_structure---
+
+Your reasoning must follow this structure.
+
+First, produce **numbered claims**.
+
+Each claim must:
+
+• be labeled **C1, C2, C3, ...**
+• describe a **risk mechanism affecting portfolio stability**
+• include at least one valid evidence citation
+• explain why the mechanism affects portfolio risk or drawdown potential
+
+Claims should generally follow the structure:
+
+**risk driver → portfolio vulnerability → allocation adjustment**
+
+Example structure:
+
+C1 — Volatility regime implication
+C2 — Correlation or concentration risk
+C3 — Security-level risk contribution
+
+Each claim should also include:
+
+• Assumptions — conditions required for the claim to hold
+• Falsifiers — what evidence would invalidate the claim
+
+Example:
+
+C1: Elevated market volatility increases portfolio drawdown risk, especially for high-beta securities, which may require smaller position sizes to maintain stable risk-adjusted returns [L1-VIX].
+
+Assumptions:
+
+* Volatility remains elevated
+* Correlations increase during stress events
+
+Falsifiers:
+
+* Volatility compresses significantly
+* Correlation structure weakens rather than strengthens
+
+Claims should focus primarily on **portfolio risk dynamics** rather than expected returns alone.
+
+---
+
+---SECTION: portfolio_construction---
+
+After stating claims, construct a portfolio allocation consistent with your reasoning.
+
+For each position:
+
+• Specify ticker and weight
+• Explain which claim(s) justify the allocation
+• Explain the position's contribution to portfolio risk
+• Explain how the allocation affects diversification and drawdown exposure
+
+Portfolio weights should follow from the **risk profile implied by the claims**.
+
+Example linkage:
+
+If C1 identifies an elevated volatility regime, reduce exposure to high-volatility securities.
+
+If C2 identifies strong correlation clustering within a sector, reduce concentration in that sector.
+
+If C3 identifies securities with favorable risk-adjusted characteristics, allocate modest exposure.
+
+Follow these rules carefully:
+
+• Use **3–5 claims maximum**
+• Every claim must cite evidence
+• Every major allocation must reference at least one claim
+• Avoid unsupported narrative speculation
+• Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **risk-aware portfolio construction**.
+
+---
+
+---SECTION: output_format---
+{{ allocation_output_instructions_enumerated }}

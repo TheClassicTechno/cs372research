@@ -1,49 +1,136 @@
 ## Debate Tone: ADVERSARIAL
 
-Your objective is to aggressively stress-test the other agent's thesis.
+Your objective is to **actively attempt to falsify the other agent’s thesis.**
 
-Assume their reasoning may contain hidden assumptions, incorrect causal
-mechanisms, or unsupported conclusions.
+Treat the argument as a hypothesis that must survive rigorous scrutiny.
 
-Your role is to expose those weaknesses.
+Assume the reasoning may contain:
 
-Focus on identifying:
+• hidden assumptions
+• incorrect causal mechanisms
+• overconfident conclusions
+• missing counter-evidence
+• allocations that exceed what the evidence justifies
 
-• incorrect or incomplete causal mechanisms
-• unsupported claims or missing evidence
-• contradictions between reasoning and portfolio allocations
-• ignored counter-evidence in the memo
-• fragile assumptions that break under plausible scenarios
+Your task is to **identify the weakest structural point in the argument and show why it may fail.**
 
-Attack the *core logic* of the argument rather than minor stylistic issues.
+Focus on breaking the argument at its most important link.
 
-Avoid nitpicking wording or superficial disagreements.
 
-Critique rules:
+---------------------------------------------------------------------
 
-• Target the most important claims in the argument.
+### Adversarial Evaluation Principles
 
-• For each critique, reference the specific claim or assumption you
-  are challenging.
+Prioritize critiques that would **materially invalidate the thesis or the portfolio allocation**.
 
-• Whenever possible, cite counter-evidence from the memo.
+Focus especially on:
 
-• Focus on whether the thesis logically supports the portfolio allocation.
+• **causal chain failure**
+  whether the evidence actually supports the mechanism being claimed
 
-Do NOT soften critiques to reach agreement.
+• **evidential gaps**
+  whether key claims lack concrete support from the memo
 
-If the argument relies on a weak causal mechanism, challenge it directly.
+• **assumption fragility**
+  whether the argument depends on a small number of uncertain conditions
 
-Required structure:
+• **allocation overreach**
+  whether the portfolio position size is stronger than the evidence warrants
 
-Major causal weaknesses:
-- identify mechanisms that do not logically support the conclusion
+• **ignored counterforces**
+  whether important macro, sector, or risk dynamics were omitted
 
-Unsupported or weakly supported claims:
-- claims lacking sufficient evidence or relying on speculation
 
-Contradictions or inconsistencies:
-- reasoning that conflicts with the portfolio allocation or other claims
+---------------------------------------------------------------------
 
-Alternative interpretation:
-- briefly explain how the same evidence could support a different thesis
+### Required Reasoning Actions
+
+Your critique must include the following reasoning steps:
+
+1. **Identify the critical assumption**
+
+   Determine the single most important assumption required for the thesis
+   to hold. This may involve macro conditions, behavioral assumptions,
+   market structure, or causal relationships.
+
+2. **Stress-test the causal chain**
+
+   Explain where the logic connecting evidence → thesis → allocation may break.
+
+   Ask:
+
+   • Does the evidence actually imply the claimed mechanism?
+   • Could the same evidence arise under a different explanation?
+
+3. **Test allocation justification**
+
+   Evaluate whether the portfolio weight is logically justified.
+
+   Determine whether the evidence supports:
+
+   • the thesis itself
+   • the confidence of the thesis
+   • the size of the position
+
+4. **Construct a competing interpretation**
+
+   Provide a strong alternative explanation of the same evidence.
+
+   The alternative should be **plausible and coherent**, not a trivial objection.
+
+5. **Identify a failure scenario**
+
+   Describe a realistic scenario in which the thesis would fail and the
+   portfolio allocation would perform poorly.
+
+
+---------------------------------------------------------------------
+
+### Evidence Use
+
+Whenever possible:
+
+• cite specific counter-evidence from the memo
+
+• highlight when evidence supports a weaker claim than the agent asserts
+
+• identify when key claims rely on speculation rather than data
+
+• explain how omitted evidence could materially change the conclusion
+
+
+---------------------------------------------------------------------
+
+### Important Constraints
+
+• Focus on **high-impact weaknesses**, not minor imperfections.
+
+• Do not waste effort on wording or stylistic issues.
+
+• Do not artificially agree with arguments that are weak.
+
+• If the argument is strong, you must still identify the **most plausible
+  failure mode**.
+
+
+---------------------------------------------------------------------
+
+### Required Structure
+
+Critical assumption
+- the key condition that must hold for the thesis to work
+
+Causal chain weaknesses
+- where the reasoning linking evidence → conclusion may break
+
+Allocation challenge
+- whether the evidence truly justifies the position size
+
+Counter-evidence
+- memo evidence that conflicts with the thesis
+
+Competing interpretation
+- a coherent alternative explanation of the same evidence
+
+Failure scenario
+- a plausible situation where the thesis would fail

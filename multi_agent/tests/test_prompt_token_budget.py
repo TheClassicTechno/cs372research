@@ -199,7 +199,7 @@ class TestPerRoleSystemPromptBudget:
 
 @pytest.mark.fast
 class TestToneInjectionBudget:
-    """Tone text injected by PID must be < 500 tokens."""
+    """Tone text injected by PID must be < 1000 tokens."""
 
     @pytest.mark.parametrize("beta", [0.1, 0.5, 0.9])
     @pytest.mark.parametrize("phase", ["critique", "revise"])
@@ -224,7 +224,7 @@ class TestToneInjectionBudget:
             result_without_tone.system_prompt, ""
         )
         tone_tokens = _count_tokens(tone_text)
-        assert tone_tokens < 500, (
-            f"Tone injection for {phase} beta={beta} exceeds 500-token budget: "
+        assert tone_tokens < 1000, (
+            f"Tone injection for {phase} beta={beta} exceeds 1000-token budget: "
             f"{tone_tokens} tokens"
         )

@@ -44,10 +44,12 @@ class TestNormalizeVariable:
 class TestExtractEvidenceSpans:
     def test_from_claims_variables(self):
         dec = {
-            "claims": [
-                {"claim_text": "something", "variables": ["fed_rate", "GDP_growth"]},
-                {"claim_text": "another", "variables": ["NVDA_datacenter_revenue"]},
-            ]
+            "action_dict": {
+                "claims": [
+                    {"claim_text": "something", "variables": ["fed_rate", "GDP_growth"]},
+                    {"claim_text": "another", "variables": ["NVDA_datacenter_revenue"]},
+                ]
+            }
         }
         spans = extract_evidence_spans(dec)
         assert spans == {"fedrate", "gdpgrowth", "nvdadatacenterrevenue"}
@@ -65,19 +67,23 @@ class TestExtractEvidenceSpans:
 
     def test_fallback_to_claim_text(self):
         dec = {
-            "claims": [
-                {"claim_text": "The fed rate is rising rapidly"},
-            ]
+            "action_dict": {
+                "claims": [
+                    {"claim_text": "The fed rate is rising rapidly"},
+                ]
+            }
         }
         spans = extract_evidence_spans(dec)
         assert "the" in spans or "fed" in spans
         assert all(len(s) > 2 for s in spans)
 
-    def test_empty_decision(self):
-        assert extract_evidence_spans({}) == set()
+    def test_empty_decision_crashes(self):
+        """Empty decision dict must crash — action_dict is required."""
+        with pytest.raises(KeyError, match="action_dict"):
+            extract_evidence_spans({})
 
     def test_no_variables_no_text(self):
-        dec = {"claims": [{"variables": [], "claim_text": ""}]}
+        dec = {"action_dict": {"claims": [{"variables": [], "claim_text": ""}]}}
         assert extract_evidence_spans(dec) == set()
 
 
@@ -88,8 +94,8 @@ class TestExtractEvidenceSpans:
 class TestExtractAgentEvidenceSpans:
     def test_multiple_agents(self):
         decisions = [
-            {"role": "macro", "claims": [{"variables": ["fed_rate", "gdp"]}]},
-            {"role": "value", "claims": [{"variables": ["pe_ratio", "earnings"]}]},
+            {"role": "macro", "action_dict": {"claims": [{"variables": ["fed_rate", "gdp"]}]}},
+            {"role": "value", "action_dict": {"claims": [{"variables": ["pe_ratio", "earnings"]}]}},
         ]
         result = extract_agent_evidence_spans(decisions)
         assert "macro" in result
@@ -99,8 +105,8 @@ class TestExtractAgentEvidenceSpans:
 
     def test_same_role_merges(self):
         decisions = [
-            {"role": "macro", "claims": [{"variables": ["fed_rate"]}]},
-            {"role": "macro", "claims": [{"variables": ["gdp"]}]},
+            {"role": "macro", "action_dict": {"claims": [{"variables": ["fed_rate"]}]}},
+            {"role": "macro", "action_dict": {"claims": [{"variables": ["gdp"]}]}},
         ]
         result = extract_agent_evidence_spans(decisions)
         assert result["macro"] == {"fedrate", "gdp"}

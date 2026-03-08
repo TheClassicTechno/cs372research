@@ -117,18 +117,19 @@ from .state import DebateState, ParallelRoundState
 
 
 def _call_llm_with_lifecycle(config: dict, system_prompt: str, user_prompt: str,
-                              role: str, phase: str) -> str:
+                              role: str, phase: str, round_num: int = 0) -> str:
     """Wrap _call_llm with optional lifecycle callbacks for terminal display."""
+    _kw = dict(role=role, phase=phase, round_num=round_num)
     lifecycle = config.get("_llm_lifecycle")
     if not lifecycle:
-        return _call_llm(config, system_prompt, user_prompt)
+        return _call_llm(config, system_prompt, user_prompt, **_kw)
 
     start_fn, end_fn, _ = lifecycle
     call_id = f"{phase}_{role}"
     start_fn(call_id, role, phase)
     result = ""
     try:
-        result = _call_llm(config, system_prompt, user_prompt)
+        result = _call_llm(config, system_prompt, user_prompt, **_kw)
     finally:
         end_fn(call_id, result)
     return result
@@ -195,6 +196,36 @@ def _apply_sector_limits(
 
     sector_map = build_sector_map(sectors_def)
     return enforce_sector_limits(alloc, sector_map, limits)
+
+
+def _build_action_dict(result: dict, raw_alloc: dict, universe: list, config: dict) -> dict:
+    """Build the action_dict from an LLM result.
+
+    Shared by all 4 propose/revise paths (sequential + parallel) to prevent
+    drift between them.
+
+    Canonical thesis field:
+        - ``thesis`` is the canonical field (always populated).
+        - ``justification`` and ``portfolio_rationale`` are deprecated aliases
+          kept for backward compatibility.
+        - Reading priority: thesis → portfolio_rationale → justification
+    """
+    ac = config.get("allocation_constraints") or {}
+    thesis = result.get("justification") or result.get("portfolio_rationale") or ""
+    return {
+        "allocation": normalize_allocation(
+            raw_alloc, universe,
+            max_weight=ac.get("max_weight", 1.0),
+            min_holdings=ac.get("min_holdings", 1),
+        ),
+        "thesis": thesis,
+        "justification": thesis,
+        "portfolio_rationale": result.get("portfolio_rationale") or "",
+        "position_rationale": result.get("position_rationale") or [],
+        "confidence": result.get("confidence", 0.5),
+        "claims": result.get("claims", []),
+        "risks_or_falsifiers": result.get("risks_or_falsifiers") or [],
+    }
 
 
 # =============================================================================
@@ -300,18 +331,7 @@ def propose_node(state: DebateState) -> dict:
         raw_alloc = result.get("allocation", {})
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
-        # Pull constraints from config
-        ac = config.get("allocation_constraints") or {}
-        action_dict = {
-            "allocation": normalize_allocation(
-                raw_alloc, universe,
-                max_weight=ac.get("max_weight", 1.0),
-                min_holdings=ac.get("min_holdings", 1),
-            ),
-            "justification": result.get("justification", ""),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
+        action_dict = _build_action_dict(result, raw_alloc, universe, config)
 
         if config.get("verbose"):
             _verbose_proposal(role, result)
@@ -424,7 +444,7 @@ def critique_node(state: DebateState) -> dict:
             result = _mock_critique(role, source)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique")
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique", round_num=current_round)
             result = _parse_json(raw_text)
 
         if config.get("verbose"):
@@ -549,25 +569,14 @@ def revise_node(state: DebateState) -> dict:
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise")
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise", round_num=current_round)
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
-        # Pull constraints from config
-        ac = config.get("allocation_constraints") or {}
-        action_dict = {
-            "allocation": normalize_allocation(
-                raw_alloc, universe,
-                max_weight=ac.get("max_weight", 1.0),
-                min_holdings=ac.get("min_holdings", 1),
-            ),
-            "justification": result.get("justification", ""),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
+        action_dict = _build_action_dict(result, raw_alloc, universe, config)
 
         if config.get("verbose"):
             _verbose_revision(role, result)
@@ -706,18 +715,7 @@ def make_propose_node(role: str):
         raw_alloc = result.get("allocation", {})
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
-        # Pull constraints from config
-        ac = config.get("allocation_constraints") or {}
-        action_dict = {
-            "allocation": normalize_allocation(
-                raw_alloc, universe,
-                max_weight=ac.get("max_weight", 1.0),
-                min_holdings=ac.get("min_holdings", 1),
-            ),
-            "justification": result.get("justification", ""),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
+        action_dict = _build_action_dict(result, raw_alloc, universe, config)
 
         if config.get("verbose"):
             _verbose_proposal(role, result)
@@ -842,7 +840,7 @@ def make_critique_node(role: str):
             result = _mock_critique(role, source)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique")
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique", round_num=current_round)
             result = _parse_json(raw_text)
 
         if config.get("verbose"):
@@ -980,25 +978,14 @@ def make_revise_node(role: str):
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise")
+            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise", round_num=current_round)
             result = _parse_json(raw_text)
 
         universe = obs.get("universe", [])
         raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
-        # Pull constraints from config
-        ac = config.get("allocation_constraints") or {}
-        action_dict = {
-            "allocation": normalize_allocation(
-                raw_alloc, universe,
-                max_weight=ac.get("max_weight", 1.0),
-                min_holdings=ac.get("min_holdings", 1),
-            ),
-            "justification": result.get("justification", ""),
-            "confidence": result.get("confidence", 0.5),
-            "claims": result.get("claims", []),
-        }
+        action_dict = _build_action_dict(result, raw_alloc, universe, config)
 
         if config.get("verbose"):
             _verbose_revision(role, result)
