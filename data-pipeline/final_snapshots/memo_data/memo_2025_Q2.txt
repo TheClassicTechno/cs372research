@@ -1,6 +1,6 @@
 QUARTERLY SNAPSHOT MEMO — 2025 Q2
 As-of date: 2025-06-30
-Tickers: 35
+Tickers: 36
 
 This document is the complete data payload for agent deliberation.
 It contains macro regime, per-ticker price/fundamental metrics,
@@ -41,86 +41,36 @@ Volatility:
   [L1-EQBC]  Equity-Bond Correlation: 1.00
 
 ======================================================================
-CROSS-SECTIONAL SUMMARY
-======================================================================
-
-  TICKER     CLOSE  60D RET  60D VOL   BETA  SHARPE  SENT_Z      GM
-  -----------------------------------------------------------------
-  CAT       381.32   +16.9%    39.4%   1.11    1.67   -0.01   32.8%
-  DAL        49.13   +17.2%    69.0%   1.63    0.97   -0.91   27.4%
-  DE        508.18    +7.3%    33.5%   0.75    0.88    0.99   39.2%
-  RTX       142.98    +9.4%    40.7%   0.49    0.93   -1.55   20.3%
-  JPM       283.07   +18.6%    33.9%   0.95    2.11    0.46     n/a
-  GS        680.16   +26.6%    43.7%   1.33    2.26   -1.18     n/a
-  BAC        46.62   +14.2%    39.5%   0.97    1.42    0.67     n/a
-  BLK      1037.84   +11.6%    37.7%   1.02    1.22    0.99   47.9%
-  MS        138.87   +22.5%    42.8%   1.31    1.99   -0.06     n/a
-  UNH       305.12   -40.5%    78.8%   0.19   -2.77    1.69   17.9%
-  LLY       771.33    -3.5%    53.2%   0.77   -0.28   -1.00   84.3%
-  JNJ       149.55    +0.3%    20.3%   0.01    0.06   -0.35   67.9%
-  PFE        22.98    +0.4%    29.9%   0.42    0.06    0.60   74.2%
-  AMT       213.80    +0.9%    29.7%  -0.03    0.12    1.85   73.8%
-  PLD       103.88    -4.3%    39.0%   0.86   -0.48    0.87   74.7%
-  XOM       106.72    -7.3%    33.1%   0.50   -0.96   -1.65   22.6%
-  CVX       139.27   -13.6%    36.5%   0.68   -1.69   -1.03   29.7%
-  COP        87.93   -13.7%    50.6%   0.87   -1.22   -0.34   25.1%
-  OXY        42.13   -12.9%    54.9%   0.92   -1.06    0.98   32.5%
-  COST      982.39    +3.4%    25.9%   0.61    0.53    0.14   13.0%
-  WMT        96.85    +9.8%    28.6%   0.60    1.37   -0.25   24.9%
-  PG        156.56    -5.7%    22.6%   0.14   -1.09    1.30   49.1%
-  AAPL      200.47    -9.8%    50.0%   1.20   -0.86    0.84   46.5%
-  NVDA      157.73   +43.2%    57.9%   2.06    2.61   -1.33   60.5%
-  MSFT      493.08   +30.0%    32.1%   0.93    3.43   -0.83   68.6%
-  AVGO      268.38   +60.2%    58.8%   1.95    3.37   -1.26   68.0%
-  AMD       143.81   +39.9%    71.1%   1.94    1.98   -1.99   39.8%
-  GOOG      177.99   +12.3%    38.5%   1.02    1.27    1.47   59.5%
-  META      732.54   +25.3%    51.0%   1.37    1.86    0.78   82.1%
-  NFLX      132.31   +42.5%    33.5%   0.92    4.44    0.04   51.9%
-  DIS       121.52   +25.8%    46.6%   0.97    2.07    0.62   38.6%
-  AMZN      223.30   +16.2%    45.8%   1.35    1.38    0.01   51.8%
-  TSLA      323.63   +20.5%    81.2%   2.37    0.97    0.45   17.2%
-  HD        364.30    +1.5%    25.6%   0.63    0.25   -0.53   33.8%
-  NKE        70.74   +12.0%    62.2%   0.98    0.76   -0.48   40.3%
-
-======================================================================
 TICKER: CAT
 ======================================================================
 
   Price & Returns:
-    [CAT-PX]       Close: $381.32
-    [CAT-RET20]    20D Return: +9.4%
-    [CAT-RET60]    60D Return: +16.9%
-    [CAT-RET120]   120D Return: +7.8%
-    [CAT-RET252]   1Y Return: +19.4%
+    [CAT-PX]       Close: $384.78
+    [CAT-RET20]    20D Return: +11.5%
+    [CAT-RET60]    60D Return: +16.6%
+    [CAT-RET120]   120D Return: +7.6%
+    [CAT-RET252]   1Y Return: +20.8%
 
   Volatility & Risk:
-    [CAT-VOL20]    20D Vol (ann): 18.2%
-    [CAT-VOL60]    60D Vol (ann): 39.4%
+    [CAT-VOL20]    20D Vol (ann): 17.3%
+    [CAT-VOL60]    60D Vol (ann): 39.3%
     [CAT-DVOL60]   60D Downside Vol: 32.4%
     [CAT-DD60]     60D Drawdown: -18.1%
     [CAT-MDD1Y]    1Y Max Drawdown: -34.1%
-    [CAT-SHARPE]   60D Sharpe: 1.67
+    [CAT-SHARPE]   60D Sharpe: 1.64
     [CAT-BETA]     1Y Beta: 1.11
 
   Trend & Momentum:
-    [CAT-SMA20]    SMA 20D: $357.29
-    [CAT-SMA50]    SMA 50D: $336.71
-    [CAT-SMA200]   SMA 200D: $354.35
+    [CAT-SMA20]    SMA 20D: $359.28
+    [CAT-SMA50]    SMA 50D: $338.69
+    [CAT-SMA200]   SMA 200D: $354.64
     [CAT-MOM200]   200D Momentum: 1.08
-    [CAT-MOM12_1]  12-1M Momentum: +8.5%
-    [CAT-IDMOM]    Idiosyncratic Momentum 60D: 0.0512
+    [CAT-MOM12_1]  12-1M Momentum: +9.4%
+    [CAT-IDMOM]    Idiosyncratic Momentum 60D: 0.0497
     [CAT-TREND]    Trend Consistency: 0.57
-    [CAT-RS60]     Relative Strength 60D: +5.4%
-
-  Fundamentals:
-    [CAT-MCAP]     Log Market Cap: 25.91
-    [CAT-BM]       Book-to-Market: 0.1045
-    [CAT-GM]       Gross Margin: 32.8%
-    [CAT-ROE]      ROE: +11.7%
-    [CAT-FCFY]     FCF Yield: +1.2%
-    [CAT-DE]       Debt/Equity: 2.18
+    [CAT-RS60]     Relative Strength 60D: +6.7%
     [CAT-ESURP]    Earnings Surprise: -2.1%
-    [CAT-ADVOL]    Avg Dollar Volume 20D: $927,092,447
+    [CAT-ADVOL]    Avg Dollar Volume 20D: $896,849,297
 
   Sentiment:
     [CAT-SENT]     Mean Sentiment: 0.0267
@@ -156,40 +106,32 @@ TICKER: DAL
 ======================================================================
 
   Price & Returns:
-    [DAL-PX]       Close: $49.13
-    [DAL-RET20]    20D Return: +2.2%
-    [DAL-RET60]    60D Return: +17.2%
-    [DAL-RET120]   120D Return: -15.6%
-    [DAL-RET252]   1Y Return: +2.8%
+    [DAL-PX]       Close: $48.73
+    [DAL-RET20]    20D Return: +1.6%
+    [DAL-RET60]    60D Return: +13.7%
+    [DAL-RET120]   120D Return: -16.2%
+    [DAL-RET252]   1Y Return: +3.3%
 
   Volatility & Risk:
-    [DAL-VOL20]    20D Vol (ann): 41.0%
+    [DAL-VOL20]    20D Vol (ann): 41.1%
     [DAL-VOL60]    60D Vol (ann): 69.0%
-    [DAL-DVOL60]   60D Downside Vol: 47.4%
+    [DAL-DVOL60]   60D Downside Vol: 46.9%
     [DAL-DD60]     60D Drawdown: -17.3%
     [DAL-MDD1Y]    1Y Max Drawdown: -47.9%
-    [DAL-SHARPE]   60D Sharpe: 0.97
+    [DAL-SHARPE]   60D Sharpe: 0.78
     [DAL-BETA]     1Y Beta: 1.63
 
   Trend & Momentum:
-    [DAL-SMA20]    SMA 20D: $48.48
-    [DAL-SMA50]    SMA 50D: $46.66
-    [DAL-SMA200]   SMA 200D: $53.47
-    [DAL-MOM200]   200D Momentum: 0.92
-    [DAL-MOM12_1]  12-1M Momentum: +0.8%
-    [DAL-IDMOM]    Idiosyncratic Momentum 60D: -0.0152
-    [DAL-TREND]    Trend Consistency: 0.55
-    [DAL-RS60]     Relative Strength 60D: +5.7%
-
-  Fundamentals:
-    [DAL-MCAP]     Log Market Cap: 24.19
-    [DAL-BM]       Book-to-Market: 0.5436
-    [DAL-GM]       Gross Margin: 27.4%
-    [DAL-ROE]      ROE: +12.2%
-    [DAL-FCFY]     FCF Yield: +2.0%
-    [DAL-DE]       Debt/Equity: 1.22
+    [DAL-SMA20]    SMA 20D: $48.52
+    [DAL-SMA50]    SMA 50D: $46.83
+    [DAL-SMA200]   SMA 200D: $53.50
+    [DAL-MOM200]   200D Momentum: 0.91
+    [DAL-MOM12_1]  12-1M Momentum: +1.9%
+    [DAL-IDMOM]    Idiosyncratic Momentum 60D: -0.0424
+    [DAL-TREND]    Trend Consistency: 0.53
+    [DAL-RS60]     Relative Strength 60D: +3.9%
     [DAL-ESURP]    Earnings Surprise: +17.9%
-    [DAL-ADVOL]    Avg Dollar Volume 20D: $447,569,544
+    [DAL-ADVOL]    Avg Dollar Volume 20D: $456,067,649
 
   Sentiment:
     [DAL-SENT]     Mean Sentiment: -0.0568
@@ -222,40 +164,32 @@ TICKER: DE
 ======================================================================
 
   Price & Returns:
-    [DE-PX]       Close: $508.18
-    [DE-RET20]    20D Return: +2.0%
-    [DE-RET60]    60D Return: +7.3%
-    [DE-RET120]   120D Return: +23.2%
-    [DE-RET252]   1Y Return: +41.0%
+    [DE-PX]       Close: $504.97
+    [DE-RET20]    20D Return: +0.8%
+    [DE-RET60]    60D Return: +8.3%
+    [DE-RET120]   120D Return: +21.2%
+    [DE-RET252]   1Y Return: +37.6%
 
   Volatility & Risk:
     [DE-VOL20]    20D Vol (ann): 18.2%
-    [DE-VOL60]    60D Vol (ann): 33.5%
+    [DE-VOL60]    60D Vol (ann): 33.3%
     [DE-DVOL60]   60D Downside Vol: 17.9%
-    [DE-DD60]     60D Drawdown: -13.7%
+    [DE-DD60]     60D Drawdown: -12.3%
     [DE-MDD1Y]    1Y Max Drawdown: -18.6%
-    [DE-SHARPE]   60D Sharpe: 0.88
-    [DE-BETA]     1Y Beta: 0.75
+    [DE-SHARPE]   60D Sharpe: 1.01
+    [DE-BETA]     1Y Beta: 0.74
 
   Trend & Momentum:
-    [DE-SMA20]    SMA 20D: $509.89
-    [DE-SMA50]    SMA 50D: $492.94
-    [DE-SMA200]   SMA 200D: $448.24
-    [DE-MOM200]   200D Momentum: 1.13
-    [DE-MOM12_1]  12-1M Momentum: +39.5%
-    [DE-IDMOM]    Idiosyncratic Momentum 60D: -0.0080
+    [DE-SMA20]    SMA 20D: $510.08
+    [DE-SMA50]    SMA 50D: $494.08
+    [DE-SMA200]   SMA 200D: $448.87
+    [DE-MOM200]   200D Momentum: 1.12
+    [DE-MOM12_1]  12-1M Momentum: +35.8%
+    [DE-IDMOM]    Idiosyncratic Momentum 60D: 0.0026
     [DE-TREND]    Trend Consistency: 0.50
-    [DE-RS60]     Relative Strength 60D: -4.3%
-
-  Fundamentals:
-    [DE-MCAP]     Log Market Cap: 25.65
-    [DE-BM]       Book-to-Market: 0.1765
-    [DE-GM]       Gross Margin: 39.2%
-    [DE-ROE]      ROE: +7.4%
-    [DE-FCFY]     FCF Yield: +0.5%
-    [DE-DE]       Debt/Equity: 2.74
+    [DE-RS60]     Relative Strength 60D: -1.6%
     [DE-ESURP]    Earnings Surprise: +18.1%
-    [DE-ADVOL]    Avg Dollar Volume 20D: $602,130,583
+    [DE-ADVOL]    Avg Dollar Volume 20D: $595,434,516
 
   Sentiment:
     [DE-SENT]     Mean Sentiment: 0.1203
@@ -307,40 +241,32 @@ TICKER: RTX
 ======================================================================
 
   Price & Returns:
-    [RTX-PX]       Close: $142.98
-    [RTX-RET20]    20D Return: +7.3%
-    [RTX-RET60]    60D Return: +9.4%
-    [RTX-RET120]   120D Return: +26.0%
-    [RTX-RET252]   1Y Return: +45.4%
+    [RTX-PX]       Close: $144.33
+    [RTX-RET20]    20D Return: +7.0%
+    [RTX-RET60]    60D Return: +10.2%
+    [RTX-RET120]   120D Return: +27.3%
+    [RTX-RET252]   1Y Return: +47.2%
 
   Volatility & Risk:
-    [RTX-VOL20]    20D Vol (ann): 22.5%
+    [RTX-VOL20]    20D Vol (ann): 22.4%
     [RTX-VOL60]    60D Vol (ann): 40.7%
     [RTX-DVOL60]   60D Downside Vol: 43.8%
     [RTX-DD60]     60D Drawdown: -14.6%
     [RTX-MDD1Y]    1Y Max Drawdown: -16.2%
-    [RTX-SHARPE]   60D Sharpe: 0.93
+    [RTX-SHARPE]   60D Sharpe: 1.00
     [RTX-BETA]     1Y Beta: 0.49
 
   Trend & Momentum:
-    [RTX-SMA20]    SMA 20D: $140.35
-    [RTX-SMA50]    SMA 50D: $132.55
-    [RTX-SMA200]   SMA 200D: $123.74
-    [RTX-MOM200]   200D Momentum: 1.16
-    [RTX-MOM12_1]  12-1M Momentum: +33.5%
-    [RTX-IDMOM]    Idiosyncratic Momentum 60D: 0.0355
+    [RTX-SMA20]    SMA 20D: $140.82
+    [RTX-SMA50]    SMA 50D: $132.89
+    [RTX-SMA200]   SMA 200D: $123.88
+    [RTX-MOM200]   200D Momentum: 1.17
+    [RTX-MOM12_1]  12-1M Momentum: +35.9%
+    [RTX-IDMOM]    Idiosyncratic Momentum 60D: 0.0434
     [RTX-TREND]    Trend Consistency: 0.58
-    [RTX-RS60]     Relative Strength 60D: -2.1%
-
-  Fundamentals:
-    [RTX-MCAP]     Log Market Cap: 25.98
-    [RTX-BM]       Book-to-Market: 0.3260
-    [RTX-GM]       Gross Margin: 20.3%
-    [RTX-ROE]      ROE: +2.7%
-    [RTX-FCFY]     FCF Yield: -0.1%
-    [RTX-DE]       Debt/Equity: 0.70
+    [RTX-RS60]     Relative Strength 60D: +0.3%
     [RTX-ESURP]    Earnings Surprise: +7.3%
-    [RTX-ADVOL]    Avg Dollar Volume 20D: $947,841,978
+    [RTX-ADVOL]    Avg Dollar Volume 20D: $935,428,442
 
   Sentiment:
     [RTX-SENT]     Mean Sentiment: -0.1160
@@ -372,11 +298,11 @@ TICKER: JPM
 ======================================================================
 
   Price & Returns:
-    [JPM-PX]       Close: $283.07
-    [JPM-RET20]    20D Return: +8.6%
-    [JPM-RET60]    60D Return: +18.6%
-    [JPM-RET120]   120D Return: +21.0%
-    [JPM-RET252]   1Y Return: +48.3%
+    [JPM-PX]       Close: $285.83
+    [JPM-RET20]    20D Return: +9.8%
+    [JPM-RET60]    60D Return: +18.7%
+    [JPM-RET120]   120D Return: +20.5%
+    [JPM-RET252]   1Y Return: +50.2%
 
   Volatility & Risk:
     [JPM-VOL20]    20D Vol (ann): 14.6%
@@ -384,28 +310,20 @@ TICKER: JPM
     [JPM-DVOL60]   60D Downside Vol: 33.0%
     [JPM-DD60]     60D Drawdown: -13.9%
     [JPM-MDD1Y]    1Y Max Drawdown: -24.4%
-    [JPM-SHARPE]   60D Sharpe: 2.11
+    [JPM-SHARPE]   60D Sharpe: 2.12
     [JPM-BETA]     1Y Beta: 0.95
 
   Trend & Momentum:
-    [JPM-SMA20]    SMA 20D: $267.77
-    [JPM-SMA50]    SMA 50D: $256.47
-    [JPM-SMA200]   SMA 200D: $239.31
-    [JPM-MOM200]   200D Momentum: 1.18
-    [JPM-MOM12_1]  12-1M Momentum: +36.1%
-    [JPM-IDMOM]    Idiosyncratic Momentum 60D: 0.0811
+    [JPM-SMA20]    SMA 20D: $269.05
+    [JPM-SMA50]    SMA 50D: $257.66
+    [JPM-SMA200]   SMA 200D: $239.74
+    [JPM-MOM200]   200D Momentum: 1.19
+    [JPM-MOM12_1]  12-1M Momentum: +37.0%
+    [JPM-IDMOM]    Idiosyncratic Momentum 60D: 0.0834
     [JPM-TREND]    Trend Consistency: 0.62
-    [JPM-RS60]     Relative Strength 60D: +7.0%
-
-  Fundamentals:
-    [JPM-MCAP]     Log Market Cap: 27.38
-    [JPM-BM]       Book-to-Market: 0.4585
-    [JPM-GM]       Gross Margin: n/a
-    [JPM-ROE]      ROE: +4.2%
-    [JPM-FCFY]     FCF Yield: +3.8%
-    [JPM-DE]       Debt/Equity: 1.36
+    [JPM-RS60]     Relative Strength 60D: +8.8%
     [JPM-ESURP]    Earnings Surprise: +9.3%
-    [JPM-ADVOL]    Avg Dollar Volume 20D: $2,322,285,405
+    [JPM-ADVOL]    Avg Dollar Volume 20D: $2,360,767,435
 
   Sentiment:
     [JPM-SENT]     Mean Sentiment: 0.0710
@@ -435,40 +353,32 @@ TICKER: GS
 ======================================================================
 
   Price & Returns:
-    [GS-PX]       Close: $680.16
-    [GS-RET20]    20D Return: +14.8%
-    [GS-RET60]    60D Return: +26.6%
-    [GS-RET120]   120D Return: +21.3%
-    [GS-RET252]   1Y Return: +54.2%
+    [GS-PX]       Close: $696.84
+    [GS-RET20]    20D Return: +17.9%
+    [GS-RET60]    60D Return: +26.3%
+    [GS-RET120]   120D Return: +23.2%
+    [GS-RET252]   1Y Return: +58.5%
 
   Volatility & Risk:
-    [GS-VOL20]    20D Vol (ann): 18.0%
+    [GS-VOL20]    20D Vol (ann): 18.6%
     [GS-VOL60]    60D Vol (ann): 43.7%
     [GS-DVOL60]   60D Downside Vol: 40.5%
     [GS-DD60]     60D Drawdown: -17.9%
     [GS-MDD1Y]    1Y Max Drawdown: -30.9%
-    [GS-SHARPE]   60D Sharpe: 2.26
+    [GS-SHARPE]   60D Sharpe: 2.25
     [GS-BETA]     1Y Beta: 1.33
 
   Trend & Momentum:
-    [GS-SMA20]    SMA 20D: $620.22
-    [GS-SMA50]    SMA 50D: $582.87
-    [GS-SMA200]   SMA 200D: $558.09
-    [GS-MOM200]   200D Momentum: 1.22
-    [GS-MOM12_1]  12-1M Momentum: +35.1%
-    [GS-IDMOM]    Idiosyncratic Momentum 60D: 0.1164
+    [GS-SMA20]    SMA 20D: $625.51
+    [GS-SMA50]    SMA 50D: $587.02
+    [GS-SMA200]   SMA 200D: $559.30
+    [GS-MOM200]   200D Momentum: 1.25
+    [GS-MOM12_1]  12-1M Momentum: +34.8%
+    [GS-IDMOM]    Idiosyncratic Momentum 60D: 0.1163
     [GS-TREND]    Trend Consistency: 0.63
-    [GS-RS60]     Relative Strength 60D: +15.0%
-
-  Fundamentals:
-    [GS-MCAP]     Log Market Cap: 26.05
-    [GS-BM]       Book-to-Market: 0.6024
-    [GS-GM]       Gross Margin: n/a
-    [GS-ROE]      ROE: +3.0%
-    [GS-FCFY]     FCF Yield: +2.5%
-    [GS-DE]       Debt/Equity: 3.01
-    [GS-ESURP]    Earnings Surprise: +15.2%
-    [GS-ADVOL]    Avg Dollar Volume 20D: $1,276,759,958
+    [GS-RS60]     Relative Strength 60D: +16.4%
+    [GS-ESURP]    Earnings Surprise: +14.9%
+    [GS-ADVOL]    Avg Dollar Volume 20D: $1,352,358,472
 
   Sentiment:
     [GS-SENT]     Mean Sentiment: -0.0816
@@ -504,40 +414,32 @@ TICKER: BAC
 ======================================================================
 
   Price & Returns:
-    [BAC-PX]       Close: $46.62
-    [BAC-RET20]    20D Return: +7.1%
-    [BAC-RET60]    60D Return: +14.2%
-    [BAC-RET120]   120D Return: +7.7%
-    [BAC-RET252]   1Y Return: +22.6%
+    [BAC-PX]       Close: $46.55
+    [BAC-RET20]    20D Return: +7.9%
+    [BAC-RET60]    60D Return: +13.7%
+    [BAC-RET120]   120D Return: +6.9%
+    [BAC-RET252]   1Y Return: +24.3%
 
   Volatility & Risk:
-    [BAC-VOL20]    20D Vol (ann): 15.0%
+    [BAC-VOL20]    20D Vol (ann): 14.8%
     [BAC-VOL60]    60D Vol (ann): 39.5%
     [BAC-DVOL60]   60D Downside Vol: 45.0%
     [BAC-DD60]     60D Drawdown: -17.8%
     [BAC-MDD1Y]    1Y Max Drawdown: -27.5%
-    [BAC-SHARPE]   60D Sharpe: 1.42
+    [BAC-SHARPE]   60D Sharpe: 1.37
     [BAC-BETA]     1Y Beta: 0.97
 
   Trend & Momentum:
-    [BAC-SMA20]    SMA 20D: $44.63
-    [BAC-SMA50]    SMA 50D: $42.41
-    [BAC-SMA200]   SMA 200D: $42.28
-    [BAC-MOM200]   200D Momentum: 1.10
-    [BAC-MOM12_1]  12-1M Momentum: +14.0%
-    [BAC-IDMOM]    Idiosyncratic Momentum 60D: 0.0384
+    [BAC-SMA20]    SMA 20D: $44.55
+    [BAC-SMA50]    SMA 50D: $42.37
+    [BAC-SMA200]   SMA 200D: $42.09
+    [BAC-MOM200]   200D Momentum: 1.11
+    [BAC-MOM12_1]  12-1M Momentum: +15.5%
+    [BAC-IDMOM]    Idiosyncratic Momentum 60D: 0.0356
     [BAC-TREND]    Trend Consistency: 0.63
-    [BAC-RS60]     Relative Strength 60D: +2.7%
-
-  Fundamentals:
-    [BAC-MCAP]     Log Market Cap: 26.57
-    [BAC-BM]       Book-to-Market: 0.8642
-    [BAC-GM]       Gross Margin: n/a
-    [BAC-ROE]      ROE: +2.4%
-    [BAC-FCFY]     FCF Yield: -2.6%
-    [BAC-DE]       Debt/Equity: 1.21
+    [BAC-RS60]     Relative Strength 60D: +3.9%
     [BAC-ESURP]    Earnings Surprise: +9.8%
-    [BAC-ADVOL]    Avg Dollar Volume 20D: $1,775,972,574
+    [BAC-ADVOL]    Avg Dollar Volume 20D: $1,733,944,652
 
   Sentiment:
     [BAC-SENT]     Mean Sentiment: 0.0907
@@ -572,40 +474,32 @@ TICKER: BLK
 ======================================================================
 
   Price & Returns:
-    [BLK-PX]       Close: $1037.84
-    [BLK-RET20]    20D Return: +7.9%
-    [BLK-RET60]    60D Return: +11.6%
-    [BLK-RET120]   120D Return: +4.1%
-    [BLK-RET252]   1Y Return: +34.8%
+    [BLK-PX]       Close: $1033.51
+    [BLK-RET20]    20D Return: +7.6%
+    [BLK-RET60]    60D Return: +9.7%
+    [BLK-RET120]   120D Return: +3.9%
+    [BLK-RET252]   1Y Return: +36.1%
 
   Volatility & Risk:
     [BLK-VOL20]    20D Vol (ann): 14.8%
-    [BLK-VOL60]    60D Vol (ann): 37.7%
+    [BLK-VOL60]    60D Vol (ann): 37.5%
     [BLK-DVOL60]   60D Downside Vol: 34.8%
     [BLK-DD60]     60D Drawdown: -15.2%
     [BLK-MDD1Y]    1Y Max Drawdown: -23.7%
-    [BLK-SHARPE]   60D Sharpe: 1.22
+    [BLK-SHARPE]   60D Sharpe: 1.03
     [BLK-BETA]     1Y Beta: 1.02
 
   Trend & Momentum:
-    [BLK-SMA20]    SMA 20D: $981.08
-    [BLK-SMA50]    SMA 50D: $945.84
-    [BLK-SMA200]   SMA 200D: $956.90
-    [BLK-MOM200]   200D Momentum: 1.08
-    [BLK-MOM12_1]  12-1M Momentum: +24.3%
-    [BLK-IDMOM]    Idiosyncratic Momentum 60D: 0.0049
+    [BLK-SMA20]    SMA 20D: $979.32
+    [BLK-SMA50]    SMA 50D: $944.31
+    [BLK-SMA200]   SMA 200D: $952.49
+    [BLK-MOM200]   200D Momentum: 1.09
+    [BLK-MOM12_1]  12-1M Momentum: +26.0%
+    [BLK-IDMOM]    Idiosyncratic Momentum 60D: -0.0104
     [BLK-TREND]    Trend Consistency: 0.62
-    [BLK-RS60]     Relative Strength 60D: +0.0%
-
-  Fundamentals:
-    [BLK-MCAP]     Log Market Cap: 25.80
-    [BLK-BM]       Book-to-Market: 0.3060
-    [BLK-GM]       Gross Margin: 47.9%
-    [BLK-ROE]      ROE: +3.2%
-    [BLK-FCFY]     FCF Yield: +0.8%
-    [BLK-DE]       Debt/Equity: 0.30
+    [BLK-RS60]     Relative Strength 60D: -0.2%
     [BLK-ESURP]    Earnings Surprise: +11.6%
-    [BLK-ADVOL]    Avg Dollar Volume 20D: $611,742,358
+    [BLK-ADVOL]    Avg Dollar Volume 20D: $584,830,729
 
   Sentiment:
     [BLK-SENT]     Mean Sentiment: 0.1206
@@ -641,40 +535,32 @@ TICKER: MS
 ======================================================================
 
   Price & Returns:
-    [MS-PX]       Close: $138.87
-    [MS-RET20]    20D Return: +9.8%
-    [MS-RET60]    60D Return: +22.5%
-    [MS-RET120]   120D Return: +14.4%
-    [MS-RET252]   1Y Return: +48.4%
+    [MS-PX]       Close: $139.04
+    [MS-RET20]    20D Return: +10.0%
+    [MS-RET60]    60D Return: +19.1%
+    [MS-RET120]   120D Return: +13.5%
+    [MS-RET252]   1Y Return: +50.0%
 
   Volatility & Risk:
-    [MS-VOL20]    20D Vol (ann): 14.6%
-    [MS-VOL60]    60D Vol (ann): 42.8%
+    [MS-VOL20]    20D Vol (ann): 14.5%
+    [MS-VOL60]    60D Vol (ann): 42.5%
     [MS-DVOL60]   60D Downside Vol: 41.2%
     [MS-DD60]     60D Drawdown: -16.3%
     [MS-MDD1Y]    1Y Max Drawdown: -29.2%
-    [MS-SHARPE]   60D Sharpe: 1.99
+    [MS-SHARPE]   60D Sharpe: 1.72
     [MS-BETA]     1Y Beta: 1.31
 
   Trend & Momentum:
-    [MS-SMA20]    SMA 20D: $130.64
-    [MS-SMA50]    SMA 50D: $123.90
-    [MS-SMA200]   SMA 200D: $120.11
+    [MS-SMA20]    SMA 20D: $131.27
+    [MS-SMA50]    SMA 50D: $124.57
+    [MS-SMA200]   SMA 200D: $120.34
     [MS-MOM200]   200D Momentum: 1.16
-    [MS-MOM12_1]  12-1M Momentum: +34.5%
-    [MS-IDMOM]    Idiosyncratic Momentum 60D: 0.0862
+    [MS-MOM12_1]  12-1M Momentum: +36.5%
+    [MS-IDMOM]    Idiosyncratic Momentum 60D: 0.0597
     [MS-TREND]    Trend Consistency: 0.63
-    [MS-RS60]     Relative Strength 60D: +10.9%
-
-  Fundamentals:
-    [MS-MCAP]     Log Market Cap: 26.13
-    [MS-BM]       Book-to-Market: 0.4874
-    [MS-GM]       Gross Margin: n/a
-    [MS-ROE]      ROE: +3.3%
-    [MS-FCFY]     FCF Yield: +5.0%
-    [MS-DE]       Debt/Equity: 3.26
+    [MS-RS60]     Relative Strength 60D: +9.2%
     [MS-ESURP]    Earnings Surprise: +18.7%
-    [MS-ADVOL]    Avg Dollar Volume 20D: $704,456,767
+    [MS-ADVOL]    Avg Dollar Volume 20D: $719,643,748
 
   Sentiment:
     [MS-SENT]     Mean Sentiment: 0.0221
@@ -683,7 +569,26 @@ TICKER: MS
     [MS-CSZ]      Cross-Sectional Z: -0.0645
     [MS-ACNT]     Article Count: 222
 
-  Filing summary: not available
+  Filing Evidence (10-Q, filed 2025-05-05, fiscal period: 2025-Q1):
+    [MS-F1] Morgan Stanley reported net revenues of $17.7 billion in Q1 2025, increasing 17% from the prior year driven by strong performance across all segments.
+    [MS-F2] Institutional Securities delivered 28% growth primarily from higher equity trading revenues and gains on corporate loan sales versus prior year mark-to-market losses.
+    [MS-F3] Wealth Management grew 6% on higher asset management fees despite lower transactional revenues, while Investment Management increased 16% from higher performance-based income.
+    [MS-F4] Trading assets expanded to $400 billion from $332 billion reflecting increased client activity and market positioning.
+    [MS-F5] Total non-interest expenses increased 15% to $12.1 billion primarily from higher compensation costs driven by discretionary incentive compensation on increased revenues and $144 million in severance costs from March workforce reductions affecting approximately 2% of global employees.
+    [MS-F6] Non-compensation expenses rose reflecting higher execution-related and distribution expenses.
+    [MS-F7] The firm's expense efficiency ratio was 68% for the quarter.
+    [MS-F8] The firm executed workforce reductions in March 2025 impacting approximately 2% of global employees across all segments related to performance management and workforce alignment.
+    [MS-F9] The company repurchased $1.0 billion in common stock with $17.5 billion remaining under authorization.
+    [MS-F10] Raja Akram resigned as Deputy CFO and Chief Accounting Officer effective March 26, 2025, with Victoria Worster appointed as replacement effective May 15, 2025.
+    [MS-F11] Provision for credit losses increased to $135 million from a $6 million benefit in the prior year, reflecting deterioration in macroeconomic outlook incorporated into ACL models with slower economic growth assumptions and higher interest rates.
+    [MS-F12] Credit provisions included specific loans related to California wildfires and certain commercial real estate and corporate loans.
+    [MS-F13] The firm maintains exposure to variable interest entities with maximum loss exposure of $204.2 billion in unpaid principal balance.
+    [MS-F14] Management maintains a 20% return on tangible common equity goal based on normal market conditions.
+    [MS-F15] The base scenario used in ACL models assumes slower economic growth with forecasted U.S. real GDP growth rates of 1.5% for 4Q 2025 and 1.9% for 4Q 2026.
+    [MS-F16] Wealth Management added $94 billion in net new assets with fee-based asset flows indicating continued client acquisition momentum.
+    [MS-F17] The Federal Reserve is expected to publish CCAR and supervisory stress test results by June 30, 2025, with the firm required to disclose company-run stress test results within 15 days thereafter.
+    [MS-F18] Significant uncertainty remains regarding global trade policy evolution and impacts on borrowers and counterparties.
+    [MS-F19] Level 3 fair value assets increased to $7.8 billion with expanded exposure to illiquid positions, while credit risk-related contingent features in derivative contracts totaled $19.9 billion with potential additional collateral requirements under downgrade scenarios.
 
   Earnings call: not available
 
@@ -692,40 +597,32 @@ TICKER: UNH
 ======================================================================
 
   Price & Returns:
-    [UNH-PX]       Close: $305.12
-    [UNH-RET20]    20D Return: +4.4%
-    [UNH-RET60]    60D Return: -40.5%
-    [UNH-RET120]   120D Return: -38.0%
-    [UNH-RET252]   1Y Return: -35.0%
+    [UNH-PX]       Close: $307.94
+    [UNH-RET20]    20D Return: +4.1%
+    [UNH-RET60]    60D Return: -40.0%
+    [UNH-RET120]   120D Return: -38.5%
+    [UNH-RET252]   1Y Return: -34.3%
 
   Volatility & Risk:
-    [UNH-VOL20]    20D Vol (ann): 22.6%
+    [UNH-VOL20]    20D Vol (ann): 22.4%
     [UNH-VOL60]    60D Vol (ann): 78.8%
     [UNH-DVOL60]   60D Downside Vol: 87.8%
     [UNH-DD60]     60D Drawdown: -54.2%
     [UNH-MDD1Y]    1Y Max Drawdown: -55.8%
-    [UNH-SHARPE]   60D Sharpe: -2.77
+    [UNH-SHARPE]   60D Sharpe: -2.72
     [UNH-BETA]     1Y Beta: 0.19
 
   Trend & Momentum:
-    [UNH-SMA20]    SMA 20D: $300.03
-    [UNH-SMA50]    SMA 50D: $338.56
-    [UNH-SMA200]   SMA 200D: $483.89
-    [UNH-MOM200]   200D Momentum: 0.63
-    [UNH-MOM12_1]  12-1M Momentum: -37.8%
-    [UNH-IDMOM]    Idiosyncratic Momentum 60D: -0.5345
+    [UNH-SMA20]    SMA 20D: $300.63
+    [UNH-SMA50]    SMA 50D: $333.25
+    [UNH-SMA200]   SMA 200D: $482.53
+    [UNH-MOM200]   200D Momentum: 0.64
+    [UNH-MOM12_1]  12-1M Momentum: -37.7%
+    [UNH-IDMOM]    Idiosyncratic Momentum 60D: -0.5252
     [UNH-TREND]    Trend Consistency: 0.45
-    [UNH-RS60]     Relative Strength 60D: -52.1%
-
-  Fundamentals:
-    [UNH-MCAP]     Log Market Cap: 26.34
-    [UNH-BM]       Book-to-Market: 0.3430
-    [UNH-GM]       Gross Margin: 17.9%
-    [UNH-ROE]      ROE: +3.6%
-    [UNH-FCFY]     FCF Yield: +2.3%
-    [UNH-DE]       Debt/Equity: 0.84
+    [UNH-RS60]     Relative Strength 60D: -49.8%
     [UNH-ESURP]    Earnings Surprise: -1.2%
-    [UNH-ADVOL]    Avg Dollar Volume 20D: $3,893,688,613
+    [UNH-ADVOL]    Avg Dollar Volume 20D: $3,807,494,775
 
   Sentiment:
     [UNH-SENT]     Mean Sentiment: 0.1852
@@ -762,40 +659,32 @@ TICKER: LLY
 ======================================================================
 
   Price & Returns:
-    [LLY-PX]       Close: $771.33
-    [LLY-RET20]    20D Return: +7.3%
-    [LLY-RET60]    60D Return: -3.5%
-    [LLY-RET120]   120D Return: +0.0%
-    [LLY-RET252]   1Y Return: -13.7%
+    [LLY-PX]       Close: $775.39
+    [LLY-RET20]    20D Return: +5.7%
+    [LLY-RET60]    60D Return: -4.5%
+    [LLY-RET120]   120D Return: +0.1%
+    [LLY-RET252]   1Y Return: -12.9%
 
   Volatility & Risk:
-    [LLY-VOL20]    20D Vol (ann): 26.8%
-    [LLY-VOL60]    60D Vol (ann): 53.2%
+    [LLY-VOL20]    20D Vol (ann): 26.0%
+    [LLY-VOL60]    60D Vol (ann): 53.1%
     [LLY-DVOL60]   60D Downside Vol: 41.5%
     [LLY-DD60]     60D Drawdown: -20.4%
     [LLY-MDD1Y]    1Y Max Drawdown: -25.2%
-    [LLY-SHARPE]   60D Sharpe: -0.28
+    [LLY-SHARPE]   60D Sharpe: -0.37
     [LLY-BETA]     1Y Beta: 0.77
 
   Trend & Momentum:
-    [LLY-SMA20]    SMA 20D: $776.65
-    [LLY-SMA50]    SMA 50D: $776.75
-    [LLY-SMA200]   SMA 200D: $813.13
+    [LLY-SMA20]    SMA 20D: $778.73
+    [LLY-SMA50]    SMA 50D: $777.67
+    [LLY-SMA200]   SMA 200D: $812.55
     [LLY-MOM200]   200D Momentum: 0.95
-    [LLY-MOM12_1]  12-1M Momentum: -19.9%
-    [LLY-IDMOM]    Idiosyncratic Momentum 60D: -0.1038
+    [LLY-MOM12_1]  12-1M Momentum: -19.3%
+    [LLY-IDMOM]    Idiosyncratic Momentum 60D: -0.1133
     [LLY-TREND]    Trend Consistency: 0.57
-    [LLY-RS60]     Relative Strength 60D: -15.1%
-
-  Fundamentals:
-    [LLY-MCAP]     Log Market Cap: 27.26
-    [LLY-BM]       Book-to-Market: 0.0264
-    [LLY-GM]       Gross Margin: 84.3%
-    [LLY-ROE]      ROE: +31.0%
-    [LLY-FCFY]     FCF Yield: +0.2%
-    [LLY-DE]       Debt/Equity: 2.18
+    [LLY-RS60]     Relative Strength 60D: -14.4%
     [LLY-ESURP]    Earnings Surprise: -5.7%
-    [LLY-ADVOL]    Avg Dollar Volume 20D: $2,609,953,835
+    [LLY-ADVOL]    Avg Dollar Volume 20D: $2,503,849,819
 
   Sentiment:
     [LLY-SENT]     Mean Sentiment: -0.0646
@@ -833,40 +722,32 @@ TICKER: JNJ
 ======================================================================
 
   Price & Returns:
-    [JNJ-PX]       Close: $149.55
-    [JNJ-RET20]    20D Return: -0.8%
-    [JNJ-RET60]    60D Return: +0.3%
-    [JNJ-RET120]   120D Return: +7.6%
-    [JNJ-RET252]   1Y Return: +6.9%
+    [JNJ-PX]       Close: $149.88
+    [JNJ-RET20]    20D Return: -1.6%
+    [JNJ-RET60]    60D Return: -0.8%
+    [JNJ-RET120]   120D Return: +7.7%
+    [JNJ-RET252]   1Y Return: +7.4%
 
   Volatility & Risk:
-    [JNJ-VOL20]    20D Vol (ann): 13.1%
-    [JNJ-VOL60]    60D Vol (ann): 20.3%
+    [JNJ-VOL20]    20D Vol (ann): 12.5%
+    [JNJ-VOL60]    60D Vol (ann): 20.1%
     [JNJ-DVOL60]   60D Downside Vol: 15.5%
     [JNJ-DD60]     60D Drawdown: -8.4%
     [JNJ-MDD1Y]    1Y Max Drawdown: -14.4%
-    [JNJ-SHARPE]   60D Sharpe: 0.06
-    [JNJ-BETA]     1Y Beta: 0.01
+    [JNJ-SHARPE]   60D Sharpe: -0.18
+    [JNJ-BETA]     1Y Beta: 0.02
 
   Trend & Momentum:
-    [JNJ-SMA20]    SMA 20D: $150.91
-    [JNJ-SMA50]    SMA 50D: $150.33
-    [JNJ-SMA200]   SMA 200D: $150.67
-    [JNJ-MOM200]   200D Momentum: 0.99
-    [JNJ-MOM12_1]  12-1M Momentum: +6.9%
-    [JNJ-IDMOM]    Idiosyncratic Momentum 60D: -0.0115
+    [JNJ-SMA20]    SMA 20D: $150.79
+    [JNJ-SMA50]    SMA 50D: $150.34
+    [JNJ-SMA200]   SMA 200D: $150.61
+    [JNJ-MOM200]   200D Momentum: 1.00
+    [JNJ-MOM12_1]  12-1M Momentum: +8.0%
+    [JNJ-IDMOM]    Idiosyncratic Momentum 60D: -0.0225
     [JNJ-TREND]    Trend Consistency: 0.53
-    [JNJ-RS60]     Relative Strength 60D: -11.3%
-
-  Fundamentals:
-    [JNJ-MCAP]     Log Market Cap: 26.61
-    [JNJ-BM]       Book-to-Market: 0.2180
-    [JNJ-GM]       Gross Margin: 67.9%
-    [JNJ-ROE]      ROE: +7.1%
-    [JNJ-FCFY]     FCF Yield: +0.7%
-    [JNJ-DE]       Debt/Equity: 0.65
+    [JNJ-RS60]     Relative Strength 60D: -10.7%
     [JNJ-ESURP]    Earnings Surprise: +7.4%
-    [JNJ-ADVOL]    Avg Dollar Volume 20D: $1,245,297,177
+    [JNJ-ADVOL]    Avg Dollar Volume 20D: $1,194,782,683
 
   Sentiment:
     [JNJ-SENT]     Mean Sentiment: -0.0041
@@ -903,11 +784,11 @@ TICKER: PFE
 ======================================================================
 
   Price & Returns:
-    [PFE-PX]       Close: $22.98
+    [PFE-PX]       Close: $23.03
     [PFE-RET20]    20D Return: +3.2%
-    [PFE-RET60]    60D Return: +0.4%
-    [PFE-RET120]   120D Return: -5.8%
-    [PFE-RET252]   1Y Return: -7.8%
+    [PFE-RET60]    60D Return: +0.0%
+    [PFE-RET120]   120D Return: -5.6%
+    [PFE-RET252]   1Y Return: -5.7%
 
   Volatility & Risk:
     [PFE-VOL20]    20D Vol (ann): 16.3%
@@ -915,28 +796,20 @@ TICKER: PFE
     [PFE-DVOL60]   60D Downside Vol: 23.0%
     [PFE-DD60]     60D Drawdown: -12.6%
     [PFE-MDD1Y]    1Y Max Drawdown: -29.0%
-    [PFE-SHARPE]   60D Sharpe: 0.06
+    [PFE-SHARPE]   60D Sharpe: 0.00
     [PFE-BETA]     1Y Beta: 0.42
 
   Trend & Momentum:
-    [PFE-SMA20]    SMA 20D: $22.78
-    [PFE-SMA50]    SMA 50D: $22.10
-    [PFE-SMA200]   SMA 200D: $23.89
+    [PFE-SMA20]    SMA 20D: $22.82
+    [PFE-SMA50]    SMA 50D: $22.15
+    [PFE-SMA200]   SMA 200D: $23.87
     [PFE-MOM200]   200D Momentum: 0.96
-    [PFE-MOM12_1]  12-1M Momentum: -11.7%
-    [PFE-IDMOM]    Idiosyncratic Momentum 60D: -0.0514
+    [PFE-MOM12_1]  12-1M Momentum: -8.8%
+    [PFE-IDMOM]    Idiosyncratic Momentum 60D: -0.0549
     [PFE-TREND]    Trend Consistency: 0.53
-    [PFE-RS60]     Relative Strength 60D: -11.1%
-
-  Fundamentals:
-    [PFE-MCAP]     Log Market Cap: 25.60
-    [PFE-BM]       Book-to-Market: 0.6788
-    [PFE-GM]       Gross Margin: 74.2%
-    [PFE-ROE]      ROE: +3.3%
-    [PFE-FCFY]     FCF Yield: -0.9%
-    [PFE-DE]       Debt/Equity: 0.69
+    [PFE-RS60]     Relative Strength 60D: -9.9%
     [PFE-ESURP]    Earnings Surprise: +37.3%
-    [PFE-ADVOL]    Avg Dollar Volume 20D: $869,157,525
+    [PFE-ADVOL]    Avg Dollar Volume 20D: $857,485,698
 
   Sentiment:
     [PFE-SENT]     Mean Sentiment: 0.0839
@@ -945,7 +818,19 @@ TICKER: PFE
     [PFE-CSZ]      Cross-Sectional Z: 0.6000
     [PFE-ACNT]     Article Count: 223
 
-  Filing summary: not available
+  Filing Evidence (10-Q, filed 2025-05-05, fiscal period: 2025-Q1):
+    [PFE-F1] No specific Q1 2025 revenue or operating performance data was provided in the filing text.
+    [PFE-F2] The 8-K filing references Q4 2024 results announcement but does not contain the actual financial metrics or segment performance details for the current quarter.
+    [PFE-F3] No Q1 2025 cost structure information including gross margins, operating expenses, or cost dynamics was disclosed in the provided filing excerpts.
+    [PFE-F4] The material focuses on risk factors and regulatory filing procedures rather than financial performance metrics.
+    [PFE-F5] Pfizer issued Q4 2024 financial results via press release on February 4, 2025, though the actual results are not included in this filing.
+    [PFE-F6] The company continues its voluntary withdrawal of all Oxbryta lots across all approved markets following earlier regulatory concerns.
+    [PFE-F7] Pfizer faces heightened exposure to tariff risks and trade restrictions under potential new U.S. administration policies, with uncertainty around effective dates, duration, and scope of trade measures.
+    [PFE-F8] The company remains exposed to geopolitical conflicts including Russia-Ukraine and Middle East tensions affecting global operations and supply chains.
+    [PFE-F9] No specific forward guidance or strategic direction was provided in the available filing text.
+    [PFE-F10] Management outlook and capital allocation plans were not disclosed in the risk factor sections and regulatory filing excerpts provided.
+    [PFE-F11] The company faces ongoing regulatory evaluation of its product portfolio for nitrosamine contamination risks requiring continued assessment and potential remediation.
+    [PFE-F12] Patent application outcomes remain uncertain with potential challenges to intellectual property validity and enforcement, particularly for COVID-19 products facing third-party royalty claims.
 
   Earnings call: not available
 
@@ -954,40 +839,32 @@ TICKER: AMT
 ======================================================================
 
   Price & Returns:
-    [AMT-PX]       Close: $213.80
-    [AMT-RET20]    20D Return: +2.7%
-    [AMT-RET60]    60D Return: +0.9%
-    [AMT-RET120]   120D Return: +22.2%
-    [AMT-RET252]   1Y Return: +16.7%
+    [AMT-PX]       Close: $216.98
+    [AMT-RET20]    20D Return: +3.8%
+    [AMT-RET60]    60D Return: +3.1%
+    [AMT-RET120]   120D Return: +23.0%
+    [AMT-RET252]   1Y Return: +18.5%
 
   Volatility & Risk:
-    [AMT-VOL20]    20D Vol (ann): 15.1%
-    [AMT-VOL60]    60D Vol (ann): 29.7%
-    [AMT-DVOL60]   60D Downside Vol: 23.7%
+    [AMT-VOL20]    20D Vol (ann): 15.8%
+    [AMT-VOL60]    60D Vol (ann): 29.8%
+    [AMT-DVOL60]   60D Downside Vol: 24.0%
     [AMT-DD60]     60D Drawdown: -10.3%
     [AMT-MDD1Y]    1Y Max Drawdown: -27.4%
-    [AMT-SHARPE]   60D Sharpe: 0.12
+    [AMT-SHARPE]   60D Sharpe: 0.43
     [AMT-BETA]     1Y Beta: -0.03
 
   Trend & Momentum:
-    [AMT-SMA20]    SMA 20D: $211.41
-    [AMT-SMA50]    SMA 50D: $210.65
-    [AMT-SMA200]   SMA 200D: $201.30
-    [AMT-MOM200]   200D Momentum: 1.06
-    [AMT-MOM12_1]  12-1M Momentum: +13.0%
-    [AMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0034
-    [AMT-TREND]    Trend Consistency: 0.57
-    [AMT-RS60]     Relative Strength 60D: -10.7%
-
-  Fundamentals:
-    [AMT-MCAP]     Log Market Cap: 25.33
-    [AMT-BM]       Book-to-Market: 0.0371
-    [AMT-GM]       Gross Margin: 73.8%
-    [AMT-ROE]      ROE: +9.9%
-    [AMT-FCFY]     FCF Yield: +1.0%
-    [AMT-DE]       Debt/Equity: 12.18
+    [AMT-SMA20]    SMA 20D: $211.80
+    [AMT-SMA50]    SMA 50D: $210.74
+    [AMT-SMA200]   SMA 200D: $201.23
+    [AMT-MOM200]   200D Momentum: 1.08
+    [AMT-MOM12_1]  12-1M Momentum: +13.7%
+    [AMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0250
+    [AMT-TREND]    Trend Consistency: 0.58
+    [AMT-RS60]     Relative Strength 60D: -6.8%
     [AMT-ESURP]    Earnings Surprise: -33.8%
-    [AMT-ADVOL]    Avg Dollar Volume 20D: $489,364,902
+    [AMT-ADVOL]    Avg Dollar Volume 20D: $450,565,939
 
   Sentiment:
     [AMT-SENT]     Mean Sentiment: 0.2005
@@ -1025,40 +902,32 @@ TICKER: PLD
 ======================================================================
 
   Price & Returns:
-    [PLD-PX]       Close: $103.88
-    [PLD-RET20]    20D Return: -2.4%
-    [PLD-RET60]    60D Return: -4.3%
-    [PLD-RET120]   120D Return: +3.2%
-    [PLD-RET252]   1Y Return: -0.5%
+    [PLD-PX]       Close: $103.39
+    [PLD-RET20]    20D Return: -2.3%
+    [PLD-RET60]    60D Return: -5.5%
+    [PLD-RET120]   120D Return: +1.4%
+    [PLD-RET252]   1Y Return: -1.5%
 
   Volatility & Risk:
     [PLD-VOL20]    20D Vol (ann): 15.8%
     [PLD-VOL60]    60D Vol (ann): 39.0%
-    [PLD-DVOL60]   60D Downside Vol: 34.8%
+    [PLD-DVOL60]   60D Downside Vol: 34.4%
     [PLD-DD60]     60D Drawdown: -20.1%
     [PLD-MDD1Y]    1Y Max Drawdown: -30.5%
-    [PLD-SHARPE]   60D Sharpe: -0.48
+    [PLD-SHARPE]   60D Sharpe: -0.61
     [PLD-BETA]     1Y Beta: 0.86
 
   Trend & Momentum:
-    [PLD-SMA20]    SMA 20D: $104.96
-    [PLD-SMA50]    SMA 50D: $103.49
-    [PLD-SMA200]   SMA 200D: $109.18
+    [PLD-SMA20]    SMA 20D: $104.84
+    [PLD-SMA50]    SMA 50D: $103.61
+    [PLD-SMA200]   SMA 200D: $109.07
     [PLD-MOM200]   200D Momentum: 0.95
-    [PLD-MOM12_1]  12-1M Momentum: +0.7%
-    [PLD-IDMOM]    Idiosyncratic Momentum 60D: -0.1365
-    [PLD-TREND]    Trend Consistency: 0.55
-    [PLD-RS60]     Relative Strength 60D: -15.9%
-
-  Fundamentals:
-    [PLD-MCAP]     Log Market Cap: 25.29
-    [PLD-BM]       Book-to-Market: 0.5470
-    [PLD-GM]       Gross Margin: 74.7%
-    [PLD-ROE]      ROE: +1.1%
-    [PLD-FCFY]     FCF Yield: +1.3%
-    [PLD-DE]       Debt/Equity: 0.66
+    [PLD-MOM12_1]  12-1M Momentum: +1.4%
+    [PLD-IDMOM]    Idiosyncratic Momentum 60D: -0.1475
+    [PLD-TREND]    Trend Consistency: 0.53
+    [PLD-RS60]     Relative Strength 60D: -15.4%
     [PLD-ESURP]    Earnings Surprise: +0.0%
-    [PLD-ADVOL]    Avg Dollar Volume 20D: $412,795,994
+    [PLD-ADVOL]    Avg Dollar Volume 20D: $412,728,467
 
   Sentiment:
     [PLD-SENT]     Mean Sentiment: 0.1094
@@ -1093,40 +962,32 @@ TICKER: XOM
 ======================================================================
 
   Price & Returns:
-    [XOM-PX]       Close: $106.72
-    [XOM-RET20]    20D Return: +6.5%
-    [XOM-RET60]    60D Return: -7.3%
-    [XOM-RET120]   120D Return: +3.8%
-    [XOM-RET252]   1Y Return: -1.0%
+    [XOM-PX]       Close: $105.18
+    [XOM-RET20]    20D Return: +5.4%
+    [XOM-RET60]    60D Return: -8.3%
+    [XOM-RET120]   120D Return: +1.8%
+    [XOM-RET252]   1Y Return: -2.5%
 
   Volatility & Risk:
-    [XOM-VOL20]    20D Vol (ann): 24.1%
-    [XOM-VOL60]    60D Vol (ann): 33.1%
-    [XOM-DVOL60]   60D Downside Vol: 28.9%
-    [XOM-DD60]     60D Drawdown: -16.1%
+    [XOM-VOL20]    20D Vol (ann): 24.8%
+    [XOM-VOL60]    60D Vol (ann): 33.2%
+    [XOM-DVOL60]   60D Downside Vol: 28.6%
+    [XOM-DD60]     60D Drawdown: -15.8%
     [XOM-MDD1Y]    1Y Max Drawdown: -18.9%
-    [XOM-SHARPE]   60D Sharpe: -0.96
+    [XOM-SHARPE]   60D Sharpe: -1.10
     [XOM-BETA]     1Y Beta: 0.50
 
   Trend & Momentum:
-    [XOM-SMA20]    SMA 20D: $105.52
-    [XOM-SMA50]    SMA 50D: $103.95
+    [XOM-SMA20]    SMA 20D: $105.79
+    [XOM-SMA50]    SMA 50D: $104.03
     [XOM-SMA200]   SMA 200D: $107.45
-    [XOM-MOM200]   200D Momentum: 0.99
-    [XOM-MOM12_1]  12-1M Momentum: -7.6%
-    [XOM-IDMOM]    Idiosyncratic Momentum 60D: -0.1429
+    [XOM-MOM200]   200D Momentum: 0.98
+    [XOM-MOM12_1]  12-1M Momentum: -7.1%
+    [XOM-IDMOM]    Idiosyncratic Momentum 60D: -0.1531
     [XOM-TREND]    Trend Consistency: 0.53
-    [XOM-RS60]     Relative Strength 60D: -18.9%
-
-  Fundamentals:
-    [XOM-MCAP]     Log Market Cap: 26.84
-    [XOM-BM]       Book-to-Market: 0.5772
-    [XOM-GM]       Gross Margin: 22.6%
-    [XOM-ROE]      ROE: +2.7%
-    [XOM-FCFY]     FCF Yield: +1.2%
-    [XOM-DE]       Debt/Equity: 0.15
+    [XOM-RS60]     Relative Strength 60D: -18.2%
     [XOM-ESURP]    Earnings Surprise: +1.1%
-    [XOM-ADVOL]    Avg Dollar Volume 20D: $2,224,222,138
+    [XOM-ADVOL]    Avg Dollar Volume 20D: $2,182,227,942
 
   Sentiment:
     [XOM-SENT]     Mean Sentiment: -0.1254
@@ -1162,40 +1023,32 @@ TICKER: CVX
 ======================================================================
 
   Price & Returns:
-    [CVX-PX]       Close: $139.27
-    [CVX-RET20]    20D Return: +4.3%
-    [CVX-RET60]    60D Return: -13.6%
-    [CVX-RET120]   120D Return: +0.3%
-    [CVX-RET252]   1Y Return: -5.1%
+    [CVX-PX]       Close: $138.69
+    [CVX-RET20]    20D Return: +4.8%
+    [CVX-RET60]    60D Return: -12.9%
+    [CVX-RET120]   120D Return: -0.9%
+    [CVX-RET252]   1Y Return: -4.0%
 
   Volatility & Risk:
-    [CVX-VOL20]    20D Vol (ann): 19.8%
+    [CVX-VOL20]    20D Vol (ann): 19.5%
     [CVX-VOL60]    60D Vol (ann): 36.5%
-    [CVX-DVOL60]   60D Downside Vol: 34.8%
-    [CVX-DD60]     60D Drawdown: -20.6%
+    [CVX-DVOL60]   60D Downside Vol: 35.0%
+    [CVX-DD60]     60D Drawdown: -19.7%
     [CVX-MDD1Y]    1Y Max Drawdown: -20.6%
-    [CVX-SHARPE]   60D Sharpe: -1.69
+    [CVX-SHARPE]   60D Sharpe: -1.60
     [CVX-BETA]     1Y Beta: 0.68
 
   Trend & Momentum:
-    [CVX-SMA20]    SMA 20D: $138.65
-    [CVX-SMA50]    SMA 50D: $134.88
-    [CVX-SMA200]   SMA 200D: $142.25
-    [CVX-MOM200]   200D Momentum: 0.98
-    [CVX-MOM12_1]  12-1M Momentum: -10.3%
-    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.2318
+    [CVX-SMA20]    SMA 20D: $138.96
+    [CVX-SMA50]    SMA 50D: $135.06
+    [CVX-SMA200]   SMA 200D: $142.30
+    [CVX-MOM200]   200D Momentum: 0.97
+    [CVX-MOM12_1]  12-1M Momentum: -7.5%
+    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.2227
     [CVX-TREND]    Trend Consistency: 0.52
-    [CVX-RS60]     Relative Strength 60D: -25.2%
-
-  Fundamentals:
-    [CVX-MCAP]     Log Market Cap: 26.20
-    [CVX-BM]       Book-to-Market: 0.6134
-    [CVX-GM]       Gross Margin: 29.7%
-    [CVX-ROE]      ROE: +1.7%
-    [CVX-FCFY]     FCF Yield: +2.0%
-    [CVX-DE]       Debt/Equity: 0.20
+    [CVX-RS60]     Relative Strength 60D: -22.8%
     [CVX-ESURP]    Earnings Surprise: +1.4%
-    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,395,079,430
+    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,358,355,119
 
   Sentiment:
     [CVX-SENT]     Mean Sentiment: -0.0674
@@ -1225,40 +1078,32 @@ TICKER: COP
 ======================================================================
 
   Price & Returns:
-    [COP-PX]       Close: $87.93
-    [COP-RET20]    20D Return: +5.3%
-    [COP-RET60]    60D Return: -13.7%
-    [COP-RET120]   120D Return: -8.4%
-    [COP-RET252]   1Y Return: -19.1%
+    [COP-PX]       Close: $87.51
+    [COP-RET20]    20D Return: +5.1%
+    [COP-RET60]    60D Return: -14.7%
+    [COP-RET120]   120D Return: -9.8%
+    [COP-RET252]   1Y Return: -18.6%
 
   Volatility & Risk:
-    [COP-VOL20]    20D Vol (ann): 30.5%
+    [COP-VOL20]    20D Vol (ann): 30.6%
     [COP-VOL60]    60D Vol (ann): 50.6%
-    [COP-DVOL60]   60D Downside Vol: 45.0%
+    [COP-DVOL60]   60D Downside Vol: 44.6%
     [COP-DD60]     60D Drawdown: -22.1%
     [COP-MDD1Y]    1Y Max Drawdown: -27.5%
-    [COP-SHARPE]   60D Sharpe: -1.22
+    [COP-SHARPE]   60D Sharpe: -1.32
     [COP-BETA]     1Y Beta: 0.87
 
   Trend & Momentum:
-    [COP-SMA20]    SMA 20D: $88.39
-    [COP-SMA50]    SMA 50D: $87.32
-    [COP-SMA200]   SMA 200D: $95.52
+    [COP-SMA20]    SMA 20D: $88.60
+    [COP-SMA50]    SMA 50D: $87.40
+    [COP-SMA200]   SMA 200D: $95.46
     [COP-MOM200]   200D Momentum: 0.92
-    [COP-MOM12_1]  12-1M Momentum: -24.1%
-    [COP-IDMOM]    Idiosyncratic Momentum 60D: -0.2673
-    [COP-TREND]    Trend Consistency: 0.52
-    [COP-RS60]     Relative Strength 60D: -25.3%
-
-  Fundamentals:
-    [COP-MCAP]     Log Market Cap: 25.42
-    [COP-BM]       Book-to-Market: 0.5971
-    [COP-GM]       Gross Margin: 25.1%
-    [COP-ROE]      ROE: +3.0%
-    [COP-FCFY]     FCF Yield: +0.2%
-    [COP-DE]       Debt/Equity: 0.36
+    [COP-MOM12_1]  12-1M Momentum: -22.3%
+    [COP-IDMOM]    Idiosyncratic Momentum 60D: -0.2767
+    [COP-TREND]    Trend Consistency: 0.50
+    [COP-RS60]     Relative Strength 60D: -24.6%
     [COP-ESURP]    Earnings Surprise: +1.9%
-    [COP-ADVOL]    Avg Dollar Volume 20D: $845,306,160
+    [COP-ADVOL]    Avg Dollar Volume 20D: $789,892,802
 
   Sentiment:
     [COP-SENT]     Mean Sentiment: -0.0040
@@ -1267,24 +1112,26 @@ TICKER: COP
     [COP-CSZ]      Cross-Sectional Z: -0.3448
     [COP-ACNT]     Article Count: 222
 
-  Filing Evidence (10-Q, filed 2022-05-05, fiscal period: 2022-Q1):
-    [COP-F1] Total production reached 1,747 MBOED in Q1 2022, increasing 220 MBOED from prior year driven by Shell Permian acquisition, new wells online across Lower 48 unconventional plays, and absence of Winter Storm Uri impacts.
-    [COP-F2] Realized commodity prices surged with total average price reaching $76.99 per BOE versus $45.36 in Q1 2021, driven by Russian invasion of Ukraine and OPEC supply restraint.
-    [COP-F3] Production and operating expenses increased aligned with higher production volumes, while purchased commodities costs rose significantly due to elevated crude and gas prices.
-    [COP-F4] DD&A decreased despite higher volumes due to lower rates from price-related reserve revisions.
-    [COP-F5] ConocoPhillips allocated capital for energy transition activities addressing emissions reduction projects and low-carbon technology opportunities.
-    [COP-F6] Completed $1.4 billion acquisition of additional 10% interest in APLNG increasing ownership to 47.5% and executed debt refinancing reducing total debt by $1.2 billion.
-    [COP-F7] Divested Indonesia assets for $731 million and completed CVE share monetization generating $1.4 billion proceeds.
-    [COP-F8] Distributed $2.3 billion to shareholders through ordinary dividend, VROC, and share repurchases while announcing increase in 2022 expected capital returns to $10 billion total.
-    [COP-F9] Commodity price volatility intensified due to Russian invasion of Ukraine with Brent averaging $101.40 per barrel versus $60.90 in Q1 2021.
-    [COP-F10] Company maintains unhedged position while monitoring Ukraine conflict impacts, OPEC supply updates, global demand fluctuations, inflation, and supply chain disruptions.
-    [COP-F11] Energy transition dynamics continue evolving with exposure to foreign exchange fluctuations across global operations.
-    [COP-F12] Second quarter 2022 production expected at 1.67-1.73 MMBOED reflecting seasonal turnarounds and weather impacts, with full-year guidance approximately 1.76 MMBOED.
-    [COP-F13] Operating capital guidance increased to $7.8 billion from $7.2 billion reflecting inflationary impacts.
-    [COP-F14] Management committed to using scenario analyses including carbon costs for capital allocation decisions while targeting asset dispositions by year-end 2023.
-    [COP-F15] Environmental accruals total $184 million for remediation activities with CERCLA sites identified and climate change regulations continuing to evolve with potential material impacts.
-    [COP-F16] Legal proceedings ongoing involving royalty payments, environmental damages, and climate change claims.
-    [COP-F17] Integration risks persist from Shell asset acquisition and collection risks remain from Venezuelan government obligations.
+  Filing Evidence (10-Q, filed 2025-05-08, fiscal period: 2025-Q1):
+    [COP-F1] Total production reached 2,389 MBOED in Q1 2025, increasing 26% year-over-year driven by Marathon Oil acquisition completed November 2024 and organic growth from new wells across multiple regions.
+    [COP-F2] Average realized price declined to $53.34 per BOE from $56.60 per BOE due to lower crude oil prices, partially offset by higher natural gas prices from cold winter weather demand.
+    [COP-F3] Operating cash flow generation of $6.1 billion demonstrates maintained cost discipline despite production increases.
+    [COP-F4] Capital expenditures totaled $3.4 billion allocated primarily to flexible short-cycle unconventional plays.
+    [COP-F5] Full-year capital expenditure guidance lowered to $12.3-$12.6 billion from $12.9 billion while maintaining production guidance, indicating improved capital efficiency from Marathon Oil integration.
+    [COP-F6] Completed Marathon Oil acquisition integration with expected synergies exceeding $1 billion run rate within first full year.
+    [COP-F7] Closed noncore asset dispositions generating $1.3 billion proceeds.
+    [COP-F8] Returned $2.5 billion to shareholders through share repurchases and dividends.
+    [COP-F9] Declared second-quarter ordinary dividend of $0.78 per share.
+    [COP-F10] Became sole operator of Kebabangan Cluster PSC in Malaysia and achieved first oil at Gumusut Phase 4.
+    [COP-F11] Crude oil prices declined in Q2 2025 due to broad-ranging U.S. tariffs and retaliatory measures with significant uncertainty regarding scope and duration.
+    [COP-F12] OPEC Plus actions and geopolitical tensions create ongoing supply disruption risks affecting global demand and inventory levels.
+    [COP-F13] Second-quarter 2025 production guidance set at 2.34-2.38 MMBOED with full-year production maintained despite lowered capital expenditure guidance.
+    [COP-F14] Management targets $2 billion in disposition proceeds with $1.3 billion secured.
+    [COP-F15] Willow project achieved critical winter construction milestones.
+    [COP-F16] Marathon Oil integration remains on track to deliver synergies exceeding $1 billion run rate within first full year.
+    [COP-F17] Commodity price volatility continues with external factors including global economic health, supply disruptions, military conflicts, environmental regulations, and weather-related disruptions beyond company control.
+    [COP-F18] Regional natural gas marker volatility expected throughout 2025 with ongoing third-party pipeline constraints affecting realized prices.
+    [COP-F19] Ultimate impact of tariff policies and geopolitical tensions remains uncertain.
 
   Earnings call: not available
 
@@ -1293,40 +1140,32 @@ TICKER: OXY
 ======================================================================
 
   Price & Returns:
-    [OXY-PX]       Close: $42.13
-    [OXY-RET20]    20D Return: +3.3%
-    [OXY-RET60]    60D Return: -12.9%
-    [OXY-RET120]   120D Return: -13.6%
-    [OXY-RET252]   1Y Return: -31.2%
+    [OXY-PX]       Close: $41.55
+    [OXY-RET20]    20D Return: +3.6%
+    [OXY-RET60]    60D Return: -14.4%
+    [OXY-RET120]   120D Return: -15.9%
+    [OXY-RET252]   1Y Return: -31.9%
 
   Volatility & Risk:
-    [OXY-VOL20]    20D Vol (ann): 33.7%
-    [OXY-VOL60]    60D Vol (ann): 54.9%
-    [OXY-DVOL60]   60D Downside Vol: 46.7%
+    [OXY-VOL20]    20D Vol (ann): 33.6%
+    [OXY-VOL60]    60D Vol (ann): 55.0%
+    [OXY-DVOL60]   60D Downside Vol: 46.1%
     [OXY-DD60]     60D Drawdown: -26.8%
     [OXY-MDD1Y]    1Y Max Drawdown: -42.5%
-    [OXY-SHARPE]   60D Sharpe: -1.06
-    [OXY-BETA]     1Y Beta: 0.92
+    [OXY-SHARPE]   60D Sharpe: -1.18
+    [OXY-BETA]     1Y Beta: 0.91
 
   Trend & Momentum:
-    [OXY-SMA20]    SMA 20D: $43.00
-    [OXY-SMA50]    SMA 50D: $41.40
-    [OXY-SMA200]   SMA 200D: $46.42
-    [OXY-MOM200]   200D Momentum: 0.91
-    [OXY-MOM12_1]  12-1M Momentum: -33.9%
-    [OXY-IDMOM]    Idiosyncratic Momentum 60D: -0.2562
-    [OXY-TREND]    Trend Consistency: 0.48
-    [OXY-RS60]     Relative Strength 60D: -24.5%
-
-  Fundamentals:
-    [OXY-MCAP]     Log Market Cap: 24.45
-    [OXY-BM]       Book-to-Market: 0.8613
-    [OXY-GM]       Gross Margin: 32.5%
-    [OXY-ROE]      ROE: +1.3%
-    [OXY-FCFY]     FCF Yield: +2.3%
-    [OXY-DE]       Debt/Equity: 0.68
+    [OXY-SMA20]    SMA 20D: $43.07
+    [OXY-SMA50]    SMA 50D: $41.47
+    [OXY-SMA200]   SMA 200D: $46.37
+    [OXY-MOM200]   200D Momentum: 0.90
+    [OXY-MOM12_1]  12-1M Momentum: -33.1%
+    [OXY-IDMOM]    Idiosyncratic Momentum 60D: -0.2709
+    [OXY-TREND]    Trend Consistency: 0.47
+    [OXY-RS60]     Relative Strength 60D: -24.2%
     [OXY-ESURP]    Earnings Surprise: +14.5%
-    [OXY-ADVOL]    Avg Dollar Volume 20D: $620,290,514
+    [OXY-ADVOL]    Avg Dollar Volume 20D: $622,395,661
 
   Sentiment:
     [OXY-SENT]     Mean Sentiment: 0.1195
@@ -1335,24 +1174,25 @@ TICKER: OXY
     [OXY-CSZ]      Cross-Sectional Z: 0.9827
     [OXY-ACNT]     Article Count: 215
 
-  Filing Evidence (10-Q, filed 2022-05-10, fiscal period: 2022-Q1):
-    [OXY-F1] Total revenue increased to $8.3 billion in Q1 2022 from $7.9 billion in Q4 2021, driven by higher crude oil prices averaging $94.29 WTI versus $77.19 in the prior quarter.
-    [OXY-F2] Oil and gas production declined to 1,074 Mboe/d from 1,193 Mboe/d due to Al Hosn Gas Plant shutdown for expansion work and scheduled maintenance in Algeria.
-    [OXY-F3] Chemical segment benefited from higher realized pricing and margins with continued strong demand.
-    [OXY-F4] Oil and gas operating expenses increased modestly while depreciation, depletion and amortization decreased to $1.6 billion from $2.0 billion due to lower production volumes and reduced per-barrel DD&A rates from higher proved reserves following positive price revisions.
-    [OXY-F5] Chemical and midstream costs rose primarily due to higher raw material costs and increased power generation expenses.
-    [OXY-F6] Occidental reduced debt by $3.3 billion in Q1 2022 using cash on hand, targeting various maturities.
-    [OXY-F7] The company completed a legal entity reorganization to align structure with post-Anadarko acquisition business activities, resulting in a $2.6 billion non-cash tax benefit from adjusted tax basis in operating assets.
-    [OXY-F8] Carl Icahn's designated directors resigned from the board following the Icahn Group's complete equity exit, while Vicky Bailey was elected as new independent director.
-    [OXY-F9] The company faces oil price volatility driven by geopolitical risks from the Russia-Ukraine war and COVID-19 related demand impacts, though operates no assets in Russia or Ukraine.
-    [OXY-F10] Rising commodity prices and supply chain constraints affect chemical segment raw material costs and midstream operations.
-    [OXY-F11] Interest rate exposure remains through fair value swaps with mandatory termination dates in September 2022 and 2023.
-    [OXY-F12] Management prioritizes maximizing cash flow while sustaining 2021 production levels with capital expenditures in Q1 2022.
-    [OXY-F13] The company expects to fund operations, increased dividends, and active share buyback programs through operating cash flows in the current commodity price environment.
-    [OXY-F14] Occidental maintains $1.9 billion cash on hand and $4.0 billion available borrowing capacity under its revolving credit facility.
-    [OXY-F15] Remaining near-term debt maturities include amounts in 2023 and 2024, with Zero Coupon bonds totaling $2.3 billion eligible for put to the company in October 2022 for approximately $1.1 billion if exercised.
-    [OXY-F16] Environmental remediation liabilities continue under federal and international laws that may apply retroactively regardless of fault.
-    [OXY-F17] The timing of cash tax benefits from the legal entity reorganization depends on commodity prices, capital activity levels, and production mix.
+  Filing Evidence (10-Q, filed 2025-05-07, fiscal period: 2025-Q1):
+    [OXY-F1] Total revenue remained flat at $6.8 billion as higher commodity prices offset lower sales volumes.
+    [OXY-F2] Oil and gas segment earnings increased to $1.7 billion from $1.2 billion driven by higher domestic prices.
+    [OXY-F3] Average daily sales volumes decreased to 1,391 Mboe from 1,463 Mboe due to ethane rejection and weather-related Permian delays, though year-over-year volumes increased 18% from the CrownRock Acquisition.
+    [OXY-F4] Depreciation, depletion and amortization increased to $1.9 billion from $1.7 billion primarily from increased Permian Basin sales volumes following the CrownRock Acquisition.
+    [OXY-F5] Chemical segment earnings declined due to lower caustic soda and polyvinyl chloride prices combined with higher ethylene and natural gas costs.
+    [OXY-F6] Operating cash flow from continuing operations increased to $2.1 billion from $2.0 billion despite higher working capital usage from timing of federal tax payments.
+    [OXY-F7] Occidental redeemed senior notes and repaid term loan debt totaling $515 million during Q1 2025.
+    [OXY-F8] The company completed $1.3 billion in divestitures of non-core oil and gas assets.
+    [OXY-F9] In March 2025, Occidental offered to exercise outstanding warrants at $21.30 per share, subsequently issuing 41.9 million shares in April 2025 for proceeds of approximately $890 million used to repay near-term debt maturities.
+    [OXY-F10] President Trump announced sweeping tariff policy in April 2025 imposing 10% baseline tariff on most imports with higher reciprocal rates for certain nations, though significant rates are paused for 90 days during trade negotiations.
+    [OXY-F11] Occidental cannot assess final impact but notes tariffs may increase supplier costs and affect OxyChem's import-export operations.
+    [OXY-F12] Oil price volatility continues from geopolitical risks and OPEC actions.
+    [OXY-F13] Occidental maintains strategic priorities to preserve asset base integrity, deliver sustainable growing dividends, and prioritize excess cash flow for deleveraging until principal debt falls below $15 billion.
+    [OXY-F14] Capital expenditures were $1.9 billion in Q1 2025 compared to $1.8 billion in Q1 2024.
+    [OXY-F15] The company expects cash on hand, operating cash flows, and available credit facilities to meet obligations over the next 12 months.
+    [OXY-F16] Principal debt outstanding totaled $22.1 billion after recent repayments, with no maturities in 2025 and $2.9 billion in 2026.
+    [OXY-F17] Zero Coupon bonds can be put to Occidental in October 2025 for approximately $381 million if exercised in whole.
+    [OXY-F18] Environmental compliance costs are expected to rise with ongoing remedial activities under federal laws that may apply retroactively regardless of fault.
 
   Earnings call: not available
 
@@ -1361,40 +1201,32 @@ TICKER: COST
 ======================================================================
 
   Price & Returns:
-    [COST-PX]       Close: $982.39
-    [COST-RET20]    20D Return: -2.3%
-    [COST-RET60]    60D Return: +3.4%
-    [COST-RET120]   120D Return: +8.5%
-    [COST-RET252]   1Y Return: +15.8%
+    [COST-PX]       Close: $987.17
+    [COST-RET20]    20D Return: -4.8%
+    [COST-RET60]    60D Return: +2.7%
+    [COST-RET120]   120D Return: +8.3%
+    [COST-RET252]   1Y Return: +16.1%
 
   Volatility & Risk:
-    [COST-VOL20]    20D Vol (ann): 23.4%
+    [COST-VOL20]    20D Vol (ann): 20.3%
     [COST-VOL60]    60D Vol (ann): 25.9%
     [COST-DVOL60]   60D Downside Vol: 19.7%
     [COST-DD60]     60D Drawdown: -7.8%
     [COST-MDD1Y]    1Y Max Drawdown: -17.3%
-    [COST-SHARPE]   60D Sharpe: 0.53
+    [COST-SHARPE]   60D Sharpe: 0.43
     [COST-BETA]     1Y Beta: 0.61
 
   Trend & Momentum:
-    [COST-SMA20]    SMA 20D: $1002.76
-    [COST-SMA50]    SMA 50D: $1000.22
-    [COST-SMA200]   SMA 200D: $955.82
+    [COST-SMA20]    SMA 20D: $1000.26
+    [COST-SMA50]    SMA 50D: $1000.69
+    [COST-SMA200]   SMA 200D: $956.31
     [COST-MOM200]   200D Momentum: 1.03
-    [COST-MOM12_1]  12-1M Momentum: +19.0%
-    [COST-IDMOM]    Idiosyncratic Momentum 60D: -0.0162
+    [COST-MOM12_1]  12-1M Momentum: +18.3%
+    [COST-IDMOM]    Idiosyncratic Momentum 60D: -0.0216
     [COST-TREND]    Trend Consistency: 0.50
-    [COST-RS60]     Relative Strength 60D: -8.2%
-
-  Fundamentals:
-    [COST-MCAP]     Log Market Cap: 26.80
-    [COST-BM]       Book-to-Market: 0.0623
-    [COST-GM]       Gross Margin: 13.0%
-    [COST-ROE]      ROE: +7.0%
-    [COST-FCFY]     FCF Yield: +0.5%
-    [COST-DE]       Debt/Equity: 0.30
+    [COST-RS60]     Relative Strength 60D: -7.2%
     [COST-ESURP]    Earnings Surprise: +1.2%
-    [COST-ADVOL]    Avg Dollar Volume 20D: $2,273,600,438
+    [COST-ADVOL]    Avg Dollar Volume 20D: $2,098,355,080
 
   Sentiment:
     [COST-SENT]     Mean Sentiment: 0.0407
@@ -1446,40 +1278,32 @@ TICKER: WMT
 ======================================================================
 
   Price & Returns:
-    [WMT-PX]       Close: $96.85
-    [WMT-RET20]    20D Return: +0.2%
-    [WMT-RET60]    60D Return: +9.8%
-    [WMT-RET120]   120D Return: +8.6%
-    [WMT-RET252]   1Y Return: +45.8%
+    [WMT-PX]       Close: $97.35
+    [WMT-RET20]    20D Return: -0.9%
+    [WMT-RET60]    60D Return: +9.2%
+    [WMT-RET120]   120D Return: +8.3%
+    [WMT-RET252]   1Y Return: +44.6%
 
   Volatility & Risk:
-    [WMT-VOL20]    20D Vol (ann): 16.0%
+    [WMT-VOL20]    20D Vol (ann): 15.0%
     [WMT-VOL60]    60D Vol (ann): 28.6%
     [WMT-DVOL60]   60D Downside Vol: 16.7%
     [WMT-DD60]     60D Drawdown: -8.9%
     [WMT-MDD1Y]    1Y Max Drawdown: -21.9%
-    [WMT-SHARPE]   60D Sharpe: 1.37
+    [WMT-SHARPE]   60D Sharpe: 1.29
     [WMT-BETA]     1Y Beta: 0.60
 
   Trend & Momentum:
-    [WMT-SMA20]    SMA 20D: $96.54
-    [WMT-SMA50]    SMA 50D: $96.16
-    [WMT-SMA200]   SMA 200D: $90.14
-    [WMT-MOM200]   200D Momentum: 1.07
-    [WMT-MOM12_1]  12-1M Momentum: +45.7%
-    [WMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0290
+    [WMT-SMA20]    SMA 20D: $96.49
+    [WMT-SMA50]    SMA 50D: $96.30
+    [WMT-SMA200]   SMA 200D: $90.24
+    [WMT-MOM200]   200D Momentum: 1.08
+    [WMT-MOM12_1]  12-1M Momentum: +43.6%
+    [WMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0249
     [WMT-TREND]    Trend Consistency: 0.50
-    [WMT-RS60]     Relative Strength 60D: -1.8%
-
-  Fundamentals:
-    [WMT-MCAP]     Log Market Cap: 27.37
-    [WMT-BM]       Book-to-Market: 0.1083
-    [WMT-GM]       Gross Margin: 24.9%
-    [WMT-ROE]      ROE: +5.3%
-    [WMT-FCFY]     FCF Yield: +0.1%
-    [WMT-DE]       Debt/Equity: 0.80
+    [WMT-RS60]     Relative Strength 60D: -0.7%
     [WMT-ESURP]    Earnings Surprise: +5.2%
-    [WMT-ADVOL]    Avg Dollar Volume 20D: $1,716,692,253
+    [WMT-ADVOL]    Avg Dollar Volume 20D: $1,656,015,034
 
   Sentiment:
     [WMT-SENT]     Mean Sentiment: 0.0049
@@ -1527,40 +1351,32 @@ TICKER: PG
 ======================================================================
 
   Price & Returns:
-    [PG-PX]       Close: $156.56
-    [PG-RET20]    20D Return: -5.2%
-    [PG-RET60]    60D Return: -5.7%
-    [PG-RET120]   120D Return: -2.5%
-    [PG-RET252]   1Y Return: -1.8%
+    [PG-PX]       Close: $156.03
+    [PG-RET20]    20D Return: -6.2%
+    [PG-RET60]    60D Return: -5.4%
+    [PG-RET120]   120D Return: -2.3%
+    [PG-RET252]   1Y Return: -2.5%
 
   Volatility & Risk:
-    [PG-VOL20]    20D Vol (ann): 14.7%
+    [PG-VOL20]    20D Vol (ann): 14.1%
     [PG-VOL60]    60D Vol (ann): 22.6%
-    [PG-DVOL60]   60D Downside Vol: 17.5%
+    [PG-DVOL60]   60D Downside Vol: 17.6%
     [PG-DD60]     60D Drawdown: -8.1%
     [PG-MDD1Y]    1Y Max Drawdown: -11.8%
-    [PG-SHARPE]   60D Sharpe: -1.09
+    [PG-SHARPE]   60D Sharpe: -1.04
     [PG-BETA]     1Y Beta: 0.14
 
   Trend & Momentum:
-    [PG-SMA20]    SMA 20D: $158.83
-    [PG-SMA50]    SMA 50D: $159.30
-    [PG-SMA200]   SMA 200D: $162.76
+    [PG-SMA20]    SMA 20D: $158.32
+    [PG-SMA50]    SMA 50D: $159.19
+    [PG-SMA200]   SMA 200D: $162.69
     [PG-MOM200]   200D Momentum: 0.96
-    [PG-MOM12_1]  12-1M Momentum: +2.8%
-    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0852
+    [PG-MOM12_1]  12-1M Momentum: +3.1%
+    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0820
     [PG-TREND]    Trend Consistency: 0.50
-    [PG-RS60]     Relative Strength 60D: -17.3%
-
-  Fundamentals:
-    [PG-MCAP]     Log Market Cap: 26.63
-    [PG-BM]       Book-to-Market: 0.1419
-    [PG-GM]       Gross Margin: 49.1%
-    [PG-ROE]      ROE: +7.0%
-    [PG-FCFY]     FCF Yield: +1.1%
-    [PG-DE]       Debt/Equity: 0.68
+    [PG-RS60]     Relative Strength 60D: -15.3%
     [PG-ESURP]    Earnings Surprise: +0.7%
-    [PG-ADVOL]    Avg Dollar Volume 20D: $1,304,271,314
+    [PG-ADVOL]    Avg Dollar Volume 20D: $1,287,229,509
 
   Sentiment:
     [PG-SENT]     Mean Sentiment: 0.1493
@@ -1609,40 +1425,32 @@ TICKER: AAPL
 ======================================================================
 
   Price & Returns:
-    [AAPL-PX]       Close: $200.47
-    [AAPL-RET20]    20D Return: +0.6%
-    [AAPL-RET60]    60D Return: -9.8%
-    [AAPL-RET120]   120D Return: -17.3%
-    [AAPL-RET252]   1Y Return: -3.4%
+    [AAPL-PX]       Close: $204.55
+    [AAPL-RET20]    20D Return: +2.1%
+    [AAPL-RET60]    60D Return: -8.2%
+    [AAPL-RET120]   120D Return: -15.5%
+    [AAPL-RET252]   1Y Return: -3.3%
 
   Volatility & Risk:
-    [AAPL-VOL20]    20D Vol (ann): 16.9%
-    [AAPL-VOL60]    60D Vol (ann): 50.0%
+    [AAPL-VOL20]    20D Vol (ann): 18.2%
+    [AAPL-VOL60]    60D Vol (ann): 50.2%
     [AAPL-DVOL60]   60D Downside Vol: 37.0%
     [AAPL-DD60]     60D Drawdown: -23.0%
     [AAPL-MDD1Y]    1Y Max Drawdown: -33.4%
-    [AAPL-SHARPE]   60D Sharpe: -0.86
+    [AAPL-SHARPE]   60D Sharpe: -0.72
     [AAPL-BETA]     1Y Beta: 1.20
 
   Trend & Momentum:
-    [AAPL-SMA20]    SMA 20D: $199.83
-    [AAPL-SMA50]    SMA 50D: $201.92
-    [AAPL-SMA200]   SMA 200D: $222.22
-    [AAPL-MOM200]   200D Momentum: 0.90
-    [AAPL-MOM12_1]  12-1M Momentum: -3.7%
-    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: -0.2349
+    [AAPL-SMA20]    SMA 20D: $200.05
+    [AAPL-SMA50]    SMA 50D: $202.14
+    [AAPL-SMA200]   SMA 200D: $222.15
+    [AAPL-MOM200]   200D Momentum: 0.92
+    [AAPL-MOM12_1]  12-1M Momentum: -5.8%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: -0.2160
     [AAPL-TREND]    Trend Consistency: 0.52
-    [AAPL-RS60]     Relative Strength 60D: -21.4%
-
-  Fundamentals:
-    [AAPL-MCAP]     Log Market Cap: 28.72
-    [AAPL-BM]       Book-to-Market: 0.0221
-    [AAPL-GM]       Gross Margin: 46.5%
-    [AAPL-ROE]      ROE: +35.6%
-    [AAPL-FCFY]     FCF Yield: +0.8%
-    [AAPL-DE]       Debt/Equity: 1.54
+    [AAPL-RS60]     Relative Strength 60D: -18.1%
     [AAPL-ESURP]    Earnings Surprise: +1.8%
-    [AAPL-ADVOL]    Avg Dollar Volume 20D: $10,788,711,080
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $11,019,686,612
 
   Sentiment:
     [AAPL-SENT]     Mean Sentiment: 0.1059
@@ -1693,40 +1501,32 @@ TICKER: NVDA
 ======================================================================
 
   Price & Returns:
-    [NVDA-PX]       Close: $157.73
-    [NVDA-RET20]    20D Return: +13.3%
-    [NVDA-RET60]    60D Return: +43.2%
-    [NVDA-RET120]   120D Return: +14.1%
-    [NVDA-RET252]   1Y Return: +25.1%
+    [NVDA-PX]       Close: $157.97
+    [NVDA-RET20]    20D Return: +16.9%
+    [NVDA-RET60]    60D Return: +43.1%
+    [NVDA-RET120]   120D Return: +9.4%
+    [NVDA-RET252]   1Y Return: +25.0%
 
   Volatility & Risk:
-    [NVDA-VOL20]    20D Vol (ann): 27.6%
+    [NVDA-VOL20]    20D Vol (ann): 24.2%
     [NVDA-VOL60]    60D Vol (ann): 57.9%
     [NVDA-DVOL60]   60D Downside Vol: 39.9%
     [NVDA-DD60]     60D Drawdown: -15.2%
     [NVDA-MDD1Y]    1Y Max Drawdown: -36.9%
-    [NVDA-SHARPE]   60D Sharpe: 2.61
-    [NVDA-BETA]     1Y Beta: 2.06
+    [NVDA-SHARPE]   60D Sharpe: 2.60
+    [NVDA-BETA]     1Y Beta: 2.05
 
   Trend & Momentum:
-    [NVDA-SMA20]    SMA 20D: $144.53
-    [NVDA-SMA50]    SMA 50D: $129.54
-    [NVDA-SMA200]   SMA 200D: $129.17
+    [NVDA-SMA20]    SMA 20D: $145.68
+    [NVDA-SMA50]    SMA 50D: $130.61
+    [NVDA-SMA200]   SMA 200D: $129.42
     [NVDA-MOM200]   200D Momentum: 1.22
-    [NVDA-MOM12_1]  12-1M Momentum: +6.9%
-    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.2077
+    [NVDA-MOM12_1]  12-1M Momentum: +10.2%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.2092
     [NVDA-TREND]    Trend Consistency: 0.60
-    [NVDA-RS60]     Relative Strength 60D: +31.6%
-
-  Fundamentals:
-    [NVDA-MCAP]     Log Market Cap: 28.98
-    [NVDA-BM]       Book-to-Market: 0.0218
-    [NVDA-GM]       Gross Margin: 60.5%
-    [NVDA-ROE]      ROE: +22.4%
-    [NVDA-FCFY]     FCF Yield: +0.7%
-    [NVDA-DE]       Debt/Equity: 0.12
+    [NVDA-RS60]     Relative Strength 60D: +33.2%
     [NVDA-ESURP]    Earnings Surprise: +8.0%
-    [NVDA-ADVOL]    Avg Dollar Volume 20D: $28,632,333,197
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $27,918,587,339
 
   Sentiment:
     [NVDA-SENT]     Mean Sentiment: -0.0960
@@ -1777,10 +1577,10 @@ TICKER: MSFT
 ======================================================================
 
   Price & Returns:
-    [MSFT-PX]       Close: $493.08
+    [MSFT-PX]       Close: $494.54
     [MSFT-RET20]    20D Return: +8.1%
-    [MSFT-RET60]    60D Return: +30.0%
-    [MSFT-RET120]   120D Return: +18.9%
+    [MSFT-RET60]    60D Return: +30.4%
+    [MSFT-RET120]   120D Return: +17.9%
     [MSFT-RET252]   1Y Return: +10.8%
 
   Volatility & Risk:
@@ -1789,28 +1589,20 @@ TICKER: MSFT
     [MSFT-DVOL60]   60D Downside Vol: 17.4%
     [MSFT-DD60]     60D Drawdown: -8.0%
     [MSFT-MDD1Y]    1Y Max Drawdown: -23.7%
-    [MSFT-SHARPE]   60D Sharpe: 3.43
+    [MSFT-SHARPE]   60D Sharpe: 3.47
     [MSFT-BETA]     1Y Beta: 0.93
 
   Trend & Momentum:
-    [MSFT-SMA20]    SMA 20D: $473.94
-    [MSFT-SMA50]    SMA 50D: $442.80
-    [MSFT-SMA200]   SMA 200D: $419.23
+    [MSFT-SMA20]    SMA 20D: $475.79
+    [MSFT-SMA50]    SMA 50D: $445.32
+    [MSFT-SMA200]   SMA 200D: $419.66
     [MSFT-MOM200]   200D Momentum: 1.18
     [MSFT-MOM12_1]  12-1M Momentum: +2.2%
-    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: 0.1832
-    [MSFT-TREND]    Trend Consistency: 0.62
-    [MSFT-RS60]     Relative Strength 60D: +18.4%
-
-  Fundamentals:
-    [MSFT-MCAP]     Log Market Cap: 28.93
-    [MSFT-BM]       Book-to-Market: 0.0937
-    [MSFT-GM]       Gross Margin: 68.6%
-    [MSFT-ROE]      ROE: +7.9%
-    [MSFT-FCFY]     FCF Yield: +0.7%
-    [MSFT-DE]       Debt/Equity: 0.18
+    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: 0.1875
+    [MSFT-TREND]    Trend Consistency: 0.63
+    [MSFT-RS60]     Relative Strength 60D: +20.5%
     [MSFT-ESURP]    Earnings Surprise: +7.4%
-    [MSFT-ADVOL]    Avg Dollar Volume 20D: $9,678,475,897
+    [MSFT-ADVOL]    Avg Dollar Volume 20D: $9,584,227,398
 
   Sentiment:
     [MSFT-SENT]     Mean Sentiment: -0.0493
@@ -1860,40 +1652,32 @@ TICKER: AVGO
 ======================================================================
 
   Price & Returns:
-    [AVGO-PX]       Close: $268.38
-    [AVGO-RET20]    20D Return: +11.6%
-    [AVGO-RET60]    60D Return: +60.2%
-    [AVGO-RET120]   120D Return: +16.7%
-    [AVGO-RET252]   1Y Return: +72.3%
+    [AVGO-PX]       Close: $274.65
+    [AVGO-RET20]    20D Return: +14.1%
+    [AVGO-RET60]    60D Return: +60.6%
+    [AVGO-RET120]   120D Return: +19.2%
+    [AVGO-RET252]   1Y Return: +75.1%
 
   Volatility & Risk:
-    [AVGO-VOL20]    20D Vol (ann): 34.3%
+    [AVGO-VOL20]    20D Vol (ann): 34.8%
     [AVGO-VOL60]    60D Vol (ann): 58.8%
     [AVGO-DVOL60]   60D Downside Vol: 43.4%
     [AVGO-DD60]     60D Drawdown: -15.0%
     [AVGO-MDD1Y]    1Y Max Drawdown: -41.1%
-    [AVGO-SHARPE]   60D Sharpe: 3.37
+    [AVGO-SHARPE]   60D Sharpe: 3.38
     [AVGO-BETA]     1Y Beta: 1.95
 
   Trend & Momentum:
-    [AVGO-SMA20]    SMA 20D: $253.00
-    [AVGO-SMA50]    SMA 50D: $225.52
-    [AVGO-SMA200]   SMA 200D: $199.42
-    [AVGO-MOM200]   200D Momentum: 1.35
-    [AVGO-MOM12_1]  12-1M Momentum: +52.8%
-    [AVGO-IDMOM]    Idiosyncratic Momentum 60D: 0.3257
+    [AVGO-SMA20]    SMA 20D: $254.70
+    [AVGO-SMA50]    SMA 50D: $227.54
+    [AVGO-SMA200]   SMA 200D: $200.07
+    [AVGO-MOM200]   200D Momentum: 1.37
+    [AVGO-MOM12_1]  12-1M Momentum: +53.4%
+    [AVGO-IDMOM]    Idiosyncratic Momentum 60D: 0.3302
     [AVGO-TREND]    Trend Consistency: 0.65
-    [AVGO-RS60]     Relative Strength 60D: +48.6%
-
-  Fundamentals:
-    [AVGO-MCAP]     Log Market Cap: 27.86
-    [AVGO-BM]       Book-to-Market: 0.0551
-    [AVGO-GM]       Gross Margin: 68.0%
-    [AVGO-ROE]      ROE: +7.1%
-    [AVGO-FCFY]     FCF Yield: +0.5%
-    [AVGO-DE]       Debt/Equity: 0.97
+    [AVGO-RS60]     Relative Strength 60D: +50.7%
     [AVGO-ESURP]    Earnings Surprise: +0.6%
-    [AVGO-ADVOL]    Avg Dollar Volume 20D: $6,877,329,275
+    [AVGO-ADVOL]    Avg Dollar Volume 20D: $6,890,727,103
 
   Sentiment:
     [AVGO-SENT]     Mean Sentiment: -0.0894
@@ -1929,40 +1713,32 @@ TICKER: AMD
 ======================================================================
 
   Price & Returns:
-    [AMD-PX]       Close: $143.81
-    [AMD-RET20]    20D Return: +27.2%
-    [AMD-RET60]    60D Return: +39.9%
-    [AMD-RET120]   120D Return: +19.2%
-    [AMD-RET252]   1Y Return: -10.3%
+    [AMD-PX]       Close: $141.90
+    [AMD-RET20]    20D Return: +28.1%
+    [AMD-RET60]    60D Return: +37.8%
+    [AMD-RET120]   120D Return: +13.2%
+    [AMD-RET252]   1Y Return: -9.9%
 
   Volatility & Risk:
-    [AMD-VOL20]    20D Vol (ann): 46.8%
-    [AMD-VOL60]    60D Vol (ann): 71.1%
-    [AMD-DVOL60]   60D Downside Vol: 46.0%
+    [AMD-VOL20]    20D Vol (ann): 46.2%
+    [AMD-VOL60]    60D Vol (ann): 71.2%
+    [AMD-DVOL60]   60D Downside Vol: 45.3%
     [AMD-DD60]     60D Drawdown: -24.0%
     [AMD-MDD1Y]    1Y Max Drawdown: -57.5%
-    [AMD-SHARPE]   60D Sharpe: 1.98
+    [AMD-SHARPE]   60D Sharpe: 1.89
     [AMD-BETA]     1Y Beta: 1.94
 
   Trend & Momentum:
-    [AMD-SMA20]    SMA 20D: $125.07
-    [AMD-SMA50]    SMA 50D: $111.84
+    [AMD-SMA20]    SMA 20D: $126.62
+    [AMD-SMA50]    SMA 50D: $112.91
     [AMD-SMA200]   SMA 200D: $124.10
-    [AMD-MOM200]   200D Momentum: 1.16
-    [AMD-MOM12_1]  12-1M Momentum: -29.6%
-    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.1535
-    [AMD-TREND]    Trend Consistency: 0.58
-    [AMD-RS60]     Relative Strength 60D: +28.3%
-
-  Fundamentals:
-    [AMD-MCAP]     Log Market Cap: 26.18
-    [AMD-BM]       Book-to-Market: 0.2558
-    [AMD-GM]       Gross Margin: 39.8%
-    [AMD-ROE]      ROE: +1.5%
-    [AMD-FCFY]     FCF Yield: +0.7%
-    [AMD-DE]       Debt/Equity: 0.07
+    [AMD-MOM200]   200D Momentum: 1.14
+    [AMD-MOM12_1]  12-1M Momentum: -28.2%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.1415
+    [AMD-TREND]    Trend Consistency: 0.57
+    [AMD-RS60]     Relative Strength 60D: +27.9%
     [AMD-ESURP]    Earnings Surprise: +3.2%
-    [AMD-ADVOL]    Avg Dollar Volume 20D: $6,816,549,502
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $6,921,635,390
 
   Sentiment:
     [AMD-SENT]     Mean Sentiment: -0.1568
@@ -1996,40 +1772,32 @@ TICKER: GOOG
 ======================================================================
 
   Price & Returns:
-    [GOOG-PX]       Close: $177.99
-    [GOOG-RET20]    20D Return: +3.2%
-    [GOOG-RET60]    60D Return: +12.3%
-    [GOOG-RET120]   120D Return: -6.3%
-    [GOOG-RET252]   1Y Return: -3.5%
+    [GOOG-PX]       Close: $177.12
+    [GOOG-RET20]    20D Return: +2.8%
+    [GOOG-RET60]    60D Return: +11.8%
+    [GOOG-RET120]   120D Return: -7.9%
+    [GOOG-RET252]   1Y Return: -3.9%
 
   Volatility & Risk:
-    [GOOG-VOL20]    20D Vol (ann): 26.6%
+    [GOOG-VOL20]    20D Vol (ann): 26.7%
     [GOOG-VOL60]    60D Vol (ann): 38.5%
-    [GOOG-DVOL60]   60D Downside Vol: 25.3%
+    [GOOG-DVOL60]   60D Downside Vol: 25.1%
     [GOOG-DD60]     60D Drawdown: -8.0%
     [GOOG-MDD1Y]    1Y Max Drawdown: -29.3%
-    [GOOG-SHARPE]   60D Sharpe: 1.27
+    [GOOG-SHARPE]   60D Sharpe: 1.22
     [GOOG-BETA]     1Y Beta: 1.02
 
   Trend & Momentum:
-    [GOOG-SMA20]    SMA 20D: $173.13
-    [GOOG-SMA50]    SMA 50D: $166.76
-    [GOOG-SMA200]   SMA 200D: $173.16
-    [GOOG-MOM200]   200D Momentum: 1.03
-    [GOOG-MOM12_1]  12-1M Momentum: -6.2%
-    [GOOG-IDMOM]    Idiosyncratic Momentum 60D: 0.0362
+    [GOOG-SMA20]    SMA 20D: $173.37
+    [GOOG-SMA50]    SMA 50D: $167.21
+    [GOOG-SMA200]   SMA 200D: $173.30
+    [GOOG-MOM200]   200D Momentum: 1.02
+    [GOOG-MOM12_1]  12-1M Momentum: -6.4%
+    [GOOG-IDMOM]    Idiosyncratic Momentum 60D: 0.0327
     [GOOG-TREND]    Trend Consistency: 0.50
-    [GOOG-RS60]     Relative Strength 60D: +0.8%
-
-  Fundamentals:
-    [GOOG-MCAP]     Log Market Cap: 28.40
-    [GOOG-BM]       Book-to-Market: 0.1684
-    [GOOG-GM]       Gross Margin: 59.5%
-    [GOOG-ROE]      ROE: +7.8%
-    [GOOG-FCFY]     FCF Yield: +0.2%
-    [GOOG-DE]       Debt/Equity: 0.10
+    [GOOG-RS60]     Relative Strength 60D: +1.9%
     [GOOG-ESURP]    Earnings Surprise: +39.8%
-    [GOOG-ADVOL]    Avg Dollar Volume 20D: $4,954,836,950
+    [GOOG-ADVOL]    Avg Dollar Volume 20D: $5,031,675,943
 
   Sentiment:
     [GOOG-SENT]     Mean Sentiment: 0.1646
@@ -2068,40 +1836,32 @@ TICKER: META
 ======================================================================
 
   Price & Returns:
-    [META-PX]       Close: $732.54
-    [META-RET20]    20D Return: +13.8%
-    [META-RET60]    60D Return: +25.3%
-    [META-RET120]   120D Return: +22.6%
-    [META-RET252]   1Y Return: +44.2%
+    [META-PX]       Close: $736.99
+    [META-RET20]    20D Return: +14.1%
+    [META-RET60]    60D Return: +26.5%
+    [META-RET120]   120D Return: +22.3%
+    [META-RET252]   1Y Return: +44.3%
 
   Volatility & Risk:
     [META-VOL20]    20D Vol (ann): 26.4%
     [META-VOL60]    60D Vol (ann): 51.0%
-    [META-DVOL60]   60D Downside Vol: 34.3%
+    [META-DVOL60]   60D Downside Vol: 34.6%
     [META-DD60]     60D Drawdown: -17.3%
     [META-MDD1Y]    1Y Max Drawdown: -34.2%
-    [META-SHARPE]   60D Sharpe: 1.86
+    [META-SHARPE]   60D Sharpe: 1.94
     [META-BETA]     1Y Beta: 1.37
 
   Trend & Momentum:
-    [META-SMA20]    SMA 20D: $692.63
-    [META-SMA50]    SMA 50D: $630.90
-    [META-SMA200]   SMA 200D: $608.38
-    [META-MOM200]   200D Momentum: 1.20
-    [META-MOM12_1]  12-1M Momentum: +26.4%
-    [META-IDMOM]    Idiosyncratic Momentum 60D: 0.0937
-    [META-TREND]    Trend Consistency: 0.52
-    [META-RS60]     Relative Strength 60D: +13.7%
-
-  Fundamentals:
-    [META-MCAP]     Log Market Cap: 28.24
-    [META-BM]       Book-to-Market: 0.1058
-    [META-GM]       Gross Margin: 82.1%
-    [META-ROE]      ROE: +9.4%
-    [META-FCFY]     FCF Yield: +0.5%
-    [META-DE]       Debt/Equity: 0.25
+    [META-SMA20]    SMA 20D: $697.17
+    [META-SMA50]    SMA 50D: $635.61
+    [META-SMA200]   SMA 200D: $609.55
+    [META-MOM200]   200D Momentum: 1.21
+    [META-MOM12_1]  12-1M Momentum: +26.0%
+    [META-IDMOM]    Idiosyncratic Momentum 60D: 0.1052
+    [META-TREND]    Trend Consistency: 0.53
+    [META-RS60]     Relative Strength 60D: +16.6%
     [META-ESURP]    Earnings Surprise: +23.2%
-    [META-ADVOL]    Avg Dollar Volume 20D: $8,848,366,917
+    [META-ADVOL]    Avg Dollar Volume 20D: $8,891,319,664
 
   Sentiment:
     [META-SENT]     Mean Sentiment: 0.1005
@@ -2140,40 +1900,32 @@ TICKER: NFLX
 ======================================================================
 
   Price & Returns:
-    [NFLX-PX]       Close: $132.31
-    [NFLX-RET20]    20D Return: +11.7%
-    [NFLX-RET60]    60D Return: +42.5%
-    [NFLX-RET120]   120D Return: +49.2%
-    [NFLX-RET252]   1Y Return: +96.8%
+    [NFLX-PX]       Close: $133.91
+    [NFLX-RET20]    20D Return: +10.9%
+    [NFLX-RET60]    60D Return: +43.1%
+    [NFLX-RET120]   120D Return: +52.0%
+    [NFLX-RET252]   1Y Return: +97.6%
 
   Volatility & Risk:
-    [NFLX-VOL20]    20D Vol (ann): 18.7%
-    [NFLX-VOL60]    60D Vol (ann): 33.5%
+    [NFLX-VOL20]    20D Vol (ann): 18.2%
+    [NFLX-VOL60]    60D Vol (ann): 33.6%
     [NFLX-DVOL60]   60D Downside Vol: 24.3%
     [NFLX-DD60]     60D Drawdown: -8.5%
     [NFLX-MDD1Y]    1Y Max Drawdown: -19.1%
-    [NFLX-SHARPE]   60D Sharpe: 4.44
+    [NFLX-SHARPE]   60D Sharpe: 4.49
     [NFLX-BETA]     1Y Beta: 0.92
 
   Trend & Momentum:
-    [NFLX-SMA20]    SMA 20D: $123.94
-    [NFLX-SMA50]    SMA 50D: $117.39
-    [NFLX-SMA200]   SMA 200D: $94.51
-    [NFLX-MOM200]   200D Momentum: 1.40
-    [NFLX-MOM12_1]  12-1M Momentum: +79.7%
-    [NFLX-IDMOM]    Idiosyncratic Momentum 60D: 0.2876
+    [NFLX-SMA20]    SMA 20D: $124.60
+    [NFLX-SMA50]    SMA 50D: $118.14
+    [NFLX-SMA200]   SMA 200D: $94.84
+    [NFLX-MOM200]   200D Momentum: 1.41
+    [NFLX-MOM12_1]  12-1M Momentum: +74.8%
+    [NFLX-IDMOM]    Idiosyncratic Momentum 60D: 0.2930
     [NFLX-TREND]    Trend Consistency: 0.65
-    [NFLX-RS60]     Relative Strength 60D: +30.9%
-
-  Fundamentals:
-    [NFLX-MCAP]     Log Market Cap: 27.06
-    [NFLX-BM]       Book-to-Market: 0.0444
-    [NFLX-GM]       Gross Margin: 51.9%
-    [NFLX-ROE]      ROE: +12.5%
-    [NFLX-FCFY]     FCF Yield: +0.4%
-    [NFLX-DE]       Debt/Equity: 0.58
+    [NFLX-RS60]     Relative Strength 60D: +33.3%
     [NFLX-ESURP]    Earnings Surprise: +15.8%
-    [NFLX-ADVOL]    Avg Dollar Volume 20D: $3,497,066,137
+    [NFLX-ADVOL]    Avg Dollar Volume 20D: $3,433,371,730
 
   Sentiment:
     [NFLX-SENT]     Mean Sentiment: 0.0319
@@ -2208,40 +1960,32 @@ TICKER: DIS
 ======================================================================
 
   Price & Returns:
-    [DIS-PX]       Close: $121.52
-    [DIS-RET20]    20D Return: +9.7%
-    [DIS-RET60]    60D Return: +25.8%
-    [DIS-RET120]   120D Return: +10.9%
-    [DIS-RET252]   1Y Return: +21.3%
+    [DIS-PX]       Close: $123.18
+    [DIS-RET20]    20D Return: +10.2%
+    [DIS-RET60]    60D Return: +27.2%
+    [DIS-RET120]   120D Return: +12.0%
+    [DIS-RET252]   1Y Return: +23.0%
 
   Volatility & Risk:
-    [DIS-VOL20]    20D Vol (ann): 15.4%
-    [DIS-VOL60]    60D Vol (ann): 46.6%
+    [DIS-VOL20]    20D Vol (ann): 15.7%
+    [DIS-VOL60]    60D Vol (ann): 46.7%
     [DIS-DVOL60]   60D Downside Vol: 37.5%
     [DIS-DD60]     60D Drawdown: -16.5%
     [DIS-MDD1Y]    1Y Max Drawdown: -30.2%
-    [DIS-SHARPE]   60D Sharpe: 2.07
+    [DIS-SHARPE]   60D Sharpe: 2.17
     [DIS-BETA]     1Y Beta: 0.97
 
   Trend & Momentum:
-    [DIS-SMA20]    SMA 20D: $115.95
-    [DIS-SMA50]    SMA 50D: $105.94
-    [DIS-SMA200]   SMA 200D: $103.11
-    [DIS-MOM200]   200D Momentum: 1.18
-    [DIS-MOM12_1]  12-1M Momentum: +10.1%
-    [DIS-IDMOM]    Idiosyncratic Momentum 60D: 0.1154
+    [DIS-SMA20]    SMA 20D: $116.52
+    [DIS-SMA50]    SMA 50D: $106.77
+    [DIS-SMA200]   SMA 200D: $103.29
+    [DIS-MOM200]   200D Momentum: 1.19
+    [DIS-MOM12_1]  12-1M Momentum: +10.6%
+    [DIS-IDMOM]    Idiosyncratic Momentum 60D: 0.1286
     [DIS-TREND]    Trend Consistency: 0.55
-    [DIS-RS60]     Relative Strength 60D: +14.2%
-
-  Fundamentals:
-    [DIS-MCAP]     Log Market Cap: 26.11
-    [DIS-BM]       Book-to-Market: 0.4998
-    [DIS-GM]       Gross Margin: 38.6%
-    [DIS-ROE]      ROE: +4.8%
-    [DIS-FCFY]     FCF Yield: +0.9%
-    [DIS-DE]       Debt/Equity: 0.39
+    [DIS-RS60]     Relative Strength 60D: +17.4%
     [DIS-ESURP]    Earnings Surprise: +19.8%
-    [DIS-ADVOL]    Avg Dollar Volume 20D: $1,164,972,774
+    [DIS-ADVOL]    Avg Dollar Volume 20D: $1,175,839,588
 
   Sentiment:
     [DIS-SENT]     Mean Sentiment: 0.0859
@@ -2291,40 +2035,32 @@ TICKER: AMZN
 ======================================================================
 
   Price & Returns:
-    [AMZN-PX]       Close: $223.30
-    [AMZN-RET20]    20D Return: +8.6%
-    [AMZN-RET60]    60D Return: +16.2%
-    [AMZN-RET120]   120D Return: +1.4%
-    [AMZN-RET252]   1Y Return: +19.8%
+    [AMZN-PX]       Close: $219.39
+    [AMZN-RET20]    20D Return: +7.0%
+    [AMZN-RET60]    60D Return: +11.9%
+    [AMZN-RET120]   120D Return: -2.1%
+    [AMZN-RET252]   1Y Return: +13.3%
 
   Volatility & Risk:
-    [AMZN-VOL20]    20D Vol (ann): 22.3%
+    [AMZN-VOL20]    20D Vol (ann): 23.5%
     [AMZN-VOL60]    60D Vol (ann): 45.8%
-    [AMZN-DVOL60]   60D Downside Vol: 30.1%
+    [AMZN-DVOL60]   60D Downside Vol: 29.6%
     [AMZN-DD60]     60D Drawdown: -14.6%
     [AMZN-MDD1Y]    1Y Max Drawdown: -30.9%
-    [AMZN-SHARPE]   60D Sharpe: 1.38
+    [AMZN-SHARPE]   60D Sharpe: 1.03
     [AMZN-BETA]     1Y Beta: 1.35
 
   Trend & Momentum:
-    [AMZN-SMA20]    SMA 20D: $212.30
-    [AMZN-SMA50]    SMA 50D: $200.95
-    [AMZN-SMA200]   SMA 200D: $204.93
-    [AMZN-MOM200]   200D Momentum: 1.09
-    [AMZN-MOM12_1]  12-1M Momentum: +9.9%
-    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.0328
-    [AMZN-TREND]    Trend Consistency: 0.50
-    [AMZN-RS60]     Relative Strength 60D: +4.6%
-
-  Fundamentals:
-    [AMZN-MCAP]     Log Market Cap: 28.50
-    [AMZN-BM]       Book-to-Market: 0.1402
-    [AMZN-GM]       Gross Margin: 51.8%
-    [AMZN-ROE]      ROE: +5.4%
-    [AMZN-FCFY]     FCF Yield: +0.0%
-    [AMZN-DE]       Debt/Equity: 0.40
+    [AMZN-SMA20]    SMA 20D: $213.02
+    [AMZN-SMA50]    SMA 50D: $201.85
+    [AMZN-SMA200]   SMA 200D: $205.13
+    [AMZN-MOM200]   200D Momentum: 1.07
+    [AMZN-MOM12_1]  12-1M Momentum: +6.2%
+    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: -0.0023
+    [AMZN-TREND]    Trend Consistency: 0.48
+    [AMZN-RS60]     Relative Strength 60D: +2.1%
     [AMZN-ESURP]    Earnings Surprise: +16.9%
-    [AMZN-ADVOL]    Avg Dollar Volume 20D: $9,203,439,282
+    [AMZN-ADVOL]    Avg Dollar Volume 20D: $9,319,669,327
 
   Sentiment:
     [AMZN-SENT]     Mean Sentiment: 0.0292
@@ -2358,40 +2094,32 @@ TICKER: TSLA
 ======================================================================
 
   Price & Returns:
-    [TSLA-PX]       Close: $323.63
-    [TSLA-RET20]    20D Return: -9.7%
-    [TSLA-RET60]    60D Return: +20.5%
-    [TSLA-RET120]   120D Return: -14.7%
-    [TSLA-RET252]   1Y Return: +72.7%
+    [TSLA-PX]       Close: $317.66
+    [TSLA-RET20]    20D Return: -8.3%
+    [TSLA-RET60]    60D Return: +12.3%
+    [TSLA-RET120]   120D Return: -22.6%
+    [TSLA-RET252]   1Y Return: +61.8%
 
   Volatility & Risk:
-    [TSLA-VOL20]    20D Vol (ann): 75.8%
-    [TSLA-VOL60]    60D Vol (ann): 81.2%
-    [TSLA-DVOL60]   60D Downside Vol: 53.9%
+    [TSLA-VOL20]    20D Vol (ann): 75.3%
+    [TSLA-VOL60]    60D Vol (ann): 80.7%
+    [TSLA-DVOL60]   60D Downside Vol: 53.1%
     [TSLA-DD60]     60D Drawdown: -21.6%
     [TSLA-MDD1Y]    1Y Max Drawdown: -53.8%
-    [TSLA-SHARPE]   60D Sharpe: 0.97
+    [TSLA-SHARPE]   60D Sharpe: 0.61
     [TSLA-BETA]     1Y Beta: 2.37
 
   Trend & Momentum:
-    [TSLA-SMA20]    SMA 20D: $325.33
-    [TSLA-SMA50]    SMA 50D: $311.30
-    [TSLA-SMA200]   SMA 200D: $312.82
-    [TSLA-MOM200]   200D Momentum: 1.03
-    [TSLA-MOM12_1]  12-1M Momentum: +90.5%
-    [TSLA-IDMOM]    Idiosyncratic Momentum 60D: 0.0034
-    [TSLA-TREND]    Trend Consistency: 0.53
-    [TSLA-RS60]     Relative Strength 60D: +9.0%
-
-  Fundamentals:
-    [TSLA-MCAP]     Log Market Cap: 27.67
-    [TSLA-BM]       Book-to-Market: 0.0741
-    [TSLA-GM]       Gross Margin: 17.2%
-    [TSLA-ROE]      ROE: +1.5%
-    [TSLA-FCFY]     FCF Yield: +0.0%
-    [TSLA-DE]       Debt/Equity: 0.17
+    [TSLA-SMA20]    SMA 20D: $323.89
+    [TSLA-SMA50]    SMA 50D: $312.82
+    [TSLA-SMA200]   SMA 200D: $313.28
+    [TSLA-MOM200]   200D Momentum: 1.01
+    [TSLA-MOM12_1]  12-1M Momentum: +82.5%
+    [TSLA-IDMOM]    Idiosyncratic Momentum 60D: -0.0631
+    [TSLA-TREND]    Trend Consistency: 0.52
+    [TSLA-RS60]     Relative Strength 60D: +2.5%
     [TSLA-ESURP]    Earnings Surprise: -34.2%
-    [TSLA-ADVOL]    Avg Dollar Volume 20D: $39,886,661,902
+    [TSLA-ADVOL]    Avg Dollar Volume 20D: $38,965,854,550
 
   Sentiment:
     [TSLA-SENT]     Mean Sentiment: 0.0700
@@ -2426,40 +2154,32 @@ TICKER: HD
 ======================================================================
 
   Price & Returns:
-    [HD-PX]       Close: $364.30
-    [HD-RET20]    20D Return: +0.7%
-    [HD-RET60]    60D Return: +1.5%
-    [HD-RET120]   120D Return: -3.9%
-    [HD-RET252]   1Y Return: +11.6%
+    [HD-PX]       Close: $362.23
+    [HD-RET20]    20D Return: +0.2%
+    [HD-RET60]    60D Return: -0.5%
+    [HD-RET120]   120D Return: -4.6%
+    [HD-RET252]   1Y Return: +9.8%
 
   Volatility & Risk:
-    [HD-VOL20]    20D Vol (ann): 17.8%
-    [HD-VOL60]    60D Vol (ann): 25.6%
-    [HD-DVOL60]   60D Downside Vol: 15.7%
+    [HD-VOL20]    20D Vol (ann): 17.9%
+    [HD-VOL60]    60D Vol (ann): 25.5%
+    [HD-DVOL60]   60D Downside Vol: 15.5%
     [HD-DD60]     60D Drawdown: -9.6%
     [HD-MDD1Y]    1Y Max Drawdown: -21.8%
-    [HD-SHARPE]   60D Sharpe: 0.25
+    [HD-SHARPE]   60D Sharpe: -0.09
     [HD-BETA]     1Y Beta: 0.63
 
   Trend & Momentum:
-    [HD-SMA20]    SMA 20D: $357.20
-    [HD-SMA50]    SMA 50D: $357.56
-    [HD-SMA200]   SMA 200D: $378.09
+    [HD-SMA20]    SMA 20D: $357.23
+    [HD-SMA50]    SMA 50D: $358.01
+    [HD-SMA200]   SMA 200D: $378.10
     [HD-MOM200]   200D Momentum: 0.96
-    [HD-MOM12_1]  12-1M Momentum: +10.7%
-    [HD-IDMOM]    Idiosyncratic Momentum 60D: -0.0406
-    [HD-TREND]    Trend Consistency: 0.45
-    [HD-RS60]     Relative Strength 60D: -10.1%
-
-  Fundamentals:
-    [HD-MCAP]     Log Market Cap: 26.62
-    [HD-BM]       Book-to-Market: 0.0219
-    [HD-GM]       Gross Margin: 33.8%
-    [HD-ROE]      ROE: +43.2%
-    [HD-FCFY]     FCF Yield: +1.0%
-    [HD-DE]       Debt/Equity: 7.70
+    [HD-MOM12_1]  12-1M Momentum: +9.7%
+    [HD-IDMOM]    Idiosyncratic Momentum 60D: -0.0597
+    [HD-TREND]    Trend Consistency: 0.43
+    [HD-RS60]     Relative Strength 60D: -10.4%
     [HD-ESURP]    Earnings Surprise: -0.8%
-    [HD-ADVOL]    Avg Dollar Volume 20D: $1,317,098,092
+    [HD-ADVOL]    Avg Dollar Volume 20D: $1,326,104,959
 
   Sentiment:
     [HD-SENT]     Mean Sentiment: -0.0211
@@ -2494,40 +2214,32 @@ TICKER: NKE
 ======================================================================
 
   Price & Returns:
-    [NKE-PX]       Close: $70.74
+    [NKE-PX]       Close: $69.76
     [NKE-RET20]    20D Return: +18.0%
-    [NKE-RET60]    60D Return: +12.0%
-    [NKE-RET120]   120D Return: -1.1%
-    [NKE-RET252]   1Y Return: -22.3%
+    [NKE-RET60]    60D Return: +10.1%
+    [NKE-RET120]   120D Return: -2.0%
+    [NKE-RET252]   1Y Return: -22.9%
 
   Volatility & Risk:
     [NKE-VOL20]    20D Vol (ann): 57.6%
     [NKE-VOL60]    60D Vol (ann): 62.2%
-    [NKE-DVOL60]   60D Downside Vol: 49.0%
+    [NKE-DVOL60]   60D Downside Vol: 48.2%
     [NKE-DD60]     60D Drawdown: -18.0%
-    [NKE-MDD1Y]    1Y Max Drawdown: -43.0%
-    [NKE-SHARPE]   60D Sharpe: 0.76
-    [NKE-BETA]     1Y Beta: 0.98
+    [NKE-MDD1Y]    1Y Max Drawdown: -42.6%
+    [NKE-SHARPE]   60D Sharpe: 0.65
+    [NKE-BETA]     1Y Beta: 0.97
 
   Trend & Momentum:
-    [NKE-SMA20]    SMA 20D: $61.05
-    [NKE-SMA50]    SMA 50D: $59.09
-    [NKE-SMA200]   SMA 200D: $69.67
-    [NKE-MOM200]   200D Momentum: 1.02
-    [NKE-MOM12_1]  12-1M Momentum: -33.8%
-    [NKE-IDMOM]    Idiosyncratic Momentum 60D: -0.0041
-    [NKE-TREND]    Trend Consistency: 0.52
-    [NKE-RS60]     Relative Strength 60D: +0.4%
-
-  Fundamentals:
-    [NKE-MCAP]     Log Market Cap: 25.37
-    [NKE-BM]       Book-to-Market: 0.1265
-    [NKE-GM]       Gross Margin: 40.3%
-    [NKE-ROE]      ROE: +1.6%
-    [NKE-FCFY]     FCF Yield: +0.4%
-    [NKE-DE]       Debt/Equity: 0.83
+    [NKE-SMA20]    SMA 20D: $61.58
+    [NKE-SMA50]    SMA 50D: $59.44
+    [NKE-SMA200]   SMA 200D: $69.65
+    [NKE-MOM200]   200D Momentum: 1.00
+    [NKE-MOM12_1]  12-1M Momentum: -33.7%
+    [NKE-IDMOM]    Idiosyncratic Momentum 60D: -0.0191
+    [NKE-TREND]    Trend Consistency: 0.50
+    [NKE-RS60]     Relative Strength 60D: +0.2%
     [NKE-ESURP]    Earnings Surprise: +16.7%
-    [NKE-ADVOL]    Avg Dollar Volume 20D: $1,271,243,642
+    [NKE-ADVOL]    Avg Dollar Volume 20D: $1,326,034,752
 
   Sentiment:
     [NKE-SENT]     Mean Sentiment: -0.0164
@@ -2536,25 +2248,24 @@ TICKER: NKE
     [NKE-CSZ]      Cross-Sectional Z: -0.4787
     [NKE-ACNT]     Article Count: 229
 
-  Filing Evidence (10-K, filed 2022-07-21, fiscal period: FY2022 [FYE: May 31]):
-    [NKE-F1] NIKE achieved record revenues of $46.7 billion in fiscal 2022, increasing 5% reported and 6% currency-neutral, driven by NIKE Direct growth of 14% to represent 42% of total revenues with digital sales reaching $10.7 billion.
-    [NKE-F2] Regional performance was broadly positive with double-digit growth in EMEA and APLA, North America growing moderately, while Greater China declined due to COVID-19 restrictions.
-    [NKE-F3] Wholesale revenues declined as supply chain constraints most significantly affected wholesale channels, with footwear unit sales declining but average selling prices rising from higher NIKE Direct pricing and full-price mix improvements.
-    [NKE-F4] Gross margin expanded 120 basis points to 46.0% driven by NIKE Direct margin expansion, higher full-price sales mix and favorable foreign currency impacts, partially offset by elevated freight and logistics costs from supply chain disruptions and higher inventory obsolescence reserves in Greater China.
-    [NKE-F5] Selling and administrative expenses increased due to higher strategic technology investments, wage-related expenses, NIKE Direct variable costs and normalized demand creation spending.
-    [NKE-F6] NIKE completed $4.0 billion in share repurchases under the four-year program and received board authorization for a new four-year $18 billion share repurchase program.
-    [NKE-F7] The company entered definitive agreements to sell legal entities in Argentina, Uruguay and Chile to third-party distributors with closures expected by Q3 fiscal 2023.
-    [NKE-F8] NIKE deconsolidated Russian legal entities due to economic sanctions resulting in a $96 million pre-tax charge and subsequently decided to exit the Russian marketplace entirely.
-    [NKE-F9] COVID-19 factory shutdowns in Vietnam and Indonesia during Q1 eliminated approximately three months of production, driving inventory to $8.4 billion up 23% with extended transit times elevating in-transit inventory levels.
-    [NKE-F10] Foreign currency translation provided favorable impact on pre-tax income through international profit translation and hedging activities, though volatility remains elevated due to geopolitical dynamics and stronger U.S.
-    [NKE-F11] Dollar.
-    [NKE-F12] Management expects inventory supply to significantly lag consumer demand with transportation and logistics costs remaining elevated while product costs stay high due to input cost inflation.
-    [NKE-F13] Annual capital expenditures of approximately 3% of revenues will focus on digital capabilities, technology foundation and supply chain improvements.
-    [NKE-F14] The company maintains multi-year investment plans for digital transformation and brand campaigns while continuing Consumer Direct Acceleration strategy execution.
-    [NKE-F15] Operating environment volatility expected to continue with ongoing COVID-19 variant risks potentially disrupting operations and impacting revenue growth and profitability.
-    [NKE-F16] Argentina subsidiary operates in hyperinflationary environment requiring U.S.
-    [NKE-F17] Dollar functional currency with outstanding endorsement and product purchase obligations representing significant future cash commitments.
-    [NKE-F18] Cybersecurity and climate change risks have increased requiring additional facility investments affecting raw material availability and costs.
+  Filing Evidence (10-Q, filed 2025-04-03, fiscal period: 2025-Q1 [FYE: May 31]):
+    [NKE-F1] NIKE revenues declined 9% to $11.3 billion in Q3 2025, driven by decreased traffic across NIKE Direct channels and deliberate supply reduction of certain footwear products through increased markdowns.
+    [NKE-F2] NIKE Brand revenues fell 9% with footwear declining 12% and apparel down 3%, while wholesale revenues decreased 7% and NIKE Direct revenues dropped 12%.
+    [NKE-F3] Performance weakened globally with double-digit declines across Greater China, EMEA, and APLA regions, while North America declined modestly.
+    [NKE-F4] Operating cash flow deteriorated with $648 million outflow for the first nine months.
+    [NKE-F5] Gross margin contracted 330 basis points to 41.5% primarily due to lower average selling prices from higher discounts, elevated inventory obsolescence reserves, and higher product costs.
+    [NKE-F6] Operating overhead expense decreased 13% due to prior year restructuring charges and lower wage-related expenses, while demand creation expense increased 8% reflecting investment in brand marketing.
+    [NKE-F7] Total selling and administrative expense decreased 8% but increased as percentage of revenues to 34.5%.
+    [NKE-F8] The company returned approximately $1.1 billion to shareholders through dividends and share repurchases during the third quarter, with total share repurchases of $2.8 billion at an average price of $80.02 per share.
+    [NKE-F9] Management implemented strategic actions to reduce supply of certain footwear products while repositioning NIKE Brand Digital as a full-price platform and reinvesting in wholesale distribution.
+    [NKE-F10] Nike entered into new credit facilities totaling $3 billion and repaid $1 billion in maturing notes.
+    [NKE-F11] The company faces uncertainty from geopolitical dynamics, new tariffs, tax regulation changes, and fluctuating foreign exchange rates that could materially impact consumer behavior and profitability.
+    [NKE-F12] Foreign currency translation negatively affected revenues by approximately $310 million and income before taxes by $67 million for the quarter.
+    [NKE-F13] Management expects the strategic actions to reduce supply and rebalance product portfolio will continue negatively impacting revenues and gross margin over the next several quarters, along with higher demand creation expenses.
+    [NKE-F14] The company believes these actions will reignite brand momentum and reposition the business for long-term shareholder value creation.
+    [NKE-F15] Inventory management remains challenging as the company balances supply reduction with new product introductions while managing elevated obsolescence reserves.
+    [NKE-F16] The effectiveness and timeline of strategic repositioning efforts to restore brand momentum represents execution risk for future performance recovery.
+    [NKE-F17] Endorsement contract obligations increased to $15.1 billion with $1.4 billion payable within 12 months.
 
   Earnings Call Evidence:
     [NKE-EC1] Nike reported Q2 FY25 revenue down 8% (9% currency-neutral) to meet expectations amid ongoing franchise management headwinds.
@@ -2570,6 +2281,44 @@ TICKER: NKE
     [NKE-EC11] Success depends on sport-focused product innovation through new 'fields of play' organizational structure covering running, basketball, training, football, and sportswear.
     [NKE-EC12] Key growth drivers include reducing classic footwear franchise concentration, launching new seasonal products for fall/holiday 2025, and rebuilding authentic brand marketing around sports moments.
     [NKE-EC13] Marketplace health restoration through premium Nike Direct positioning and strengthened wholesale partnerships is critical for sustainable growth recovery.
+
+======================================================================
+TICKER: TLT
+======================================================================
+
+  Price & Returns:
+    [TLT-PX]       Close: $85.71
+    [TLT-RET20]    20D Return: +2.7%
+    [TLT-RET60]    60D Return: -2.8%
+    [TLT-RET120]   120D Return: +2.9%
+    [TLT-RET252]   1Y Return: -1.3%
+
+  Volatility & Risk:
+    [TLT-VOL20]    20D Vol (ann): 12.8%
+    [TLT-VOL60]    60D Vol (ann): 15.7%
+    [TLT-DVOL60]   60D Downside Vol: 11.8%
+    [TLT-DD60]     60D Drawdown: -9.2%
+    [TLT-MDD1Y]    1Y Max Drawdown: -14.8%
+    [TLT-SHARPE]   60D Sharpe: -0.75
+    [TLT-BETA]     1Y Beta: 0.04
+
+  Trend & Momentum:
+    [TLT-SMA20]    SMA 20D: $84.00
+    [TLT-SMA50]    SMA 50D: $83.94
+    [TLT-SMA200]   SMA 200D: $86.18
+    [TLT-MOM200]   200D Momentum: 0.99
+    [TLT-MOM12_1]  12-1M Momentum: -4.0%
+    [TLT-IDMOM]    Idiosyncratic Momentum 60D: -0.0374
+    [TLT-TREND]    Trend Consistency: 0.60
+    [TLT-RS60]     Relative Strength 60D: -12.6%
+    [TLT-ESURP]    Earnings Surprise: n/a
+    [TLT-ADVOL]    Avg Dollar Volume 20D: $3,296,167,941
+
+  Sentiment: not available
+
+  Filing summary: not available
+
+  Earnings call: not available
 
 ======================================================================
 END OF MEMO
