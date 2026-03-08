@@ -56,7 +56,7 @@ Use this structure when evaluating reasoning quality.
 
 # Original Proposal
 
-The original proposal contains the agent’s earlier reasoning and numbered claims.
+The original proposal contains the agent's earlier reasoning and numbered claims.
 
 Use it only as reference to determine whether critiques exposed weaknesses.
 
@@ -66,11 +66,20 @@ Use it only as reference to determine whether critiques exposed weaknesses.
 
 # Critiques Received
 
+{% if critiques_received | length == 0 %}
+No critiques were received by this agent in this round.
+
+When critiques_received is empty:
+• Do NOT penalize alternative_consideration for lack of critique handling
+• Evaluate whether the agent proactively considers alternative explanations in their reasoning
+• Absence of critiques does NOT imply the reasoning is strong — evaluate on its own merits
+{% else %}
 Each critique is labeled with a critique ID (K1, K2, K3, ...).
 
 Critiques may target specific claims (C#) or the portfolio allocation.
 
 You must evaluate whether the revised argument **properly responds to these critiques**.
+{% endif %}
 
 {{ critiques_received | tojson(indent=2) }}
 
@@ -78,7 +87,13 @@ You must evaluate whether the revised argument **properly responds to these crit
 
 # Revised Argument
 
-The revised argument contains the agent’s updated reasoning, claims, and portfolio.
+The revised argument contains the agent's updated reasoning, claims, and portfolio.
+
+The reasoning field contains structured data:
+• reasoning.claims — with evidence_ids, assumptions, falsifiers, impacts_positions
+• reasoning.position_rationale — with supporting_claims linking positions to claims
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — how critiques were handled (if present)
 
 Your evaluation should focus primarily on this revision.
 
@@ -106,7 +121,7 @@ Identify reasoning failures such as:
 
 Also check whether critiques that target specific claims expose unresolved logical flaws.
 
-Record whether contradictions are present.
+Record whether contradictions are present. If so, count them.
 
 ---
 
@@ -114,22 +129,28 @@ STEP 2 — Detect Evidence Failures
 
 Evaluate how evidence is used to support claims.
 
+Use reasoning.claims[*].evidence_ids to cross-reference with evidence_citations.
+
 Identify whether:
 
-• key claims lack evidence citations
+• key claims lack evidence citations (count claims with zero evidence_ids)
 • citations do not support the claims they reference
 • evidence is selectively used or misinterpreted
 • claims are stronger than the cited evidence justifies
 
 Also check whether critiques that identified evidence gaps were addressed.
 
-Record whether unsupported claims exist.
+Record whether unsupported claims exist. Report unsupported_claims_count.
 
 ---
 
 STEP 3 — Detect Alternative Reasoning Failures
 
 Evaluate how the agent responds to critiques and competing explanations.
+
+{% if critiques_received | length > 0 %}
+Use reasoning.revision_notes (if present) to assess how critiques were handled.
+{% endif %}
 
 Identify whether:
 
@@ -142,27 +163,30 @@ Identify whether:
 
 Strong reasoning should acknowledge competing interpretations and respond to critiques directly.
 
+Report ignored_critiques_count if critiques were not addressed.
+
 ---
 
 STEP 4 — Detect Causal Reasoning Failures
 
-Evaluate causal reasoning using **Pearl’s causal hierarchy**.
+Evaluate causal reasoning using **Pearl's causal hierarchy** (adapted for financial domain).
 
 Levels:
 
-L1 — correlation
-L2 — intervention
-L3 — counterfactual reasoning
+L1 — correlation/association
+L2 — intervention: requires a plausible mechanism or policy transmission pathway (not literal experimental evidence)
+L3 — counterfactual reasoning: must explicitly reason about an alternative state
 
-Identify **rung collapse**, including:
+Identify **causal overreach**, including:
 
+• L2 claims with only associational evidence and no mechanism
+• L3 claims without counterfactual structure
 • causal conclusions drawn from purely correlational evidence
 • macro claims mapped directly to asset outcomes without mechanism
-• causal statements lacking explanation of the transmission mechanism
 
 Also check whether critiques successfully exposed causal weaknesses in specific claims.
 
-Record whether causal overreach occurs.
+Record whether causal overreach occurs. Report causal_overreach_count.
 
 ---
 
@@ -170,12 +194,17 @@ STEP 5 — Detect Conclusion Drift
 
 Determine whether the **final portfolio allocation logically follows from the reasoning**.
 
+Use reasoning.position_rationale[*].supporting_claims to verify each position cites a real claim.
+Use reasoning.claims[*].impacts_positions to verify causal completeness.
+
 Check for:
 
-• allocation decisions not justified by reasoning
+• positions with weight >10% that have no supporting_claims entry
 • thesis statements inconsistent with allocation choices
 • claims that do not logically imply the portfolio allocation
 • revisions that ignore critiques without explanation
+
+Count orphaned positions (weight >10% with no supporting claim). Report orphaned_positions_count.
 
 ---
 
@@ -223,13 +252,15 @@ Important rules:
 • If unsupported claims are detected → evidential_support ≤ 0.70
 • If critiques were ignored → alternative_consideration ≤ 0.70
 • If causal overreach occurs → causal_alignment ≤ 0.70
+• Scores above 0.90 should be RARE
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
 
 Avoid rounding scores to simple values such as **0.5 or 1.0** unless fully justified.
 
 When assigning scores, consider how many distinct reasoning failures were detected.
 
 1 failure → small penalty
-2–3 failures → moderate penalty
+2-3 failures → moderate penalty
 4+ failures → severe penalty
 
 ---
@@ -239,3 +270,5 @@ When assigning scores, consider how many distinct reasoning failures were detect
 Return **only the JSON object defined in the system prompt**.
 
 Do not include explanations outside the JSON.
+
+Include optional count fields in diagnostics where you can determine the count.

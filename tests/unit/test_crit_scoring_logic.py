@@ -46,14 +46,28 @@ def _make_bundle(role: str) -> dict:
         "proposal": {
             "thesis": f"{role} thesis",
             "portfolio_allocation": {"NVDA": 0.5},
-            "reasoning": f"{role} reasoning.",
+            "reasoning": {
+                "claims": [],
+                "position_rationale": [],
+                "thesis": f"{role} thesis",
+                "confidence": 0.8,
+                "risks_or_falsifiers": [],
+            },
+            "raw_response": f"{role} reasoning.",
             "evidence_citations": [],
         },
         "critiques_received": [],
         "revised_argument": {
             "thesis": f"{role} revised thesis",
             "portfolio_allocation": {"NVDA": 0.5},
-            "reasoning": f"{role} revised reasoning.",
+            "reasoning": {
+                "claims": [],
+                "position_rationale": [],
+                "thesis": f"{role} revised thesis",
+                "confidence": 0.85,
+                "risks_or_falsifiers": [],
+            },
+            "raw_response": f"{role} revised reasoning.",
             "evidence_citations": [],
         },
     }
@@ -62,7 +76,7 @@ def _make_bundle(role: str) -> dict:
 def _make_scorer_uniform(**kwargs) -> CritScorer:
     """Create a CritScorer with a mock LLM that returns same scores for all agents."""
     response_text = json.dumps(_make_single_agent_response(**kwargs))
-    return CritScorer(llm_fn=lambda sys, usr: response_text)
+    return CritScorer(llm_fn=lambda sys, usr, **kw: response_text)
 
 
 def _make_scorer_per_role(role_scores: dict[str, dict]) -> CritScorer:
@@ -76,7 +90,7 @@ def _make_scorer_per_role(role_scores: dict[str, dict]) -> CritScorer:
         for role, scores in role_scores.items()
     }
 
-    def _llm(sys_prompt: str, usr_prompt: str) -> str:
+    def _llm(sys_prompt: str, usr_prompt: str, **kw) -> str:
         # Match the agent role from the "## Agent Under Evaluation" section.
         # The template renders {{ agent_role | upper }} on its own line.
         for role in role_scores:
@@ -169,7 +183,7 @@ class TestRhoBarComputation:
 
 class TestCritScorerErrors:
     def test_invalid_json_raises(self):
-        scorer = CritScorer(llm_fn=lambda sys, usr: "not valid json at all")
+        scorer = CritScorer(llm_fn=lambda sys, usr, **kw: "not valid json at all")
         with pytest.raises(json.JSONDecodeError):
             scorer.score(BUNDLES_1)
 
@@ -194,7 +208,7 @@ class TestCritScorerErrors:
                 "causal_alignment": "ok",
             },
         })
-        scorer = CritScorer(llm_fn=lambda sys, usr: incomplete)
+        scorer = CritScorer(llm_fn=lambda sys, usr, **kw: incomplete)
         with pytest.raises(Exception):  # ValidationError from pydantic
             scorer.score(BUNDLES_1)
 
@@ -207,7 +221,7 @@ class TestCritScorerErrors:
         """CritScorer should handle LLM output wrapped in markdown code fences."""
         inner = json.dumps(_make_single_agent_response(ic=0.7, es=0.7, ta=0.7, ci=0.7))
         wrapped = f"```json\n{inner}\n```"
-        scorer = CritScorer(llm_fn=lambda sys, usr: wrapped)
+        scorer = CritScorer(llm_fn=lambda sys, usr, **kw: wrapped)
         result = scorer.score(BUNDLES_1)
         assert abs(result.rho_bar - 0.7) < 1e-9
 

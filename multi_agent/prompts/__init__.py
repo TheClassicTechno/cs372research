@@ -163,6 +163,15 @@ _DEFAULT_SECTION_ORDER = [
 
 _SECTION_RE = re.compile(r"^---SECTION:\s*(\w+)---\s*$", re.MULTILINE)
 
+# Regex to find Jinja2 variable references like {{ var_name }}
+_VAR_REF_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+
+# Vars that are legitimately empty in some configurations — no warning needed.
+_OPTIONAL_VARS = frozenset({
+    "sector_constraints",
+    "disagreements_section",
+})
+
 
 def _load_sectioned_template(name: str) -> dict[str, str]:
     """Split a template file by ``---SECTION: name---`` delimiters.
@@ -185,11 +194,40 @@ def _load_sectioned_template(name: str) -> dict[str, str]:
     return sections
 
 
+def _warn_empty_template_vars(
+    section_name: str,
+    raw_template: str,
+    template_vars: dict,
+    phase: str = "",
+) -> None:
+    """Warn loudly when a template section references an empty variable.
+
+    Scans the raw Jinja2 template for ``{{ var_name }}`` references and
+    checks whether the corresponding value in *template_vars* is falsy
+    (empty string, empty list, etc.).  Skips vars in ``_OPTIONAL_VARS``.
+    """
+    referenced = set(_VAR_REF_RE.findall(raw_template))
+    for var_name in sorted(referenced):
+        if var_name in _OPTIONAL_VARS:
+            continue
+        val = template_vars.get(var_name)
+        # val is None → StrictUndefined will already crash.
+        # val is falsy but present → silent blank in rendered prompt.
+        if val is not None and not val:
+            tag = f" (phase={phase})" if phase else ""
+            logger.warning(
+                "EMPTY TEMPLATE VAR: '%s' is empty in section '%s'%s. "
+                "The rendered prompt will have a blank where agent data should be.",
+                var_name, section_name, tag,
+            )
+
+
 def _assemble_user_prompt(
     sections: dict[str, str],
     order: list[str],
     template_vars: dict,
     prompt_file_overrides: dict[str, str] | None = None,
+    phase: str = "",
 ) -> str:
     """Render each section with Jinja2 and join in the specified order.
 
@@ -203,6 +241,8 @@ def _assemble_user_prompt(
     for section_name in order:
         raw_tmpl = sections.get(section_name)
         if raw_tmpl is not None:
+            # Check for empty vars BEFORE rendering
+            _warn_empty_template_vars(section_name, raw_tmpl, template_vars, phase)
             # Template section — render with Jinja2
             tmpl = _env.from_string(raw_tmpl)
             rendered = tmpl.render(**template_vars).strip()
@@ -303,10 +343,11 @@ def build_proposal_user_prompt(
 
     if "_unsectioned" in sections:
         # Template has no section markers — render as a single template (legacy)
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "propose")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="propose")
 
 
 def build_critique_prompt(
@@ -350,10 +391,11 @@ def build_critique_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "critique")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="critique")
 
 
 def build_revision_prompt(
@@ -401,10 +443,11 @@ def build_revision_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "revise")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="revise")
 
 
 def build_judge_prompt(
@@ -449,7 +492,8 @@ def build_judge_prompt(
     sections = _load_sectioned_template(template_name)
 
     if "_unsectioned" in sections:
+        _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "judge")
         tmpl = _env.get_template(template_name)
         return tmpl.render(**template_vars)
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides)
+    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="judge")

@@ -48,7 +48,7 @@ def _mock_crit_llm(ic=0.8, es=0.7, ta=0.9, ci=0.6):
     """Return a mock LLM function that produces a valid single-agent CRIT response."""
     entry = _make_crit_entry(ic, es, ta, ci)
     response = json.dumps(entry)
-    return lambda sys, usr: response
+    return lambda sys, usr, **kw: response
 
 
 def _mock_crit_llm_per_role(role_scores: dict[str, tuple]):
@@ -61,7 +61,7 @@ def _mock_crit_llm_per_role(role_scores: dict[str, tuple]):
     for role, (ic, es, ta, ci) in role_scores.items():
         responses[role] = json.dumps(_make_crit_entry(ic, es, ta, ci))
 
-    def _llm(sys_prompt: str, usr_prompt: str) -> str:
+    def _llm(sys_prompt: str, usr_prompt: str, **kw) -> str:
         # Match the agent role from the "## Agent Under Evaluation" section.
         # The template renders {{ agent_role | upper }} on its own line.
         for role in role_scores:
@@ -85,14 +85,28 @@ def _make_bundle(role: str) -> dict:
         "proposal": {
             "thesis": f"{role} thesis",
             "portfolio_allocation": {"NVDA": 0.5},
-            "reasoning": f"{role} reasoning for buy.",
+            "reasoning": {
+                "claims": [],
+                "position_rationale": [],
+                "thesis": f"{role} thesis",
+                "confidence": 0.8,
+                "risks_or_falsifiers": [],
+            },
+            "raw_response": f"{role} reasoning for buy.",
             "evidence_citations": [],
         },
         "critiques_received": [],
         "revised_argument": {
             "thesis": f"{role} revised thesis",
             "portfolio_allocation": {"NVDA": 0.5},
-            "reasoning": f"{role} revised reasoning.",
+            "reasoning": {
+                "claims": [],
+                "position_rationale": [],
+                "thesis": f"{role} revised thesis",
+                "confidence": 0.85,
+                "risks_or_falsifiers": [],
+            },
+            "raw_response": f"{role} revised reasoning.",
             "evidence_citations": [],
         },
     }
@@ -174,7 +188,7 @@ class TestCritInLoop:
         call_count = 0
         entry = _make_crit_entry()
 
-        def counting_llm(sys, usr):
+        def counting_llm(sys, usr, **kw):
             nonlocal call_count
             call_count += 1
             return json.dumps(entry)

@@ -1,0 +1,125 @@
+---SECTION: context---
+{{ context }}
+
+---SECTION: task---
+Using the data above, analyze the investment universe and propose a portfolio allocation **based on price action, momentum, and trend behavior**.
+
+Your task is to identify **securities whose price trends and momentum characteristics indicate continued outperformance or underperformance.**
+
+Your reasoning must be structured around **numbered causal claims** explaining how price behavior and momentum signals affect expected returns.
+
+Each claim should represent a **distinct technical mechanism** affecting asset performance.
+
+Examples include:
+
+• strong momentum persistence
+• trend continuation above key moving averages
+• relative strength leadership within the universe
+• momentum divergence suggesting weakening trends
+• breakout behavior following consolidation
+
+Limit yourself to **3–5 claims maximum**.
+
+Each claim should provide **independent technical reasoning** explaining why price action implies future performance.
+
+Your portfolio allocation should follow logically from these claims.
+
+---
+
+CRITICAL — Evidence citation rules:
+
+• Every factual claim about a ticker or macro condition MUST include at least one bracketed evidence ID copied verbatim from the memo (e.g. [AAPL-RET60], [L1-VIX], [NVDA-F3]).
+
+• Valid IDs use the exact format from the memo:
+[TICKER-METRIC] or [L1-METRIC]
+
+• NEVER invent your own labels. NEVER use free-text slugs such as
+"aaplrevenuegrowth" or "portfoliorisk".
+
+• If you cannot find a bracketed ID supporting a claim, **do not make that claim**.
+
+• Claims without valid citations are treated as unsupported by the evaluation system.
+
+{{ sector_constraints }}
+
+---
+
+---SECTION: reasoning_structure---
+
+Your reasoning must follow this structure.
+
+First, produce **numbered claims**.
+
+Each claim must:
+
+• be labeled **C1, C2, C3, ...**
+• describe a **technical price or momentum mechanism** affecting asset performance
+• include at least one valid evidence citation
+• explain why the mechanism affects expected returns
+
+Claims should generally follow the structure:
+
+**price behavior → momentum implication → security positioning**
+
+Example structure:
+
+C1 — Trend regime
+C2 — Momentum leadership
+C3 — Security-level momentum thesis
+
+Each claim should also include:
+
+• Assumptions — conditions required for the claim to hold
+• Falsifiers — what evidence would invalidate the claim
+
+Example:
+
+C1: Securities exhibiting strong medium-term momentum tend to outperform in the near term due to momentum persistence in equity markets [NVDA-MOM200].
+
+Assumptions:
+
+* Momentum persistence continues in the current market environment
+* No major macro shock disrupts the trend structure
+
+Falsifiers:
+
+* Momentum metrics deteriorate rapidly
+* Price breaks below key trend levels (e.g., major moving averages)
+
+Claims should focus primarily on **observable price and momentum behavior**, not macro or fundamental narratives.
+
+---
+
+---SECTION: portfolio_construction---
+
+After stating claims, construct a portfolio allocation consistent with your reasoning.
+
+For each position:
+
+• Specify ticker and weight
+• Explain which claim(s) justify the allocation
+• Explain the technical signals supporting the position
+• Explain key downside risks
+
+Portfolio weights should follow from the **strength and interaction of the claims**.
+
+Example linkage:
+
+If C1 identifies a strong momentum regime and C2 identifies securities with the strongest relative strength, overweight those securities.
+
+If a claim identifies weakening momentum or trend breakdown risk, reduce exposure to those securities.
+
+Follow these rules carefully:
+
+• Use **3–5 claims maximum**
+• Every claim must cite evidence
+• Every major allocation must reference at least one claim
+• Avoid unsupported narrative speculation
+• Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **technical momentum reasoning**.
+
+---
+
+---SECTION: output_format---
+{{ allocation_output_instructions_enumerated }}
