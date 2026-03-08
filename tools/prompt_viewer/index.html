@@ -613,6 +613,8 @@
 
     // 0. PID Stats Overview — per-pillar CRIT scores per agent per round
     sectionsHtml += '<div id="pid-stats-section"></div>';
+    // 0b. Divergence Overview — JS divergence + evidence overlap per phase per round
+    sectionsHtml += '<div id="divergence-section"></div>';
     // 1. PID Quadrant Table + Charts — loaded async
     sectionsHtml += '<div id="pid-section"></div>';
     // 2. CRIT Chart — loaded async
@@ -652,6 +654,7 @@
     // Load async data
     loadJudgePortfolio(experiment, runId, detail.final_portfolio, detail.manifest);
     loadPIDStatsSection(experiment, runId);
+    loadDivergenceSection(experiment, runId);
     loadPIDSection(experiment, runId);
     loadCRITSection(experiment, runId);
     loadPortfolioSection(experiment, runId);
@@ -792,6 +795,74 @@
         }
 
         div.innerHTML = buildCard('PID Stats Overview', h, true);
+        div.querySelector('.card').onclick = null;
+        div.querySelector('.card').classList.add('open');
+        div.querySelector('.card-header').onclick = function() {
+          this.parentElement.classList.toggle('open');
+        };
+      })
+      .catch(function() { div.innerHTML = ''; });
+  }
+
+  // ===== DIVERGENCE OVERVIEW =====
+  function loadDivergenceSection(experiment, runId) {
+    var div = document.getElementById('divergence-section');
+    fetch('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/divergence')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.length === 0) { div.innerHTML = ''; return; }
+
+        // Group entries by round
+        var rounds = {};
+        data.forEach(function(d) {
+          var rn = d.round;
+          if (!rounds[rn]) rounds[rn] = {};
+          rounds[rn][d.phase] = d;
+        });
+
+        var roundNums = Object.keys(rounds).map(Number).sort(function(a, b) { return a - b; });
+
+        var h = '';
+        for (var i = 0; i < roundNums.length; i++) {
+          var rn = roundNums[i];
+          var phases = rounds[rn];
+          h += '<div class="section-label">Round ' + rn + '</div>';
+          h += '<table class="data-table">';
+          h += '<tr><th>Phase</th><th>JS Divergence</th><th>Evidence Overlap</th>';
+
+          // Collect agent names from confidences
+          var agents = [];
+          ['propose', 'revise'].forEach(function(ph) {
+            if (phases[ph] && phases[ph].agent_confidences) {
+              Object.keys(phases[ph].agent_confidences).forEach(function(a) {
+                if (agents.indexOf(a) === -1) agents.push(a);
+              });
+            }
+          });
+          agents.sort();
+          for (var a = 0; a < agents.length; a++) {
+            h += '<th>' + esc(agents[a]) + ' conf.</th>';
+          }
+          h += '</tr>';
+
+          ['propose', 'revise'].forEach(function(phase) {
+            var entry = phases[phase];
+            if (!entry) return;
+            var label = phase.charAt(0).toUpperCase() + phase.slice(1);
+            h += '<tr><td>' + label + '</td>';
+            h += '<td>' + fmt(entry.js_divergence) + '</td>';
+            h += '<td>' + fmt(entry.mean_overlap) + '</td>';
+            for (var a = 0; a < agents.length; a++) {
+              var conf = entry.agent_confidences ? entry.agent_confidences[agents[a]] : null;
+              h += '<td>' + fmt(conf) + '</td>';
+            }
+            h += '</tr>';
+          });
+
+          h += '</table>';
+        }
+
+        div.innerHTML = buildCard('Divergence Overview', h, true);
         div.querySelector('.card').onclick = null;
         div.querySelector('.card').classList.add('open');
         div.querySelector('.card-header').onclick = function() {

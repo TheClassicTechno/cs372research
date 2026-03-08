@@ -866,6 +866,32 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
+        # --- Propose-phase JS divergence + evidence overlap (logging only) ---
+        if self._debate_logger and round_num == 1:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            proposals = state.get("proposals", [])
+            prop_allocs = [
+                d.get("action_dict", {}).get("allocation", {})
+                for d in proposals
+            ]
+            prop_js = generalized_js_divergence(prop_allocs) if len(prop_allocs) >= 2 else 0.0
+
+            prop_ev = extract_agent_evidence_spans(proposals, allocation_mode=True)
+            prop_ov = compute_mean_overlap(prop_ev) or 0.0
+
+            prop_confidences = {
+                d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                for d in proposals
+            }
+            prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
+
+            self._debate_logger.write_divergence_metrics(
+                prop_js, prop_ov, prop_confidences, prop_evidence,
+                round_num, phase="propose",
+            )
+
         # --- Critique phase (uses PID beta for tone) ---
         if use_display:
             render_phase_label("Critique")

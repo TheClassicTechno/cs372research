@@ -71,8 +71,15 @@ def run_simulation(config_path, scenario_path, output_root, verbose=False):
 
     try:
         if verbose:
-            # Don't capture stdout — let Rich colors pass through to the terminal
-            process = subprocess.Popen(cmd, stderr=subprocess.STDOUT)
+            # Capture stdout so we can parse RESULTS_DIR, but also print it live
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            for line in process.stdout:
+                print(line, end="", flush=True)
+                stripped = line.strip()
+                if "RESULTS_DIR: " in stripped:
+                    results_dir = stripped.split("RESULTS_DIR: ")[1]
+                elif "[Logged] " in stripped:
+                    log_dir = stripped.split("[Logged] ")[1]
             process.wait()
             if process.returncode != 0:
                 error = f"Exit code {process.returncode}"
