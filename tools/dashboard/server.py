@@ -1,7 +1,7 @@
 """Local FastAPI server for browsing prompt traces and debate runs.
 
 Usage:
-    python tools/prompt_viewer/server.py
+    python tools/dashboard/server.py
 
 Then open http://localhost:8000 in a browser.
 """
@@ -13,13 +13,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
-from tools.prompt_viewer import run_scanner
+from tools.dashboard import run_scanner
 
 app = FastAPI(title="Debate Dashboard")
 
 LOGS_PATH = Path("logs/prompt_traces.jsonl")
-HTML_PATH = Path(__file__).parent / "index.html"
+STATIC_DIR = Path(__file__).parent / "static"
 RUNS_BASE = Path("logging/runs")
 
 
@@ -30,7 +31,7 @@ RUNS_BASE = Path("logging/runs")
 @app.get("/")
 def index():
     """Serve the single-page viewer UI."""
-    return FileResponse(HTML_PATH, media_type="text/html")
+    return FileResponse(STATIC_DIR / "index.html", media_type="text/html")
 
 
 @app.get("/logs")
@@ -225,6 +226,8 @@ def read_file(
 
     return JSONResponse({"content": content, "truncated": False})
 
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 if __name__ == "__main__":
     import uvicorn

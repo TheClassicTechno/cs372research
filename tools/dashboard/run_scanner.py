@@ -699,7 +699,6 @@ def get_divergence_trajectory(
                 "mean_overlap": ov_r,
                 "agent_confidences": div_r.get("agent_confidences"),
             })
-
     return result
 
 

@@ -866,31 +866,38 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
-        # --- Propose-phase JS divergence + evidence overlap (logging only) ---
-        if self._debate_logger and round_num == 1:
+        # --- Propose-phase JS divergence + evidence overlap ---
+        self._proposed_divergence = None
+        if self._debate_logger:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            proposals = state.get("proposals", [])
+            prop_decisions = state.get("revisions") or state.get("proposals", [])
             prop_allocs = [
                 d.get("action_dict", {}).get("allocation", {})
-                for d in proposals
+                for d in prop_decisions
             ]
-            prop_js = generalized_js_divergence(prop_allocs) if len(prop_allocs) >= 2 else 0.0
+            if len(prop_allocs) >= 2:
+                prop_js = generalized_js_divergence(prop_allocs)
+                prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
+                prop_ov = compute_mean_overlap(prop_ev) or 0.0
 
-            prop_ev = extract_agent_evidence_spans(proposals, allocation_mode=True)
-            prop_ov = compute_mean_overlap(prop_ev) or 0.0
+                prop_confidences = {
+                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in prop_decisions
+                }
+                prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
 
-            prop_confidences = {
-                d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
-                for d in proposals
-            }
-            prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
-
-            self._debate_logger.write_divergence_metrics(
-                prop_js, prop_ov, prop_confidences, prop_evidence,
-                round_num, phase="propose",
-            )
+                self._debate_logger.write_divergence_metrics(
+                    prop_js, prop_ov, prop_confidences, prop_evidence,
+                    round_num, phase="propose",
+                )
+                self._proposed_divergence = {
+                    "js": prop_js,
+                    "ov": prop_ov,
+                    "agent_confidences": prop_confidences,
+                    "agent_evidence_ids": prop_evidence,
+                }
 
         # --- Critique phase (uses PID beta for tone) ---
         if use_display:
@@ -1110,6 +1117,7 @@ class MultiAgentRunner:
                     "agent_confidences": agent_confidences,
                     "agent_evidence_ids": agent_evidence,
                 },
+                "divergence_propose": self._proposed_divergence,
                 "convergence": {
                     "stable_rounds": self._stable_rounds,
                     "delta_rho_actual": (

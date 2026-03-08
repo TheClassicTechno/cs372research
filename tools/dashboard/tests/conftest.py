@@ -63,7 +63,7 @@ def dashboard_url(tmp_path_factory):
     5. Yields the base URL.
     6. Cleans up on teardown.
     """
-    import tools.prompt_viewer.server as srv
+    import tools.dashboard.server as srv
 
     # --- 1. Copy dataset into temp workspace ---
     tmp_root = tmp_path_factory.mktemp("dashboard_runs")

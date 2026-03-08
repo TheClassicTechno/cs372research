@@ -1,0 +1,81 @@
+rules:
+
+- id: no-fetch-in-components
+  pattern: fetch(...)
+  message: "Components must not perform network requests"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/components/**
+
+- id: no-dom-in-utils
+  pattern-either:
+    - pattern: document.$X
+    - pattern: document.$X(...)
+  message: "Utils must not access DOM"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/utils/**
+
+- id: no-window-in-utils
+  pattern-either:
+    - pattern: window.$X
+    - pattern: window.$X = ...
+  message: "Utils must not access window"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/utils/**
+
+- id: no-inline-onclick
+  pattern-regex: onclick\s*=
+  message: "Inline onclick handlers are forbidden — use delegation with data-action"
+  severity: ERROR
+  languages: [js]
+
+- id: no-eval
+  pattern-either:
+    - pattern: eval(...)
+    - pattern: new Function(...)
+  message: "Dynamic code execution is forbidden"
+  severity: ERROR
+  languages: [js]
+
+- id: no-window-global-assignment
+  pattern: window.$X = ...
+  message: "Window global assignments are forbidden — state belongs in state.js"
+  severity: WARNING
+  languages: [js]
+
+- id: no-fetch-in-api-layer-dom
+  pattern-either:
+    - pattern: document.$X
+    - pattern: document.$X(...)
+  message: "API layer must not access DOM"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/api/**
+
+- id: no-innerhtml-in-components
+  pattern: $X.innerHTML = ...
+  message: "Components must not mutate DOM — return HTML strings instead"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/components/**
+
+- id: no-addeventlistener-in-components
+  pattern: $X.addEventListener(...)
+  message: "Components must not attach event listeners"
+  severity: ERROR
+  languages: [js]
+  paths:
+    include:
+      - /static/js/components/**
