@@ -37,7 +37,8 @@
     "AMZN",
     "TSLA",
     "HD",
-    "NKE"
+    "NKE",
+    "TLT"
   ],
   "macro_regime": {
     "macro_metrics": {
@@ -121,7 +122,12 @@
         "sentiment_volatility": 0.462615,
         "transcript_char_count": 58227
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.090667,
+        "sentiment_volatility": 0.462615,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.268105
+      },
       "asset_features": {
         "close": 356.53,
         "ret_20d": -0.0988,
@@ -145,13 +151,13 @@
         "beta_1y": 1.2195,
         "size_log_mcap": 25.8614,
         "value_book_to_market": 0.1144,
-        "avg_dollar_volume_20d": 678417134.31,
+        "avg_dollar_volume_20d": 678417108.71,
         "gross_margin": 0.3426,
         "roe": 0.1432,
         "free_cash_flow_yield": 0.0138,
         "debt_to_equity": 1.9706,
         "earnings_surprise_pct": -0.0336,
-        "relative_strength_60d": -0.0983
+        "relative_strength_60d": -0.09
       }
     },
     "DAL": {
@@ -182,7 +188,12 @@
         "sentiment_volatility": 0.617273,
         "transcript_char_count": 56359
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.024828,
+        "sentiment_volatility": 0.617273,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.575598
+      },
       "asset_features": {
         "close": 59.62,
         "ret_20d": -0.0459,
@@ -206,13 +217,13 @@
         "beta_1y": 1.2702,
         "size_log_mcap": 24.375,
         "value_book_to_market": 0.3968,
-        "avg_dollar_volume_20d": 419387184.96,
+        "avg_dollar_volume_20d": 419387170.72,
         "gross_margin": 0.2583,
         "roe": 0.0551,
         "free_cash_flow_yield": 0.0152,
         "debt_to_equity": 1.489,
         "earnings_surprise_pct": -0.0132,
-        "relative_strength_60d": 0.2162
+        "relative_strength_60d": 0.2245
       }
     },
     "DE": {
@@ -243,7 +254,12 @@
         "sentiment_volatility": 0.447095,
         "transcript_char_count": 60149
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.091917,
+        "sentiment_volatility": 0.447095,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.12084
+      },
       "asset_features": {
         "close": 417.98,
         "ret_20d": -0.0813,
@@ -267,13 +283,13 @@
         "beta_1y": 0.6342,
         "size_log_mcap": null,
         "value_book_to_market": null,
-        "avg_dollar_volume_20d": 486455308.63,
+        "avg_dollar_volume_20d": 486455301.0,
         "gross_margin": null,
         "roe": null,
         "free_cash_flow_yield": null,
         "debt_to_equity": null,
         "earnings_surprise_pct": 0.1578,
-        "relative_strength_60d": 0.0274
+        "relative_strength_60d": 0.0357
       },
       "fiscal_year_end": "10-31"
     },
@@ -305,7 +321,12 @@
         "sentiment_volatility": 0.609177,
         "transcript_char_count": 57653
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.210005,
+        "sentiment_volatility": 0.609177,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.672354
+      },
       "asset_features": {
         "close": 113.23,
         "ret_20d": -0.0249,
@@ -329,18 +350,31 @@
         "beta_1y": 0.2656,
         "size_log_mcap": 25.7394,
         "value_book_to_market": 0.3988,
-        "avg_dollar_volume_20d": 492736990.65,
+        "avg_dollar_volume_20d": 492736991.56,
         "gross_margin": 0.1959,
         "roe": 0.0246,
         "free_cash_flow_yield": 0.0022,
         "debt_to_equity": 0.713,
         "earnings_surprise_pct": 0.0821,
-        "relative_strength_60d": -0.0837
+        "relative_strength_60d": -0.0754
       }
     },
     "JPM": {
       "filing_summary": {
-        "periodic": null,
+        "periodic": {
+          "ticker": "JPM",
+          "form": "10-K",
+          "filing_date": "2024-02-16",
+          "fiscal_period": "FY2023",
+          "period_type": "annual",
+          "operating_state": "JPMorgan Chase operates as a global systemically important financial institution across consumer banking, investment banking, asset management, and commercial banking segments. Revenue generation spans net interest income, trading revenues, and fee-based services while facing regulatory constraints on products, services, and market-making activities driven by interest rate environments, market volatility, and client activity levels.",
+          "cost_structure": "Operating expenses are elevated by extensive compliance requirements, regulatory assessments, and technology investments for cybersecurity and risk management systems. First Republic integration costs and enhanced vendor oversight standards drive additional operational expenses beyond anticipated levels alongside compensation expenses and competitive talent acquisition pressures.",
+          "material_events": "JPMorgan Chase completed the acquisition of certain First Republic Bank assets and liabilities from the FDIC on May 1, 2023, involving complex system integration challenges. CEO Jamie Dimon announced plans to sell 1 million shares in 2024 for diversification purposes, representing his first stock sale during his tenure. The firm completed debt offerings totaling $7.25 billion across fixed-to-floating rate notes with maturities through 2034.",
+          "macro_exposures": "The firm faces elevated exposure to geopolitical conflicts that could disrupt global markets, energy prices, and currency stability. Interest rate volatility and credit spread changes materially impact earnings and capital levels while climate change presents physical and transition risks affecting client creditworthiness. Political developments affecting governmental policies on taxation, spending, and financial services regulation present material risks.",
+          "forward_outlook": "Management expects continued heightened regulatory scrutiny with potential formal enforcement actions requiring substantial compliance resources. The firm anticipates ongoing business model modifications in response to supervisory expectations and evolving regulatory frameworks while maintaining required capital levels and supporting business growth, technology infrastructure investments, and shareholder distributions.",
+          "uncertainty_profile": "Pending regulatory investigations carry material financial and reputational risks with potential for criminal charges, client disqualification, and business restrictions. Cybersecurity threats have escalated with vulnerabilities in software development, third-party vendor security, and zero-day exploits requiring substantial control enhancements. Risk management models based on historical correlations may prove inadequate during market stress when previously uncorrelated indicators become correlated.",
+          "word_count": 320
+        },
         "event_filings": []
       },
       "earnings_call": {
@@ -353,7 +387,12 @@
         "sentiment_volatility": 0.368655,
         "transcript_char_count": 46667
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.493574,
+        "sentiment_volatility": 0.368655,
+        "source": "earnings_call",
+        "cross_sectional_z": 1.613619
+      },
       "asset_features": {
         "close": 233.69,
         "ret_20d": -0.0266,
@@ -377,18 +416,31 @@
         "beta_1y": 0.793,
         "size_log_mcap": 27.206,
         "value_book_to_market": 0.5273,
-        "avg_dollar_volume_20d": 2013825347.93,
+        "avg_dollar_volume_20d": 2013825410.21,
         "gross_margin": null,
         "roe": 0.0406,
         "free_cash_flow_yield": 0.226,
         "debt_to_equity": 1.3178,
         "earnings_surprise_pct": 0.0952,
-        "relative_strength_60d": 0.1198
+        "relative_strength_60d": 0.128
       }
     },
     "GS": {
       "filing_summary": {
-        "periodic": null,
+        "periodic": {
+          "ticker": "GS",
+          "form": "10-K",
+          "filing_date": "2024-02-23",
+          "fiscal_period": "FY2023",
+          "period_type": "annual",
+          "operating_state": "Net revenues declined 2% to $46.25 billion driven by 16% decline in investment banking fees from reduced M&A activity and lower market making revenues from decreased client activity. Asset & Wealth Management revenues rose from higher management fees on increased assets under supervision, while Platform Solutions revenues increased significantly from credit card balance growth. The firm operates under comprehensive regulatory oversight as a systemically important financial institution with overlapping compliance requirements across global jurisdictions.",
+          "cost_structure": "Operating expenses increased 11% primarily driven by commercial real estate impairments, GreenSky intangible asset write-down, Consumer platforms goodwill impairment, and FDIC special assessment fee, deteriorating efficiency ratio to 74.6%. Headcount decreased 7% to 45,300 while compliance and technology infrastructure costs increased. Interest expense rose faster than interest income due to higher borrowing costs, compressing net interest margins.",
+          "material_events": "Returned $9.39 billion to shareholders through share repurchases and dividends under new $30 billion repurchase program approved February 2023. Completed sale of substantially all Marcus loan portfolio and sold Personal Financial Management business. Entered agreement to sell GreenSky expected to close Q1 2024 and completed agreement with General Motors regarding credit card program transition. Federal Reserve reduced stress capital buffer from 6.3% to 5.5%, lowering CET1 capital ratio requirement to 13.0%.",
+          "macro_exposures": "Commercial real estate market pressure resulted in significant impairments with office-related investments marked down approximately 50% amid broader market stress. Geopolitical tensions from Ukraine conflict and Middle East developments continued weighing on investment banking activity while US-China trade tensions create ongoing operational risks. The firm maintains significant exposure to market volatility through net long positions across debt securities, equities, and derivatives with credit exposure concentrated in financial services counterparties.",
+          "forward_outlook": "Management targets through-the-cycle ROE of 14-16% and ROTE of 15-17% compared to current 7.5% and 8.1% respectively, with expected 2024 tax rate approximately 22%. Target annual firmwide management fees exceeding $10 billion in 2024 with Asset & Wealth Management targeting mid-twenties pre-tax margins and Platform Solutions targeting pre-tax profitability by end of 2025. Historical principal investments portfolio targeted for reduction while maintaining Global Core Liquid Assets to cover stressed outflows.",
+          "uncertainty_profile": "Credit rating downgrades could trigger significant collateral calls with potential contract terminations affecting liquidity access. Evolving AI regulations present compliance risks and implementation costs while cybersecurity threats pose ongoing operational risks. Resolution planning under single point of entry strategy could result in complete losses for Group Inc. security holders while subsidiary creditors receive full recoveries, with regulatory capital requirements subject to annual stress test results and potential implementation changes.",
+          "word_count": 410
+        },
         "event_filings": []
       },
       "earnings_call": {
@@ -401,7 +453,12 @@
         "sentiment_volatility": 0.619236,
         "transcript_char_count": 55042
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.04579,
+        "sentiment_volatility": 0.619236,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.90541
+      },
       "asset_features": {
         "close": 558.23,
         "ret_20d": -0.0483,
@@ -425,13 +482,13 @@
         "beta_1y": 1.1405,
         "size_log_mcap": 25.879,
         "value_book_to_market": 0.7035,
-        "avg_dollar_volume_20d": 1048298701.73,
+        "avg_dollar_volume_20d": 1048298702.65,
         "gross_margin": null,
         "roe": 0.0337,
         "free_cash_flow_yield": 0.2663,
         "debt_to_equity": 2.8079,
         "earnings_surprise_pct": 0.2139,
-        "relative_strength_60d": 0.1471
+        "relative_strength_60d": 0.1554
       }
     },
     "BAC": {
@@ -449,7 +506,12 @@
         "sentiment_volatility": 0.653165,
         "transcript_char_count": 76275
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.197607,
+        "sentiment_volatility": 0.653165,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.231344
+      },
       "asset_features": {
         "close": 42.71,
         "ret_20d": -0.0605,
@@ -473,13 +535,13 @@
         "beta_1y": 0.8173,
         "size_log_mcap": 26.5074,
         "value_book_to_market": 0.9092,
-        "avg_dollar_volume_20d": 1350816854.7,
+        "avg_dollar_volume_20d": 1350816861.07,
         "gross_margin": null,
         "roe": 0.0226,
         "free_cash_flow_yield": 0.0797,
         "debt_to_equity": 1.1053,
         "earnings_surprise_pct": 0.0658,
-        "relative_strength_60d": 0.0867
+        "relative_strength_60d": 0.095
       }
     },
     "BLK": {
@@ -497,7 +559,12 @@
         "sentiment_volatility": 0.477616,
         "transcript_char_count": 59507
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.141211,
+        "sentiment_volatility": 0.477616,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.351061
+      },
       "asset_features": {
         "close": 998.96,
         "ret_20d": 0.0099,
@@ -521,13 +588,13 @@
         "beta_1y": 0.8446,
         "size_log_mcap": 25.7653,
         "value_book_to_market": 0.3068,
-        "avg_dollar_volume_20d": 780765772.72,
+        "avg_dollar_volume_20d": 780765804.39,
         "gross_margin": 0.4925,
         "roe": 0.0352,
         "free_cash_flow_yield": 0.0163,
         "debt_to_equity": 0.2994,
         "earnings_surprise_pct": 0.1115,
-        "relative_strength_60d": 0.0702
+        "relative_strength_60d": 0.0785
       }
     },
     "MS": {
@@ -545,7 +612,12 @@
         "sentiment_volatility": 0.651557,
         "transcript_char_count": 67849
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.30579,
+        "sentiment_volatility": 0.651557,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.736598
+      },
       "asset_features": {
         "close": 122.3,
         "ret_20d": -0.0405,
@@ -569,13 +641,13 @@
         "beta_1y": 1.0651,
         "size_log_mcap": 26.0039,
         "value_book_to_market": 0.5319,
-        "avg_dollar_volume_20d": 723743192.83,
+        "avg_dollar_volume_20d": 723743205.58,
         "gross_margin": null,
         "roe": 0.0355,
         "free_cash_flow_yield": 0.0556,
         "debt_to_equity": 2.9702,
         "earnings_surprise_pct": 0.1899,
-        "relative_strength_60d": 0.1595
+        "relative_strength_60d": 0.1678
       }
     },
     "UNH": {
@@ -606,7 +678,12 @@
         "sentiment_volatility": 0.614056,
         "transcript_char_count": 57929
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.239982,
+        "sentiment_volatility": 0.614056,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.429251
+      },
       "asset_features": {
         "close": 493.7,
         "ret_20d": -0.1655,
@@ -630,13 +707,13 @@
         "beta_1y": 0.1221,
         "size_log_mcap": 26.8364,
         "value_book_to_market": 0.2051,
-        "avg_dollar_volume_20d": 3582022093.06,
+        "avg_dollar_volume_20d": 3582022046.45,
         "gross_margin": 0.2114,
         "roe": 0.0598,
         "free_cash_flow_yield": 0.0032,
         "debt_to_equity": 0.83,
         "earnings_surprise_pct": 0.0171,
-        "relative_strength_60d": -0.1562
+        "relative_strength_60d": -0.1479
       }
     },
     "LLY": {
@@ -667,7 +744,12 @@
         "sentiment_volatility": 0.581221,
         "transcript_char_count": 53665
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.266703,
+        "sentiment_volatility": 0.581221,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.554048
+      },
       "asset_features": {
         "close": 765.01,
         "ret_20d": -0.0348,
@@ -691,13 +773,13 @@
         "beta_1y": 0.8664,
         "size_log_mcap": 27.2551,
         "value_book_to_market": 0.0208,
-        "avg_dollar_volume_20d": 2511579945.18,
+        "avg_dollar_volume_20d": 2511579931.07,
         "gross_margin": 0.8224,
         "roe": 0.309,
         "free_cash_flow_yield": 0.0011,
         "debt_to_equity": 2.3573,
         "earnings_surprise_pct": -0.1973,
-        "relative_strength_60d": -0.1435
+        "relative_strength_60d": -0.1352
       }
     },
     "JNJ": {
@@ -728,7 +810,12 @@
         "sentiment_volatility": 0.492807,
         "transcript_char_count": 61651
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.216679,
+        "sentiment_volatility": 0.492807,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.703524
+      },
       "asset_features": {
         "close": 139.58,
         "ret_20d": -0.0658,
@@ -752,13 +839,13 @@
         "beta_1y": -0.0458,
         "size_log_mcap": 26.5403,
         "value_book_to_market": 0.2128,
-        "avg_dollar_volume_20d": 1209742326.26,
+        "avg_dollar_volume_20d": 1209742305.46,
         "gross_margin": 0.6835,
         "roe": 0.048,
         "free_cash_flow_yield": 0.0144,
         "debt_to_equity": 0.5124,
         "earnings_surprise_pct": 0.095,
-        "relative_strength_60d": -0.1056
+        "relative_strength_60d": -0.0973
       }
     },
     "PFE": {
@@ -789,7 +876,12 @@
         "sentiment_volatility": 0.564333,
         "transcript_char_count": 64017
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.060587,
+        "sentiment_volatility": 0.564333,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.974517
+      },
       "asset_features": {
         "close": 24.33,
         "ret_20d": 0.0275,
@@ -813,13 +905,13 @@
         "beta_1y": 0.2553,
         "size_log_mcap": 25.6497,
         "value_book_to_market": 0.6397,
-        "avg_dollar_volume_20d": 1027409024.76,
+        "avg_dollar_volume_20d": 1027409039.01,
         "gross_margin": 0.6674,
         "roe": 0.0046,
         "free_cash_flow_yield": 0.0421,
         "debt_to_equity": 0.7216,
         "earnings_surprise_pct": 0.7377,
-        "relative_strength_60d": -0.0724
+        "relative_strength_60d": -0.0641
       }
     },
     "AMT": {
@@ -850,7 +942,12 @@
         "sentiment_volatility": 0.677129,
         "transcript_char_count": 60030
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.055269,
+        "sentiment_volatility": 0.677129,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.433427
+      },
       "asset_features": {
         "close": 177.19,
         "ret_20d": -0.1075,
@@ -874,13 +971,13 @@
         "beta_1y": 0.0207,
         "size_log_mcap": 25.1399,
         "value_book_to_market": 0.0408,
-        "avg_dollar_volume_20d": 479081844.95,
+        "avg_dollar_volume_20d": 479081848.0,
         "gross_margin": 0.7431,
         "roe": 0.3636,
         "free_cash_flow_yield": 0.0091,
         "debt_to_equity": 12.9957,
         "earnings_surprise_pct": -0.4258,
-        "relative_strength_60d": -0.1818
+        "relative_strength_60d": -0.1735
       }
     },
     "PLD": {
@@ -911,7 +1008,12 @@
         "sentiment_volatility": 0.492401,
         "transcript_char_count": 51853
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.470717,
+        "sentiment_volatility": 0.492401,
+        "source": "earnings_call",
+        "cross_sectional_z": 1.506868
+      },
       "asset_features": {
         "close": 102.06,
         "ret_20d": -0.0796,
@@ -935,13 +1037,13 @@
         "beta_1y": 0.8197,
         "size_log_mcap": 25.2723,
         "value_book_to_market": 0.5707,
-        "avg_dollar_volume_20d": 471154806.45,
+        "avg_dollar_volume_20d": 471154805.12,
         "gross_margin": 0.7639,
         "roe": 0.0237,
         "free_cash_flow_yield": 0.0141,
         "debt_to_equity": 0.5838,
         "earnings_surprise_pct": 0.6875,
-        "relative_strength_60d": -0.1442
+        "relative_strength_60d": -0.1359
       }
     },
     "XOM": {
@@ -972,7 +1074,12 @@
         "sentiment_volatility": 0.445223,
         "transcript_char_count": 54185
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.328593,
+        "sentiment_volatility": 0.445223,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.843097
+      },
       "asset_features": {
         "close": 103.07,
         "ret_20d": -0.0872,
@@ -996,13 +1103,13 @@
         "beta_1y": 0.1865,
         "size_log_mcap": 26.8296,
         "value_book_to_market": 0.5877,
-        "avg_dollar_volume_20d": 1799937382.76,
+        "avg_dollar_volume_20d": 1799937389.49,
         "gross_margin": 0.2128,
         "roe": 0.0289,
         "free_cash_flow_yield": 0.012,
         "debt_to_equity": 0.1582,
         "earnings_surprise_pct": 0.0267,
-        "relative_strength_60d": -0.1463
+        "relative_strength_60d": -0.1381
       }
     },
     "CVX": {
@@ -1033,7 +1140,12 @@
         "sentiment_volatility": 0.56092,
         "transcript_char_count": 60323
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.131082,
+        "sentiment_volatility": 0.56092,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.079352
+      },
       "asset_features": {
         "close": 137.08,
         "ret_20d": -0.1071,
@@ -1057,13 +1169,13 @@
         "beta_1y": 0.4179,
         "size_log_mcap": 26.2143,
         "value_book_to_market": 0.6281,
-        "avg_dollar_volume_20d": 1356662718.71,
+        "avg_dollar_volume_20d": 1356662728.18,
         "gross_margin": 0.2734,
         "roe": 0.0213,
         "free_cash_flow_yield": 0.018,
         "debt_to_equity": 0.1611,
         "earnings_surprise_pct": 0.0372,
-        "relative_strength_60d": -0.0444
+        "relative_strength_60d": -0.0362
       }
     },
     "COP": {
@@ -1094,7 +1206,12 @@
         "sentiment_volatility": 0.394232,
         "transcript_char_count": 52759
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.444935,
+        "sentiment_volatility": 0.394232,
+        "source": "earnings_call",
+        "cross_sectional_z": 1.386457
+      },
       "asset_features": {
         "close": 95.11,
         "ret_20d": -0.0657,
@@ -1118,13 +1235,13 @@
         "beta_1y": 0.2551,
         "size_log_mcap": 25.522,
         "value_book_to_market": 0.5339,
-        "avg_dollar_volume_20d": 734210249.96,
+        "avg_dollar_volume_20d": 734210232.58,
         "gross_margin": 0.2942,
         "roe": 0.0356,
         "free_cash_flow_yield": 0.0094,
         "debt_to_equity": 0.3754,
         "earnings_surprise_pct": 0.0854,
-        "relative_strength_60d": -0.1432
+        "relative_strength_60d": -0.1349
       }
     },
     "OXY": {
@@ -1155,7 +1272,12 @@
         "sentiment_volatility": 0.699372,
         "transcript_char_count": 52437
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.018753,
+        "sentiment_volatility": 0.699372,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.779137
+      },
       "asset_features": {
         "close": 48.35,
         "ret_20d": -0.0156,
@@ -1179,13 +1301,13 @@
         "beta_1y": 0.4397,
         "size_log_mcap": 24.5381,
         "value_book_to_market": 0.7529,
-        "avg_dollar_volume_20d": 602964491.99,
+        "avg_dollar_volume_20d": 602964499.44,
         "gross_margin": 0.3429,
         "roe": -0.0037,
         "free_cash_flow_yield": 0.0347,
         "debt_to_equity": 0.7881,
         "earnings_surprise_pct": 0.3333,
-        "relative_strength_60d": -0.125
+        "relative_strength_60d": -0.1167
       }
     },
     "COST": {
@@ -1216,7 +1338,12 @@
         "sentiment_volatility": 0.598084,
         "transcript_char_count": 55761
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.032637,
+        "sentiment_volatility": 0.598084,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.539127
+      },
       "asset_features": {
         "close": 911.51,
         "ret_20d": -0.0602,
@@ -1240,13 +1367,13 @@
         "beta_1y": 0.8352,
         "size_log_mcap": 26.7263,
         "value_book_to_market": 0.0604,
-        "avg_dollar_volume_20d": 2052002616.12,
+        "avg_dollar_volume_20d": 2052002642.82,
         "gross_margin": 0.1294,
         "roe": 0.0735,
         "free_cash_flow_yield": 0.0049,
         "debt_to_equity": 0.3285,
         "earnings_surprise_pct": 0.0632,
-        "relative_strength_60d": 0.0238
+        "relative_strength_60d": 0.032
       },
       "fiscal_year_end": "08-31"
     },
@@ -1278,7 +1405,12 @@
         "sentiment_volatility": 0.562338,
         "transcript_char_count": 61087
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.13767,
+        "sentiment_volatility": 0.562338,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.334523
+      },
       "asset_features": {
         "close": 89.49,
         "ret_20d": -0.0226,
@@ -1302,13 +1434,13 @@
         "beta_1y": 0.302,
         "size_log_mcap": 27.3011,
         "value_book_to_market": 0.1225,
-        "avg_dollar_volume_20d": 1687841404.45,
+        "avg_dollar_volume_20d": 1687841391.88,
         "gross_margin": 0.2491,
         "roe": 0.0519,
         "free_cash_flow_yield": 0.0005,
         "debt_to_equity": 0.7008,
-        "earnings_surprise_pct": 0.0943,
-        "relative_strength_60d": 0.1036
+        "earnings_surprise_pct": 0.0755,
+        "relative_strength_60d": 0.1119
       },
       "fiscal_year_end": "01-31"
     },
@@ -1340,7 +1472,12 @@
         "sentiment_volatility": 0.504468,
         "transcript_char_count": 72270
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.036125,
+        "sentiment_volatility": 0.504468,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.522836
+      },
       "asset_features": {
         "close": 162.18,
         "ret_20d": -0.0671,
@@ -1364,13 +1501,13 @@
         "beta_1y": 0.0029,
         "size_log_mcap": 26.6642,
         "value_book_to_market": 0.1345,
-        "avg_dollar_volume_20d": 1057471073.17,
+        "avg_dollar_volume_20d": 1057471033.79,
         "gross_margin": 0.5239,
         "roe": 0.0905,
         "free_cash_flow_yield": 0.0103,
         "debt_to_equity": 0.6779,
         "earnings_surprise_pct": 0.0158,
-        "relative_strength_60d": -0.0165
+        "relative_strength_60d": -0.0083
       },
       "fiscal_year_end": "06-30"
     },
@@ -1402,7 +1539,12 @@
         "sentiment_volatility": 0.535937,
         "transcript_char_count": 46162
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.20322,
+        "sentiment_volatility": 0.535937,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.257559
+      },
       "asset_features": {
         "close": 249.06,
         "ret_20d": 0.0452,
@@ -1426,13 +1568,13 @@
         "beta_1y": 0.9704,
         "size_log_mcap": 28.9515,
         "value_book_to_market": 0.0178,
-        "avg_dollar_volume_20d": 11564110039.66,
+        "avg_dollar_volume_20d": 11564109925.23,
         "gross_margin": 0.4688,
         "roe": 0.5442,
         "free_cash_flow_yield": 0.0072,
         "debt_to_equity": 1.45,
         "earnings_surprise_pct": 0.0211,
-        "relative_strength_60d": 0.0903
+        "relative_strength_60d": 0.0985
       },
       "fiscal_year_end": "09-30"
     },
@@ -1464,7 +1606,12 @@
         "sentiment_volatility": 0.551748,
         "transcript_char_count": 48484
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.397063,
+        "sentiment_volatility": 0.551748,
+        "source": "earnings_call",
+        "cross_sectional_z": 1.162877
+      },
       "asset_features": {
         "close": 134.25,
         "ret_20d": -0.0312,
@@ -1488,13 +1635,13 @@
         "beta_1y": 2.6399,
         "size_log_mcap": null,
         "value_book_to_market": null,
-        "avg_dollar_volume_20d": 26717010006.46,
+        "avg_dollar_volume_20d": 26717009767.04,
         "gross_margin": null,
         "roe": null,
         "free_cash_flow_yield": null,
         "debt_to_equity": null,
         "earnings_surprise_pct": 0.08,
-        "relative_strength_60d": 0.06
+        "relative_strength_60d": 0.0683
       },
       "fiscal_year_end": "01-31"
     },
@@ -1526,7 +1673,12 @@
         "sentiment_volatility": 0.572054,
         "transcript_char_count": 53305
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.139142,
+        "sentiment_volatility": 0.572054,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.041709
+      },
       "asset_features": {
         "close": 417.46,
         "ret_20d": -0.022,
@@ -1550,13 +1702,13 @@
         "beta_1y": 1.1962,
         "size_log_mcap": 28.7637,
         "value_book_to_market": 0.0975,
-        "avg_dollar_volume_20d": 9150519795.14,
+        "avg_dollar_volume_20d": 9150519844.47,
         "gross_margin": 0.6869,
         "roe": 0.0796,
         "free_cash_flow_yield": 0.0021,
         "debt_to_equity": 0.2056,
         "earnings_surprise_pct": 0.0611,
-        "relative_strength_60d": 0.0
+        "relative_strength_60d": 0.0083
       },
       "fiscal_year_end": "06-30"
     },
@@ -1588,7 +1740,12 @@
         "sentiment_volatility": 0.630029,
         "transcript_char_count": 37761
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.34067,
+        "sentiment_volatility": 0.630029,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.899501
+      },
       "asset_features": {
         "close": 229.76,
         "ret_20d": 0.3961,
@@ -1612,13 +1769,13 @@
         "beta_1y": 2.6003,
         "size_log_mcap": 27.7049,
         "value_book_to_market": 0.0629,
-        "avg_dollar_volume_20d": 10033556218.88,
+        "avg_dollar_volume_20d": 10033556178.42,
         "gross_margin": 0.6405,
         "roe": 0.0639,
         "free_cash_flow_yield": 0.0051,
         "debt_to_equity": 0.9983,
         "earnings_surprise_pct": 0.0216,
-        "relative_strength_60d": 0.3009
+        "relative_strength_60d": 0.3091
       },
       "fiscal_year_end": "10-31"
     },
@@ -1650,7 +1807,12 @@
         "sentiment_volatility": 0.543494,
         "transcript_char_count": 51044
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.047495,
+        "sentiment_volatility": 0.543494,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.913373
+      },
       "asset_features": {
         "close": 120.79,
         "ret_20d": -0.1497,
@@ -1680,7 +1842,7 @@
         "free_cash_flow_yield": 0.0056,
         "debt_to_equity": 0.0384,
         "earnings_surprise_pct": 0.0,
-        "relative_strength_60d": -0.3083
+        "relative_strength_60d": -0.3001
       }
     },
     "GOOG": {
@@ -1711,7 +1873,12 @@
         "sentiment_volatility": 0.488571,
         "transcript_char_count": 53083
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": -0.099874,
+        "sentiment_volatility": 0.488571,
+        "source": "earnings_call",
+        "cross_sectional_z": -1.158002
+      },
       "asset_features": {
         "close": 189.7,
         "ret_20d": 0.1022,
@@ -1741,7 +1908,7 @@
         "free_cash_flow_yield": 0.0107,
         "debt_to_equity": 0.0694,
         "earnings_surprise_pct": 0.1459,
-        "relative_strength_60d": 0.116
+        "relative_strength_60d": 0.1242
       }
     },
     "META": {
@@ -1772,7 +1939,12 @@
         "sentiment_volatility": 0.563266,
         "transcript_char_count": 53794
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.321338,
+        "sentiment_volatility": 0.563266,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.809213
+      },
       "asset_features": {
         "close": 583.67,
         "ret_20d": -0.0116,
@@ -1796,13 +1968,13 @@
         "beta_1y": 1.5331,
         "size_log_mcap": 28.0226,
         "value_book_to_market": 0.1235,
-        "avg_dollar_volume_20d": 7573855572.03,
+        "avg_dollar_volume_20d": 7573855325.16,
         "gross_margin": 0.8173,
         "roe": 0.1141,
         "free_cash_flow_yield": 0.0092,
         "debt_to_equity": 0.2686,
         "earnings_surprise_pct": 0.1399,
-        "relative_strength_60d": -0.0318
+        "relative_strength_60d": -0.0236
       }
     },
     "NFLX": {
@@ -1848,7 +2020,12 @@
         "sentiment_volatility": 0.392766,
         "transcript_char_count": 32945
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.38507,
+        "sentiment_volatility": 0.392766,
+        "source": "earnings_call",
+        "cross_sectional_z": 1.106865
+      },
       "asset_features": {
         "close": 89.13,
         "ret_20d": -0.0072,
@@ -1878,7 +2055,7 @@
         "free_cash_flow_yield": 0.0036,
         "debt_to_equity": 0.6298,
         "earnings_surprise_pct": 0.0588,
-        "relative_strength_60d": 0.2234
+        "relative_strength_60d": 0.2316
       }
     },
     "DIS": {
@@ -1909,7 +2086,12 @@
         "sentiment_volatility": 0.489708,
         "transcript_char_count": 37302
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.234109,
+        "sentiment_volatility": 0.489708,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.401822
+      },
       "asset_features": {
         "close": 110.13,
         "ret_20d": -0.0454,
@@ -1933,13 +2115,13 @@
         "beta_1y": 0.5253,
         "size_log_mcap": 26.038,
         "value_book_to_market": 0.5014,
-        "avg_dollar_volume_20d": 891599104.01,
+        "avg_dollar_volume_20d": 891599121.62,
         "gross_margin": 0.376,
         "roe": 0.0251,
         "free_cash_flow_yield": 0.0036,
         "debt_to_equity": 0.4445,
         "earnings_surprise_pct": 0.027,
-        "relative_strength_60d": 0.1603
+        "relative_strength_60d": 0.1686
       },
       "fiscal_year_end": "09-30"
     },
@@ -1971,7 +2153,12 @@
         "sentiment_volatility": 0.655178,
         "transcript_char_count": 47782
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.253386,
+        "sentiment_volatility": 0.655178,
+        "source": "earnings_call",
+        "cross_sectional_z": 0.491852
+      },
       "asset_features": {
         "close": 219.39,
         "ret_20d": 0.0412,
@@ -2001,7 +2188,7 @@
         "free_cash_flow_yield": 0.0077,
         "debt_to_equity": 0.4577,
         "earnings_surprise_pct": 0.2544,
-        "relative_strength_60d": 0.1612
+        "relative_strength_60d": 0.1695
       }
     },
     "TSLA": {
@@ -2032,7 +2219,12 @@
         "sentiment_volatility": 0.385171,
         "transcript_char_count": 53248
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.651417,
+        "sentiment_volatility": 0.385171,
+        "source": "earnings_call",
+        "cross_sectional_z": 2.350804
+      },
       "asset_features": {
         "close": 403.84,
         "ret_20d": 0.1309,
@@ -2062,7 +2254,7 @@
         "free_cash_flow_yield": 0.0016,
         "debt_to_equity": 0.1868,
         "earnings_surprise_pct": 0.2,
-        "relative_strength_60d": 0.5997
+        "relative_strength_60d": 0.6079
       }
     },
     "HD": {
@@ -2093,7 +2285,12 @@
         "sentiment_volatility": 0.579401,
         "transcript_char_count": 51028
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.117881,
+        "sentiment_volatility": 0.579401,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.141006
+      },
       "asset_features": {
         "close": 379.53,
         "ret_20d": -0.0889,
@@ -2117,13 +2314,13 @@
         "beta_1y": 0.7792,
         "size_log_mcap": 26.6555,
         "value_book_to_market": 0.0153,
-        "avg_dollar_volume_20d": 1249783845.71,
+        "avg_dollar_volume_20d": 1249783825.93,
         "gross_margin": 0.3338,
         "roe": 0.6305,
         "free_cash_flow_yield": 0.0091,
         "debt_to_equity": 10.9537,
         "earnings_surprise_pct": 0.0027,
-        "relative_strength_60d": -0.0575
+        "relative_strength_60d": -0.0493
       },
       "fiscal_year_end": "01-31"
     },
@@ -2155,7 +2352,12 @@
         "sentiment_volatility": 0.479276,
         "transcript_char_count": 55408
       },
-      "news_sentiment": null,
+      "news_sentiment": {
+        "mean_sentiment": 0.090716,
+        "sentiment_volatility": 0.479276,
+        "source": "earnings_call",
+        "cross_sectional_z": -0.267876
+      },
       "asset_features": {
         "close": 73.45,
         "ret_20d": -0.0432,
@@ -2179,15 +2381,54 @@
         "beta_1y": 0.6613,
         "size_log_mcap": 25.4131,
         "value_book_to_market": 0.129,
-        "avg_dollar_volume_20d": 994712190.08,
+        "avg_dollar_volume_20d": 994712230.76,
         "gross_margin": 0.4362,
         "roe": 0.0829,
         "free_cash_flow_yield": 0.0085,
         "debt_to_equity": 0.8595,
         "earnings_surprise_pct": 0.2381,
-        "relative_strength_60d": -0.0904
+        "relative_strength_60d": -0.0822
       },
       "fiscal_year_end": "05-31"
+    },
+    "TLT": {
+      "filing_summary": {
+        "periodic": null,
+        "event_filings": []
+      },
+      "earnings_call": null,
+      "news_sentiment": null,
+      "asset_features": {
+        "close": 83.33,
+        "ret_20d": -0.0661,
+        "ret_60d": -0.0762,
+        "ret_120d": -0.047,
+        "ret_252d": -0.0805,
+        "vol_20d": 0.1217,
+        "vol_60d": 0.1462,
+        "vol_120d": 0.1423,
+        "downside_vol_60d": 0.0949,
+        "drawdown_60d": -0.0786,
+        "max_drawdown_1y": -0.1284,
+        "sma_20d": 86.05,
+        "sma_50d": 86.49,
+        "sma_200d": 87.39,
+        "momentum_200d": 0.9536,
+        "momentum_12_1": -0.0179,
+        "idiosyncratic_momentum": -0.0806,
+        "trend_consistency": 0.5,
+        "sharpe_60d": -2.2762,
+        "beta_1y": 0.0708,
+        "size_log_mcap": null,
+        "value_book_to_market": null,
+        "avg_dollar_volume_20d": 3187102463.3,
+        "gross_margin": null,
+        "roe": null,
+        "free_cash_flow_yield": null,
+        "debt_to_equity": null,
+        "earnings_surprise_pct": null,
+        "relative_strength_60d": -0.083
+      }
     }
   }
 }

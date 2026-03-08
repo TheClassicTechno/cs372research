@@ -115,12 +115,57 @@ def get_ticker_cik_map():
     return mapping
 
 
-def get_company_filings(cik: str):
+def get_company_filings(cik: str, target_years: set[int] | None = None):
+    """Fetch company filings from SEC EDGAR, following pagination if needed.
+
+    Large filers (e.g. JPM, GS) have thousands of filings. The SEC API
+    paginates older filings into separate JSON files listed in
+    ``filings.files``. If target_years is provided, we only fetch pages
+    whose date range overlaps the target years, avoiding unnecessary
+    downloads.
+    """
     url = BASE_SUBMISSIONS_URL.format(cik=cik)
     rate_limit()
     resp = requests.get(url, headers=SEC_HEADERS)
     resp.raise_for_status()
-    return resp.json()
+    data = resp.json()
+
+    if target_years is None:
+        return data
+
+    # Check if all target years are covered by the recent filings
+    recent = data.get("filings", {}).get("recent", {})
+    recent_dates = recent.get("filingDate", [])
+    if recent_dates:
+        min_year = int(recent_dates[-1][:4])
+        if min_year <= min(target_years):
+            return data
+
+    # Fetch paginated filing pages that overlap target years
+    pages = data.get("filings", {}).get("files", [])
+    cik_no_leading = str(int(cik))
+    for page in pages:
+        page_from = page.get("filingFrom", "")
+        page_to = page.get("filingTo", "")
+        if not page_from or not page_to:
+            continue
+        page_min_year = int(page_from[:4])
+        page_max_year = int(page_to[:4])
+        # Skip pages entirely outside target range (with 1-year buffer for spillover)
+        if page_min_year > max(target_years) + 1 or page_max_year < min(target_years) - 1:
+            continue
+        page_url = f"https://data.sec.gov/submissions/{page['name']}"
+        rate_limit()
+        page_resp = requests.get(page_url, headers=SEC_HEADERS)
+        if page_resp.status_code != 200:
+            continue
+        page_data = page_resp.json()
+        # Merge page filings into recent
+        for key in recent:
+            if key in page_data:
+                recent[key].extend(page_data[key])
+
+    return data
 
 
 def build_filing_url(cik: str, accession: str, primary_doc: str):
@@ -353,6 +398,9 @@ def main():
 
     ticker_map = get_ticker_cik_map()
 
+    # Extract target years for pagination
+    target_years = {y for y, _q in targets}
+
     # Collect all download tasks: (ticker, cik, filing) across all tickers
     all_tasks = []
     for ticker in tqdm(tickers, desc="Scanning", unit="ticker"):
@@ -361,7 +409,7 @@ def main():
             continue
 
         cik = ticker_map[ticker]
-        filings = get_company_filings(cik)
+        filings = get_company_filings(cik, target_years=target_years)
 
         filtered = filter_filings(
             filings,

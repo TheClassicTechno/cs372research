@@ -149,12 +149,13 @@ class DebateConfig:
     # --- Agent profiles (new unified system) ---
     # When set, these replace prompt_profile + prompt_file_overrides + role_overrides.
     agent_profiles: dict = field(default_factory=dict)  # {role: loaded_profile_dict}
+    agent_profile_names: dict = field(default_factory=dict)  # {role: profile_name_str}
     judge_profile: dict = field(default_factory=dict)   # loaded judge profile dict
 
     # --- CRIT configuration ---
     crit_model_name: str = "gpt-5-mini"  # LLM model for CRIT scoring (separate from debate model)
-    crit_system_template: str = "crit_system.jinja"
-    crit_user_template: str = "crit_user.jinja"
+    crit_system_template: str = "crit_system_enumerated.jinja"
+    crit_user_template: str = "crit_user_enumerated.jinja"
 
     # --- Runtime metadata (set by run_simulation.py, not in YAML) ---
     run_command: str | None = None

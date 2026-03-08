@@ -51,11 +51,11 @@ def get_processed_scenarios(tracking_file, current_config_hash):
                     }
     return processed
 
-def run_simulation(config_path, scenario_path, output_root):
+def run_simulation(config_path, scenario_path, output_root, verbose=False):
     # Derive a subdirectory for this specific run
     s_name = Path(scenario_path).stem
     c_name = Path(config_path).stem
-    
+
     cmd = [
         "python3", "run_simulation.py",
         "--agents", config_path,
@@ -64,28 +64,35 @@ def run_simulation(config_path, scenario_path, output_root):
         "--output-dir", str(output_root / c_name),
         "--log-level", "WARNING"
     ]
-    
+
     results_dir = "N/A"
     log_dir = "N/A"
     error = None
-    
+
     try:
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-        for line in process.stdout:
-            line = line.strip()
-            if "RESULTS_DIR: " in line:
-                results_dir = line.split("RESULTS_DIR: ")[1]
-            elif "[Logged] " in line:
-                log_dir = line.split("[Logged] ")[1]
-            elif "Error" in line or "Exception" in line:
-                print(f"  {line}", flush=True)
-        
-        process.wait()
-        if process.returncode != 0:
-            error = f"Exit code {process.returncode}"
+        if verbose:
+            # Don't capture stdout — let Rich colors pass through to the terminal
+            process = subprocess.Popen(cmd, stderr=subprocess.STDOUT)
+            process.wait()
+            if process.returncode != 0:
+                error = f"Exit code {process.returncode}"
+        else:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            for line in process.stdout:
+                line = line.strip()
+                if "RESULTS_DIR: " in line:
+                    results_dir = line.split("RESULTS_DIR: ")[1]
+                elif "[Logged] " in line:
+                    log_dir = line.split("[Logged] ")[1]
+                elif "Error" in line or "Exception" in line:
+                    print(f"  {line}", flush=True)
+
+            process.wait()
+            if process.returncode != 0:
+                error = f"Exit code {process.returncode}"
     except Exception as e:
         error = str(e)
-        
+
     return results_dir, log_dir, error
 
 def flatten_dict(d, prefix="", excluded_fields=None):
@@ -180,6 +187,7 @@ def main():
     parser.add_argument("--config", required=True, help="Path to debate agents YAML config")
     parser.add_argument("--output-dir", default="results/scenario_runs", help="Root dir for results")
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--verbose", action="store_true", help="Print subprocess output to screen")
     args = parser.parse_args()
 
     scenarios, scale = load_scenario_list(args.scenarios)
@@ -214,7 +222,7 @@ def main():
         print(f"\n[{run_count+1}/{len(scenarios)}] Processing {scenario}...")
         
         t0 = time.monotonic()
-        res_dir, l_dir, err = run_simulation(args.config, scenario, output_root)
+        res_dir, l_dir, err = run_simulation(args.config, scenario, output_root, verbose=args.verbose)
         duration = time.monotonic() - t0
         now_ts = datetime.now(timezone.utc).isoformat()
         
