@@ -563,6 +563,56 @@ class TestAllocationTableStyling:
 # TEST 14 — Muted color palette on section labels and table headers
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# TEST — Ablation tab
+# ---------------------------------------------------------------------------
+
+class TestAblationTab:
+    def test_ablation_tab_renders(self, page: Page, dashboard_url: str):
+        """Navigate to #ablation, verify the content container appears."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-content']", timeout=5000,
+        )
+        container = page.get_by_test_id("ablation-content")
+        assert container.is_visible(), "Ablation content container not visible"
+
+    def test_ablation_experiment_card_shows(self, page: Page, dashboard_url: str):
+        """Ablation view shows at least one experiment card with name."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        card = page.get_by_test_id("ablation-experiment").first
+        assert card.is_visible(), "Ablation experiment card not visible"
+        text = card.text_content()
+        assert "test" in text, "Experiment name 'test' not found in card"
+
+    def test_ablation_regenerate_button_exists(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Regenerate button is visible on the ablation view."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='regenerate-ablation']", timeout=5000,
+        )
+        btn = page.get_by_test_id("regenerate-ablation")
+        assert btn.is_visible(), "Regenerate button not visible"
+
+    def test_ablation_metrics_table(self, page: Page, dashboard_url: str):
+        """Ablation content contains a data-table with rho/pillar values."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-content'] .data-table", timeout=5000,
+        )
+        table_text = page.text_content(
+            "[data-testid='ablation-content'] .data-table",
+        )
+        assert "0.7200" in table_text, (
+            "Expected rho value 0.7200 in ablation table"
+        )
+
+
 class TestColorPalette:
     def test_section_labels_use_brown(self, page: Page, dashboard_url: str):
         """Section labels use the dark brown color (#5c4632)."""

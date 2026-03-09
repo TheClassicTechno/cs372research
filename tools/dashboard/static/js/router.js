@@ -1,4 +1,5 @@
 import { newViewToken, runsViewState } from './state.js';
+import * as ablationView from './views/ablationView.js';
 import * as liveView from './views/liveView.js';
 import * as runsView from './views/runsView.js';
 import * as runDetailView from './views/runDetail/index.js';
@@ -14,6 +15,7 @@ function getRoute() {
     return { view: 'run-detail', experiment: parts[0], runId: parts.slice(1).join('/') };
   }
   if (h === '#runs') return { view: 'runs' };
+  if (h === '#ablation') return { view: 'ablation' };
   if (h === '#live') return { view: 'live' };
   return { view: 'live' };
 }
@@ -43,6 +45,9 @@ export function route() {
   } else if (r.view === 'runs') {
     activeView = runsView;
     runsView.renderRunsView(token);
+  } else if (r.view === 'ablation') {
+    activeView = ablationView;
+    ablationView.renderAblationView(token);
   } else if (r.view === 'run-detail') {
     runsViewState.lastExperiment = r.experiment;
     try { sessionStorage.setItem('dashExp', r.experiment); } catch (e) { }
