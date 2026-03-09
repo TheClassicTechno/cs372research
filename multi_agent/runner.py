@@ -453,7 +453,10 @@ class MultiAgentRunner:
                 self.config.roles = list(self.config.roles) + ["devils_advocate"]
 
         self.pipeline_graph = compile_pipeline_graph(self.config)
-        if self.config.parallel_agents:
+        if getattr(self.config, "round_robin_mode", False):
+            from .graph import compile_round_robin_graph
+            self.single_round_graph = compile_round_robin_graph(self.config)
+        elif self.config.parallel_agents:
             self.single_round_graph = compile_parallel_single_round_graph(self.config)
         else:
             self.single_round_graph = compile_single_round_graph(self.config)

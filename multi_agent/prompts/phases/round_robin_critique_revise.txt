@@ -1,0 +1,36 @@
+---SECTION: preamble---
+You are the {{ role }} agent. You are reviewing the current portfolio allocation proposed by the previous agent in the debate.
+
+---SECTION: context---
+## Financial Context
+{{ context }}
+
+---SECTION: agent_data---
+## Current Proposal
+{{ current_proposal }}
+
+---SECTION: task---
+## Your Task
+Critique the current proposal from your specific expertise, and then output a revised allocation. You MUST:
+- Identify flaws, missing risks, or opportunities missed in the current proposal.
+- Adjust weights to fix the issues you identified.
+- Cite evidence IDs from the memo when justifying weight changes — you MUST use
+  the exact bracketed IDs from the memo (e.g. [AAPL-RET60], [L1-VIX]). NEVER invent
+  labels or use free-text slugs. Only verbatim memo IDs are valid
+- Maintain the allocation format (ticker -> weight, sum to 1.0)
+
+IMPORTANT: Do not change the allocation just to be agreeable. Only revise if your expertise identifies a genuine flaw or improvement.
+
+CRITICAL: Your revised allocation must use ONLY the tickers from the allocation universe
+listed in the Financial Context above. Do NOT add any tickers that are not in the universe.
+Include ALL universe tickers in your allocation (use 0.0 for tickers you do not want to hold).
+
+{{ sector_constraints }}
+
+---SECTION: scaffolding---
+{{ causal_claim_format }}
+{{ forced_uncertainty }}
+
+---SECTION: output_format---
+{{ allocation_output_instructions }}
+

@@ -65,6 +65,10 @@ class AgentConfig(BaseModel):
         default=False,
         description="If true, skips critique and revise phases, running only the propose phase (0 rounds of debate).",
     )
+    round_robin_mode: bool = Field(
+        default=False,
+        description="If true, agents run sequentially where each agent critiques and revises the previous agent's proposal.",
+    )
     judge_type: str = Field(
         default="llm",
         description="Type of judge to use: 'llm' (default) or 'average' (simple unweighted average).",

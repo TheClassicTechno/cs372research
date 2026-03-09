@@ -64,6 +64,9 @@ class DebateConfig:
     # Skip critique and revise phases (propose -> judge only)
     propose_only: bool = False
 
+    # Run agents sequentially, critiquing and revising the previous agent's proposal
+    round_robin_mode: bool = False
+
     # Type of judge ('llm' or 'average')
     judge_type: str = "llm"
 
@@ -222,6 +225,7 @@ class DebateConfig:
             "roles": list(self.roles),
             "max_rounds": self.max_rounds,
             "propose_only": self.propose_only,
+            "round_robin_mode": self.round_robin_mode,
             "judge_type": self.judge_type,
             "enable_adversarial": self.enable_adversarial,
             "model_name": self.model_name,
