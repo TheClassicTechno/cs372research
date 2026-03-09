@@ -13,7 +13,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from models.case import ClosePricePoint
 from models.log import EpisodeLog
 from eval.evidence import parse_memo_evidence
-from simulation.runner import AsyncSimulationRunner
 from eval.financial import compute_daily_financial_metrics
 
 def _parse_invest_quarter(invest_quarter: str) -> tuple[int, str]:
@@ -158,7 +157,7 @@ def repair_summary(run_dir: Path, force: bool = False):
                 # We can just get positions and cash from the summary directly
                 positions = ep_summary.get("final_positions", {})
                 cash = ep_summary.get("final_cash", initial_cash)
-                
+
                 daily_fin = compute_daily_financial_metrics(
                     positions=positions, cash=cash, initial_value=initial_cash,
                     daily_prices=daily_prices, risk_free_rate=risk_free_rate, spy_daily=spy_daily,
@@ -179,7 +178,7 @@ def repair_summary(run_dir: Path, force: bool = False):
                 else:
                     # Fallback to update return_pct_with_cash_interest even if daily fails
                     pass
-        
+
         # If force, recalculate return_pct_with_cash_interest just in case
         if force:
             book_val = ep_summary.get("book_value", initial_cash)
