@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -174,6 +175,11 @@ def ensure_snapshots(
     fiscal_year_ends = load_fiscal_year_ends()
 
     for year, quarter in quarters:
+        out_path = _JSON_DIR / f"snapshot_{year}_{quarter}.json"
+        if out_path.exists():
+            print(f"  Snapshot {year}_{quarter} already exists, skipping.")
+            continue
+
         print(f"  Building snapshot {year}_{quarter} for {len(tickers)} tickers...")
         snapshot = build_quarter_snapshot(
             year, quarter, tickers,
@@ -185,9 +191,8 @@ def ensure_snapshots(
             fiscal_year_ends=fiscal_year_ends,
         )
 
-        out_path = _JSON_DIR / f"snapshot_{year}_{quarter}.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = out_path.with_suffix(".json.tmp")
+        tmp = out_path.with_suffix(f".json.tmp.{os.getpid()}")
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(snapshot, f, indent=2)
         tmp.replace(out_path)
@@ -197,13 +202,17 @@ def ensure_snapshots(
     from generate_quarterly_memo import build_memo
 
     for year, quarter in quarters:
+        out_path = _MEMO_DIR / f"memo_{year}_{quarter}.txt"
+        if out_path.exists():
+            print(f"  Memo {year}_{quarter} already exists, skipping.")
+            continue
+
         snapshot_path = _JSON_DIR / f"snapshot_{year}_{quarter}.json"
         with open(snapshot_path, "r") as f:
             doc = json.load(f)
 
         memo = build_memo(doc, filter_tickers=tickers)
 
-        out_path = _MEMO_DIR / f"memo_{year}_{quarter}.txt"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w") as f:
             f.write(memo)

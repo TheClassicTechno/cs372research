@@ -89,8 +89,7 @@ class MajorityVoteRunner:
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-                    pearl_level=c.get("pearl_level", "L1"),
-                    variables=c.get("variables", []),
+                    reasoning_type=c.get("reasoning_type", "observational"),
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

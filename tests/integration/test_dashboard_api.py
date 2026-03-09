@@ -154,26 +154,34 @@ class TestHTMLUI:
         assert 'id="app"' in html
 
     def test_has_routing_logic(self, client):
+        """Routing logic lives in external JS module."""
         html = client.get("/").text
-        assert "hashchange" in html
+        # Hash targets are in the HTML nav links
         assert "#live" in html
         assert "#runs" in html
+        # hashchange listener is in app.js
+        js = client.get("/static/js/app.js").text
+        assert "hashchange" in js
 
     def test_has_chart_functions(self, client):
-        html = client.get("/").text
-        assert "buildPIDChart" in html
-        assert "buildCRITChart" in html
+        """Chart functions exist in external JS modules."""
+        js = client.get("/static/js/components/charts.js").text
+        assert "buildPIDChart" in js
+        assert "buildCRITChart" in js
 
     def test_has_file_explorer(self, client):
-        html = client.get("/").text
-        assert "loadFileContent" in html
-        assert "file-tree" in html
+        """File explorer exists in external JS modules."""
+        js = client.get("/static/js/views/runDetail/fileExplorerSection.js").text
+        assert "file-tree" in js
 
     def test_has_live_debate_view(self, client):
-        html = client.get("/").text
-        assert "renderLiveDebateView" in html
-        assert "live-entries" in html
-        assert "/api/live_debate" in html
+        """Live debate view exists in external JS module."""
+        js = client.get("/static/js/views/liveView.js").text
+        assert "renderLiveDebateView" in js
+        assert "live-entries" in js
+        # The API endpoint is in the API module
+        api_js = client.get("/static/js/api/live.js").text
+        assert "/api/live_debate" in api_js
 
 
 # ---------------------------------------------------------------------------

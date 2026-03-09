@@ -157,6 +157,37 @@ def _load(name: str) -> str:
     return (_TEMPLATE_DIR / name).read_text()
 
 
+# ---------------------------------------------------------------------------
+# Allocation constraint defaults — match AllocationConstraints model defaults
+# ---------------------------------------------------------------------------
+
+_DEFAULT_MAX_WEIGHT = 1.0
+_DEFAULT_MIN_HOLDINGS = 1
+
+
+def _render_alloc_instructions(
+    raw_text: str, constraints: dict | None = None,
+) -> str:
+    """Replace ``__MARKER__`` placeholders in allocation instruction text.
+
+    Args:
+        raw_text: Raw instruction text with ``__MAX_WEIGHT__``, etc.
+        constraints: Dict with ``max_weight`` / ``min_holdings`` keys
+            (typically from ``config["allocation_constraints"]``).
+
+    Returns:
+        Instruction text with actual constraint values substituted.
+    """
+    c = constraints or {}
+    max_w = c.get("max_weight", _DEFAULT_MAX_WEIGHT)
+    min_h = c.get("min_holdings", _DEFAULT_MIN_HOLDINGS)
+    text = raw_text
+    text = text.replace("__MAX_WEIGHT__", f"{max_w:.2f}")
+    text = text.replace("__MAX_WEIGHT_PCT__", str(int(round(max_w * 100))))
+    text = text.replace("__MIN_HOLDINGS__", str(min_h))
+    return text
+
+
 _DEFAULT_SECTION_ORDER = [
     "preamble", "context", "agent_data", "task", "scaffolding", "output_format",
 ]
@@ -170,6 +201,9 @@ _VAR_REF_RE = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 _OPTIONAL_VARS = frozenset({
     "sector_constraints",
     "disagreements_section",
+    "max_weight",
+    "max_weight_pct",
+    "min_holdings",
 })
 
 
@@ -272,8 +306,13 @@ CAUSAL_CLAIM_FORMAT: str = _load("scaffolding/causal_claim_format.txt")
 FORCED_UNCERTAINTY: str = _load("scaffolding/forced_uncertainty.txt")
 TRAP_AWARENESS: str = _load("scaffolding/trap_awareness.txt")
 JSON_OUTPUT_INSTRUCTIONS: str = _load("output_format/json_output_instructions.txt")
-ALLOCATION_OUTPUT_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
-ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED: str = _load("output_format/allocation_output_instructions_enumerated.txt")
+# Raw templates with __MARKER__ placeholders — rendered with defaults for
+# backward-compat module-level constants; re-rendered per-call with actual
+# config values inside the builder functions.
+_RAW_ALLOC_INSTRUCTIONS: str = _load("output_format/allocation_output_instructions.txt")
+_RAW_ALLOC_INSTRUCTIONS_ENUM: str = _load("output_format/allocation_output_instructions_enumerated.txt")
+ALLOCATION_OUTPUT_INSTRUCTIONS: str = _render_alloc_instructions(_RAW_ALLOC_INSTRUCTIONS)
+ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED: str = _render_alloc_instructions(_RAW_ALLOC_INSTRUCTIONS_ENUM)
 
 # =============================================================================
 # ENRICHED ROLE PROMPTS
@@ -311,6 +350,7 @@ def build_proposal_user_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    allocation_constraints: dict | None = None,
 ) -> str:
     """User prompt sent to each role agent for their initial proposal."""
     causal = CAUSAL_CLAIM_FORMAT
@@ -320,12 +360,19 @@ def build_proposal_user_prompt(
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("proposal_template", "phases/proposal_allocation.txt")
 
-    # Allow overriding the allocation output instructions via prompt_file_overrides
-    alloc_instructions = (
-        load_module("output_allocation", overrides)
-        if "output_allocation" in overrides
-        else ALLOCATION_OUTPUT_INSTRUCTIONS
-    )
+    # Render allocation instruction text with actual constraint values
+    ac = allocation_constraints
+    if "output_allocation" in overrides:
+        raw_alloc = load_module("output_allocation", overrides)
+    else:
+        raw_alloc = _RAW_ALLOC_INSTRUCTIONS
+    alloc_instructions = _render_alloc_instructions(raw_alloc, ac)
+    alloc_instructions_enum = _render_alloc_instructions(_RAW_ALLOC_INSTRUCTIONS_ENUM, ac)
+
+    # Compute display values for Jinja phase template vars
+    _ac = ac or {}
+    max_weight_val = _ac.get("max_weight", _DEFAULT_MAX_WEIGHT)
+    min_holdings_val = _ac.get("min_holdings", _DEFAULT_MIN_HOLDINGS)
 
     template_vars = {
         "context": context,
@@ -334,8 +381,11 @@ def build_proposal_user_prompt(
         "trap_awareness": traps,
         "json_output_instructions": JSON_OUTPUT_INSTRUCTIONS,
         "allocation_output_instructions": alloc_instructions,
-        "allocation_output_instructions_enumerated": ALLOCATION_OUTPUT_INSTRUCTIONS_ENUMERATED,
+        "allocation_output_instructions_enumerated": alloc_instructions_enum,
         "sector_constraints": sector_constraints,
+        "max_weight": f"{max_weight_val:.2f}",
+        "max_weight_pct": str(int(round(max_weight_val * 100))),
+        "min_holdings": str(min_holdings_val),
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER
@@ -410,6 +460,7 @@ def build_revision_prompt(
     sector_constraints: str = "",
     my_proposal_v2: str = "",
     critiques_text_v2: str = "",
+    allocation_constraints: dict | None = None,
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -427,6 +478,11 @@ def build_revision_prompt(
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("revision_template", "phases/revision_allocation.txt")
 
+    # Compute constraint display values for Jinja phase template vars
+    _ac = allocation_constraints or {}
+    max_weight_val = _ac.get("max_weight", _DEFAULT_MAX_WEIGHT)
+    min_holdings_val = _ac.get("min_holdings", _DEFAULT_MIN_HOLDINGS)
+
     template_vars = {
         "role": role.upper(),
         "context": context,
@@ -437,6 +493,9 @@ def build_revision_prompt(
         "causal_claim_format": causal,
         "forced_uncertainty": uncertainty,
         "sector_constraints": sector_constraints,
+        "max_weight": f"{max_weight_val:.2f}",
+        "max_weight_pct": str(int(round(max_weight_val * 100))),
+        "min_holdings": str(min_holdings_val),
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER
@@ -460,6 +519,7 @@ def build_judge_prompt(
     allocation_mode: bool = True,  # kept for backward compat, always True
     user_sections: list[str] | None = None,
     sector_constraints: str = "",
+    allocation_constraints: dict | None = None,
 ) -> str:
     """Build the judge/aggregator prompt for final decision."""
     revisions_text = "\n\n".join(
@@ -479,6 +539,10 @@ def build_judge_prompt(
     overrides = prompt_file_overrides or {}
     template_name = overrides.get("judge_template", "phases/judge_allocation.txt")
 
+    # Compute constraint display values for Jinja phase template vars
+    _ac = allocation_constraints or {}
+    max_weight_val = _ac.get("max_weight", _DEFAULT_MAX_WEIGHT)
+
     template_vars = {
         "context": context,
         "revisions_text": revisions_text,
@@ -486,6 +550,8 @@ def build_judge_prompt(
         "disagreements_section": disagreements_section,
         "causal_claim_format": causal,
         "sector_constraints": sector_constraints,
+        "max_weight": f"{max_weight_val:.2f}",
+        "max_weight_pct": str(int(round(max_weight_val * 100))),
     }
 
     order = user_sections or section_order or _DEFAULT_SECTION_ORDER

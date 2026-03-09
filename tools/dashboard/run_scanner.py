@@ -118,7 +118,7 @@ def _extract_quality_metrics(run_dir: Path) -> dict:
         # Extract JS divergence
         div = entry.get("divergence")
         if isinstance(div, dict):
-            js = div.get("js_divergence")
+            js = div.get("js_divergence") or div.get("js")
             if js is not None:
                 js_values.append(js)
 

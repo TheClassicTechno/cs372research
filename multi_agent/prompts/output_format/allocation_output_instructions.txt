@@ -32,8 +32,7 @@ Full JSON schema:
   "claims": [
     {
       "claim_text": "...",
-      "pearl_level": "L1"|"L2"|"L3",
-      "variables": ["fed_rate", "AAPL_price"],
+      "reasoning_type": "causal"|"observational"|"risk_assessment"|"pattern",
       "assumptions": ["..."],
       "confidence": 0.0-1.0
     }
@@ -42,9 +41,9 @@ Full JSON schema:
 
 ALLOCATION RULES:
 - Include EVERY ticker from the allocation universe — no more, no fewer.
-- Weights must be between 0.0 and 0.40 (max 40% per ticker).
+- Weights must be between 0.0 and __MAX_WEIGHT__ (max __MAX_WEIGHT_PCT__% per ticker).
 - Weights MUST sum to 1.0 (fully invested, no cash reserve).
-- At least 3 tickers must have weight > 0.
+- At least __MIN_HOLDINGS__ tickers must have weight > 0.
 - A weight of 0.0 means you recommend zero allocation to that ticker.
 - Higher weight = stronger conviction in that ticker's risk-adjusted return.
 

@@ -2,6 +2,7 @@ import os
 import json
 import yaml
 import argparse
+import re
 from pathlib import Path
 from typing import Any
 
@@ -11,8 +12,20 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from models.case import ClosePricePoint
 from models.log import EpisodeLog
+from eval.evidence import parse_memo_evidence
 from eval.financial import compute_daily_financial_metrics
-from models.portfolio import PortfolioSnapshot
+
+def _parse_invest_quarter(invest_quarter: str) -> tuple[int, str]:
+    year = int(invest_quarter[:4])
+    q = invest_quarter[4:]
+    return year, q
+
+def _prior_quarter(year: int, q: str) -> tuple[int, str]:
+    labels = ["Q1", "Q2", "Q3", "Q4"]
+    idx = labels.index(q)
+    if idx == 0:
+        return year - 1, "Q4"
+    return year, labels[idx - 1]
 
 def repair_summary(run_dir: Path, force: bool = False):
     summary_path = run_dir / "summary.json"
@@ -52,9 +65,22 @@ def repair_summary(run_dir: Path, force: bool = False):
         print(f"  Missing invest_quarter in log config, skipping.")
         return False
 
+    # Try to extract risk-free rate from the correct prior-quarter memo
+    risk_free_rate = log_data.get("config", {}).get("risk_free_rate", 0.0)
+    year, q_label = _parse_invest_quarter(invest_quarter)
+    p_year, p_q = _prior_quarter(year, q_label)
+    memo_path = Path(f"data-pipeline/final_snapshots/memo_data/memo_{p_year}_{p_q}.txt")
+    
+    if memo_path.exists():
+        with open(memo_path, "r") as f:
+            memo_text = f.read()
+        evidence = parse_memo_evidence(memo_text)
+        if "L1-FF" in evidence:
+            match = re.search(r"([\d\.]+)", evidence["L1-FF"])
+            if match:
+                risk_free_rate = float(match.group(1)) / 100.0
+
     # Load exit prices from rebuilt snapshots to fix zero final_prices
-    year = int(invest_quarter[:4])
-    q_label = invest_quarter[4:]
     snapshot_path = Path("data-pipeline/final_snapshots/json_data") / f"snapshot_{year}_{q_label}.json"
     snapshot_prices = {}
     if snapshot_path.exists():
@@ -112,7 +138,15 @@ def repair_summary(run_dir: Path, force: bool = False):
                 qty * final_prices.get(t, 0.0) for t, qty in final_pos.items()
             )
             ep_summary["book_value"] = book_val
+            
+            # Recalculate return_pct_with_cash_interest using the extracted rate
+            n_days = len(daily_prices.get(next(iter(daily_prices)), [])) if daily_prices else 63
+            quarterly_rate = (1 + risk_free_rate)**(n_days / 252.0) - 1.0
+            interest_wealth = ep_summary.get("final_cash", 0.0) * quarterly_rate
+            total_wealth = book_val + interest_wealth
+            
             ep_summary["return_pct"] = ((book_val - initial_cash) / initial_cash) * 100
+            ep_summary["return_pct_with_cash_interest"] = ((total_wealth - initial_cash) / initial_cash) * 100
             ep_summary["final_prices"] = final_prices
             print(f"  Fixed zero prices and recalculated book_value for {ep_id}")
 
@@ -120,33 +154,39 @@ def repair_summary(run_dir: Path, force: bool = False):
         if "daily_metrics" not in ep_summary or force:
             ep_log_dict = next((e for e in episode_logs_data if e.get("episode_id") == ep_id), None)
             if ep_log_dict:
-                ep_log = EpisodeLog(**ep_log_dict)
-                # Extract positions and cash from the first non-MTM decision point
-                positions = {}
-                cash = initial_cash
-                for dp in ep_log.decision_point_logs:
-                    if not dp.case_id.startswith("mtm/"):
-                        positions = dp.portfolio_after.positions
-                        cash = dp.portfolio_after.cash
-                        break
-                if positions:
-                    daily_fin = compute_daily_financial_metrics(
-                        positions, cash, initial_value=initial_cash,
-                        daily_prices=daily_prices, spy_daily=spy_daily,
-                    )
-                    if daily_fin:
-                        ep_summary["daily_metrics"] = {
-                            "trading_days": daily_fin.trading_days,
-                            "total_return_pct": daily_fin.total_return_pct,
-                            "annualized_sharpe": daily_fin.annualized_sharpe,
-                            "annualized_sortino": daily_fin.annualized_sortino,
-                            "annualized_volatility": daily_fin.annualized_volatility,
-                            "max_drawdown_pct": daily_fin.max_drawdown_pct,
-                            "calmar_ratio": daily_fin.calmar_ratio,
-                            "spy_return_pct": daily_fin.spy_return_pct,
-                            "excess_return_pct": daily_fin.excess_return_pct,
-                        }
-                        print(f"  Fixed daily_metrics for {ep_id}")
+                # We can just get positions and cash from the summary directly
+                positions = ep_summary.get("final_positions", {})
+                cash = ep_summary.get("final_cash", initial_cash)
+
+                daily_fin = compute_daily_financial_metrics(
+                    positions=positions, cash=cash, initial_value=initial_cash,
+                    daily_prices=daily_prices, risk_free_rate=risk_free_rate, spy_daily=spy_daily,
+                )
+                if daily_fin:
+                    ep_summary["daily_metrics"] = {
+                        "trading_days": daily_fin.trading_days,
+                        "total_return_pct": daily_fin.total_return_pct,
+                        "annualized_sharpe": daily_fin.annualized_sharpe,
+                        "annualized_sortino": daily_fin.annualized_sortino,
+                        "annualized_volatility": daily_fin.annualized_volatility,
+                        "max_drawdown_pct": daily_fin.max_drawdown_pct,
+                        "calmar_ratio": daily_fin.calmar_ratio,
+                        "spy_return_pct": daily_fin.spy_return_pct,
+                        "excess_return_pct": daily_fin.excess_return_pct,
+                    }
+                    print(f"  Fixed daily_metrics for {ep_id} (using RF rate: {risk_free_rate*100:.2f}%)")
+                else:
+                    # Fallback to update return_pct_with_cash_interest even if daily fails
+                    pass
+
+        # If force, recalculate return_pct_with_cash_interest just in case
+        if force:
+            book_val = ep_summary.get("book_value", initial_cash)
+            n_days = len(daily_prices.get(next(iter(daily_prices)), [])) if daily_prices else 63
+            quarterly_rate = (1 + risk_free_rate)**(n_days / 252.0) - 1.0
+            interest_wealth = ep_summary.get("final_cash", 0.0) * quarterly_rate
+            total_wealth = book_val + interest_wealth
+            ep_summary["return_pct_with_cash_interest"] = ((total_wealth - initial_cash) / initial_cash) * 100
 
     # Write back
     with open(summary_path, "w") as f:

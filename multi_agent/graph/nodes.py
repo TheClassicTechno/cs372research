@@ -298,6 +298,7 @@ def propose_node(state: DebateState) -> dict:
             prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -544,6 +545,7 @@ def revise_node(state: DebateState) -> dict:
             sector_constraints=sector_text,
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -682,6 +684,7 @@ def make_propose_node(role: str):
             prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -953,6 +956,7 @@ def make_revise_node(role: str):
             sector_constraints=sector_text,
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -1125,6 +1129,7 @@ def judge_node(state: DebateState) -> dict:
         prompt_file_overrides=overrides,
         user_sections=user_secs,
         sector_constraints=sector_text,
+        allocation_constraints=config.get("allocation_constraints"),
     )
 
     if use_profiles:

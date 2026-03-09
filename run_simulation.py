@@ -148,9 +148,9 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--log-level",
-        default="INFO",
+        default="DEBUG",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging verbosity (default: INFO).",
+        help="Logging verbosity (default: DEBUG).",
     )
     parser.add_argument(
         "--logging-mode",

@@ -283,10 +283,30 @@ class DebateLogger:
         now = datetime.now()
         self._timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
         self._run_id = f"run_{self._timestamp}"
-        self._run_dir = Path("logging/runs") / experiment_name / self._run_id
+        base = Path("logging/runs") / experiment_name
+        self._run_dir = self._unique_run_dir(base, self._run_id)
         self._round_dir: Path | None = None
         self._current_beta: float = 0.5
         self._round_num: int = 0
+
+    @staticmethod
+    def _unique_run_dir(base: Path, run_id: str) -> Path:
+        """Return a run directory path that doesn't already exist.
+
+        If ``base / run_id`` is free, use it.  Otherwise append _001,
+        _002, ... until an unused name is found.  This prevents
+        concurrent workers from colliding on the same second-precision
+        timestamp.
+        """
+        candidate = base / run_id
+        if not candidate.exists():
+            return candidate
+        idx = 1
+        while True:
+            candidate = base / f"{run_id}_{idx:03d}"
+            if not candidate.exists():
+                return candidate
+            idx += 1
 
     @property
     def run_dir(self) -> Path:
@@ -306,8 +326,16 @@ class DebateLogger:
         if self._mode == "off":
             return
 
-        # Create top-level directories
-        self._run_dir.mkdir(parents=True, exist_ok=True)
+        # Create top-level directory.  Use exist_ok=False to detect races:
+        # if another process claimed this path between __init__ and now,
+        # re-resolve to the next available suffix.
+        try:
+            self._run_dir.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            base = self._run_dir.parent
+            self._run_dir = self._unique_run_dir(base, self._run_id)
+            self._run_id = self._run_dir.name
+            self._run_dir.mkdir(parents=True, exist_ok=False)
         (self._run_dir / "shared_context").mkdir(exist_ok=True)
         (self._run_dir / "rounds").mkdir(exist_ok=True)
         (self._run_dir / "final").mkdir(exist_ok=True)

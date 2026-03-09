@@ -396,3 +396,201 @@ class TestPIDStatsFormatting:
         assert "(" in second_label and ")" in second_label, (
             f"Round 2 label missing delta indicator: '{second_label}'"
         )
+
+
+# ---------------------------------------------------------------------------
+# TEST 10 — Global bold text (font-weight: 600 on body)
+# ---------------------------------------------------------------------------
+
+class TestGlobalBoldText:
+    def test_body_font_weight(self, page: Page, dashboard_url: str):
+        """Body element has font-weight 600 for readability."""
+        _goto_run_detail(page, dashboard_url)
+
+        fw = page.evaluate(
+            "window.getComputedStyle(document.body).fontWeight"
+        )
+        assert fw == "600", f"Expected body font-weight 600, got '{fw}'"
+
+
+# ---------------------------------------------------------------------------
+# TEST 11 — No truncation on overview table cells
+# ---------------------------------------------------------------------------
+
+class TestNoTruncation:
+    def test_ov_htable_cells_not_truncated(self, page: Page, dashboard_url: str):
+        """Overview table cells use word-wrap, not text-overflow: ellipsis."""
+        _goto_run_detail(page, dashboard_url)
+
+        cells = page.query_selector_all("table.ov-htable td")
+        assert len(cells) > 0, "No ov-htable cells found"
+
+        for cell in cells:
+            overflow = page.evaluate(
+                "(el) => window.getComputedStyle(el).textOverflow", cell,
+            )
+            assert overflow != "ellipsis", (
+                f"ov-htable td still has text-overflow: ellipsis"
+            )
+
+
+# ---------------------------------------------------------------------------
+# TEST 12 — Divergence section shows numeric values (not dashes)
+# ---------------------------------------------------------------------------
+
+class TestDivergenceValues:
+    def test_revised_js_divergence_not_dash(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Revised JS Divergence cell shows a number, not a dash."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+
+        table = page.query_selector("#divergence-section .data-table")
+        assert table is not None, "Divergence table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        for row in rows:
+            tds = row.query_selector_all("td")
+            label = tds[0].text_content().strip() if tds else ""
+            if label == "Revised":
+                js_val = tds[1].text_content().strip()
+                assert js_val != "\u2014", (
+                    "Revised JS Divergence shows '\u2014' — key mismatch bug"
+                )
+                assert re.match(r"^\d+\.\d+$", js_val), (
+                    f"Expected numeric value, got '{js_val}'"
+                )
+                break
+        else:
+            pytest.skip("No 'Revised' row in divergence table")
+
+    def test_proposed_js_divergence_present(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Proposed JS Divergence cell shows a number from test data."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+
+        table = page.query_selector("#divergence-section .data-table")
+        assert table is not None, "Divergence table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        for row in rows:
+            tds = row.query_selector_all("td")
+            label = tds[0].text_content().strip() if tds else ""
+            if label == "Proposed":
+                js_val = tds[1].text_content().strip()
+                assert js_val != "\u2014", (
+                    "Proposed JS Divergence shows '\u2014'"
+                )
+                break
+
+
+# ---------------------------------------------------------------------------
+# TEST 13 — Allocation table: bold + right-aligned agent cells
+# ---------------------------------------------------------------------------
+
+class TestAllocationTableStyling:
+    def test_agent_cells_bold_and_right_aligned(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Agent allocation cells in the JUDGE table are bold and right-aligned."""
+        _goto_run_detail(page, dashboard_url)
+
+        table = page.wait_for_selector("#judge-alloc-table", timeout=10000)
+        assert table is not None, "Judge allocation table not found"
+
+        data_cells = table.query_selector_all("tr:not(:first-child) td")
+        # Skip the first cell in each row (ticker name column)
+        numeric_cells = [
+            c for i, c in enumerate(data_cells) if i % (len(data_cells) // 2 + 1) != 0
+        ]
+        if not numeric_cells:
+            pytest.skip("No numeric cells in allocation table")
+
+        # Check at least one non-ticker cell is bold + right-aligned
+        rows = table.query_selector_all("tr:not(:first-child)")
+        found_styled = False
+        for row in rows:
+            tds = row.query_selector_all("td")
+            if len(tds) < 2:
+                continue
+            # Check agent cells (skip first = ticker)
+            for td in tds[1:]:
+                fw = page.evaluate(
+                    "(el) => window.getComputedStyle(el).fontWeight", td,
+                )
+                ta = page.evaluate(
+                    "(el) => window.getComputedStyle(el).textAlign", td,
+                )
+                if fw in ("600", "700", "bold") and ta == "right":
+                    found_styled = True
+                    break
+            if found_styled:
+                break
+
+        assert found_styled, (
+            "No allocation cells found with font-weight:600 and text-align:right"
+        )
+
+    def test_judge_column_has_border(self, page: Page, dashboard_url: str):
+        """JUDGE column has a visible left border for visual separation."""
+        _goto_run_detail(page, dashboard_url)
+
+        table = page.wait_for_selector("#judge-alloc-table", timeout=10000)
+        assert table is not None, "Judge allocation table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        if not rows:
+            pytest.skip("No data rows in allocation table")
+
+        # Last td in each row is the JUDGE column
+        last_td = rows[0].query_selector("td:last-child")
+        border = page.evaluate(
+            "(el) => window.getComputedStyle(el).borderLeftWidth", last_td,
+        )
+        assert border != "0px", (
+            f"JUDGE column missing left border, got borderLeftWidth={border}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 14 — Muted color palette on section labels and table headers
+# ---------------------------------------------------------------------------
+
+class TestColorPalette:
+    def test_section_labels_use_brown(self, page: Page, dashboard_url: str):
+        """Section labels use the dark brown color (#5c4632)."""
+        _goto_run_detail(page, dashboard_url)
+
+        labels = page.query_selector_all(".section-label")
+        if not labels:
+            pytest.skip("No section labels found")
+
+        color = page.evaluate(
+            "(el) => window.getComputedStyle(el).color", labels[0],
+        )
+        # #5c4632 → rgb(92, 70, 50)
+        assert "92" in color and "70" in color and "50" in color, (
+            f"Section label color not dark brown, got '{color}'"
+        )
+
+    def test_ov_title_uses_brown(self, page: Page, dashboard_url: str):
+        """Overview title uses the dark brown color."""
+        _goto_run_detail(page, dashboard_url)
+
+        title = page.query_selector(".ov-title")
+        if not title:
+            pytest.skip("No .ov-title found")
+
+        color = page.evaluate(
+            "(el) => window.getComputedStyle(el).color", title,
+        )
+        assert "92" in color and "70" in color and "50" in color, (
+            f"Overview title color not dark brown, got '{color}'"
+        )

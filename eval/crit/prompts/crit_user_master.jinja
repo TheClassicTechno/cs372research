@@ -4,8 +4,6 @@
 
 {{ agent_role | upper }}
 
-You are a **CRIT reasoning auditor**.
-
 Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
 
 CRIT evaluates **reasoning quality only**.
@@ -64,7 +62,7 @@ Each claim includes:
 • claim_id
 • claim_text
 • claim_type (macro / sector / firm)
-• pearl_level (L1 / L2 / L3)
+• reasoning_type (causal / observational / risk_assessment / pattern)
 • evidence_ids (normalized evidence references)
 • assumptions
 • falsifiers
@@ -183,7 +181,9 @@ Identify objective reasoning failures.
 Assign pillar scores based on detected failures.
 
 Detection should be **conservative and objective**.
-Scores should reflect the **number and severity of detected failures**.
+Scores must reflect the **number and severity of detected failures**.
+
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
 
 ---
 
@@ -204,6 +204,13 @@ Detect:
 • circular reasoning
 • missing reasoning steps between evidence and conclusions
 • conclusions that do not logically follow from earlier reasoning
+
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
+
+Example:
+
+• one claim implies recession
+• another implies strong cyclical expansion
 
 Also evaluate whether the **portfolio allocation logically follows from the thesis**.
 
@@ -226,12 +233,18 @@ inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references
 but `evidence_ids` is empty, treat the claim as having evidence — the references were
 not captured in the structured field but are present in the text.
 
-A claim is unsupported only when it has **no evidence_ids AND no inline bracketed
-references in claim_text**.
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
+
+Let:
+
+total_claims = number of claims in reasoning.claims
+unsupported_claims = number of claims failing the evidence rule
+
+unsupported_claim_rate = unsupported_claims / total_claims
 
 Detect:
 
-• claims with no evidence citations (per the rule above)
+• claims with no evidence citations
 • citations that do not support the claim
 • misinterpretation of evidence
 • claims stronger than the cited evidence justifies
@@ -252,6 +265,24 @@ Detect:
 • failure to consider alternative explanations
 • premature certainty
 
+A critique is considered ADDRESSED only if the revision provides
+explicit reasoning responding to the critique.
+
+Evidence of addressing may include:
+
+• revision_notes that explain why the critique is accepted or rejected
+• claim structure changes motivated by the critique
+• portfolio allocation changes motivated by the critique
+• new evidence introduced to evaluate the critique
+
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
+• revision_notes explicitly reference the critique
+• claim structure changes
+• portfolio allocation changes
+• new evidence is introduced responding to the critique
+
+If none of these occur, treat the critique as **ignored**.
+
 Strong reasoning should:
 
 • directly address critiques
@@ -264,30 +295,47 @@ Count ignored critiques when applicable.
 
 ## Causal Reasoning Failures
 
-Evaluate causal reasoning using **Pearl's causal hierarchy adapted for financial reasoning**.
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
 
-Levels:
+For each claim, independently determine its causal level:
 
-L1 — correlation / association: citing data patterns or statistical relationships
+L1 — correlation / association: citing data patterns or statistical relationships.
+
 L2 — intervention / mechanism: the claim describes a plausible causal pathway
-      (e.g., "Fed raises rates → higher discount rates → lower equity valuations").
-      The **claim text** must articulate the mechanism. The **evidence** need only be
-      consistent with the mechanism — it does not need to prove the mechanism directly.
-      Financial reasoning cannot produce experimental evidence; observational data
-      that is consistent with the described mechanism satisfies L2.
-L3 — counterfactual reasoning: the claim explicitly reasons about an alternative
-      state (e.g., "if rates had not risen, tech valuations would have held").
+(e.g., "Fed raises rates → higher discount rates → lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
 
-Detect **causal overreach**, including:
+L3 — counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
 
-• L2 claims where no mechanism is described in the claim text (data cited without causal explanation)
-• L3 claims without explicit counterfactual structure
-• claims labeled L2 or L3 whose reasoning is purely correlational (no pathway described)
-• macro claims mapped to asset outcomes without any transmission mechanism
+Detect **rung collapse** (causal overreach), including:
+
+• L2 claims where no mechanism is described in the claim text
+• L3 claims without explicit counterfactual reasoning
+• claims whose conclusions require L2/L3 reasoning but evidence is purely L1
+• macro claims mapped to asset outcomes without transmission mechanisms
 
 Count causal overreach cases.
 
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
+
 ---
+
+## Assumption Failures
+
+Detect:
+
+• critical assumptions that are not acknowledged
+• assumptions contradicted by evidence
+• assumptions doing most of the explanatory work
+
+These typically reduce evidential_support.
 
 ## Conclusion Consistency Failures
 
@@ -302,26 +350,51 @@ Detect:
 
 • positions >10% with no `supporting_claims` entries
 • `supporting_claims` entries that reference claim IDs not present in the claims array
-  (e.g., supporting_claims cites "C5" but no claim has claim_id "C5") — treat as orphaned
 • claims that do not logically imply the allocation
 • portfolio changes without reasoning explanation
 
 Count orphaned positions (positions >10% that have no valid supporting claim).
 
+---
 
-Failure → pillar mapping
+# Failure → Pillar Mapping
 
-contradictions → logical_validity
-unsupported claims → evidential_support
-ignored critiques → alternative_consideration
-causal overreach → causal_alignment
-conclusion drift → logical_validity
+When failures are detected, penalties MUST map to pillars as follows:
 
+logical_validity penalties may only result from:
+
+• contradictions
+• missing reasoning steps
+• portfolio reasoning mismatch
+
+evidential_support penalties may only result from:
+
+• unsupported claims
+• evidence misuse
+
+alternative_consideration penalties may only result from:
+
+• ignored critiques
+• unjustified rejection of critiques
+• premature certainty
+
+causal_alignment penalties may only result from:
+
+• causal overreach
+• missing causal mechanisms
+
+premature certainty is detected when:
+
+• strong conclusions are asserted
+• while evidence is weak or ambiguous
+• or competing explanations are ignored
 ---
 
 # PHASE 2 — Assign Pillar Scores
 
 After detecting failures in Phase 1, assign scores for the four CRIT pillars.
+
+Scores MUST be **consistent with the detected counts**.
 
 ---
 
@@ -359,8 +432,9 @@ Penalize for:
 
 Whether competing explanations are considered.
 
-Definition of premature certainty: strong conclusions expressed despite weak or limited evidence.
+Definition of premature certainty:
 
+strong conclusions expressed despite weak or limited evidence.
 
 Penalize for:
 
@@ -415,9 +489,20 @@ Severity guidance:
 • **2–3 failures** → moderate penalty (typically ≤ 0.55)
 • **4+ failures** → severe penalty (typically ≤ 0.40)
 
-Scores above **0.90 should be rare**.
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
 
 Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
+
+---
+
+# Diagnostic Boolean Rules
+
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
 
 ---
 
@@ -456,4 +541,3 @@ No text outside JSON.
     "causal_alignment": "<1–2 sentences explaining causal reasoning quality>"
   }
 }
-```
