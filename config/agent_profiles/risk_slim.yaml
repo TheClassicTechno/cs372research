@@ -2,15 +2,15 @@
 system_prompts:
   propose:
     # - system_contract/system_causal_contract_slim.txt
-    - roles/risk.txt
+    - roles/risk_slim.txt
   critique:
     # - system_contract/system_causal_contract_slim.txt
-    - roles/risk.txt
+    - roles/risk_slim.txt
     - phase_preambles/critique.txt
     - tone
   revise:
     # - system_contract/system_causal_contract_slim.txt
-    - roles/risk.txt
+    - roles/risk_slim.txt
     - phase_preambles/revise.txt
     - tone
 
