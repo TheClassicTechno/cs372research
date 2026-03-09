@@ -11,8 +11,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from models.case import ClosePricePoint
 from models.log import EpisodeLog
-from simulation.runner import AsyncSimulationRunner
 from eval.financial import compute_daily_financial_metrics
+from models.portfolio import PortfolioSnapshot
 
 def repair_summary(run_dir: Path, force: bool = False):
     summary_path = run_dir / "summary.json"
@@ -121,10 +121,17 @@ def repair_summary(run_dir: Path, force: bool = False):
             ep_log_dict = next((e for e in episode_logs_data if e.get("episode_id") == ep_id), None)
             if ep_log_dict:
                 ep_log = EpisodeLog(**ep_log_dict)
-                allocation = AsyncSimulationRunner._extract_allocation_weights(ep_log, initial_cash)
-                if allocation:
+                # Extract positions and cash from the first non-MTM decision point
+                positions = {}
+                cash = initial_cash
+                for dp in ep_log.decision_point_logs:
+                    if not dp.case_id.startswith("mtm/"):
+                        positions = dp.portfolio_after.positions
+                        cash = dp.portfolio_after.cash
+                        break
+                if positions:
                     daily_fin = compute_daily_financial_metrics(
-                        allocation, initial_value=initial_cash,
+                        positions, cash, initial_value=initial_cash,
                         daily_prices=daily_prices, spy_daily=spy_daily,
                     )
                     if daily_fin:
