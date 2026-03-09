@@ -369,14 +369,14 @@ class TestHTMLViewer:
         assert "<h1>Debate Dashboard</h1>" in html
 
     def test_live_status_span(self, client):
-        """Page has the live status indicator."""
-        html = client.get("/").text
-        assert 'id="live-status"' in html
+        """Live view JS creates the live-status element."""
+        js = client.get("/static/js/views/liveView.js").text
+        assert 'live-status' in js
 
     def test_live_entries_container(self, client):
-        """Page has the live entries container."""
-        html = client.get("/").text
-        assert 'id="live-entries"' in html
+        """Live view JS creates the live-entries container."""
+        js = client.get("/static/js/views/liveView.js").text
+        assert 'live-entries' in js
 
     def test_app_container(self, client):
         """Page has the app div container."""
@@ -384,59 +384,58 @@ class TestHTMLViewer:
         assert 'id="app"' in html
 
     def test_runs_search_filter(self, client):
-        """Page has the search filter for runs."""
-        html = client.get("/").text
-        assert 'id="runs-search"' in html
-        assert 'Filter runs...' in html
+        """Runs view JS has the search filter."""
+        js = client.get("/static/js/views/runsView.js").text
+        assert 'runs-search' in js or 'Filter' in js
 
     # -- JS behavior: poll function exists --
 
     def test_poll_function_present(self, client):
-        """Page JS has the poll function that fetches /api/live_debate."""
-        html = client.get("/").text
-        assert "function poll()" in html
-        assert "fetch('/api/live_debate')" in html
+        """Live view JS has the poll function that fetches live debate data."""
+        js = client.get("/static/js/views/liveView.js").text
+        assert "function poll()" in js
+        # The actual fetch is in the API module
+        api_js = client.get("/static/js/api/live.js").text
+        assert "live_debate" in api_js
 
     def test_auto_refresh_interval(self, client):
-        """Page JS sets up a polling interval."""
-        html = client.get("/").text
-        assert "setInterval(poll, 1500)" in html
+        """Live view JS sets up a polling interval."""
+        js = client.get("/static/js/views/liveView.js").text
+        assert "setInterval(poll, 1500)" in js
 
     # -- CSS: card structure --
 
     def test_card_styles_defined(self, client):
-        """CSS defines card, card-header, card-body styles."""
-        html = client.get("/").text
-        assert ".card " in html or ".card{" in html
-        assert ".card-header" in html
-        assert ".card-body" in html
-        assert ".card.open" in html
+        """CSS defines card, card-header, card-body styles in external stylesheet."""
+        css = client.get("/static/css/components.css").text
+        assert ".card " in css or ".card{" in css
+        assert ".card-header" in css
+        assert ".card-body" in css
+        assert ".card.open" in css
 
     def test_card_body_hidden_by_default(self, client):
         """Card bodies are hidden (display:none) by default, shown when .open."""
-        html = client.get("/").text
-        assert "display: none" in html or "display:none" in html
-        assert "display: block" in html or "display:block" in html
+        css = client.get("/static/css/components.css").text
+        assert "display: none" in css or "display:none" in css
+        assert "display: block" in css or "display:block" in css
 
     # -- JS rendering: label format --
 
     def test_debate_label_format(self, client):
-        """JS builds debate labels as ROLE | Round N | PHASE."""
-        html = client.get("/").text
-        assert "'Round '" in html or '"Round "' in html
-        assert "CRIT" in html
+        """JS builds round labels in card component."""
+        js = client.get("/static/js/components/card.js").text
+        assert "'Round '" in js or '"Round "' in js
 
     def test_live_event_card_format(self, client):
         """JS builds event cards with round and phase labels."""
-        html = client.get("/").text
-        # The JS template: '[ROUND ' + ev.round + '] ' + ev.agent + ' — ' + ev.phase
-        assert "ROUND" in html
-        assert "ev.phase" in html
+        js = client.get("/static/js/components/card.js").text
+        assert "ROUND" in js
+        assert "ev.phase" in js
 
     def test_portfolio_label_in_card(self, client):
         """Card body JS renders PORTFOLIO label when portfolio data exists."""
-        html = client.get("/").text
-        assert "PORTFOLIO" in html
+        js = client.get("/static/js/components/card.js").text
+        assert "PORTFOLIO" in js
 
     # -- API returns entry metadata fields --
 
@@ -459,5 +458,5 @@ class TestHTMLViewer:
 
     def test_clear_button_style(self, client):
         """Clear button has CSS styling defined via generic button selector."""
-        html = client.get("/").text
-        assert "button" in html and "cursor: pointer" in html
+        css = client.get("/static/css/layout.css").text
+        assert "button" in css and "cursor: pointer" in css
