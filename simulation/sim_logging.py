@@ -133,20 +133,28 @@ class SimulationLogger:
 def _unique_run_dir(output_dir: Path, run_name: str) -> Path:
     """Return a run directory that does not already exist.
 
+    Uses atomic directory creation to be safe across concurrent processes.
     If ``output_dir/run_name`` is free, use it directly (first run keeps
     a clean name).  Otherwise append an incrementing suffix:
     ``run_name_001``, ``run_name_002``, etc.
     """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     candidate = output_dir / run_name
-    if not candidate.exists():
+    try:
+        candidate.mkdir(parents=True, exist_ok=False)
         return candidate
+    except FileExistsError:
+        pass
 
     idx = 1
     while True:
         candidate = output_dir / f"{run_name}_{idx:03d}"
-        if not candidate.exists():
+        try:
+            candidate.mkdir(parents=True, exist_ok=False)
             return candidate
-        idx += 1
+        except FileExistsError:
+            idx += 1
 
 
 def _write_json(path: Path, data: Any) -> None:
