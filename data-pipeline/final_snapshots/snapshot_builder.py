@@ -214,8 +214,10 @@ def ensure_snapshots(
         memo = build_memo(doc, filter_tickers=tickers)
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(out_path, "w") as f:
+        tmp = out_path.with_suffix(f".txt.tmp.{os.getpid()}")
+        with open(tmp, "w") as f:
             f.write(memo)
+        tmp.replace(out_path)
         print(f"  Wrote: {out_path}")
 
     # --- Copy prior-quarter memo to scenario-specific path if requested ---

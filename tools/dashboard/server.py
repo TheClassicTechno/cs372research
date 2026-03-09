@@ -9,6 +9,8 @@ Then open http://localhost:8000 in a browser.
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI, Query
@@ -225,6 +227,35 @@ def read_file(
             pass
 
     return JSONResponse({"content": content, "truncated": False})
+
+
+# ------------------------------------------------------------------
+# Ablation summary endpoints
+# ------------------------------------------------------------------
+
+@app.get("/api/ablation")
+def ablation_summary():
+    """Return the ablation summary JSON, or a not_generated marker."""
+    path = RUNS_BASE / "ablation_summary.json"
+    if not path.exists():
+        return JSONResponse({"error": "not_generated", "experiments": {}})
+    return JSONResponse(json.loads(path.read_text()))
+
+
+@app.post("/api/ablation/regenerate")
+def ablation_regenerate():
+    """Re-run aggregate_metrics.py and return the result."""
+    result = subprocess.run(
+        [sys.executable, "logging/aggregate_metrics.py"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return JSONResponse(
+            {"status": "error", "detail": result.stderr},
+            status_code=500,
+        )
+    return JSONResponse({"status": "ok"})
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

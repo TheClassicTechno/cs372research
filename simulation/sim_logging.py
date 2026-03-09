@@ -60,8 +60,11 @@ class SimulationLogger:
     # ------------------------------------------------------------------
 
     def init_run(self, config_yaml_path: str | None = None) -> None:
-        """Create the output directory tree and optionally copy the config."""
-        self._run_dir.mkdir(parents=True, exist_ok=True)
+        """Create the output directory tree and optionally copy the config.
+
+        The run directory itself is already created atomically by
+        ``_unique_run_dir`` during ``__init__``.
+        """
         self._episodes_dir.mkdir(exist_ok=True)
         if config_yaml_path is not None:
             dest = self._run_dir / "config.yaml"
@@ -131,24 +134,32 @@ class SimulationLogger:
 # ------------------------------------------------------------------
 
 def _unique_run_dir(output_dir: Path, run_name: str) -> Path:
-    """Return a run directory that does not already exist.
+    """Atomically claim a unique run directory.
 
-    If ``output_dir/run_name`` is free, use it directly (first run keeps
-    a clean name).  Otherwise append an incrementing suffix:
-    ``run_name_001``, ``run_name_002``, etc.
+    Uses ``mkdir(exist_ok=False)`` as the atomic lock — the first
+    process to create the directory wins.  If it already exists,
+    increment a suffix (_001, _002, ...) and retry.
     """
+    output_dir.mkdir(parents=True, exist_ok=True)
     candidate = output_dir / run_name
-    if not candidate.exists():
+    try:
+        candidate.mkdir(exist_ok=False)
         return candidate
-
+    except FileExistsError:
+        pass
     idx = 1
     while True:
         candidate = output_dir / f"{run_name}_{idx:03d}"
-        if not candidate.exists():
+        try:
+            candidate.mkdir(exist_ok=False)
             return candidate
-        idx += 1
+        except FileExistsError:
+            idx += 1
 
 
 def _write_json(path: Path, data: Any) -> None:
-    """Write *data* as pretty-printed JSON to *path*."""
-    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+    """Write *data* as pretty-printed JSON via atomic temp-file + rename."""
+    import os
+    tmp = path.with_suffix(f"{path.suffix}.tmp.{os.getpid()}")
+    tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+    tmp.replace(path)
