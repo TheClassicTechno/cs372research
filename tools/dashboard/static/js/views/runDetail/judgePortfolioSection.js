@@ -55,9 +55,9 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
         th += '<tr><td style="font-weight:600;">' + esc(ticker) + '</td>';
         for (var a = 0; a < agentNames.length; a++) {
           var w = agents[agentNames[a]] ? agents[agentNames[a]][ticker] : null;
-          th += '<td>' + fmtPct(w) + '</td>';
+          th += '<td style="font-weight:600;text-align:right;">' + fmtPct(w) + '</td>';
         }
-        th += '<td style="font-weight:600;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
+        th += '<td style="font-weight:600;text-align:right;border-left:2px solid #d6c4a1;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
         th += '</tr>';
       }
       th += '</table>';

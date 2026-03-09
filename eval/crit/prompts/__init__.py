@@ -25,7 +25,7 @@ _JINJA_ENV = jinja2.Environment(
 def render_crit_prompts(
     bundle: dict,
     system_template: str = "crit_system_enumerated.jinja",
-    user_template: str = "crit_user_enumerated.jinja",
+    user_template: str = "crit_user_master.jinja",
 ) -> tuple[str, str]:
     """Render CRIT system + user prompts from a reasoning bundle.
 
@@ -83,7 +83,8 @@ explanations? Are alternative hypotheses acknowledged or ignored?
 
 4. **Causal Alignment** — Are causal claims justified by the evidence? Does \
 the agent distinguish between correlation (L1), intervention (L2), and \
-counterfactual (L3) reasoning?
+counterfactual (L3) reasoning? Detect rung collapse: higher-level conclusions \
+supported only by lower-level evidence.
 
 ## What you do NOT evaluate
 
@@ -216,7 +217,8 @@ explanations? Are alternative hypotheses acknowledged or ignored?
 
 4. **Causal Alignment** — Are causal claims justified by the evidence? Does \
 the agent distinguish between correlation (L1), intervention (L2), and \
-counterfactual (L3) reasoning?
+counterfactual (L3) reasoning? Detect rung collapse: higher-level conclusions \
+supported only by lower-level evidence.
 
 ## What you do NOT evaluate
 

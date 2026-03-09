@@ -49,11 +49,19 @@ def _book_value(cash: float, positions: dict[str, int], prices: dict[str, float]
     )
 
 
-def build_equity_curve(episode_log: EpisodeLog, initial_cash: float) -> list[float]:
+def build_equity_curve(
+    episode_log: EpisodeLog,
+    initial_cash: float,
+    risk_free_rate: float = 0.0,
+) -> list[float]:
     """Build a time series of portfolio book values across decision points.
 
     The curve starts with *initial_cash* (before any trades) and appends
     the after-trade book value at each decision point.
+
+    If *risk_free_rate* is > 0 (annualized, e.g. 0.05), cash earns compounding
+    interest between decision points.
+    Assumes each step is 1 quarter (0.25 years).
 
     Falls back to ``final_prices`` for decision points that lack
     ``case_prices`` (backward compat with logs generated before
@@ -62,16 +70,20 @@ def build_equity_curve(episode_log: EpisodeLog, initial_cash: float) -> list[flo
     curve: list[float] = [initial_cash]
     fallback_prices = episode_log.final_prices
 
+    # Quarterly growth factor: (1 + r)^(1/4)
+    q_factor = (1.0 + risk_free_rate) ** 0.25
+    interest_cash = 0.0
     for dp in episode_log.decision_point_logs:
-        # TODO: Cash should add interest rate here if it isn't added by sim
+        interest_cash = (dp.portfolio_after.cash + interest_cash) * q_factor - dp.portfolio_after.cash
         prices = dp.case_prices if dp.case_prices else fallback_prices
         bv = _book_value(
-            dp.portfolio_after.cash,
+            dp.portfolio_after.cash + interest_cash,
             dp.portfolio_after.positions,
             prices,
         )
         curve.append(bv)
 
+    print("Total quarterly cash interest", interest_cash)
     return curve
 
 
@@ -162,19 +174,23 @@ def max_drawdown(equity_curve: list[float]) -> tuple[float, float]:
 def compute_financial_metrics(
     episode_log: EpisodeLog,
     initial_cash: float,
+    risk_free_rate: float = 0.0,
 ) -> FinancialMetrics:
     """Compute all financial metrics for one episode.
 
     This is the main entry point.  It builds the equity curve from the
     episode's decision point logs and derives all risk-adjusted metrics.
     """
-    curve = build_equity_curve(episode_log, initial_cash)
+    curve = build_equity_curve(episode_log, initial_cash, risk_free_rate)
     rets = compute_returns(curve)
+
+    # Periodic risk-free rate for Sharpe/Sortino (quarterly)
+    rf_q = (1.0 + risk_free_rate) ** 0.25 - 1.0
 
     dd_abs, dd_pct = max_drawdown(curve)
 
-    sr = sharpe_ratio(rets)
-    so = sortino_ratio(rets)
+    sr = sharpe_ratio(rets, risk_free=rf_q)
+    so = sortino_ratio(rets, risk_free=rf_q)
 
     total_return_pct = (
         ((curve[-1] - initial_cash) / initial_cash) * 100.0
@@ -184,7 +200,9 @@ def compute_financial_metrics(
 
     calmar = None
     if dd_pct > 0.0 and total_return_pct != 0.0:
-        calmar = (total_return_pct / 100.0) / dd_pct
+        # Annualize the quarterly return for calmar
+        ann_return = (1 + total_return_pct / 100.0) ** 4 - 1
+        calmar = ann_return / dd_pct
 
     return FinancialMetrics(
         equity_curve=curve,
@@ -221,38 +239,19 @@ class DailyFinancialMetrics(BaseModel):
 
 
 def build_daily_equity_curve(
-    allocation: dict[str, float],
+    positions: dict[str, int],
+    cash: float,
     initial_value: float,
     daily_prices: dict[str, list[ClosePricePoint]],
+    risk_free_rate: float = 0.0,
 ) -> list[float]:
-    """Build a daily equity curve from allocation weights and daily prices.
+    """Build a daily equity curve from actual share positions and cash.
 
     Assumes buy-and-hold at the given weights starting on day 0.
-    For each day t, portfolio value = sum over tickers of:
-        weight_i * initial_value * (price_t / price_0)
-
-    Tickers in the allocation that lack daily price data are treated as
-    earning zero return (their portion stays constant at initial weight).
-
-    Parameters
-    ----------
-    allocation:
-        {ticker: weight} where weights sum to ~1.0.
-    initial_value:
-        Starting portfolio value (e.g. 100_000).
-    daily_prices:
-        {ticker: [ClosePricePoint, ...]} sorted by date ascending.
-
-    Returns
-    -------
-    List of daily portfolio values, starting from day 0.
     """
-    if not allocation or initial_value <= 0.0:
-        return [initial_value]
-
     # Find common trading dates across all tickers that have prices
     tickers_with_prices = [
-        t for t in allocation if t in daily_prices and daily_prices[t]
+        t for t in positions if t in daily_prices and daily_prices[t]
     ]
 
     if not tickers_with_prices:
@@ -262,57 +261,75 @@ def build_daily_equity_curve(
     ref_ticker = max(tickers_with_prices, key=lambda t: len(daily_prices[t]))
     n_days = len(daily_prices[ref_ticker])
 
-    # Build per-ticker price arrays indexed by day
-    # For tickers without data, their contribution stays flat
-    ticker_prices: dict[str, list[float]] = {}
-    for t in tickers_with_prices:
-        bars = daily_prices[t]
-        ticker_prices[t] = [bar.close for bar in bars]
+    # Daily growth factor: (1 + r)^(1/252)
+    d_factor = (1.0 + risk_free_rate) ** (1.0 / 252.0)
 
-    curve: list[float] = []
+    # Build per-ticker price arrays indexed by day
+    ticker_prices: dict[str, list[float]] = {}
+    for t in positions:
+        if t in daily_prices:
+            bars = daily_prices[t]
+            ticker_prices[t] = [bar.close for bar in bars]
+
+    curve: list[float] = [initial_value]
+    interest_wealth = 0.0
     for day_idx in range(n_days):
-        day_value = 0.0
-        for t, weight in allocation.items():
-            if weight <= 0.0:
+        if risk_free_rate > 0:
+            interest_wealth = (cash + interest_wealth) * d_factor - cash
+            
+        day_value = cash + interest_wealth
+        for t, qty in positions.items():
+            if qty == 0:
                 continue
             if t in ticker_prices:
                 prices = ticker_prices[t]
-                if day_idx < len(prices) and prices[0] > 0.0:
-                    day_value += weight * initial_value * (prices[day_idx] / prices[0])
+                if day_idx < len(prices):
+                    price = prices[day_idx]
+                    # If you want exact match with quarterly metrics, comment this in.
+                    # if day_idx == n_days -1:
+                    #     price = round(price, 2)
+                    day_value += qty * price
                 else:
-                    # Beyond available data or zero start price — hold flat
-                    day_value += weight * initial_value
+                    # Beyond available data — hold at last seen price
+                    day_value += qty * prices[-1]
             else:
-                # No daily data for this ticker — hold flat
-                day_value += weight * initial_value
+                # No daily data for this ticker — value is 0 (conservative)
+                pass
         curve.append(day_value)
-
+    print("Total daily cash interest", interest_wealth, "n days:", n_days)
     return curve
 
 
 def compute_daily_financial_metrics(
-    allocation: dict[str, float],
+    positions: dict[str, int],
+    cash: float,
     initial_value: float,
     daily_prices: dict[str, list[ClosePricePoint]],
     spy_daily: list[ClosePricePoint] | None = None,
+    risk_free_rate: float = 0.0,
 ) -> DailyFinancialMetrics | None:
-    """Compute daily-granularity financial metrics for an allocation.
+    """Compute daily-granularity financial metrics for actual positions.
 
     Returns None if insufficient daily price data is available.
 
     Parameters
     ----------
-    allocation:
-        {ticker: weight} from the debate output.
+    positions:
+        {ticker: share_count} resulting from simulation trades.
+    cash:
+        Cash balance after trades.
     initial_value:
         Starting portfolio value.
     daily_prices:
         {ticker: [ClosePricePoint, ...]} from the MTM case's stock_data.
     spy_daily:
         Optional SPY daily prices for benchmark comparison.
+    risk_free_rate:
+        Annualized risk-free rate (e.g. 0.05).
     """
-    curve = build_daily_equity_curve(allocation, initial_value, daily_prices)
-
+    curve = build_daily_equity_curve(
+        positions, cash, initial_value, daily_prices, risk_free_rate
+    )
     if len(curve) < 2:
         return None
 
@@ -322,14 +339,16 @@ def compute_daily_financial_metrics(
     if trading_days < 2:
         return None
 
+    # Daily risk-free rate for Sharpe/Sortino
+    rf_d = (1.0 + risk_free_rate) ** (1.0 / 252.0) - 1.0
     total_return_pct = ((curve[-1] - curve[0]) / curve[0]) * 100.0
 
     # Annualized metrics (scale daily to annual)
-    ann_sr = sharpe_ratio(rets)
+    ann_sr = sharpe_ratio(rets, risk_free=rf_d)
     if ann_sr is not None:
         ann_sr = ann_sr * math.sqrt(252)
 
-    ann_so = sortino_ratio(rets)
+    ann_so = sortino_ratio(rets, risk_free=rf_d)
     if ann_so is not None:
         ann_so = ann_so * math.sqrt(252)
 

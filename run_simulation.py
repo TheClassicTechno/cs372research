@@ -148,9 +148,9 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--log-level",
-        default="INFO",
+        default="DEBUG",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging verbosity (default: INFO).",
+        help="Logging verbosity (default: DEBUG).",
     )
     parser.add_argument(
         "--logging-mode",
@@ -163,7 +163,7 @@ def _parse_args() -> argparse.Namespace:
         "--crit-model",
         default=None,
         metavar="MODEL",
-        help="Override LLM model used for CRIT scoring (default: gpt-5).",
+        help="Override LLM model used for CRIT scoring (default: gpt-5-mini).",
     )
     parser.add_argument(
         "--no-parallel",

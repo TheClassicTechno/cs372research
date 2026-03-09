@@ -12,16 +12,21 @@ from pydantic import BaseModel, Field
 
 
 # =============================================================================
-# PEARL LEVELS (for causal claim classification)
+# REASONING TYPES (for causal claim classification)
 # =============================================================================
 
 
-class PearlLevel(str, Enum):
-    """Pearl's Ladder of Causation levels for causal claim classification."""
+class ReasoningType(str, Enum):
+    """Reasoning type classification for structured claims."""
 
-    L1 = "L1"  # Association: "X is associated with Y"
-    L2 = "L2"  # Intervention: "If we do X, Y changes"
-    L3 = "L3"  # Counterfactual: "Had X not occurred, Y would..."
+    CAUSAL = "causal"                  # If X changes, Y will follow
+    OBSERVATIONAL = "observational"    # X is associated with Y
+    RISK_ASSESSMENT = "risk_assessment"  # X creates vulnerability to Y
+    PATTERN = "pattern"                # Price behavior suggests continuation/reversal
+
+
+# Keep PearlLevel as alias for backward compatibility with saved traces
+PearlLevel = ReasoningType
 
 
 # =============================================================================
@@ -89,12 +94,11 @@ class Order(BaseModel):
 class Claim(BaseModel):
     """
     Machine-readable causal claim for T3/CRIT-style evaluation.
-    Each claim is classified by Pearl level for reasoning quality scoring.
+    Each claim is classified by reasoning type for quality scoring.
     """
 
     claim_text: str
-    pearl_level: PearlLevel = PearlLevel.L1
-    variables: list[str] = Field(default_factory=list)
+    reasoning_type: ReasoningType = ReasoningType.OBSERVATIONAL
     assumptions: Optional[list[str]] = None
     timestamp_dependency: Optional[str] = None
     confidence: float = 0.5

@@ -39,5 +39,5 @@ Respond with valid JSON only (same format as other agents):
   "justification": "Detailed contrarian reasoning",
   "confidence": 0.0-1.0,
   "risks_or_falsifiers": "What would make you agree with the majority",
-  "claims": [{"claim_text": "...", "pearl_level": "L2"|"L3", "variables": [...], "assumptions": [...], "confidence": 0.5}]
+  "claims": [{"claim_text": "...", "reasoning_type": "causal"|"observational"|"risk_assessment"|"pattern", "assumptions": [...], "confidence": 0.5}]
 }

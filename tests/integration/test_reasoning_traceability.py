@@ -29,9 +29,8 @@ CLAIMS = [
         "claim_id": "C1",
         "claim_text": "Rising rates pressure growth equities [L1-10Y]",
         "claim_type": "macro",
-        "pearl_level": "L2",
+        "reasoning_type": "causal",
         "evidence": ["[L1-10Y]", "[L1-FF: Fed Funds: 5.08%]"],
-        "variables": ["rates", "growth"],
         "assumptions": ["Fed holds rates steady"],
         "falsifiers": ["Rate cuts announced"],
         "impacts_positions": ["AAPL", "NVDA"],
@@ -41,9 +40,8 @@ CLAIMS = [
         "claim_id": "C2",
         "claim_text": "NVDA AI capex cycle supports revenue [NVDA-F3]",
         "claim_type": "firm",
-        "pearl_level": "L1",
+        "reasoning_type": "observational",
         "evidence": ["[NVDA-F3]", "[NVDA-F3]"],  # Duplicate to test dedup
-        "variables": ["capex"],
         "assumptions": ["AI demand persists"],
         "falsifiers": ["Capex cuts"],
         "impacts_positions": ["NVDA"],
@@ -138,7 +136,7 @@ class TestClaimEvidenceTraceability:
             assert "claim_id" in claim
             assert "claim_text" in claim
             assert "claim_type" in claim
-            assert "pearl_level" in claim
+            assert "reasoning_type" in claim
             assert "evidence" in claim
             assert "evidence_ids" in claim
             assert "assumptions" in claim
@@ -184,7 +182,7 @@ class TestBundleToCritPrompt:
         _, user_prompt = render_crit_prompts(
             bundle,
             system_template="crit_system_enumerated.jinja",
-            user_template="crit_user_enumerated.jinja",
+            user_template="crit_user_master.jinja",
         )
 
         # Structured reasoning should appear in the rendered prompt
@@ -202,7 +200,7 @@ class TestBundleToCritPrompt:
         _, user_prompt = render_crit_prompts(
             bundle,
             system_template="crit_system_enumerated.jinja",
-            user_template="crit_user_enumerated.jinja",
+            user_template="crit_user_master.jinja",
         )
 
         assert "Accepted critique K1" in user_prompt

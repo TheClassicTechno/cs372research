@@ -25,6 +25,7 @@ from multi_agent.prompts import (
     _assemble_user_prompt,
     _DEFAULT_SECTION_ORDER,
     _load_sectioned_template,
+    _render_alloc_instructions,
     _warn_empty_template_vars,
     build_critique_prompt,
     build_judge_prompt,
@@ -233,7 +234,8 @@ class TestUserPromptSectionOrdering:
     def test_proposal_allocation_default_order(self):
         result = build_proposal_user_prompt("MY CONTEXT", allocation_mode=True)
         assert "MY CONTEXT" in result
-        assert "Evidence citation rules" in result
+        # Citation rules are now in system causal contract only (not duplicated in user prompt)
+        assert "allocation" in result.lower()
 
     def test_critique_custom_section_order_output_first(self):
         """Put output_format before task — output instructions appear first."""
@@ -298,7 +300,7 @@ class TestPromptFileOverrides:
             prompt_file_overrides={"proposal_template": "phases/proposal_allocation.txt"},
         )
         # Should use allocation template even though allocation_mode=False
-        assert "Evidence citation rules" in result
+        assert "allocation" in result.lower()
 
     def test_revision_template_override(self):
         result = build_revision_prompt(
@@ -741,3 +743,75 @@ class TestEmptyTemplateVarWarnings:
                 critiques_text_v2="",
             )
         assert any("EMPTY TEMPLATE VAR" in msg and "'critiques_text_v2'" in msg for msg in caplog.messages)
+
+
+# =============================================================================
+# Allocation constraint injection
+# =============================================================================
+
+
+class TestAllocationConstraintInjection:
+    """Verify allocation constraint values are injected into agent prompts."""
+
+    def test_render_alloc_instructions_defaults(self):
+        raw = "max __MAX_WEIGHT__ (__MAX_WEIGHT_PCT__%), min __MIN_HOLDINGS__ tickers"
+        result = _render_alloc_instructions(raw)
+        assert result == "max 1.00 (100%), min 1 tickers"
+
+    def test_render_alloc_instructions_custom(self):
+        raw = "max __MAX_WEIGHT__ (__MAX_WEIGHT_PCT__%), min __MIN_HOLDINGS__ tickers"
+        result = _render_alloc_instructions(raw, {"max_weight": 0.25, "min_holdings": 5})
+        assert result == "max 0.25 (25%), min 5 tickers"
+
+    def test_proposal_default_constraints(self):
+        """Default constraints (1.0, 1) render in proposal prompt."""
+        prompt = build_proposal_user_prompt(context="Test context")
+        assert "1.00" in prompt
+        assert "100%" in prompt
+
+    def test_proposal_custom_constraints(self):
+        """Custom constraints render in proposal prompt."""
+        prompt = build_proposal_user_prompt(
+            context="Test context",
+            allocation_constraints={"max_weight": 0.25, "min_holdings": 5},
+        )
+        assert "0.25" in prompt
+        assert "25%" in prompt
+        assert "5 tickers must have weight > 0" in prompt
+
+    def test_revision_custom_constraints(self):
+        """Custom constraints render in revision prompt via Jinja vars."""
+        prompt = build_revision_prompt(
+            role="macro",
+            context="Test context",
+            my_proposal="Test proposal",
+            critiques_received=[],
+            allocation_constraints={"max_weight": 0.20, "min_holdings": 4},
+            prompt_file_overrides={
+                "revision_template": "phases/revision_allocation_with_enumeration.txt",
+            },
+        )
+        assert "0.20" in prompt
+
+    def test_judge_custom_constraints(self):
+        """Custom constraints render in judge prompt via Jinja vars."""
+        prompt = build_judge_prompt(
+            context="Test context",
+            revisions=[{"role": "macro", "action": "{}", "confidence": 0.5}],
+            all_critiques_text="No critiques",
+            allocation_constraints={"max_weight": 0.30},
+        )
+        assert "30%" in prompt
+
+    def test_overridden_output_allocation_rendered(self):
+        """When output instructions are overridden, constraints still render."""
+        prompt = build_proposal_user_prompt(
+            context="Test context",
+            prompt_file_overrides={
+                "output_allocation": "output_format/allocation_output_diverse.txt",
+            },
+            allocation_constraints={"max_weight": 0.15, "min_holdings": 7},
+        )
+        assert "0.15" in prompt
+        assert "15%" in prompt
+        assert "7 tickers" in prompt

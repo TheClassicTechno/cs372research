@@ -1,0 +1,83 @@
+# ============================================================================
+# Experiment A: Per-Role LLM — Macro=GPT, Risk=Gemini, Value=GPT
+# ============================================================================
+# Tests whether the LLM choice per agent role affects allocation outcomes.
+# Compare with Experiment B (swapped assignments) to isolate model effects.
+#
+# Usage:
+#   uv run python run_simulation.py \
+#     --agents config/debate/experiment_role_llm_A.yaml \
+#     --scenario config/scenarios/2022Q1_inflation_shock.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+tickers:
+  - AAPL
+  - MSFT
+  - NVDA
+  - JPM
+  - GS
+  - XOM
+  - CVX
+  - UNH
+  - WMT
+  - CAT
+
+allocation_constraints:
+  max_weight: 0.25
+  min_holdings: 4
+  fully_invested: true
+  max_tickers: 15
+
+num_episodes: 1
+
+# --- Who debates ---
+agents:
+  macro: "macro_standard"
+  value: "value_standard"
+  risk: "risk_standard"
+judge_profile: "judge_standard"
+
+# --- How to debate ---
+debate_setup:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 2
+
+  # Per-role LLM overrides
+  # Experiment A: Macro=GPT, Value=GPT, Risk=Gemini, Judge=GPT
+  role_llms:
+    macro:
+      provider: "openai"
+      model: "gpt-5-mini"
+    value:
+      provider: "openai"
+      model: "gpt-5-mini"
+    risk:
+      provider: "google"
+      model: "gemini-2.5-flash"
+    judge:
+      provider: "openai"
+      model: "gpt-5-mini"
+
+  # PID enabled
+  pid_enabled: true
+  pid_kp: 0.15
+  pid_ki: 0.01
+  pid_kd: 0.03
+  pid_rho_star: 0.8
+  pid_initial_beta: 0.5
+  pid_epsilon: 0.001
+
+  logging_mode: "debug"
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 2
+
+broker:
+  initial_cash: 100000.0

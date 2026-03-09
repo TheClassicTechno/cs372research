@@ -21,6 +21,7 @@ from typing import Any
 
 from agents.registry import create_agent_system
 from agents.tools import make_submit_decision_tool
+from eval.evidence import parse_memo_evidence
 from eval.financial import compute_daily_financial_metrics, compute_financial_metrics
 from models.agents import AgentInvocation
 from models.case import Case
@@ -46,6 +47,7 @@ class AsyncSimulationRunner:
         self._config = config
         self._config_yaml_path = config_yaml_path
         self._run_name = run_name_from_config_path(config_yaml_path)
+        self._templates: list[Case] = []
         
         final_output_dir = output_dir or config.output_dir
         self._sim_logger = SimulationLogger(final_output_dir, config, self._run_name)
@@ -70,6 +72,7 @@ class AsyncSimulationRunner:
             tickers=tickers,
             memo_override_path=self._config.memo_override_path,
         )
+        self._templates = templates
         num_cases = len(templates)
         num_decision = sum(1 for t in templates if not t.case_id.startswith("mtm/"))
         num_mtm = num_cases - num_decision
@@ -109,6 +112,7 @@ class AsyncSimulationRunner:
         summary = self._build_summary()
         self._sim_logger.finalize(summary)
         logger.info("Simulation '%s' complete. Output: %s", self._run_name, self._sim_logger.run_dir)
+        print(f"RESULTS_DIR: {self._sim_logger.run_dir}", flush=True)
 
     # ------------------------------------------------------------------
     # Episode execution
@@ -266,6 +270,29 @@ class AsyncSimulationRunner:
         episodes = self._sim_logger.simulation_log.episode_logs
         initial_cash = self._config.broker.initial_cash
 
+        # Extract risk-free rate from the first decision case's memo if available.
+        risk_free_rate = 0.0
+        if self._templates:
+            # First template item content should be the memo
+            memo_text = self._templates[0].case_data.items[0].content
+            evidence = parse_memo_evidence(memo_text)
+            if "L1-FF" in evidence:
+                import re
+                try:
+                    # Memo text looks like "Fed Funds: 4.33%"
+                    match = re.search(r"([\d\.]+)", evidence["L1-FF"])
+                    if match:
+                        risk_free_rate = float(match.group(1)) / 100.0
+                        logger.info("Extracted risk-free rate from memo: %.4f", risk_free_rate)
+                    else:
+                        logger.warning("Could not find numeric rate in 'L1-FF' memo text: %s", evidence["L1-FF"])
+                except (ValueError, TypeError):
+                    logger.warning("Failed to parse risk-free rate 'L1-FF' from memo.")
+            else:
+                logger.warning("Risk-free rate 'L1-FF' not found in memo evidence; defaulting to 0.0.")
+        else:
+            logger.warning("No case templates found; cannot extract risk-free rate for summary metrics.")
+
         # Load daily prices once for daily metrics (if available).
         daily_prices, spy_daily = self._load_daily_prices_for_eval()
 
@@ -281,8 +308,10 @@ class AsyncSimulationRunner:
                 for ticker, qty in ep.final_portfolio.positions.items()
             }
             book_value = ep.book_value or 0.0
-
-            fin = compute_financial_metrics(ep, initial_cash)
+            
+            fin_ep = ep.copy()
+            fin_ep.decision_point_logs = fin_ep.decision_point_logs[:-1]  # Exclude MTM point for financial metrics
+            fin = compute_financial_metrics(fin_ep, initial_cash, risk_free_rate=risk_free_rate)
 
             summary: dict[str, Any] = {
                 "episode_id": ep.episode_id,
@@ -293,6 +322,7 @@ class AsyncSimulationRunner:
                 "position_values": position_values,
                 "book_value": book_value,
                 "return_pct": ((book_value - initial_cash) / initial_cash) * 100,
+                "return_pct_with_cash_interest": fin.returns[-1] * 100 if fin.returns else None,
                 "total_trades": len(ep.trades),
                 "sharpe_ratio": fin.sharpe_ratio,
                 "sortino_ratio": fin.sortino_ratio,
@@ -301,15 +331,23 @@ class AsyncSimulationRunner:
                 "calmar_ratio": fin.calmar_ratio,
             }
 
-            # Daily metrics from allocation weights + daily prices.
+            # Daily metrics from actual positions + daily prices.
             if daily_prices:
-                allocation = self._extract_allocation_weights(ep, initial_cash)
-                if allocation:
-                    daily_fin = compute_daily_financial_metrics(
-                        allocation, initial_value=initial_cash,
-                        daily_prices=daily_prices, spy_daily=spy_daily,
-                    )
-                    if daily_fin is not None:
+                # Find positions and cash from the first non-MTM decision point
+                # TODO daily metrics likely need to be rewritten if we add multi-step episodes.
+                positions = {}
+                cash = initial_cash
+                for dp in ep.decision_point_logs:
+                    if not dp.case_id.startswith("mtm/"):
+                        positions = dp.portfolio_after.positions
+                        cash = dp.portfolio_after.cash
+                        break
+
+                daily_fin = compute_daily_financial_metrics(
+                    positions, cash,  initial_value=initial_cash, daily_prices=daily_prices, spy_daily=spy_daily,
+                    risk_free_rate=risk_free_rate,
+                )
+                if daily_fin is not None:
                         summary["daily_metrics"] = {
                             "trading_days": daily_fin.trading_days,
                             "total_return_pct": daily_fin.total_return_pct,
@@ -392,36 +430,3 @@ class AsyncSimulationRunner:
 
         return daily_prices, spy_daily
 
-    @staticmethod
-    def _extract_allocation_weights(
-        episode_log: EpisodeLog, initial_cash: float,
-    ) -> dict[str, float]:
-        """Extract allocation weights from the first decision point's positions.
-
-        Converts share-count positions to weight fractions using entry prices.
-        """
-        if not episode_log.decision_point_logs:
-            return {}
-
-        # Find the first non-MTM decision point with positions
-        for dp in episode_log.decision_point_logs:
-            positions = dp.portfolio_after.positions
-            if not positions:
-                continue
-
-            # Use case_prices if available, fall back to final_prices
-            prices = dp.case_prices if dp.case_prices else (episode_log.final_prices or {})
-
-            total_value = dp.portfolio_after.cash + sum(
-                qty * prices.get(t, 0.0) for t, qty in positions.items()
-            )
-            if total_value <= 0.0:
-                continue
-
-            return {
-                t: (qty * prices.get(t, 0.0)) / total_value
-                for t, qty in positions.items()
-                if qty != 0 and prices.get(t, 0.0) > 0.0
-            }
-
-        return {}

@@ -30,7 +30,7 @@ Your job is to synthesize all revised allocations into ONE final portfolio alloc
 CRITICAL: Your final allocation must use ONLY the tickers from the allocation universe
 listed in the Financial Context above. Do NOT include any tickers outside the universe.
 Include ALL universe tickers (use 0.0 for any you choose not to hold).
-Weights must sum to 1.0. No single ticker may exceed 40%.
+Weights must sum to 1.0. No single ticker may exceed {{ max_weight_pct }}%.
 
 {{ sector_constraints }}
 

@@ -11,8 +11,7 @@ Respond with valid JSON only (no markdown, no extra text):
   "claims": [
     {
       "claim_text": "...",
-      "pearl_level": "L1"|"L2"|"L3",
-      "variables": ["X", "Y"],
+      "reasoning_type": "causal"|"observational"|"risk_assessment"|"pattern",
       "assumptions": ["..."],
       "confidence": 0.0-1.0
     }

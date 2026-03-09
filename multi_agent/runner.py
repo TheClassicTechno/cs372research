@@ -183,12 +183,11 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             "claim_id": claim.get("claim_id", ""),
             "claim_text": claim.get("claim_text", ""),
             "claim_type": claim.get("claim_type", "unknown"),
-            "pearl_level": claim.get("pearl_level", ""),
+            "reasoning_type": claim.get("reasoning_type", ""),
             "evidence": raw_evidence,
             "evidence_ids": sorted(set(
                 normalize_evidence_id(e) for e in raw_evidence if isinstance(e, str)
             )),
-            "variables": claim.get("variables", []),
             "assumptions": claim.get("assumptions", []),
             "falsifiers": claim.get("falsifiers", []),
             "impacts_positions": claim.get("impacts_positions", []),
@@ -206,7 +205,7 @@ def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
         normalized.append({
             "ticker": entry.get("ticker", ""),
             "weight": entry.get("weight", 0.0),
-            "supporting_claims": entry.get("supported_by_claims", []),
+            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
             "explanation": entry.get("explanation") or entry.get("rationale") or "",
         })
     return normalized
@@ -387,7 +386,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(prop_citations, memo_evidence_lookup)
     proposal_bundle = {
-        "thesis": _extract_thesis(prop_action, role=role, phase="propose"),
         "portfolio_allocation": prop_action["allocation"],
         "reasoning": _extract_reasoning(prop_action, normalize_evidence_id),
         "raw_response": proposal.get("raw_response") or "",
@@ -401,7 +399,6 @@ def build_reasoning_bundle(
     )
     enrich_evidence_citations(rev_citations, memo_evidence_lookup)
     revised_bundle = {
-        "thesis": _extract_thesis(rev_action, role=role, phase="revise"),
         "portfolio_allocation": rev_action["allocation"],
         "reasoning": _extract_reasoning(
             rev_action, normalize_evidence_id,
@@ -419,7 +416,7 @@ def build_reasoning_bundle(
 
     # Expand evidence IDs inline in text fields
     for bundle_part in (proposal_bundle, revised_bundle):
-        bundle_part["thesis"] = expand_evidence_ids_inline(bundle_part["thesis"], memo_evidence_lookup)
+        bundle_part["reasoning"]["thesis"] = expand_evidence_ids_inline(bundle_part["reasoning"]["thesis"], memo_evidence_lookup)
         bundle_part["raw_response"] = expand_evidence_ids_inline(bundle_part["raw_response"], memo_evidence_lookup)
     for crit in critiques_received:
         crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)
@@ -480,7 +477,7 @@ class MultiAgentRunner:
         self._log_metrics = self.config.pid_log_metrics
         self._log_llm = self.config.pid_log_llm_calls
 
-        # --- CRIT scorer (uses dedicated model, default gpt-5) ---
+        # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
         if self.config.pid_enabled:
             from eval.crit import CritScorer
@@ -1326,6 +1323,19 @@ class MultiAgentRunner:
         self._reset_per_invocation_state()
         return self._run_pipeline(observation)
 
+    @staticmethod
+    def _coerce_variables(raw) -> list[str]:
+        """Coerce LLM-returned variables to list[str].
+
+        LLMs sometimes return a dict like {"X": "desc", "Y": "desc"}
+        instead of ["X", "Y"]. Convert gracefully.
+        """
+        if isinstance(raw, list):
+            return [str(v) for v in raw]
+        if isinstance(raw, dict):
+            return [str(k) for k in raw]
+        return []
+
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
@@ -1344,8 +1354,7 @@ class MultiAgentRunner:
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-                    pearl_level=c.get("pearl_level", "L1"),
-                    variables=c.get("variables", []),
+                    reasoning_type=c.get("reasoning_type", "observational"),
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

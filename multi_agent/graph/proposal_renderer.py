@@ -62,8 +62,7 @@ def render_previous_proposal(action_dict: dict) -> str:
         for i, claim in enumerate(claims):
             cid = claim.get("claim_id") or f"C{i + 1}"
             text = claim.get("claim_text") or ""
-            pearl = claim.get("pearl_level") or ""
-            variables = claim.get("variables") or []
+            rtype = claim.get("reasoning_type") or ""
             assumptions = claim.get("assumptions") or []
             confidence = claim.get("confidence")
 
@@ -71,15 +70,13 @@ def render_previous_proposal(action_dict: dict) -> str:
             falsifiers = claim.get("falsifiers") or []
 
             entry = f"{cid}: {text}"
-            if pearl:
-                entry += f"\n  Pearl Level: {pearl}"
+            if rtype:
+                entry += f"\n  Reasoning Type: {rtype}"
             claim_type = claim.get("claim_type")
             if claim_type:
                 entry += f"\n  Claim Type: {claim_type}"
             if evidence:
                 entry += f"\n  Evidence: {', '.join(str(e) for e in evidence)}"
-            if variables:
-                entry += f"\n  Variables: {', '.join(str(v) for v in variables)}"
             if assumptions:
                 entry += f"\n  Assumptions: {', '.join(str(a) for a in assumptions)}"
             if falsifiers:

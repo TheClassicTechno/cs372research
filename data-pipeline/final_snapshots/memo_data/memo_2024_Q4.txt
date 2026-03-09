@@ -1,6 +1,6 @@
 QUARTERLY SNAPSHOT MEMO — 2024 Q4
 As-of date: 2024-12-31
-Tickers: 2
+Tickers: 5
 
 This document is the complete data payload for agent deliberation.
 It contains macro regime, per-ticker price/fundamental metrics,
@@ -41,55 +41,330 @@ Volatility:
   [L1-EQBC]  Equity-Bond Correlation: 0.04
 
 ======================================================================
-CROSS-SECTIONAL SUMMARY
+TICKER: AAPL
 ======================================================================
 
-  TICKER     CLOSE  60D RET  60D VOL   BETA  SHARPE  SENT_Z      GM
-  -----------------------------------------------------------------
-  NVDA      137.45   +11.9%    36.5%   2.63    1.30     n/a     n/a
-  TSLA      417.41   +73.4%    76.3%   2.38    3.03     n/a   16.3%
+  Price & Returns:
+    [AAPL-PX]       Close: $249.06
+    [AAPL-RET20]    20D Return: +4.5%
+    [AAPL-RET60]    60D Return: +10.5%
+    [AAPL-RET120]   120D Return: +10.3%
+    [AAPL-RET252]   1Y Return: +30.7%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 16.5%
+    [AAPL-VOL60]    60D Vol (ann): 17.2%
+    [AAPL-DVOL60]   60D Downside Vol: 11.8%
+    [AAPL-DD60]     60D Drawdown: -6.1%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -15.3%
+    [AAPL-SHARPE]   60D Sharpe: 2.45
+    [AAPL-BETA]     1Y Beta: 0.97
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $248.45
+    [AAPL-SMA50]    SMA 50D: $236.24
+    [AAPL-SMA200]   SMA 200D: $211.91
+    [AAPL-MOM200]   200D Momentum: 1.18
+    [AAPL-MOM12_1]  12-1M Momentum: +23.9%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.0816
+    [AAPL-TREND]    Trend Consistency: 0.60
+    [AAPL-RS60]     Relative Strength 60D: +3.0%
+    [AAPL-ESURP]    Earnings Surprise: +2.1%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $11,564,109,925
+
+  Sentiment (from earnings call):
+    [AAPL-SENT]     Mean Sentiment: 0.2032
+    [AAPL-SVOL]     Sentiment Volatility: 0.5359
+
+  Filing Evidence (10-K, filed 2024-11-01, fiscal period: FY2024 [FYE: Sep 30]):
+    [AAPL-F1] Total revenue increased 2% to $391 billion driven by 13% Services growth from advertising, App Store and cloud services, offsetting flat iPhone revenue and declines in iPad and Wearables.
+    [AAPL-F2] Regional performance showed growth in Americas, Europe and Japan while Greater China declined due to iPhone weakness and currency headwinds.
+    [AAPL-F3] Global operations maintain international sales majority with supply chain concentrated across Asia through outsourcing partners.
+    [AAPL-F4] Gross margin expanded to 46.2% from 44.1% as Products margin improved from cost savings despite mix pressures, while Services margin reached 73.9% from mix benefits.
+    [AAPL-F5] Operating expenses increased with R&D and SG&A growth.
+    [AAPL-F6] Component supply risks from single sources create capacity constraints until supplier yields mature, with manufacturing equipment maintained at partner facilities under long-term agreements.
+    [AAPL-F7] Company executed $95 billion in share repurchases and paid dividends under expanded capital return program with new $110 billion buyback authorization and quarterly dividend raised to $0.25 per share.
+    [AAPL-F8] Product launches included iPhone 16 series, Apple Watch Series 10, updated MacBooks and iPads, plus Apple Intelligence introduction.
+    [AAPL-F9] Apple appointed Kevan Parekh as CFO effective January 2025. iOS and App Store changes implemented in EU for Digital Markets Act compliance including alternative distribution methods.
+    [AAPL-F10] Foreign exchange headwinds from dollar strength adversely impacted international pricing and revenue translation, particularly affecting Greater China and Japan operations.
+    [AAPL-F11] U.S.-China trade tensions pose escalation risks beyond current tariffs to operational restrictions.
+    [AAPL-F12] Global semiconductor shortages historically impacted component availability while currency fluctuations, inflation and economic slowdowns threaten demand given significant international exposure and consumer discretionary positioning.
+    [AAPL-F13] Management expects continued annual dividend increases and full execution of current share repurchase program while implementing compliance measures for evolving global regulations.
+    [AAPL-F14] Continued R&D investment planned to maintain competitive positioning through innovative product introductions.
+    [AAPL-F15] Supply chain diversification efforts continue despite substantial Asian manufacturing concentration, with gross margins anticipated to remain subject to volatility from competitive pricing and product mix shifts.
+    [AAPL-F16] Multiple patent infringement litigations across jurisdictions pose broad injunctive relief and substantial damages exposure.
+    [AAPL-F17] Antitrust litigation including US smartphone monopolization claims and EU App Store investigations threaten significant fines and business practice changes.
+    [AAPL-F18] Google search licensing arrangements under DOJ scrutiny with proposed remedies potentially restricting revenue-sharing agreements.
+    [AAPL-F19] State Aid Decision resulted in $10.2 billion tax charge with ongoing European Commission DMA compliance challenges.
+
+  Earnings Call Evidence:
+    [AAPL-EC1] Apple reported Q4 FY2024 revenue of $94.9 billion, up 6% year-over-year and a September quarter record. iPhone revenue reached $46.2 billion (up 6%) with growth across all geographic segments, while Services hit an all-time record of $25 billion (up 12%).
+    [AAPL-EC2] The company launched Apple Intelligence features in US English on iOS 18.1, with adoption rates twice as fast as the previous year's comparable release.
+    [AAPL-EC3] Mac revenue grew 2% to $7.7 billion and iPad revenue increased 8% to $7 billion, while Wearables declined 3% to $9 billion.
+    [AAPL-EC4] Apple expects December quarter total company revenue to grow low- to mid-single digits year-over-year, with Services continuing double-digit growth at rates similar to fiscal 2024.
+    [AAPL-EC5] The company anticipates gross margins between 46-47% and operating expenses of $15.3-15.5 billion.
+    [AAPL-EC6] Management emphasized the staged rollout of Apple Intelligence features, with additional capabilities launching in December including ChatGPT integration and localized English support for several countries, followed by more languages starting in April 2025.
+    [AAPL-EC7] The company faces potential supply constraints on iPhone 16 Pro models through October, though management expects to resolve these soon.
+    [AAPL-EC8] Apple Intelligence rollout is geographically staged rather than simultaneous, which could impact normal demand patterns across regions.
+    [AAPL-EC9] The guidance assumes macroeconomic conditions don't worsen from current projections.
+    [AAPL-EC10] There are ongoing legal uncertainties regarding the DOJ case related to Google revenue sharing agreements.
+    [AAPL-EC11] Apple Intelligence adoption is showing strong early momentum with 18.1 iOS adoption twice as fast as the previous year, positioning it as a compelling upgrade driver.
+    [AAPL-EC12] The installed base reached all-time highs across all product categories and geographic segments, with high customer satisfaction rates (95-98% across products).
+    [AAPL-EC13] Services growth is supported by over 1 billion paid subscriptions growing double-digits, with the recurring portion growing faster than transactional services.
+    [AAPL-EC14] International markets showed strength, particularly India setting all-time revenue records and China showing sequential improvement.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $120.79
+    [AMD-RET20]    20D Return: -15.0%
+    [AMD-RET60]    60D Return: -29.3%
+    [AMD-RET120]   120D Return: -33.6%
+    [AMD-RET252]   1Y Return: -18.1%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 34.7%
+    [AMD-VOL60]    60D Vol (ann): 40.6%
+    [AMD-DVOL60]   60D Downside Vol: 33.4%
+    [AMD-DD60]     60D Drawdown: -31.2%
+    [AMD-MDD1Y]    1Y Max Drawdown: -43.8%
+    [AMD-SHARPE]   60D Sharpe: -3.59
+    [AMD-BETA]     1Y Beta: 2.19
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $128.39
+    [AMD-SMA50]    SMA 50D: $138.37
+    [AMD-SMA200]   SMA 200D: $153.47
+    [AMD-MOM200]   200D Momentum: 0.79
+    [AMD-MOM12_1]  12-1M Momentum: -6.9%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: -0.3848
+    [AMD-TREND]    Trend Consistency: 0.42
+    [AMD-RS60]     Relative Strength 60D: -36.8%
+    [AMD-ESURP]    Earnings Surprise: +0.0%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $4,979,305,153
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: -0.0475
+    [AMD-SVOL]     Sentiment Volatility: 0.5435
+
+  Filing Evidence (10-Q, filed 2024-10-30, fiscal period: 2024-Q3):
+    [AMD-F1] AMD reported Q3 2024 revenue of $6.8 billion, up 18% year-over-year, driven by record Data Center performance from AI accelerator demand and Client segment growth from Ryzen processors.
+    [AMD-F2] Gaming segment declined significantly due to lower semi-custom revenue, while Embedded segment decreased reflecting normalization from elevated prior levels.
+    [AMD-F3] The company maintains concentrated customer relationships and experiences quarterly volatility from month-end weighted sales patterns.
+    [AMD-F4] Gross margin expanded to 50% in Q3 2024 from 45% in the prior year, driven by favorable product mix with higher Data Center contribution and improved pricing dynamics.
+    [AMD-F5] Operating expenses increased year-over-year from higher R&D investments in AI and data center technologies, increased employee compensation, and acquisition-related costs.
+    [AMD-F6] Manufacturing remains dependent on third-party foundries with TSMC handling advanced nodes, creating exposure to foundry pricing and capacity allocation decisions.
+    [AMD-F7] AMD completed the Silo AI acquisition in August 2024 and entered a definitive agreement to acquire ZT Systems for approximately $4.9 billion, expected to close in H1 2025 subject to regulatory approvals.
+    [AMD-F8] Victor Peng retired as President effective August 30, 2024.
+    [AMD-F9] The company maintains $4.9 billion remaining under its share repurchase authorization.
+    [AMD-F10] Export control restrictions implemented in October 2023 prevent shipment of certain AMD products to China without licenses, requiring advance notifications for specific products.
+    [AMD-F11] Ongoing US-China geopolitical tensions create uncertainty around future trade restrictions and licensing requirements.
+    [AMD-F12] Climate-related regulations and carbon pricing mechanisms may increase operational costs through higher energy expenses and supply chain compliance requirements.
+    [AMD-F13] Management expects continued strong AI and data center demand driving revenue growth, with the ZT Systems acquisition enhancing manufacturing capabilities and customer relationships in AI infrastructure markets.
+    [AMD-F14] AMD plans to divest ZT's manufacturing business to a strategic partner while retaining design capabilities post-closing.
+    [AMD-F15] The company continues heavy investment in AI software development and next-generation processor architectures.
+    [AMD-F16] The ZT Systems acquisition faces regulatory approval requirements across multiple jurisdictions with integration risks and potential difficulties executing the planned manufacturing divestiture.
+    [AMD-F17] Cybersecurity threats are escalating with AI-enhanced attack sophistication, while supply chain dependencies on TSMC for advanced nodes create concentration risk.
+    [AMD-F18] Goodwill and intangible assets from recent acquisitions face potential impairment risk if integration challenges arise.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD delivered record Q4 2024 revenue of $7.7 billion, up 24% year-over-year, driven by strong performance in data center and client segments.
+    [AMD-EC2] Full-year revenue reached $25.8 billion, up 14%, with data center revenue nearly doubling and client revenue growing 52%.
+    [AMD-EC3] The data center segment achieved record revenue of $3.9 billion, up 69% year-over-year, driven by both EPYC CPU and Instinct GPU growth.
+    [AMD-EC4] AMD's data center AI business exceeded $5 billion in annual revenue, establishing a multi-billion dollar franchise with strong customer adoption across hyperscalers and enterprises.
+    [AMD-EC5] Management expects Q1 2025 revenue of approximately $7.1 billion, up 30% year-over-year but down 7% sequentially due to seasonality.
+    [AMD-EC6] The company anticipates strong double-digit revenue and EPS growth for full-year 2025, with data center and client businesses driving growth while gaming and embedded show modest increases.
+    [AMD-EC7] AMD is accelerating MI350 series production to mid-year from second half, citing strong customer demand and better-than-expected silicon performance.
+    [AMD-EC8] The company sees the data center AI business growing to tens of billions of dollars annually over the coming years.
+    [AMD-EC9] The company faces sequential revenue decline in Q1 due to seasonality across all segments, with client and embedded businesses expected to decline more than the corporate average.
+    [AMD-EC10] Gaming segment revenue declined 59% year-over-year due to console inventory normalization, though this is expected to stabilize.
+    [AMD-EC11] The embedded segment continues to face mixed demand with slower-than-expected market recovery, particularly in industrial and communications markets.
+    [AMD-EC12] Competitive pressure in the server CPU market remains intense, with potential pricing pressures from competitors attempting to defend market share.
+    [AMD-EC13] Data center segment growth is driven by strong EPYC CPU adoption with over 50% share at major hyperscalers and expanding enterprise deployments, plus rapid scaling of the Instinct GPU business with new customer wins and product launches.
+    [AMD-EC14] Client segment benefits from record desktop sell-out, strong Ryzen AI 300 series notebook adoption, and new commercial PC partnerships including Dell.
+    [AMD-EC15] The accelerated MI350 series launch and strong customer feedback on the MI400 series roadmap position AMD well for continued AI market expansion.
+    [AMD-EC16] ROCm software improvements and expanding ecosystem support enhance competitive positioning in AI workloads.
+
+======================================================================
+TICKER: AVGO
+======================================================================
+
+  Price & Returns:
+    [AVGO-PX]       Close: $229.76
+    [AVGO-RET20]    20D Return: +39.6%
+    [AVGO-RET60]    60D Return: +31.6%
+    [AVGO-RET120]   120D Return: +36.7%
+    [AVGO-RET252]   1Y Return: +110.5%
+
+  Volatility & Risk:
+    [AVGO-VOL20]    20D Vol (ann): 100.0%
+    [AVGO-VOL60]    60D Vol (ann): 64.2%
+    [AVGO-DVOL60]   60D Downside Vol: 25.4%
+    [AVGO-DD60]     60D Drawdown: -14.1%
+    [AVGO-MDD1Y]    1Y Max Drawdown: -25.2%
+    [AVGO-SHARPE]   60D Sharpe: 1.80
+    [AVGO-BETA]     1Y Beta: 2.60
+
+  Trend & Momentum:
+    [AVGO-SMA20]    SMA 20D: $208.13
+    [AVGO-SMA50]    SMA 50D: $184.81
+    [AVGO-SMA200]   SMA 200D: $158.22
+    [AVGO-MOM200]   200D Momentum: 1.45
+    [AVGO-MOM12_1]  12-1M Momentum: +46.8%
+    [AVGO-IDMOM]    Idiosyncratic Momentum 60D: 0.2140
+    [AVGO-TREND]    Trend Consistency: 0.45
+    [AVGO-RS60]     Relative Strength 60D: +24.1%
+    [AVGO-ESURP]    Earnings Surprise: +2.2%
+    [AVGO-ADVOL]    Avg Dollar Volume 20D: $10,033,556,178
+
+  Sentiment (from earnings call):
+    [AVGO-SENT]     Mean Sentiment: 0.3407
+    [AVGO-SVOL]     Sentiment Volatility: 0.6300
+
+  Filing Evidence (10-K, filed 2024-12-20, fiscal period: FY2024 [FYE: Oct 31]):
+    [AVGO-F1] Total revenue increased 44% to $51.6 billion driven by VMware acquisition contributing to infrastructure software segment growth of 181%.
+    [AVGO-F2] Semiconductor solutions revenue grew 7% with strong AI networking demand offsetting broadband and server storage declines.
+    [AVGO-F3] Customer concentration remains high with top distributor representing 28% of revenue and top five end customers accounting for 40% through all channels.
+    [AVGO-F4] Gross margin decreased to 63% from 69% primarily due to higher amortization of VMware acquisition-related intangible assets totaling $6.0 billion.
+    [AVGO-F5] Operating expenses increased 125% driven by VMware headcount additions and $1.5 billion in restructuring charges for employee terminations.
+    [AVGO-F6] Manufacturing operates on outsourced model with TSMC fabricating 95% of wafers and single-source dependencies across key suppliers.
+    [AVGO-F7] Completed VMware acquisition for $84.2 billion using $30.8 billion cash and 544 million shares, with ongoing integration focused on core private cloud business and subscription licensing transition.
+    [AVGO-F8] Divested VMware's end-user computing business to KKR for $3.5 billion and acquired Seagate's SoC operations for $600 million.
+    [AVGO-F9] Executed ten-for-one stock split and issued $5.0 billion in senior notes across four tranches.
+    [AVGO-F10] China revenue exposure decreased to 20% from 32% though actual end-customer dependency believed substantially lower due to geographic shipment differences.
+    [AVGO-F11] Trade tensions have resulted in export restrictions, increased tariffs, and entity list additions limiting market participation.
+    [AVGO-F12] Global minimum tax implementations, particularly Singapore's adoption effective fiscal 2026, will materially increase effective tax rates beyond current $2.3 billion annual tax incentive benefits.
+    [AVGO-F13] Management expects continued investment in AI-related product development including custom accelerators and XPUs, requiring significant engineering resources and higher capital expenditures.
+    [AVGO-F14] Board declared quarterly dividend of $0.59 per share with payment capacity dependent on subsidiary dividend restrictions and $69.8 billion total debt obligations.
+    [AVGO-F15] Enterprise-wide software licensing model expected to drive revenue growth through reduced complexity and easier renewals.
+    [AVGO-F16] Singapore tax incentives providing reduced rates expire November 2030 with potential requirement to refund previously realized benefits if operating conditions not met.
+    [AVGO-F17] Korean Fair Trade Commission investigation creates potential for fines and business practice changes.
+    [AVGO-F18] Extensive intellectual property litigation exposure includes potential treble damages and customer indemnification obligations, while cybersecurity threats escalate with AI-enabled attack sophistication.
+
+  Earnings Call Evidence:
+    [AVGO-EC1] Broadcom reported record Q4 2024 consolidated revenue of $14.1 billion, up 51% year-over-year, driven by strong AI demand and VMware integration.
+    [AVGO-EC2] AI revenue grew 220% to $12.2 billion for fiscal 2024, representing 41% of semiconductor revenue.
+    [AVGO-EC3] The VMware acquisition integration is largely complete with operating margins reaching 70%.
+    [AVGO-EC4] For Q1 2025, the company guides consolidated revenue to $14.6 billion with AI revenue expected at $3.8 billion, up 65% year-over-year.
+    [AVGO-EC5] Management projects a massive AI opportunity with a serviceable addressable market of $60-90 billion by fiscal 2027 for their three hyperscale customers deploying 1 million XPU clusters.
+    [AVGO-EC6] They expect AI semiconductor business to rapidly outgrow non-AI segments and will now guide by AI versus non-AI revenue segments.
+    [AVGO-EC7] Two additional hyperscale customers are in advanced development for next-generation AI XPUs.
+    [AVGO-EC8] Non-AI semiconductor business is expected to recover at mid-single digit growth rates from the cyclical bottom.
+    [AVGO-EC9] The company faces quarterly variability in AI revenue due to having only three hyperscale customers and deployment coming in large chunks rather than linear growth.
+    [AVGO-EC10] Higher cash taxes are expected due to increased U.S. taxable income mix and regulatory changes.
+    [AVGO-EC11] Gross margins in semiconductors may face pressure from higher AI XPU mix, though this should be offset by operating leverage from revenue growth.
+    [AVGO-EC12] AI demand remains the primary growth driver with custom AI accelerators (XPUs) and networking connectivity showing strong momentum.
+    [AVGO-EC13] VMware's focus on data center virtualization with 70% of bookings from VMware Cloud Foundation is driving infrastructure software growth.
+    [AVGO-EC14] The company expects AI networking content to increase from 5-10% today to 15-20% as clusters scale to 500,000-1 million XPUs, with next-generation 3nm XPUs launching in H2 2025.
+
+======================================================================
+TICKER: MSFT
+======================================================================
+
+  Price & Returns:
+    [MSFT-PX]       Close: $417.46
+    [MSFT-RET20]    20D Return: -2.2%
+    [MSFT-RET60]    60D Return: +1.5%
+    [MSFT-RET120]   120D Return: -7.0%
+    [MSFT-RET252]   1Y Return: +12.9%
+
+  Volatility & Risk:
+    [MSFT-VOL20]    20D Vol (ann): 19.4%
+    [MSFT-VOL60]    60D Vol (ann): 21.7%
+    [MSFT-DVOL60]   60D Downside Vol: 22.3%
+    [MSFT-DD60]     60D Drawdown: -7.2%
+    [MSFT-MDD1Y]    1Y Max Drawdown: -15.5%
+    [MSFT-SHARPE]   60D Sharpe: 0.29
+    [MSFT-BETA]     1Y Beta: 1.20
+
+  Trend & Momentum:
+    [MSFT-SMA20]    SMA 20D: $435.61
+    [MSFT-SMA50]    SMA 50D: $424.06
+    [MSFT-SMA200]   SMA 200D: $419.82
+    [MSFT-MOM200]   200D Momentum: 0.99
+    [MSFT-MOM12_1]  12-1M Momentum: +13.5%
+    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: -0.0168
+    [MSFT-TREND]    Trend Consistency: 0.60
+    [MSFT-RS60]     Relative Strength 60D: -6.0%
+    [MSFT-ESURP]    Earnings Surprise: +6.1%
+    [MSFT-ADVOL]    Avg Dollar Volume 20D: $9,150,519,844
+
+  Sentiment (from earnings call):
+    [MSFT-SENT]     Mean Sentiment: 0.1391
+    [MSFT-SVOL]     Sentiment Volatility: 0.5721
+
+  Filing Evidence (10-Q, filed 2024-10-30, fiscal period: 2024-Q4 [FYE: Jun 30]):
+    [MSFT-F1] Microsoft Cloud revenue increased 21% to $40.9 billion in Q2 FY2025, driven by Azure growth of 31% and Microsoft 365 Commercial cloud growth of 16%.
+    [MSFT-F2] Server products and cloud services revenue rose 21% while Dynamics 365 revenue expanded 19%, reflecting broad-based enterprise cloud adoption.
+    [MSFT-F3] Search and news advertising revenue increased 21% excluding traffic acquisition costs, and LinkedIn revenue grew 9%.
+    [MSFT-F4] Operating expenses increased primarily due to datacenter operations expansion supporting cloud services growth and employee compensation costs.
+    [MSFT-F5] The company continues investing heavily in AI infrastructure and cloud capacity to support accelerating demand across Azure and Microsoft 365 services.
+    [MSFT-F6] Cost structure reflects ongoing shift toward cloud-first operations with emphasis on datacenter scaling.
+    [MSFT-F7] The company completed its annual shareholder meeting in December 2024, re-electing all 12 board directors and approving executive compensation on an advisory basis.
+    [MSFT-F8] Microsoft announced an expected $800 million impairment charge in Q2 FY2025 related to its minority investment in Cruise following GM's decision to realign autonomous driving strategy and cease robotaxi development funding.
+    [MSFT-F9] No material new macro risk exposures were disclosed this period beyond standard forward-looking statement risks related to business operations and market conditions.
+    [MSFT-F10] The company maintains exposure to global economic conditions affecting enterprise IT spending and consumer demand patterns.
+    [MSFT-F11] Management provided Q2 FY2025 guidance on October 30, 2024, which excluded the subsequently announced Cruise impairment charge estimated to reduce diluted earnings per share by approximately $0.09.
+    [MSFT-F12] The company continues strategic focus on AI integration across cloud services and productivity solutions to drive future growth.
+    [MSFT-F13] Primary uncertainties include standard business risks related to competitive dynamics, regulatory changes, and market conditions as outlined in forward-looking statements.
+    [MSFT-F14] The Cruise investment impairment represents resolution of one investment uncertainty, while broader technology sector regulatory developments remain ongoing considerations.
+
+  Earnings Call Evidence:
+    [MSFT-EC1] Microsoft reported strong Q4 FY2024 results with revenue of $64.7B (up 15%) and EPS of $2.95 (up 10%).
+    [MSFT-EC2] Microsoft Cloud revenue reached $36.8B (up 21%), driven by Azure growth of 29-30% including 8 points from AI services.
+    [MSFT-EC3] The company completed the Activision acquisition, contributing significantly to gaming revenue growth of 44%.
+    [MSFT-EC4] Commercial bookings exceeded expectations with record commitments, and the company returned $8.4B to shareholders.
+    [MSFT-EC5] AI adoption accelerated across the portfolio with over 60,000 Azure AI customers and growing Copilot for Microsoft 365 momentum.
+    [MSFT-EC6] Management expects continued double-digit revenue and operating income growth in FY2025, with capital expenditures increasing to meet AI and cloud demand.
+    [MSFT-EC7] Azure growth is expected to accelerate in H2 as capacity constraints ease from infrastructure investments.
+    [MSFT-EC8] The company projects FY2025 operating margins down only about one point year-over-year despite scaling AI infrastructure.
+    [MSFT-EC9] Q1 guidance shows Azure growth of 28-29% in constant currency, with Microsoft Cloud gross margins around 70%.
+    [MSFT-EC10] The primary risk is capacity constraints limiting AI service growth, particularly in the first half of FY2025.
+    [MSFT-EC11] Management noted some softness in European markets for non-AI Azure consumption.
+    [MSFT-EC12] The company faces execution risk in scaling AI infrastructure investments while maintaining operating leverage.
+    [MSFT-EC13] There's also uncertainty around the timing and magnitude of AI demand, which could impact capital allocation decisions and margin progression.
+    [MSFT-EC14] AI services are the primary growth driver, contributing 8 points to Azure growth with demand exceeding capacity.
+    [MSFT-EC15] Copilot adoption is accelerating across the portfolio, with 77,000 organizations using GitHub Copilot and growing enterprise adoption of Copilot for Microsoft 365.
+    [MSFT-EC16] The Activision acquisition is driving gaming growth, while continued cloud migration and digital transformation support underlying Azure consumption growth.
+    [MSFT-EC17] Strong commercial bookings and long-term customer commitments indicate sustained demand momentum.
 
 ======================================================================
 TICKER: NVDA
 ======================================================================
 
   Price & Returns:
-    [NVDA-PX]       Close: $137.45
-    [NVDA-RET20]    20D Return: -0.5%
-    [NVDA-RET60]    60D Return: +11.9%
-    [NVDA-RET120]   120D Return: +1.9%
-    [NVDA-RET252]   1Y Return: +177.7%
+    [NVDA-PX]       Close: $134.25
+    [NVDA-RET20]    20D Return: -3.1%
+    [NVDA-RET60]    60D Return: +7.5%
+    [NVDA-RET120]   120D Return: +5.4%
+    [NVDA-RET252]   1Y Return: +171.2%
 
   Volatility & Risk:
-    [NVDA-VOL20]    20D Vol (ann): 33.0%
-    [NVDA-VOL60]    60D Vol (ann): 36.5%
-    [NVDA-DVOL60]   60D Downside Vol: 21.9%
+    [NVDA-VOL20]    20D Vol (ann): 34.0%
+    [NVDA-VOL60]    60D Vol (ann): 36.7%
+    [NVDA-DVOL60]   60D Downside Vol: 21.5%
     [NVDA-DD60]     60D Drawdown: -13.4%
     [NVDA-MDD1Y]    1Y Max Drawdown: -27.1%
-    [NVDA-SHARPE]   60D Sharpe: 1.30
-    [NVDA-BETA]     1Y Beta: 2.63
+    [NVDA-SHARPE]   60D Sharpe: 0.83
+    [NVDA-BETA]     1Y Beta: 2.64
 
   Trend & Momentum:
-    [NVDA-SMA20]    SMA 20D: $137.33
-    [NVDA-SMA50]    SMA 50D: $139.92
-    [NVDA-SMA200]   SMA 200D: $117.58
-    [NVDA-MOM200]   200D Momentum: 1.17
-    [NVDA-MOM12_1]  12-1M Momentum: +173.3%
-    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.0534
-    [NVDA-TREND]    Trend Consistency: 0.53
-    [NVDA-RS60]     Relative Strength 60D: -30.8%
-
-  Fundamentals:
-    [NVDA-MCAP]     Log Market Cap: n/a
-    [NVDA-BM]       Book-to-Market: n/a
-    [NVDA-GM]       Gross Margin: n/a
-    [NVDA-ROE]      ROE: n/a
-    [NVDA-FCFY]     FCF Yield: n/a
-    [NVDA-DE]       Debt/Equity: n/a
+    [NVDA-SMA20]    SMA 20D: $137.11
+    [NVDA-SMA50]    SMA 50D: $139.85
+    [NVDA-SMA200]   SMA 200D: $117.82
+    [NVDA-MOM200]   200D Momentum: 1.14
+    [NVDA-MOM12_1]  12-1M Momentum: +179.2%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.0322
+    [NVDA-TREND]    Trend Consistency: 0.52
+    [NVDA-RS60]     Relative Strength 60D: +0.0%
     [NVDA-ESURP]    Earnings Surprise: +8.0%
-    [NVDA-ADVOL]    Avg Dollar Volume 20D: $26,861,733,942
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $26,717,009,767
 
-  Sentiment: not available
+  Sentiment (from earnings call):
+    [NVDA-SENT]     Mean Sentiment: 0.3971
+    [NVDA-SVOL]     Sentiment Volatility: 0.5517
 
   Filing Evidence (10-Q, filed 2024-11-20, fiscal period: 2024-Q4 [FYE: Jan 31]):
     [NVDA-F1] Revenue reached $35.1 billion, up 94% year-over-year and 17% sequentially, driven by Data Center platforms generating 112% year-over-year growth from Hopper architecture demand for large language model training and inference.
@@ -128,82 +403,6 @@ TICKER: NVDA
     [NVDA-EC14] Sovereign AI initiatives are emerging as countries invest in domestic AI infrastructure and language models.
     [NVDA-EC15] The software and services business reached $1 billion annualized run rate, with NVIDIA AI Enterprise positioned as an AI operating system at $4,500 per GPU annually.
     [NVDA-EC16] Gaming revenue of $2.87 billion was supported by RTX 40 Super Series launch and AI-enabled PC applications.
-
-======================================================================
-TICKER: TSLA
-======================================================================
-
-  Price & Returns:
-    [TSLA-PX]       Close: $417.41
-    [TSLA-RET20]    20D Return: +20.9%
-    [TSLA-RET60]    60D Return: +73.4%
-    [TSLA-RET120]   120D Return: +58.6%
-    [TSLA-RET252]   1Y Return: +64.9%
-
-  Volatility & Risk:
-    [TSLA-VOL20]    20D Vol (ann): 66.2%
-    [TSLA-VOL60]    60D Vol (ann): 76.3%
-    [TSLA-DVOL60]   60D Downside Vol: 38.4%
-    [TSLA-DD60]     60D Drawdown: -14.6%
-    [TSLA-MDD1Y]    1Y Max Drawdown: -43.9%
-    [TSLA-SHARPE]   60D Sharpe: 3.03
-    [TSLA-BETA]     1Y Beta: 2.38
-
-  Trend & Momentum:
-    [TSLA-SMA20]    SMA 20D: $416.57
-    [TSLA-SMA50]    SMA 50D: $342.52
-    [TSLA-SMA200]   SMA 200D: $237.64
-    [TSLA-MOM200]   200D Momentum: 1.76
-    [TSLA-MOM12_1]  12-1M Momentum: +31.5%
-    [TSLA-IDMOM]    Idiosyncratic Momentum 60D: 0.4406
-    [TSLA-TREND]    Trend Consistency: 0.50
-    [TSLA-RS60]     Relative Strength 60D: +30.8%
-
-  Fundamentals:
-    [TSLA-MCAP]     Log Market Cap: 27.93
-    [TSLA-BM]       Book-to-Market: 0.0543
-    [TSLA-GM]       Gross Margin: 16.3%
-    [TSLA-ROE]      ROE: +3.2%
-    [TSLA-FCFY]     FCF Yield: +0.1%
-    [TSLA-DE]       Debt/Equity: 0.19
-    [TSLA-ESURP]    Earnings Surprise: +20.0%
-    [TSLA-ADVOL]    Avg Dollar Volume 20D: $38,499,941,154
-
-  Sentiment: not available
-
-  Filing Evidence (10-Q, filed 2024-07-24, fiscal period: 2024-Q2):
-    [TSLA-F1] Total revenues increased 2% to $25.5 billion in Q2 2024, driven by energy storage revenue doubling from increased Megapack deployments while automotive sales revenue declined 9% due to lower average selling prices from price reductions and attractive financing options, partially offset by Cybertruck production ramp.
-    [TSLA-F2] Regulatory credits revenue surged 216% to $890 million as other manufacturers scaled back electric vehicle plans.
-    [TSLA-F3] Total gross margin compressed to 18.0% from 18.2% year-over-year as automotive gross margin declined to 18.5% from 19.2% due to lower average selling prices and temporary manufacturing capacity under-utilization during production ramps, partially offset by lower raw material costs and higher IRA manufacturing credits.
-    [TSLA-F4] Energy storage gross margin expanded significantly to 24.6% from 18.4% due to increased IRA credits and higher-margin business mix.
-    [TSLA-F5] Tesla completed global restructuring in Q2 2024 reducing headcount by over 10%, recognizing $583 million in employee termination expenses.
-    [TSLA-F6] Andrew Baglino, Senior Vice President of Powertrain and Energy Engineering, resigned effective April 14, 2024 after 18 years with the company.
-    [TSLA-F7] Stockholders approved redomestication from Delaware to Texas and ratified Elon Musk's 2018 performance-based stock option award at the June 2024 annual meeting.
-    [TSLA-F8] Operations face heightened sensitivity to political and regulatory uncertainty affecting trade and environmental policies, compounded by inflationary pressures and central bank interest rate increases impacting vehicle financing affordability.
-    [TSLA-F9] Foreign currency exchange rate fluctuations on significant intercompany balances created unfavorable impacts of $308 million in Q2 without typical hedging protection.
-    [TSLA-F10] Red Sea shipping conflicts and geopolitical tensions disrupted production at Gigafactory Berlin-Brandenburg through supply chain diversions.
-    [TSLA-F11] Management expects capital expenditures to exceed $10.0 billion in 2024 and range between $8.0-$10.0 billion annually in following two fiscal years for global factory expansion, AI infrastructure, and next-generation platform development.
-    [TSLA-F12] Production growth depends on continued factory ramps, autonomy advances, and new product introductions including robotaxi capabilities while expanding Supercharger network capacity to accommodate NACS adoption by other manufacturers.
-    [TSLA-F13] Manufacturing ramp execution remains subject to new product and technology introduction complexities, concurrent international project management, and potential industry-wide component constraints.
-    [TSLA-F14] Energy storage deployment timing varies significantly quarter-to-quarter based on project milestones and logistics coordination while supplier liquidity challenges in the North American automotive industry could affect component access and pricing.
-
-  Earnings Call Evidence:
-    [TSLA-EC1] Tesla delivered record Q4 2024 volumes at nearly 2 million annualized rate, with Model Y becoming the best-selling vehicle globally of any kind.
-    [TSLA-EC2] The company reduced automotive costs below $35,000 per vehicle and achieved $2 billion quarterly free cash flow despite $2.4 billion annual CapEx increase.
-    [TSLA-EC3] Energy storage reached all-time highs and remains supply constrained.
-    [TSLA-EC4] Tesla will transition all factories to new Model Y production in February, causing temporary production disruption but positioning for future growth.
-    [TSLA-EC5] Management expects 2025 to be Tesla's most pivotal year, launching unsupervised Full Self Driving as paid service in Austin by June and expanding to multiple US cities by year-end.
-    [TSLA-EC6] The company plans to produce several thousand Optimus robots internally in 2025, with external sales beginning in second half of 2026.
-    [TSLA-EC7] Energy storage deployments expected to grow at least 50% year-over-year in 2025.
-    [TSLA-EC8] CapEx will remain flat year-over-year as the company focuses on AI infrastructure and manufacturing preparation for what management calls an 'epic 2026' and 'ridiculous 2027-2028.'
-    [TSLA-EC9] Battery production constraints limit current vehicle output growth, with management identifying this as the primary near-term bottleneck.
-    [TSLA-EC10] Tariff uncertainty poses significant risks given global supply chain dependencies across all business segments.
-    [TSLA-EC11] The Model Y factory retooling will result in several weeks of lost production and margin pressure in Q1 2025.
-    [TSLA-EC12] Regulatory approval timelines for FSD deployment remain uncertain, particularly in Europe where bureaucratic processes could delay rollout until May 2026 or later.
-    [TSLA-EC13] Autonomous vehicle technology advancement represents the primary value driver, with management projecting FSD could enable 5x higher vehicle utilization rates and create the largest asset value increase in human history.
-    [TSLA-EC14] Optimus humanoid robot development targets eventual $10+ trillion revenue opportunity with aspirational 10x annual production ramps.
-    [TSLA-EC15] Real-world AI capabilities position Tesla significantly ahead of competitors, with management claiming no visible second place.
-    [TSLA-EC16] The combination of autonomy, robotics, and energy storage creates multiple exponential growth vectors converging in the 2026-2028 timeframe.
 
 ======================================================================
 END OF MEMO

@@ -42,6 +42,6 @@ Respond with valid JSON only:
   "justification": "Revised reasoning addressing critiques",
   "confidence": 0.0-1.0,
   "risks_or_falsifiers": "Updated falsifiers",
-  "claims": [{"claim_text": "...", "pearl_level": "L1"|"L2"|"L3", "variables": [...], "assumptions": [...], "confidence": 0.5}],
+  "claims": [{"claim_text": "...", "reasoning_type": "causal"|"observational"|"risk_assessment"|"pattern", "assumptions": [...], "confidence": 0.5}],
   "revision_notes": "What you changed and why (or why you stood firm)"
 }{% endraw %}
