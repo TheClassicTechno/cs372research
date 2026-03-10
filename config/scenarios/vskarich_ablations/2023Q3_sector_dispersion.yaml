@@ -1,0 +1,106 @@
+# ============================================================================
+# Scenario: 2023 Q3 Sector Dispersion — Post-AI-Boom Consolidation
+# Q2 2023 data → Q3 2023 investment decision
+# ============================================================================
+# Ablation 2: Stock selection in a near-zero EW return environment.
+# Cyclicals rebound (CAT +11%, XOM +10%) vs tech/defense selloff (RTX -26%, AAPL -11%).
+# EW return ~-1.39% — agents must pick correctly to generate positive returns.
+
+scenario_type: "vskarich_ablation"
+experiment_group: "ablation_2_stock_selection"
+universe_size: 18
+
+invest_quarter: "2023Q3"
+
+macro_context: |
+  ## Macro Environment Overview
+
+  [L0-MACRO-REGIME] As of the end of Q2 2023, financial markets are navigating a complex transition period. The first half of 2023 saw a powerful AI-driven rally in mega-cap technology stocks, but the sustainability of this narrowly concentrated advance is increasingly debated.
+
+  [L0-HIGHER-FOR-LONGER] The Federal Reserve has maintained a hawkish stance, with policy rates above 5% and forward guidance suggesting rates will remain elevated for longer than markets previously anticipated. Long-term Treasury yields have risen sharply.
+
+  [L0-AI-CONCENTRATION] The 2023 equity rally has been driven primarily by a small number of AI-related technology names. Market breadth has been historically narrow, raising questions about the durability of the advance.
+
+  [L0-CYCLICAL-STABILIZATION] Despite tight monetary policy, certain cyclical sectors have shown resilience as industrial demand, infrastructure spending, and energy prices stabilize.
+
+  [L0-EARNINGS-DIVERGENCE] Corporate earnings growth has been uneven across sectors, with strong results in energy and industrials contrasting with margin pressure in consumer discretionary and defense.
+
+  These conditions create a challenging environment where near-zero aggregate market returns mask significant cross-sectional dispersion.
+
+  ## Competing Macro Theses
+
+  The following interpretations represent plausible explanations for current market behavior.
+
+  Agents should evaluate which interpretation is most consistent with the available evidence.
+
+  ### Thesis A — Higher-for-Longer Rate Regime
+
+  [L0-HIGHER-FOR-LONGER] Persistent inflation and a strong labor market may prevent the Fed from cutting rates in the near term, maintaining elevated discount rates across risk assets.
+
+  [L0-EARNINGS-DIVERGENCE] Sectors with strong current cash flows and low duration sensitivity may outperform those dependent on future growth expectations.
+
+  [L0-RATE-SENSITIVITY] Under this interpretation, financials (JPM, GS, BAC) may benefit from sustained net interest margins, while rate-sensitive growth stocks face continued pressure.
+
+  ### Thesis B — AI Rally Exhaustion
+
+  [L0-AI-CONCENTRATION] After the explosive H1 2023 rally in AI-related names, valuations for semiconductor and cloud companies may have overextended relative to near-term earnings delivery.
+
+  [L0-HIGHER-FOR-LONGER] Elevated rates increase the opportunity cost of holding richly valued growth stocks, potentially triggering profit-taking and rotation.
+
+  [L0-TECH-CONSOLIDATION] Under this interpretation, mega-cap tech names may consolidate or decline as the market broadens and investors seek more attractive risk-reward elsewhere.
+
+  ### Thesis C — Cyclical Rebound
+
+  [L0-CYCLICAL-STABILIZATION] Industrial activity, construction spending, and energy demand have remained more resilient than expected, supporting earnings for cyclical companies.
+
+  [L0-EARNINGS-DIVERGENCE] Companies with strong pricing power and exposure to infrastructure and energy capex may deliver positive earnings surprises.
+
+  [L0-COMMODITY-DEMAND] Under this interpretation, industrials (CAT) and energy producers (XOM, CVX) may outperform as underlying demand supports revenues.
+
+  ### Thesis D — Defensive Rotation
+
+  [L0-MACRO-REGIME] With the economy facing lagged effects of aggressive tightening and consumer savings buffers depleting, economic deceleration risk is rising.
+
+  [L0-HIGHER-FOR-LONGER] Sustained tight policy increases the probability of an eventual growth slowdown, favoring companies with inelastic demand.
+
+  [L0-DEFENSIVE-POSITIONING] Under this interpretation, healthcare (UNH, LLY, JNJ) and consumer staples (WMT, COST) may provide downside protection as cyclical risk materializes.
+
+  Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+  These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+tickers:
+  # Mega-cap technology
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - META
+  - GOOG
+
+  # Financials
+  - JPM
+  - GS
+  - BAC
+
+  # Energy
+  - XOM
+  - CVX
+
+  # Industrials / Defense
+  - CAT
+  - RTX
+
+  # Healthcare
+  - UNH
+  - LLY
+  - JNJ
+
+  # Consumer staples / Defensive
+  - WMT
+  - COST
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 18

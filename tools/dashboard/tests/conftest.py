@@ -81,6 +81,11 @@ def dashboard_url(tmp_path_factory):
     }
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
+    # --- 2b. Copy ablation_summary.json to RUNS_BASE level ---
+    abl_src = _CANONICAL_RUNS / "ablation_summary.json"
+    if abl_src.exists():
+        shutil.copy2(abl_src, tmp_root / "ablation_summary.json")
+
     # --- 3. Point server at our temp copy ---
     original_base = srv.RUNS_BASE
     srv.RUNS_BASE = tmp_root

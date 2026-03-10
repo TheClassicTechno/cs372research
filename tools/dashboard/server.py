@@ -159,6 +159,14 @@ def portfolio_performance(experiment: str, run_id: str):
     )
 
 
+@app.get("/runs/{experiment}/{run_id}/performance/by-agent")
+def portfolio_performance_by_agent(experiment: str, run_id: str):
+    """Compute per-agent portfolio performance from final-round allocations."""
+    return JSONResponse(
+        run_scanner.compute_agent_performance(RUNS_BASE, experiment, run_id)
+    )
+
+
 @app.get("/runs/{experiment}/{run_id}/pid")
 def pid_trajectory(experiment: str, run_id: str):
     """PID trajectory array."""
