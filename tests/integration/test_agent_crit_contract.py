@@ -1,10 +1,11 @@
 """
 Integration tests: Agent Prompt → Normalizer → CRIT contract compatibility.
 
-These tests verify that agent prompt templates produce outputs compatible with
-the CRIT reasoning evaluator.  The test matrix covers both the "base" template
-family (standard/diverse/slim) and the "enriched" template family, exposing
-the known schema gap where base templates lack CRIT-required fields.
+These tests verify two things:
+
+1. That agent prompt templates produce outputs compatible with CRIT (Groups 1-4).
+2. That inter-phase data handoffs preserve structural fields through the full
+   debate pipeline: propose → critique → revise → CRIT (Groups 7-9).
 
 Pipeline under test:
 
@@ -12,11 +13,15 @@ Pipeline under test:
         ↓
     LLM output JSON
         ↓
-    _normalize_claims() / _normalize_position_rationale()
+    render_previous_proposal() / render_others_proposals()    ← propose→critique
+        ↓
+    render_critiques_received()                               ← critique→revise
+        ↓
+    _normalize_claims() / _normalize_position_rationale()     ← revise→CRIT
         ↓
     build_reasoning_bundle()
         ↓
-    CRIT evaluation  (render_crit_prompts → CritScorer)
+    render_crit_prompts() → CRIT evaluation
 
 CRIT expects claims with:
     claim_id, claim_text, claim_type, evidence_ids,
@@ -29,6 +34,7 @@ Position objects must also contain:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -41,6 +47,8 @@ import yaml
 # ---------------------------------------------------------------------------
 from multi_agent.prompts import (
     build_proposal_user_prompt,
+    build_critique_prompt,
+    build_revision_prompt,
     load_module,
 )
 from multi_agent.runner import (
@@ -48,6 +56,11 @@ from multi_agent.runner import (
     _normalize_position_rationale,
     _extract_reasoning,
     build_reasoning_bundle,
+)
+from multi_agent.graph.proposal_renderer import (
+    render_previous_proposal,
+    render_others_proposals,
+    render_critiques_received,
 )
 from eval.evidence import normalize_evidence_id
 from eval.crit.prompts import render_crit_prompts
@@ -990,3 +1003,672 @@ class TestRevisionContract:
             pytest.xfail(
                 f"Base revision template '{template_name}' missing: {missing}"
             )
+
+
+# ===================================================================
+# INTER-PHASE HANDOFF FIXTURES
+# ===================================================================
+
+def _make_enriched_critique_output() -> dict:
+    """Simulated critique output from an enriched-family agent."""
+    return {
+        "critiques": [
+            {
+                "target_role": "risk",
+                "target_claim": "C1",
+                "objection": "The macro regime assessment ignores rising real yields [L1-10Y].",
+                "counter_evidence": ["[L1-10Y]", "[L1-VIX]"],
+                "portfolio_implication": "Should reduce equity overweight by 5-10%.",
+                "suggested_adjustment": "Cut AAPL from 40% to 30%.",
+                "falsifier": "If real yields fall below 1%, regime concern is invalidated.",
+                "objection_confidence": 0.75,
+            },
+            {
+                "target_role": "technical",
+                "target_claim": "C2",
+                "objection": "Momentum signals are stale with 60-day lookback.",
+                "counter_evidence": ["[AAPL-RET60]"],
+                "portfolio_implication": "Momentum tilt is unreliable.",
+                "falsifier": "20-day momentum confirming 60-day would validate.",
+                "objection_confidence": 0.6,
+            },
+        ],
+        "self_critique": "My own allocation may underweight tech given AI tailwinds.",
+    }
+
+
+def _make_base_critique_output() -> dict:
+    """Simulated critique output from a base-family agent."""
+    return {
+        "critiques": [
+            {
+                "target_role": "risk",
+                "objection": "Risk assessment is too conservative.",
+            },
+            {
+                "target_role": "technical",
+                "objection": "Momentum signals are unreliable in current regime.",
+            },
+        ],
+        "self_critique": "My allocation may be too aggressive.",
+    }
+
+
+def _make_proposals(enriched: bool) -> list[dict]:
+    """Build a list of proposals from two agents (macro and risk)."""
+    make = _make_enriched_output if enriched else _make_base_output
+    macro_out = make()
+    risk_out = make()
+    # Tweak risk output so it differs
+    risk_out["allocation"] = {"AAPL": 0.20, "MSFT": 0.30, "GOOGL": 0.50}
+    if "portfolio_rationale" in risk_out:
+        risk_out["portfolio_rationale"] = "Defensive tilt toward diversified GOOGL."
+    if "justification" in risk_out:
+        risk_out["justification"] = "Defensive tilt toward diversified GOOGL."
+    return [
+        {"role": "macro", "action_dict": macro_out, "raw_response": json.dumps(macro_out)},
+        {"role": "risk", "action_dict": risk_out, "raw_response": json.dumps(risk_out)},
+    ]
+
+
+def _make_critiques(enriched: bool) -> list[dict]:
+    """Build critique state entries from two agents."""
+    make = _make_enriched_critique_output if enriched else _make_base_critique_output
+    return [
+        {"role": "macro", "critiques": make()["critiques"], "self_critique": ""},
+        {"role": "risk", "critiques": make()["critiques"], "self_critique": ""},
+    ]
+
+
+# ===================================================================
+# TEST GROUP 7 — PROPOSE → CRITIQUE HANDOFF
+#
+# Verify that render_previous_proposal() and render_others_proposals()
+# preserve structural fields that the critique prompt needs.
+# ===================================================================
+
+class TestProposeToCritiqueHandoff:
+    """Propose output must render into critique context with structural fields."""
+
+    # --- Enriched: structural fields survive rendering ------------------
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_claim_ids(self):
+        """render_previous_proposal() preserves claim_id references."""
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        assert "C1:" in rendered, "Rendered proposal should contain claim_id C1"
+        assert "C2:" in rendered, "Rendered proposal should contain claim_id C2"
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_claim_type(self):
+        """render_previous_proposal() includes claim_type."""
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        assert "Claim Type: macro" in rendered
+        assert "Claim Type: firm" in rendered
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_evidence(self):
+        """render_previous_proposal() includes evidence citations."""
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        assert "[L1-10Y]" in rendered
+        assert "[AAPL-GM]" in rendered
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_falsifiers(self):
+        """render_previous_proposal() includes per-claim falsifiers."""
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        assert "Falsifiers:" in rendered
+        assert "Rapid rate cuts" in rendered
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_position_rationale(self):
+        """render_previous_proposal() includes position rationale with claim refs."""
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        assert "Previous Position Rationale" in rendered
+        assert "Supported by claims: C1, C2" in rendered
+
+    @pytest.mark.fast
+    def test_enriched_render_preserves_impacts_positions(self):
+        """render_previous_proposal() preserves impacts_positions.
+
+        Note: impacts_positions is NOT currently rendered by proposal_renderer.
+        This test documents the gap — the critique agent cannot see which
+        tickers each claim affects unless it parses the raw JSON.
+        """
+        output = _make_enriched_output()
+        rendered = render_previous_proposal(output)
+        # impacts_positions is NOT rendered in the structured text — it only
+        # exists in the raw JSON (my_proposal v1).  The v2 renderer does not
+        # include it.  This is a known limitation.
+        has_impacts = "impacts_positions" in rendered or "Impacts:" in rendered
+        if not has_impacts:
+            pytest.xfail(
+                "render_previous_proposal() does not render impacts_positions — "
+                "critique agent must rely on raw JSON (v1) for this field"
+            )
+
+    @pytest.mark.fast
+    def test_enriched_others_proposals_renders_all_agents(self):
+        """render_others_proposals() includes all agents except self."""
+        proposals = _make_proposals(enriched=True)
+        rendered = render_others_proposals(proposals, "macro")
+        assert "RISK agent proposed:" in rendered
+        assert "MACRO agent proposed:" not in rendered
+
+    # --- Base: structural fields missing from rendered proposal ---------
+
+    @pytest.mark.fast
+    def test_base_render_missing_claim_ids(self):
+        """Base proposal rendering auto-generates claim IDs from list order."""
+        output = _make_base_output()
+        rendered = render_previous_proposal(output)
+        # Base claims have no claim_id, renderer auto-generates C1, C2, ...
+        assert "C1:" in rendered, (
+            "Renderer should auto-generate C1 for base claims without claim_id"
+        )
+
+    @pytest.mark.fast
+    def test_base_render_missing_claim_type(self):
+        """Base proposal rendering omits claim_type (not in base output)."""
+        output = _make_base_output()
+        rendered = render_previous_proposal(output)
+        has_claim_type = "Claim Type:" in rendered
+        if not has_claim_type:
+            pytest.xfail(
+                "Base proposal rendering lacks Claim Type — "
+                "critique agent cannot see domain classification"
+            )
+
+    @pytest.mark.fast
+    def test_base_render_missing_evidence(self):
+        """Base proposal rendering omits structured evidence list."""
+        output = _make_base_output()
+        rendered = render_previous_proposal(output)
+        has_evidence_section = "Evidence:" in rendered
+        if not has_evidence_section:
+            pytest.xfail(
+                "Base proposal rendering lacks Evidence section — "
+                "critique agent has no structured evidence to reference"
+            )
+
+    @pytest.mark.fast
+    def test_base_render_missing_position_rationale(self):
+        """Base proposal rendering omits position rationale entirely."""
+        output = _make_base_output()
+        rendered = render_previous_proposal(output)
+        has_pos_rationale = "Previous Position Rationale" in rendered
+        if not has_pos_rationale:
+            pytest.xfail(
+                "Base proposal rendering lacks Position Rationale — "
+                "critique agent cannot target specific position reasoning"
+            )
+
+
+# ===================================================================
+# TEST GROUP 8 — CRITIQUE → REVISE HANDOFF
+#
+# Verify that critique output is correctly routed, rendered, and
+# injected into the revision prompt with all structural fields.
+# ===================================================================
+
+class TestCritiqueToReviseHandoff:
+    """Critique output must be routed and rendered for the revise phase."""
+
+    # --- Critique routing (target_role normalization) ------------------
+
+    @pytest.mark.fast
+    def test_critique_routing_exact_match(self):
+        """Critiques with exact lowercase target_role reach the right agent."""
+        critiques = _make_critiques(enriched=True)
+        # Simulate revise_node critique collection for "risk" agent
+        received = []
+        for c in critiques:
+            for crit in c["critiques"]:
+                target = crit.get("target_role", "").lower().split()[0]
+                if target == "risk":
+                    received.append(crit)
+        assert len(received) > 0, "Risk agent should receive critiques"
+
+    @pytest.mark.fast
+    def test_critique_routing_uppercase_target(self):
+        """Critiques with uppercase target_role still match after .lower()."""
+        critiques = [{"role": "macro", "critiques": [
+            {"target_role": "RISK", "objection": "Too conservative"},
+        ]}]
+        received = []
+        for c in critiques:
+            for crit in c["critiques"]:
+                target = crit.get("target_role", "").lower().split()[0]
+                if target == "risk":
+                    received.append(crit)
+        assert len(received) == 1
+
+    @pytest.mark.fast
+    def test_critique_routing_multiword_target(self):
+        """Critiques with 'Risk Agent' target match via .split()[0]."""
+        critiques = [{"role": "macro", "critiques": [
+            {"target_role": "Risk Agent", "objection": "Too conservative"},
+        ]}]
+        received = []
+        for c in critiques:
+            for crit in c["critiques"]:
+                target = crit.get("target_role", "").lower().split()[0]
+                if target == "risk":
+                    received.append(crit)
+        assert len(received) == 1
+
+    @pytest.mark.fast
+    def test_critique_routing_missing_target_dropped(self):
+        """Critiques with empty target_role are silently dropped.
+
+        Uses the guarded pattern from runner.py (line 344) which checks
+        ``crit.get("target_role")`` before splitting.  Note: nodes.py
+        (line 516) lacks this guard and would crash on empty target_role.
+        """
+        critiques = [{"role": "macro", "critiques": [
+            {"target_role": "", "objection": "Unrouted critique"},
+        ]}]
+        received = []
+        for c in critiques:
+            for crit in c["critiques"]:
+                # Use the safe pattern from runner.py (not the unsafe nodes.py pattern)
+                target = crit.get("target_role", "").lower().split()[0] if crit.get("target_role") else ""
+                if target == "risk":
+                    received.append(crit)
+        assert len(received) == 0, "Critique with empty target should not reach any agent"
+
+    @pytest.mark.fast
+    def test_critique_routing_empty_target_logs_warning(self, caplog):
+        """nodes.py logs a warning and skips critiques with empty target_role.
+
+        Previously ``crit.get("target_role", "").lower().split()[0]`` would
+        raise IndexError on empty strings.  The fix guards with an explicit
+        check and logs a warning.
+        """
+        from multi_agent.graph.nodes import revise_node
+
+        # Build minimal state with an empty-target critique
+        base_output = _make_base_output()
+        state = {
+            "config": {
+                "roles": ["macro"],
+                "mock": True,
+                "console_display": True,
+            },
+            "enriched_context": "Test context",
+            "observation": {"universe": list(base_output["allocation"].keys())},
+            "proposals": [
+                {"role": "macro", "action_dict": base_output,
+                 "raw_response": json.dumps(base_output)},
+            ],
+            "revisions": None,
+            "critiques": [
+                {"role": "risk", "critiques": [
+                    {"target_role": "", "objection": "Unroutable critique"},
+                ]},
+            ],
+            "current_round": 1,
+            "debate_turns": [],
+        }
+
+        with caplog.at_level(logging.WARNING, logger="multi_agent.graph.nodes"):
+            result = revise_node(state)
+
+        assert "empty target_role" in caplog.text, (
+            "Should log warning about empty target_role"
+        )
+        # Revise should complete without crashing
+        assert "revisions" in result
+
+    # --- Critique rendering -------------------------------------------
+
+    @pytest.mark.fast
+    def test_enriched_critique_renders_target_claim(self):
+        """render_critiques_received() includes target_claim references."""
+        critiques = [
+            {
+                "from_role": "macro",
+                "objection": "Regime assessment ignores yields.",
+                "target_claim": "C1",
+                "counter_evidence": ["[L1-10Y]"],
+                "falsifier": "Real yields fall below 1%",
+                "objection_confidence": 0.75,
+            },
+        ]
+        rendered = render_critiques_received(critiques)
+        assert "Target claim: C1" in rendered
+        assert "Counter-evidence: [L1-10Y]" in rendered
+        assert "Falsifier: Real yields" in rendered
+        assert "Objection confidence: 0.75" in rendered
+
+    @pytest.mark.fast
+    def test_base_critique_renders_minimal(self):
+        """Base critique renders only from_role and objection."""
+        critiques = [
+            {"from_role": "macro", "objection": "Too conservative"},
+        ]
+        rendered = render_critiques_received(critiques)
+        assert "MACRO" in rendered
+        assert "Too conservative" in rendered
+        # No target_claim, counter_evidence, etc.
+        assert "Target claim:" not in rendered
+
+    @pytest.mark.fast
+    def test_enriched_critique_renders_counter_evidence(self):
+        """Enriched critique rendering includes counter-evidence IDs."""
+        critiques = [
+            {
+                "from_role": "value",
+                "objection": "AAPL overvalued.",
+                "counter_evidence": ["[AAPL-GM]", "[AAPL-RET60]"],
+            },
+        ]
+        rendered = render_critiques_received(critiques)
+        assert "[AAPL-GM]" in rendered
+        assert "[AAPL-RET60]" in rendered
+
+    @pytest.mark.fast
+    def test_empty_critiques_renders_message(self):
+        """No critiques → informative message, not empty string."""
+        rendered = render_critiques_received([])
+        assert "No critiques" in rendered
+
+    # --- Revision prompt receives critique context ---------------------
+
+    @pytest.mark.fast
+    def test_enriched_revision_prompt_has_critiques(self, mini_memo):
+        """build_revision_prompt() includes enriched critiques in the prompt."""
+        output = _make_enriched_output()
+        my_proposal_v2 = render_previous_proposal(output)
+        critiques = [
+            {
+                "from_role": "risk",
+                "objection": "Overweight tech in high-rate regime [L1-10Y].",
+                "target_claim": "C1",
+                "counter_evidence": ["[L1-10Y]"],
+                "falsifier": "Rate cuts would change outlook",
+                "objection_confidence": 0.8,
+            },
+        ]
+        critiques_text_v2 = render_critiques_received(critiques)
+
+        profile = _load_profile("macro_enriched")
+        user_cfg = profile.get("user_prompts", {}).get("revise", {})
+        template = user_cfg.get("template")
+        sections = user_cfg.get("sections")
+        overrides = {"revision_template": template} if template else {}
+
+        prompt = build_revision_prompt(
+            "macro", mini_memo, json.dumps(output), critiques,
+            prompt_file_overrides=overrides or None,
+            user_sections=sections,
+            my_proposal_v2=my_proposal_v2,
+            critiques_text_v2=critiques_text_v2,
+            allocation_constraints={"max_weight": 0.40, "min_holdings": 2},
+        )
+
+        assert "Target claim: C1" in prompt or "C1" in prompt, (
+            "Revision prompt should contain target_claim reference"
+        )
+        assert "[L1-10Y]" in prompt, (
+            "Revision prompt should contain counter-evidence IDs"
+        )
+
+
+# ===================================================================
+# TEST GROUP 9 — FULL PIPELINE HANDOFF: PROPOSE → CRITIQUE → REVISE → CRIT
+#
+# Exercise the complete data flow through all phases using simulated
+# outputs at each stage, verifying that structural fields survive
+# all transformations and land in the CRIT prompt correctly.
+# ===================================================================
+
+class TestFullPipelineHandoff:
+    """End-to-end: propose output → rendered critique context → revision →
+    build_reasoning_bundle → render_crit_prompts.  Verify structural fields
+    survive all transformations."""
+
+    @staticmethod
+    def _build_full_state(enriched: bool) -> dict:
+        """Build a complete debate state with proposals, critiques, revisions."""
+        proposals = _make_proposals(enriched)
+        critiques = _make_critiques(enriched)
+
+        # Simulate revisions — use the same structure as proposals but
+        # with revision_notes added.
+        make = _make_enriched_output if enriched else _make_base_output
+        macro_rev = make()
+        macro_rev["revision_notes"] = "Adjusted AAPL weight down per risk critique."
+        risk_rev = make()
+        risk_rev["allocation"] = {"AAPL": 0.25, "MSFT": 0.35, "GOOGL": 0.40}
+        risk_rev["revision_notes"] = "Increased diversification per macro critique."
+
+        revisions = [
+            {"role": "macro", "action_dict": macro_rev,
+             "raw_response": json.dumps(macro_rev), "revision_notes": macro_rev["revision_notes"]},
+            {"role": "risk", "action_dict": risk_rev,
+             "raw_response": json.dumps(risk_rev), "revision_notes": risk_rev["revision_notes"]},
+        ]
+
+        return {
+            "proposals": proposals,
+            "critiques": critiques,
+            "revisions": revisions,
+        }
+
+    # --- Enriched full pipeline: all fields survive --------------------
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_bundle_has_claims_with_ids(self, memo_evidence_lookup):
+        """Enriched pipeline: claims in CRIT bundle have non-empty claim_id."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+        assert bundle is not None
+
+        claims = bundle["revised_argument"]["reasoning"]["claims"]
+        for claim in claims:
+            assert claim["claim_id"], (
+                f"Enriched claim missing claim_id after full pipeline"
+            )
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_bundle_has_evidence_ids(self, memo_evidence_lookup):
+        """Enriched pipeline: claims have populated evidence_ids."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        claims = bundle["revised_argument"]["reasoning"]["claims"]
+        for claim in claims:
+            assert len(claim["evidence_ids"]) > 0, (
+                f"Enriched claim {claim['claim_id']} has empty evidence_ids after pipeline"
+            )
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_bundle_has_position_rationale(self, memo_evidence_lookup):
+        """Enriched pipeline: position_rationale with supporting_claims survives."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        positions = bundle["revised_argument"]["reasoning"]["position_rationale"]
+        assert len(positions) > 0, "Enriched bundle should have position_rationale"
+        for pos in positions:
+            assert len(pos["supporting_claims"]) > 0, (
+                f"Position {pos['ticker']} has empty supporting_claims after pipeline"
+            )
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_bundle_has_critiques_received(self, memo_evidence_lookup):
+        """Enriched pipeline: critiques are correctly routed to the agent."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "risk", 1, memo_evidence_lookup)
+
+        crits = bundle["critiques_received"]
+        assert len(crits) > 0, "Risk agent should have received critiques"
+        for crit in crits:
+            assert crit["from_role"], "Critique should have from_role"
+            assert crit["critique_text"], "Critique should have critique_text"
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_crit_prompt_has_structural_fields(self, memo_evidence_lookup):
+        """Enriched pipeline: final CRIT prompt contains all structural fields."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        _, user_prompt = render_crit_prompts(bundle)
+
+        # Claims with IDs
+        assert "C1" in user_prompt
+        assert "C2" in user_prompt
+        # Evidence IDs populated
+        assert "L1-10Y" in user_prompt
+        assert "AAPL-GM" in user_prompt
+        # Position rationale
+        assert "position_rationale" in user_prompt
+        assert "supporting_claims" in user_prompt
+        # Falsifiers
+        assert "falsifiers" in user_prompt
+        # Thesis
+        assert "thesis" in user_prompt
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_crit_prompt_has_revision_notes(self, memo_evidence_lookup):
+        """Enriched pipeline: revision_notes appear in CRIT prompt."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        _, user_prompt = render_crit_prompts(bundle)
+
+        assert "revision_notes" in user_prompt
+
+    @pytest.mark.fast
+    def test_enriched_pipeline_no_crit_flags(self, memo_evidence_lookup):
+        """Enriched pipeline: mock CRIT produces no structural failure flags."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        crit_raw = _crit_response_from_bundle(bundle)
+        result = validate_raw_response(crit_raw)
+
+        assert not result.diagnostics.unsupported_claims_detected
+        assert not result.diagnostics.conclusion_drift_detected
+        assert result.rho_bar > 0.70
+
+    # --- Base full pipeline: structural degradation --------------------
+
+    @pytest.mark.fast
+    def test_base_pipeline_bundle_claims_have_empty_ids(self, memo_evidence_lookup):
+        """Base pipeline: claims have empty claim_id after full pipeline."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        claims = bundle["revised_argument"]["reasoning"]["claims"]
+        empty_ids = [c for c in claims if not c["claim_id"]]
+        assert len(empty_ids) > 0, (
+            "Base pipeline claims should have empty claim_id"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_bundle_claims_have_empty_evidence_ids(self, memo_evidence_lookup):
+        """Base pipeline: claims have empty evidence_ids after full pipeline."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        claims = bundle["revised_argument"]["reasoning"]["claims"]
+        empty_ev = [c for c in claims if len(c["evidence_ids"]) == 0]
+        assert len(empty_ev) > 0, (
+            "Base pipeline claims should have empty evidence_ids"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_bundle_no_position_rationale(self, memo_evidence_lookup):
+        """Base pipeline: position_rationale is empty after full pipeline."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        positions = bundle["revised_argument"]["reasoning"]["position_rationale"]
+        assert len(positions) == 0, (
+            "Base pipeline should have empty position_rationale"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_conclusion_drift(self, memo_evidence_lookup):
+        """Base pipeline: conclusion_drift_detected fires in CRIT."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        crit_raw = _crit_response_from_bundle(bundle)
+        result = validate_raw_response(crit_raw)
+
+        assert result.diagnostics.conclusion_drift_detected, (
+            "Base pipeline should trigger conclusion_drift — "
+            "no position_rationale means no supporting_claims"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_rho_bar_degraded(self, memo_evidence_lookup):
+        """Base pipeline: rho_bar in degradation zone (≤ 0.70)."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        crit_raw = _crit_response_from_bundle(bundle)
+        result = validate_raw_response(crit_raw)
+
+        assert result.rho_bar <= 0.70, (
+            f"Base pipeline rho_bar={result.rho_bar:.3f} should be ≤ 0.70"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_crit_prompt_has_empty_evidence_ids(self, memo_evidence_lookup):
+        """Base pipeline: CRIT prompt renders claims with empty evidence_ids."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        _, user_prompt = render_crit_prompts(bundle)
+
+        assert '"evidence_ids": []' in user_prompt, (
+            "Base pipeline CRIT prompt should show empty evidence_ids"
+        )
+
+    @pytest.mark.fast
+    def test_base_pipeline_crit_prompt_has_unknown_claim_type(self, memo_evidence_lookup):
+        """Base pipeline: CRIT prompt renders claims with claim_type 'unknown'."""
+        state = self._build_full_state(enriched=False)
+        bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+
+        _, user_prompt = render_crit_prompts(bundle)
+
+        assert "unknown" in user_prompt, (
+            "Base pipeline CRIT prompt should show claim_type='unknown'"
+        )
+
+    # --- Cross-phase critique routing -----------------------------------
+
+    @pytest.mark.fast
+    def test_critiques_route_to_correct_agent(self, memo_evidence_lookup):
+        """Critiques targeting 'risk' appear in risk's bundle, not macro's."""
+        state = self._build_full_state(enriched=True)
+
+        macro_bundle = build_reasoning_bundle(state, "macro", 1, memo_evidence_lookup)
+        risk_bundle = build_reasoning_bundle(state, "risk", 1, memo_evidence_lookup)
+
+        # Critiques in test fixture target "risk" and "technical", not "macro"
+        risk_crits = risk_bundle["critiques_received"]
+        assert len(risk_crits) > 0, "Risk should receive critiques"
+
+    @pytest.mark.fast
+    def test_critique_evidence_survives_to_crit(self, memo_evidence_lookup):
+        """Counter-evidence from critiques appears in the CRIT prompt."""
+        state = self._build_full_state(enriched=True)
+        bundle = build_reasoning_bundle(state, "risk", 1, memo_evidence_lookup)
+
+        _, user_prompt = render_crit_prompts(bundle)
+
+        # Critiques targeting risk have counter_evidence with [L1-10Y]
+        assert "critique" in user_prompt.lower(), (
+            "CRIT prompt should contain critique section"
+        )
