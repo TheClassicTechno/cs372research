@@ -8,6 +8,7 @@ import { fetchPortfolio, fetchPerformance, fetchAgentPerformance, fetchRoundPerf
 import { buildSimpleAllocTable, buildAgentPerfTable, buildRoundAllocTable, buildDebateImpactTable, buildMeanPortfolioTable } from '../../components/table.js';
 import { esc } from '../../utils/dom.js';
 import { fmtPct, numFmt } from '../../utils/format.js';
+import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
 
 /**
@@ -238,19 +239,6 @@ function loadDebateImpact(experiment, runId, agentLabel, token) {
       var wrap = document.getElementById('debate-impact-section');
       if (wrap) wrap.innerHTML = '';
     });
-}
-
-/**
- * Build an agent label resolver from the manifest profile map.
- * Returns a function that maps role keys to display names.
- */
-function makeAgentLabel(manifest) {
-  var m = manifest !== undefined && manifest !== null ? manifest : {};
-  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
-  return function agentLabel(role) {
-    if (profileMap !== null && profileMap[role]) return profileMap[role];
-    return role;
-  };
 }
 
 /**

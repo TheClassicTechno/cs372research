@@ -86,6 +86,18 @@ Portfolio-level invalidation conditions.
 
 Explanation of how critiques were handled.
 
+**reasoning.critique_responses**
+
+Per-critique structured responses. Each entry contains:
+
+• from_agent (which agent sent the critique)
+• target_claim (which claim was critiqued)
+• disposition ("accept" or "rebut")
+• justification (why the agent accepted or rebutted)
+
+Use this to determine whether each critique was explicitly addressed.
+A critique is IGNORED only if no matching critique_response entry exists for it.
+
 **portfolio_allocation**
 
 Final asset allocation.
@@ -147,6 +159,19 @@ Use the proposal only to determine whether critiques revealed weaknesses.
 
 # Critiques Received
 
+Each critique contains:
+
+• from_role — which agent sent the critique
+• target_claim — which specific claim (C1, C2, …) is targeted
+• critique_text — the objection
+• evidence_citations — counter-evidence IDs with full text
+• portfolio_implication — how the flaw affects the portfolio
+• suggested_adjustment — what the critic recommends
+• falsifier — what would disprove the objection
+• objection_confidence — how confident the critic is
+
+Use `target_claim` to match critiques against `critique_responses` in the revised argument.
+
 {% if critiques_received | length == 0 %}
 No critiques were received.
 
@@ -162,6 +187,23 @@ Evaluate whether critiques were meaningfully addressed in the revision.
 
 ---
 
+{% if self_critique is defined and self_critique is not none %}
+# Agent Self-Critique
+
+The agent identified the following weakness in its own reasoning during the critique phase:
+
+{{ self_critique | tojson(indent=2) }}
+
+Evaluate whether the revision addresses the agent's own identified weakness.
+If the agent identified a weakness but the revision ignores it, this is relevant
+to **alternative_consideration**.
+
+Do not reward agents merely for writing a self-critique.
+Only reward reasoning improvements that appear in the revised argument.
+
+---
+
+{% endif %}
 # Revised Argument
 
 Focus primarily on the reasoning quality in this revision.
@@ -268,7 +310,11 @@ Detect:
 A critique is considered ADDRESSED only if the revision provides
 explicit reasoning responding to the critique.
 
-Evidence of addressing may include:
+**Primary source**: `reasoning.critique_responses` — each entry explicitly maps a critique
+to a disposition (accept/rebut) with justification. Cross-reference these against
+`critiques_received` to identify ignored critiques.
+
+**Secondary evidence** of addressing may include:
 
 • revision_notes that explain why the critique is accepted or rejected
 • claim structure changes motivated by the critique
@@ -276,12 +322,9 @@ Evidence of addressing may include:
 • new evidence introduced to evaluate the critique
 
 Superficial acknowledgement without reasoning does NOT count as addressing the critique.
-• revision_notes explicitly reference the critique
-• claim structure changes
-• portfolio allocation changes
-• new evidence is introduced responding to the critique
 
-If none of these occur, treat the critique as **ignored**.
+If a critique has no matching entry in `critique_responses` AND no secondary evidence
+of engagement, treat the critique as **ignored**.
 
 Strong reasoning should:
 

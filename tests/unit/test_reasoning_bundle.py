@@ -33,6 +33,11 @@ def _make_state(
         "justification": justification,
         "confidence": 0.8,
         "claims": proposal_claims or [],
+        "position_rationale": [
+            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Test position"},
+            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Test position"},
+        ],
+        "risks_or_falsifiers": ["Test risk: market downturn"],
     }
     if proposal_citations is not None:
         prop_action["evidence_citations"] = proposal_citations
@@ -42,6 +47,12 @@ def _make_state(
         "justification": revision_justification,
         "confidence": 0.85,
         "claims": revision_claims or [],
+        "critique_responses": [],
+        "position_rationale": [
+            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "explanation": "Revised position"},
+            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "explanation": "Revised position"},
+        ],
+        "risks_or_falsifiers": ["Test risk: revised market downturn"],
     }
     if revision_citations is not None:
         rev_action["evidence_citations"] = revision_citations
@@ -78,6 +89,11 @@ def _make_enriched_state(
         "portfolio_rationale": portfolio_rationale,
         "confidence": 0.8,
         "claims": proposal_claims or [],
+        "position_rationale": [
+            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Enriched position"},
+            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Enriched position"},
+        ],
+        "risks_or_falsifiers": ["Test risk: enriched market downturn"],
     }
 
     rev_action = {
@@ -85,6 +101,12 @@ def _make_enriched_state(
         "portfolio_rationale": revision_portfolio_rationale,
         "confidence": 0.85,
         "claims": revision_claims or [],
+        "critique_responses": [],
+        "position_rationale": [
+            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "explanation": "Revised enriched position"},
+            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "explanation": "Revised enriched position"},
+        ],
+        "risks_or_falsifiers": ["Test risk: revised enriched market downturn"],
     }
 
     state = {
@@ -92,7 +114,7 @@ def _make_enriched_state(
             {"role": "macro", "action_dict": prop_action, "raw_response": proposal_raw},
         ],
         "revisions": [
-            {"role": "macro", "action_dict": rev_action, "raw_response": revision_raw},
+            {"role": "macro", "action_dict": rev_action, "revision_notes": "", "raw_response": revision_raw},
         ],
         "critiques": critiques or [],
     }
@@ -318,8 +340,8 @@ class TestBundleStructure:
                 {
                     "role": "value",
                     "critiques": [
-                        {"target_role": "macro", "objection": "Overweight energy"},
-                        {"target_role": "risk", "objection": "Not for macro"},
+                        {"target_role": "macro", "target_claim": "C1", "objection": "Overweight energy", "counter_evidence": [], "portfolio_implication": "Reduce energy weight", "suggested_adjustment": "Lower AAPL to 0.3", "falsifier": "Energy rally", "objection_confidence": 0.7},
+                        {"target_role": "risk", "target_claim": "C1", "objection": "Not for macro", "counter_evidence": [], "portfolio_implication": "N/A", "suggested_adjustment": "None", "falsifier": "None", "objection_confidence": 0.5},
                     ],
                 },
             ],
@@ -351,8 +373,13 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Ignores valuation",
                             "counter_evidence": ["[AAPL-RET60]", "[L1-VIX]"],
+                            "portfolio_implication": "Overvalued positions",
+                            "suggested_adjustment": "Reduce AAPL weight",
+                            "falsifier": "Earnings beat",
+                            "objection_confidence": 0.75,
                         },
                     ],
                 },
@@ -374,8 +401,13 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Too risky",
                             "counter_evidence": ["[NVDA-DVOL60]"],
+                            "portfolio_implication": "Excessive volatility exposure",
+                            "suggested_adjustment": "Reduce NVDA weight",
+                            "falsifier": "Vol compression",
+                            "objection_confidence": 0.7,
                         },
                     ],
                 },
@@ -396,8 +428,13 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Momentum is weak",
                             "counter_evidence": ["[AAPL-RET60]"],
+                            "portfolio_implication": "Weak momentum undermines thesis",
+                            "suggested_adjustment": "Reduce AAPL weight",
+                            "falsifier": "Momentum reversal",
+                            "objection_confidence": 0.65,
                         },
                     ],
                 },
@@ -417,8 +454,13 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Weak thesis",
                             "counter_evidence": [],
+                            "portfolio_implication": "Thesis lacks support",
+                            "suggested_adjustment": "Strengthen evidence base",
+                            "falsifier": "New supporting data",
+                            "objection_confidence": 0.6,
                         },
                     ],
                 },
@@ -438,7 +480,12 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "No evidence field at all",
+                            "portfolio_implication": "Unknown impact",
+                            "suggested_adjustment": "None",
+                            "falsifier": "None",
+                            "objection_confidence": 0.5,
                         },
                     ],
                 },
@@ -458,8 +505,13 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Legacy format",
                             "evidence_citations": [{"evidence_id": "AAPL-BETA"}],
+                            "portfolio_implication": "Legacy impact",
+                            "suggested_adjustment": "None",
+                            "falsifier": "None",
+                            "objection_confidence": 0.5,
                         },
                     ],
                 },
@@ -479,9 +531,14 @@ class TestCritiqueEvidence:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Both fields present",
                             "counter_evidence": ["[AAPL-RET60]"],
                             "evidence_citations": [{"evidence_id": "OLD-ID"}],
+                            "portfolio_implication": "Mixed evidence",
+                            "suggested_adjustment": "Review allocation",
+                            "falsifier": "New data",
+                            "objection_confidence": 0.65,
                         },
                     ],
                 },
@@ -588,7 +645,13 @@ class TestInlineEvidenceExpansion:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Ignores low vol [L1-VIX] environment.",
+                            "counter_evidence": [],
+                            "portfolio_implication": "Low vol ignored",
+                            "suggested_adjustment": "Account for vol regime",
+                            "falsifier": "Vol spike",
+                            "objection_confidence": 0.7,
                         },
                     ],
                 },
@@ -921,7 +984,12 @@ class TestWarningsEmitted:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "No evidence field at all",
+                            "portfolio_implication": "Unknown impact",
+                            "suggested_adjustment": "None",
+                            "falsifier": "None",
+                            "objection_confidence": 0.5,
                         },
                     ],
                 },
@@ -942,8 +1010,13 @@ class TestWarningsEmitted:
                     "critiques": [
                         {
                             "target_role": "macro",
+                            "target_claim": "C1",
                             "objection": "Has evidence",
                             "counter_evidence": ["[AAPL-RET60]"],
+                            "portfolio_implication": "Has evidence support",
+                            "suggested_adjustment": "None",
+                            "falsifier": "None",
+                            "objection_confidence": 0.6,
                         },
                     ],
                 },
@@ -971,7 +1044,7 @@ class TestCritiqueTargetRoleNormalization:
                 {
                     "role": "risk",
                     "critiques": [
-                        {"target_role": "MACRO", "objection": "Uppercase target"},
+                        {"target_role": "MACRO", "target_claim": "C1", "objection": "Uppercase target", "counter_evidence": [], "portfolio_implication": "Test implication", "suggested_adjustment": "None", "falsifier": "None", "objection_confidence": 0.5},
                     ],
                 },
             ],
@@ -987,7 +1060,7 @@ class TestCritiqueTargetRoleNormalization:
                 {
                     "role": "value",
                     "critiques": [
-                        {"target_role": "MACRO agent", "objection": "Suffix target"},
+                        {"target_role": "MACRO agent", "target_claim": "C1", "objection": "Suffix target", "counter_evidence": [], "portfolio_implication": "Test implication", "suggested_adjustment": "None", "falsifier": "None", "objection_confidence": 0.5},
                     ],
                 },
             ],
@@ -1003,7 +1076,7 @@ class TestCritiqueTargetRoleNormalization:
                 {
                     "role": "technical",
                     "critiques": [
-                        {"target_role": "Macro", "objection": "Mixed case"},
+                        {"target_role": "Macro", "target_claim": "C1", "objection": "Mixed case", "counter_evidence": [], "portfolio_implication": "Test implication", "suggested_adjustment": "None", "falsifier": "None", "objection_confidence": 0.5},
                     ],
                 },
             ],
@@ -1018,10 +1091,171 @@ class TestCritiqueTargetRoleNormalization:
                 {
                     "role": "value",
                     "critiques": [
-                        {"target_role": "RISK", "objection": "Not for macro"},
+                        {"target_role": "RISK", "target_claim": "C1", "objection": "Not for macro", "counter_evidence": [], "portfolio_implication": "N/A", "suggested_adjustment": "None", "falsifier": "None", "objection_confidence": 0.5},
                     ],
                 },
             ],
         )
         bundle = build_reasoning_bundle(state, "macro", 1, {})
         assert len(bundle["critiques_received"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Multi-round revision lookup — must use LATEST revision per role
+# ---------------------------------------------------------------------------
+
+class TestMultiRoundRevisionLookup:
+    """Ensure build_reasoning_bundle picks the latest revision, not the first."""
+
+    def _make_multi_round_state(self):
+        """State with two rounds of revisions accumulated via operator.add."""
+        return {
+            "proposals": [
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.5, "NVDA": 0.5},
+                        "justification": "proposal thesis",
+                        "confidence": 0.8,
+                        "claims": [],
+                        "position_rationale": [
+                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                        ],
+                        "risks_or_falsifiers": ["Test risk: proposal"],
+                    },
+                    "raw_response": "proposal raw",
+                },
+            ],
+            "revisions": [
+                # Round 1 revision (first in list)
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.45, "NVDA": 0.55},
+                        "justification": "round 1 thesis",
+                        "confidence": 0.82,
+                        "claims": [],
+                        "critique_responses": [],
+                        "position_rationale": [
+                            {"ticker": "AAPL", "weight": 0.45, "supporting_claims": [], "explanation": "Round 1 position"},
+                            {"ticker": "NVDA", "weight": 0.55, "supporting_claims": [], "explanation": "Round 1 position"},
+                        ],
+                        "risks_or_falsifiers": ["Test risk: round 1"],
+                    },
+                    "revision_notes": "round 1 notes",
+                    "raw_response": "round 1 raw",
+                },
+                # Round 2 revision (latest — should be picked)
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.3, "NVDA": 0.7},
+                        "justification": "round 2 thesis",
+                        "confidence": 0.9,
+                        "claims": [],
+                        "critique_responses": [],
+                        "position_rationale": [
+                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": [], "explanation": "Round 2 position"},
+                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "explanation": "Round 2 position"},
+                        ],
+                        "risks_or_falsifiers": ["Test risk: round 2"],
+                    },
+                    "revision_notes": "round 2 notes",
+                    "raw_response": "round 2 raw",
+                },
+            ],
+            "critiques": [],
+        }
+
+    def test_latest_revision_allocation_used(self):
+        """The round 2 allocation must be used, not round 1."""
+        state = self._make_multi_round_state()
+        bundle = build_reasoning_bundle(state, "macro", 2, {})
+        assert bundle["revised_argument"]["portfolio_allocation"] == {"AAPL": 0.3, "NVDA": 0.7}
+
+    def test_latest_revision_raw_response_used(self):
+        """The round 2 raw_response must flow into the bundle."""
+        state = self._make_multi_round_state()
+        bundle = build_reasoning_bundle(state, "macro", 2, {})
+        assert "round 2 raw" in bundle["revised_argument"]["raw_response"]
+
+    def test_latest_revision_thesis_used(self):
+        """The round 2 thesis must be used."""
+        state = self._make_multi_round_state()
+        bundle = build_reasoning_bundle(state, "macro", 2, {})
+        assert "round 2" in bundle["revised_argument"]["reasoning"]["thesis"]
+
+    def test_stale_round1_not_used(self):
+        """Round 1 data must NOT appear in the bundle."""
+        state = self._make_multi_round_state()
+        bundle = build_reasoning_bundle(state, "macro", 2, {})
+        assert "round 1" not in bundle["revised_argument"]["raw_response"]
+        assert "round 1" not in bundle["revised_argument"]["reasoning"]["thesis"]
+
+    def test_single_revision_still_works(self):
+        """Single-round state (one revision) should still work fine."""
+        state = _make_state(revision_raw="only revision raw")
+        bundle = build_reasoning_bundle(state, "macro", 1, {})
+        assert "only revision raw" in bundle["revised_argument"]["raw_response"]
+
+    def test_broken_round1_skipped_for_good_round2(self):
+        """If round 1 has empty claims but round 2 is valid, round 2 is used."""
+        state = {
+            "proposals": [
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.5, "NVDA": 0.5},
+                        "justification": "proposal",
+                        "confidence": 0.8,
+                        "claims": [],
+                        "position_rationale": [
+                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                        ],
+                        "risks_or_falsifiers": ["Test risk: proposal"],
+                    },
+                    "raw_response": "proposal raw",
+                },
+            ],
+            "revisions": [
+                # Round 1: parse failure produced empty action_dict
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.5, "NVDA": 0.5},
+                        "justification": "broken placeholder",
+                        "confidence": 0.5,
+                        "claims": [],
+                        "critique_responses": [],
+                        "position_rationale": [],
+                        "risks_or_falsifiers": [],
+                    },
+                    "revision_notes": "",
+                    "raw_response": "broken raw",
+                },
+                # Round 2: valid
+                {
+                    "role": "macro",
+                    "action_dict": {
+                        "allocation": {"AAPL": 0.3, "NVDA": 0.7},
+                        "justification": "recovered thesis with [L1-CPI] evidence",
+                        "confidence": 0.88,
+                        "claims": [{"claim_id": "C1", "claim_text": "valid claim", "evidence": ["[L1-CPI]"]}],
+                        "critique_responses": [],
+                        "position_rationale": [
+                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": ["C1"], "explanation": "Recovered position"},
+                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "explanation": "Recovered position"},
+                        ],
+                        "risks_or_falsifiers": ["Test risk: recovered"],
+                    },
+                    "revision_notes": "recovered from round 1 failure",
+                    "raw_response": "recovered raw",
+                },
+            ],
+            "critiques": [],
+        }
+        bundle = build_reasoning_bundle(state, "macro", 2, {})
+        assert bundle["revised_argument"]["portfolio_allocation"] == {"AAPL": 0.3, "NVDA": 0.7}
+        assert "recovered" in bundle["revised_argument"]["raw_response"]

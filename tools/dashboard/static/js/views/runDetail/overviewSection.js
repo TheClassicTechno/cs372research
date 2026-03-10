@@ -13,7 +13,12 @@ export function buildOverviewPanel(detail, experiment, runId) {
 
   var agentsStr = '\u2014';
   if (m.agent_profiles && typeof m.agent_profiles === 'object') {
-    agentsStr = Object.values(m.agent_profiles).join(', ');
+    var vals = Object.entries(m.agent_profiles);
+    // agent_profiles may be {role: "name"} or {role: {config...}}.
+    // Use string values as names; fall back to role keys for objects.
+    agentsStr = vals.map(function (entry) {
+      return typeof entry[1] === 'string' ? entry[1] : entry[0];
+    }).join(', ');
   } else if (m.roles && m.roles.length > 0) {
     agentsStr = m.roles.join(', ');
   }

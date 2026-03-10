@@ -182,12 +182,14 @@ class TestRhoBarComputation:
 # ---------------------------------------------------------------------------
 
 class TestCritScorerErrors:
-    def test_invalid_json_raises(self):
+    def test_invalid_json_crashes(self):
+        """Invalid JSON exhausts retries and crashes the debate."""
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: "not valid json at all")
-        with pytest.raises(json.JSONDecodeError):
+        with pytest.raises(RuntimeError, match="CRIT scoring failed"):
             scorer.score(BUNDLES_1)
 
-    def test_partial_response_missing_pillar_raises(self):
+    def test_partial_response_missing_pillar_crashes(self):
+        """Missing pillar fields exhaust retries and crash the debate."""
         incomplete = json.dumps({
             "pillar_scores": {
                 "logical_validity": 0.8,
@@ -209,7 +211,7 @@ class TestCritScorerErrors:
             },
         })
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: incomplete)
-        with pytest.raises(Exception):  # ValidationError from pydantic
+        with pytest.raises(RuntimeError, match="CRIT scoring failed"):
             scorer.score(BUNDLES_1)
 
     def test_empty_bundles_raises(self):

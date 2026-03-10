@@ -84,12 +84,23 @@ class MajorityVoteRunner:
                 )
             )
 
+        _VALID_REASONING_TYPES = {"causal", "observational", "risk_assessment", "pattern"}
+
         claims = []
         for c in d.get("claims", []):
+            raw_rtype = c.get("reasoning_type", "observational")
+            if raw_rtype not in _VALID_REASONING_TYPES:
+                for part in raw_rtype.replace("|", " ").split():
+                    part = part.strip().lower()
+                    if part in _VALID_REASONING_TYPES:
+                        raw_rtype = part
+                        break
+                else:
+                    raw_rtype = "observational"
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-                    reasoning_type=c.get("reasoning_type", "observational"),
+                    reasoning_type=raw_rtype,
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

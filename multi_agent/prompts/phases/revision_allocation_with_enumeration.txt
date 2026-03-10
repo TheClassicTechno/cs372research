@@ -80,6 +80,7 @@ Weights must:
 • Maintain **3–5 claims maximum**
 
 • Claims must retain **stable IDs** where possible (C1, C2, C3…)
+• If you drop a claim, you MUST document which claim was dropped and why in `revision_notes`
 
 If you change a claim:
 
@@ -127,6 +128,8 @@ If weights changed:
 
 Respond with **valid JSON only**.
 
+You MUST include one entry in `critique_responses` for every critique you received. Omitting a critique is not allowed.
+
 {% raw %}
 {
   "allocation": {
@@ -164,6 +167,15 @@ Respond with **valid JSON only**.
     "Portfolio-level condition that would invalidate the strategy."
   ],
 
-  "revision_notes": "Explain what changed in response to critiques. Reference claim IDs (e.g., 'C2 revised due to critique about evidence misuse; reduced NVDA weight accordingly')."
+  "critique_responses": [
+    {
+      "from_agent": "agent role that sent the critique",
+      "target_claim": "C1",
+      "disposition": "accept | rebut",
+      "justification": "Why you accept or rebut this critique. Cite evidence IDs."
+    }
+  ],
+
+  "revision_notes": "Summary of changes. Reference claim IDs."
 }
 {% endraw %}

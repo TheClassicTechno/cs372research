@@ -86,6 +86,7 @@ def _make_state():
         "confidence": 0.8,
         "claims": CLAIMS,
         "risks_or_falsifiers": ["Fed pivot would invalidate rate thesis."],
+        "critique_responses": ["Accepted critique K1: reduced AAPL weight from 0.5 to 0.4."],
     }
     return {
         "proposals": [
@@ -226,6 +227,7 @@ class TestBundleToCritPrompt:
             "thesis": "Test thesis",
             "confidence": 0.8,
             "risks_or_falsifiers": ["Risk 1"],
+            "critique_responses": ["Addressed K1: adjusted weights accordingly."],
         }
         reasoning = _extract_reasoning(
             action_dict, normalize_evidence_id,

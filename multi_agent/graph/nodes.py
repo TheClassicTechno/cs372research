@@ -26,6 +26,51 @@ from ..prompts import (
 from ..prompts.registry import resolve_beta, get_registry
 
 
+def _latest_per_role(entries: list[dict]) -> list[dict]:
+    """Deduplicate a list of proposal/revision dicts to the latest per role.
+
+    When revisions accumulate across rounds via operator.add, this ensures
+    only the most recent entry for each role is returned, preserving order.
+    """
+    seen: dict[str, dict] = {}
+    for entry in entries:
+        seen[entry["role"]] = entry  # last write wins
+    return list(seen.values())
+
+
+def _latest_per_role(entries: list[dict]) -> list[dict]:
+    """Deduplicate a list of proposal/revision dicts to the latest per role.
+
+    When revisions accumulate across rounds via operator.add, this ensures
+    only the most recent entry for each role is returned, preserving order.
+    """
+    seen: dict[str, dict] = {}
+    for entry in entries:
+        seen[entry["role"]] = entry  # last write wins
+    return list(seen.values())
+
+
+def _resolve_source(state: dict) -> list[dict]:
+    """Return the latest-per-role source entries for critique/revise phases.
+
+    Uses revisions if any exist, otherwise proposals. Deduplicates to
+    latest per role and validates the result is non-empty.
+    """
+    raw = state.get("revisions") if state.get("revisions") else state.get("proposals")
+    if not raw:
+        raise RuntimeError(
+            "Debate state has no proposals and no revisions — "
+            "cannot proceed with critique/revise phase."
+        )
+    source = _latest_per_role(raw)
+    if not source:
+        raise RuntimeError(
+            "Debate state produced empty source after deduplication — "
+            "this indicates corrupted state."
+        )
+    return source
+
+
 def _has_agent_profiles(config: dict) -> bool:
     """Check if the new agent profile system is active."""
     return bool(config.get("agent_profiles"))
@@ -138,6 +183,41 @@ def _call_llm_with_lifecycle(config: dict, system_prompt: str, user_prompt: str,
     return result
 
 
+_JSON_RETRIES = 2  # extra LLM calls on JSON parse failure
+
+
+def _call_llm_json(config: dict, system_prompt: str, user_prompt: str,
+                    role: str, phase: str, round_num: int = 0) -> tuple[dict, str]:
+    """Call LLM and parse JSON response, retrying on parse failure.
+
+    Returns (parsed_dict, raw_text).  On JSON parse failure the LLM is
+    re-called up to _JSON_RETRIES additional times before raising.
+    """
+    last_exc = None
+    for attempt in range(_JSON_RETRIES + 1):
+        raw_text = _call_llm_with_lifecycle(
+            config, system_prompt, user_prompt, role, phase, round_num=round_num,
+        )
+        try:
+            return _parse_json(raw_text), raw_text
+        except ValueError as exc:
+            last_exc = exc
+            if attempt < _JSON_RETRIES:
+                logger.warning(
+                    "JSON parse failed for %s/%s (attempt %d/%d), retrying LLM call: %s",
+                    role, phase, attempt + 1, _JSON_RETRIES + 1, exc,
+                )
+                print(
+                    f"  [JSON RETRY] {role}/{phase} — parse failed, retrying "
+                    f"(attempt {attempt + 1}/{_JSON_RETRIES + 1}): {exc}",
+                    flush=True,
+                )
+    raise RuntimeError(
+        f"LLM returned unparseable JSON after {_JSON_RETRIES + 1} attempts "
+        f"({role}/{phase}): {last_exc}"
+    )
+
+
 def _apply_sector_permissions(
     raw_alloc: dict[str, float],
     role: str,
@@ -204,17 +284,42 @@ def _apply_sector_limits(
 def _build_action_dict(result: dict, raw_alloc: dict, universe: list, config: dict) -> dict:
     """Build the action_dict from an LLM result.
 
-    Shared by all 4 propose/revise paths (sequential + parallel) to prevent
-    drift between them.
+    Shared by all propose/revise paths to prevent drift between them.
 
     Canonical thesis field:
         - ``thesis`` is the canonical field (always populated).
         - ``justification`` and ``portfolio_rationale`` are deprecated aliases
           kept for backward compatibility.
         - Reading priority: thesis → portfolio_rationale → justification
+
+    Raises RuntimeError on missing required fields — no silent defaults.
     """
+    if not raw_alloc:
+        raise RuntimeError(
+            "LLM returned empty or missing 'allocation'. "
+            f"Raw result keys: {list(result.keys())}"
+        )
+
+    thesis = result.get("justification") or result.get("portfolio_rationale")
+    if not thesis:
+        raise RuntimeError(
+            "LLM returned no 'justification' or 'portfolio_rationale'. "
+            f"Raw result keys: {list(result.keys())}"
+        )
+
+    if "confidence" not in result:
+        raise RuntimeError(
+            f"LLM returned no 'confidence' field. "
+            f"Raw result keys: {list(result.keys())}"
+        )
+
+    if "risks_or_falsifiers" not in result:
+        raise RuntimeError(
+            f"LLM returned no 'risks_or_falsifiers' field. "
+            f"Raw result keys: {list(result.keys())}"
+        )
+
     ac = config.get("allocation_constraints") or {}
-    thesis = result.get("justification") or result.get("portfolio_rationale") or ""
     return {
         "allocation": normalize_allocation(
             raw_alloc, universe,
@@ -223,11 +328,12 @@ def _build_action_dict(result: dict, raw_alloc: dict, universe: list, config: di
         ),
         "thesis": thesis,
         "justification": thesis,
-        "portfolio_rationale": result.get("portfolio_rationale") or "",
-        "position_rationale": result.get("position_rationale") or [],
-        "confidence": result.get("confidence", 0.5),
+        "portfolio_rationale": result.get("portfolio_rationale", ""),
+        "position_rationale": result.get("position_rationale", []),
+        "confidence": result["confidence"],
         "claims": result.get("claims", []),
-        "risks_or_falsifiers": result.get("risks_or_falsifiers") or [],
+        "risks_or_falsifiers": result["risks_or_falsifiers"],
+        "critique_responses": result.get("critique_responses", []),
     }
 
 
@@ -382,7 +488,7 @@ def critique_node(state: DebateState) -> dict:
     is_mock = config.get("mock", False)
 
     # After first round, critique the revisions; otherwise the proposals
-    source = state.get("revisions") if state.get("revisions") else state["proposals"]
+    source = _resolve_source(state)
 
     all_proposals_for_critique = [
         {
@@ -498,7 +604,7 @@ def revise_node(state: DebateState) -> dict:
     obs = state["observation"]
     all_critiques = state.get("critiques", [])
 
-    source = state.get("revisions") if state.get("revisions") else state["proposals"]
+    source = _resolve_source(state)
 
     revisions = []
     turns = []
@@ -722,11 +828,15 @@ def make_propose_node(role: str):
             result = _mock_proposal(role, obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, role_system, user_prompt, role, "propose")
-            result = _parse_json(raw_text)
+            result, raw_text = _call_llm_json(config, role_system, user_prompt, role, "propose")
 
         universe = obs.get("universe", [])
-        raw_alloc = result.get("allocation", {})
+        if "allocation" not in result:
+            raise RuntimeError(
+                f"Propose: {role} LLM returned no 'allocation'. "
+                f"Keys: {list(result.keys())}"
+            )
+        raw_alloc = result["allocation"]
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
         action_dict = _build_action_dict(result, raw_alloc, universe, config)
@@ -783,15 +893,21 @@ def make_critique_node(role: str):
         is_mock = config.get("mock", False)
 
         # After first round, critique the revisions; otherwise the proposals.
-        # Sort by config role order for deterministic behavior (operator.add
-        # merge order is non-deterministic).
+        # Deduplicate to latest per role, then sort by config role order.
         roles = config.get("roles", ["macro", "value", "risk"])
         role_order = {r: i for i, r in enumerate(roles)}
-        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
-        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+        source = sorted(
+            _resolve_source(state),
+            key=lambda e: role_order.get(e["role"], len(roles)),
+        )
 
-        # Find own entry by role (safe lookup — missing role returns empty dict)
-        p = next((entry for entry in source if entry["role"] == role), {})
+        # Find own entry by role.
+        p = next((entry for entry in source if entry["role"] == role), None)
+        if p is None:
+            raise RuntimeError(
+                f"No source entry found for role '{role}' in critique phase. "
+                f"Available roles: {[e['role'] for e in source]}"
+            )
 
         all_proposals_for_critique = [
             {
@@ -854,8 +970,7 @@ def make_critique_node(role: str):
             result = _mock_critique(role, source)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "critique", round_num=current_round)
-            result = _parse_json(raw_text)
+            result, raw_text = _call_llm_json(config, system_msg, prompt, role, "critique", round_num=current_round)
 
         if config.get("verbose"):
             _verbose_critique(role, result)
@@ -863,9 +978,15 @@ def make_critique_node(role: str):
         if not config.get("console_display"):
             _print_critique_summary(role, result)
 
+        if "critiques" not in result:
+            raise RuntimeError(
+                f"Critique: {role} LLM returned no 'critiques'. "
+                f"Keys: {list(result.keys())}"
+            )
+
         critique = {
             "role": role,
-            "critiques": result.get("critiques", []),
+            "critiques": result["critiques"],
             "self_critique": result.get("self_critique", ""),
         }
 
@@ -912,17 +1033,22 @@ def make_revise_node(role: str):
         obs = state["observation"]
         all_critiques = state.get("critiques", [])
 
-        # Sort by config role order for deterministic behavior (operator.add
-        # merge order is non-deterministic).
+        # Deduplicate to latest per role, then sort by config role order.
         roles = config.get("roles", ["macro", "value", "risk"])
         role_order = {r: i for i, r in enumerate(roles)}
-        raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
-        source = sorted(raw_source, key=lambda e: role_order.get(e["role"], len(roles)))
+        source = sorted(
+            _resolve_source(state),
+            key=lambda e: role_order.get(e["role"], len(roles)),
+        )
 
-        # Find own entry by role (safe lookup — missing role returns empty dict)
-        p = next((entry for entry in source if entry["role"] == role), {})
+        # Find own entry by role.
+        p = next((entry for entry in source if entry["role"] == role), None)
+        if p is None:
+            raise RuntimeError(
+                f"No source entry found for role '{role}' in revise phase. "
+                f"Available roles: {[e['role'] for e in source]}"
+            )
 
-        roles = config.get("roles", ["macro", "value", "risk"])
         i = roles.index(role) if role in roles else 0
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
@@ -1001,11 +1127,15 @@ def make_revise_node(role: str):
             result = _mock_revision(role, p.get("action_dict", {}), obs, config)
             raw_text = json.dumps(result, indent=2)
         else:
-            raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, role, "revise", round_num=current_round)
-            result = _parse_json(raw_text)
+            result, raw_text = _call_llm_json(config, system_msg, prompt, role, "revise", round_num=current_round)
 
         universe = obs.get("universe", [])
-        raw_alloc = result.get("allocation", p.get("action_dict", {}).get("allocation", {}))
+        if "allocation" not in result:
+            raise RuntimeError(
+                f"Revise: {role} LLM returned no 'allocation'. "
+                f"Keys: {list(result.keys())}"
+            )
+        raw_alloc = result["allocation"]
         raw_alloc = _apply_sector_permissions(raw_alloc, role, config)
 
         action_dict = _build_action_dict(result, raw_alloc, universe, config)
@@ -1016,10 +1146,21 @@ def make_revise_node(role: str):
         if not config.get("console_display"):
             _print_allocation(role, action_dict, "revised")
 
+        if "revision_notes" not in result:
+            raise RuntimeError(
+                f"Revise: {role} LLM returned no 'revision_notes'. "
+                f"Keys: {list(result.keys())}"
+            )
+
+        # Embed revision_notes into action_dict so round 2+ agents see it
+        # via render_previous_proposal when reading this revision as source.
+        action_dict["revision_notes"] = result["revision_notes"]
+
         revision = {
             "role": role,
             "action_dict": action_dict,
-            "revision_notes": result.get("revision_notes", ""),
+            "revision_notes": result["revision_notes"],
+            "critique_responses": result.get("critique_responses", []),
             "raw_response": raw_text,
         }
 
@@ -1175,13 +1316,28 @@ def judge_node(state: DebateState) -> dict:
         result = _mock_judge(revisions, config)
         raw_text = json.dumps(result, indent=2)
     else:
-        raw_text = _call_llm_with_lifecycle(config, system_msg, prompt, "judge", "judge")
-        result = _parse_json(raw_text)
+        result, raw_text = _call_llm_json(config, system_msg, prompt, "judge", "judge")
 
     if config.get("verbose"):
         _verbose_judge(result)
 
-    raw_alloc = result.get("allocation", {})
+    if "allocation" not in result:
+        raise RuntimeError(
+            f"Judge LLM returned no 'allocation'. Keys: {list(result.keys())}"
+        )
+    raw_alloc = result["allocation"]
+
+    justification = result.get("audited_memo") or result.get("justification")
+    if not justification:
+        raise RuntimeError(
+            f"Judge LLM returned no 'audited_memo' or 'justification'. "
+            f"Keys: {list(result.keys())}"
+        )
+
+    if "confidence" not in result:
+        raise RuntimeError(
+            f"Judge LLM returned no 'confidence'. Keys: {list(result.keys())}"
+        )
 
     # Pull constraints from config
     ac = config.get("allocation_constraints") or {}
@@ -1193,8 +1349,8 @@ def judge_node(state: DebateState) -> dict:
     alloc = _apply_sector_limits(alloc, config)
     final_action = {
         "allocation": alloc,
-        "justification": result.get("audited_memo", result.get("justification", "")),
-        "confidence": result.get("confidence", 0.5),
+        "justification": justification,
+        "confidence": result["confidence"],
         "claims": result.get("claims", []),
     }
     if not config.get("console_display"):
