@@ -543,21 +543,37 @@ def list_experiments(base_path: Path = DEFAULT_BASE) -> list[str]:
 
 
 def _read_agent_profiles_from_config(run_dir: Path) -> dict[str, str] | None:
-    """Read the agents mapping from a debate config YAML in final/.
+    """Read the agents mapping from a debate config YAML.
 
+    Checks final/ first, then falls back to config_paths in the manifest.
     Returns {role: profile_name} or None if unavailable.
     """
+    # Try final/ directory first
     final_dir = run_dir / "final"
-    if not final_dir.is_dir():
-        return None
-    for f in final_dir.iterdir():
-        if f.suffix == ".yaml" and f.stem.startswith("debate"):
-            try:
-                data = yaml.safe_load(f.read_text(encoding="utf-8"))
-                if isinstance(data, dict) and isinstance(data.get("agents"), dict):
-                    return data["agents"]
-            except Exception:
-                continue
+    if final_dir.is_dir():
+        for f in final_dir.iterdir():
+            if f.suffix == ".yaml" and f.stem.startswith("debate"):
+                try:
+                    data = yaml.safe_load(f.read_text(encoding="utf-8"))
+                    if isinstance(data, dict) and isinstance(data.get("agents"), dict):
+                        return data["agents"]
+                except Exception:
+                    continue
+
+    # Fallback: read config_paths from manifest
+    manifest_path = run_dir / "manifest.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for cp in manifest.get("config_paths", []):
+                p = Path(cp)
+                if p.is_file() and p.suffix == ".yaml":
+                    data = yaml.safe_load(p.read_text(encoding="utf-8"))
+                    if isinstance(data, dict) and isinstance(data.get("agents"), dict):
+                        return data["agents"]
+        except Exception:
+            pass
+
     return None
 
 
@@ -600,8 +616,11 @@ def list_runs(base_path: Path = DEFAULT_BASE, experiment: str = "default") -> li
                 except (ValueError, TypeError):
                     pass
 
-            # Fallback: if manifest has no agent_profiles, read from config YAML
-            if not entry.get("agent_profiles"):
+            # Ensure agent_profiles is a simple {role: profile_name} map.
+            # The manifest may store full config objects; the config YAML
+            # always has simple string profile names.
+            ap = entry.get("agent_profiles")
+            if not ap or not all(isinstance(v, str) for v in ap.values()):
                 cfg_profiles = _read_agent_profiles_from_config(run_dir)
                 if cfg_profiles:
                     entry["agent_profiles"] = cfg_profiles
@@ -642,10 +661,12 @@ def get_run_detail(
     }
 
     manifest = _safe_json(run_dir / "manifest.json")
-    if manifest and not manifest.get("agent_profiles"):
-        cfg_profiles = _read_agent_profiles_from_config(run_dir)
-        if cfg_profiles:
-            manifest["agent_profiles"] = cfg_profiles
+    if manifest:
+        ap = manifest.get("agent_profiles")
+        if not ap or not all(isinstance(v, str) for v in ap.values()):
+            cfg_profiles = _read_agent_profiles_from_config(run_dir)
+            if cfg_profiles:
+                manifest["agent_profiles"] = cfg_profiles
     detail["manifest"] = manifest
     detail["pid_config"] = _safe_json(run_dir / "pid_config.json")
     detail["final_portfolio"] = _safe_json(run_dir / "final" / "final_portfolio.json")

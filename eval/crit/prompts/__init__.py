@@ -55,6 +55,7 @@ def render_crit_prompts(
         proposal=_strip_raw(bundle["proposal"]),
         critiques_received=bundle["critiques_received"],
         revised_argument=_strip_raw(bundle["revised_argument"]),
+        self_critique=bundle.get("self_critique"),
     )
     return system_prompt, user_prompt
 

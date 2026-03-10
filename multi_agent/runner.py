@@ -221,20 +221,27 @@ def _extract_reasoning(
     raw LLM text. If fields change here, CRIT prompts and evaluation schemas
     must be updated together.
     """
+    thesis = (action_dict.get("thesis")
+               or action_dict.get("portfolio_rationale")
+               or action_dict.get("justification"))
+    if not thesis:
+        raise RuntimeError(
+            f"action_dict has no thesis/portfolio_rationale/justification. "
+            f"Keys: {list(action_dict.keys())}"
+        )
+
     result = {
-        "claims": _normalize_claims(action_dict.get("claims", []), normalize_evidence_id),
+        "claims": _normalize_claims(action_dict["claims"], normalize_evidence_id),
         "position_rationale": _normalize_position_rationale(
-            action_dict.get("position_rationale", [])
+            action_dict["position_rationale"]
         ),
-        "thesis": (action_dict.get("thesis")
-                   or action_dict.get("portfolio_rationale")
-                   or action_dict.get("justification")
-                   or ""),
-        "confidence": action_dict.get("confidence", 0.5),
-        "risks_or_falsifiers": action_dict.get("risks_or_falsifiers", []),
+        "thesis": thesis,
+        "confidence": action_dict["confidence"],
+        "risks_or_falsifiers": action_dict["risks_or_falsifiers"],
     }
     if revision_notes:
         result["revision_notes"] = revision_notes
+        result["critique_responses"] = action_dict["critique_responses"]
     return result
 
 
@@ -320,9 +327,9 @@ def build_reasoning_bundle(
     if proposal is None:
         return None
 
-    # Find this agent's revision (fall back to proposal if no revision)
+    # Find this agent's LATEST revision (fall back to proposal if none)
     revision = None
-    for r in state.get("revisions") or []:
+    for r in reversed(state.get("revisions") or []):
         if r["role"] == role:
             revision = r
             break
@@ -330,12 +337,17 @@ def build_reasoning_bundle(
         revision = proposal
 
     # Filter critiques: only those targeting this agent.
+    # Also extract this agent's own self_critique.
     # LLM outputs vary in casing ("MACRO" vs "macro") and may include
     # suffixes ("MACRO agent"), so we normalize before comparing.
     critiques_received = []
+    self_critique = None
     role_lower = role.lower()
     for critic in state.get("critiques") or []:
         from_role = critic["role"]
+        # Capture this agent's self_critique
+        if from_role == role:
+            self_critique = critic["self_critique"]
         for crit in critic["critiques"]:
             target = crit.get("target_role", "").lower().split()[0] if crit.get("target_role") else ""
             if target == role_lower:
@@ -357,8 +369,13 @@ def build_reasoning_bundle(
                         structured_ev.append({"evidence_id": normalize_evidence_id(ev)})
                 critiques_received.append({
                     "from_role": from_role,
+                    "target_claim": crit["target_claim"],
                     "critique_text": crit["objection"],
                     "evidence_citations": structured_ev,
+                    "portfolio_implication": crit["portfolio_implication"],
+                    "suggested_adjustment": crit["suggested_adjustment"],
+                    "falsifier": crit["falsifier"],
+                    "objection_confidence": crit["objection_confidence"],
                 })
 
     # Extract action_dict content for proposal and revision — these MUST exist.
@@ -417,13 +434,16 @@ def build_reasoning_bundle(
     for crit in critiques_received:
         crit["critique_text"] = expand_evidence_ids_inline(crit["critique_text"], memo_evidence_lookup)
 
-    return {
+    bundle = {
         "round": round_num,
         "agent_role": role,
         "proposal": proposal_bundle,
         "critiques_received": critiques_received,
         "revised_argument": revised_bundle,
     }
+    if self_critique is not None:
+        bundle["self_critique"] = self_critique
+    return bundle
 
 
 class MultiAgentRunner:
@@ -836,19 +856,19 @@ class MultiAgentRunner:
                 obs_universe,
             )
 
-        # --- Propose phase (no tone injection) ---
+        # --- Propose phase (round 1 only — round 2+ critique/revise
+        #     operate on the prior round's revisions via _resolve_source) ---
         n_agents = len(self.config.roles)
         role_names = ", ".join(r.upper() for r in self.config.roles)
-        if use_display:
-            render_phase_label("Propose")
-            from .terminal_display import _reset_llm_tracker
-            _reset_llm_tracker(n_agents)
-            print(f"  Calling {n_agents} agents: {role_names}", flush=True)
-        state["config"]["_current_beta"] = None
-        state = self._propose_graph.invoke(state)
-        # In Round 2+, propose is a no-op; show the latest revisions
-        # (which critique/revise will actually operate on) instead of
-        # stale Round 1 proposals.
+        if round_num == 1:
+            if use_display:
+                render_phase_label("Propose")
+                from .terminal_display import _reset_llm_tracker
+                _reset_llm_tracker(n_agents)
+                print(f"  Calling {n_agents} agents: {role_names}", flush=True)
+            state["config"]["_current_beta"] = None
+            state = self._propose_graph.invoke(state)
+
         display_source = state.get("revisions") or state.get("proposals", [])
         display_label = "Revised Allocations" if state.get("revisions") else "Allocations"
         if use_display:
@@ -856,7 +876,7 @@ class MultiAgentRunner:
         else:
             _print_comparison_table(display_source, display_label)
 
-        if self._debate_logger:
+        if round_num == 1 and self._debate_logger:
             self._debate_logger.write_proposals(state.get("proposals", []))
 
         # --- Propose-phase JS divergence + evidence overlap ---
@@ -1345,12 +1365,25 @@ class MultiAgentRunner:
                 )
             )
 
+        _VALID_REASONING_TYPES = {"causal", "observational", "risk_assessment", "pattern"}
+
         claims = []
         for c in d.get("claims", []):
+            raw_rtype = c.get("reasoning_type", "observational")
+            # LLMs sometimes return pipe-separated combos like
+            # "causal | risk_assessment" — extract the first valid value.
+            if raw_rtype not in _VALID_REASONING_TYPES:
+                for part in raw_rtype.replace("|", " ").split():
+                    part = part.strip().lower()
+                    if part in _VALID_REASONING_TYPES:
+                        raw_rtype = part
+                        break
+                else:
+                    raw_rtype = "observational"
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-                    reasoning_type=c.get("reasoning_type", "observational"),
+                    reasoning_type=raw_rtype,
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

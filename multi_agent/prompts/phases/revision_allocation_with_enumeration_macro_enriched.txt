@@ -133,6 +133,7 @@ Macro regime transitions occur slowly and often contradict:
 • Maintain **3–5 claims maximum**
 
 • Claims must retain **stable IDs** where possible (C1, C2, C3…)
+• If you drop a claim, you MUST document which claim was dropped and why in `revision_notes`
 
 If you change a claim:
 
@@ -179,6 +180,8 @@ If weights changed:
 
 Respond with **valid JSON only**.
 
+You MUST include one entry in `critique_responses` for every critique you received. Omitting a critique is not allowed.
+
 {
   "allocation": {
     "TICKER": 0.XX
@@ -215,5 +218,14 @@ Respond with **valid JSON only**.
     "Portfolio-level macro condition that would invalidate the strategy."
   ],
 
-  "revision_notes": "Explain what changed in response to critiques and which critiques were rejected."
+  "critique_responses": [
+    {
+      "from_agent": "agent role that sent the critique",
+      "target_claim": "C1",
+      "disposition": "accept | rebut",
+      "justification": "Why you accept or rebut this critique. Cite evidence IDs."
+    }
+  ],
+
+  "revision_notes": "Summary of changes. Reference claim IDs."
 }

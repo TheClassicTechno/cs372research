@@ -176,10 +176,6 @@ def ensure_snapshots(
 
     for year, quarter in quarters:
         out_path = _JSON_DIR / f"snapshot_{year}_{quarter}.json"
-        if out_path.exists():
-            print(f"  Snapshot {year}_{quarter} already exists, skipping.")
-            continue
-
         print(f"  Building snapshot {year}_{quarter} for {len(tickers)} tickers...")
         snapshot = build_quarter_snapshot(
             year, quarter, tickers,
@@ -203,10 +199,6 @@ def ensure_snapshots(
 
     for year, quarter in quarters:
         out_path = _MEMO_DIR / f"memo_{year}_{quarter}.txt"
-        if out_path.exists():
-            print(f"  Memo {year}_{quarter} already exists, skipping.")
-            continue
-
         snapshot_path = _JSON_DIR / f"snapshot_{year}_{quarter}.json"
         with open(snapshot_path, "r") as f:
             doc = json.load(f)

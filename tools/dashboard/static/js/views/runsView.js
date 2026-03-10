@@ -71,7 +71,9 @@ export function renderRunsView(token) {
   function getRunSearchText(r) {
     var parts = [r.run_id || '', r.status || '', r.model_name || ''];
     if (r.agent_profiles && typeof r.agent_profiles === 'object') {
-      parts.push(Object.values(r.agent_profiles).join(' '));
+      parts.push(Object.entries(r.agent_profiles).map(function (e) {
+        return typeof e[1] === 'string' ? e[1] : e[0];
+      }).join(' '));
     } else if (r.roles) {
       parts.push(r.roles.join(' '));
     }
@@ -121,7 +123,9 @@ export function renderRunsView(token) {
       }
       var agentsList = '\u2014';
       if (r.agent_profiles && typeof r.agent_profiles === 'object') {
-        agentsList = Object.values(r.agent_profiles).map(function (a) { return esc(a); }).join('<br>');
+        agentsList = Object.entries(r.agent_profiles).map(function (e) {
+          return esc(typeof e[1] === 'string' ? e[1] : e[0]);
+        }).join('<br>');
       } else if (r.roles && r.roles.length > 0) {
         agentsList = r.roles.map(function (a) { return esc(a); }).join('<br>');
       }
