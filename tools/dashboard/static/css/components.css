@@ -42,17 +42,15 @@ pre.content {
 
 /* Tables */
 table.data-table {
-  width: 100%;
   border-collapse: collapse;
   font-size: 0.8em;
   margin-bottom: 16px;
 }
 table.data-table th, table.data-table td {
   border: 1px solid #ccc;
-  padding: 5px 10px;
+  padding: 5px 8px;
   text-align: left;
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 table.data-table th {
@@ -134,6 +132,29 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 .file-tree .dir-toggle:hover { text-decoration: underline; }
 .file-tree .file-link { cursor: pointer; color: #006; }
 .file-tree .file-link:hover { text-decoration: underline; }
+
+/* Ablation metrics: side-by-side layout */
+.metrics-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.metrics-col {
+  flex: 1;
+  min-width: 200px;
+}
+/* Row 2 (PID + Collapse): push Collapse to the right */
+.metrics-row-spread {
+  justify-content: space-between;
+}
+.metrics-row-spread .metrics-col {
+  flex: 0 1 auto;
+}
+/* Larger section titles inside experiment cards */
+.ablation-experiment .card-body .section-label {
+  font-size: 1.2em;
+}
 
 /* PID Stats: score shading */
 .score-high { color: #a07b2d; font-weight: 600; }

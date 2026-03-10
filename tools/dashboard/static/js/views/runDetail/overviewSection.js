@@ -30,24 +30,27 @@ export function buildOverviewPanel(detail, experiment, runId) {
   var html = '<div class="run-overview">';
   html += '<div class="ov-title">RUN OVERVIEW</div>';
 
-  // Table 1
+  // Table 1 — run identity
   html += '<table class="ov-htable">';
-  html += '<tr><th>Run ID</th><th>Experiment</th><th>Model</th><th>CRIT Model</th><th>Config</th><th>Status</th></tr>';
+  html += '<tr><th>Run ID</th><th>Experiment</th><th>Model</th><th>CRIT Model</th><th>Status</th></tr>';
   html += '<tr>';
   html += '<td>' + esc(runId) + '</td>';
   html += '<td>' + esc(experiment) + '</td>';
   html += '<td>' + esc(m.model_name || '\u2014') + '</td>';
   html += '<td>' + esc(m.crit_model_name || '\u2014') + '</td>';
-  html += '<td>' + esc(configName) + '</td>';
   html += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
   html += '</tr></table>';
 
-  // Table 2
+  // Table 2 — config and agents (own rows to avoid wrapping)
+  html += '<table class="ov-htable" style="table-layout:auto;">';
+  html += '<tr><th style="width:1%;white-space:nowrap">Config</th><td>' + esc(configName) + '</td></tr>';
+  html += '<tr><th style="width:1%;white-space:nowrap">Agents</th><td>' + esc(agentsStr) + '</td></tr>';
+  html += '</table>';
+
+  // Table 3 — metrics
   html += '<table class="ov-htable">';
-  html += '<colgroup><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%"><col style="width:8.33%"><col style="width:8.33%"></colgroup>';
-  html += '<tr><th>Agents</th><th>Tickers</th><th>Rounds</th><th>Termination</th><th>Final \u03B2</th><th>Final <span style="text-decoration:overline">\u03c1</span></th><th>JS Drop</th></tr>';
+  html += '<tr><th>Tickers</th><th>Rounds</th><th>Termination</th><th>Final \u03B2</th><th>Final <span style="text-decoration:overline">\u03c1</span></th><th>JS Drop</th></tr>';
   html += '<tr>';
-  html += '<td>' + esc(agentsStr) + '</td>';
   html += '<td>' + esc(tickersStr) + '</td>';
   html += '<td>' + esc(roundsStr) + '</td>';
   html += '<td>' + esc(m.termination_reason || '\u2014') + '</td>';

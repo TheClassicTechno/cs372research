@@ -141,9 +141,8 @@ class TestHTMLUI:
     def test_has_nav_bar(self, client):
         html = client.get("/").text
         assert 'id="nav"' in html
-        assert 'href="#live"' in html
         assert 'href="#runs"' in html
-        assert "Live Debate" in html
+        assert 'href="#ablation"' in html
 
     def test_has_title(self, client):
         html = client.get("/").text
@@ -157,8 +156,8 @@ class TestHTMLUI:
         """Routing logic lives in external JS module."""
         html = client.get("/").text
         # Hash targets are in the HTML nav links
-        assert "#live" in html
         assert "#runs" in html
+        assert "#ablation" in html
         # hashchange listener is in app.js
         js = client.get("/static/js/app.js").text
         assert "hashchange" in js
@@ -174,14 +173,11 @@ class TestHTMLUI:
         js = client.get("/static/js/views/runDetail/fileExplorerSection.js").text
         assert "file-tree" in js
 
-    def test_has_live_debate_view(self, client):
-        """Live debate view exists in external JS module."""
-        js = client.get("/static/js/views/liveView.js").text
-        assert "renderLiveDebateView" in js
-        assert "live-entries" in js
-        # The API endpoint is in the API module
-        api_js = client.get("/static/js/api/live.js").text
-        assert "/api/live_debate" in api_js
+    def test_has_ablation_view(self, client):
+        """Ablation view exists in external JS module."""
+        js = client.get("/static/js/components/ablation.js").text
+        assert "buildAblationOverview" in js
+        assert "buildExperimentCard" in js
 
 
 # ---------------------------------------------------------------------------

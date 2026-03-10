@@ -16,6 +16,11 @@ export function fetchPerformance(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance');
 }
 
+/** Fetch per-agent portfolio performance metrics. */
+export function fetchAgentPerformance(experiment, runId) {
+  return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance/by-agent');
+}
+
 export function fetchPID(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/pid');
 }
