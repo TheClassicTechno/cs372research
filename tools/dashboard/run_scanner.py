@@ -1012,8 +1012,8 @@ def compute_debate_impact(
     )
 
     # R2: R1 revisions (input) vs R2 revisions (output)
-    # The logger re-writes R1 proposals into round_002/proposals/ so those
-    # are stale — use R1 revisions as the actual "before" for round 2.
+    # Propose is skipped in round 2+ so round_002/proposals/ is empty.
+    # Use R1 revisions as the actual "before" for round 2.
     if len(trajectory) >= 2:
         r2 = trajectory[1]
         r2_revisions = r2.get("revisions") or {}

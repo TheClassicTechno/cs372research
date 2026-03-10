@@ -434,7 +434,8 @@ class DebateLogger:
         self._current_beta = beta
         self._round_dir = self._run_dir / "rounds" / f"round_{round_num:03d}"
         self._round_dir.mkdir(parents=True, exist_ok=True)
-        (self._round_dir / "proposals").mkdir(exist_ok=True)
+        if round_num == 1:
+            (self._round_dir / "proposals").mkdir(exist_ok=True)
         (self._round_dir / "critiques").mkdir(exist_ok=True)
         (self._round_dir / "revisions").mkdir(exist_ok=True)
         (self._round_dir / "CRIT").mkdir(exist_ok=True)
@@ -635,14 +636,17 @@ class DebateLogger:
         if self._mode == "off" or self._round_dir is None:
             return
 
+        # Only include proposals for round 1 — round 2+ skips the propose
+        # phase and the stale R1 proposals lingering in state are misleading.
         proposals_summary = {}
-        for p in state.get("proposals", []):
-            role = p.get("role", "unknown")
-            action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
-            proposals_summary[role] = {
-                "allocation": action.get("allocation", {}),
-                "confidence": action.get("confidence", 0.5),
-            }
+        if round_num == 1:
+            for p in state.get("proposals", []):
+                role = p.get("role", "unknown")
+                action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
+                proposals_summary[role] = {
+                    "allocation": action.get("allocation", {}),
+                    "confidence": action.get("confidence", 0.5),
+                }
 
         revisions_summary = {}
         for r in state.get("revisions", []):
