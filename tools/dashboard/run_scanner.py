@@ -877,6 +877,11 @@ def get_portfolio_trajectory(
         proposals = _read_phase_portfolios(rd / "proposals")
         revisions = _read_phase_portfolios(rd / "revisions")
 
+        # Round 2+: propose phase is skipped so the proposals dir is empty.
+        # The effective input was the prior round's revisions.
+        if not proposals and result:
+            proposals = result[-1].get("revisions", {})
+
         # Compute consensus (mean across revised agents)
         consensus: dict[str, float] = {}
         if revisions:
@@ -1012,8 +1017,8 @@ def compute_debate_impact(
     )
 
     # R2: R1 revisions (input) vs R2 revisions (output)
-    # The logger re-writes R1 proposals into round_002/proposals/ so those
-    # are stale — use R1 revisions as the actual "before" for round 2.
+    # Propose is skipped in round 2+ so round_002/proposals/ is empty.
+    # Use R1 revisions as the actual "before" for round 2.
     if len(trajectory) >= 2:
         r2 = trajectory[1]
         r2_revisions = r2.get("revisions") or {}

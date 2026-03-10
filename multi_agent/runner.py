@@ -858,6 +858,9 @@ class MultiAgentRunner:
 
         # --- Propose phase (round 1 only — round 2+ critique/revise
         #     operate on the prior round's revisions via _resolve_source) ---
+        # Capture prior revisions before they're overwritten — these are the
+        # effective "proposals" (input) for round 2+.
+        prior_revisions = list(state.get("revisions", [])) if round_num > 1 else None
         n_agents = len(self.config.roles)
         role_names = ", ".join(r.upper() for r in self.config.roles)
         if round_num == 1:
@@ -948,12 +951,16 @@ class MultiAgentRunner:
                 from .terminal_display import _reset_llm_tracker
                 _reset_llm_tracker(n_agents)
                 print(f"  Scoring {n_agents} agents with CRIT ({self.config.crit_model_name})", flush=True)
-            self._crit_and_pid_step(state, round_num, beta_in=beta)
+            self._crit_and_pid_step(
+                state, round_num, beta_in=beta,
+                prior_revisions=prior_revisions,
+            )
 
         return state
 
     def _crit_and_pid_step(
         self, state: dict, round_num: int, *, beta_in: float,
+        prior_revisions: list[dict] | None = None,
     ) -> None:
         """Run per-agent CRIT scoring + PID controller step once per round.
 
@@ -1197,6 +1204,7 @@ class MultiAgentRunner:
                     state, round_num, _round_floats(metrics_summary),
                     crit_data=_round_floats(crit_data),
                     pid_data=_round_floats(pid_data),
+                    prior_revisions=prior_revisions,
                 )
 
             # Rich console display: CRIT + PID metrics
