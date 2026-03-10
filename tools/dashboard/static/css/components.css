@@ -151,9 +151,35 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 .metrics-row-spread .metrics-col {
   flex: 0 1 auto;
 }
-/* Larger section titles inside experiment cards */
+/* Match section titles inside experiment cards to rest of dashboard */
 .ablation-experiment .card-body .section-label {
-  font-size: 1.2em;
+  font-size: 1em;
+}
+/* Experiment metadata bar inside ablation cards */
+.experiment-meta {
+  background: #faf8f4;
+  border: 1px solid #d6c4a1;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  font-size: 0.85em;
+  color: #5c4632;
+}
+.experiment-meta table.ov-htable {
+  margin-bottom: 0;
+}
+.experiment-meta table.ov-htable th {
+  border-bottom: none;
+}
+/* Per-agent-config card inside debate impact section */
+.config-card {
+  background: #faf8f4;
+  border: 1px solid #d6c4a1;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.config-card .section-label:first-child {
+  margin-top: 0;
 }
 
 /* PID Stats: score shading */

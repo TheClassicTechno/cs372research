@@ -205,17 +205,150 @@ function col(html) {
 }
 
 /**
+ * Build one config subsection for the debate impact area.
+ * Shows per-agent deltas and mean portfolio critique tables in a flex row.
+ *
+ * @param {string} configKey - sorted role string (e.g. "risk, technical, value")
+ * @param {object} cfg - {run_count, agent_deltas, mean_portfolios}
+ * @returns {string} HTML string for the config subsection
+ */
+function buildDebateImpactConfig(configKey, cfg) {
+  var h = '<div class="config-card">';
+  h += '<div class="section-label"><strong>' + esc(configKey) + '</strong>';
+  h += ' <span style="font-weight:400;color:#888;">(' + esc(String(cfg.run_count)) + ' runs)</span>';
+  h += '</div>';
+  var row = '';
+  if (cfg.agent_deltas !== undefined && cfg.agent_deltas !== null) {
+    row += col(buildAgentDeltasTable(cfg.agent_deltas));
+  }
+  if (cfg.mean_portfolios !== undefined && cfg.mean_portfolios !== null) {
+    var rounds = Object.keys(cfg.mean_portfolios).sort();
+    for (var r = 0; r < rounds.length; r++) {
+      var rd = cfg.mean_portfolios[rounds[r]];
+      if (rd !== null && typeof rd === 'object' && rd.proposals_return !== undefined) {
+        row += col(buildMeanPortfolioSummary(rd, rounds[r].toUpperCase()));
+      }
+    }
+  }
+  if (row !== '') {
+    h += '<div class="metrics-row">' + row + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/**
+ * Build the debate impact section for an experiment card.
+ * Iterates per-agent-config groups and renders each as a subsection.
+ *
+ * @param {object} impact - {configs: {key: {run_count, agent_deltas, mean_portfolios}}}
+ * @returns {string} HTML string for the debate impact section
+ */
+function buildDebateImpactSection(impact) {
+  if (impact === undefined || impact === null) return '';
+  var configs = impact.configs;
+  if (configs === undefined || configs === null) return '';
+  var keys = Object.keys(configs);
+  if (keys.length === 0) return '';
+  keys.sort();
+
+  var h = '';
+  for (var i = 0; i < keys.length; i++) {
+    h += buildDebateImpactConfig(keys[i], configs[keys[i]]);
+  }
+  return '<div data-testid="debate-impact-section">' + h + '</div>';
+}
+
+/**
+ * Build the per-agent debate delta table for ablation.
+ * Shows averaged R1 proposal vs final revision returns per agent.
+ *
+ * @param {object} agentDeltas - {role: {mean_initial_return, mean_final_return, mean_delta_pct}}
+ * @returns {string} HTML table string
+ */
+function buildAgentDeltasTable(agentDeltas) {
+  var roles = Object.keys(agentDeltas);
+  if (roles.length === 0) return '';
+  var h = '<div class="section-label">Debate Impact</div>';
+  h += '<table class="data-table">';
+  h += '<tr><th>Agent</th><th>R1 Proposal</th><th>Final Rev.</th><th>\u0394 %</th></tr>';
+  var sumInit = 0;
+  var sumFinal = 0;
+  var sumDelta = 0;
+  for (var i = 0; i < roles.length; i++) {
+    var d = agentDeltas[roles[i]];
+    var cls = d.mean_delta_pct >= 0 ? 'perf-profit' : 'perf-loss';
+    var sign = d.mean_delta_pct >= 0 ? '+' : '';
+    h += '<tr><td>' + esc(roles[i]) + '</td>';
+    h += '<td>' + fmt(d.mean_initial_return, 2) + '%</td>';
+    h += '<td>' + fmt(d.mean_final_return, 2) + '%</td>';
+    h += '<td class="' + cls + '">' + sign + fmt(d.mean_delta_pct, 2) + '%</td></tr>';
+    sumInit += d.mean_initial_return;
+    sumFinal += d.mean_final_return;
+    sumDelta += d.mean_delta_pct;
+  }
+  h += buildDeltaMeanRow(sumInit, sumFinal, sumDelta, roles.length);
+  h += '</table>';
+  return h;
+}
+
+/**
+ * Build the mean summary row for the agent deltas table.
+ * Returns an HTML <tr> string with a top border separator.
+ */
+function buildDeltaMeanRow(sumInit, sumFinal, sumDelta, n) {
+  var avg = sumDelta / n;
+  var cls = avg >= 0 ? 'perf-profit' : 'perf-loss';
+  var sign = avg >= 0 ? '+' : '';
+  var sep = 'border-top:2px solid #999;font-weight:600;';
+  var h = '<tr><td style="' + sep + '">Mean</td>';
+  h += '<td style="' + sep + '">' + fmt(sumInit / n, 2) + '%</td>';
+  h += '<td style="' + sep + '">' + fmt(sumFinal / n, 2) + '%</td>';
+  h += '<td class="' + cls + '" style="' + sep + '">' + sign + fmt(avg, 2) + '%</td></tr>';
+  return h;
+}
+
+/**
+ * Build the mean portfolio critique impact summary for one round.
+ * Shows proposals vs revisions returns for a given round.
+ *
+ * @param {object} mp - {proposals_return, revisions_return, critique_impact}
+ * @param {string} roundLabel - Display label (e.g. "R1", "R2")
+ * @returns {string} HTML table string
+ */
+function buildMeanPortfolioSummary(mp, roundLabel) {
+  var cls = mp.critique_impact >= 0 ? 'perf-profit' : 'perf-loss';
+  var sign = mp.critique_impact >= 0 ? '+' : '';
+  var h = '<div class="section-label">' + esc(roundLabel) + ' Mean Portfolio</div>';
+  h += '<table class="data-table">';
+  h += '<tr><th>Phase</th><th>Avg Return</th></tr>';
+  h += '<tr><td>Proposals</td><td>' + fmt(mp.proposals_return, 2) + '%</td></tr>';
+  h += '<tr><td>Revisions</td><td>' + fmt(mp.revisions_return, 2) + '%</td></tr>';
+  h += '<tr><td style="font-weight:600;">Critique \u0394</td>';
+  h += '<td class="' + cls + '" style="font-weight:600;">' + sign + fmt(mp.critique_impact, 2) + '%</td></tr>';
+  h += '</table>';
+  return h;
+}
+
+/**
  * Build the inner body HTML for an experiment card.
- * Accepts the experiment data object.
+ * Accepts the experiment data object and optional debate impact data.
  * Returns an HTML string with all metric sections arranged in rows.
  *
+ * Row 0: Debate Impact (agent deltas + mean portfolio)
  * Row 1: Rho, CRIT Pillars, JS Divergence, Evidence Overlap (side-by-side)
  * Row 2: PID, Collapse Metrics (side-by-side)
  * Row 3: Per Scenario, Per Agent Config (side-by-side)
  */
-function buildExperimentBody(data) {
-  var body = '<div style="margin-bottom:4px"><strong>Runs:</strong> ' + esc(String(data.run_count));
-  body += ' &nbsp; <strong>Model:</strong> ' + esc(data.model) + '</div>';
+function buildExperimentBody(data, impact) {
+  var body = '<div class="experiment-meta">';
+  body += '<table class="ov-htable"><tr>';
+  body += '<th>Runs</th><td>' + esc(String(data.run_count)) + '</td>';
+  body += '<th>Model</th><td>' + esc(data.model) + '</td>';
+  body += '</tr></table></div>';
+
+  // Row 0: Debate Impact (per agent config)
+  body += buildDebateImpactSection(impact);
 
   // Row 1: Rho, Pillars, JS Divergence, Evidence Overlap
   var row1 = '';
@@ -232,14 +365,23 @@ function buildExperimentBody(data) {
   if (row2 !== '') { body += '<div class="metrics-row metrics-row-spread" data-testid="metrics-row-pid">' + row2 + '</div>'; }
 
   // Row 3: Per Scenario, Per Agent Config (side-by-side)
-  var row3 = '';
-  var scenarioHtml = buildBreakdownTable('Per Scenario', data.per_scenario);
-  var agentHtml = buildBreakdownTable('Per Agent Config', data.per_agent_config);
-  if (scenarioHtml !== '') { row3 += col(scenarioHtml); }
-  if (agentHtml !== '') { row3 += col(agentHtml); }
-  if (row3 !== '') { body += '<div class="metrics-row" data-testid="metrics-row-breakdowns">' + row3 + '</div>'; }
+  body += buildBreakdownRow(data.per_scenario, data.per_agent_config);
 
   return body;
+}
+
+/**
+ * Build the breakdown metrics row (Per Scenario + Per Agent Config).
+ * Returns an HTML string or empty string if no data.
+ */
+function buildBreakdownRow(perScenario, perAgentConfig) {
+  var row = '';
+  var scenarioHtml = buildBreakdownTable('Per Scenario', perScenario);
+  var agentHtml = buildBreakdownTable('Per Agent Config', perAgentConfig);
+  if (scenarioHtml !== '') { row += col(scenarioHtml); }
+  if (agentHtml !== '') { row += col(agentHtml); }
+  if (row !== '') { return '<div class="metrics-row" data-testid="metrics-row-breakdowns">' + row + '</div>'; }
+  return '';
 }
 
 /**
@@ -247,8 +389,8 @@ function buildExperimentBody(data) {
  * Accepts experiment name and its data object.
  * Returns an HTML string.
  */
-export function buildExperimentCard(name, data) {
-  var body = buildExperimentBody(data);
+export function buildExperimentCard(name, data, impact) {
+  var body = buildExperimentBody(data, impact);
   var h = '<div class="card ablation-experiment" data-testid="ablation-experiment">';
   h += '<div class="card-header"><span>' + esc(name) + '</span><span class="arrow">&#9654;</span></div>';
   h += '<div class="card-body">' + body + '</div></div>';
