@@ -18,9 +18,12 @@ memo_format: "text"
 num_episodes: 1
 
 agents:
-  single_agent: "single_agent_slim"
+  # macro: "macro_standard"
+  value: "value_standard"
+  technical: "technical_standard"
+  risk: "risk_standard"
 
-judge_profile: "judge_slim"
+judge_profile: "judge_standard"
 
 debate_setup:
   agent_system: "multi_agent_debate"
@@ -36,7 +39,7 @@ debate_setup:
   prompt_file_overrides:
     # causal_contract: "system_contract/system_causal_contract_slim.txt"
     # scaffolding_causal: "scaffolding/causal_claim_format_slim.txt"
-    output_allocation: "output_format/allocation_output_slim.txt"
+    output_allocation: "output_format/allocation_output_instructions_cot_no_falsifiers.txt"
 
   pid_enabled: false
   judge_type: "average"

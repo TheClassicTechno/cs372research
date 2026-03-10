@@ -139,6 +139,7 @@ def aggregate_metrics(results_map):
     excluded_fields = {"episode_id", "initial_cash", "final_positions", "final_prices", "position_values"}
     all_metrics = []
     initial_cash = None
+    counts = set()
     
     for scenario, paths in results_map.items():
         res_dir = paths["results_dir"]
@@ -195,7 +196,10 @@ def aggregate_metrics(results_map):
             "sem": sem,
             "count": len(vals)
         }
-            
+        counts.add(len(vals))
+    print("COUNTS: ", counts)
+    if len(counts) > 1:
+        print("ERROR: Metrics have different counts, likely due to errors.")
     return stats, initial_cash
 
 def main():
@@ -296,8 +300,11 @@ def main():
         for idx, (scenario, s_hash) in enumerate(scenarios_to_run):
             process_scenario(idx+1, len(scenarios_to_run), scenario, s_hash)
 
+    # Filter processed to only include scenarios from the current list
+    processed_for_list = {s: processed[s] for s in scenarios if s in processed}
+
     # Aggregation
-    stats, initial_cash = aggregate_metrics(processed)
+    stats, initial_cash = aggregate_metrics(processed_for_list)
     if not stats:
         print("No summary data found to aggregate.")
         return
@@ -310,7 +317,7 @@ def main():
         "initial_cash": initial_cash,
         "scale": scale,
         "as_of": datetime.now(timezone.utc).isoformat(),
-        "num_scenarios": len(processed),
+        "num_scenarios": len(processed_for_list),
         "metrics": stats
     }
     
@@ -319,7 +326,7 @@ def main():
         json.dump(results_payload, f, indent=2)
 
     print("\n" + "=" * 85)
-    print(f"AGGREGATE PERFORMANCE (N={len(processed)} scenarios)")
+    print(f"AGGREGATE PERFORMANCE (N={len(processed_for_list)} scenarios)")
     print("-" * 85)
     print(f"{'Metric':<35} | {'Mean':>12} | {'SEM':>12}")
     print("-" * 85)

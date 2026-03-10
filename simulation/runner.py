@@ -186,13 +186,12 @@ class AsyncSimulationRunner:
                     decision = result.decision
                     agent_output = result.raw_output
                 except Exception as exc:
-                    logger.warning(
-                        "Agent error on case %s: %s — defaulting to hold.",
+                    logger.error(
+                        "Agent error on case %s: %s — aborting simulation.",
                         case_id,
                         exc,
                     )
-                    decision = Decision(orders=[])
-                    agent_output = f"ERROR: {exc}"
+                    raise RuntimeError(f"Agent execution failed: {exc}") from exc
 
                 elapsed = time.monotonic() - t0
             logger.info(
