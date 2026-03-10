@@ -557,6 +557,7 @@ def revise_node(state: DebateState) -> dict:
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
             allocation_constraints=config.get("allocation_constraints"),
+            intervention_nudge=config.get("_intervention_nudge") or "",
         )
 
         if use_profiles:
@@ -976,6 +977,7 @@ def make_revise_node(role: str):
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
             allocation_constraints=config.get("allocation_constraints"),
+            intervention_nudge=config.get("_intervention_nudge") or "",
         )
 
         if use_profiles:

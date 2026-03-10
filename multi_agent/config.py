@@ -175,6 +175,9 @@ class DebateConfig:
     # --- Allocation constraints (optional, forwarded from SimulationConfig) ---
     allocation_constraints: dict | None = None  # {max_weight, min_holdings, fully_invested}
 
+    # --- Intervention engine (intra-round retry on acute failures) ---
+    intervention_config: dict | None = None  # {enabled, rules: {rule_name: {params...}}}
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -257,4 +260,5 @@ class DebateConfig:
             "crit_user_template": self.crit_user_template,
             "sector_config": self.sector_config,
             "allocation_constraints": self.allocation_constraints,
+            "intervention_config": self.intervention_config,
         }

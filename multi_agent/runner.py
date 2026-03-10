@@ -535,6 +535,14 @@ class MultiAgentRunner:
             experiment = self.config.experiment_name or "default"
             self._debate_logger = DebateLogger(self.config, experiment)
 
+        # --- Intervention engine (intra-round retry on acute failures) ---
+        self._intervention_engine = None
+        if self.config.intervention_config:
+            from eval.interventions import build_intervention_engine
+            self._intervention_engine = build_intervention_engine(
+                self.config.intervention_config
+            )
+
         if self.config.pid_config:
             from eval.PID.controller import PIDController
             from eval.PID.stability import validate_gains
@@ -565,6 +573,7 @@ class MultiAgentRunner:
         self._memo_evidence_lookup = {}
         self._crit_current_captures = {}
         self._crit_round1_captures = None
+        self._intervention_history: list[dict] = []
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -811,6 +820,10 @@ class MultiAgentRunner:
             if not self.config.console_display:
                 print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
 
+        # Stamp intervention history onto state for downstream / test access
+        if self._intervention_history:
+            state["intervention_history"] = list(self._intervention_history)
+
         return state
 
     def _run_round_with_pid(self, state: dict, round_num: int) -> dict:
@@ -865,7 +878,7 @@ class MultiAgentRunner:
 
         # --- Propose-phase JS divergence + evidence overlap ---
         self._proposed_divergence = None
-        if self._debate_logger:
+        if self._debate_logger or self._intervention_engine:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
@@ -885,10 +898,11 @@ class MultiAgentRunner:
                 }
                 prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
 
-                self._debate_logger.write_divergence_metrics(
-                    prop_js, prop_ov, prop_confidences, prop_evidence,
-                    round_num, phase="propose",
-                )
+                if self._debate_logger:
+                    self._debate_logger.write_divergence_metrics(
+                        prop_js, prop_ov, prop_confidences, prop_evidence,
+                        round_num, phase="propose",
+                    )
                 self._proposed_divergence = {
                     "js": prop_js,
                     "ov": prop_ov,
@@ -924,6 +938,14 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_revisions(state.get("revisions", []))
 
+        # --- Post-revision intervention checkpoint ---
+        if self._intervention_engine:
+            state = self._intervention_checkpoint(
+                state, round_num, stage="post_revision",
+                beta=beta, use_display=use_display,
+                n_agents=n_agents, role_names=role_names,
+            )
+
         # --- CRIT + PID (once per round, after revise) ---
         if self._pid_controller and self._crit_scorer:
             if use_display:
@@ -935,6 +957,134 @@ class MultiAgentRunner:
             self._crit_and_pid_step(state, round_num, beta_in=beta)
 
         return state
+
+    def _intervention_checkpoint(
+        self,
+        state: dict,
+        round_num: int,
+        *,
+        stage: str,
+        beta: float,
+        use_display: bool,
+        n_agents: int,
+        role_names: str,
+    ) -> dict:
+        """Run the intervention retry loop for a given stage.
+
+        Evaluates all registered rules, and if any fire with a retry
+        action, re-runs the revise phase with a nudge injected into
+        the prompt.  Repeats until no rules fire or max_retries exhausted.
+
+        Intervention history is tracked on self._intervention_history
+        (not in the LangGraph state dict, which would be stripped by
+        graph.invoke()).  The history is written to state at the end
+        for downstream access.
+        """
+        from eval.interventions import InterventionContext
+
+        retry_count = 0
+        while True:
+            js_rev = self._get_js_divergence(state)
+            ctx = InterventionContext(
+                round_num=round_num,
+                stage=stage,
+                retry_count=retry_count,
+                state=state,
+                js_proposal=(
+                    self._proposed_divergence.get("js")
+                    if self._proposed_divergence else None
+                ),
+                js_revision=js_rev,
+                ov_revision=None,
+                rho_bar=None,
+                agent_crit_scores=None,
+                pid_result=None,
+                intervention_history=list(self._intervention_history),
+            )
+            results = self._intervention_engine.evaluate(ctx)
+            retry_actions = [r for r in results if r.action.startswith("retry")]
+            if not retry_actions:
+                break
+
+            # Pick highest-severity action (critical > warning)
+            action = max(
+                retry_actions,
+                key=lambda r: (r.severity == "critical", r.rule_name),
+            )
+
+            # Record in intervention history (runner-owned, survives invoke)
+            history_entry = {
+                "round": round_num,
+                "stage": stage,
+                "rule": action.rule_name,
+                "retry": retry_count + 1,
+                "action": action.action,
+                "metrics": action.metrics,
+                "severity": action.severity,
+            }
+            self._intervention_history.append(history_entry)
+
+            # Log the intervention
+            self._log_intervention(action, round_num, retry_count)
+
+            # Inject nudge into state config
+            state["config"]["_intervention_nudge"] = action.nudge_text
+
+            # Console display
+            if use_display:
+                render_phase_label(
+                    f"Revise (RETRY {retry_count + 1} — {action.rule_name})"
+                )
+                from .terminal_display import _reset_llm_tracker
+                _reset_llm_tracker(n_agents)
+                print(
+                    f"  Retrying {n_agents} agents: {role_names} "
+                    f"[{action.rule_name}: {action.severity}]",
+                    flush=True,
+                )
+
+            # Re-run revise
+            state["config"]["_current_beta"] = beta
+            state = self._revise_graph.invoke(state)
+            state["config"]["_intervention_nudge"] = None  # clear after retry
+
+            if use_display:
+                render_portfolio_table(state.get("revisions", []), "Revisions (retry)")
+            else:
+                _print_comparison_table(state.get("revisions", []), "Revisions (retry)")
+
+            # Log the retry revisions
+            if self._debate_logger:
+                self._debate_logger.write_revisions(
+                    state.get("revisions", []),
+                    retry=retry_count + 1,
+                )
+
+            retry_count += 1
+
+        # Write history to state for downstream access (post-hoc analysis)
+        if self._intervention_history:
+            state["intervention_history"] = list(self._intervention_history)
+
+        return state
+
+    def _log_intervention(
+        self, result, round_num: int, retry_count: int,
+    ) -> None:
+        """Log an intervention event to both the Python logger and DebateLogger."""
+        entry = {
+            "type": "intervention",
+            "round": round_num,
+            "stage": result.action.replace("retry_", "post_"),
+            "rule": result.rule_name,
+            "action": result.action,
+            "severity": result.severity,
+            "retry": retry_count + 1,
+            "metrics": result.metrics,
+        }
+        logger.info("INTERVENTION TRIGGERED: %s", json.dumps(entry, indent=2))
+        if self._debate_logger:
+            self._debate_logger.write_intervention(entry)
 
     def _crit_and_pid_step(
         self, state: dict, round_num: int, *, beta_in: float,

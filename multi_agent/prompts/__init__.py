@@ -461,6 +461,7 @@ def build_revision_prompt(
     my_proposal_v2: str = "",
     critiques_text_v2: str = "",
     allocation_constraints: dict | None = None,
+    intervention_nudge: str = "",
 ) -> str:
     """Build revision user prompt for a role agent after receiving critiques."""
     critiques_text = "\n".join(
@@ -504,9 +505,15 @@ def build_revision_prompt(
     if "_unsectioned" in sections:
         _warn_empty_template_vars("_unsectioned", (_TEMPLATE_DIR / template_name).read_text(), template_vars, "revise")
         tmpl = _env.get_template(template_name)
-        return tmpl.render(**template_vars)
+        rendered = tmpl.render(**template_vars)
+    else:
+        rendered = _assemble_user_prompt(sections, order, template_vars, overrides, phase="revise")
 
-    return _assemble_user_prompt(sections, order, template_vars, overrides, phase="revise")
+    # Prepend intervention nudge if present (ephemeral, for retry only)
+    if intervention_nudge:
+        rendered = f"### INTERVENTION NOTICE\n\n{intervention_nudge}\n\n---\n\n{rendered}"
+
+    return rendered
 
 
 def build_judge_prompt(
