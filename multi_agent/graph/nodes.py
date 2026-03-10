@@ -7,7 +7,10 @@ factories (for parallel execution), judge, aggregation, and trace builders.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 from ..config import DebateConfig
 from ..models import Observation
@@ -298,6 +301,7 @@ def propose_node(state: DebateState) -> dict:
             prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -512,7 +516,15 @@ def revise_node(state: DebateState) -> dict:
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                target = crit.get("target_role", "").lower().split()[0]
+                raw_target = crit.get("target_role", "")
+                if not raw_target:
+                    logger.warning(
+                        "[%s/revise] Critique from %s has empty target_role — "
+                        "cannot route to any agent. Critique dropped.",
+                        role, c["role"],
+                    )
+                    continue
+                target = raw_target.lower().split()[0]
                 if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
@@ -544,6 +556,7 @@ def revise_node(state: DebateState) -> dict:
             sector_constraints=sector_text,
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -682,6 +695,7 @@ def make_propose_node(role: str):
             prompt_file_overrides=overrides,
             user_sections=user_secs,
             sector_constraints=sector_text,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -921,7 +935,15 @@ def make_revise_node(role: str):
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                target = crit.get("target_role", "").lower().split()[0]
+                raw_target = crit.get("target_role", "")
+                if not raw_target:
+                    logger.warning(
+                        "[%s/revise] Critique from %s has empty target_role — "
+                        "cannot route to any agent. Critique dropped.",
+                        role, c["role"],
+                    )
+                    continue
+                target = raw_target.lower().split()[0]
                 if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
@@ -953,6 +975,7 @@ def make_revise_node(role: str):
             sector_constraints=sector_text,
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
+            allocation_constraints=config.get("allocation_constraints"),
         )
 
         if use_profiles:
@@ -1148,6 +1171,7 @@ def judge_node(state: DebateState) -> dict:
         prompt_file_overrides=overrides,
         user_sections=user_secs,
         sector_constraints=sector_text,
+        allocation_constraints=config.get("allocation_constraints"),
     )
 
     if use_profiles:

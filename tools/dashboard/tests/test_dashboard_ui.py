@@ -10,8 +10,6 @@ Run:
 
 from __future__ import annotations
 
-import re
-
 import pytest
 from playwright.sync_api import Page
 
@@ -21,13 +19,6 @@ pytestmark = pytest.mark.dashboard
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _goto_live(page: Page, url: str) -> None:
-    """Navigate to the Live Debate view and wait for event cards."""
-    page.goto(f"{url}/#live")
-    page.wait_for_selector("#live-entries", timeout=5000)
-    page.wait_for_selector("#live-entries .card", timeout=10000)
-
 
 def _goto_run_detail(page: Page, url: str) -> None:
     """Navigate to the test run detail page."""
@@ -111,147 +102,7 @@ class TestAgentNamesFromConfig:
 
 
 # ---------------------------------------------------------------------------
-# TEST 4 — Live debate panel renders events
-# ---------------------------------------------------------------------------
-
-class TestLiveDebatePanel:
-    def test_events_appear(self, page: Page, dashboard_url: str):
-        """Live Debate tab loads and shows event cards."""
-        _goto_live(page, dashboard_url)
-        cards = page.query_selector_all("#live-entries .card")
-        assert len(cards) > 0, "Live debate panel rendered no events"
-
-    def test_phase_labels_present(self, page: Page, dashboard_url: str):
-        """Event cards contain phase labels (PROPOSAL / CRITIQUE / REVISION)."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        phases_found = [
-            p for p in ("PROPOSAL", "CRITIQUE", "REVISION")
-            if p in entries_text
-        ]
-        assert len(phases_found) >= 1, (
-            f"No phase labels found. Text sample: {entries_text[:300]}"
-        )
-
-    def test_agent_names_in_event_labels(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Event card headers contain agent names from the run."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        agents_found = [
-            a for a in ("risk", "technical", "value")
-            if a in entries_text
-        ]
-        assert len(agents_found) >= 1, (
-            "No agent names found in event labels"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 5 — Event ordering (newest first)
-# ---------------------------------------------------------------------------
-
-class TestEventOrdering:
-    def test_events_newest_first(self, page: Page, dashboard_url: str):
-        """Events are rendered newest first (highest round at top)."""
-        _goto_live(page, dashboard_url)
-
-        headers = page.query_selector_all("#live-entries .card-header")
-        assert len(headers) >= 2, "Need at least 2 events to test ordering"
-
-        rounds = []
-        for h in headers:
-            text = h.text_content()
-            match = re.search(r"\[ROUND\s+(\d+)\]", text)
-            if match:
-                rounds.append(int(match.group(1)))
-
-        assert len(rounds) >= 2, (
-            f"Could not parse round numbers from headers: "
-            f"{[h.text_content() for h in headers[:5]]}"
-        )
-
-        assert rounds[0] == max(rounds), (
-            f"First event round ({rounds[0]}) is not the highest "
-            f"({max(rounds)})"
-        )
-
-        for i in range(len(rounds) - 1):
-            assert rounds[i] >= rounds[i + 1], (
-                f"Events not in descending round order at index {i}: "
-                f"{rounds[i]} < {rounds[i + 1]}. Full: {rounds}"
-            )
-
-
-# ---------------------------------------------------------------------------
-# TEST 6 — Expand event payload and verify content
-# ---------------------------------------------------------------------------
-
-class TestExpandEventPayload:
-    def test_click_expands_card(self, page: Page, dashboard_url: str):
-        """Clicking an event card header reveals the card body."""
-        _goto_live(page, dashboard_url)
-
-        first_card = page.query_selector("#live-entries .card")
-        assert first_card is not None, "No event card found"
-
-        classes_before = first_card.get_attribute("class") or ""
-        assert "open" not in classes_before, (
-            "Card unexpectedly open before click"
-        )
-
-        header = first_card.query_selector(".card-header")
-        header.click()
-
-        classes_after = first_card.get_attribute("class") or ""
-        assert "open" in classes_after, (
-            "Card did not get 'open' class after click"
-        )
-
-        body = first_card.query_selector(".card-body")
-        assert body is not None, "Card body element not found"
-        assert body.is_visible(), "Card body not visible after expand"
-
-        pre = body.query_selector("pre")
-        assert pre is not None, "No <pre> element in card body"
-        content = pre.text_content().strip()
-        assert len(content) > 0, "Event payload is empty"
-
-    def test_payload_contains_structured_data(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Expanded PROPOSAL payload contains expected keys."""
-        _goto_live(page, dashboard_url)
-
-        cards = page.query_selector_all("#live-entries .card")
-        proposal_card = None
-        for card in cards:
-            header_text = card.query_selector(".card-header").text_content()
-            if "PROPOSAL" in header_text:
-                proposal_card = card
-                break
-
-        if proposal_card is None:
-            pytest.skip("No PROPOSAL event card found to test payload")
-
-        proposal_card.query_selector(".card-header").click()
-        body = proposal_card.query_selector(".card-body")
-        pre = body.query_selector("pre.content")
-        assert pre is not None, "No <pre class='content'> in proposal card"
-
-        content = pre.text_content().strip()
-        assert len(content) > 10, "Payload too short to be meaningful"
-
-        assert "allocation" in content.lower() or "claim" in content.lower(), (
-            "Proposal payload doesn't contain 'allocation' or 'claim'"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 7 — Judge portfolio layout (vertical alloc table + metrics table)
+# TEST 4 — Judge portfolio layout (vertical alloc table + metrics table)
 # ---------------------------------------------------------------------------
 
 class TestJudgePortfolioLayout:
@@ -473,3 +324,98 @@ class TestDivergenceTableLayout:
         ]
         assert "Proposed" in row_labels, "Missing 'Proposed' row"
         assert "Revised" in row_labels, "Missing 'Revised' row"
+
+
+# ---------------------------------------------------------------------------
+# TEST 11 — Ablation metrics use side-by-side row layout
+# ---------------------------------------------------------------------------
+
+class TestAblationSideBySideLayout:
+    def test_quality_metrics_row_has_flex_display(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Quality metrics row (rho, pillars, JS, evidence) uses flex layout."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        row = page.wait_for_selector(
+            "[data-testid='metrics-row-quality']", timeout=3000,
+        )
+        display = page.evaluate(
+            "(el) => window.getComputedStyle(el).display", row,
+        )
+        assert display == "flex", (
+            f"Expected metrics-row display:flex, got '{display}'"
+        )
+
+    def test_breakdowns_row_side_by_side(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Per Scenario and Per Agent Config tables are in same flex row."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        row = page.wait_for_selector(
+            "[data-testid='metrics-row-breakdowns']", timeout=3000,
+        )
+        display = page.evaluate(
+            "(el) => window.getComputedStyle(el).display", row,
+        )
+        assert display == "flex", (
+            f"Expected breakdowns row display:flex, got '{display}'"
+        )
+        text = row.text_content()
+        assert "Per Scenario" in text, "Missing 'Per Scenario' in breakdowns row"
+        assert "Per Agent Config" in text, (
+            "Missing 'Per Agent Config' in breakdowns row"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 12 — Duration column in runs table
+# ---------------------------------------------------------------------------
+
+class TestRunsDurationColumn:
+    def test_runs_table_has_duration_header(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Runs table includes a 'duration' column header."""
+        page.goto(dashboard_url)
+        page.click("text=Runs")
+        page.wait_for_selector(
+            "#runs-table .data-table tr.clickable", timeout=5000,
+        )
+        header_text = page.text_content(
+            "#runs-table .data-table tr:first-child",
+        )
+        assert "duration" in header_text, (
+            "Duration column header not found in runs table"
+        )
+
+    def test_runs_table_duration_cell_has_value(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Duration cell shows a formatted time value (e.g. '8m 9s')."""
+        page.goto(f"{dashboard_url}/#runs")
+        row = page.wait_for_selector(
+            "#runs-table .data-table tr.clickable", timeout=5000,
+        )
+        cells = row.query_selector_all("td")
+        # Duration is the 11th column (0-indexed: 10)
+        duration_cell = cells[10]
+        text = duration_cell.text_content().strip()
+        assert "s" in text or "m" in text, (
+            f"Duration cell should show formatted time, got '{text}'"
+        )

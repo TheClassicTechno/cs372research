@@ -183,12 +183,11 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             "claim_id": claim.get("claim_id", ""),
             "claim_text": claim.get("claim_text", ""),
             "claim_type": claim.get("claim_type", "unknown"),
-            "pearl_level": claim.get("pearl_level", ""),
+            "reasoning_type": claim.get("reasoning_type", ""),
             "evidence": raw_evidence,
             "evidence_ids": sorted(set(
                 normalize_evidence_id(e) for e in raw_evidence if isinstance(e, str)
             )),
-            "variables": claim.get("variables", []),
             "assumptions": claim.get("assumptions", []),
             "falsifiers": claim.get("falsifiers", []),
             "impacts_positions": claim.get("impacts_positions", []),
@@ -1358,8 +1357,7 @@ class MultiAgentRunner:
             claims.append(
                 Claim(
                     claim_text=c.get("claim_text", ""),
-                    pearl_level=c.get("pearl_level", "L1"),
-                    variables=self._coerce_variables(c.get("variables", [])),
+                    reasoning_type=c.get("reasoning_type", "observational"),
                     assumptions=c.get("assumptions"),
                     confidence=c.get("confidence", 0.5),
                 )

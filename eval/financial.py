@@ -285,9 +285,8 @@ def build_daily_equity_curve(
                 prices = ticker_prices[t]
                 if day_idx < len(prices):
                     price = prices[day_idx]
-                    # If you want exact match with quarterly metrics, comment this in.
-                    # if day_idx == n_days -1:
-                    #     price = round(price, 2)
+                    if day_idx == n_days - 1:
+                        price = round(price, 2)
                     day_value += qty * price
                 else:
                     # Beyond available data — hold at last seen price

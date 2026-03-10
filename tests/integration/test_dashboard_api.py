@@ -141,9 +141,8 @@ class TestHTMLUI:
     def test_has_nav_bar(self, client):
         html = client.get("/").text
         assert 'id="nav"' in html
-        assert 'href="#live"' in html
         assert 'href="#runs"' in html
-        assert "Live Debate" in html
+        assert 'href="#ablation"' in html
 
     def test_has_title(self, client):
         html = client.get("/").text
@@ -154,26 +153,31 @@ class TestHTMLUI:
         assert 'id="app"' in html
 
     def test_has_routing_logic(self, client):
+        """Routing logic lives in external JS module."""
         html = client.get("/").text
-        assert "hashchange" in html
-        assert "#live" in html
+        # Hash targets are in the HTML nav links
         assert "#runs" in html
+        assert "#ablation" in html
+        # hashchange listener is in app.js
+        js = client.get("/static/js/app.js").text
+        assert "hashchange" in js
 
     def test_has_chart_functions(self, client):
-        html = client.get("/").text
-        assert "buildPIDChart" in html
-        assert "buildCRITChart" in html
+        """Chart functions exist in external JS modules."""
+        js = client.get("/static/js/components/charts.js").text
+        assert "buildPIDChart" in js
+        assert "buildCRITChart" in js
 
     def test_has_file_explorer(self, client):
-        html = client.get("/").text
-        assert "loadFileContent" in html
-        assert "file-tree" in html
+        """File explorer exists in external JS modules."""
+        js = client.get("/static/js/views/runDetail/fileExplorerSection.js").text
+        assert "file-tree" in js
 
-    def test_has_live_debate_view(self, client):
-        html = client.get("/").text
-        assert "renderLiveDebateView" in html
-        assert "live-entries" in html
-        assert "/api/live_debate" in html
+    def test_has_ablation_view(self, client):
+        """Ablation view exists in external JS module."""
+        js = client.get("/static/js/components/ablation.js").text
+        assert "buildAblationOverview" in js
+        assert "buildExperimentCard" in js
 
 
 # ---------------------------------------------------------------------------

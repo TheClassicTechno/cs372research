@@ -255,6 +255,7 @@ class DebateConfig:
             "prompt_profile": self.prompt_profile,
             "role_overrides": self.role_overrides,
             "agent_profiles": self.agent_profiles,
+            "agent_profile_names": self.agent_profile_names,
             "judge_profile": self.judge_profile,
             "crit_system_template": self.crit_system_template,
             "crit_user_template": self.crit_user_template,

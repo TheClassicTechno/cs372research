@@ -1,31 +1,20 @@
-import { fetchPortfolio, fetchPerformance } from '../../api/runs.js';
-import { buildSimpleAllocTable } from '../../components/table.js';
+/**
+ * judgePortfolioSection.js
+ *
+ * Renders the FINAL ALLOCATIONS section on the run detail page:
+ * combined allocation table, consensus performance, and per-agent performance.
+ */
+import { fetchPortfolio, fetchPerformance, fetchAgentPerformance } from '../../api/runs.js';
+import { buildSimpleAllocTable, buildAgentPerfTable } from '../../components/table.js';
 import { esc } from '../../utils/dom.js';
 import { fmtPct, numFmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
 
-export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, token) {
-  var div = document.getElementById('judge-portfolio-section');
-  if (!div) return;
-  if (!finalPortfolio || Object.keys(finalPortfolio).length === 0) {
-    div.innerHTML = '';
-    return;
-  }
-
-  var h = '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
-  h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';
-  h += '<div id="judge-alloc-wrap"><span style="color:#666;font-size:0.85em;">Loading allocations...</span></div>';
-  h += '<div id="perf-metrics"><span style="color:#666;font-size:0.85em;">Loading performance...</span></div>';
-  h += '</div>';
-  div.innerHTML = h;
-
-  var m = manifest || {};
-  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
-  function agentLabel(role) {
-    if (profileMap && profileMap[role]) return profileMap[role];
-    return role;
-  }
-
+/**
+ * Load and render the combined allocation table into #judge-alloc-wrap.
+ * Falls back to buildSimpleAllocTable when trajectory data is unavailable.
+ */
+function loadAllocTable(experiment, runId, finalPortfolio, agentLabel, token) {
   fetchPortfolio(experiment, runId)
     .then(function (data) {
       if (appState.viewToken !== token) return;
@@ -55,9 +44,9 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
         th += '<tr><td style="font-weight:600;">' + esc(ticker) + '</td>';
         for (var a = 0; a < agentNames.length; a++) {
           var w = agents[agentNames[a]] ? agents[agentNames[a]][ticker] : null;
-          th += '<td>' + fmtPct(w) + '</td>';
+          th += '<td style="font-weight:600;text-align:right;">' + fmtPct(w) + '</td>';
         }
-        th += '<td style="font-weight:600;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
+        th += '<td style="font-weight:600;text-align:right;border-left:2px solid #d6c4a1;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
         th += '</tr>';
       }
       th += '</table>';
@@ -68,7 +57,12 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
       var wrap = document.getElementById('judge-alloc-wrap');
       if (wrap) wrap.innerHTML = buildSimpleAllocTable(finalPortfolio);
     });
+}
 
+/**
+ * Load and render consensus performance metrics into #perf-metrics.
+ */
+function loadConsensusPerf(experiment, runId, token) {
   fetchPerformance(experiment, runId)
     .then(function (perf) {
       if (appState.viewToken !== token) return;
@@ -85,7 +79,7 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
       var returnPct = perf.return_pct;
 
       var ph = '<table class="data-table" id="perf-table">';
-      ph += '<tr><th>Metric</th><th>Value</th></tr>';
+      ph += '<tr><th>JUDGE</th><th>Value</th></tr>';
       ph += '<tr><td>Initial Capital</td><td>$' + numFmt(perf.initial_capital) + '</td></tr>';
       ph += '<tr><td>Final Value</td><td class="' + profitCls + '">$' + numFmt(perf.final_value) + '</td></tr>';
       ph += '<tr><td>Profit/Loss</td><td class="' + profitCls + '">' + profitSign + '$' + numFmt(Math.abs(perf.profit)) + '</td></tr>';
@@ -98,4 +92,66 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
       var perfDiv = document.getElementById('perf-metrics');
       if (perfDiv) perfDiv.innerHTML = '<span style="color:#666;font-size:0.85em;">Performance data unavailable</span>';
     });
+}
+
+/**
+ * Load and render per-agent performance tables into #agent-perf-wrap.
+ */
+function loadAgentPerf(experiment, runId, agentLabel, token) {
+  fetchAgentPerformance(experiment, runId)
+    .then(function (data) {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('agent-perf-wrap');
+      if (!wrap) return;
+      if (data.error || !data.agents) {
+        wrap.innerHTML = '';
+        return;
+      }
+      var roles = Object.keys(data.agents).sort();
+      var html = '';
+      for (var i = 0; i < roles.length; i++) {
+        var label = agentLabel(roles[i]).toUpperCase();
+        html += '<div>' + buildAgentPerfTable(data.agents[roles[i]], label) + '</div>';
+      }
+      wrap.innerHTML = html;
+    })
+    .catch(function () {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('agent-perf-wrap');
+      if (wrap) wrap.innerHTML = '';
+    });
+}
+
+/**
+ * Orchestrate the FINAL ALLOCATIONS section: layout scaffolding + async fetches.
+ */
+export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, token) {
+  var div = document.getElementById('judge-portfolio-section');
+  if (!div) return;
+  if (!finalPortfolio || Object.keys(finalPortfolio).length === 0) {
+    div.innerHTML = '';
+    return;
+  }
+
+  var h = '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
+  h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';
+  h += '<div id="judge-alloc-wrap"><span style="color:#666;font-size:0.85em;">Loading allocations...</span></div>';
+  h += '<div id="perf-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+  h += '<div id="perf-metrics"><span style="color:#666;font-size:0.85em;">Loading performance...</span></div>';
+  h += '<div id="agent-perf-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;"></div>';
+  h += '</div>';
+  h += '</div>';
+  div.innerHTML = h;
+
+  var m = manifest || {};
+  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
+  /** Resolve agent role to display label via manifest profile map. */
+  function agentLabel(role) {
+    if (profileMap && profileMap[role]) return profileMap[role];
+    return role;
+  }
+
+  loadAllocTable(experiment, runId, finalPortfolio, agentLabel, token);
+  loadConsensusPerf(experiment, runId, token);
+  loadAgentPerf(experiment, runId, agentLabel, token);
 }

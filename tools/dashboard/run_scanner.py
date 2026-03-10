@@ -118,7 +118,7 @@ def _extract_quality_metrics(run_dir: Path) -> dict:
         # Extract JS divergence
         div = entry.get("divergence")
         if isinstance(div, dict):
-            js = div.get("js_divergence")
+            js = div.get("js_divergence") or div.get("js")
             if js is not None:
                 js_values.append(js)
 
@@ -267,6 +267,85 @@ def compute_portfolio_performance(
         }
 
     return result
+
+
+def _portfolio_value(
+    portfolio: dict[str, float],
+    prices_base: Path,
+    year: str,
+    quarter: str,
+    initial_capital: float = 100_000.0,
+) -> dict:
+    """Compute performance metrics for a single portfolio allocation.
+
+    Returns ``{initial_capital, final_value, profit, return_pct}``.
+    Shared helper used by both consensus and per-agent performance.
+    """
+    final_value = 0.0
+    for ticker, weight in portfolio.items():
+        if weight == 0:
+            continue
+        if ticker == "_CASH_":
+            final_value += weight * initial_capital
+            continue
+        price_file = prices_base / ticker / f"{year}_{quarter}.json"
+        price_data = _safe_json(price_file)
+        if not price_data or not price_data.get("daily_close"):
+            final_value += weight * initial_capital
+            continue
+        closes = price_data["daily_close"]
+        p_start = closes[0]["close"]
+        p_end = closes[-1]["close"]
+        ticker_return = (p_end - p_start) / p_start
+        final_value += weight * initial_capital * (1 + ticker_return)
+
+    profit = final_value - initial_capital
+    return_pct = (profit / initial_capital) * 100
+    return {
+        "initial_capital": initial_capital,
+        "final_value": round(final_value, 2),
+        "profit": round(profit, 2),
+        "return_pct": round(return_pct, 2),
+    }
+
+
+def compute_agent_performance(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "default",
+    run_id: str = "",
+    prices_base: Path = DAILY_PRICES_BASE,
+) -> dict:
+    """Compute per-agent portfolio performance from final-round allocations.
+
+    Returns ``{agents: {role: {initial_capital, final_value, profit,
+    return_pct}}}`` or ``{error: ...}`` on failure.
+    """
+    run_dir = base_path / experiment / run_id
+    manifest = _safe_json(run_dir / "manifest.json")
+    if not manifest:
+        return {"error": "Missing manifest"}
+
+    invest_q = manifest.get("invest_quarter")
+    parsed = _quarter_from_date(invest_q) if invest_q else None
+    if parsed is None:
+        return {"error": f"Cannot parse invest_quarter: {invest_q}"}
+
+    year, quarter = parsed
+
+    trajectory = get_portfolio_trajectory(base_path, experiment, run_id)
+    if not trajectory:
+        return {"error": "No portfolio trajectory data"}
+
+    last_round = trajectory[-1]
+    allocations = last_round.get("allocations")
+    if not allocations:
+        return {"error": "No agent allocations in final round"}
+
+    agents: dict[str, dict] = {}
+    for role, portfolio in allocations.items():
+        agents[role] = _portfolio_value(portfolio, prices_base, year, quarter)
+
+    return {"agents": agents}
 
 
 def _find_active_run(base_path: Path) -> tuple[str, str, Path] | None:
@@ -511,6 +590,16 @@ def list_runs(base_path: Path = DEFAULT_BASE, experiment: str = "default") -> li
                 if key in manifest:
                     entry[key] = manifest[key]
 
+            # Compute elapsed seconds from timestamps
+            if manifest.get("started_at") and manifest.get("completed_at"):
+                try:
+                    from datetime import datetime, timezone
+                    started = datetime.fromisoformat(manifest["started_at"])
+                    completed = datetime.fromisoformat(manifest["completed_at"])
+                    entry["elapsed_s"] = round((completed - started).total_seconds(), 1)
+                except (ValueError, TypeError):
+                    pass
+
             # Fallback: if manifest has no agent_profiles, read from config YAML
             if not entry.get("agent_profiles"):
                 cfg_profiles = _read_agent_profiles_from_config(run_dir)
@@ -520,6 +609,13 @@ def list_runs(base_path: Path = DEFAULT_BASE, experiment: str = "default") -> li
         # Quality metrics
         if status != "incomplete":
             entry.update(_extract_quality_metrics(run_dir))
+
+        # Portfolio performance (lightweight — reuses cached price files)
+        if status != "incomplete" and manifest is not None:
+            perf = compute_portfolio_performance(base_path, experiment, run_dir.name)
+            if "error" not in perf:
+                entry["portfolio_final_value"] = perf["final_value"]
+                entry["portfolio_return_pct"] = perf["return_pct"]
 
         runs.append(entry)
 

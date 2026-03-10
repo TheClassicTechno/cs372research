@@ -1,0 +1,370 @@
+## Portfolio Allocation Task
+- Cash to allocate: $100,<FLOAT>
+- Allocation universe: AAPL, MSFT, NVDA
+- As-of: <TIMESTAMP>
+## Market Summary
+Equity markets showed mixed signals. Tech leads on AI optimism.
+## Macro
+Fed Funds Rate: <FLOAT>%. CPI trending down.
+[AAPL-RET60]: AAPL 60-day return +<FLOAT>%
+[MSFT-VOL30]: MSFT 30-day volatility <FLOAT>%
+[NVDA-RET30]: NVDA 30-day return +<FLOAT>%
+[MACRO-FF]: Fed Funds Rate <FLOAT>%
+[AAPL-VOL60]: AAPL 60-day volatility <FLOAT>%
+
+Using the data above, analyze the investment universe and propose a portfolio allocation **based on price action, momentum, and trend behavior**.
+
+Your task is to identify **securities whose price trends and momentum characteristics indicate continued outperformance or underperformance.**
+
+Your reasoning must be structured around **numbered causal claims** explaining how price behavior and momentum signals affect expected returns.
+
+Each claim should represent a **distinct technical mechanism** affecting asset performance.
+
+Examples include:
+
+• strong momentum persistence
+• trend continuation above key moving averages
+• relative strength leadership within the universe
+• momentum divergence suggesting weakening trends
+• breakout behavior following consolidation
+
+Limit yourself to **3–5 claims maximum**.
+
+Each claim should provide **independent technical reasoning** explaining why price action implies future performance.
+
+Your portfolio allocation should follow logically from these claims.
+
+---
+
+---
+
+Your reasoning must follow this structure.
+
+First, produce **numbered claims**.
+
+Each claim must:
+
+• be labeled **C1, C2, C3, ...**
+• describe a **technical price or momentum mechanism** affecting asset performance
+• include at least one valid evidence citation
+• explain why the mechanism affects expected returns
+
+Claims should generally follow the structure:
+
+**price behavior → momentum implication → security positioning**
+
+Example structure:
+
+C1 — Trend regime
+C2 — Momentum leadership
+C3 — Security-level momentum thesis
+
+Each claim should also include:
+
+• Assumptions — conditions required for the claim to hold
+• Falsifiers — what evidence would invalidate the claim
+
+Example:
+
+C1: Securities exhibiting strong medium-term momentum tend to outperform in the near term due to momentum persistence in equity markets [NVDA-MOM200].
+
+Assumptions:
+
+* Momentum persistence continues in the current market environment
+* No major macro shock disrupts the trend structure
+
+Falsifiers:
+
+* Momentum metrics deteriorate rapidly
+* Price breaks below key trend levels (e.g., major moving averages)
+
+Claims should focus primarily on **observable price and momentum behavior**, not macro or fundamental narratives.
+
+---
+
+After stating claims, construct a portfolio allocation consistent with your reasoning.
+
+For each position:
+
+• Specify ticker and weight
+• Explain which claim(s) justify the allocation
+• Explain the technical signals supporting the position
+• Explain key downside risks
+
+Portfolio weights should follow from the **strength and interaction of the claims**.
+
+Example linkage:
+
+If C1 identifies a strong momentum regime and C2 identifies securities with the strongest relative strength, overweight those securities.
+
+If a claim identifies weakening momentum or trend breakdown risk, reduce exposure to those securities.
+
+Follow these rules carefully:
+
+• Use **3–5 claims maximum**
+• Every claim must cite evidence
+• Every major allocation must reference at least one claim
+• Avoid unsupported narrative speculation
+• Distinguish clearly between evidence and interpretation
+
+Your portfolio should clearly reflect **technical momentum reasoning**.
+
+---
+
+## Output Format
+
+Respond with **valid JSON only** (no markdown, no commentary, no extra text).
+
+---
+
+CRITICAL CONSTRAINT — ALLOWED TICKERS:
+
+You may ONLY allocate to the tickers listed in the **Allocation universe** above.
+
+Do NOT include any other tickers.
+
+Your JSON `"allocation"` object must:
+
+• contain ONLY tickers from the allocation universe
+• contain **ALL tickers in the universe** (use <FLOAT> if not allocated)
+
+---
+
+Example — if the universe is `[AAPL, NVDA, MSFT]`
+
+{
+ "allocation": {"AAPL": <FLOAT>, "NVDA": <FLOAT>, "MSFT": <FLOAT>},
+ "claims": [...],
+ "position_rationale": [...],
+ "portfolio_rationale": "...",
+ "confidence": <FLOAT>,
+ "risks_or_falsifiers": ["..."]
+}
+
+WRONG (ticker not in universe):
+
+{
+ "allocation": {"AAPL": <FLOAT>, "NFLX": <FLOAT>, "MSFT": <FLOAT>}
+}
+
+^^^ NFLX is not in the universe — this is INVALID.
+
+---
+
+## Full JSON Schema
+
+{
+ "allocation": {
+ "TICKER": 0.XX
+ },
+
+ "claims": [
+ {
+ "claim_id": "C1",
+ "claim_text": "... concise analytical hypothesis with inline evidence citations ...",
+ "reasoning_type": "causal" | "observational" | "risk_assessment" | "pattern",
+ "claim_type": "macro" | "sector" | "firm" | "risk" | "technical",
+ "evidence": ["[EVIDENCE-ID]", "..."],
+ "assumptions": ["..."],
+ "falsifiers": ["..."],
+ "impacts_positions": ["TICKER", "..."],
+ "confidence": <FLOAT>-<FLOAT>
+ }
+ ],
+
+ "position_rationale": [
+ {
+ "ticker": "TICKER",
+ "weight": 0.XX,
+ "supported_by_claims": ["C1", "C2"],
+ "explanation": "Explain why these claims justify the allocation and how they affect expected return or risk."
+ }
+ ],
+
+ "portfolio_rationale": "Explain how the claims jointly imply this portfolio structure, including major overweights, underweights, and risk tradeoffs.",
+
+ "confidence": <FLOAT>-<FLOAT>,
+
+ "risks_or_falsifiers": [
+ "Portfolio-level condition that would invalidate the strategy."
+ ]
+}
+
+---
+
+## CLAIM RULES
+
+• Use **3–5 claims maximum**
+
+• Each claim must have a **unique ID**
+ C1, C2, C3, ...
+
+• Each claim must represent a **distinct analytical hypothesis**
+
+• Claims should follow a structure appropriate to your analytical framework
+
+• Each claim should represent a distinct mechanism relevant to your decision lens
+
+• Claims should be **concise and atomic**
+
+• Do NOT write long essays or bundle multiple unrelated ideas into one claim
+
+• Claims that do not influence any positions are INVALID
+
+---
+
+## CLAIM TYPE RULE
+
+Every claim MUST include a `"claim_type"` field:
+
+• `"macro"` — macro regime, rates, inflation, economic environment
+• `"sector"` — sector/industry dynamics, factor exposure
+• `"firm"` — company-specific fundamentals, filings, earnings
+• `"risk"` — volatility, correlation, drawdown, portfolio risk dynamics
+• `"technical"` — price action, momentum, trend behavior
+
+`claim_type` is REQUIRED for each claim.
+
+Every claim MUST include a `"reasoning_type"` field:
+
+• `"causal"` — if X changes, Y will follow (intervention or counterfactual reasoning)
+• `"observational"` — X is associated with Y (correlation or pattern)
+• `"risk_assessment"` — X creates vulnerability to Y (conditional risk)
+• `"pattern"` — price behavior suggests continuation or reversal
+
+---
+
+## CLAIM EVIDENCE REQUIREMENT
+
+Every claim MUST cite **at least one valid evidence ID**.
+
+Evidence IDs must appear in both:
+
+• the `"evidence"` field
+• the `"claim_text"` itself
+
+Example:
+
+{
+ "claim_id": "C1",
+ "claim_text": "Rising real yields increase discount rates and may pressure long-duration growth equities [L1-REAL].",
+ "evidence": ["[L1-REAL]"],
+ ...
+}
+
+Claims without valid citations will be scored as **unsupported reasoning**.
+
+---
+
+## CLAIM → POSITION LINK REQUIREMENT
+
+Each claim must specify which positions it affects using:
+
+"impacts_positions": ["TICKER", "..."]
+
+Rules:
+
+• Every claim must affect at least one ticker in the allocation universe
+• Every ticker with weight > 0 must appear in at least one claim’s `"impacts_positions"`
+• `"impacts_positions"` should include only tickers from the allocation universe
+
+This prevents dead reasoning that does not affect the portfolio.
+
+---
+
+## POSITION RATIONALE RULE
+
+Every ticker with weight > 0 MUST appear in `"position_rationale"` and MUST reference **at least one claim ID**.
+
+Example:
+
+{
+ "ticker": "NVDA",
+ "weight": <FLOAT>,
+ "supported_by_claims": ["C2", "C3"],
+ "explanation": "C2 supports tech leadership while C3 supports firm-specific upside."
+}
+
+Rules:
+
+• Every ticker with weight > 0 must have a rationale entry
+• The `"weight"` in each rationale entry must match the `"allocation"` object
+• `"supported_by_claims"` must reference valid claim IDs
+• If a ticker has weight <FLOAT>, it does not need a position_rationale entry
+
+This creates a **traceable mapping between reasoning and allocation decisions**.
+
+---
+
+## PORTFOLIO COHERENCE RULE
+
+Your portfolio must be consistent with your claims.
+
+That means:
+
+• if a claim says a sector or factor should outperform, the allocation should reflect that
+• if a claim identifies major risk, the allocation should reflect reduced exposure where appropriate
+• do NOT produce claims that are disconnected from the final weights
+• do NOT produce weights that are not justified by claims
+
+Unsupported allocations will be treated as weak reasoning.
+
+---
+
+## ALLOCATION RULES
+
+• Include EVERY ticker from the allocation universe — no more, no fewer
+• Weights must be between **<FLOAT> and <FLOAT>** (max 100% per ticker)
+• Weights MUST **sum to <FLOAT>**
+• At least **1 tickers must have weight > 0**
+• A weight of **<FLOAT> means zero allocation**
+
+Higher weight = stronger conviction.
+
+---
+
+## EVIDENCE CITATIONS
+
+When making claims about specific data, you MUST cite the evidence ID
+from the memo in square brackets.
+
+Example:
+
+"NVDA shows strong momentum [NVDA-MOM200] but elevated volatility [NVDA-VOL60]
+in a rising rate environment [L1-10Y]."
+
+Available evidence ID categories:
+
+[L1-*] Macro metrics (e.g. [L1-FF], [L1-VIX], [L1-CPI])
+[TICKER-PX] Close price
+[TICKER-RET*] Returns (RET20, RET60, RET120, RET252)
+[TICKER-VOL*] Volatility (VOL20, VOL60)
+[TICKER-BETA] Beta
+[TICKER-SHARPE] Sharpe ratio
+[TICKER-F*] Filing evidence sentences (granular, one fact per ID)
+[TICKER-EC*] Earnings call evidence sentences (granular, one fact per ID)
+[TICKER-SENT] Sentiment
+[TICKER-GM] Gross margin
+[TICKER-ROE] ROE
+[TICKER-DE] Debt/Equity
+
+Cite ALL evidence you rely on.
+
+Claims without valid citations will be scored as **unsupported reasoning**.
+
+---
+
+## FINAL VALIDITY CHECKS
+
+Before responding, ensure all of the following are true:
+
+• allocation includes all and only allowed tickers
+• weights sum to <FLOAT>
+• 3–5 claims are present
+• claim IDs are C1, C2, ... and unique
+• every claim has evidence, assumptions, falsifiers, and impacts_positions
+• every positive-weight ticker is supported by at least one claim
+• every positive-weight ticker appears in position_rationale
+• position_rationale references valid claim IDs
+• portfolio_rationale explains the overall structure
+• risks_or_falsifiers contains portfolio-level invalidation conditions

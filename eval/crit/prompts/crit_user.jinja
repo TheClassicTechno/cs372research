@@ -103,19 +103,23 @@ Strong reasoning should acknowledge competing interpretations.
 
 STEP 4 — Detect Causal Reasoning Failures
 
-Evaluate causal reasoning using **Pearl’s causal hierarchy**.
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
 
-Levels:
+For each claim, independently determine its causal level:
 
 L1 — correlation
-L2 — intervention
-L3 — counterfactual reasoning
+L2 — intervention (must describe a mechanism or transmission pathway)
+L3 — counterfactual reasoning (must reason about an alternative state)
 
 Identify **rung collapse**, including:
 
 • causal conclusions drawn from purely correlational evidence
 • macro claims mapped directly to asset outcomes without mechanism
-• causal statements lacking explanation of the transmission mechanism
+• causal claims lacking explanation of the transmission mechanism
+• counterfactual conclusions without explicit alternative-state reasoning
+
+As a secondary check, note mismatches between the agent's self-declared
+reasoning_type label and the actual reasoning structure.
 
 Record whether causal overreach occurs.
 

@@ -18,16 +18,14 @@ FULL_ACTION_DICT = {
         {
             "claim_id": "C1",
             "claim_text": "Inflation will peak within 2 quarters",
-            "pearl_level": "L2",
-            "variables": ["CPI", "oil_price"],
+            "reasoning_type": "causal",
             "assumptions": ["supply constraints ease"],
             "confidence": 0.70,
         },
         {
             "claim_id": "C2",
             "claim_text": "Tech earnings rebound in H2",
-            "pearl_level": "L1",
-            "variables": ["earnings_growth"],
+            "reasoning_type": "observational",
             "assumptions": ["demand expansion"],
             "confidence": 0.65,
         },
@@ -42,15 +40,13 @@ ACTION_DICT_NO_CLAIM_IDS = {
     "claims": [
         {
             "claim_text": "Tech leads recovery",
-            "pearl_level": "L1",
-            "variables": ["earnings"],
+            "reasoning_type": "observational",
             "assumptions": ["no recession"],
             "confidence": 0.55,
         },
         {
             "claim_text": "Financials benefit from rate hikes",
-            "pearl_level": "L2",
-            "variables": ["fed_funds"],
+            "reasoning_type": "causal",
             "assumptions": ["credit quality holds"],
             "confidence": 0.60,
         },
@@ -91,8 +87,7 @@ class TestRenderPreviousProposal:
 
     def test_claim_metadata_rendered(self):
         result = render_previous_proposal(FULL_ACTION_DICT)
-        assert "Pearl Level: L2" in result
-        assert "Variables: CPI, oil_price" in result
+        assert "Reasoning Type: causal" in result
         assert "Assumptions: supply constraints ease" in result
         assert "Confidence: 0.7" in result
 
@@ -265,13 +260,13 @@ ENRICHED_ACTION_DICT = {
         {
             "claim_id": "C1",
             "claim_text": "Higher-for-longer rates benefit financials.",
-            "pearl_level": "L1",
+            "reasoning_type": "observational",
             "evidence": ["[L1-FF]", "[JPM-NII]"],
         },
         {
             "claim_id": "C2",
             "claim_text": "AI infrastructure buildout accelerating.",
-            "pearl_level": "L2",
+            "reasoning_type": "causal",
             "evidence": ["[NVDA-F1]", "[L1-CAPEX]"],
         },
     ],

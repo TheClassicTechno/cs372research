@@ -54,9 +54,9 @@ def _verbose_proposal(role: str, result: dict) -> None:
     print(f"    │ Confidence: {conf:.0%}", flush=True)
     print(f"    │ Thesis: {hyp}", flush=True)
     for c in claims[:2]:
-        lvl = c.get("pearl_level", "?")
+        rtype = c.get("reasoning_type", "?")
         txt = c.get("claim_text", "")[:120]
-        print(f"    │ Claim [{lvl}]: {txt}", flush=True)
+        print(f"    │ Claim [{rtype}]: {txt}", flush=True)
     falsifiers = result.get("risks_or_falsifiers", "")
     if falsifiers:
         falsifiers_str = str(falsifiers)

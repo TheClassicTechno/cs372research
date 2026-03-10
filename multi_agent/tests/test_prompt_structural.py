@@ -36,8 +36,8 @@ _MY_PROPOSAL = (
     '{"allocation": {"AAPL": 0.6, "MSFT": 0.4}, '
     '"justification": "Growth", "confidence": 0.8, '
     '"risks_or_falsifiers": "Downturn", '
-    '"claims": [{"claim_text": "AAPL up", "pearl_level": "L1", '
-    '"variables": ["AAPL"], "assumptions": [], "confidence": 0.7}]}'
+    '"claims": [{"claim_text": "AAPL up", "reasoning_type": "observational", '
+    '"assumptions": [], "confidence": 0.7}]}'
 )
 
 _ALL_PROPOSALS = [

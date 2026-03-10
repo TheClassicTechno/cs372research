@@ -59,8 +59,8 @@ debate_setup:
       provider: "openai"
       model: "gpt-5-mini"
     risk:
-      provider: "google"
-      model: "gemini-2.5-flash"
+      provider: "openai"
+      model: "gpt-5-mini"
     judge:
       provider: "openai"
       model: "gpt-5-mini"
@@ -74,6 +74,7 @@ debate_setup:
   pid_initial_beta: 0.5
   pid_epsilon: 0.001
 
+  experiment_name: "juli_ablation_test"
   logging_mode: "debug"
   parallel_agents: true
   llm_stagger_ms: 500

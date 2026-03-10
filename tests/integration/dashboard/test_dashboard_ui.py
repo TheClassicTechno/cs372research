@@ -22,13 +22,6 @@ pytestmark = pytest.mark.dashboard
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _goto_live(page: Page, url: str) -> None:
-    """Navigate to the Live Debate view and wait for event cards."""
-    page.goto(f"{url}/#live")
-    page.wait_for_selector("#live-entries", timeout=5000)
-    page.wait_for_selector("#live-entries .card", timeout=10000)
-
-
 def _goto_run_detail(page: Page, url: str) -> None:
     """Navigate to the test run detail page."""
     page.goto(f"{url}/#run/test/run_2026-03-07_19-50-06")
@@ -111,147 +104,7 @@ class TestAgentNamesFromConfig:
 
 
 # ---------------------------------------------------------------------------
-# TEST 4 — Live debate panel renders events
-# ---------------------------------------------------------------------------
-
-class TestLiveDebatePanel:
-    def test_events_appear(self, page: Page, dashboard_url: str):
-        """Live Debate tab loads and shows event cards."""
-        _goto_live(page, dashboard_url)
-        cards = page.query_selector_all("#live-entries .card")
-        assert len(cards) > 0, "Live debate panel rendered no events"
-
-    def test_phase_labels_present(self, page: Page, dashboard_url: str):
-        """Event cards contain phase labels (PROPOSAL / CRITIQUE / REVISION)."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        phases_found = [
-            p for p in ("PROPOSAL", "CRITIQUE", "REVISION")
-            if p in entries_text
-        ]
-        assert len(phases_found) >= 1, (
-            f"No phase labels found. Text sample: {entries_text[:300]}"
-        )
-
-    def test_agent_names_in_event_labels(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Event card headers contain agent names from the run."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        agents_found = [
-            a for a in ("risk", "technical", "value")
-            if a in entries_text
-        ]
-        assert len(agents_found) >= 1, (
-            "No agent names found in event labels"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 5 — Event ordering (newest first)
-# ---------------------------------------------------------------------------
-
-class TestEventOrdering:
-    def test_events_newest_first(self, page: Page, dashboard_url: str):
-        """Events are rendered newest first (highest round at top)."""
-        _goto_live(page, dashboard_url)
-
-        headers = page.query_selector_all("#live-entries .card-header")
-        assert len(headers) >= 2, "Need at least 2 events to test ordering"
-
-        rounds = []
-        for h in headers:
-            text = h.text_content()
-            match = re.search(r"\[ROUND\s+(\d+)\]", text)
-            if match:
-                rounds.append(int(match.group(1)))
-
-        assert len(rounds) >= 2, (
-            f"Could not parse round numbers from headers: "
-            f"{[h.text_content() for h in headers[:5]]}"
-        )
-
-        assert rounds[0] == max(rounds), (
-            f"First event round ({rounds[0]}) is not the highest "
-            f"({max(rounds)})"
-        )
-
-        for i in range(len(rounds) - 1):
-            assert rounds[i] >= rounds[i + 1], (
-                f"Events not in descending round order at index {i}: "
-                f"{rounds[i]} < {rounds[i + 1]}. Full: {rounds}"
-            )
-
-
-# ---------------------------------------------------------------------------
-# TEST 6 — Expand event payload and verify content
-# ---------------------------------------------------------------------------
-
-class TestExpandEventPayload:
-    def test_click_expands_card(self, page: Page, dashboard_url: str):
-        """Clicking an event card header reveals the card body."""
-        _goto_live(page, dashboard_url)
-
-        first_card = page.query_selector("#live-entries .card")
-        assert first_card is not None, "No event card found"
-
-        classes_before = first_card.get_attribute("class") or ""
-        assert "open" not in classes_before, (
-            "Card unexpectedly open before click"
-        )
-
-        header = first_card.query_selector(".card-header")
-        header.click()
-
-        classes_after = first_card.get_attribute("class") or ""
-        assert "open" in classes_after, (
-            "Card did not get 'open' class after click"
-        )
-
-        body = first_card.query_selector(".card-body")
-        assert body is not None, "Card body element not found"
-        assert body.is_visible(), "Card body not visible after expand"
-
-        pre = body.query_selector("pre")
-        assert pre is not None, "No <pre> element in card body"
-        content = pre.text_content().strip()
-        assert len(content) > 0, "Event payload is empty"
-
-    def test_payload_contains_structured_data(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Expanded PROPOSAL payload contains expected keys."""
-        _goto_live(page, dashboard_url)
-
-        cards = page.query_selector_all("#live-entries .card")
-        proposal_card = None
-        for card in cards:
-            header_text = card.query_selector(".card-header").text_content()
-            if "PROPOSAL" in header_text:
-                proposal_card = card
-                break
-
-        if proposal_card is None:
-            pytest.skip("No PROPOSAL event card found to test payload")
-
-        proposal_card.query_selector(".card-header").click()
-        body = proposal_card.query_selector(".card-body")
-        pre = body.query_selector("pre.content")
-        assert pre is not None, "No <pre class='content'> in proposal card"
-
-        content = pre.text_content().strip()
-        assert len(content) > 10, "Payload too short to be meaningful"
-
-        assert "allocation" in content.lower() or "claim" in content.lower(), (
-            "Proposal payload doesn't contain 'allocation' or 'claim'"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 7 — Divergence table axes: phases as rows, metrics as columns
+# TEST 4 — Divergence table axes: phases as rows, metrics as columns
 # ---------------------------------------------------------------------------
 
 class TestDivergenceTableLayout:
@@ -396,3 +249,298 @@ class TestPIDStatsFormatting:
         assert "(" in second_label and ")" in second_label, (
             f"Round 2 label missing delta indicator: '{second_label}'"
         )
+
+
+# ---------------------------------------------------------------------------
+# TEST 10 — Global bold text (font-weight: 600 on body)
+# ---------------------------------------------------------------------------
+
+class TestGlobalBoldText:
+    def test_body_font_weight(self, page: Page, dashboard_url: str):
+        """Body element has font-weight 600 for readability."""
+        _goto_run_detail(page, dashboard_url)
+
+        fw = page.evaluate(
+            "window.getComputedStyle(document.body).fontWeight"
+        )
+        assert fw == "600", f"Expected body font-weight 600, got '{fw}'"
+
+
+# ---------------------------------------------------------------------------
+# TEST 11 — No truncation on overview table cells
+# ---------------------------------------------------------------------------
+
+class TestNoTruncation:
+    def test_ov_htable_cells_not_truncated(self, page: Page, dashboard_url: str):
+        """Overview table cells use word-wrap, not text-overflow: ellipsis."""
+        _goto_run_detail(page, dashboard_url)
+
+        cells = page.query_selector_all("table.ov-htable td")
+        assert len(cells) > 0, "No ov-htable cells found"
+
+        for cell in cells:
+            overflow = page.evaluate(
+                "(el) => window.getComputedStyle(el).textOverflow", cell,
+            )
+            assert overflow != "ellipsis", (
+                f"ov-htable td still has text-overflow: ellipsis"
+            )
+
+
+# ---------------------------------------------------------------------------
+# TEST 12 — Divergence section shows numeric values (not dashes)
+# ---------------------------------------------------------------------------
+
+class TestDivergenceValues:
+    def test_revised_js_divergence_not_dash(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Revised JS Divergence cell shows a number, not a dash."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+
+        table = page.query_selector("#divergence-section .data-table")
+        assert table is not None, "Divergence table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        for row in rows:
+            tds = row.query_selector_all("td")
+            label = tds[0].text_content().strip() if tds else ""
+            if label == "Revised":
+                js_val = tds[1].text_content().strip()
+                assert js_val != "\u2014", (
+                    "Revised JS Divergence shows '\u2014' — key mismatch bug"
+                )
+                assert re.match(r"^\d+\.\d+$", js_val), (
+                    f"Expected numeric value, got '{js_val}'"
+                )
+                break
+        else:
+            pytest.skip("No 'Revised' row in divergence table")
+
+    def test_proposed_js_divergence_present(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Proposed JS Divergence cell shows a number from test data."""
+        _goto_run_detail(page, dashboard_url)
+
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+
+        table = page.query_selector("#divergence-section .data-table")
+        assert table is not None, "Divergence table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        for row in rows:
+            tds = row.query_selector_all("td")
+            label = tds[0].text_content().strip() if tds else ""
+            if label == "Proposed":
+                js_val = tds[1].text_content().strip()
+                assert js_val != "\u2014", (
+                    "Proposed JS Divergence shows '\u2014'"
+                )
+                break
+
+
+# ---------------------------------------------------------------------------
+# TEST 13 — Allocation table: bold + right-aligned agent cells
+# ---------------------------------------------------------------------------
+
+class TestAllocationTableStyling:
+    def test_agent_cells_bold_and_right_aligned(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Agent allocation cells in the JUDGE table are bold and right-aligned."""
+        _goto_run_detail(page, dashboard_url)
+
+        table = page.wait_for_selector("#judge-alloc-table", timeout=10000)
+        assert table is not None, "Judge allocation table not found"
+
+        data_cells = table.query_selector_all("tr:not(:first-child) td")
+        # Skip the first cell in each row (ticker name column)
+        numeric_cells = [
+            c for i, c in enumerate(data_cells) if i % (len(data_cells) // 2 + 1) != 0
+        ]
+        if not numeric_cells:
+            pytest.skip("No numeric cells in allocation table")
+
+        # Check at least one non-ticker cell is bold + right-aligned
+        rows = table.query_selector_all("tr:not(:first-child)")
+        found_styled = False
+        for row in rows:
+            tds = row.query_selector_all("td")
+            if len(tds) < 2:
+                continue
+            # Check agent cells (skip first = ticker)
+            for td in tds[1:]:
+                fw = page.evaluate(
+                    "(el) => window.getComputedStyle(el).fontWeight", td,
+                )
+                ta = page.evaluate(
+                    "(el) => window.getComputedStyle(el).textAlign", td,
+                )
+                if fw in ("600", "700", "bold") and ta == "right":
+                    found_styled = True
+                    break
+            if found_styled:
+                break
+
+        assert found_styled, (
+            "No allocation cells found with font-weight:600 and text-align:right"
+        )
+
+    def test_judge_column_has_border(self, page: Page, dashboard_url: str):
+        """JUDGE column has a visible left border for visual separation."""
+        _goto_run_detail(page, dashboard_url)
+
+        table = page.wait_for_selector("#judge-alloc-table", timeout=10000)
+        assert table is not None, "Judge allocation table not found"
+
+        rows = table.query_selector_all("tr:not(:first-child)")
+        if not rows:
+            pytest.skip("No data rows in allocation table")
+
+        # Last td in each row is the JUDGE column
+        last_td = rows[0].query_selector("td:last-child")
+        border = page.evaluate(
+            "(el) => window.getComputedStyle(el).borderLeftWidth", last_td,
+        )
+        assert border != "0px", (
+            f"JUDGE column missing left border, got borderLeftWidth={border}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 14 — Muted color palette on section labels and table headers
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# TEST — Ablation tab
+# ---------------------------------------------------------------------------
+
+class TestAblationTab:
+    def test_ablation_tab_renders(self, page: Page, dashboard_url: str):
+        """Navigate to #ablation, verify the content container appears."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-content']", timeout=5000,
+        )
+        container = page.get_by_test_id("ablation-content")
+        assert container.is_visible(), "Ablation content container not visible"
+
+    def test_ablation_experiment_card_shows(self, page: Page, dashboard_url: str):
+        """Ablation view shows at least one experiment card with name."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        card = page.get_by_test_id("ablation-experiment").first
+        assert card.is_visible(), "Ablation experiment card not visible"
+        text = card.text_content()
+        assert "test" in text, "Experiment name 'test' not found in card"
+
+    def test_ablation_regenerate_button_exists(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Regenerate button is visible on the ablation view."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='regenerate-ablation']", timeout=5000,
+        )
+        btn = page.get_by_test_id("regenerate-ablation")
+        assert btn.is_visible(), "Regenerate button not visible"
+
+    def test_ablation_metrics_table(self, page: Page, dashboard_url: str):
+        """Ablation content contains a data-table with rho/pillar values."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-content'] .data-table", timeout=5000,
+        )
+        table_text = page.text_content(
+            "[data-testid='ablation-content'] .data-table",
+        )
+        assert "0.7200" in table_text, (
+            "Expected rho value 0.7200 in ablation table"
+        )
+
+
+class TestColorPalette:
+    def test_section_labels_use_brown(self, page: Page, dashboard_url: str):
+        """Section labels use the dark brown color (#5c4632)."""
+        _goto_run_detail(page, dashboard_url)
+
+        labels = page.query_selector_all(".section-label")
+        if not labels:
+            pytest.skip("No section labels found")
+
+        color = page.evaluate(
+            "(el) => window.getComputedStyle(el).color", labels[0],
+        )
+        # #5c4632 → rgb(92, 70, 50)
+        assert "92" in color and "70" in color and "50" in color, (
+            f"Section label color not dark brown, got '{color}'"
+        )
+
+    def test_ov_title_uses_brown(self, page: Page, dashboard_url: str):
+        """Overview title uses the dark brown color."""
+        _goto_run_detail(page, dashboard_url)
+
+        title = page.query_selector(".ov-title")
+        if not title:
+            pytest.skip("No .ov-title found")
+
+        color = page.evaluate(
+            "(el) => window.getComputedStyle(el).color", title,
+        )
+        assert "92" in color and "70" in color and "50" in color, (
+            f"Overview title color not dark brown, got '{color}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 15 — Per-agent performance tables render with headings
+# ---------------------------------------------------------------------------
+
+class TestPerAgentPerfTables:
+    def test_agent_perf_tables_render(self, page: Page, dashboard_url: str):
+        """Per-agent performance tables appear with agent name headings."""
+        _goto_run_detail(page, dashboard_url)
+
+        wrap = page.wait_for_selector("#agent-perf-wrap", timeout=10000)
+        assert wrap is not None, "Agent performance wrapper not found"
+
+        # Wait for tables to load
+        page.wait_for_selector(
+            "#agent-perf-wrap .data-table", timeout=10000,
+        )
+
+        tables = page.query_selector_all("#agent-perf-wrap .data-table")
+        assert len(tables) >= 2, (
+            f"Expected at least 2 agent perf tables, got {len(tables)}"
+        )
+
+        # Each table should have a header with the agent name
+        wrap_text = wrap.text_content()
+        for name in ("VALUE_ENRICHED", "RISK_ENRICHED", "TECHNICAL_ENRICHED"):
+            assert name in wrap_text, (
+                f"Agent heading '{name}' not found in perf tables"
+            )
+
+    def test_agent_perf_tables_have_metrics(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Each agent perf table contains the four standard metric rows."""
+        _goto_run_detail(page, dashboard_url)
+
+        page.wait_for_selector(
+            "#agent-perf-wrap .data-table", timeout=10000,
+        )
+
+        first_table = page.query_selector("#agent-perf-wrap .data-table")
+        text = first_table.text_content()
+        for metric in ("Initial Capital", "Final Value", "Profit/Loss", "Return"):
+            assert metric in text, (
+                f"Metric '{metric}' missing from agent perf table"
+            )

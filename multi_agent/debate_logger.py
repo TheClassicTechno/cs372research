@@ -254,8 +254,16 @@ Explain why each suggested change would improve the system.
 
 
 def _write_json(path: Path, data: Any) -> None:
-    """Write data as pretty-printed JSON. Crash-safe (single write_text call)."""
-    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+    """Write data as pretty-printed JSON via atomic temp-file + rename.
+
+    Writes to a PID-suffixed temp file first, then atomically replaces
+    the target.  This prevents corruption when two processes write to
+    the same path concurrently.
+    """
+    import os
+    tmp = path.with_suffix(f"{path.suffix}.tmp.{os.getpid()}")
+    tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+    tmp.replace(path)
 
 
 def _round_floats(obj: Any, ndigits: int = 4) -> Any:
@@ -284,10 +292,37 @@ class DebateLogger:
         now = datetime.now()
         self._timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
         self._run_id = f"run_{self._timestamp}"
-        self._run_dir = Path("logging/runs") / experiment_name / self._run_id
+        self._base = Path("logging/runs") / experiment_name
+        # Defer directory creation to init_run() so "off" mode never touches disk.
+        self._run_dir = self._base / self._run_id
         self._round_dir: Path | None = None
         self._current_beta: float = 0.5
         self._round_num: int = 0
+
+    @staticmethod
+    def _claim_run_dir(base: Path, run_id: str) -> Path:
+        """Atomically claim a unique run directory.
+
+        Uses ``mkdir(exist_ok=False)`` as the atomic lock — the first
+        process to create the directory wins.  If it already exists,
+        increment a suffix (_001, _002, ...) and retry.  This eliminates
+        the TOCTOU race in the old check-then-create pattern.
+        """
+        base.mkdir(parents=True, exist_ok=True)
+        candidate = base / run_id
+        try:
+            candidate.mkdir(exist_ok=False)
+            return candidate
+        except FileExistsError:
+            pass
+        idx = 1
+        while True:
+            candidate = base / f"{run_id}_{idx:03d}"
+            try:
+                candidate.mkdir(exist_ok=False)
+                return candidate
+            except FileExistsError:
+                idx += 1
 
     @property
     def run_dir(self) -> Path:
@@ -307,8 +342,9 @@ class DebateLogger:
         if self._mode == "off":
             return
 
-        # Create top-level directories
-        self._run_dir.mkdir(parents=True, exist_ok=True)
+        # Atomically claim the run directory (mkdir as lock).
+        self._run_dir = self._claim_run_dir(self._base, self._run_id)
+        self._run_id = self._run_dir.name
         (self._run_dir / "shared_context").mkdir(exist_ok=True)
         (self._run_dir / "rounds").mkdir(exist_ok=True)
         (self._run_dir / "final").mkdir(exist_ok=True)

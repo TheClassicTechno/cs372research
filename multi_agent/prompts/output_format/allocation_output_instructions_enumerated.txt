@@ -48,11 +48,10 @@ WRONG (ticker not in universe):
   "claims": [
     {
       "claim_id": "C1",
-      "claim_text": "... concise causal hypothesis with inline evidence citations ...",
-      "pearl_level": "L1" | "L2" | "L3",
-      "claim_type": "macro" | "sector" | "firm",
+      "claim_text": "... concise analytical hypothesis with inline evidence citations ...",
+      "reasoning_type": "causal" | "observational" | "risk_assessment" | "pattern",
+      "claim_type": "macro" | "sector" | "firm" | "risk" | "technical",
       "evidence": ["[EVIDENCE-ID]", "..."],
-      "variables": ["fed_rate", "AAPL_price"],
       "assumptions": ["..."],
       "falsifiers": ["..."],
       "impacts_positions": ["TICKER", "..."],
@@ -87,19 +86,15 @@ WRONG (ticker not in universe):
 • Each claim must have a **unique ID**
   C1, C2, C3, ...
 
-• Each claim must represent a **distinct causal hypothesis**
+• Each claim must represent a **distinct analytical hypothesis**
 
-• Claims should ideally follow a structure such as:
+• Claims should follow a structure appropriate to your analytical framework
 
-  C1 — macro regime effect
-  C2 — sector or factor implication
-  C3 — company-specific thesis
+• Each claim should represent a distinct mechanism relevant to your decision lens
 
 • Claims should be **concise and atomic**
 
 • Do NOT write long essays or bundle multiple unrelated ideas into one claim
-
-• Claims should connect **macro → sector/factor → security** where possible
 
 • Claims that do not influence any positions are INVALID
 
@@ -112,8 +107,17 @@ Every claim MUST include a `"claim_type"` field:
 • `"macro"` — macro regime, rates, inflation, economic environment
 • `"sector"` — sector/industry dynamics, factor exposure
 • `"firm"` — company-specific fundamentals, filings, earnings
+• `"risk"` — volatility, correlation, drawdown, portfolio risk dynamics
+• `"technical"` — price action, momentum, trend behavior
 
 `claim_type` is REQUIRED for each claim.
+
+Every claim MUST include a `"reasoning_type"` field:
+
+• `"causal"` — if X changes, Y will follow (intervention or counterfactual reasoning)
+• `"observational"` — X is associated with Y (correlation or pattern)
+• `"risk_assessment"` — X creates vulnerability to Y (conditional risk)
+• `"pattern"` — price behavior suggests continuation or reversal
 
 ---
 
@@ -197,9 +201,9 @@ Unsupported allocations will be treated as weak reasoning.
 ## ALLOCATION RULES
 
 • Include EVERY ticker from the allocation universe — no more, no fewer
-• Weights must be between **0.0 and 0.40** (max 40% per ticker)
+• Weights must be between **0.0 and __MAX_WEIGHT__** (max __MAX_WEIGHT_PCT__% per ticker)
 • Weights MUST **sum to 1.0**
-• At least **3 tickers must have weight > 0**
+• At least **__MIN_HOLDINGS__ tickers must have weight > 0**
 • A weight of **0.0 means zero allocation**
 
 Higher weight = stronger conviction.

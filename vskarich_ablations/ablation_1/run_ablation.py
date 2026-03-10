@@ -125,6 +125,7 @@ def _execute_run(
     debate_path: str,
     scenario_path: str,
     retries: int,
+    quiet: bool = False,
 ) -> dict:
     """Run a single ablation pair with retry logic.
 
@@ -146,7 +147,11 @@ def _execute_run(
     for attempt in range(1, attempts + 1):
         try:
             start = time.time()
-            result = subprocess.run(cmd, cwd=str(REPO_ROOT))
+            result = subprocess.run(
+                cmd, cwd=str(REPO_ROOT),
+                stdout=subprocess.DEVNULL if quiet else None,
+                stderr=subprocess.DEVNULL if quiet else None,
+            )
             elapsed = time.time() - start
             last_exit = result.returncode
 
@@ -201,12 +206,16 @@ def main() -> None:
         help="Wipe ablation_status.json and start fresh.",
     )
     parser.add_argument(
-        "--workers", type=int, default=1,
-        help="Number of parallel workers (default: 1 = serial).",
+        "--workers", type=int, default=1, choices=[1, 2, 3, 4],
+        help="Number of parallel workers (1–4; default: 1 = serial).",
     )
     parser.add_argument(
         "--retries", type=int, default=0,
         help="Number of retries per failed run (default: 0).",
+    )
+    parser.add_argument(
+        "--quiet", "-q", action="store_true",
+        help="Suppress per-run simulation output (keep only progress bar).",
     )
     args = parser.parse_args()
 
@@ -264,7 +273,7 @@ def main() -> None:
             key = _run_key(debate.stem, scenario.stem)
             pbar.set_postfix_str(f"{debate.stem[:30]}...", refresh=True)
 
-            run_result = _execute_run(str(debate), str(scenario), args.retries)
+            run_result = _execute_run(str(debate), str(scenario), args.retries, quiet=args.quiet)
 
             # Update status (main thread only)
             status[run_result["key"]] = {
@@ -302,7 +311,7 @@ def main() -> None:
             future_to_key = {}
             for debate, scenario in remaining:
                 future = executor.submit(
-                    _execute_run, str(debate), str(scenario), args.retries,
+                    _execute_run, str(debate), str(scenario), args.retries, args.quiet,
                 )
                 future_to_key[future] = _run_key(debate.stem, scenario.stem)
 
