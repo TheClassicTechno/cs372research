@@ -1,0 +1,106 @@
+# ============================================================================
+# Scenario: 2022 Inflation Rotation — Energy vs Growth Divergence
+# Q4 2021 data → Q1 2022 investment decision
+# ============================================================================
+# Ablation 2: Stock selection in a balanced macro regime.
+# Energy surges (CVX +38%, XOM +24%) while growth resets (NVDA -15%, GS -16%).
+# EW return ~+2.76% masks extreme cross-sectional dispersion.
+
+scenario_type: "vskarich_ablation"
+experiment_group: "ablation_2_stock_selection"
+universe_size: 18
+
+invest_quarter: "2022Q1"
+
+macro_context: |
+  ## Macro Environment Overview
+
+  [L0-MACRO-REGIME] As of the end of Q4 2021, global financial markets are contending with a sharp pivot in monetary policy expectations. After nearly two years of ultra-accommodative policy, the Federal Reserve has signaled an aggressive tightening cycle in response to inflation that has reached multi-decade highs.
+
+  [L0-INFLATION-SURGE] Consumer price inflation has accelerated sharply through 2021, driven by pandemic-era supply chain disruptions, tight labor markets, and surging energy and commodity prices. Year-over-year CPI exceeded 7% by December 2021.
+
+  [L0-FED-PIVOT] The Federal Reserve has signaled that rate hikes will begin in early 2022 and that quantitative tightening may follow, marking a dramatic reversal from the zero-rate, asset-purchase regime that supported equity valuations since 2020.
+
+  [L0-COMMODITY-BOOM] Energy and commodity markets have rallied significantly as global demand recovered while supply remained constrained by underinvestment and geopolitical tensions.
+
+  [L0-VALUATION-RESET] High-multiple growth stocks face discount rate pressure as real yields rise. The Nasdaq 100 has begun underperforming value-oriented indices after two years of dominance.
+
+  These conditions create a highly uncertain environment in which sector rotation and stock selection are likely to drive meaningful return dispersion.
+
+  ## Competing Macro Theses
+
+  The following interpretations represent plausible explanations for current market behavior.
+
+  Agents should evaluate which interpretation is most consistent with the available evidence.
+
+  ### Thesis A — Commodity Supercycle
+
+  [L0-COMMODITY-BOOM] Years of underinvestment in fossil fuel production capacity, combined with post-pandemic demand recovery and geopolitical supply risks, may sustain elevated energy and commodity prices.
+
+  [L0-INFLATION-SURGE] If inflation remains structurally elevated, energy producers with strong free cash flow and pricing power stand to benefit disproportionately.
+
+  [L0-ENERGY-OUTPERFORMANCE] Under this interpretation, energy names such as CVX and XOM may significantly outperform the broader market as commodity revenues surge.
+
+  ### Thesis B — Growth Valuation Reset
+
+  [L0-FED-PIVOT] Aggressive monetary tightening increases the discount rate applied to long-duration cash flows, mechanically compressing the valuations of high-growth technology companies.
+
+  [L0-VALUATION-RESET] Companies trading at elevated price-to-earnings multiples may experience sharp de-ratings even if underlying earnings remain strong.
+
+  [L0-DURATION-RISK] Under this interpretation, large-cap tech and semiconductor names may underperform despite solid fundamentals, as the market reprices growth expectations.
+
+  ### Thesis C — Defensive Quality
+
+  [L0-MACRO-REGIME] Rising uncertainty and tightening financial conditions may favor companies with stable earnings, strong balance sheets, and essential demand characteristics.
+
+  [L0-INFLATION-SURGE] Consumer staples and healthcare companies with pricing power may protect real returns in an inflationary environment.
+
+  [L0-QUALITY-PREMIUM] Under this interpretation, defensive names such as UNH, JNJ, WMT, and COST may provide downside protection while maintaining modest growth.
+
+  ### Thesis D — Financials Rate Tailwind
+
+  [L0-FED-PIVOT] Rising interest rates typically expand net interest margins for banks and financial institutions, potentially boosting earnings for the financial sector.
+
+  [L0-COMMODITY-BOOM] Strong economic activity and elevated commodity prices may support loan demand and trading revenues.
+
+  [L0-FINANCIALS-ROTATION] Under this interpretation, financials such as JPM, GS, and BAC may benefit from a higher-rate environment — though credit risk from an eventual slowdown remains a competing concern.
+
+  Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+  These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+tickers:
+  # Mega-cap technology
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - META
+  - GOOG
+
+  # Financials
+  - JPM
+  - GS
+  - BAC
+
+  # Energy
+  - XOM
+  - CVX
+
+  # Industrials / Defense
+  - CAT
+  - RTX
+
+  # Healthcare
+  - UNH
+  - LLY
+  - JNJ
+
+  # Consumer staples / Defensive
+  - WMT
+  - COST
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 18

@@ -118,6 +118,19 @@ function buildEoSection(eo) {
  * Accepts the experiment pid object.
  * Returns an HTML string.
  */
+/**
+ * Format a distribution object as "key: NN.N%, key: NN.N%".
+ * Returns an HTML string with labels.
+ */
+function fmtDistribution(dist) {
+  var keys = Object.keys(dist);
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    parts.push(esc(keys[i]) + ':&nbsp;' + fmt(dist[keys[i]] * 100, 1) + '%');
+  }
+  return parts.join(' &nbsp;\u2022&nbsp; ');
+}
+
 function buildPidSection(pid) {
   var h = '<div class="section-label">PID</div>';
   h += '<table class="data-table">';
@@ -125,11 +138,11 @@ function buildPidSection(pid) {
   h += '<tr><td>Beta Final Mean \u00b1 StDev</td><td>' + meanStdev(pid.beta_final, 4) + '</td></tr>';
   var qd = pid.quadrant_distribution;
   if (qd !== undefined && qd !== null) {
-    h += '<tr><td>Quadrant Distribution</td><td>' + esc(JSON.stringify(qd)) + '</td></tr>';
+    h += '<tr><td>Quadrant Distribution</td><td>' + fmtDistribution(qd) + '</td></tr>';
   }
   var td = pid.tone_distribution;
   if (td !== undefined && td !== null) {
-    h += '<tr><td>Tone Distribution</td><td>' + esc(JSON.stringify(td)) + '</td></tr>';
+    h += '<tr><td>Tone Distribution</td><td>' + fmtDistribution(td) + '</td></tr>';
   }
   h += '</table>';
   return h;
@@ -163,9 +176,13 @@ function buildBreakdownTable(label, breakdowns) {
   var keys = Object.keys(breakdowns);
   if (keys.length === 0) return '';
 
+  keys.sort(function (a, b) { return rhoSortKey(breakdowns[b]) - rhoSortKey(breakdowns[a]); });
+
   var h = '<div class="section-label">' + esc(label) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Name</th><th>Runs</th><th>Final \u03c1 Mean</th><th>Final JS Mean</th></tr>';
+  var rhoHeader = label === 'Per Agent Config' ? 'Final \u03c1' : 'Final \u03c1 Mean';
+  var jsHeader = label === 'Per Agent Config' ? 'Final JS' : 'Final JS Mean';
+  h += '<tr><th>Name</th><th>Runs</th><th>' + rhoHeader + '</th><th>' + jsHeader + '</th></tr>';
   for (var i = 0; i < keys.length; i++) {
     var b = breakdowns[keys[i]];
     var rhoMean = (b.rho && b.rho.final_round) ? fmt(b.rho.final_round.mean, 4) : '\u2014';
@@ -180,21 +197,48 @@ function buildBreakdownTable(label, breakdowns) {
 }
 
 /**
+ * Wrap HTML content in a metrics-col div.
+ * Returns an HTML string.
+ */
+function col(html) {
+  return '<div class="metrics-col">' + html + '</div>';
+}
+
+/**
  * Build the inner body HTML for an experiment card.
  * Accepts the experiment data object.
- * Returns an HTML string with all metric sections.
+ * Returns an HTML string with all metric sections arranged in rows.
+ *
+ * Row 1: Rho, CRIT Pillars, JS Divergence, Evidence Overlap (side-by-side)
+ * Row 2: PID, Collapse Metrics (side-by-side)
+ * Row 3: Per Scenario, Per Agent Config (side-by-side)
  */
 function buildExperimentBody(data) {
   var body = '<div style="margin-bottom:4px"><strong>Runs:</strong> ' + esc(String(data.run_count));
   body += ' &nbsp; <strong>Model:</strong> ' + esc(data.model) + '</div>';
-  if (data.rho !== undefined && data.rho !== null) { body += buildRhoTable(data.rho); }
-  if (data.pillars !== undefined && data.pillars !== null) { body += buildPillarsTable(data.pillars); }
-  if (data.js_divergence !== undefined && data.js_divergence !== null) { body += buildJsSection(data.js_divergence); }
-  if (data.evidence_overlap !== undefined && data.evidence_overlap !== null) { body += buildEoSection(data.evidence_overlap); }
-  if (data.pid !== undefined && data.pid !== null) { body += buildPidSection(data.pid); }
-  if (data.collapse !== undefined && data.collapse !== null) { body += buildCollapseSection(data.collapse); }
-  body += buildBreakdownTable('Per Scenario', data.per_scenario);
-  body += buildBreakdownTable('Per Agent Config', data.per_agent_config);
+
+  // Row 1: Rho, Pillars, JS Divergence, Evidence Overlap
+  var row1 = '';
+  if (data.rho !== undefined && data.rho !== null) { row1 += col(buildRhoTable(data.rho)); }
+  if (data.pillars !== undefined && data.pillars !== null) { row1 += col(buildPillarsTable(data.pillars)); }
+  if (data.js_divergence !== undefined && data.js_divergence !== null) { row1 += col(buildJsSection(data.js_divergence)); }
+  if (data.evidence_overlap !== undefined && data.evidence_overlap !== null) { row1 += col(buildEoSection(data.evidence_overlap)); }
+  if (row1 !== '') { body += '<div class="metrics-row" data-testid="metrics-row-quality">' + row1 + '</div>'; }
+
+  // Row 2: PID, Collapse Metrics
+  var row2 = '';
+  if (data.pid !== undefined && data.pid !== null) { row2 += col(buildPidSection(data.pid)); }
+  if (data.collapse !== undefined && data.collapse !== null) { row2 += col(buildCollapseSection(data.collapse)); }
+  if (row2 !== '') { body += '<div class="metrics-row metrics-row-spread" data-testid="metrics-row-pid">' + row2 + '</div>'; }
+
+  // Row 3: Per Scenario, Per Agent Config (side-by-side)
+  var row3 = '';
+  var scenarioHtml = buildBreakdownTable('Per Scenario', data.per_scenario);
+  var agentHtml = buildBreakdownTable('Per Agent Config', data.per_agent_config);
+  if (scenarioHtml !== '') { row3 += col(scenarioHtml); }
+  if (agentHtml !== '') { row3 += col(agentHtml); }
+  if (row3 !== '') { body += '<div class="metrics-row" data-testid="metrics-row-breakdowns">' + row3 + '</div>'; }
+
   return body;
 }
 
@@ -216,9 +260,22 @@ export function buildExperimentCard(name, data) {
  * Accepts the full experiments object.
  * Returns an HTML table string.
  */
+/**
+ * Extract final rho mean from an experiment or breakdown entry.
+ * Returns -Infinity when unavailable so entries sort to the bottom.
+ */
+function rhoSortKey(d) {
+  if (d.rho && d.rho.final_round && d.rho.final_round.mean != null) {
+    return d.rho.final_round.mean;
+  }
+  return -Infinity;
+}
+
 export function buildAblationOverview(experiments) {
   var names = Object.keys(experiments);
   if (names.length === 0) return '<p>No experiments found.</p>';
+
+  names.sort(function (a, b) { return rhoSortKey(experiments[b]) - rhoSortKey(experiments[a]); });
 
   var h = '<table class="data-table" data-testid="ablation-overview">';
   h += '<tr><th>Experiment</th><th>Runs</th><th>Model</th>';
