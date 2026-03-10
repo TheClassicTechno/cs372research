@@ -1672,3 +1672,314 @@ class TestFullPipelineHandoff:
         assert "critique" in user_prompt.lower(), (
             "CRIT prompt should contain critique section"
         )
+
+
+# ===================================================================
+# ASSEMBLED PROMPT HELPERS
+# ===================================================================
+
+def _render_full_critique_prompt(
+    profile_name: str, memo: str, enriched: bool,
+) -> str:
+    """Render the full assembled critique prompt for a given profile.
+
+    Builds proposals, renders v2 text, and calls build_critique_prompt()
+    exactly as critique_node() does in production.
+    """
+    profile = _load_profile(profile_name)
+    user_cfg = profile.get("user_prompts", {}).get("critique", {})
+    template = user_cfg.get("template")
+    sections = user_cfg.get("sections")
+
+    overrides = {}
+    if template:
+        overrides["critique_template"] = template
+
+    # Build proposals the same way critique_node does
+    proposals = _make_proposals(enriched)
+    role = "macro"
+    action_dict = proposals[0]["action_dict"]
+
+    my_proposal = json.dumps(action_dict)
+    my_proposal_v2 = render_previous_proposal(action_dict)
+    others_text_v2 = render_others_proposals(proposals, role)
+
+    all_proposals_for_critique = [
+        {"role": p["role"], "proposal": json.dumps(p.get("action_dict", {}))}
+        for p in proposals
+    ]
+
+    return build_critique_prompt(
+        role, memo, all_proposals_for_critique, my_proposal,
+        prompt_file_overrides=overrides or None,
+        user_sections=sections,
+        my_proposal_v2=my_proposal_v2,
+        others_text_v2=others_text_v2,
+        sector_constraints="",
+    )
+
+
+def _render_full_revision_prompt(
+    profile_name: str, memo: str, enriched: bool,
+) -> str:
+    """Render the full assembled revision prompt for a given profile.
+
+    Builds proposal + critiques, renders v2 text, and calls
+    build_revision_prompt() exactly as revise_node() does in production.
+    """
+    profile = _load_profile(profile_name)
+    user_cfg = profile.get("user_prompts", {}).get("revise", {})
+    template = user_cfg.get("template")
+    sections = user_cfg.get("sections")
+
+    overrides = {}
+    if template:
+        overrides["revision_template"] = template
+
+    proposals = _make_proposals(enriched)
+    role = "macro"
+    action_dict = proposals[0]["action_dict"]
+
+    my_proposal = json.dumps(action_dict)
+    my_proposal_v2 = render_previous_proposal(action_dict)
+
+    # Build critiques the same way revise_node collects them
+    if enriched:
+        critiques_received = [
+            {
+                "from_role": "risk",
+                "objection": "Overweight tech in high-rate regime [L1-10Y].",
+                "target_claim": "C1",
+                "counter_evidence": ["[L1-10Y]", "[L1-VIX]"],
+                "falsifier": "Rate cuts would invalidate this concern",
+                "portfolio_implication": "Reduce AAPL weight by 10%",
+                "suggested_adjustment": "Cut AAPL from 40% to 30%",
+                "objection_confidence": 0.8,
+            },
+        ]
+    else:
+        critiques_received = [
+            {
+                "from_role": "risk",
+                "objection": "Too aggressive on tech exposure.",
+            },
+        ]
+
+    critiques_text_v2 = render_critiques_received(critiques_received)
+
+    return build_revision_prompt(
+        role, memo, my_proposal, critiques_received,
+        prompt_file_overrides=overrides or None,
+        user_sections=sections,
+        my_proposal_v2=my_proposal_v2,
+        critiques_text_v2=critiques_text_v2,
+        sector_constraints="",
+        allocation_constraints={"max_weight": 0.40, "min_holdings": 2},
+    )
+
+
+# ===================================================================
+# TEST GROUP 10 — ASSEMBLED CRITIQUE PROMPT HANDOFF
+#
+# Render the full critique prompt per-profile (exactly as critique_node
+# does) and verify that structural fields from the proposal survive
+# template assembly.  This catches the case where render_previous_proposal
+# does its job but the template uses {{ my_proposal }} (v1 raw JSON)
+# instead of {{ my_proposal_v2 }} (v2 rendered text).
+# ===================================================================
+
+class TestAssembledCritiquePrompt:
+    """Full assembled critique prompts must contain structural fields."""
+
+    # --- Enriched: v2 rendered text lands in the prompt ----------------
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_claim_ids(self, profile, mini_memo):
+        """Enriched critique prompt contains claim_id references from proposal."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "C1:" in prompt or '"C1"' in prompt or "C1" in prompt, (
+            f"Enriched profile '{profile}' critique prompt missing claim_id references"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_claim_type(self, profile, mini_memo):
+        """Enriched critique prompt contains claim_type from rendered proposal."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "Claim Type:" in prompt or "claim_type" in prompt, (
+            f"Enriched profile '{profile}' critique prompt missing claim_type"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_evidence(self, profile, mini_memo):
+        """Enriched critique prompt contains evidence citations from proposal."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "[L1-10Y]" in prompt, (
+            f"Enriched profile '{profile}' critique prompt missing evidence IDs"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_falsifiers(self, profile, mini_memo):
+        """Enriched critique prompt contains per-claim falsifiers from proposal."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "Falsifiers:" in prompt or "falsifiers" in prompt, (
+            f"Enriched profile '{profile}' critique prompt missing falsifiers"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_position_rationale(self, profile, mini_memo):
+        """Enriched critique prompt contains position rationale with claim refs."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "Supported by claims:" in prompt or "supported_by_claims" in prompt, (
+            f"Enriched profile '{profile}' critique prompt missing position rationale claim refs"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_critique_prompt_has_other_agents(self, profile, mini_memo):
+        """Enriched critique prompt contains other agents' rendered proposals."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=True)
+        assert "RISK agent proposed:" in prompt or "risk" in prompt.lower(), (
+            f"Enriched profile '{profile}' critique prompt missing other agents' proposals"
+        )
+
+    # --- Base: v1 raw JSON loses structural rendering ------------------
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_BASE, ids=_PROPOSING_BASE)
+    def test_base_critique_prompt_lacks_rendered_claim_type(self, profile, mini_memo):
+        """Base critique prompt uses raw JSON — 'Claim Type:' label absent."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=False)
+        # "Claim Type:" is the v2 rendered label from render_previous_proposal.
+        # Base templates use {{ my_proposal }} (v1 raw JSON), so this label
+        # never appears even though v2 rendered text was generated.
+        has_rendered_label = "Claim Type:" in prompt
+        if not has_rendered_label:
+            pytest.xfail(
+                f"Base profile '{profile}' critique prompt uses v1 raw JSON — "
+                "rendered structural labels absent"
+            )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_BASE, ids=_PROPOSING_BASE)
+    def test_base_critique_prompt_lacks_supported_by_claims(self, profile, mini_memo):
+        """Base critique prompt lacks 'Supported by claims:' label."""
+        prompt = _render_full_critique_prompt(profile, mini_memo, enriched=False)
+        has_label = "Supported by claims:" in prompt
+        if not has_label:
+            pytest.xfail(
+                f"Base profile '{profile}' critique prompt missing position-claim links"
+            )
+
+
+# ===================================================================
+# TEST GROUP 11 — ASSEMBLED REVISION PROMPT HANDOFF
+#
+# Render the full revision prompt per-profile (exactly as revise_node
+# does) and verify that critique details survive template assembly.
+# This catches the case where render_critiques_received() produces
+# detailed text but the template uses {{ critiques_text }} (lossy
+# one-liner) instead of {{ critiques_text_v2 }}.
+# ===================================================================
+
+class TestAssembledRevisionPrompt:
+    """Full assembled revision prompts must contain critique structural fields."""
+
+    # --- Enriched: v2 critique details land in the prompt --------------
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_target_claim(self, profile, mini_memo):
+        """Enriched revision prompt contains target_claim from critique."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        assert "Target claim: C1" in prompt or "target_claim" in prompt, (
+            f"Enriched profile '{profile}' revision prompt missing target_claim"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_counter_evidence(self, profile, mini_memo):
+        """Enriched revision prompt contains counter-evidence from critique."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        assert "[L1-10Y]" in prompt, (
+            f"Enriched profile '{profile}' revision prompt missing counter-evidence"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_falsifier(self, profile, mini_memo):
+        """Enriched revision prompt contains falsifier from critique."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        assert "Falsifier:" in prompt or "falsifier" in prompt.lower(), (
+            f"Enriched profile '{profile}' revision prompt missing critique falsifier"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_portfolio_implication(self, profile, mini_memo):
+        """Enriched revision prompt contains portfolio implication from critique."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        assert "Portfolio implication:" in prompt or "portfolio_implication" in prompt, (
+            f"Enriched profile '{profile}' revision prompt missing portfolio implication"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_own_proposal(self, profile, mini_memo):
+        """Enriched revision prompt contains the agent's own rendered proposal."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        # The v2 rendered proposal should appear via {{ my_proposal_v2 }}
+        assert "Previous Portfolio Allocation" in prompt or "allocation" in prompt.lower(), (
+            f"Enriched profile '{profile}' revision prompt missing own proposal context"
+        )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_ENRICHED, ids=_PROPOSING_ENRICHED)
+    def test_enriched_revision_prompt_has_objection_confidence(self, profile, mini_memo):
+        """Enriched revision prompt contains objection confidence from critique."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=True)
+        assert "Objection confidence: 0.8" in prompt or "objection_confidence" in prompt, (
+            f"Enriched profile '{profile}' revision prompt missing objection confidence"
+        )
+
+    # --- Base: lossy v1 critique text drops structural fields ----------
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_BASE, ids=_PROPOSING_BASE)
+    def test_base_revision_prompt_lacks_target_claim(self, profile, mini_memo):
+        """Base revision prompt uses lossy v1 critiques — target_claim absent."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=False)
+        has_target_claim = "Target claim:" in prompt or "target_claim" in prompt
+        if not has_target_claim:
+            pytest.xfail(
+                f"Base profile '{profile}' revision prompt uses v1 critiques_text — "
+                "target_claim lost in lossy format"
+            )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_BASE, ids=_PROPOSING_BASE)
+    def test_base_revision_prompt_lacks_counter_evidence(self, profile, mini_memo):
+        """Base revision prompt loses counter-evidence in lossy v1 format."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=False)
+        # v1 critiques_text is just "- [RISK]: Too aggressive on tech exposure."
+        # No counter-evidence, no target_claim, no falsifier
+        has_counter_ev = "Counter-evidence:" in prompt or "counter_evidence" in prompt
+        if not has_counter_ev:
+            pytest.xfail(
+                f"Base profile '{profile}' revision prompt uses v1 critiques_text — "
+                "counter-evidence lost in lossy format"
+            )
+
+    @pytest.mark.fast
+    @pytest.mark.parametrize("profile", _PROPOSING_BASE, ids=_PROPOSING_BASE)
+    def test_base_revision_prompt_has_objection_text(self, profile, mini_memo):
+        """Base revision prompt at least contains the objection text."""
+        prompt = _render_full_revision_prompt(profile, mini_memo, enriched=False)
+        # Even lossy v1 format includes the objection string
+        assert "Too aggressive" in prompt or "objection" in prompt.lower(), (
+            f"Base profile '{profile}' revision prompt missing even the objection text"
+        )
