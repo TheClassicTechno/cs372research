@@ -1,0 +1,1383 @@
+=== SYSTEM PROMPT ===
+You are an analyst participating in a multi-agent portfolio allocation debate
+on a professional trading desk.
+
+Multiple agents will propose, critique, and revise portfolio allocations.
+Each agent represents a different analytical perspective.
+
+Your objective is to produce rigorous, evidence-based reasoning while
+critically evaluating the arguments of other agents.
+
+Focus on analytical rigor, clear reasoning, and disciplined use of evidence.
+
+
+---------------------------------------------------------------------
+
+## Evidence Citation — MANDATORY
+
+You MUST cite data using ONLY the exact bracketed evidence IDs
+from the investment memo.
+
+Valid citations look like:
+
+[L1-FF]
+[L1-VIX]
+[L1-10Y]
+[AAPL-RET60]
+
+Rules:
+
+• NEVER invent evidence labels
+• NEVER paraphrase evidence IDs
+• NEVER reference evidence that does not appear in the memo
+
+Any claim without a valid bracketed evidence ID is considered unsupported.
+
+
+---------------------------------------------------------------------
+
+## Reasoning Discipline
+
+Your reasoning must follow these principles:
+
+• Ground all claims in explicit evidence from the memo
+• Avoid unsupported speculation
+• Ensure arguments are internally consistent
+• Clearly connect evidence → reasoning → conclusion
+
+You should prioritize explanations that logically follow from
+the available data rather than making unsupported assumptions.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Construction Discipline
+
+When constructing or revising a portfolio:
+
+• Allocate more capital to higher-conviction ideas
+• Allocate less capital to lower-conviction ideas
+• Avoid equal-weight portfolios unless conviction is identical
+• Ensure allocations reflect the reasoning presented
+
+Your portfolio must clearly express your analytical thesis.
+
+
+---------------------------------------------------------------------
+
+## Active Critique Requirement
+
+During critique phases you must identify at least ONE
+concrete weakness in another agent's reasoning.
+
+Examples of critique targets:
+
+• unsupported claims
+• weak causal reasoning
+• ignoring relevant evidence
+• inconsistent logic
+• fragile assumptions
+
+
+---------------------------------------------------------------------
+
+## Weakest-Assumption Attacks
+
+When evaluating another agent's argument,
+identify the **single weakest assumption** in their thesis.
+
+Focus on assumptions that:
+
+• rely on unverified conditions
+• contradict available evidence
+• depend on fragile reasoning
+• ignore relevant data
+
+Explain clearly why the assumption weakens the argument.
+
+
+---------------------------------------------------------------------
+
+## Anti-Convergence Rule
+
+You are NOT required to converge with other agents.
+
+If critiques do not meaningfully invalidate your reasoning,
+you should defend your thesis rather than adopting another
+agent's conclusion.
+
+Do NOT shift toward neutral allocations simply to reduce disagreement.
+
+
+---------------------------------------------------------------------
+
+## Disagreement Tracking
+
+When revising your reasoning, explicitly state:
+
+Accepted critiques:
+- critiques you accept and how they changed your reasoning
+
+Rejected critiques:
+- critiques you reject and why they do not invalidate your thesis
+
+
+---------------------------------------------------------------------
+
+## Epistemic Calibration
+
+After presenting your thesis, explicitly state the conditions
+that would cause you to revise or abandon your position.
+
+These conditions must be:
+
+• concrete
+• falsifiable
+• tied to observable evidence
+
+Examples include:
+
+• new data contradicting key assumptions
+• evidence invalidating the reasoning chain
+• structural changes in the environment
+
+
+---------------------------------------------------------------------
+
+## Debate Objective
+
+The goal of this debate is not consensus for its own sake.
+
+The objective is to:
+
+• test competing analytical frameworks
+• identify weaknesses in reasoning
+• refine portfolio decisions through adversarial analysis
+
+Disagreement is expected and valuable when supported by
+evidence and sound reasoning.
+You are the TECHNICAL ANALYST agent on a multi-agent trading desk.
+
+Your analytical objective is to determine **what the market is currently doing
+based on price action, momentum, and trend persistence, and which assets
+are most likely to continue outperforming.**
+
+Your core question is:
+
+"What does price action indicate about the current market trend,
+and which companies exhibit the strongest momentum signals?"
+
+
+---------------------------------------------------------------------
+
+## Primary Decision Lens
+
+You analyze markets through **price behavior and momentum dynamics.**
+
+Your reasoning focuses on:
+
+• trend direction and persistence
+• momentum strength and acceleration
+• breakout and reversal signals
+• relative strength across assets
+• confirmation through price and volume behavior
+
+Your portfolio should favor securities where **price action
+supports continued directional movement.**
+
+
+---------------------------------------------------------------------
+
+## Analytical Domain
+
+Your analysis focuses on technical indicators that reveal
+trend structure and momentum dynamics:
+
+• moving-average regimes (SMA50, SMA200)
+• medium-term and long-term momentum metrics
+• relative strength versus peers
+• support and resistance levels
+• volume confirmation of price moves
+• trend continuation versus exhaustion signals
+
+You evaluate securities primarily through the question:
+
+"What does the current price trend imply about
+near-term direction and continuation probability?"
+
+
+---------------------------------------------------------------------
+
+## Narrative Commitment
+
+You operate under the following technical narrative:
+
+**Price action reflects the aggregated information of the market,
+and established trends tend to persist until momentum weakens.**
+
+Under this framework:
+
+• price incorporates information faster than fundamental analysis
+• trends often persist longer than expected
+• momentum continuation provides exploitable signals
+• fighting strong trends usually leads to poor outcomes
+
+Your allocations should therefore prioritize **assets with strong
+price momentum and confirmed trend structures.**
+
+
+---------------------------------------------------------------------
+
+## Evidence Priorities
+
+You prioritize evidence derived directly from **price behavior.**
+
+Primary evidence sources:
+
+• medium-term and long-term returns
+• momentum indicators and trend strength
+• price relative to key moving averages
+• relative strength versus peers
+• volume confirmation of price movements
+
+Secondary evidence sources:
+
+• sector-level momentum rotation
+• volatility signals affecting trend persistence
+• correlation patterns affecting momentum trades
+
+Macro or fundamental signals should only influence your reasoning
+if they clearly contradict the **observed price trend.**
+
+
+---------------------------------------------------------------------
+
+## Portfolio Objective
+
+Construct a portfolio that **captures momentum and trend persistence.**
+
+Your allocations should favor securities that exhibit:
+
+• strong upward price momentum
+• price trading above key trend levels
+• relative strength versus other assets
+• confirmation through sustained directional movement
+
+Avoid allocating heavily to securities whose **price action
+contradicts the prevailing trend.**
+
+
+---------------------------------------------------------------------
+
+## Portfolio Differentiation
+
+Your portfolio must clearly reflect **technical momentum logic.**
+
+If another agent focused on macro conditions or fundamental
+valuation could construct the same portfolio, your reasoning
+is insufficiently technical.
+
+Typical technically-driven positioning includes:
+
+• overweighting strong momentum leaders
+• avoiding assets in sustained downtrends
+• favoring securities with strong relative strength
+• rotating toward sectors with accelerating price trends
+
+
+---------------------------------------------------------------------
+
+## Technical Market Regimes
+
+When evaluating market conditions, consider whether price
+behavior suggests one of the following regimes:
+
+• trending markets with persistent directional momentum
+• range-bound markets characterized by mean reversion
+• breakout environments following consolidation
+• reversal conditions following trend exhaustion
+
+Your portfolio should align with the **dominant technical regime.**
+
+
+---------------------------------------------------------------------
+
+## Common Technical Reasoning Traps
+
+Avoid the following mistakes:
+
+• interpreting random noise as meaningful patterns
+• assuming every trend will immediately reverse
+• ignoring momentum persistence in strong trends
+• relying on lagging signals after price has already moved
+## Revision Tone: BALANCED
+
+Your objective is to improve the **accuracy, robustness, and internal consistency**
+of your thesis by incorporating critiques that materially strengthen the reasoning,
+while rejecting critiques that do not meaningfully affect your analytical framework.
+
+You are not trying to preserve your original thesis at all costs,
+and you are not trying to converge for its own sake.
+
+Your task is to determine:
+
+• which critiques genuinely expose weaknesses in your reasoning
+• which critiques are valid but low-impact
+• which critiques are inconsistent with the evidence or your analytical lens
+• how accepted critiques should change your thesis, confidence, and allocation
+
+
+---------------------------------------------------------------------
+
+### Balanced Revision Principles
+
+Apply the following standards when revising:
+
+• **Materiality**
+  Only accept critiques that change the strength, scope, or logic of the thesis.
+
+• **Role consistency**
+  Maintain your analytical lens as a TECHNICAL agent.
+  Do not adopt another agent’s reasoning framework wholesale.
+
+• **Reasoning improvement**
+  Your revised thesis must be more precise, better supported, or more robust
+  than the original.
+
+• **Allocation proportionality**
+  Portfolio changes should reflect the magnitude of the reasoning update.
+  Small reasoning updates should not produce extreme allocation swings.
+  Large reasoning failures should not leave the allocation unchanged.
+
+
+---------------------------------------------------------------------
+
+### Required Revision Actions
+
+For each critique, determine whether it is:
+
+• **accepted and material**
+  → it changes the reasoning, confidence, or allocation
+
+• **accepted but limited**
+  → it improves the framing or completeness of the thesis but does not
+    substantially change the allocation
+
+• **rejected**
+  → it does not meaningfully weaken the thesis within your analytical framework
+
+Then perform the following:
+
+1. **Diagnose the impact of accepted critiques**
+   Explain whether the critique changes:
+   • the causal mechanism
+   • the assumptions
+   • the interpretation of evidence
+   • the confidence of the thesis
+   • the portfolio implication
+
+2. **Repair the thesis**
+   Update the argument by doing at least one of the following:
+   • refine the causal explanation
+   • narrow or qualify the claim
+   • incorporate additional memo evidence
+   • revise assumptions or confidence
+   • explain how competing evidence is resolved
+
+3. **Reassess the allocation**
+   Determine whether accepted critiques imply:
+   • reducing a position
+   • increasing a position
+   • reallocating between positions
+   • leaving the portfolio largely unchanged despite a reasoning improvement
+
+4. **Preserve strategic coherence**
+   The revised portfolio should remain a coherent expression of your role-based thesis,
+   not a patchwork compromise with other agents.
+
+
+---------------------------------------------------------------------
+
+### Important Constraints
+
+• Do NOT repeat your original reasoning without meaningful modification.
+
+• Do NOT accept critiques merely because they sound plausible.
+
+• Do NOT reject critiques that clearly weaken your thesis.
+
+• Do NOT make portfolio changes that are larger than the reasoning warrants.
+
+• If your thesis remains mostly intact, explain why.
+  If your thesis materially changed, explain exactly what changed.
+
+
+---------------------------------------------------------------------
+
+### Reasoning Update Requirement
+
+You MUST update your reasoning in at least one substantive way.
+
+Valid updates include:
+
+• refining the causal mechanism
+• adjusting assumptions or uncertainty
+• incorporating additional evidence from the memo
+• clarifying how conflicting evidence is interpreted
+• reducing the scope or confidence of an overextended claim
+
+A revision that only rephrases the same thesis without changing its reasoning
+does NOT satisfy this requirement.
+
+
+---------------------------------------------------------------------
+
+### Portfolio Revision Principles
+
+Portfolio changes must follow from the revised reasoning.
+
+Use the following guidance:
+
+• If a critique weakens a core claim, reduce exposure accordingly.
+
+• If a critique only adds nuance without materially changing the thesis,
+  small or no allocation changes may be appropriate.
+
+• If a critique reveals a stronger interpretation of the evidence,
+  modestly strengthen the most justified positions.
+
+• Avoid excessive turnover between rounds unless the revised reasoning
+  clearly supports a different strategy.
+
+
+---------------------------------------------------------------------
+
+### Required Structure
+
+Accepted critiques
+- critiques that materially improved or refined your reasoning
+
+Rejected critiques
+- critiques that do not alter your thesis within your analytical framework
+
+Reasoning updates
+- exactly how your causal explanation, assumptions, confidence, or evidence use changed
+
+Revised thesis
+- updated explanation incorporating accepted critiques while preserving strategic coherence
+
+Portfolio changes
+- allocation adjustments and the reasoning that justifies them
+
+=== USER PROMPT ===
+You are the TECHNICAL ANALYST agent in a multi-agent portfolio allocation debate.
+
+Your analytical framework is **price behavior, momentum dynamics, and market structure**.
+
+Your investment thesis is based on the principle that **price contains information about supply, demand, and market participant positioning**.
+
+You previously proposed a portfolio using **technical causal claims (C1, C2, …)** derived from price-based signals.
+
+You have now received critiques from other agents.
+
+Your task is to **revise or defend your proposal while maintaining technical analysis discipline.**
+
+Your objective is **not to reach consensus** and **not to adopt fundamental reasoning frameworks**.
+
+Many critiques from other agents will rely on:
+
+• macroeconomic narratives
+• valuation-based arguments
+• long-term fundamental expectations
+
+Those arguments may be valid within their frameworks, but they **do not invalidate price-based signals**.
+
+Technical analysis focuses on **observable market behavior**:
+
+• price trends
+• momentum persistence
+• volatility regimes
+• drawdowns and recoveries
+• relative strength between assets
+
+You should therefore **reject critiques that ignore price behavior**.
+
+You should only revise claims if critiques demonstrate that **your interpretation of the price signals is incorrect.**
+
+---
+
+## Financial Context
+## Portfolio Allocation Task
+- Cash to allocate: $100,000.00
+- Allocation universe: AMD, AMZN, BAC, CAT, CVX, PG, RTX, SLB, _CASH_
+- As-of: 2023-03-31
+- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).
+[INFO] QUARTERLY SNAPSHOT MEMO — 2023 Q1
+As-of date: 2023-03-31
+Tickers: 8
+
+This document is the complete data payload for agent deliberation.
+It contains macro regime, per-ticker price/fundamental metrics,
+SEC filing summaries, and news sentiment for the quarter.
+
+Agents must:
+  - Cite evidence IDs (e.g. [L1-10Y], [AAPL-RET60]) when making claims.
+  - Integrate across layers (macro -> filings -> sentiment -> price).
+  - Treat all interpretations as non-binding hypotheses.
+
+======================================================================
+LAYER 1 — MACRO REGIME
+======================================================================
+
+Rates & Yields:
+  [L1-FF]    Fed Funds: 4.83%
+  [L1-2Y]    2Y Treasury: 4.06% (-35bps QoQ)
+  [L1-10Y]   10Y Treasury: 3.48% (-40bps QoQ)
+  [L1-30Y]   30Y Treasury: 3.67%
+  [L1-CURVE] 10Y-2Y Spread: -0.58% (inverted)
+  [L1-REAL]  10Y Real Yield: 1.16%
+
+Inflation:
+  [L1-CPI]   CPI YoY: 4.92%
+  [L1-CORE]  Core CPI YoY: 5.57%
+
+Growth & Labor:
+  [L1-INDPRO] Industrial Production Index: 101.02
+  [L1-UNEMP] Unemployment: 3.50%
+
+Credit & Commodities:
+  [L1-HY]    HY OAS Spread: 4.58%
+  [L1-DXY]   Dollar Index: 119.36
+  [L1-WTI]   WTI Crude: $75.68
+
+Volatility:
+  [L1-VIX]   VIX: 18.70
+  [L1-EQBC]  Equity-Bond Correlation: 0.05
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $97.88
+    [AMD-RET20]    20D Return: +21.7%
+    [AMD-RET60]    60D Return: +52.9%
+    [AMD-RET120]   120D Return: +44.3%
+    [AMD-RET252]   1Y Return: -20.6%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 43.1%
+    [AMD-VOL60]    60D Vol (ann): 51.1%
+    [AMD-DVOL60]   60D Downside Vol: 21.4%
+    [AMD-DD60]     60D Drawdown: -13.2%
+    [AMD-MDD1Y]    1Y Max Drawdown: -54.6%
+    [AMD-SHARPE]   60D Sharpe: 3.49
+    [AMD-BETA]     1Y Beta: 1.96
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $91.21
+    [AMD-SMA50]    SMA 50D: $84.09
+    [AMD-SMA200]   SMA 200D: $77.77
+    [AMD-MOM200]   200D Momentum: 1.26
+    [AMD-MOM12_1]  12-1M Momentum: -36.5%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.3136
+    [AMD-TREND]    Trend Consistency: 0.55
+    [AMD-RS60]     Relative Strength 60D: +56.8%
+    [AMD-ESURP]    Earnings Surprise: +3.0%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $6,870,064,090
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: 0.0189
+    [AMD-SVOL]     Sentiment Volatility: 0.5140
+
+  Filing Evidence (10-K, filed 2023-02-27, fiscal period: FY2022):
+    [AMD-F1] AMD achieved $23.6 billion net revenue in 2022, increasing 44% from prior year driven by Data Center growth from EPYC server processors, Gaming segment expansion from console SoC demand, and Embedded revenue from acquired Xilinx products.
+    [AMD-F2] Client segment declined due to weak PC market conditions and supply chain inventory corrections.
+    [AMD-F3] International sales comprised 66% of revenue with company depending on small customer base including semi-custom SoC revenue tied to console success.
+    [AMD-F4] Gross margin compressed to 45% from 48% primarily due to acquisition-related intangible asset amortization from Xilinx acquisition.
+    [AMD-F5] Research and development and administrative expenses increased substantially driven by strategic investments, headcount expansion through acquisitions, and increased go-to-market activities.
+    [AMD-F6] Manufacturing depends on third-party foundries with TSMC handling advanced nodes while GLOBALFOUNDRIES provides larger node capacity through 2025 wafer supply agreement.
+    [AMD-F7] Completed strategic acquisitions of Xilinx in February 2022 for adaptable hardware platforms and Pensando Systems in May 2022 for data processing units, recording significant goodwill and intangible assets.
+    [AMD-F8] Issued senior notes and established commercial paper program for operational flexibility.
+    [AMD-F9] Returned $3.7 billion to shareholders through share repurchases under stock repurchase program with John Caldwell retiring as Lead Independent Director.
+    [AMD-F10] Operations face heightened geopolitical risks from US-China tensions and potential Taiwan disruptions affecting third-party foundries, with nearly all assembly and testing performed in Asia-Pacific facilities.
+    [AMD-F11] Export control restrictions limit product shipments to China and Russia while expanding regulations target advanced computing semiconductors.
+    [AMD-F12] Global economic uncertainty and potential recession conditions may reduce consumer confidence with particular vulnerability to PC market downturns.
+    [AMD-F13] Integration of Xilinx and Pensando acquisitions expected to deliver operational synergies and product innovations while company maintains growth strategy through potential complementary acquisitions.
+    [AMD-F14] Management expects continued dependence on small customer base with semi-custom SoC success tied to next-generation console performance and ongoing research investment to maintain competitive positioning.
+    [AMD-F15] Goodwill and intangible assets from recent acquisitions subject to annual impairment testing with significant judgment required for fair value determinations.
+    [AMD-F16] Wafer supply agreement with GLOBALFOUNDRIES creates financial exposure if annual purchase targets not met requiring shortfall payments through 2025.
+    [AMD-F17] Total debt includes cross-default provisions with acceleration triggers and maintains valuation allowance for tax attributes due to regulatory limitations.
+
+  Recent 8-K Events (1):
+    [AMD-EV1] 8-K filed 2023-01-11
+      Devinder Kumar retired as CFO effective January 23, 2023, with Jean Hu appointed as his replacement from Marvell Technology. Hu received $725,000 base salary, $5 million sign-on equity award, $12 million make-whole equity compensation, and $2 million cash bonus. Executive bonuses totaling $2.26 million were approved for fiscal 2022 performance, including $918,800 for CEO Lisa Su.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD reported first quarter 2023 revenue of $5.4 billion, a 9% year-over-year decline, with data center and embedded products contributing over 50% of total revenue.
+    [AMD-EC2] The data center segment remained flat year-over-year at $1.3 billion, driven by strong cloud sales, while client segment revenue fell 65% to $739 million due to inventory reduction efforts.
+    [AMD-EC3] The gaming segment saw a 6% decline to $1.8 billion, and the embedded segment achieved record revenue of $1.6 billion, reflecting strong demand across various markets.
+    [AMD-EC4] For the second quarter of 2023, AMD expects revenue to be approximately $5.3 billion, down 19% year-over-year but flat sequentially.
+    [AMD-EC5] Management anticipates growth in the client and data center segments, offset by declines in gaming and embedded segments.
+    [AMD-EC6] Looking ahead, AMD is confident in achieving double-digit growth in the data center segment for the full year, driven by the ramp of new products and improving demand trends.
+    [AMD-EC7] AMD faces risks from a mixed demand environment influenced by macroeconomic uncertainties, particularly in the enterprise sector.
+    [AMD-EC8] The company is also navigating inventory challenges in the client segment and potential competitive pressures in the data center market.
+    [AMD-EC9] Additionally, the success of its AI strategy and product launches, such as the MI300 GPUs, will be critical in determining future growth.
+    [AMD-EC10] Key drivers for AMD's growth include the successful ramp of its Zen 4 EPYC CPU portfolio, the upcoming launches of Bergamo and Genoa-X processors, and the expansion of its AI product offerings.
+    [AMD-EC11] The company is also focused on enhancing its embedded solutions and capitalizing on strong demand in industrial and automotive markets.
+    [AMD-EC12] The integration of Xilinx's capabilities is expected to further strengthen AMD's position in the embedded and data center segments.
+
+======================================================================
+TICKER: AMZN
+======================================================================
+
+  Price & Returns:
+    [AMZN-PX]       Close: $102.00
+    [AMZN-RET20]    20D Return: +10.7%
+    [AMZN-RET60]    60D Return: +18.9%
+    [AMZN-RET120]   120D Return: -15.2%
+    [AMZN-RET252]   1Y Return: -39.8%
+
+  Volatility & Risk:
+    [AMZN-VOL20]    20D Vol (ann): 29.8%
+    [AMZN-VOL60]    60D Vol (ann): 39.3%
+    [AMZN-DVOL60]   60D Downside Vol: 25.5%
+    [AMZN-DD60]     60D Drawdown: -19.6%
+    [AMZN-MDD1Y]    1Y Max Drawdown: -51.7%
+    [AMZN-SHARPE]   60D Sharpe: 1.85
+    [AMZN-BETA]     1Y Beta: 1.66
+
+  Trend & Momentum:
+    [AMZN-SMA20]    SMA 20D: $96.65
+    [AMZN-SMA50]    SMA 50D: $97.79
+    [AMZN-SMA200]   SMA 200D: $107.51
+    [AMZN-MOM200]   200D Momentum: 0.95
+    [AMZN-MOM12_1]  12-1M Momentum: -45.6%
+    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.0679
+    [AMZN-TREND]    Trend Consistency: 0.52
+    [AMZN-RS60]     Relative Strength 60D: +22.7%
+    [AMZN-ESURP]    Earnings Surprise: -82.3%
+    [AMZN-ADVOL]    Avg Dollar Volume 20D: $5,726,432,053
+
+  Sentiment (from earnings call):
+    [AMZN-SENT]     Mean Sentiment: 0.3379
+    [AMZN-SVOL]     Sentiment Volatility: 0.5796
+
+  Filing Evidence (10-K, filed 2023-02-03, fiscal period: FY2022):
+    [AMZN-F1] Amazon reported total net sales of $514.0 billion for fiscal 2022, representing 9% growth year-over-year, with North America achieving growth while International declined and AWS accelerated to strong double-digit expansion.
+    [AMZN-F2] Operating income declined sharply to $12.2 billion from $24.9 billion as North America shifted to operating losses and International losses expanded, while AWS operating income increased substantially.
+    [AMZN-F3] Consumer business growth moderated significantly from pandemic-elevated levels as retail patterns normalized and discretionary spending faced macroeconomic headwinds.
+    [AMZN-F4] Operating expenses increased driven by stock-based compensation expense surging to $19.6 billion from $12.8 billion, with technology and content expenses absorbing substantial equity costs.
+    [AMZN-F5] Fulfillment and technology costs rose due to wage inflation, capacity expansion, AWS infrastructure investments, and original content production.
+    [AMZN-F6] Cost of sales increased 6% with improved margin mix as higher-margin services revenue grew faster than products revenue.
+    [AMZN-F7] Amazon completed MGM acquisition for $6.1 billion in March 2022 and authorized a $10 billion share repurchase program, executing $6 billion during the year.
+    [AMZN-F8] The company issued $21.1 billion in new debt with maturities extending to 2032.
+    [AMZN-F9] Leadership transitions included Andy Jassy as CEO and Douglas Herrington as CEO Worldwide Amazon Stores, while the company announced pending acquisitions of One Medical and iRobot.
+    [AMZN-F10] Foreign exchange headwinds reduced net sales by $15.5 billion with International segment particularly impacted by dollar strength.
+    [AMZN-F11] European authorities imposed significant GDPR and competition fines totaling over $1.8 billion.
+    [AMZN-F12] Inflationary pressures across labor, transportation, and energy costs elevated operational expenses while supply chain disruptions continued affecting inventory management and fulfillment operations.
+    [AMZN-F13] Q1 2023 guidance anticipates net sales between $121-126 billion representing 4-8% growth with continued foreign exchange headwinds and operating income between $0-4 billion.
+    [AMZN-F14] Management signaled sustained investment in AWS infrastructure expansion, artificial intelligence capabilities, and original content production.
+    [AMZN-F15] Capital allocation priorities emphasize technology infrastructure, fulfillment network optimization, and emerging technologies including satellite broadband and autonomous vehicles.
+    [AMZN-F16] Amazon faces approximately $4 billion in accrued tax contingencies across multiple jurisdictions with ongoing disputes regarding transfer pricing and service taxation.
+    [AMZN-F17] Multiple antitrust lawsuits in the U.S. and Canada allege price-fixing arrangements with courts allowing certain claims to proceed, while patent litigation exposure includes potential damages ranging from $130-986 million across multiple cases.
+    [AMZN-F18] The company increased self-insurance reserves by $1.3 billion in Q4 2022 for general, product, and automobile liabilities driven by revised claims cost estimates.
+
+  Earnings Call Evidence:
+    [AMZN-EC1] In Q1 2023, Amazon reported net sales of $127.4 billion, a 9% increase year-over-year, exceeding guidance.
+    [AMZN-EC2] The growth was driven by strong performance in worldwide stores and a 16% increase in AWS sales, totaling $21.4 billion.
+    [AMZN-EC3] Operating income reached $4.8 billion, despite a $470 million employee severance charge, while net income was $3.2 billion, impacted by a $467 million loss from Rivian investments.
+    [AMZN-EC4] Management remains optimistic about future growth, particularly in AWS and advertising, despite ongoing economic uncertainties.
+    [AMZN-EC5] They are focused on optimizing costs and improving operational efficiency, with a shift towards a regional fulfillment model expected to enhance delivery speeds and reduce costs.
+    [AMZN-EC6] Investments in generative AI and large language models are seen as key growth areas, with expectations of significant long-term returns.
+    [AMZN-EC7] The company faces risks from economic uncertainties, including inflation and cautious consumer spending, which may impact demand for discretionary items.
+    [AMZN-EC8] Additionally, fluctuations in foreign exchange rates and potential changes in global economic conditions could materially affect financial results.
+    [AMZN-EC9] The ongoing optimization efforts in AWS may also lead to short-term revenue growth challenges as customers adjust their spending.
+    [AMZN-EC10] Key drivers of growth include the expansion of third-party seller participation, which accounted for 59% of unit sales, and a 23% increase in advertising revenue.
+    [AMZN-EC11] The transition to a regional fulfillment network is expected to improve delivery efficiency.
+    [AMZN-EC12] In AWS, the focus on cost optimization and customer support during economic uncertainty is anticipated to strengthen long-term customer relationships and drive future growth.
+
+======================================================================
+TICKER: BAC
+======================================================================
+
+  Price & Returns:
+    [BAC-PX]       Close: $26.18
+    [BAC-RET20]    20D Return: -15.5%
+    [BAC-RET60]    60D Return: -15.0%
+    [BAC-RET120]   120D Return: -8.9%
+    [BAC-RET252]   1Y Return: -33.2%
+
+  Volatility & Risk:
+    [BAC-VOL20]    20D Vol (ann): 45.8%
+    [BAC-VOL60]    60D Vol (ann): 30.6%
+    [BAC-DVOL60]   60D Downside Vol: 25.6%
+    [BAC-DD60]     60D Drawdown: -26.2%
+    [BAC-MDD1Y]    1Y Max Drawdown: -36.4%
+    [BAC-SHARPE]   60D Sharpe: -2.23
+    [BAC-BETA]     1Y Beta: 0.97
+
+  Trend & Momentum:
+    [BAC-SMA20]    SMA 20D: $27.24
+    [BAC-SMA50]    SMA 50D: $30.25
+    [BAC-SMA200]   SMA 200D: $30.70
+    [BAC-MOM200]   200D Momentum: 0.85
+    [BAC-MOM12_1]  12-1M Momentum: -20.0%
+    [BAC-IDMOM]    Idiosyncratic Momentum 60D: -0.2332
+    [BAC-TREND]    Trend Consistency: 0.45
+    [BAC-RS60]     Relative Strength 60D: -11.1%
+    [BAC-ESURP]    Earnings Surprise: +10.4%
+    [BAC-ADVOL]    Avg Dollar Volume 20D: $2,587,227,420
+
+  Sentiment (from earnings call):
+    [BAC-SENT]     Mean Sentiment: 0.2116
+    [BAC-SVOL]     Sentiment Volatility: 0.5171
+
+  Filing summary: not available
+
+  Earnings Call Evidence:
+    [BAC-EC1] Bank of America reported strong first quarter results with an 18% year-over-year increase in earnings per share (EPS), reaching $0.94.
+    [BAC-EC2] The bank achieved a 13% growth in revenue, driven by a 25% increase in net interest income and strong performance across all business segments.
+    [BAC-EC3] The CET1 ratio improved to 11.4%, and the bank maintained robust liquidity with over $900 billion in global liquidity sources.
+    [BAC-EC4] Management anticipates a shallow recession beginning in Q3 2023, but consumer financial positions remain healthy with strong account balances and access to credit.
+    [BAC-EC5] They expect net interest income (NII) to decrease slightly in Q2 due to anticipated lower deposit balances and a shift towards interest-bearing accounts.
+    [BAC-EC6] Overall, they remain optimistic about organic growth and operational leverage.
+    [BAC-EC7] Key risks include potential economic slowdown impacting loan demand and consumer spending, as well as regulatory changes that could affect capital requirements.
+    [BAC-EC8] The bank is also monitoring the impact of Federal Reserve actions on interest rates and the overall economic environment, which could influence deposit behaviors and asset quality.
+    [BAC-EC9] The bank's performance was driven by strong organic growth in client accounts, particularly in consumer banking, where they opened 130,000 new checking accounts and 1.3 million credit card accounts.
+    [BAC-EC10] Additionally, the bank's focus on digital engagement and customer relationships has enhanced customer satisfaction and retention, contributing to overall revenue growth.
+
+======================================================================
+TICKER: CAT
+======================================================================
+
+  Price & Returns:
+    [CAT-PX]       Close: $213.86
+    [CAT-RET20]    20D Return: -11.0%
+    [CAT-RET60]    60D Return: -5.5%
+    [CAT-RET120]   120D Return: +27.0%
+    [CAT-RET252]   1Y Return: +4.0%
+
+  Volatility & Risk:
+    [CAT-VOL20]    20D Vol (ann): 34.6%
+    [CAT-VOL60]    60D Vol (ann): 29.0%
+    [CAT-DVOL60]   60D Downside Vol: 21.2%
+    [CAT-DD60]     60D Drawdown: -18.7%
+    [CAT-MDD1Y]    1Y Max Drawdown: -30.1%
+    [CAT-SHARPE]   60D Sharpe: -0.83
+    [CAT-BETA]     1Y Beta: 0.90
+
+  Trend & Momentum:
+    [CAT-SMA20]    SMA 20D: $217.19
+    [CAT-SMA50]    SMA 50D: $228.97
+    [CAT-SMA200]   SMA 200D: $200.82
+    [CAT-MOM200]   200D Momentum: 1.06
+    [CAT-MOM12_1]  12-1M Momentum: +15.1%
+    [CAT-IDMOM]    Idiosyncratic Momentum 60D: -0.1131
+    [CAT-TREND]    Trend Consistency: 0.53
+    [CAT-RS60]     Relative Strength 60D: -1.7%
+    [CAT-ESURP]    Earnings Surprise: -4.2%
+    [CAT-ADVOL]    Avg Dollar Volume 20D: $721,429,956
+
+  Sentiment (from earnings call):
+    [CAT-SENT]     Mean Sentiment: -0.0359
+    [CAT-SVOL]     Sentiment Volatility: 0.6965
+
+  Filing Evidence (10-K, filed 2023-02-15, fiscal period: FY2022):
+    [CAT-F1] Caterpillar achieved $59.4 billion in sales and revenues for 2022, representing 17% growth driven by favorable price realization and higher sales volume across all three primary segments, partially offset by unfavorable currency impacts.
+    [CAT-F2] Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines.
+    [CAT-F3] Operating profit margin remained stable at 13.3% despite a $925 million goodwill impairment charge for the Rail reporting unit.
+    [CAT-F4] Manufacturing costs increased significantly due to higher material costs, freight expenses, and manufacturing inefficiencies from supply chain disruptions, partially offsetting benefits from favorable price realization.
+    [CAT-F5] Operating expenses rose driven by strategic investments in services growth, digital technology, electrification, and autonomy initiatives, plus higher short-term incentive compensation expense.
+    [CAT-F6] Restructuring costs totaled $299 million versus $90 million prior year reflecting ongoing operational optimization efforts.
+    [CAT-F7] The company recorded a $925 million goodwill impairment charge for the Rail reporting unit reflecting reduced locomotive demand forecasts, lower margins from inflationary pressures, and higher discount rates.
+    [CAT-F8] Management reached a $490 million settlement with the IRS resolving all tax disputes for 2007-2016 without penalties, generating a $41 million discrete tax benefit.
+    [CAT-F9] The Board approved a new $15 billion share repurchase authorization with the company repurchasing $4.2 billion of common stock and paying $2.4 billion in dividends.
+    [CAT-F10] The company faces heightened exposure to commodity price volatility affecting energy and mining customers whose equipment purchase decisions depend on expected future commodity dynamics.
+    [CAT-F11] Foreign exchange sensitivity increased with a hypothetical 10% dollar weakening potentially adversely affecting 2023 cash flow by approximately $98 million, with primary exposures to major global currencies.
+    [CAT-F12] Supply chain disruptions from material shortages, logistics constraints, and transportation capacity limitations continue creating production delays and increased costs.
+    [CAT-F13] Management expects continued price realization benefits and volume growth across segments supported by strong demand fundamentals and infrastructure investment dynamics.
+    [CAT-F14] Expected net periodic benefit cost is projected to increase $273 million in 2023 primarily due to higher interest costs from elevated discount rates.
+    [CAT-F15] Enterprise operating cash flow reached $7.8 billion with enterprise cash position of $7.0 billion providing liquidity for operations and capital allocation.
+    [CAT-F16] Primary uncertainties include duration and severity of supply chain disruptions, semiconductor availability, and transportation capacity constraints affecting production schedules and customer deliveries.
+    [CAT-F17] Pending tax examinations for years 2017-2019 with unrecognized tax benefits remain unresolved alongside ongoing federal investigation regarding cash movements and parts transactions among subsidiaries.
+    [CAT-F18] Rail division faces continued challenges with locomotive market outlook remaining below expectations, while China excavator industry expected to remain below 2022 levels.
+
+  Earnings Call Evidence:
+    [CAT-EC1] Caterpillar reported a strong first quarter of 2023 with sales and revenues increasing by 17% year-over-year to $15.9 billion, driven by strong price realization and volume growth.
+    [CAT-EC2] Adjusted operating profit margins improved to 21.1%, significantly exceeding expectations due to better manufacturing costs and efficiencies.
+    [CAT-EC3] The backlog remained healthy at $30.4 billion, and the company generated $1.4 billion in ME&T free cash flow, returning $1 billion to shareholders through dividends and stock repurchases.
+    [CAT-EC4] Management expects 2023 to be even better than previously anticipated, with strong demand across end markets.
+    [CAT-EC5] They anticipate being in the top half of the targeted range for adjusted operating profit margin and ME&T free cash flow.
+    [CAT-EC6] While they expect a seasonal increase in sales in the second quarter, they also foresee a decrease in dealer inventories compared to the first quarter, which may impact sales in the second half of the year.
+    [CAT-EC7] Caterpillar continues to monitor global macroeconomic conditions, which could impact demand.
+    [CAT-EC8] There are pockets of supply chain challenges that remain, particularly for large engines and some larger machines.
+    [CAT-EC9] Additionally, the company faces potential headwinds from pension expenses and restructuring costs, which could affect profitability.
+    [CAT-EC10] Key drivers of Caterpillar's performance include strong customer demand across various end markets, particularly in Energy & Transportation and Resource Industries.
+    [CAT-EC11] The company benefits from improving supply chain conditions, which have allowed for increased equipment availability and dealer inventory levels.
+    [CAT-EC12] Strategic investments in sustainability and new technologies are also expected to support long-term growth.
+
+======================================================================
+TICKER: CVX
+======================================================================
+
+  Price & Returns:
+    [CVX-PX]       Close: $143.03
+    [CVX-RET20]    20D Return: -0.1%
+    [CVX-RET60]    60D Return: -5.8%
+    [CVX-RET120]   120D Return: +2.3%
+    [CVX-RET252]   1Y Return: +2.2%
+
+  Volatility & Risk:
+    [CVX-VOL20]    20D Vol (ann): 26.3%
+    [CVX-VOL60]    60D Vol (ann): 25.8%
+    [CVX-DVOL60]   60D Downside Vol: 17.2%
+    [CVX-DD60]     60D Drawdown: -18.2%
+    [CVX-MDD1Y]    1Y Max Drawdown: -24.9%
+    [CVX-SHARPE]   60D Sharpe: -0.98
+    [CVX-BETA]     1Y Beta: 0.74
+
+  Trend & Momentum:
+    [CVX-SMA20]    SMA 20D: $140.00
+    [CVX-SMA50]    SMA 50D: $145.60
+    [CVX-SMA200]   SMA 200D: $142.53
+    [CVX-MOM200]   200D Momentum: 1.00
+    [CVX-MOM12_1]  12-1M Momentum: +2.0%
+    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.1020
+    [CVX-TREND]    Trend Consistency: 0.52
+    [CVX-RS60]     Relative Strength 60D: -1.9%
+    [CVX-ESURP]    Earnings Surprise: -4.9%
+    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,290,192,427
+
+  Sentiment (from earnings call):
+    [CVX-SENT]     Mean Sentiment: 0.4816
+    [CVX-SVOL]     Sentiment Volatility: 0.3941
+
+  Filing Evidence (10-K, filed 2023-02-23, fiscal period: FY2022):
+    [CVX-F1] Chevron operates in a commodities business with significant exposure to crude oil price volatility, which represents the most significant factor affecting results of operations.
+    [CVX-F2] Extended periods of low crude oil prices can materially adversely impact results, financial condition, and liquidity, potentially affecting production, proved reserves, and upstream asset valuations.
+    [CVX-F3] Downstream earnings depend on refined product supply, demand, and associated margins.
+    [CVX-F4] The company's cost structure experiences direct impacts from commodity price fluctuations, with upstream operations particularly affected during price downturns.
+    [CVX-F5] Operational costs may increase substantially due to climate change-related legislation requiring capital expenditures for compliance, emissions reduction technologies, and carbon credits purchases.
+    [CVX-F6] The company maintains significant self-insurance exposure rather than commercial coverage for operational risks, creating substantial financial exposure to catastrophic events.
+    [CVX-F7] The Board of Directors approved amended and restated By-Laws effective December 7, 2022, updating stockholder meeting procedures, nomination requirements, and proxy solicitation rules.
+    [CVX-F8] Third quarter 2022 earnings of $11.2 billion were announced on October 28, 2022.
+    [CVX-F9] Chevron faces heightened exposure to geopolitical risks including the ongoing Ukraine conflict, COVID-19 pandemic effects on demand and operations, and evolving cybersecurity threats from state-sponsored and criminal actors targeting process control networks.
+    [CVX-F10] The company operates in politically unstable regions subject to government actions including forced contract renegotiations, increased public ownership requirements, additional taxes or royalties, and trade restrictions that could materially impact operations and financial results.
+    [CVX-F11] The company announced an aspiration to achieve net zero Scope 1 and 2 emissions in upstream operations by 2050, with nearer-term targets for zero routine flaring and carbon intensity reductions.
+    [CVX-F12] Achievement of climate-related aspirations depends on commercially viable technology progress, regulatory permit approvals, cost-effective carbon credit availability, and evolving customer preferences.
+    [CVX-F13] The company continues evaluating lower carbon business opportunities through its Chevron New Energies organization.
+    [CVX-F14] The company faces substantial uncertainty from evolving ESG reporting standards, potential windfall profit taxes in multiple jurisdictions including California and Australia, and ongoing Congressional investigations related to climate change.
+    [CVX-F15] Management estimates for asset impairments, reserve calculations, and litigation accruals remain subject to material revision based on changing business plans and market conditions.
+    [CVX-F16] Increasing stakeholder pressure on ESG matters creates risks of divestment, reduced capital access, and potential litigation exposure related to climate-related disclosures.
+
+  Earnings Call Evidence:
+    [CVX-EC1] Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow.
+    [CVX-EC2] The company achieved a return on capital employed greater than 12% for the seventh consecutive quarter, despite a 20% decline in oil prices.
+    [CVX-EC3] Production was down approximately 80,000 barrels per day year-over-year, primarily due to asset sales and contract expirations, but growth is expected in the Permian Basin in the latter half of the year.
+    [CVX-EC4] Looking ahead, Chevron anticipates production growth in the Permian to be back-end loaded, with increased activity in New Mexico and a focus on capital discipline.
+    [CVX-EC5] The company plans to increase share buybacks to an annual rate of $17.5 billion and expects to maintain strong cash returns to shareholders.
+    [CVX-EC6] Key milestones include the startup of the WPMP project in Kazakhstan by the end of 2023 and continued operational improvements in LNG facilities in Australia.
+    [CVX-EC7] Chevron faces risks related to commodity price volatility, regulatory changes, and operational challenges in its various projects.
+    [CVX-EC8] The company is also monitoring potential impacts from new regulations in California regarding profit penalties, which could affect investment and supply dynamics in the region.
+    [CVX-EC9] Additionally, the ongoing geopolitical situation and market conditions in Venezuela present uncertainties for future production and sales.
+    [CVX-EC10] Key drivers of Chevron's performance include its diverse production portfolio, particularly in the Permian Basin, and strong refining margins in the downstream segment.
+    [CVX-EC11] The company's focus on capital and cost discipline, along with strategic investments in carbon capture and storage projects, positions it to navigate market fluctuations effectively.
+    [CVX-EC12] The ability to optimize production and maintain a strong balance sheet further supports its commitment to returning cash to shareholders.
+
+======================================================================
+TICKER: PG
+======================================================================
+
+  Price & Returns:
+    [PG-PX]       Close: $136.58
+    [PG-RET20]    20D Return: +5.4%
+    [PG-RET60]    60D Return: -2.1%
+    [PG-RET120]   120D Return: +18.1%
+    [PG-RET252]   1Y Return: -2.7%
+
+  Volatility & Risk:
+    [PG-VOL20]    20D Vol (ann): 14.7%
+    [PG-VOL60]    60D Vol (ann): 16.3%
+    [PG-DVOL60]   60D Downside Vol: 10.2%
+    [PG-DD60]     60D Drawdown: -10.7%
+    [PG-MDD1Y]    1Y Max Drawdown: -23.8%
+    [PG-SHARPE]   60D Sharpe: -0.55
+    [PG-BETA]     1Y Beta: 0.49
+
+  Trend & Momentum:
+    [PG-SMA20]    SMA 20D: $131.82
+    [PG-SMA50]    SMA 50D: $130.68
+    [PG-SMA200]   SMA 200D: $129.96
+    [PG-MOM200]   200D Momentum: 1.05
+    [PG-MOM12_1]  12-1M Momentum: -9.2%
+    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0467
+    [PG-TREND]    Trend Consistency: 0.47
+    [PG-RS60]     Relative Strength 60D: +1.8%
+    [PG-ESURP]    Earnings Surprise: +0.0%
+    [PG-ADVOL]    Avg Dollar Volume 20D: $884,248,165
+
+  Sentiment (from earnings call):
+    [PG-SENT]     Mean Sentiment: 0.0736
+    [PG-SVOL]     Sentiment Volatility: 0.6136
+
+  Filing Evidence (10-Q, filed 2023-01-19, fiscal period: 2022-Q4 [FYE: Jun 30]):
+    [PG-F1] Net sales decreased 1% to $20.8 billion driven by 6% unfavorable foreign exchange and 6% volume decline, partially offset by 10% pricing increases.
+    [PG-F2] Organic sales increased 5% excluding foreign exchange with Health Care and Fabric & Home Care delivering high single-digit growth while Grooming declined high single digits.
+    [PG-F3] Volume declines were broad-based across regions with double-digit decreases in Europe and high single-digit decreases in Greater China.
+    [PG-F4] Gross margin compressed 160 basis points to 47.5% primarily from 380 basis points of increased commodity and input material costs, partially offset by 470 basis points from higher pricing and 80 basis points from manufacturing productivity savings.
+    [PG-F5] Cost increases reflected commodity inflation for oil-derived materials and pulp, transportation inflation, and labor constraints.
+    [PG-F6] SG&A increased 10 basis points to 24.5% as overhead cost inflation was partially offset by reduced marketing spending.
+    [PG-F7] The company completed integration of Grooming Sector Business Unit combining Shave Care and Appliances categories into unified reporting structure effective July 2022.
+    [PG-F8] Operations in Russia were suspended beginning March 2022 including discontinued capital investments and media activity.
+    [PG-F9] Share repurchases totaled $6.0 billion with dividends paid and quarterly dividend of $0.9133 per share declared.
+    [PG-F10] Russia-Ukraine war negatively impacted operations with combined exposure representing less than 3% of sales, creating uncertainty from potential facility damage and sanctions.
+    [PG-F11] Foreign exchange translation exposures continue across multiple currencies with particular volatility in emerging markets.
+    [PG-F12] Commodity price inflation affecting oil-derived materials and paper-based materials directly impacts cost structure alongside supply chain disruptions from COVID-19 lockdowns and freight container shortages.
+    [PG-F13] Management expects share repurchases during fiscal year 2023, financed by operating cash flows and debt issuance.
+    [PG-F14] The company continues implementing cost improvement plans including supply chain optimization and workforce optimization while managing inflationary impacts through pricing actions and productivity improvements.
+    [PG-F15] Gillette indefinite-lived intangible asset remains susceptible to impairment with fair value cushion of approximately 5%, vulnerable to adverse business changes or currency devaluation.
+    [PG-F16] Commodity and input material cost inflation may continue impacting margins if not offset by pricing actions and cost savings projects.
+    [PG-F17] Currency exchange controls and import authorization restrictions in Argentina, Egypt, Nigeria and Pakistan create operational challenges alongside ongoing tax audits across multiple jurisdictions.
+
+  Earnings Call Evidence:
+    [PG-EC1] Procter & Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%.
+    [PG-EC2] The company maintained its guidance for organic sales growth and core EPS growth despite facing high commodity costs, inflation, and geopolitical challenges.
+    [PG-EC3] Core earnings per share were $1.57, down 2% year-over-year, with a significant impact from rising costs and foreign exchange headwinds.
+    [PG-EC4] Management expects continued volatility in costs and consumer dynamics throughout the fiscal year but remains confident in their integrated strategies to manage these challenges.
+    [PG-EC5] They reaffirmed guidance for organic sales growth of 3% to 5% and core EPS growth of 4%, while planning to return $15 billion to $17 billion to shareholders through dividends and share repurchases.
+    [PG-EC6] The focus will remain on productivity improvements and maintaining investments in innovation.
+    [PG-EC7] Key risks include ongoing high commodity and transportation costs, foreign exchange fluctuations, and potential geopolitical disruptions.
+    [PG-EC8] The company anticipates a $3.9 billion after-tax headwind from these factors, which could significantly impact EPS growth.
+    [PG-EC9] Additionally, consumer behavior changes due to inflation and economic pressures may affect demand and volume in certain categories.
+    [PG-EC10] The primary drivers of growth include effective pricing strategies, a diverse product portfolio, and a focus on innovation and productivity.
+    [PG-EC11] The company is seeing broad-based growth across all product categories, with personal health care and feminine care leading the way.
+    [PG-EC12] Management emphasizes the importance of maintaining brand superiority and adapting to consumer needs in a challenging economic environment.
+
+======================================================================
+TICKER: RTX
+======================================================================
+
+  Price & Returns:
+    [RTX-PX]       Close: $91.20
+    [RTX-RET20]    20D Return: -1.7%
+    [RTX-RET60]    60D Return: -2.9%
+    [RTX-RET120]   120D Return: +16.9%
+    [RTX-RET252]   1Y Return: -1.4%
+
+  Volatility & Risk:
+    [RTX-VOL20]    20D Vol (ann): 20.9%
+    [RTX-VOL60]    60D Vol (ann): 20.2%
+    [RTX-DVOL60]   60D Downside Vol: 13.5%
+    [RTX-DD60]     60D Drawdown: -8.0%
+    [RTX-MDD1Y]    1Y Max Drawdown: -21.9%
+    [RTX-SHARPE]   60D Sharpe: -0.61
+    [RTX-BETA]     1Y Beta: 0.68
+
+  Trend & Momentum:
+    [RTX-SMA20]    SMA 20D: $91.09
+    [RTX-SMA50]    SMA 50D: $91.77
+    [RTX-SMA200]   SMA 200D: $87.43
+    [RTX-MOM200]   200D Momentum: 1.04
+    [RTX-MOM12_1]  12-1M Momentum: -0.7%
+    [RTX-IDMOM]    Idiosyncratic Momentum 60D: -0.0618
+    [RTX-TREND]    Trend Consistency: 0.50
+    [RTX-RS60]     Relative Strength 60D: +1.0%
+    [RTX-ESURP]    Earnings Surprise: +1.6%
+    [RTX-ADVOL]    Avg Dollar Volume 20D: $456,016,427
+
+  Sentiment (from earnings call):
+    [RTX-SENT]     Mean Sentiment: -0.0596
+    [RTX-SVOL]     Sentiment Volatility: 0.5514
+
+  Filing Evidence (10-K, filed 2023-02-07, fiscal period: FY2022):
+    [RTX-F1] RTX generated $67.1 billion consolidated revenue in 2022, up 4% driven by commercial aerospace recovery with Collins and Pratt & Whitney achieving double-digit organic growth from increased aftermarket sales and aircraft utilization.
+    [RTX-F2] Defense segments experienced organic declines due to supply chain constraints and lower production volumes.
+    [RTX-F3] Operating cash flows remained stable at $6.8 billion despite higher tax payments from research expenditure capitalization requirements.
+    [RTX-F4] Consolidated operating profit increased to $5.4 billion with margins improving to 8.1% from 7.7%, driven by commercial aerospace aftermarket recovery and reduced acquisition accounting adjustments.
+    [RTX-F5] Commercial segments achieved significant margin expansion while defense segments experienced compression due to unfavorable program mix and supply chain impacts.
+    [RTX-F6] Capital expenditures increased primarily for Pratt & Whitney production facility investments.
+    [RTX-F7] RTX reversed $1.3 billion of Russian backlog in Q1 2022 due to global sanctions, recognizing $296 million in associated charges.
+    [RTX-F8] The company executed $2.8 billion in share repurchases and paid $3.1 billion in dividends.
+    [RTX-F9] Management announced organizational restructuring from four to three business segments consolidating defense operations into a single Raytheon segment for H2 2023 implementation.
+    [RTX-F10] Global supply chain disruptions continue causing material shortages, delivery delays, and price increases across raw materials and microelectronics, while labor market constraints persist for specialized engineering and security clearance personnel.
+    [RTX-F11] Geopolitical tensions escalated with Russian sanctions impacting operations and potential Chinese sanctions related to Taiwan military sales.
+    [RTX-F12] Climate-related physical risks including extreme weather events pose increased threats to facilities and supply chains.
+    [RTX-F13] Management expects continued commercial aerospace recovery driving growth through increased aftermarket demand and OEM production, though timing of full capacity restoration remains uncertain.
+    [RTX-F14] The company maintains $175 billion total backlog providing strong foundation.
+    [RTX-F15] Strategic focus remains on digital transformation initiatives, sustainable aviation technology investments, and structural cost reductions including facility optimization and advanced manufacturing capabilities.
+    [RTX-F16] RTX faces ongoing DOJ investigation into defense contract pricing matters with $147 million accrual established, while maintaining exposure to annual acquisition accounting adjustments from merger intangibles.
+    [RTX-F17] Two Collins reporting units have fair values exceeding book values by only 15-17% representing $9.5 billion combined goodwill exposure.
+    [RTX-F18] Long-term contract accounting involves significant estimation uncertainty around labor productivity and material costs, while pension obligations remain sensitive to discount rate assumptions.
+
+  Earnings Call Evidence:
+    [RTX-EC1] Raytheon Technologies reported strong Q1 2023 results with sales of $17.2 billion, a 10% organic growth year-over-year, and an adjusted EPS of $1.22.
+    [RTX-EC2] The company exited the quarter with a record backlog of $180 billion, driven by robust demand in both commercial aerospace and defense sectors.
+    [RTX-EC3] Free cash flow was an outflow of $1.4 billion, attributed to higher working capital and seasonal factors, but the company remains confident in achieving $4.8 billion in free cash flow for the full year.
+    [RTX-EC4] Management is optimistic about the demand environment, expecting total global air traffic to recover to pre-pandemic levels by year-end.
+    [RTX-EC5] They anticipate continued growth in both commercial aerospace and defense, supported by a favorable fiscal year 2024 budget request from the President.
+    [RTX-EC6] The company is focused on operational performance and supply chain stabilization, with plans to enhance capacity and efficiency across its business units.
+    [RTX-EC7] Key risks include ongoing supply chain challenges, particularly in castings and raw materials, which could impact production and delivery timelines.
+    [RTX-EC8] Additionally, inflationary pressures remain a concern, affecting costs across the supply chain.
+    [RTX-EC9] The company is also monitoring the impact of geopolitical factors on defense spending and international demand.
+    [RTX-EC10] The primary drivers of growth include strong demand in commercial aerospace, particularly in aftermarket services, and significant defense contracts, including recent awards for the Patriot missile system.
+    [RTX-EC11] The company is also benefiting from a strategic realignment of its business units to enhance collaboration and operational efficiency, which is expected to unlock further synergies.
+
+======================================================================
+TICKER: SLB
+======================================================================
+
+  Price & Returns:
+    [SLB-PX]       Close: $45.16
+    [SLB-RET20]    20D Return: -11.9%
+    [SLB-RET60]    60D Return: -4.9%
+    [SLB-RET120]   120D Return: +15.7%
+    [SLB-RET252]   1Y Return: +16.2%
+
+  Volatility & Risk:
+    [SLB-VOL20]    20D Vol (ann): 52.4%
+    [SLB-VOL60]    60D Vol (ann): 40.9%
+    [SLB-DVOL60]   60D Downside Vol: 30.1%
+    [SLB-DD60]     60D Drawdown: -23.4%
+    [SLB-MDD1Y]    1Y Max Drawdown: -36.8%
+    [SLB-SHARPE]   60D Sharpe: -0.52
+    [SLB-BETA]     1Y Beta: 0.86
+
+  Trend & Momentum:
+    [SLB-SMA20]    SMA 20D: $45.41
+    [SLB-SMA50]    SMA 50D: $48.73
+    [SLB-SMA200]   SMA 200D: $42.12
+    [SLB-MOM200]   200D Momentum: 1.07
+    [SLB-MOM12_1]  12-1M Momentum: +30.9%
+    [SLB-IDMOM]    Idiosyncratic Momentum 60D: -0.0968
+    [SLB-TREND]    Trend Consistency: 0.57
+    [SLB-RS60]     Relative Strength 60D: -1.0%
+    [SLB-ESURP]    Earnings Surprise: +4.4%
+    [SLB-ADVOL]    Avg Dollar Volume 20D: $489,994,841
+
+  Sentiment: not available
+
+  Filing Evidence (10-K, filed 2023-01-25, fiscal period: FY2022):
+    [SLB-F1] Full-year 2022 revenue of $28.1 billion increased 23% year-on-year with double-digit growth across all divisions and geographies.
+    [SLB-F2] International revenue grew broadly with strong performance in Latin America and Europe/CIS/Africa, while North America increased significantly driven by robust onshore drilling activity.
+    [SLB-F3] Fourth quarter revenue increased 5% sequentially with strong digital sales and Middle East activity inflection as capacity expansion projects mobilized.
+    [SLB-F4] Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing.
+    [SLB-F5] Fourth-quarter pretax segment operating margin of 19.8% reached highest level since 2015.
+    [SLB-F6] Working capital consumed $1.7 billion primarily from receivables and inventories increasing to support activity growth.
+    [SLB-F7] Pension obligations reflect higher discount rates reducing liability valuations but increasing future expense sensitivity.
+    [SLB-F8] SLB suspended new investment and technology deployment to Russia operations in March 2022, with Russia representing approximately 6% of worldwide revenue.
+    [SLB-F9] Company sold Liberty shares for $732 million proceeds recognizing $325 million gain.
+    [SLB-F10] SLB increased quarterly dividend 40% to $0.175 per share in April 2022, followed by further 43% increase to $0.25 per share in January 2023.
+    [SLB-F11] Company repurchased senior notes reducing net debt by $1.7 billion to $9.3 billion.
+    [SLB-F12] Company faces heightened geopolitical risks from Ukraine conflict and related sanctions affecting operations and supply chains.
+    [SLB-F13] Energy transition acceleration could reduce demand for traditional services if transition occurs faster than anticipated.
+    [SLB-F14] Climate change regulations may impose taxes, require emissions reductions, or accelerate product obsolescence.
+    [SLB-F15] Company operates in over 100 tax jurisdictions with evolving regulations creating ongoing audit exposure.
+    [SLB-F16] Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity.
+    [SLB-F17] Global upstream spending projections continue trending positively with activity growth expected across international basins.
+    [SLB-F18] Capital investments projected at $2.5 to $2.6 billion in 2023 to support continued revenue growth.
+    [SLB-F19] Company resumed share buyback program under existing authorization following debt optimization.
+    [SLB-F20] SLB maintains peso-denominated net assets in Argentina subject to currency controls and parallel exchange rate risk approximately 93% higher than official rate.
+    [SLB-F21] Company faces potential transaction losses if official rate converges with parallel rate.
+    [SLB-F22] Sustainability goals and net-zero targets expose company to operational, reputational, and legal risks if targets are not achieved within announced timelines.
+    [SLB-F23] Goodwill and asset valuations depend on cash flow projections subject to commodity price changes.
+
+  Earnings call: not available
+
+======================================================================
+END OF MEMO
+======================================================================
+
+
+---
+
+## Your Original Proposal
+## Previous Portfolio Allocation
+AMD: 0.3
+AMZN: 0.05
+BAC: 0.0
+CAT: 0.05
+CVX: 0.03
+PG: 0.2
+RTX: 0.1
+SLB: 0.2
+_CASH_: 0.07
+
+## Previous Thesis
+This portfolio overweights clear momentum leaders and securities trading in bullish SMA regimes (AMD: strong medium-term returns and RS [AMD-RET60], [AMD-RS60]; SLB: strong 12-month momentum [SLB-MOM12_1]; PG: above SMA20/50/200 [PG-SMA20], [PG-SMA50], [PG-SMA200]). Smaller positions are held in names with mixed signals (RTX, CAT, CVX) that are above longer-term SMAs but exhibit less pronounced RS. Minimal exposure to AMZN reflects short-term strength but failure to clear the 200-day SMA ([AMZN-SMA200]). CASH (backstop) is sized to limit portfolio drawdown if momentum leadership reverses; cash rate referenced [L1-FF]. The structure follows technical principles: overweight momentum persistence and SMA-confirmed trends, limit exposure to names below long-term trends, and keep cash to manage regime-change risk.
+
+## Previous Position Rationale
+AMD (0.3): High-conviction momentum leader: strong medium-term returns and RS ([AMD-RET60], [AMD-RS60]) plus price above SMA50/200 ([AMD-SMA50], [AMD-SMA200]) support largest overweight under momentum persistence and bullish SMA regime. Downside risk: rapid trend reversal or break below SMA50/SMA200 on heavy volume.
+  Supported by claims: C1, C2
+
+PG (0.2): Stable trend continuation candidate: price sits above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) with low volatility enabling trend persistence. Serves as ballast to higher-volatility momentum names. Downside risk: commodity-driven margin shocks or broad retail selloff that erodes trend.
+  Supported by claims: C2, C1
+
+SLB (0.2): Momentum and long-term strength: strong 12-month momentum ([SLB-MOM12_1]) and trend consistency ([SLB-TREND]) with price above SMA200 ([SLB-SMA200]) justify material overweight despite elevated volatility. Downside risk: commodity-price driven drawdowns and heightened downside vol.
+  Supported by claims: C1, C2
+
+RTX (0.1): Positive trend above longer-term SMA ([RTX-SMA200]) and solid multi-month returns ([RTX-RET120]) support a tactical growth allocation; lower weight reflects more modest RS and idiosyncratic momentum. Downside risk: supply-chain or backlog shocks that reverse the uptrend.
+  Supported by claims: C2, C1
+
+AMZN (0.05): Small tactical exposure: short/medium momentum exists ([AMZN-RET60]) but price remains below the 200-day SMA ([AMZN-SMA200]) which reduces continuation probability—small position to capture a potential reclaim of long-term trend. Downside risk: failing to reclaim SMA200 leading to underperformance.
+  Supported by claims: C3
+
+CVX (0.03): Modest allocation to a name near/just above its 200-day SMA ([CVX-SMA200]) to capture trend continuation in commodities-linked sector if energy tailwinds persist. Kept small due to mixed short-term returns ([CVX-RET60]). Downside risk: oil-price weakness or operational shocks.
+  Supported by claims: C2
+
+CAT (0.05): Small exposure to a longer-term uptrender (positive 200D momentum [CAT-MOM200] and strong 120D performance [CAT-RET120]) that is in a short-term pullback (price below SMA20/50) — position sized conservatively to capture mean-reversion into the broader uptrend. Downside risk: deeper pullback that breaches SMA200.
+  Supported by claims: C2
+
+CASH (0.07): Convex hedge against momentum breakdowns identified in C3 (e.g., BAC negative momentum [BAC-RET20], AMZN below SMA200 [AMZN-SMA200]) — maintains dry powder if leaders' momentum fails. Cash earns the Fed funds rate [L1-FF].
+  Supported by claims: C3
+
+## Previous Claims
+C1: Stocks exhibiting strong medium-term momentum and relative strength are likely to continue outperforming in the near term due to momentum persistence; AMD shows outsized short/medium momentum and RS (e.g., [AMD-RET60], [AMD-RS60], [AMD-IDMOM]) and SLB shows strong 12-month momentum and trend consistency ([SLB-MOM12_1], [SLB-TREND]) implying persistent upside pressure for these leaders.
+  Pearl Level: L2
+  Claim Type: sector
+  Evidence: [AMD-RET60], [AMD-RS60], [AMD-IDMOM], [SLB-MOM12_1], [SLB-TREND]
+  Variables: momentum, AMD_price, SLB_price, relative_strength
+  Assumptions: Momentum persistence continues in the current market regime, No immediate idiosyncratic shock (earnings surprise or operational news) overwhelms price momentum
+  Falsifiers: Significant drop in short/medium returns for leaders (e.g., AMD losing recent gains) or reversal of idiosyncratic momentum metrics, Volume-confirmed distribution leading to break below short-term moving averages for these names
+  Confidence: 0.78
+
+C2: Price trading above key trend levels (20/50/200 SMAs) signals higher probability of trend continuation; PG is above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) and AMD is trading well above medium and long SMAs ([AMD-SMA50], [AMD-SMA200]), supporting overweight positions in names that are in a bullish moving-average regime.
+  Pearl Level: L2
+  Claim Type: firm
+  Evidence: [PG-SMA20], [PG-SMA50], [PG-SMA200], [AMD-SMA50], [AMD-SMA200]
+  Variables: price_vs_sma20, price_vs_sma50, price_vs_sma200
+  Assumptions: Moving-average regime remains a reliable trend filter in current market conditions, Short-term pullbacks that stay above SMA200 are normal and do not invalidate the uptrend
+  Falsifiers: Sustained break and close below SMA200 on higher volume for the security, Trend consistency metric collapses (large negative TREND) concurrent with SMA regime breach
+  Confidence: 0.72
+
+C3: Momentum divergence and breakdown in short-term trend implies lower forward returns and argues for underweight or cash allocation: BAC exhibits clear negative short/medium returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]), and AMZN remains below the long-term trend ([AMZN-SMA200]) despite recent short-term gains ([AMZN-RET60]) — allocate minimally to names below their long-term trend and hold cash as a hedge.
+  Pearl Level: L2
+  Claim Type: sector
+  Evidence: [BAC-RET20], [BAC-IDMOM], [AMZN-SMA200], [AMZN-RET60]
+  Variables: short_return, idiosyncratic_momentum, price_vs_sma200, cash_allocation
+  Assumptions: Being below the 200-day SMA reduces the probability of sustained outperformance in the near term, Negative idiosyncratic momentum is a sign of trend breakdown rather than short-lived noise
+  Falsifiers: AMZN decisively reclaims SMA200 with confirming volume (invalidates underweight), BAC reverses and posts several consecutive positive medium-term returns with improving IDMOM
+  Confidence: 0.7
+
+## Previous Risks / Falsifiers
+- Market-wide momentum reversal evidenced by a sharp VIX spike and broad negative returns across leaders (e.g., VIX rising >> current [L1-VIX]) would invalidate momentum bets.
+- AMD breaks and closes below its 50-day and 200-day SMAs on volume (e.g., price action breaching [AMD-SMA50] and [AMD-SMA200]) — would trigger rapid de-risking of AMD weight.
+- AMZN decisively reclaims and sustains price above its 200-day SMA with confirming volume (contradicting C3) — would require increasing AMZN weight ([AMZN-SMA200]).
+- Banking-sector stress or repo/liquidity shock causing forced selling that flips the trend dynamics (e.g., sustained deterioration in BAC short-term returns [BAC-RET20]) would force re-evaluation toward cash.
+
+## Previous Confidence
+0.72
+
+## Critiques You Received
+### Critique 1 (from RISK)
+- Target claim: C1
+- Objection: C1 relies on momentum persistence to justify very large weights in high-volatility securities (AMD 30%, SLB 20%). This is fragile because it underweights realized/downside volatility and the risk of momentum reversal during elevated market volatility. AMD shows very high realized vol, large historical drawdowns, and a negative 1Y return that indicate momentum is brittle; SLB has high downside vol and commodity exposure that can reverse momentum quickly.
+- Counter-evidence: [AMD-RET60], [AMD-RS60], [AMD-VOL60], [AMD-DVOL60], [AMD-MDD1Y], [SLB-MOM12_1], [SLB-VOL60], [SLB-DVOL60], [SLB-F1], [L1-VIX]
+- Portfolio implication: A volatility spike or commodity shock would likely reverse AMD and SLB momentum simultaneously. AMD's high vol and large historical drawdown ([AMD-VOL60], [AMD-MDD1Y]) make a 30% allocation prone to catastrophic loss if momentum fails. SLB's commodity sensitivity and high downside vol ([SLB-F1], [SLB-DVOL60]) means the portfolio is exposed to correlated losses across two large positions, amplifying drawdown magnitude and reducing recoverability.
+- Suggested adjustment: Cap single-stock allocations: reduce AMD from 30% to ≤8–10% and SLB from 20% to ≤8–10%. Increase cash (_CASH_) from 7% → 20% and raise PG (defensive) to 25% to lower portfolio volatility and improve drawdown resilience. Enforce volatility-scaled position sizing (size ∝ 1/vol).
+- Falsifier: Sustained low market volatility (VIX compresses meaningfully below current [L1-VIX] and stays low for 60 trading days) combined with persistent momentum and falling idiosyncratic vol for AMD and SLB (measured declines in [AMD-VOL60] and [SLB-VOL60] and reduced downside vol [AMD-DVOL60], [SLB-DVOL60]) would weaken this objection. Alternatively, fundamental evidence that AMD's earnings trajectory materially changed in a durable way (e.g., continued data-center ramp per [AMD-EC6]) would support the momentum bet.
+- Objection confidence: 0.9
+
+### Critique 2 (from VALUE)
+- Target claim: C1 / C2 (momentum and SMA-based sizing)
+- Objection: C1/C2 rely on price momentum and moving-average regimes to justify large allocations (notably AMD 0.30 and SLB 0.20) but underweight fundamental signals that contradict persistent earnings-strength assumptions. AMD’s recent fundamentals show revenue headwinds and segment weakness (Q1 revenue decline, client segment down sharply) and margin pressure from acquisition accounting—these are fundamentals that can undermine momentum if earnings fail to reaccelerate ([AMD-EC1], [AMD-EC2], [AMD-EC4], [AMD-F4], [AMD-F7]). AMD also exhibits high realized volatility and large historical drawdowns that increase valuation risk for a momentum-weighted large position ([AMD-VOL60], [AMD-MDD1Y]). Similarly, SLB’s momentum ignores working capital consumption and geopolitical/transition risks that can impair free cash flow despite margin improvement ([SLB-F6], [SLB-F11], [SLB-F13]). Allocating heavily to momentum leaders without aligning to earnings power risks paying for momentum that is not backed by sustainable EPS growth.
+- Counter-evidence: [AMD-EC1], [AMD-EC2], [AMD-EC4], [AMD-F4], [AMD-F7], [AMD-VOL60], [AMD-MDD1Y], [SLB-F6], [SLB-F11], [SLB-F13], [SLB-F4], [SLB-F16]
+- Portfolio implication: Heavy momentum bets (AMD 0.30, SLB 0.20) expose the portfolio to sharp valuation risk if momentum decouples from fundamentals—e.g., if AMD’s client weakness and acquisition-related margin pressure persist, the market can re-price multiple lower and erase recent price gains despite positive SMA signals ([AMD-EC2], [AMD-F4]). SLB’s apparent margin gains could be offset by working-capital-driven cash consumption or faster-than-expected energy-transition impacts, producing downside to a momentum-weighted position ([SLB-F6], [SLB-F13]).
+- Suggested adjustment: Apply fundamental overlay to momentum sizing: cut AMD from 0.30 to ~0.05–0.08 until AMD shows durable sequential EPS improvement and clearer evidence of margin recovery (reduce exposure given [AMD-EC1], [AMD-EC4], [AMD-F4]). Reduce SLB from 0.20 to ~0.10 and allocate incremental weight to names with demonstrably sustainable cash flows (e.g., PG or CVX) supported by filings ([PG-EC1], [CVX-EC1]). This aligns trend capture with valuation discipline.
+- Falsifier: If AMD demonstrates sustained, company-level recovery—specifically consistent sequential revenue growth and repeatable margin expansion documented in earnings and guidance (e.g., confirmation of the double-digit data center growth full-year outlook and successful product ramps per [AMD-EC6], [AMD-EC10]) and downside volatility compresses materially ([AMD-VOL60] falls substantially)—then the critique is falsified and larger momentum sizing would be justified.
+- Objection confidence: 0.8
+
+Critiques reference your claims using their **claim IDs (C1, C2, …)**.
+
+---
+
+## Your Task
+
+Revise your proposal based on the critiques.
+
+You MUST address **each critique explicitly**.
+
+For each critique:
+
+• Determine whether the critique **invalidates your interpretation of the price signals**.
+
+Then either:
+
+### Option 1 — Rebut the critique
+
+If the critique **does not invalidate the technical evidence**:
+
+• Reject the critique
+• Explain why the critique ignores price behavior
+• Defend your claim using technical evidence
+
+### Option 2 — Accept the critique
+
+If the critique **reveals a genuine flaw in your technical interpretation**:
+
+• Revise the affected claim
+• Update assumptions, evidence, or signal interpretation
+• Adjust portfolio weights if necessary
+
+However:
+
+• Do NOT abandon a signal simply because fundamentals disagree
+• Do NOT adopt macro or valuation reasoning frameworks
+• Only revise when critiques expose **real weaknesses in the technical signals**
+
+---
+
+CRITICAL — Evidence citation rules:
+
+When making claims about specific data, you MUST cite the **exact bracketed evidence IDs** from the memo.
+
+Examples:
+
+[AAPL-MOM200]
+[TSLA-RET60]
+[NVDA-DVOL60]
+[L1-VIX]
+
+Rules:
+
+• NEVER invent evidence labels
+• NEVER use free-text slugs like "tslamomentum"
+• ONLY copy verbatim evidence IDs from the memo
+
+Claims without valid citations will be treated as **unsupported reasoning**.
+
+---
+
+CRITICAL — Allocation universe constraint
+
+Your revised allocation must use **ONLY tickers from the allocation universe** in the Financial Context.
+
+Rules:
+
+• Do NOT add new tickers
+• Include **ALL universe tickers** in the allocation
+• Use **0.0 weight** for tickers you choose not to hold
+
+Weights must:
+
+• sum to **1.0**
+• remain within **0.0–0.40 per ticker**
+
+---
+
+
+
+---
+
+Your reasoning must remain consistent with **technical analysis principles**.
+
+Claims should follow the structure:
+
+price signal → market behavior → expected price movement
+
+Examples of valid technical reasoning include:
+
+• momentum persistence following strong returns
+• trend continuation after sustained upward price movement
+• volatility compression preceding directional breakouts
+• downside volatility indicating unstable price structure
+• relative strength signaling capital rotation between assets
+
+Avoid reasoning based purely on:
+
+• company fundamentals
+• long-term intrinsic value estimates
+• macroeconomic forecasts
+
+Those belong to other agents’ frameworks.
+
+---
+
+### Claim Revision Rules
+
+• Maintain **3–5 claims maximum**
+
+• Claims must retain **stable IDs** where possible (C1, C2, C3…)
+
+If you change a claim:
+
+• update its text
+• update its evidence
+• update assumptions or falsifiers if needed
+
+If you remove a claim:
+
+• explain why in `revision_notes`
+
+If you add a new claim:
+
+• assign the next ID (e.g., C4)
+
+---
+
+### Claim → Allocation Consistency
+
+Your portfolio allocation must remain **consistent with your technical claims**.
+
+Rules:
+
+• Each claim must affect at least one ticker using `"impacts_positions"`
+• Every ticker with **weight > 0** must be supported by at least one claim
+• Do NOT keep claims that have no effect on the portfolio
+
+---
+
+### Position Rationale Update
+
+For each ticker with **weight > 0**:
+
+• explain which claims justify the position
+• ensure `"supported_by_claims"` references valid claim IDs
+
+If weights changed:
+
+• explain why in `"revision_notes"`
+
+---
+
+Respond with **valid JSON only**.
+
+{
+  "allocation": {
+    "TICKER": 0.XX
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "... revised technical hypothesis based on price behavior with evidence citations ...",
+      "claim_type": "macro | sector | firm",
+      "pearl_level": "L1 | L2 | L3",
+      "evidence": ["[EVIDENCE-ID]", "..."],
+      "variables": ["X", "Y"],
+      "assumptions": ["..."],
+      "falsifiers": ["..."],
+      "impacts_positions": ["TICKER", "..."],
+      "confidence": 0.0-1.0
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "TICKER",
+      "weight": 0.XX,
+      "supported_by_claims": ["C1", "C2"],
+      "explanation": "Explain how the price signals justify the position."
+    }
+  ],
+
+  "portfolio_rationale": "Explain how the technical signals jointly imply the revised portfolio.",
+
+  "confidence": 0.0-1.0,
+
+  "risks_or_falsifiers": [
+    "Market condition that would invalidate the technical signals."
+  ],
+
+  "revision_notes": "Explain which critiques were rejected and which led to claim revisions."
+}

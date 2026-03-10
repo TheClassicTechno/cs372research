@@ -40,6 +40,7 @@ markers = [
     "integration: L3/L4 graph + mock + artifact tests",
     "live: L5 real API smoke tests",
     "dashboard: Playwright dashboard integration tests",
+    "no_external_api: Tests that need no external API keys (safe for CI)",
 ]
 testpaths = ["tests", "multi_agent/tests", "eval/PID/tests", "eval/tests"]
 addopts = "-m 'not live and not dashboard' --tb=short -q"

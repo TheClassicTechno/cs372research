@@ -1,0 +1,194 @@
+{
+  "allocation": {
+    "AMD": 0.30,
+    "AMZN": 0.05,
+    "BAC": 0.0,
+    "CAT": 0.05,
+    "CVX": 0.03,
+    "PG": 0.20,
+    "RTX": 0.10,
+    "SLB": 0.20,
+    "CASH": 0.07
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Stocks exhibiting strong medium-term momentum and relative strength are likely to continue outperforming in the near term due to momentum persistence; AMD shows outsized short/medium momentum and RS (e.g., [AMD-RET60], [AMD-RS60], [AMD-IDMOM]) and SLB shows strong 12-month momentum and trend consistency ([SLB-MOM12_1], [SLB-TREND]) implying persistent upside pressure for these leaders.",
+      "pearl_level": "L2",
+      "claim_type": "sector",
+      "evidence": [
+        "[AMD-RET60]",
+        "[AMD-RS60]",
+        "[AMD-IDMOM]",
+        "[SLB-MOM12_1]",
+        "[SLB-TREND]"
+      ],
+      "variables": [
+        "momentum",
+        "AMD_price",
+        "SLB_price",
+        "relative_strength"
+      ],
+      "assumptions": [
+        "Momentum persistence continues in the current market regime",
+        "No immediate idiosyncratic shock (earnings surprise or operational news) overwhelms price momentum"
+      ],
+      "falsifiers": [
+        "Significant drop in short/medium returns for leaders (e.g., AMD losing recent gains) or reversal of idiosyncratic momentum metrics",
+        "Volume-confirmed distribution leading to break below short-term moving averages for these names"
+      ],
+      "impacts_positions": [
+        "AMD",
+        "SLB",
+        "PG",
+        "RTX"
+      ],
+      "confidence": 0.78
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Price trading above key trend levels (20/50/200 SMAs) signals higher probability of trend continuation; PG is above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) and AMD is trading well above medium and long SMAs ([AMD-SMA50], [AMD-SMA200]), supporting overweight positions in names that are in a bullish moving-average regime.",
+      "pearl_level": "L2",
+      "claim_type": "firm",
+      "evidence": [
+        "[PG-SMA20]",
+        "[PG-SMA50]",
+        "[PG-SMA200]",
+        "[AMD-SMA50]",
+        "[AMD-SMA200]"
+      ],
+      "variables": [
+        "price_vs_sma20",
+        "price_vs_sma50",
+        "price_vs_sma200"
+      ],
+      "assumptions": [
+        "Moving-average regime remains a reliable trend filter in current market conditions",
+        "Short-term pullbacks that stay above SMA200 are normal and do not invalidate the uptrend"
+      ],
+      "falsifiers": [
+        "Sustained break and close below SMA200 on higher volume for the security",
+        "Trend consistency metric collapses (large negative TREND) concurrent with SMA regime breach"
+      ],
+      "impacts_positions": [
+        "PG",
+        "AMD",
+        "RTX",
+        "SLB",
+        "CVX",
+        "CAT"
+      ],
+      "confidence": 0.72
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Momentum divergence and breakdown in short-term trend implies lower forward returns and argues for underweight or cash allocation: BAC exhibits clear negative short/medium returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]), and AMZN remains below the long-term trend ([AMZN-SMA200]) despite recent short-term gains ([AMZN-RET60]) — allocate minimally to names below their long-term trend and hold cash as a hedge.",
+      "pearl_level": "L2",
+      "claim_type": "sector",
+      "evidence": [
+        "[BAC-RET20]",
+        "[BAC-IDMOM]",
+        "[AMZN-SMA200]",
+        "[AMZN-RET60]"
+      ],
+      "variables": [
+        "short_return",
+        "idiosyncratic_momentum",
+        "price_vs_sma200",
+        "cash_allocation"
+      ],
+      "assumptions": [
+        "Being below the 200-day SMA reduces the probability of sustained outperformance in the near term",
+        "Negative idiosyncratic momentum is a sign of trend breakdown rather than short-lived noise"
+      ],
+      "falsifiers": [
+        "AMZN decisively reclaims SMA200 with confirming volume (invalidates underweight)",
+        "BAC reverses and posts several consecutive positive medium-term returns with improving IDMOM"
+      ],
+      "impacts_positions": [
+        "BAC",
+        "AMZN",
+        "CASH"
+      ],
+      "confidence": 0.70
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "AMD",
+      "weight": 0.30,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "High-conviction momentum leader: strong medium-term returns and RS ([AMD-RET60], [AMD-RS60]) plus price above SMA50/200 ([AMD-SMA50], [AMD-SMA200]) support largest overweight under momentum persistence and bullish SMA regime. Downside risk: rapid trend reversal or break below SMA50/SMA200 on heavy volume."
+    },
+    {
+      "ticker": "PG",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "Stable trend continuation candidate: price sits above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) with low volatility enabling trend persistence. Serves as ballast to higher-volatility momentum names. Downside risk: commodity-driven margin shocks or broad retail selloff that erodes trend."
+    },
+    {
+      "ticker": "SLB",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "Momentum and long-term strength: strong 12-month momentum ([SLB-MOM12_1]) and trend consistency ([SLB-TREND]) with price above SMA200 ([SLB-SMA200]) justify material overweight despite elevated volatility. Downside risk: commodity-price driven drawdowns and heightened downside vol."
+    },
+    {
+      "ticker": "RTX",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "Positive trend above longer-term SMA ([RTX-SMA200]) and solid multi-month returns ([RTX-RET120]) support a tactical growth allocation; lower weight reflects more modest RS and idiosyncratic momentum. Downside risk: supply-chain or backlog shocks that reverse the uptrend."
+    },
+    {
+      "ticker": "AMZN",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Small tactical exposure: short/medium momentum exists ([AMZN-RET60]) but price remains below the 200-day SMA ([AMZN-SMA200]) which reduces continuation probability—small position to capture a potential reclaim of long-term trend. Downside risk: failing to reclaim SMA200 leading to underperformance."
+    },
+    {
+      "ticker": "CVX",
+      "weight": 0.03,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Modest allocation to a name near/just above its 200-day SMA ([CVX-SMA200]) to capture trend continuation in commodities-linked sector if energy tailwinds persist. Kept small due to mixed short-term returns ([CVX-RET60]). Downside risk: oil-price weakness or operational shocks."
+    },
+    {
+      "ticker": "CAT",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Small exposure to a longer-term uptrender (positive 200D momentum [CAT-MOM200] and strong 120D performance [CAT-RET120]) that is in a short-term pullback (price below SMA20/50) — position sized conservatively to capture mean-reversion into the broader uptrend. Downside risk: deeper pullback that breaches SMA200."
+    },
+    {
+      "ticker": "CASH",
+      "weight": 0.07,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Convex hedge against momentum breakdowns identified in C3 (e.g., BAC negative momentum [BAC-RET20], AMZN below SMA200 [AMZN-SMA200]) — maintains dry powder if leaders' momentum fails. Cash earns the Fed funds rate [L1-FF]."
+    }
+  ],
+  "portfolio_rationale": "This portfolio overweights clear momentum leaders and securities trading in bullish SMA regimes (AMD: strong medium-term returns and RS [AMD-RET60], [AMD-RS60]; SLB: strong 12-month momentum [SLB-MOM12_1]; PG: above SMA20/50/200 [PG-SMA20], [PG-SMA50], [PG-SMA200]). Smaller positions are held in names with mixed signals (RTX, CAT, CVX) that are above longer-term SMAs but exhibit less pronounced RS. Minimal exposure to AMZN reflects short-term strength but failure to clear the 200-day SMA ([AMZN-SMA200]). CASH (backstop) is sized to limit portfolio drawdown if momentum leadership reverses; cash rate referenced [L1-FF]. The structure follows technical principles: overweight momentum persistence and SMA-confirmed trends, limit exposure to names below long-term trends, and keep cash to manage regime-change risk.",
+  "confidence": 0.72,
+  "risks_or_falsifiers": [
+    "Market-wide momentum reversal evidenced by a sharp VIX spike and broad negative returns across leaders (e.g., VIX rising >> current [L1-VIX]) would invalidate momentum bets.",
+    "AMD breaks and closes below its 50-day and 200-day SMAs on volume (e.g., price action breaching [AMD-SMA50] and [AMD-SMA200]) — would trigger rapid de-risking of AMD weight.",
+    "AMZN decisively reclaims and sustains price above its 200-day SMA with confirming volume (contradicting C3) — would require increasing AMZN weight ([AMZN-SMA200]).",
+    "Banking-sector stress or repo/liquidity shock causing forced selling that flips the trend dynamics (e.g., sustained deterioration in BAC short-term returns [BAC-RET20]) would force re-evaluation toward cash."
+  ]
+}

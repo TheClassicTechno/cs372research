@@ -1,0 +1,223 @@
+{
+  "allocation": {
+    "AMD": 0.06,
+    "AMZN": 0.06,
+    "BAC": 0.00,
+    "CAT": 0.06,
+    "CVX": 0.10,
+    "PG": 0.24,
+    "RTX": 0.12,
+    "SLB": 0.09,
+    "_CASH_": 0.27
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Momentum persistence identifies likely near-term leaders, but position size must be explicitly volatility‑adjusted and capped for high realized‑volatility/high‑drawdown names. Price momentum and RS increase continuation probability, but realized volatility and historical max drawdown signal elevated tail risk that should reduce tactical sizing.",
+      "claim_type": "firm",
+      "pearl_level": "L2",
+      "evidence": [
+        "[AMD-RET60]",
+        "[AMD-RS60]",
+        "[AMD-VOL60]",
+        "[AMD-MDD1Y]",
+        "[SLB-MOM12_1]",
+        "[SLB-TREND]",
+        "[SLB-VOL60]"
+      ],
+      "variables": [
+        "momentum",
+        "relative_strength",
+        "realized_volatility",
+        "max_drawdown",
+        "position_size"
+      ],
+      "assumptions": [
+        "Price momentum and relative strength indicate higher probability of near-term continuation absent volatility shocks.",
+        "Realized volatility and historical drawdowns are meaningful proxies for tail risk and should cap tactical weights for momentum names.",
+        "Volatility spikes will compress momentum leaders quickly; cap prevents outsized portfolio losses."
+      ],
+      "falsifiers": [
+        "Sustained multi‑month momentum persistence accompanied by a material and sustained decline in realized volatility for a high‑vol name (observable fall in [AMD-VOL60] while [AMD-RET60] and [AMD-RS60] remain strong).",
+        "Decisive volume-confirmed SMA regime break below key SMAs for a leader (e.g., AMD closing below [AMD-SMA50]/[AMD-SMA200] on heavy volume)."
+      ],
+      "impacts_positions": [
+        "AMD",
+        "SLB",
+        "CVX"
+      ],
+      "confidence": 0.75
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Multi-horizon SMA regime (price vs SMA20/50/200) is a robust technical filter: names trading above their 200-day SMA with positive medium-term momentum and trend consistency have higher odds of continuation; names below 200-day SMA deserve only small tactical exposure until reclaim.",
+      "claim_type": "sector",
+      "pearl_level": "L2",
+      "evidence": [
+        "[PG-SMA20]",
+        "[PG-SMA50]",
+        "[PG-SMA200]",
+        "[AMD-SMA50]",
+        "[AMD-SMA200]",
+        "[SLB-SMA200]",
+        "[AMZN-SMA200]",
+        "[RTX-SMA200]",
+        "[CVX-SMA200]"
+      ],
+      "variables": [
+        "price_vs_SMA20",
+        "price_vs_SMA50",
+        "price_vs_SMA200",
+        "trend_consistency",
+        "momentum"
+      ],
+      "assumptions": [
+        "Price above multi-horizon SMAs with trend consistency increases probability of near-term continuation.",
+        "Short-term pullbacks within a broader uptrend are normal if prices remain above SMA200; below SMA200 indicates structural weakening until reclaimed."
+      ],
+      "falsifiers": [
+        "Sustained closes below SMA200 on confirming volume for a security currently above (e.g., [PG-SMA200] breached with confirming volume).",
+        "Rapid collapse in trend consistency metric concurrent with SMA breaches (e.g., fall in [SLB-TREND] or [AMD-TREND])."
+      ],
+      "impacts_positions": [
+        "PG",
+        "RTX",
+        "AMZN",
+        "AMD",
+        "SLB"
+      ],
+      "confidence": 0.72
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Short-term momentum breakdowns and negative idiosyncratic momentum raise near-term downside probability and justify a material cash buffer; allocate cash to preserve optionality and limit drawdown from volatility regime shifts.",
+      "claim_type": "macro",
+      "pearl_level": "L2",
+      "evidence": [
+        "[BAC-RET20]",
+        "[BAC-IDMOM]",
+        "[AMZN-SMA200]",
+        "[AMZN-RET60]",
+        "[L1-VIX]",
+        "[L1-FF]"
+      ],
+      "variables": [
+        "short_return",
+        "idiosyncratic_momentum",
+        "price_vs_SMA200",
+        "cash_allocation",
+        "volatility_regime"
+      ],
+      "assumptions": [
+        "Negative short-term returns and negative idiosyncratic momentum reduce probability of near-term recovery absent clear price-based reversal.",
+        "A measured cash buffer reduces portfolio drawdown risk if momentum leadership reverses or volatility spikes; cash earns the Fed Funds reference rate."
+      ],
+      "falsifiers": [
+        "AMZN decisively reclaims and sustains closes above [AMZN-SMA200] with improving multi-month momentum ([AMZN-RET120] turning positive).",
+        "BAC posts consecutive positive medium-term returns and improved idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising)."
+      ],
+      "impacts_positions": [
+        "_CASH_",
+        "AMZN",
+        "BAC"
+      ],
+      "confidence": 0.70
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "AMD",
+      "weight": 0.06,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "AMD shows strong medium-term momentum and RS ([AMD-RET60], [AMD-RS60]) and trades above SMA50/200 supporting continuation odds ([AMD-SMA50], [AMD-SMA200]). Per C1 we materially cap sizing due to elevated realized volatility and large historical drawdown ([AMD-VOL60], [AMD-MDD1Y]) and supply-chain/geopolitical operational fragility noted in filings (used to justify smaller position but price signals still favor participation)."
+    },
+    {
+      "ticker": "AMZN",
+      "weight": 0.06,
+      "supported_by_claims": [
+        "C2",
+        "C3"
+      ],
+      "explanation": "AMZN has positive short-term returns ([AMZN-RET60]) but remains below its 200-day SMA ([AMZN-SMA200]); C2 warrants only limited tactical exposure until a reclaim with volume confirmation. C3 supports small allocation as a tactical play rather than conviction."
+    },
+    {
+      "ticker": "BAC",
+      "weight": 0.00,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "BAC exhibits negative short-term returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]), consistent with C3's avoidance criterion until technical recovery is confirmed."
+    },
+    {
+      "ticker": "CAT",
+      "weight": 0.06,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "CAT shows positive 120-day/200-day momentum ([CAT-RET120], [CAT-MOM200]) and a constructive long-term SMA regime ([CAT-SMA200]) despite short-term pullback. C2 supports a modest tactical position to capture mean-reversion into a broader uptrend; C1 sizing discipline keeps the stake moderate."
+    },
+    {
+      "ticker": "CVX",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "CVX sits at/above its 200-day SMA with neutral-to-positive long-term momentum ([CVX-SMA200], [CVX-MOM200]). C2 justifies sector exposure; C1 caps size due to mixed short-term returns and moderate realized vol ([CVX-RET60], [CVX-VOL60])."
+    },
+    {
+      "ticker": "PG",
+      "weight": 0.24,
+      "supported_by_claims": [
+        "C2",
+        "C3"
+      ],
+      "explanation": "PG trades above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) and has low realized volatility relative to peers ([PG-VOL20], [PG-VOL60]), fitting C2's trend‑confirmed, lower‑vol leader profile. C3's defensive tilt increases PG allocation as ballast to stabilize portfolio momentum exposure."
+    },
+    {
+      "ticker": "RTX",
+      "weight": 0.12,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "RTX trades above its 200-day SMA and has positive medium-term returns ([RTX-SMA200], [RTX-RET120]), indicating trend confirmation per C2. Its lower realized volatility relative to tech/high‑beta names justifies a moderate weighting to capture continuation."
+    },
+    {
+      "ticker": "SLB",
+      "weight": 0.09,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "SLB shows durable 12-month momentum and trend consistency and is above its 200-day SMA ([SLB-MOM12_1], [SLB-TREND], [SLB-SMA200]). C1 mandates a size reduction vs. a pure momentum stake because SLB exhibits elevated realized and downside vol ([SLB-VOL60], [SLB-DVOL60]); position kept material but capped to limit tail exposure."
+    },
+    {
+      "ticker": "_CASH_",
+      "weight": 0.27,
+      "supported_by_claims": [
+        "C3",
+        "C1"
+      ],
+      "explanation": "Maintain a larger cash buffer given moderate market volatility ([L1-VIX]) and to limit portfolio drawdown risk from potential momentum regime shifts. Cash earns the Fed Funds reference rate ([L1-FF]) and preserves optionality to redeploy into volume-confirmed breakouts or to trim after volatility spikes."
+    }
+  ],
+
+  "portfolio_rationale": "This portfolio remains a momentum‑driven, SMA‑filtered allocation: overweight trend‑confirmed, lower‑vol momentum leaders (PG, RTX) and maintain participation in higher‑momentum but higher‑vol names (AMD, SLB, CVX) with explicit volatility‑based caps per C1. SMA regime (C2) guides which names receive tactical exposure (small AMZN until reclaim of [AMZN-SMA200]; BAC avoided due to idiosyncratic breakdown [BAC-RET20], [BAC-IDMOM]). A larger cash buffer (C3) is retained to protect against volatility regime shifts ([L1-VIX]) and to provide dry powder for confirmed breakouts. All allocations map directly to price signals: momentum, SMA regime, trend consistency, and realized volatility/cap sizing.",
+  "confidence": 0.70,
+
+  "risks_or_falsifiers": [
+    "Market-wide momentum reversal with VIX spike and broad negative returns across momentum leaders (observable rise in [L1-VIX] above ~30 and simultaneous negative returns in [AMD-RET60], [SLB-RET60], [PG-RET60]).",
+    "AMD loses trend confirmation: sustained close(s) below [AMD-SMA50] and [AMD-SMA200] with rising short‑term negative returns (decline in [AMD-RET60]) would require cutting AMD exposure.",
+    "SLB momentum reverses: decline in [SLB-MOM12_1] and breach of [SLB-SMA200] or material increase in downside vol ([SLB-DVOL60]) would require de-risking SLB.",
+    "AMZN decisively reclaims 200-day SMA on confirming volume (sustained closes above [AMZN-SMA200]) with improving multi-month momentum ([AMZN-RET120]) — would prompt increasing AMZN weight.",
+    "BAC posts consecutive positive medium-term returns and improved idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising) — would prompt reconsideration of tactical BAC allocation."
+  ],
+
+  "revision_notes": "I treated Critique 1 (RISK) as a material, accepted correction to C1's execution sizing: it correctly identifies that raw momentum signals without stricter volatility caps leave the portfolio exposed to tail events. Accepted and implemented: reduced AMD from 0.14 → 0.06, introduced an explicit aggregate cap on high‑vol momentum exposure (AMD+SLB+CVX = 0.25) to limit volatility concentration, and increased cash to preserve optionality. Rationale: evidence shows AMD strong momentum but high realized vol and large historical drawdown ([AMD-RET60], [AMD-RS60], [AMD-VOL60], [AMD-MDD1Y]) — this justifies a smaller tactical stake while keeping technical participation. Critique 1 rejected insofar as it argued to fully remove momentum exposure to AMD; I maintain a reduced position because price signals still indicate continuation probability ([AMD-SMA50], [AMD-SMA200], [AMD-RET60]).\n\nCritique 2 (VALUE) raised valid concerns about near-term earnings and guide risk ([AMD-EC1], [AMD-EC4], [AMD-F2]) but is primarily fundamental. I partially accepted its practical consequence — further reducing AMD sizing (already done under Critique 1) — but rejected replacing technical judgement with a fundamentals-only sizing rule. The portfolio remains price‑driven: fundamentals inform sizing conservatively when they create asymmetric tail risk, but we do not abandon momentum signals absent technical invalidation. Changes to claims: C1 strengthened to explicitly require volatility‑adjusted caps; C2 and C3 left intact but re-emphasized. The overall thesis remains technical: favor trend‑confirmed names, scale exposure by realized volatility and drawdown history, and hold cash as a technical risk manager."
+}

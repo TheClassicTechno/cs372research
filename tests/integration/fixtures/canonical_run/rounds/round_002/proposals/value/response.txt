@@ -1,0 +1,212 @@
+{
+  "allocation": {
+    "AMD": 0.0,
+    "AMZN": 0.0,
+    "BAC": 0.10,
+    "CAT": 0.20,
+    "CVX": 0.25,
+    "PG": 0.20,
+    "RTX": 0.0,
+    "SLB": 0.20,
+    "_CASH_": 0.05
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Higher policy rates and an inverted curve raise discount rates for long-duration growth expectations, which structurally pressures growth/volatile semiconductors and retail-growth multiple recoveries (relevant for AMD and AMZN) [L1-FF] [L1-CURVE]. This favors allocation to companies with nearer-term cash flows and lower duration earnings.",
+      "pearl_level": "L1",
+      "claim_type": "macro",
+      "evidence": [
+        "[L1-FF]",
+        "[L1-CURVE]"
+      ],
+      "variables": [
+        "fed_rate",
+        "term_spread",
+        "AMD_price",
+        "AMZN_price"
+      ],
+      "assumptions": [
+        "Risk-free rate and discount-rate sensitivity remain elevated near current levels [L1-FF].",
+        "Market continues to price duration-sensitive multiples lower when curve inversion persists [L1-CURVE]."
+      ],
+      "falsifiers": [
+        "Sharp and sustained decline in Fed Funds rate or rapid steepening of the yield curve (e.g., [L1-FF] falling materially).",
+        "Evidence that AMD/AMZN valuations are driven purely by near-term cash flow improvements (e.g., large and sustained EPS beats reversing growth-duration narrative)."
+      ],
+      "impacts_positions": [
+        "AMD",
+        "AMZN"
+      ],
+      "confidence": 0.70
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Energy producers and oilfield services show resilient cash generation and tangible capital returns that the market may underappreciate: Chevron reported strong Q1 cash/earnings and increased buybacks [CVX-EC1] [CVX-EC5]; SLB shows margin expansion and expects stronger 2023 activity and margin leverage [SLB-F4] [SLB-F16]. This supports relative upside for CVX and SLB vs. broader market.",
+      "pearl_level": "L2",
+      "claim_type": "sector",
+      "evidence": [
+        "[CVX-EC1]",
+        "[CVX-EC5]",
+        "[SLB-F4]",
+        "[SLB-F16]"
+      ],
+      "variables": [
+        "CVX_cashflow",
+        "SLB_margin",
+        "WTI_price"
+      ],
+      "assumptions": [
+        "Commodity-driven cash flows remain adequate to support buybacks/dividends and upstream capex [CVX-EC5].",
+        "Global upstream activity and service pricing continue to improve in 2023 supporting SLB margins [SLB-F16]."
+      ],
+      "falsifiers": [
+        "Sustained collapse in oil prices materially reducing CVX operating cash flow [CVX-F1].",
+        "SLB activity and pricing falling short of 2023 guidance (contradicting [SLB-F16])."
+      ],
+      "impacts_positions": [
+        "CVX",
+        "SLB"
+      ],
+      "confidence": 0.75
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Procter & Gamble's pricing and productivity actions offset input-cost pressure, producing organic growth and stable cash returns that make its earnings power less risky than the headline margin compression implies [PG-EC1] [PG-F4] [PG-F9]. Market prices likely underweight durable cash flow and buyback/dividend capacity.",
+      "pearl_level": "L2",
+      "claim_type": "firm",
+      "evidence": [
+        "[PG-EC1]",
+        "[PG-F4]",
+        "[PG-F9]"
+      ],
+      "variables": [
+        "PG_organic_growth",
+        "PG_margin",
+        "PG_cash_returns"
+      ],
+      "assumptions": [
+        "Pricing actions and productivity gains persist and offset commodity inflation [PG-F4] [PG-EC1].",
+        "Share repurchases and dividends continue to be funded by operating cash flow [PG-F9]."
+      ],
+      "falsifiers": [
+        "Volume declines accelerate materially and pricing elasticity forces a reduction in realized price increases (contradicting [PG-EC1]).",
+        "A material impairment or cash-flow shock that reduces ability to repurchase/share dividends."
+      ],
+      "impacts_positions": [
+        "PG"
+      ],
+      "confidence": 0.70
+    },
+    {
+      "claim_id": "C4",
+      "claim_text": "Industrial & commercial aerospace cyclicals show durable recovery evidence: Caterpillar backlog rose meaningfully and margins surprised to the upside [CAT-F2] [CAT-EC2]; Raytheon (RTX) shows record backlog and commercial aerospace recovery supporting revenue and margin tailwinds [RTX-F14] [RTX-EC1]. The market may be underpricing cyclical earnings recovery for heavy equipment and aerospace suppliers.",
+      "pearl_level": "L2",
+      "claim_type": "sector",
+      "evidence": [
+        "[CAT-F2]",
+        "[CAT-EC2]",
+        "[RTX-F14]",
+        "[RTX-EC1]"
+      ],
+      "variables": [
+        "CAT_backlog",
+        "CAT_margin",
+        "RTX_backlog",
+        "air_traffic_recovery"
+      ],
+      "assumptions": [
+        "Backlog conversion and supply-chain improvements lead to realized revenue and margin expansion as forecasted [CAT-F2] [CAT-EC2].",
+        "Commercial aerospace demand and aftermarket activity continue to recover toward pre-pandemic levels [RTX-EC1]."
+      ],
+      "falsifiers": [
+        "Backlog cancellations or delayed deliveries materially exceed current expectations.",
+        "Commercial air traffic fails to recover as anticipated, undermining RTX aftermarket volumes [RTX-EC1]."
+      ],
+      "impacts_positions": [
+        "CAT",
+        "RTX"
+      ],
+      "confidence": 0.65
+    },
+    {
+      "claim_id": "C5",
+      "claim_text": "Bank of America shows improving NII and EPS growth while the equity has materially underperformed YTD/1Y (possible overshoot in risk-pricing): BAC reported 18% y/y EPS growth and 25% net interest income growth with CET1 improvement [BAC-EC1] [BAC-EC2] while the stock is down ~33% over 1 year [BAC-RET252]. This suggests valuation dislocation vs. improving core fundamentals.",
+      "pearl_level": "L2",
+      "claim_type": "firm",
+      "evidence": [
+        "[BAC-EC1]",
+        "[BAC-EC2]",
+        "[BAC-RET252]",
+        "[BAC-EC3]"
+      ],
+      "variables": [
+        "BAC_NII",
+        "BAC_CET1",
+        "BAC_price"
+      ],
+      "assumptions": [
+        "Net interest income trends persist near management expectations and asset quality remains stable [BAC-EC2].",
+        "Market price weakness reflects macro risk repricing rather than imminent LICs or capital impairment."
+      ],
+      "falsifiers": [
+        "Rapid deterioration in credit quality or surge in loan losses inconsistent with management commentary.",
+        "Material regulatory or capital requirement changes that impair dividend/repurchase capacity."
+      ],
+      "impacts_positions": [
+        "BAC"
+      ],
+      "confidence": 0.60
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "CVX",
+      "weight": 0.25,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Allocate to CVX because strong Q1 earnings and announced buyback discipline ([CVX-EC1], [CVX-EC5]) indicate cash-return capacity and upstream resilience that the market may underprice; claim C2 argues commodity cash flows support valuation reversion."
+    },
+    {
+      "ticker": "CAT",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C4"
+      ],
+      "explanation": "Overweight Caterpillar because backlog growth and surprise margin improvement ([CAT-F2], [CAT-EC2]) support earnings durability versus current price; C4 links industrial cycle recovery to re-rating potential."
+    },
+    {
+      "ticker": "PG",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Allocate to Procter & Gamble as a fundamentals-rich defensive holding: organic growth and pricing offset input inflation and support stable EPS and cash returns ([PG-EC1], [PG-F4], [PG-F9]); C3 frames PG as mispriced relative to enduring cash flow."
+    },
+    {
+      "ticker": "SLB",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Large allocation to SLB because margin expansion and expected 2023 activity growth ([SLB-F4], [SLB-F16]) imply higher FCF potential than currently priced; C2 identifies SLB as an energy-services beneficiary of activity and pricing leverage."
+    },
+    {
+      "ticker": "BAC",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C5"
+      ],
+      "explanation": "Modest overweight to Bank of America reflects improving NII and EPS growth ([BAC-EC1], [BAC-EC2]) versus a materially discounted stock price ([BAC-RET252]); C5 argues for partial recovery if credit and capital metrics hold."
+    }
+  ],
+  "portfolio_rationale": "The portfolio tilts to value and cash-generative sectors where fundamental signals (cash flow, backlog, pricing power) point to earnings durability and potential multiple re-rating. C2 (energy and oilfield services) drives the largest conviction (CVX, SLB) because both firms show cash-return capacity and margin leverage ([CVX-EC1], [CVX-EC5], [SLB-F4], [SLB-F16]). C4 supports industrial cyclicals (CAT) given backlog and margin improvement ([CAT-F2], [CAT-EC2]) while C3 justifies a defensive consumer staple (PG) with pricing and buybacks ([PG-EC1], [PG-F9]). C5 provides a tactical exposure to BAC where NII and EPS trends contrast with a depressed equity price ([BAC-EC1], [BAC-RET252]). C1 explains the avoidance of growth/long-duration names (AMD, AMZN) due to elevated rates and curve inversion ([L1-FF], [L1-CURVE]). A small cash buffer (_CASH_ 5%) preserves optionality and limits liquidity-driven forced selling risk.",
+  "confidence": 0.65,
+  "risks_or_falsifiers": [
+    "Sustained collapse in oil prices (invalidates C2) leading to materially lower CVX cash flows and SLB activity (contradicting [CVX-F1] and [SLB-F16]).",
+    "Recession-driven demand shock that causes backlog cancellations and margin pressure at CAT/RTX (contradicting [CAT-F2] and [RTX-F14]).",
+    "Rapid Fed easing or curve steepening that re-rates long-duration growth, making avoided names (AMD/AMZN) outperform (falsifies C1) [L1-FF] [L1-CURVE].",
+    "Material deterioration in bank asset quality or regulatory capital requirements that reverse BAC's improving fundamentals (contradicting [BAC-EC1], [BAC-EC3])."
+  ]
+}
