@@ -204,6 +204,11 @@ def build_prompt_manifest(config: dict) -> dict:
 
     manifest: dict[str, Any] = {}
 
+    # --- Agent profile names (from config YAML) ---
+    agent_profiles = config.get("agent_profile_names", {})
+    if agent_profiles:
+        manifest["agent_profiles"] = dict(agent_profiles)
+
     # --- Role files ---
     role_files: dict[str, str] = {}
     for role in roles:

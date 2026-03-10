@@ -11,6 +11,10 @@ export var runsViewState = {
   lastExperiment: ''
 };
 
+export var ablationState = {
+  data: null
+};
+
 export var appState = {
   viewToken: null
 };

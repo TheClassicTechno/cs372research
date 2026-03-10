@@ -69,6 +69,11 @@ def dashboard_url(tmp_path_factory):
     tmp_root = tmp_path_factory.mktemp("dashboard_runs")
     shutil.copytree(_CANONICAL_RUNS, tmp_root / "test")
 
+    # --- 1b. Copy ablation_summary.json to RUNS_BASE root if present ---
+    ablation_src = _CANONICAL_RUNS / "ablation_summary.json"
+    if ablation_src.exists():
+        shutil.copy2(ablation_src, tmp_root / "ablation_summary.json")
+
     # --- 2. Patch manifest in the copy only ---
     manifest_path = (
         tmp_root / "test" / "run_2026-03-07_19-50-06" / "manifest.json"

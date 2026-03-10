@@ -206,8 +206,8 @@ def main() -> None:
         help="Wipe ablation_status.json and start fresh.",
     )
     parser.add_argument(
-        "--workers", type=int, default=1, choices=[1, 2],
-        help="Number of parallel workers (1 or 2; default: 1 = serial).",
+        "--workers", type=int, default=1, choices=[1, 2, 3, 4],
+        help="Number of parallel workers (1–4; default: 1 = serial).",
     )
     parser.add_argument(
         "--retries", type=int, default=0,
