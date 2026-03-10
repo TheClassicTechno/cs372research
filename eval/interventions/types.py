@@ -42,6 +42,7 @@ class InterventionResult:
     nudge_text: str  # prompt modifier injected into retry
     metrics: dict  # rule-specific diagnostic data (for logging)
     severity: str  # "warning" | "critical"
+    target_roles: list[str] | None = None  # if set, nudge only these roles
 
 
 @dataclass

@@ -1,0 +1,95 @@
+# ===========================================================================
+# Ablation 3 — PID Only
+# Condition: c1_pid_only
+# Pipeline:  propose -> critique -> revise -> CRIT -> PID -> judge
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 5
+
+
+# --- Agent profiles (intense enriched, no risk agent) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+  value: value_enriched_intense
+
+judge_profile: judge_standard
+
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini            # debate agent model
+  crit_llm_model: gpt-5            # CRIT auditor model (higher capability)
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 2
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_3
+
+
+  # --- PID controller (inter-round quality regulation) ---
+  # Adjusts critique intensity (beta) based on CRIT reasoning scores (rho).
+  # Conservative tuning: slow integral, moderate derivative damping.
+  pid_enabled: true
+  pid_kp: 0.20                     # proportional gain
+  pid_ki: 0.015                    # integral gain (slow accumulation)
+  pid_kd: 0.10                     # derivative gain (damping)
+  pid_rho_star: 0.83               # target reasoning quality
+  pid_initial_beta: 0.35           # starting critique intensity
+  pid_epsilon: 0.02                # deadband around rho_star
+  pid_gamma_beta: 0.35             # beta clamp range [initial - gamma, initial + gamma]
+
+
+  # --- Intervention engine (intra-round retry on acute failures) ---
+  intervention_config:
+    enabled: true
+    rules:
+      # JS Collapse Detection (post_revision) — disabled for this condition
+      js_collapse:
+        enabled: false
+        threshold: 0.4
+        min_js_proposal: 0.10
+        max_retries: 2
+
+      # Reasoning Quality (post_crit) — disabled for this condition
+      reasoning_quality:
+        enabled: false
+        rho_threshold: 0.5
+        max_retries: 1
+        agent_pillar_thresholds:
+          macro:
+            logical_validity: 0.40
+            evidential_support: 0.40
+            alternative_consideration: 0.40
+            causal_alignment: 0.50
+          technical:
+            logical_validity: 0.50
+            evidential_support: 0.40
+            alternative_consideration: 0.40
+            causal_alignment: 0.40
+          value:
+            logical_validity: 0.40
+            evidential_support: 0.45
+            alternative_consideration: 0.40
+            causal_alignment: 0.40
+
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0

@@ -18,8 +18,9 @@ debate_setup:
   max_concurrent_llm: 3
   llm_model: gpt-5-mini
   temperature: 0.3
-  max_rounds: 3
+  max_rounds: 2
   pid_enabled: true
+  crit_llm_model: gpt-5
   experiment_name: vskarich_ablation_2
   pid_kp: 0.55
   pid_ki: 0.06

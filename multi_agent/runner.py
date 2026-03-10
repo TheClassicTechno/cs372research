@@ -463,7 +463,7 @@ class MultiAgentRunner:
         self._critique_graph = None
         self._revise_graph = None
 
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self.config.intervention_config:
             if self.config.parallel_agents:
                 self._propose_graph = compile_parallel_propose_graph(self.config)
                 self._critique_graph = compile_parallel_critique_graph(self.config)
@@ -479,7 +479,7 @@ class MultiAgentRunner:
 
         # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self.config.intervention_config:
             from eval.crit import CritScorer
 
             crit_config = self.config.to_dict()
@@ -517,6 +517,7 @@ class MultiAgentRunner:
         # --- CRIT prompt/response capture ---
         self._crit_current_captures: dict[str, dict] = {}
         self._crit_round1_captures: dict[str, dict] | None = None
+        self._last_round_crit = None  # latest RoundCritResult for post-crit checkpoint
 
         # --- PID controller ---
         self._pid_controller = None
@@ -735,7 +736,7 @@ class MultiAgentRunner:
             if t > 0:
                 state["critiques"] = []
 
-            if self.config.pid_enabled:
+            if self.config.pid_enabled or self._intervention_engine:
                 state = self._run_round_with_pid(state, t + 1)
             else:
                 state = self.run_single_round(state)
@@ -947,7 +948,7 @@ class MultiAgentRunner:
             )
 
         # --- CRIT + PID (once per round, after revise) ---
-        if self._pid_controller and self._crit_scorer:
+        if self._crit_scorer:
             if use_display:
                 n_agents = len(self.config.roles)
                 render_phase_label("CRIT Scoring")
@@ -955,6 +956,14 @@ class MultiAgentRunner:
                 _reset_llm_tracker(n_agents)
                 print(f"  Scoring {n_agents} agents with CRIT ({self.config.crit_model_name})", flush=True)
             self._crit_and_pid_step(state, round_num, beta_in=beta)
+
+        # --- Post-CRIT intervention checkpoint ---
+        if self._intervention_engine and self._last_round_crit:
+            state = self._intervention_checkpoint(
+                state, round_num, stage="post_crit",
+                beta=beta, use_display=use_display,
+                n_agents=n_agents, role_names=role_names,
+            )
 
         return state
 
@@ -985,6 +994,14 @@ class MultiAgentRunner:
         retry_count = 0
         while True:
             js_rev = self._get_js_divergence(state)
+
+            # Populate crit-specific fields when stage is post_crit
+            _rho_bar = None
+            _agent_crit_scores = None
+            if stage == "post_crit" and self._last_round_crit:
+                _rho_bar = self._last_round_crit.rho_bar
+                _agent_crit_scores = self._last_round_crit.agent_scores
+
             ctx = InterventionContext(
                 round_num=round_num,
                 stage=stage,
@@ -996,8 +1013,8 @@ class MultiAgentRunner:
                 ),
                 js_revision=js_rev,
                 ov_revision=None,
-                rho_bar=None,
-                agent_crit_scores=None,
+                rho_bar=_rho_bar,
+                agent_crit_scores=_agent_crit_scores,
                 pid_result=None,
                 intervention_history=list(self._intervention_history),
             )
@@ -1027,26 +1044,47 @@ class MultiAgentRunner:
             # Log the intervention
             self._log_intervention(action, round_num, retry_count)
 
-            # Inject nudge into state config
-            state["config"]["_intervention_nudge"] = action.nudge_text
+            # Inject nudge and target roles into state config
+            if action.target_roles:
+                # Per-agent targeting: only targeted roles see the nudge
+                # and only targeted roles re-run the LLM call
+                state["config"]["_intervention_nudge"] = None
+                state["config"]["_intervention_target_roles"] = action.target_roles
+                for role in action.target_roles:
+                    state["config"][f"_intervention_nudge_{role}"] = action.nudge_text
+            else:
+                # Broadcast: all agents see the same nudge and re-run
+                state["config"]["_intervention_nudge"] = action.nudge_text
+                state["config"]["_intervention_target_roles"] = None
 
             # Console display
             if use_display:
+                if action.target_roles:
+                    retry_agents = ', '.join(r.upper() for r in action.target_roles)
+                    retry_count_display = len(action.target_roles)
+                else:
+                    retry_agents = role_names
+                    retry_count_display = n_agents
                 render_phase_label(
-                    f"Revise (RETRY {retry_count + 1} — {action.rule_name})"
+                    f"Revise (RETRY {retry_count + 1} — {action.rule_name} → {retry_agents})"
                 )
                 from .terminal_display import _reset_llm_tracker
-                _reset_llm_tracker(n_agents)
+                _reset_llm_tracker(retry_count_display)
                 print(
-                    f"  Retrying {n_agents} agents: {role_names} "
+                    f"  Retrying {retry_count_display} agent(s): {retry_agents} "
                     f"[{action.rule_name}: {action.severity}]",
                     flush=True,
                 )
 
-            # Re-run revise
+            # Re-run revise (only targeted agents call the LLM)
             state["config"]["_current_beta"] = beta
             state = self._revise_graph.invoke(state)
-            state["config"]["_intervention_nudge"] = None  # clear after retry
+            # Clear nudges and target roles after retry
+            state["config"]["_intervention_nudge"] = None
+            state["config"]["_intervention_target_roles"] = None
+            if action.target_roles:
+                for role in action.target_roles:
+                    state["config"].pop(f"_intervention_nudge_{role}", None)
 
             if use_display:
                 render_portfolio_table(state.get("revisions", []), "Revisions (retry)")
@@ -1059,6 +1097,15 @@ class MultiAgentRunner:
                     state.get("revisions", []),
                     retry=retry_count + 1,
                 )
+
+            # Post-crit retries are expensive: re-run CRIT after revise retry
+            if stage == "post_crit" and self._crit_scorer:
+                if use_display:
+                    render_phase_label(f"CRIT Scoring (retry {retry_count + 1})")
+                    from .terminal_display import _reset_llm_tracker
+                    _reset_llm_tracker(n_agents)
+                    print(f"  Re-scoring {n_agents} agents with CRIT", flush=True)
+                self._crit_and_pid_step(state, round_num, beta_in=beta)
 
             retry_count += 1
 
@@ -1148,36 +1195,42 @@ class MultiAgentRunner:
                            rho_bar, round_num)
             rho_bar = 0.0
 
-        # --- PID controller step ---
-        old_beta = self._pid_controller.beta
-        pid_result = self._pid_controller.step(rho_bar, js, ov)
+        # --- Store latest CRIT result for post-crit intervention checkpoint ---
+        self._last_round_crit = round_crit
 
-        # Record PIDEvent
-        ctrl_output = ControllerOutput(new_beta=pid_result.beta_new)
-        event = PIDEvent(
-            round_index=round_num,
-            metrics=RoundMetrics(
+        # --- PID controller step (only when PID is active) ---
+        old_beta = None
+        pid_result = None
+        if self._pid_controller:
+            old_beta = self._pid_controller.beta
+            pid_result = self._pid_controller.step(rho_bar, js, ov)
+
+            # Record PIDEvent
+            ctrl_output = ControllerOutput(new_beta=pid_result.beta_new)
+            event = PIDEvent(
                 round_index=round_num,
-                rho_bar=rho_bar,
-                js_divergence=js,
-                ov_overlap=ov,
-            ),
-            crit_result=round_crit.model_dump(),
-            pid_step={
-                "e_t": pid_result.e_t,
-                "u_t": pid_result.u_t,
-                "beta_new": pid_result.beta_new,
-                "p_term": pid_result.p_term,
-                "i_term": pid_result.i_term,
-                "d_term": pid_result.d_term,
-                "s_t": pid_result.s_t,
-                "quadrant": pid_result.quadrant,
-                "div_signal": pid_result.div_signal,
-                "qual_signal": pid_result.qual_signal,
-            },
-            controller_output=ctrl_output,
-        )
-        self._pid_events.append(event)
+                metrics=RoundMetrics(
+                    round_index=round_num,
+                    rho_bar=rho_bar,
+                    js_divergence=js,
+                    ov_overlap=ov,
+                ),
+                crit_result=round_crit.model_dump(),
+                pid_step={
+                    "e_t": pid_result.e_t,
+                    "u_t": pid_result.u_t,
+                    "beta_new": pid_result.beta_new,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "s_t": pid_result.s_t,
+                    "quadrant": pid_result.quadrant,
+                    "div_signal": pid_result.div_signal,
+                    "qual_signal": pid_result.qual_signal,
+                },
+                controller_output=ctrl_output,
+            )
+            self._pid_events.append(event)
 
         # --- Structured debate logger: CRIT metrics + prompts ---
         if self._debate_logger:
@@ -1204,12 +1257,12 @@ class MultiAgentRunner:
         # --- Structured JSON logging ---
         if self._log_metrics or self._debate_logger:
             phase_data = {
-                "type": "pid_round",
+                "type": "pid_round" if pid_result else "crit_round",
                 "debate_id": self._debate_id,
                 "phase_id": str(uuid.uuid4()),
                 "round": round_num,
                 "beta_in": beta_in,
-                "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                "tone_bucket": beta_to_bucket(pid_result.beta_new) if pid_result else beta_to_bucket(beta_in),
                 "crit": {
                     "rho_bar": round_crit.rho_bar,
                     "rho_i": {
@@ -1243,21 +1296,6 @@ class MultiAgentRunner:
                         for role, cr in round_crit.agent_scores.items()
                     },
                 },
-                "pid": {
-                    "e_t": pid_result.e_t,
-                    "integral": self._pid_controller.state.integral,
-                    "e_prev": self._pid_controller.state.e_prev,
-                    "p_term": pid_result.p_term,
-                    "i_term": pid_result.i_term,
-                    "d_term": pid_result.d_term,
-                    "u_t": pid_result.u_t,
-                    "beta_old": old_beta,
-                    "beta_new": pid_result.beta_new,
-                    "quadrant": pid_result.quadrant,
-                    "div_signal": pid_result.div_signal,
-                    "qual_signal": pid_result.qual_signal,
-                    "sycophancy": pid_result.s_t,
-                },
                 "divergence": {
                     "js": js,
                     "ov": ov,
@@ -1275,10 +1313,28 @@ class MultiAgentRunner:
                 },
             }
 
+            # Add PID data only when PID controller is active
+            if pid_result:
+                phase_data["pid"] = {
+                    "e_t": pid_result.e_t,
+                    "integral": self._pid_controller.state.integral,
+                    "e_prev": self._pid_controller.state.e_prev,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "u_t": pid_result.u_t,
+                    "beta_old": old_beta,
+                    "beta_new": pid_result.beta_new,
+                    "quadrant": pid_result.quadrant,
+                    "div_signal": pid_result.div_signal,
+                    "qual_signal": pid_result.qual_signal,
+                    "sycophancy": pid_result.s_t,
+                }
+
             phase_data = _round_floats(phase_data)
             self._pid_phase_data.append(phase_data)
 
-            # Structured debate logger: PID metrics + round state
+            # Structured debate logger: metrics + round state
             if self._debate_logger:
                 self._debate_logger.write_pid_metrics(phase_data)
                 metrics_summary = {
@@ -1289,9 +1345,11 @@ class MultiAgentRunner:
                     },
                     "js_divergence": js,
                     "evidence_overlap": ov,
-                    "beta_new": pid_result.beta_new,
-                    "quadrant": pid_result.quadrant,
                 }
+                if pid_result:
+                    metrics_summary["beta_new"] = pid_result.beta_new
+                    metrics_summary["quadrant"] = pid_result.quadrant
+
                 crit_data = {
                     "rho_bar": round_crit.rho_bar,
                 }
@@ -1307,30 +1365,33 @@ class MultiAgentRunner:
                     }
                     for role, cr in round_crit.agent_scores.items()
                 })
-                pid_data = {
-                    "beta_in": beta_in,
-                    "beta_new": pid_result.beta_new,
-                    "tone_bucket": beta_to_bucket(pid_result.beta_new),
-                    "e_t": pid_result.e_t,
-                    "p_term": pid_result.p_term,
-                    "i_term": pid_result.i_term,
-                    "d_term": pid_result.d_term,
-                    "u_t": pid_result.u_t,
-                    "quadrant": pid_result.quadrant,
-                    "sycophancy": pid_result.s_t,
-                    "convergence": {
-                        "stable_rounds": self._stable_rounds,
-                        "delta_rho_actual": (
-                            abs(rho_bar - self._prev_rho_bar)
-                            if self._prev_rho_bar is not None else None
-                        ),
-                        "delta_rho_threshold": self.config.delta_rho,
-                    },
-                }
+
+                pid_data = None
+                if pid_result:
+                    pid_data = {
+                        "beta_in": beta_in,
+                        "beta_new": pid_result.beta_new,
+                        "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                        "e_t": pid_result.e_t,
+                        "p_term": pid_result.p_term,
+                        "i_term": pid_result.i_term,
+                        "d_term": pid_result.d_term,
+                        "u_t": pid_result.u_t,
+                        "quadrant": pid_result.quadrant,
+                        "sycophancy": pid_result.s_t,
+                        "convergence": {
+                            "stable_rounds": self._stable_rounds,
+                            "delta_rho_actual": (
+                                abs(rho_bar - self._prev_rho_bar)
+                                if self._prev_rho_bar is not None else None
+                            ),
+                            "delta_rho_threshold": self.config.delta_rho,
+                        },
+                    }
                 self._debate_logger.write_round_state(
                     state, round_num, _round_floats(metrics_summary),
                     crit_data=_round_floats(crit_data),
-                    pid_data=_round_floats(pid_data),
+                    pid_data=_round_floats(pid_data) if pid_data else None,
                 )
 
             # Rich console display: CRIT + PID metrics

@@ -13,6 +13,7 @@ from eval.interventions.engine import InterventionEngine
 from eval.interventions.rules import (
     build_intervention_engine,
     make_js_collapse_rule,
+    make_reasoning_quality_rule,
     RULE_REGISTRY,
 )
 
@@ -29,6 +30,8 @@ def _make_ctx(
     js_revision: float | None = 0.08,
     round_num: int = 1,
     intervention_history: list | None = None,
+    rho_bar: float | None = None,
+    agent_crit_scores: dict | None = None,
 ) -> InterventionContext:
     return InterventionContext(
         round_num=round_num,
@@ -37,8 +40,40 @@ def _make_ctx(
         state={"config": {}},
         js_proposal=js_proposal,
         js_revision=js_revision,
+        rho_bar=rho_bar,
+        agent_crit_scores=agent_crit_scores,
         intervention_history=intervention_history or [],
     )
+
+
+def _make_mock_crit_scores(
+    agent_rhos: dict[str, float],
+    pillar_overrides: dict[str, dict[str, float]] | None = None,
+    explanation_overrides: dict[str, dict[str, str]] | None = None,
+) -> dict:
+    """Build mock agent_crit_scores dict (role → mock CritResult-like object)."""
+    from types import SimpleNamespace
+
+    pillar_overrides = pillar_overrides or {}
+    explanation_overrides = explanation_overrides or {}
+    scores = {}
+    for role, rho in agent_rhos.items():
+        pillars = pillar_overrides.get(role, {})
+        ps = SimpleNamespace(
+            logical_validity=pillars.get("logical_validity", 0.7),
+            evidential_support=pillars.get("evidential_support", 0.7),
+            alternative_consideration=pillars.get("alternative_consideration", 0.7),
+            causal_alignment=pillars.get("causal_alignment", 0.7),
+        )
+        expls = explanation_overrides.get(role, {})
+        ex = SimpleNamespace(
+            logical_validity=expls.get("logical_validity", ""),
+            evidential_support=expls.get("evidential_support", ""),
+            alternative_consideration=expls.get("alternative_consideration", ""),
+            causal_alignment=expls.get("causal_alignment", ""),
+        )
+        scores[role] = SimpleNamespace(rho_bar=rho, pillar_scores=ps, explanations=ex)
+    return scores
 
 
 # ---------------------------------------------------------------------------
@@ -76,6 +111,18 @@ class TestInterventionResult:
         assert r.action == "retry_revision"
         assert r.severity == "warning"
         assert r.metrics["ratio"] == 0.2
+        assert r.target_roles is None  # default: broadcast
+
+    def test_target_roles(self):
+        r = InterventionResult(
+            rule_name="test",
+            action="retry_revision",
+            nudge_text="Fix it.",
+            metrics={},
+            severity="warning",
+            target_roles=["macro", "value"],
+        )
+        assert r.target_roles == ["macro", "value"]
 
 
 # ---------------------------------------------------------------------------
@@ -152,11 +199,337 @@ class TestJSCollapseRule:
         assert "converged unusually quickly" in result.nudge_text
         assert "independent analysis" in result.nudge_text
 
+    def test_broadcast_nudge_no_target_roles(self):
+        """JS collapse is broadcast — target_roles should be None."""
+        rule = make_js_collapse_rule()
+        ctx = _make_ctx(js_proposal=0.42, js_revision=0.08)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert result.target_roles is None
+
     def test_rule_metadata(self):
         rule = make_js_collapse_rule(threshold=0.5, max_retries=3)
         assert rule.name == "js_collapse"
         assert rule.stage == "post_revision"
         assert rule.max_retries == 3
+
+
+# ---------------------------------------------------------------------------
+# Reasoning Quality Rule tests
+# ---------------------------------------------------------------------------
+
+class TestReasoningQualityRule:
+    """All pillar threshold tests use agent_pillar_thresholds (the single
+    source of truth).  Pillars not listed for an agent are not checked."""
+
+    # Helper: standard 3-agent thresholds matching the ablation_3 config
+    ALL_PILLARS_04 = {
+        "macro": {
+            "logical_validity": 0.40, "evidential_support": 0.40,
+            "alternative_consideration": 0.40, "causal_alignment": 0.50,
+        },
+        "technical": {
+            "logical_validity": 0.50, "evidential_support": 0.40,
+            "alternative_consideration": 0.40, "causal_alignment": 0.40,
+        },
+        "value": {
+            "logical_validity": 0.40, "evidential_support": 0.45,
+            "alternative_consideration": 0.40, "causal_alignment": 0.40,
+        },
+    }
+
+    def test_fires_on_low_rho(self):
+        """Agent rho below threshold triggers the rule."""
+        rule = make_reasoning_quality_rule(rho_threshold=0.5)
+        scores = _make_mock_crit_scores({"macro": 0.4, "value": 0.7, "technical": 0.8})
+        ctx = _make_ctx(
+            stage="post_crit",
+            agent_crit_scores=scores,
+        )
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert result.rule_name == "reasoning_quality"
+        assert result.action == "retry_revision"
+        assert len(result.metrics["weak_agents"]) == 1
+        assert result.metrics["weak_agents"][0]["role"] == "macro"
+        assert result.target_roles == ["macro"]
+
+    def test_fires_on_low_pillar(self):
+        """Agent with one pillar below its threshold triggers the rule."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"macro": {"causal_alignment": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.6, "value": 0.6},
+            pillar_overrides={"macro": {"causal_alignment": 0.25}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert len(result.metrics["weak_agents"]) == 1
+        wa = result.metrics["weak_agents"][0]
+        assert wa["role"] == "macro"
+        assert "causal_alignment" in wa["weak_pillars"]
+
+    def test_no_fire_above_thresholds(self):
+        """All agents above both rho and pillar thresholds → no fire."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.5,
+            agent_pillar_thresholds=self.ALL_PILLARS_04,
+        )
+        scores = _make_mock_crit_scores({"macro": 0.8, "value": 0.7, "technical": 0.8})
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is None
+
+    def test_no_thresholds_means_no_pillar_checks(self):
+        """Without agent_pillar_thresholds, only rho is checked."""
+        rule = make_reasoning_quality_rule(rho_threshold=0.3)
+        scores = _make_mock_crit_scores(
+            {"macro": 0.6},
+            pillar_overrides={"macro": {"causal_alignment": 0.01}},  # extremely low
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is None  # rho 0.6 > 0.3, no pillar thresholds configured
+
+    def test_none_scores_skip(self):
+        """Missing agent_crit_scores → skip."""
+        rule = make_reasoning_quality_rule()
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=None)
+        result = rule.evaluate(ctx)
+        assert result is None
+
+    def test_empty_scores_skip(self):
+        """Empty agent_crit_scores dict → skip."""
+        rule = make_reasoning_quality_rule()
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores={})
+        result = rule.evaluate(ctx)
+        assert result is None
+
+    def test_multiple_weak_agents(self):
+        """Multiple agents with low rho are all reported."""
+        rule = make_reasoning_quality_rule(rho_threshold=0.5)
+        scores = _make_mock_crit_scores({"macro": 0.3, "value": 0.4, "technical": 0.8})
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        roles = {wa["role"] for wa in result.metrics["weak_agents"]}
+        assert roles == {"macro", "value"}
+        assert set(result.target_roles) == {"macro", "value"}
+
+    def test_nudge_text_mentions_agent(self):
+        """Nudge text identifies the weak agent by name."""
+        rule = make_reasoning_quality_rule(rho_threshold=0.5)
+        scores = _make_mock_crit_scores({"macro": 0.3, "value": 0.8})
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert "MACRO" in result.nudge_text
+        assert "rho = 0.30" in result.nudge_text
+
+    def test_nudge_pillar_specific_guidance_causal(self):
+        """Low causal_alignment triggers Pearl's hierarchy guidance."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"macro": {"causal_alignment": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.6},
+            pillar_overrides={"macro": {"causal_alignment": 0.2}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert "Pearl" in result.nudge_text
+        assert "transmission" in result.nudge_text.lower()
+        assert "rung collapse" in result.nudge_text.lower()
+        assert "causal_alignment: 0.20" in result.nudge_text
+
+    def test_nudge_pillar_specific_guidance_evidential(self):
+        """Low evidential_support triggers evidence citation guidance."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"value": {"evidential_support": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"value": 0.6},
+            pillar_overrides={"value": {"evidential_support": 0.15}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert "memo evidence ID" in result.nudge_text
+        assert "bracketed notation" in result.nudge_text
+
+    def test_nudge_pillar_specific_guidance_alternative(self):
+        """Low alternative_consideration triggers critique handling guidance."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"technical": {"alternative_consideration": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"technical": 0.6},
+            pillar_overrides={"technical": {"alternative_consideration": 0.2}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert "critique" in result.nudge_text.lower()
+        assert "ACCEPT" in result.nudge_text
+        assert "REJECT" in result.nudge_text
+
+    def test_nudge_pillar_specific_guidance_logical(self):
+        """Low logical_validity triggers contradiction/reasoning step guidance."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"macro": {"logical_validity": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.6},
+            pillar_overrides={"macro": {"logical_validity": 0.25}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert "Contradictions" in result.nudge_text
+        assert "portfolio-reasoning mismatch" in result.nudge_text.lower()
+
+    def test_nudge_includes_crit_explanation(self):
+        """CRIT auditor explanation is passed through in the nudge."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.3,
+            agent_pillar_thresholds={"macro": {"causal_alignment": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.6},
+            pillar_overrides={"macro": {"causal_alignment": 0.2}},
+            explanation_overrides={"macro": {
+                "causal_alignment": "Claim C2 asserts rate impact on tech but provides no mechanism.",
+            }},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert "Claim C2 asserts rate impact" in result.nudge_text
+        assert "Auditor finding" in result.nudge_text
+
+    def test_rule_metadata(self):
+        rule = make_reasoning_quality_rule(rho_threshold=0.6, max_retries=2)
+        assert rule.name == "reasoning_quality"
+        assert rule.stage == "post_crit"
+        assert rule.max_retries == 2
+
+    def test_combined_rho_and_pillar(self):
+        """Agent has both low rho and a weak pillar."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.5,
+            agent_pillar_thresholds={"macro": {"evidential_support": 0.3}},
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.3},
+            pillar_overrides={"macro": {"evidential_support": 0.2}},
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        wa = result.metrics["weak_agents"][0]
+        assert wa["rho_i"] == 0.3
+        assert "evidential_support" in wa["weak_pillars"]
+
+    # --- Per-agent pillar threshold tests ---
+
+    def test_different_thresholds_per_agent(self):
+        """Each agent has its own pillar thresholds; only violations fire."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.2,
+            agent_pillar_thresholds={
+                "macro": {"causal_alignment": 0.6},
+                "value": {"evidential_support": 0.6},
+                "technical": {"logical_validity": 0.6},
+            },
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.8, "value": 0.8, "technical": 0.8},
+            pillar_overrides={
+                "macro": {"causal_alignment": 0.5},       # 0.5 < 0.6 → fires
+                "value": {"evidential_support": 0.7},      # 0.7 >= 0.6 → ok
+                "technical": {"logical_validity": 0.55},   # 0.55 < 0.6 → fires
+            },
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        roles = {wa["role"] for wa in result.metrics["weak_agents"]}
+        assert roles == {"macro", "technical"}
+        assert "value" not in roles
+
+    def test_unlisted_pillar_not_checked(self):
+        """Pillars not in agent_pillar_thresholds are never checked."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.2,
+            agent_pillar_thresholds={
+                "macro": {"causal_alignment": 0.5},  # only this pillar checked
+            },
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.8},
+            pillar_overrides={
+                "macro": {
+                    "logical_validity": 0.01,            # very low, but not listed
+                    "evidential_support": 0.01,          # very low, but not listed
+                    "alternative_consideration": 0.01,   # very low, but not listed
+                    "causal_alignment": 0.6,             # above threshold → ok
+                },
+            },
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is None  # only causal checked, and it's above 0.5
+
+    def test_unlisted_agent_not_checked_for_pillars(self):
+        """Agents not in agent_pillar_thresholds have no pillar checks."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.2,
+            agent_pillar_thresholds={
+                "macro": {"causal_alignment": 0.5},
+            },
+        )
+        scores = _make_mock_crit_scores(
+            {"macro": 0.8, "technical": 0.8},
+            pillar_overrides={
+                "macro": {"causal_alignment": 0.6},       # above → ok
+                "technical": {"logical_validity": 0.01},   # very low but agent not listed
+            },
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is None
+
+    def test_full_config_all_agents_all_pillars(self):
+        """Production-style config: all 3 agents × 4 pillars fully specified."""
+        rule = make_reasoning_quality_rule(
+            rho_threshold=0.5,
+            agent_pillar_thresholds=self.ALL_PILLARS_04,
+        )
+        # macro: causal_alignment=0.45 < 0.50 → fires
+        # value: evidential_support=0.40 < 0.45 → fires
+        # technical: all above thresholds → ok
+        scores = _make_mock_crit_scores(
+            {"macro": 0.8, "value": 0.8, "technical": 0.8},
+            pillar_overrides={
+                "macro": {"causal_alignment": 0.45},
+                "value": {"evidential_support": 0.40},
+                "technical": {"logical_validity": 0.55},
+            },
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        weak_map = {wa["role"]: wa["weak_pillars"] for wa in result.metrics["weak_agents"]}
+        assert "causal_alignment" in weak_map["macro"]
+        assert "evidential_support" in weak_map["value"]
+        assert "technical" not in weak_map
 
 
 # ---------------------------------------------------------------------------
@@ -300,3 +673,91 @@ class TestBuildInterventionEngine:
 
     def test_rule_registry_has_js_collapse(self):
         assert "js_collapse" in RULE_REGISTRY
+
+    def test_rule_registry_has_reasoning_quality(self):
+        assert "reasoning_quality" in RULE_REGISTRY
+
+    def test_reasoning_quality_config(self):
+        engine = build_intervention_engine({
+            "enabled": True,
+            "rules": {
+                "reasoning_quality": {
+                    "rho_threshold": 0.6,
+                    "max_retries": 2,
+                },
+            },
+        })
+        assert engine is not None
+        assert len(engine.rules) == 1
+        rule = engine.rules[0]
+        assert rule.name == "reasoning_quality"
+        assert rule.stage == "post_crit"
+        assert rule.max_retries == 2
+
+    def test_combined_js_and_reasoning_config(self):
+        """Both js_collapse and reasoning_quality can be registered together."""
+        engine = build_intervention_engine({
+            "enabled": True,
+            "rules": {
+                "js_collapse": {"threshold": 0.4, "max_retries": 2},
+                "reasoning_quality": {"rho_threshold": 0.5, "max_retries": 1},
+            },
+        })
+        assert engine is not None
+        assert len(engine.rules) == 2
+        names = {r.name for r in engine.rules}
+        assert names == {"js_collapse", "reasoning_quality"}
+        stages = {r.stage for r in engine.rules}
+        assert stages == {"post_revision", "post_crit"}
+
+    def test_reasoning_quality_with_agent_pillar_thresholds_config(self):
+        """agent_pillar_thresholds pass through from config as single source of truth."""
+        engine = build_intervention_engine({
+            "enabled": True,
+            "rules": {
+                "reasoning_quality": {
+                    "rho_threshold": 0.5,
+                    "agent_pillar_thresholds": {
+                        "macro": {
+                            "logical_validity": 0.40,
+                            "evidential_support": 0.40,
+                            "alternative_consideration": 0.40,
+                            "causal_alignment": 0.50,
+                        },
+                        "value": {
+                            "logical_validity": 0.40,
+                            "evidential_support": 0.45,
+                            "alternative_consideration": 0.40,
+                            "causal_alignment": 0.40,
+                        },
+                        "technical": {
+                            "logical_validity": 0.50,
+                            "evidential_support": 0.40,
+                            "alternative_consideration": 0.40,
+                            "causal_alignment": 0.40,
+                        },
+                    },
+                    "max_retries": 1,
+                },
+            },
+        })
+        assert engine is not None
+        rule = engine.rules[0]
+        assert rule.name == "reasoning_quality"
+
+        # macro: causal_alignment=0.48 < 0.50 → fires
+        # value: evidential_support=0.42 < 0.45 → fires
+        # technical: all above thresholds → ok
+        scores = _make_mock_crit_scores(
+            {"macro": 0.8, "value": 0.8, "technical": 0.8},
+            pillar_overrides={
+                "macro": {"causal_alignment": 0.48},
+                "value": {"evidential_support": 0.42},
+                "technical": {"logical_validity": 0.55},
+            },
+        )
+        ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        roles = {wa["role"] for wa in result.metrics["weak_agents"]}
+        assert roles == {"macro", "value"}

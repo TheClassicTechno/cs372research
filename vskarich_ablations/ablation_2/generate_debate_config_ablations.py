@@ -67,7 +67,7 @@ TEMPERATURES = [
 ]
 
 MAX_ROUNDS = [
-    3,  # Up from 2 in ablation 1
+    2,  # Reduced from 3 to 2
 ]
 
 PID_ENABLED = [
@@ -206,6 +206,7 @@ def generate() -> None:
         debate["temperature"] = temp
         debate["max_rounds"] = rounds
         debate["pid_enabled"] = True
+        debate["crit_llm_model"] = "gpt-5"
         debate["experiment_name"] = "vskarich_ablation_2"
 
         # Inject PID parameters

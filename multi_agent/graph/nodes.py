@@ -503,8 +503,16 @@ def revise_node(state: DebateState) -> dict:
     revisions = []
     turns = []
 
+    target_roles = config.get("_intervention_target_roles")
+
     for i, p in enumerate(source):
         role = p["role"]
+
+        # --- Selective retry: skip LLM call for non-targeted agents ---
+        if target_roles and role not in target_roles:
+            revisions.append(p)  # carry forward existing revision unchanged
+            continue
+
         if not config.get("console_display"):
             print(f"  [Round {current_round} - Revise] {role.upper()} agent ({i+1}/{len(source)})...", flush=True)
         action_dict = p.get("action_dict", {})
@@ -549,6 +557,12 @@ def revise_node(state: DebateState) -> dict:
             config.get("sector_config"), role,
         )
         overrides = _get_prompt_file_overrides(config, role, "revise")
+        # Per-role nudge takes priority over broadcast nudge
+        _nudge = (
+            config.get(f"_intervention_nudge_{role}")
+            or config.get("_intervention_nudge")
+            or ""
+        )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             prompt_file_overrides=overrides,
@@ -557,7 +571,7 @@ def revise_node(state: DebateState) -> dict:
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
             allocation_constraints=config.get("allocation_constraints"),
-            intervention_nudge=config.get("_intervention_nudge") or "",
+            intervention_nudge=_nudge,
         )
 
         if use_profiles:
@@ -907,6 +921,17 @@ def make_revise_node(role: str):
         config = state["config"]
         if config.get("propose_only"):
             return {}
+
+        # --- Selective retry: skip LLM call for non-targeted agents ---
+        target_roles = config.get("_intervention_target_roles")
+        if target_roles and role not in target_roles:
+            # Carry forward existing revision unchanged (no LLM call)
+            raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
+            existing = next((e for e in raw_source if e["role"] == role), None)
+            if existing:
+                return {"revisions": [existing]}
+            return {}
+
         context = state["enriched_context"]
         current_round = state.get("current_round", 1)
         is_mock = config.get("mock", False)
@@ -969,6 +994,12 @@ def make_revise_node(role: str):
             config.get("sector_config"), role,
         )
         overrides = _get_prompt_file_overrides(config, role, "revise")
+        # Per-role nudge takes priority over broadcast nudge
+        _nudge = (
+            config.get(f"_intervention_nudge_{role}")
+            or config.get("_intervention_nudge")
+            or ""
+        )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             prompt_file_overrides=overrides,
@@ -977,7 +1008,7 @@ def make_revise_node(role: str):
             my_proposal_v2=my_proposal_v2,
             critiques_text_v2=critiques_text_v2,
             allocation_constraints=config.get("allocation_constraints"),
-            intervention_nudge=config.get("_intervention_nudge") or "",
+            intervention_nudge=_nudge,
         )
 
         if use_profiles:

@@ -231,6 +231,12 @@ class AgentConfig(BaseModel):
         "values are dicts with 'system_blocks' and/or 'user_sections' lists.",
     )
 
+    # --- Intervention engine (intra-round retry on acute failures) ---
+    intervention_config: dict | None = Field(
+        default=None,
+        description="Intervention engine config. Contains 'enabled' and 'rules' dict.",
+    )
+
     # --- CRIT configuration ---
     crit_llm_model: str = Field(
         default="gpt-5-mini",

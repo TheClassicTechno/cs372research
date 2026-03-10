@@ -1,0 +1,101 @@
+# ===========================================================================
+# Ablation 4 — Intervention Stress Test
+# Condition: both JS collapse + reasoning quality interventions, no PID
+# Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> [IE post_crit] -> judge
+#
+# PURPOSE: Verify both intervention retry paths fire under controlled
+# conditions. Thresholds are set artificially sensitive so that:
+#   - JS collapse fires on nearly any revision (threshold=0.95)
+#   - Reasoning quality fires on each agent's domain-specific pillar
+#     (thresholds set to 0.95 — almost impossible to pass)
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1                     # single episode — this is a smoke test
+
+# --- Agent profiles (intense enriched, no risk agent) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+  value: value_enriched_intense
+
+judge_profile: judge_standard
+
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini            # debate agent model
+  crit_llm_model: gpt-5            # CRIT auditor model (higher capability)
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 2
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_4
+
+  # --- PID controller ---
+  pid_enabled: false                # no inter-round beta adjustment
+
+
+  # --- Intervention engine (STRESS TEST — thresholds set to force retries) ---
+  intervention_config:
+    enabled: true
+    rules:
+
+      # JS Collapse Detection (post_revision)
+      # threshold=0.95 means JS_revision must be >= 95% of JS_proposal to pass.
+      # In practice, any convergence at all during revision will trigger this.
+      # min_js_proposal=0.01 ensures the rule fires even with low initial diversity.
+      js_collapse:
+        enabled: true
+        threshold: 0.95             # STRESS: almost any JS drop triggers retry
+        min_js_proposal: 0.01       # STRESS: fire even with minimal initial diversity
+        max_retries: 2
+
+      # Reasoning Quality (post_crit, per-agent, pillar-aware)
+      # Each agent has one pillar set to 0.95 — virtually guaranteed to fire.
+      # The other pillars are set to 0.95 as well so we test multi-pillar nudges.
+      reasoning_quality:
+        enabled: true
+        rho_threshold: 0.95         # STRESS: almost any rho triggers retry
+        max_retries: 1
+
+        # STRESS TEST thresholds — all set high to guarantee intervention fires.
+        # macro:  causal_alignment=0.95  (macro rarely scores this high)
+        # technical: logical_validity=0.95  (technical rarely scores this high)
+        # value:  evidential_support=0.95  (value rarely scores this high)
+        agent_pillar_thresholds:
+          macro:
+            logical_validity: 0.50
+            evidential_support: 0.50
+            alternative_consideration: 0.50
+            causal_alignment: 0.95  # STRESS: macro's causal pillar
+          technical:
+            logical_validity: 0.95  # STRESS: technical's logical pillar
+            evidential_support: 0.50
+            alternative_consideration: 0.50
+            causal_alignment: 0.50
+          value:
+            logical_validity: 0.50
+            evidential_support: 0.95  # STRESS: value's evidential pillar
+            alternative_consideration: 0.50
+            causal_alignment: 0.50
+
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0
