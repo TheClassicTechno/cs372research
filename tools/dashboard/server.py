@@ -167,6 +167,30 @@ def portfolio_performance_by_agent(experiment: str, run_id: str):
     )
 
 
+@app.get("/runs/{experiment}/{run_id}/performance/by-round")
+def portfolio_performance_by_round(experiment: str, run_id: str):
+    """Compute per-round, per-phase, per-agent portfolio performance."""
+    return JSONResponse(
+        run_scanner.compute_round_performance(RUNS_BASE, experiment, run_id)
+    )
+
+
+@app.get("/runs/{experiment}/{run_id}/performance/debate-impact")
+def debate_impact(experiment: str, run_id: str):
+    """Compute debate impact: per-agent deltas and mean portfolio comparison."""
+    return JSONResponse(
+        run_scanner.compute_debate_impact(RUNS_BASE, experiment, run_id)
+    )
+
+
+@app.get("/api/ablation/debate-impact")
+def ablation_debate_impact():
+    """Aggregate debate impact across all runs per experiment."""
+    return JSONResponse(
+        run_scanner.compute_ablation_debate_impact(RUNS_BASE)
+    )
+
+
 @app.get("/runs/{experiment}/{run_id}/pid")
 def pid_trajectory(experiment: str, run_id: str):
     """PID trajectory array."""

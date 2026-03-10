@@ -33,6 +33,18 @@ What it checks
 - Non-deterministic or temp-like file naming strings
 - Optional warning on console-heavy debugging
 
+Additional style / discipline checks
+------------------------------------
+- Imperative accumulation loops where map/filter/reduce would be clearer
+- Manual reductions
+- Index-based loops over arrays
+- Excessive mutation density
+- Nested imperative loops
+- Module-level mutable state
+- Render purity checks
+- Shared-state mutation auditing
+- Side-effect detection inside components and render-like functions
+
 Exit code
 ---------
 0 on pass
@@ -42,6 +54,7 @@ Exit code
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import sys
@@ -63,6 +76,8 @@ MAX_FILE_LINES = 400
 MAX_APP_LINES = 150
 MAX_FUNC_LINES = 30
 MAX_CONSOLE_STATEMENTS_PER_FILE = 5
+MAX_MUTATION_EVENTS_PER_FILE = 12
+MAX_MUTATION_EVENTS_PER_FUNCTION = 5
 
 # Allowed trivial scaffolding tags in views.
 TRIVIAL_VIEW_TAGS = ("div", "span")
@@ -101,6 +116,64 @@ SUSPICIOUS_TEMP_NAMES = (
 
 # Allowed state mutation zone
 STATE_FILE = "state.js"
+
+# Functional-style ops
+FUNCTIONAL_ARRAY_OPS = (
+    ".map(",
+    ".filter(",
+    ".reduce(",
+    ".flatMap(",
+    ".some(",
+    ".every(",
+    ".find(",
+    ".findIndex(",
+    ".sort(",
+)
+
+# Things that smell like side effects.
+SIDE_EFFECT_TOKENS = (
+    "fetch(",
+    "localStorage.",
+    "sessionStorage.",
+    "document.cookie",
+    "window.location",
+    "history.pushState(",
+    "history.replaceState(",
+    "setTimeout(",
+    "setInterval(",
+    "requestAnimationFrame(",
+    "addEventListener(",
+    "removeEventListener(",
+    "dispatchEvent(",
+)
+
+DOM_WRITE_TOKENS = (
+    ".innerHTML",
+    ".outerHTML",
+    ".insertAdjacentHTML",
+    ".appendChild(",
+    ".prepend(",
+    ".append(",
+    ".replaceChildren(",
+    ".remove(",
+    ".removeChild(",
+    ".classList.",
+    ".style.",
+    ".textContent =",
+    ".innerText =",
+    ".value =",
+    ".checked =",
+    ".disabled =",
+    ".setAttribute(",
+    ".removeAttribute(",
+)
+
+STATE_MUTATION_TOKENS = (
+    "appState.",
+    "state.",
+    "runsViewState.",
+    "liveState.",
+)
 
 
 def strip_js_comments(text: str) -> str:
@@ -201,6 +274,14 @@ def find_function_defs(text: str) -> list[tuple[str, int, int]]:
     return results
 
 
+def get_line_range(text: str, start_line: int, end_line: int) -> str:
+    """Return source for the given 1-indexed line range."""
+    lines = text.splitlines()
+    start_idx = max(0, start_line - 1)
+    end_idx = min(len(lines), end_line)
+    return "\n".join(lines[start_idx:end_idx])
+
+
 def has_file_doc_comment(raw_text: str) -> bool:
     """Require a top-of-file block comment or doc comment."""
     stripped = raw_text.lstrip()
@@ -233,20 +314,40 @@ def require_viewtoken_guard(text: str) -> bool:
     it should reference appState.viewToken or a token guard.
     """
     has_async = bool(re.search(r"""\basync\b""", text))
-    has_dom_write = any(
-        token in text
-        for token in (
-            ".innerHTML",
-            ".insertAdjacentHTML",
-            ".appendChild(",
-            ".replaceChildren(",
-            ".textContent =",
-            ".classList.",
-        )
-    )
+    has_dom_write = any(token in text for token in DOM_WRITE_TOKENS)
     if not (has_async and has_dom_write):
         return True
     return "appState.viewToken" in text or "viewToken" in text
+
+
+def is_probably_render_function(name: str, body: str) -> bool:
+    """
+    Heuristically detect render-like / pure-presentational functions.
+    """
+    lower_name = name.lower()
+    if lower_name.startswith("render") or lower_name.startswith("build") or lower_name.startswith("template"):
+        return True
+    if contains_html_like_markup(body):
+        return True
+    if re.search(r"""\breturn\s+[`'"].*<\s*[a-zA-Z]""", body, flags=re.S):
+        return True
+    return False
+
+
+def mutation_events(text: str) -> int:
+    """Count rough mutation-like events in a text blob."""
+    patterns = [
+        r"""\.\s*(push|splice|shift|unshift|pop|sort|reverse|copyWithin|fill)\s*\(""",
+        r"""\+\+|--""",
+        r"""\b[A-Za-z_$][\w$.\]]*\s*[\+\-\*\/%]?=""",
+        r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\s*=""",
+    ]
+    return sum(len(re.findall(p, text)) for p in patterns)
+
+
+def has_side_effect_tokens(text: str) -> bool:
+    """Return whether text contains obvious side-effect markers."""
+    return any(token in text for token in SIDE_EFFECT_TOKENS) or any(token in text for token in DOM_WRITE_TOKENS)
 
 
 def check_forbidden_defaults(text: str, rel: str) -> None:
@@ -314,6 +415,175 @@ def check_file_size(text: str, rel: str) -> None:
         warnings.append(f"{rel}: app.js exceeds {MAX_APP_LINES} lines and may be becoming a god file ({lines} lines)")
     elif lines > MAX_FILE_LINES:
         warnings.append(f"{rel}: file exceeds {MAX_FILE_LINES} lines ({lines} lines); possible architectural drift")
+
+
+def check_mutable_accumulator(text: str, rel: str) -> None:
+    """
+    Detect loops building arrays via mutation instead of map/filter.
+    """
+    pattern = r"""let\s+([A-Za-z_$][\w$]*)\s*=\s*\[\]\s*;.*?for\s*\(.*?\)\s*\{.*?\1\.push\("""
+    if re.search(pattern, text, flags=re.S):
+        warnings.append(f"{rel}: mutable accumulator pattern detected; prefer map/filter pipeline")
+
+
+def check_manual_reduction(text: str, rel: str) -> None:
+    """Detect sum / count accumulation loops that could be reduce()."""
+    patterns = [
+        r"""let\s+([A-Za-z_$][\w$]*)\s*=\s*0\s*;.*?for\s*\(.*?\)\s*\{.*?\1\s*\+=""",
+        r"""let\s+([A-Za-z_$][\w$]*)\s*=\s*0\s*;.*?for\s*\(.*?\)\s*\{.*?\1\s*=\s*\1\s*\+""",
+        r"""let\s+([A-Za-z_$][\w$]*)\s*=\s*['"]{0,2}\s*;.*?for\s*\(.*?\)\s*\{.*?\1\s*\+=""",
+    ]
+    for pattern in patterns:
+        if re.search(pattern, text, flags=re.S):
+            warnings.append(f"{rel}: manual reduction loop detected; consider Array.reduce()")
+            break
+
+
+def check_index_loop(text: str, rel: str) -> None:
+    """Warn on index-based loops over arrays."""
+    if re.search(r"""for\s*\(\s*let\s+\w+\s*=\s*0\s*;\s*\w+\s*<\s*[A-Za-z_$][\w$.\]]*\.length\s*;""", text):
+        warnings.append(f"{rel}: index-based loop over array; prefer map/filter/reduce or for-of")
+
+
+def check_excessive_mutation(text: str, rel: str) -> None:
+    """Warn on heavy mutation density within a file."""
+    events = mutation_events(text)
+    if events > MAX_MUTATION_EVENTS_PER_FILE:
+        warnings.append(f"{rel}: heavy mutation detected ({events} mutation-like events); consider functional transformations")
+
+
+def check_nested_loops(text: str, rel: str) -> None:
+    """Warn on imperative nested loops."""
+    if re.search(r"""for\s*\(.*?\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*for\s*\(""", text, flags=re.S):
+        warnings.append(f"{rel}: nested loops detected; consider map/reduce, indexing, or data restructuring")
+
+
+def check_missing_functional_ops(text: str, rel: str) -> None:
+    """Warn when loops are used but functional array operators never appear."""
+    has_loop = bool(re.search(r"""\bfor\s*\(""", text))
+    has_functional = any(op in text for op in FUNCTIONAL_ARRAY_OPS)
+    if has_loop and not has_functional:
+        warnings.append(f"{rel}: loops used but no functional array operators detected")
+
+
+def check_mutable_globals(text: str, rel: str) -> None:
+    """Detect likely mutable module-level state."""
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("import ") or stripped.startswith("export "):
+            continue
+        # Heuristic: stop once first function/class body likely begins.
+        if re.search(r"""\b(function|class)\b""", stripped):
+            break
+        if re.match(r"""^(let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(\{|\[|new\s+Map|new\s+Set|new\s+Date|\w+)""", stripped):
+            warnings.append(f"{rel}:{i+1}: possible mutable module-level state")
+            break
+
+
+def check_render_purity(text: str, rel: str) -> None:
+    """
+    Detect side effects in render-like functions.
+
+    Render/build/template functions should usually be pure:
+      input -> markup/string/data structure
+    They should not fetch, mutate shared state, attach listeners, or write DOM.
+    """
+    for name, start, end in find_function_defs(text):
+        body = get_line_range(text, start, end)
+        if not is_probably_render_function(name, body):
+            continue
+
+        if any(token in body for token in SIDE_EFFECT_TOKENS):
+            warnings.append(f"{rel}:{start}-{end}: render-like function '{name}' appears to contain side effects")
+        if any(token in body for token in DOM_WRITE_TOKENS):
+            warnings.append(f"{rel}:{start}-{end}: render-like function '{name}' mutates DOM; render/build functions should be pure")
+        if any(token in body for token in STATE_MUTATION_TOKENS):
+            warnings.append(f"{rel}:{start}-{end}: render-like function '{name}' reaches into shared state")
+        if re.search(r"""\b(addEventListener|removeEventListener|fetch|setTimeout|setInterval|requestAnimationFrame)\s*\(""", body):
+            warnings.append(f"{rel}:{start}-{end}: render-like function '{name}' mixes rendering with lifecycle side effects")
+
+
+def check_state_mutation_auditing(text: str, rel: str) -> None:
+    """
+    Detect suspicious state mutation outside the dedicated state file.
+
+    This is intentionally broad: the goal is to catch surprise writes to shared
+    mutable state and push code toward explicit state transitions.
+    """
+    if rel == STATE_FILE or rel.endswith(f"/{STATE_FILE}"):
+        return
+
+    patterns = [
+        r"""\bappState\.[A-Za-z_$][\w$]*\s*=""",
+        r"""\bstate\.[A-Za-z_$][\w$]*\s*=""",
+        r"""\brunsViewState\.[A-Za-z_$][\w$]*\s*=""",
+        r"""\bliveState\.[A-Za-z_$][\w$]*\s*=""",
+        r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\.(?:push|splice|shift|unshift|pop)\s*\(""",
+    ]
+    for pattern in patterns:
+        if re.search(pattern, text):
+            warnings.append(f"{rel}: shared state mutation detected outside {STATE_FILE}; prefer explicit state helpers")
+            break
+
+
+def check_component_side_effects(text: str, rel: str) -> None:
+    """
+    Strengthen component purity expectations.
+
+    Components should remain presentational. They should not reach outward into
+    storage, timers, navigation, global state, or network access.
+    """
+    if not rel.startswith("components/"):
+        return
+
+    side_effect_patterns = [
+        (r"""\bfetch\s*\(""", "components MUST NOT perform network requests"),
+        (r"""\b(?:localStorage|sessionStorage)\.""", "components MUST NOT read/write browser storage"),
+        (r"""\bdocument\.cookie\b""", "components MUST NOT touch cookies"),
+        (r"""\b(?:setTimeout|setInterval|requestAnimationFrame)\s*\(""", "components MUST NOT own timers/animation scheduling"),
+        (r"""\b(?:history\.pushState|history\.replaceState|window\.location)\b""", "components MUST NOT perform navigation side effects"),
+        (r"""\baddEventListener\s*\(""", "components MUST NOT attach listeners directly"),
+        (r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\s*=""", "components MUST NOT mutate shared state directly"),
+    ]
+    for pattern, message in side_effect_patterns:
+        if re.search(pattern, text):
+            failures.append(f"{rel}: {message}")
+
+
+def check_function_side_effect_density(raw_text: str, rel: str) -> None:
+    """
+    Detect functions that combine too many responsibilities:
+    mutation + DOM + network + timers + global state.
+    """
+    for name, start, end in find_function_defs(raw_text):
+        body = get_line_range(raw_text, start, end)
+        mut = mutation_events(body)
+        dom_writes = sum(1 for token in DOM_WRITE_TOKENS if token in body)
+        side_tokens = sum(1 for token in SIDE_EFFECT_TOKENS if token in body)
+        shared_state_hits = sum(1 for token in STATE_MUTATION_TOKENS if token in body)
+
+        if mut > MAX_MUTATION_EVENTS_PER_FUNCTION:
+            warnings.append(f"{rel}:{start}-{end}: function '{name}' has heavy mutation density ({mut})")
+        if dom_writes >= 2 and side_tokens >= 1:
+            warnings.append(f"{rel}:{start}-{end}: function '{name}' mixes DOM writes with other side effects")
+        if shared_state_hits and dom_writes:
+            warnings.append(f"{rel}:{start}-{end}: function '{name}' mixes shared-state mutation with DOM mutation")
+
+
+def check_functional_style(text: str, rel: str) -> None:
+    """Bundle functional-style heuristics."""
+    check_mutable_accumulator(text, rel)
+    check_manual_reduction(text, rel)
+    check_index_loop(text, rel)
+    check_excessive_mutation(text, rel)
+    check_nested_loops(text, rel)
+    check_missing_functional_ops(text, rel)
+    check_mutable_globals(text, rel)
+    check_render_purity(text, rel)
+    check_state_mutation_auditing(text, rel)
+    check_component_side_effects(text, rel)
+    check_function_side_effect_density(text, rel)
 
 
 def check_function_quality(raw_text: str, stripped_text: str, rel: str) -> None:
@@ -461,6 +731,7 @@ def check_universal_patterns(text: str, rel: str) -> None:
     check_forbidden_defaults(text, rel)
     check_silent_failure_patterns(text, rel)
     check_testid_usage(text, rel)
+    check_functional_style(text, rel)
 
 
 def check_file(raw_path: pathlib.Path, raw_text: str, rel: str) -> None:
@@ -521,13 +792,11 @@ def _load_baseline() -> set[str]:
     """Load the set of known/accepted warnings from the baseline file."""
     if not BASELINE_FILE.exists():
         return set()
-    import json
     return set(json.loads(BASELINE_FILE.read_text(encoding="utf-8")))
 
 
 def _save_baseline(current_warnings: list[str]) -> None:
     """Snapshot current warnings as the new baseline."""
-    import json
     BASELINE_FILE.write_text(
         json.dumps(sorted(current_warnings), indent=2) + "\n",
         encoding="utf-8",

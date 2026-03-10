@@ -37,16 +37,33 @@ export function fetchPortfolio(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/portfolio');
 }
 
+/** Fetch per-round, per-phase, per-agent portfolio performance. */
+export function fetchRoundPerformance(experiment, runId) {
+  return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance/by-round');
+}
+
+/** Fetch debate impact: per-agent deltas and mean portfolio comparison. */
+export function fetchDebateImpact(experiment, runId) {
+  return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance/debate-impact');
+}
+
 export function fetchRound(experiment, runId, roundNum) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/round/' + roundNum);
 }
 
+/** Fetch the file tree for a run directory. */
 export function fetchTree(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/tree');
 }
 
+/** Fetch a single file from a run directory by relative path. */
 export function fetchFile(experiment, runId, path) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/file?path=' + encodeURIComponent(path));
+}
+
+/** Fetch aggregate debate impact across experiments. */
+export function fetchAblationDebateImpact() {
+  return fetchJSON('/api/ablation/debate-impact');
 }
 
 /** Fetch the ablation summary JSON. */
