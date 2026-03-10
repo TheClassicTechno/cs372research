@@ -22,13 +22,6 @@ pytestmark = pytest.mark.dashboard
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _goto_live(page: Page, url: str) -> None:
-    """Navigate to the Live Debate view and wait for event cards."""
-    page.goto(f"{url}/#live")
-    page.wait_for_selector("#live-entries", timeout=5000)
-    page.wait_for_selector("#live-entries .card", timeout=10000)
-
-
 def _goto_run_detail(page: Page, url: str) -> None:
     """Navigate to the test run detail page."""
     page.goto(f"{url}/#run/test/run_2026-03-07_19-50-06")
@@ -111,147 +104,7 @@ class TestAgentNamesFromConfig:
 
 
 # ---------------------------------------------------------------------------
-# TEST 4 — Live debate panel renders events
-# ---------------------------------------------------------------------------
-
-class TestLiveDebatePanel:
-    def test_events_appear(self, page: Page, dashboard_url: str):
-        """Live Debate tab loads and shows event cards."""
-        _goto_live(page, dashboard_url)
-        cards = page.query_selector_all("#live-entries .card")
-        assert len(cards) > 0, "Live debate panel rendered no events"
-
-    def test_phase_labels_present(self, page: Page, dashboard_url: str):
-        """Event cards contain phase labels (PROPOSAL / CRITIQUE / REVISION)."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        phases_found = [
-            p for p in ("PROPOSAL", "CRITIQUE", "REVISION")
-            if p in entries_text
-        ]
-        assert len(phases_found) >= 1, (
-            f"No phase labels found. Text sample: {entries_text[:300]}"
-        )
-
-    def test_agent_names_in_event_labels(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Event card headers contain agent names from the run."""
-        _goto_live(page, dashboard_url)
-
-        entries_text = page.text_content("#live-entries")
-        agents_found = [
-            a for a in ("risk", "technical", "value")
-            if a in entries_text
-        ]
-        assert len(agents_found) >= 1, (
-            "No agent names found in event labels"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 5 — Event ordering (newest first)
-# ---------------------------------------------------------------------------
-
-class TestEventOrdering:
-    def test_events_newest_first(self, page: Page, dashboard_url: str):
-        """Events are rendered newest first (highest round at top)."""
-        _goto_live(page, dashboard_url)
-
-        headers = page.query_selector_all("#live-entries .card-header")
-        assert len(headers) >= 2, "Need at least 2 events to test ordering"
-
-        rounds = []
-        for h in headers:
-            text = h.text_content()
-            match = re.search(r"\[ROUND\s+(\d+)\]", text)
-            if match:
-                rounds.append(int(match.group(1)))
-
-        assert len(rounds) >= 2, (
-            f"Could not parse round numbers from headers: "
-            f"{[h.text_content() for h in headers[:5]]}"
-        )
-
-        assert rounds[0] == max(rounds), (
-            f"First event round ({rounds[0]}) is not the highest "
-            f"({max(rounds)})"
-        )
-
-        for i in range(len(rounds) - 1):
-            assert rounds[i] >= rounds[i + 1], (
-                f"Events not in descending round order at index {i}: "
-                f"{rounds[i]} < {rounds[i + 1]}. Full: {rounds}"
-            )
-
-
-# ---------------------------------------------------------------------------
-# TEST 6 — Expand event payload and verify content
-# ---------------------------------------------------------------------------
-
-class TestExpandEventPayload:
-    def test_click_expands_card(self, page: Page, dashboard_url: str):
-        """Clicking an event card header reveals the card body."""
-        _goto_live(page, dashboard_url)
-
-        first_card = page.query_selector("#live-entries .card")
-        assert first_card is not None, "No event card found"
-
-        classes_before = first_card.get_attribute("class") or ""
-        assert "open" not in classes_before, (
-            "Card unexpectedly open before click"
-        )
-
-        header = first_card.query_selector(".card-header")
-        header.click()
-
-        classes_after = first_card.get_attribute("class") or ""
-        assert "open" in classes_after, (
-            "Card did not get 'open' class after click"
-        )
-
-        body = first_card.query_selector(".card-body")
-        assert body is not None, "Card body element not found"
-        assert body.is_visible(), "Card body not visible after expand"
-
-        pre = body.query_selector("pre")
-        assert pre is not None, "No <pre> element in card body"
-        content = pre.text_content().strip()
-        assert len(content) > 0, "Event payload is empty"
-
-    def test_payload_contains_structured_data(
-        self, page: Page, dashboard_url: str,
-    ):
-        """Expanded PROPOSAL payload contains expected keys."""
-        _goto_live(page, dashboard_url)
-
-        cards = page.query_selector_all("#live-entries .card")
-        proposal_card = None
-        for card in cards:
-            header_text = card.query_selector(".card-header").text_content()
-            if "PROPOSAL" in header_text:
-                proposal_card = card
-                break
-
-        if proposal_card is None:
-            pytest.skip("No PROPOSAL event card found to test payload")
-
-        proposal_card.query_selector(".card-header").click()
-        body = proposal_card.query_selector(".card-body")
-        pre = body.query_selector("pre.content")
-        assert pre is not None, "No <pre class='content'> in proposal card"
-
-        content = pre.text_content().strip()
-        assert len(content) > 10, "Payload too short to be meaningful"
-
-        assert "allocation" in content.lower() or "claim" in content.lower(), (
-            "Proposal payload doesn't contain 'allocation' or 'claim'"
-        )
-
-
-# ---------------------------------------------------------------------------
-# TEST 7 — Divergence table axes: phases as rows, metrics as columns
+# TEST 4 — Divergence table axes: phases as rows, metrics as columns
 # ---------------------------------------------------------------------------
 
 class TestDivergenceTableLayout:
@@ -644,3 +497,50 @@ class TestColorPalette:
         assert "92" in color and "70" in color and "50" in color, (
             f"Overview title color not dark brown, got '{color}'"
         )
+
+
+# ---------------------------------------------------------------------------
+# TEST 15 — Per-agent performance tables render with headings
+# ---------------------------------------------------------------------------
+
+class TestPerAgentPerfTables:
+    def test_agent_perf_tables_render(self, page: Page, dashboard_url: str):
+        """Per-agent performance tables appear with agent name headings."""
+        _goto_run_detail(page, dashboard_url)
+
+        wrap = page.wait_for_selector("#agent-perf-wrap", timeout=10000)
+        assert wrap is not None, "Agent performance wrapper not found"
+
+        # Wait for tables to load
+        page.wait_for_selector(
+            "#agent-perf-wrap .data-table", timeout=10000,
+        )
+
+        tables = page.query_selector_all("#agent-perf-wrap .data-table")
+        assert len(tables) >= 2, (
+            f"Expected at least 2 agent perf tables, got {len(tables)}"
+        )
+
+        # Each table should have a header with the agent name
+        wrap_text = wrap.text_content()
+        for name in ("VALUE_ENRICHED", "RISK_ENRICHED", "TECHNICAL_ENRICHED"):
+            assert name in wrap_text, (
+                f"Agent heading '{name}' not found in perf tables"
+            )
+
+    def test_agent_perf_tables_have_metrics(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Each agent perf table contains the four standard metric rows."""
+        _goto_run_detail(page, dashboard_url)
+
+        page.wait_for_selector(
+            "#agent-perf-wrap .data-table", timeout=10000,
+        )
+
+        first_table = page.query_selector("#agent-perf-wrap .data-table")
+        text = first_table.text_content()
+        for metric in ("Initial Capital", "Final Value", "Profit/Loss", "Return"):
+            assert metric in text, (
+                f"Metric '{metric}' missing from agent perf table"
+            )

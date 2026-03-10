@@ -368,15 +368,15 @@ class TestHTMLViewer:
         html = client.get("/").text
         assert "<h1>Debate Dashboard</h1>" in html
 
-    def test_live_status_span(self, client):
-        """Live view JS creates the live-status element."""
-        js = client.get("/static/js/views/liveView.js").text
-        assert 'live-status' in js
+    def test_ablation_overview_function(self, client):
+        """Ablation component JS has the overview builder."""
+        js = client.get("/static/js/components/ablation.js").text
+        assert 'buildAblationOverview' in js
 
-    def test_live_entries_container(self, client):
-        """Live view JS creates the live-entries container."""
-        js = client.get("/static/js/views/liveView.js").text
-        assert 'live-entries' in js
+    def test_ablation_experiment_card(self, client):
+        """Ablation component JS has the experiment card builder."""
+        js = client.get("/static/js/components/ablation.js").text
+        assert 'buildExperimentCard' in js
 
     def test_app_container(self, client):
         """Page has the app div container."""
@@ -390,18 +390,15 @@ class TestHTMLViewer:
 
     # -- JS behavior: poll function exists --
 
-    def test_poll_function_present(self, client):
-        """Live view JS has the poll function that fetches live debate data."""
-        js = client.get("/static/js/views/liveView.js").text
-        assert "function poll()" in js
-        # The actual fetch is in the API module
-        api_js = client.get("/static/js/api/live.js").text
-        assert "live_debate" in api_js
+    def test_runs_view_present(self, client):
+        """Runs view JS has the render function."""
+        js = client.get("/static/js/views/runsView.js").text
+        assert "renderRunsView" in js
 
-    def test_auto_refresh_interval(self, client):
-        """Live view JS sets up a polling interval."""
-        js = client.get("/static/js/views/liveView.js").text
-        assert "setInterval(poll, 1500)" in js
+    def test_router_present(self, client):
+        """Router JS handles hashchange navigation."""
+        js = client.get("/static/js/router.js").text
+        assert "hashchange" in js or "route" in js
 
     # -- CSS: card structure --
 

@@ -14,6 +14,24 @@ export function numFmt(n) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/**
+ * Format a duration in seconds as a human-readable string.
+ * Returns "Xm Ys" for durations >= 60s, "Xs" for shorter.
+ */
+export function fmtDuration(s) {
+  if (s == null) return '\u2014';
+  var sec = Math.round(s);
+  if (sec < 60) return sec + 's';
+  var m = Math.floor(sec / 60);
+  var rem = sec % 60;
+  if (m >= 60) {
+    var h = Math.floor(m / 60);
+    m = m % 60;
+    return h + 'h ' + m + 'm';
+  }
+  return m + 'm ' + rem + 's';
+}
+
 /** Return a CSS class encoding score magnitude as grayscale shading. */
 export function scoreClass(v) {
   if (v == null) return '';
