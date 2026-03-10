@@ -14,10 +14,22 @@ from .types import InterventionContext, InterventionResult, InterventionRule
 # JS Collapse Detection (post_revision)
 # ---------------------------------------------------------------------------
 
+_DEFAULT_JS_NUDGE = (
+    "The debate appears to have converged unusually quickly.\n\n"
+    "Before revising your allocation, reconsider whether your position "
+    "reflects your independent analysis or whether it may have been "
+    "influenced by other agents' arguments.\n\n"
+    "Evaluate the evidence again and ensure your allocation reflects "
+    "your own analytical perspective. Maintain diversity of reasoning "
+    "where your evidence supports it."
+)
+
+
 def make_js_collapse_rule(
     threshold: float = 0.4,
     min_js_proposal: float = 0.10,
     max_retries: int = 2,
+    nudge_prompts: dict[str, str] | None = None,
     **_extra,
 ) -> InterventionRule:
     """Detect premature convergence by comparing pre- and post-revision JS.
@@ -31,7 +43,12 @@ def make_js_collapse_rule(
             (JS_proposal below this value means there wasn't meaningful
             diversity to protect).
         max_retries: maximum retry attempts for this rule.
+        nudge_prompts: per-agent nudge text ``{role: text}``.  When
+            provided, each listed agent receives its own targeted nudge
+            and only those agents retry.  When absent, all agents receive
+            the default broadcast nudge.
     """
+    _nudge_prompts = nudge_prompts or {}
 
     def _evaluate(ctx: InterventionContext) -> InterventionResult | None:
         js_p = ctx.js_proposal
@@ -44,27 +61,34 @@ def make_js_collapse_rule(
         collapse_ratio = js_r / js_p
         if collapse_ratio >= threshold:
             return None  # no collapse detected
-        return InterventionResult(
-            rule_name="js_collapse",
-            action="retry_revision",
-            nudge_text=(
-                "The debate appears to have converged unusually quickly.\n\n"
-                "Before revising your allocation, reconsider whether your position "
-                "reflects your independent analysis or whether it may have been "
-                "influenced by other agents' arguments.\n\n"
-                "Evaluate the evidence again and ensure your allocation reflects "
-                "your own analytical perspective. Maintain diversity of reasoning "
-                "where your evidence supports it."
-            ),
-            metrics={
-                "js_proposal": js_p,
-                "js_revision": js_r,
-                "collapse_ratio": round(collapse_ratio, 4),
-                "threshold": threshold,
-                "min_js_proposal": min_js_proposal,
-            },
-            severity="warning",
-        )
+
+        metrics = {
+            "js_proposal": js_p,
+            "js_revision": js_r,
+            "collapse_ratio": round(collapse_ratio, 4),
+            "threshold": threshold,
+            "min_js_proposal": min_js_proposal,
+        }
+
+        if _nudge_prompts:
+            # Per-agent targeted nudge — each agent gets its own text
+            return InterventionResult(
+                rule_name="js_collapse",
+                action="retry_revision",
+                nudge_text=_nudge_prompts,  # dict, handled by checkpoint
+                metrics=metrics,
+                severity="warning",
+                target_roles=list(_nudge_prompts.keys()),
+            )
+        else:
+            # Broadcast: all agents get the same default nudge
+            return InterventionResult(
+                rule_name="js_collapse",
+                action="retry_revision",
+                nudge_text=_DEFAULT_JS_NUDGE,
+                metrics=metrics,
+                severity="warning",
+            )
 
     return InterventionRule(
         name="js_collapse",
@@ -158,6 +182,7 @@ _PILLAR_GUIDANCE: dict[str, str] = {
 def make_reasoning_quality_rule(
     rho_threshold: float = 0.5,
     agent_pillar_thresholds: dict[str, dict[str, float]] | None = None,
+    nudge_prompts: dict[str, str] | None = None,
     max_retries: int = 1,
     **_extra,
 ) -> InterventionRule:
@@ -177,9 +202,13 @@ def make_reasoning_quality_rule(
         rho_threshold: agent rho below this triggers the rule.
         agent_pillar_thresholds: ``{agent: {pillar: threshold}}`` — the
             single source of truth for pillar-level intervention triggers.
+        nudge_prompts: per-agent custom nudge preamble ``{role: text}``.
+            When provided, the custom text is prepended before the
+            auto-generated pillar guidance for that agent.
         max_retries: post-crit retries are expensive (re-run revise + CRIT).
     """
     _agent_pillar_thresholds = agent_pillar_thresholds or {}
+    _nudge_prompts = nudge_prompts or {}
 
     def _evaluate(ctx: InterventionContext) -> InterventionResult | None:
         scores = ctx.agent_crit_scores
@@ -227,17 +256,29 @@ def make_reasoning_quality_rule(
         if not weak_agents:
             return None
 
-        # Build targeted nudge text with pillar-specific guidance
-        lines = [
-            "A reasoning quality audit identified specific weaknesses in your "
-            "revised argument. Your overall reasoning score (rho) and the "
-            "specific pillar deficiencies are listed below.\n"
-            "\n"
-            "You MUST address these weaknesses in your revised allocation. "
-            "Focus on the specific remediation steps for each flagged pillar.\n"
-        ]
+        # Build per-agent nudge text: custom preamble + pillar guidance
+        # When nudge_prompts are configured, each agent gets its own nudge
+        # dict. Otherwise, all weak agents share one combined nudge string.
+        per_agent_nudges: dict[str, str] = {}
 
         for wa in weak_agents:
+            role = wa["role"]
+            lines: list[str] = []
+
+            # Custom preamble from config (if provided for this agent)
+            custom = _nudge_prompts.get(role)
+            if custom:
+                lines.append(custom.strip())
+                lines.append("")
+
+            lines.append(
+                "A reasoning quality audit identified specific weaknesses in your "
+                "revised argument. Your overall reasoning score (rho) and the "
+                "specific pillar deficiencies are listed below.\n"
+                "\n"
+                "You MUST address these weaknesses in your revised allocation. "
+                "Focus on the specific remediation steps for each flagged pillar.\n"
+            )
             lines.append(f"Agent: {wa['role'].upper()} | rho = {wa['rho_i']:.2f}")
             lines.append("")
 
@@ -278,10 +319,12 @@ def make_reasoning_quality_rule(
                                 lines.append(f"  {guidance}")
                         lines.append("")
 
+            per_agent_nudges[role] = "\n".join(lines)
+
         return InterventionResult(
             rule_name="reasoning_quality",
             action="retry_revision",
-            nudge_text="\n".join(lines),
+            nudge_text=per_agent_nudges,
             metrics={
                 "weak_agents": weak_agents,
                 "rho_threshold": rho_threshold,

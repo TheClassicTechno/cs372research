@@ -39,7 +39,7 @@ class InterventionResult:
 
     rule_name: str
     action: str  # "retry_revision" | "retry_critique_revision" | "log_only"
-    nudge_text: str  # prompt modifier injected into retry
+    nudge_text: str | dict[str, str]  # str=broadcast, dict=per-agent {role: text}
     metrics: dict  # rule-specific diagnostic data (for logging)
     severity: str  # "warning" | "critical"
     target_roles: list[str] | None = None  # if set, nudge only these roles

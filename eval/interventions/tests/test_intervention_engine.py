@@ -325,8 +325,11 @@ class TestReasoningQualityRule:
         scores = _make_mock_crit_scores({"macro": 0.3, "value": 0.8})
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
-        assert "MACRO" in result.nudge_text
-        assert "rho = 0.30" in result.nudge_text
+        assert isinstance(result.nudge_text, dict)
+        assert "macro" in result.nudge_text
+        nudge = result.nudge_text["macro"]
+        assert "MACRO" in nudge
+        assert "rho = 0.30" in nudge
 
     def test_nudge_pillar_specific_guidance_causal(self):
         """Low causal_alignment triggers Pearl's hierarchy guidance."""
@@ -341,10 +344,11 @@ class TestReasoningQualityRule:
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
         assert result is not None
-        assert "Pearl" in result.nudge_text
-        assert "transmission" in result.nudge_text.lower()
-        assert "rung collapse" in result.nudge_text.lower()
-        assert "causal_alignment: 0.20" in result.nudge_text
+        nudge = result.nudge_text["macro"]
+        assert "Pearl" in nudge
+        assert "transmission" in nudge.lower()
+        assert "rung collapse" in nudge.lower()
+        assert "causal_alignment: 0.20" in nudge
 
     def test_nudge_pillar_specific_guidance_evidential(self):
         """Low evidential_support triggers evidence citation guidance."""
@@ -359,8 +363,9 @@ class TestReasoningQualityRule:
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
         assert result is not None
-        assert "memo evidence ID" in result.nudge_text
-        assert "bracketed notation" in result.nudge_text
+        nudge = result.nudge_text["value"]
+        assert "memo evidence ID" in nudge
+        assert "bracketed notation" in nudge
 
     def test_nudge_pillar_specific_guidance_alternative(self):
         """Low alternative_consideration triggers critique handling guidance."""
@@ -375,9 +380,10 @@ class TestReasoningQualityRule:
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
         assert result is not None
-        assert "critique" in result.nudge_text.lower()
-        assert "ACCEPT" in result.nudge_text
-        assert "REJECT" in result.nudge_text
+        nudge = result.nudge_text["technical"]
+        assert "critique" in nudge.lower()
+        assert "ACCEPT" in nudge
+        assert "REJECT" in nudge
 
     def test_nudge_pillar_specific_guidance_logical(self):
         """Low logical_validity triggers contradiction/reasoning step guidance."""
@@ -392,8 +398,9 @@ class TestReasoningQualityRule:
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
         assert result is not None
-        assert "Contradictions" in result.nudge_text
-        assert "portfolio-reasoning mismatch" in result.nudge_text.lower()
+        nudge = result.nudge_text["macro"]
+        assert "Contradictions" in nudge
+        assert "portfolio-reasoning mismatch" in nudge.lower()
 
     def test_nudge_includes_crit_explanation(self):
         """CRIT auditor explanation is passed through in the nudge."""
@@ -411,8 +418,9 @@ class TestReasoningQualityRule:
         ctx = _make_ctx(stage="post_crit", agent_crit_scores=scores)
         result = rule.evaluate(ctx)
         assert result is not None
-        assert "Claim C2 asserts rate impact" in result.nudge_text
-        assert "Auditor finding" in result.nudge_text
+        nudge = result.nudge_text["macro"]
+        assert "Claim C2 asserts rate impact" in nudge
+        assert "Auditor finding" in nudge
 
     def test_rule_metadata(self):
         rule = make_reasoning_quality_rule(rho_threshold=0.6, max_retries=2)

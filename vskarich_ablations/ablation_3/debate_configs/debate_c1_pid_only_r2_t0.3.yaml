@@ -11,11 +11,12 @@ memo_format: text
 num_episodes: 5
 
 
-# --- Agent profiles (intense enriched, no risk agent) ---
+# --- Agent profiles (intense enriched) ---
 agents:
   macro: macro_enriched_intense
   technical: technical_enriched_intense
   value: value_enriched_intense
+  risk: risk_enriched_intense
 
 judge_profile: judge_standard
 
@@ -87,6 +88,11 @@ debate_setup:
             logical_validity: 0.40
             evidential_support: 0.45
             alternative_consideration: 0.40
+            causal_alignment: 0.40
+          risk:
+            logical_validity: 0.40
+            evidential_support: 0.40
+            alternative_consideration: 0.45
             causal_alignment: 0.40
 
 

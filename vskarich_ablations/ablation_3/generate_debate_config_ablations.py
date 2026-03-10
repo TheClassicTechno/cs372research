@@ -52,11 +52,12 @@ num_episodes: 5
 
 _AGENTS = """\
 
-# --- Agent profiles (intense enriched, no risk agent) ---
+# --- Agent profiles (intense enriched) ---
 agents:
   macro: macro_enriched_intense
   technical: technical_enriched_intense
   value: value_enriched_intense
+  risk: risk_enriched_intense
 
 judge_profile: judge_standard
 """
@@ -127,6 +128,152 @@ _INTERVENTION_JS_COLLAPSE_OFF = """\
         max_retries: 2
 """
 
+
+# ---------------------------------------------------------------------------
+# JS Collapse nudge prompt text — per-agent intervention prompts
+# Combined structure: HARD_DIRECTIVE + GENERAL_HEADER + ROLE_REMINDER
+#                     + REVISION_CONSTRAINTS
+# ---------------------------------------------------------------------------
+
+_JS_NUDGE_DIRECTIVE = """\
+You must maintain independent reasoning. Do not converge with \
+other agents unless critiques logically invalidate your thesis."""
+
+_JS_NUDGE_HEADER = """\
+⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+Rapid consensus formation has been detected in the debate.
+
+In complex financial analysis, early consensus often indicates
+premature convergence or sycophancy rather than strong evidence.
+
+To maintain analytical rigor:
+
+• Defensible dissent is valuable and encouraged.
+• You should not abandon a well-supported thesis solely because
+  other agents appear to agree.
+• Rapid agreement requires explicit justification.
+
+Agreement without independent reasoning is considered a debate failure.
+
+Your objective is rigorous reasoning, not agreement."""
+
+_JS_NUDGE_CONSTRAINTS = """\
+Before finalizing your revision:
+
+1. Re-examine your original thesis.
+2. Identify whether critiques genuinely invalidate it.
+3. Defend at least one element of your original reasoning unless
+   it has been clearly disproven.
+4. Identify one vulnerability in the emerging consensus view.
+5. Explain which agent you disagree with most and why.
+6. List ONE reason why another agent's argument is still flawed."""
+
+_JS_NUDGE_ROLE: dict[str, str] = {
+    "macro": """\
+MACRO INTERVENTION REMINDER
+
+Your responsibility is to analyze macro regime dynamics.
+
+Do NOT anchor on individual stock narratives if they conflict \
+with macro conditions.
+
+Re-check:
+
+• interest rate regime
+• inflation trajectory
+• liquidity conditions
+• credit spreads
+• global growth signals
+
+If other agents ignored macro constraints, you should challenge them.
+
+A portfolio that ignores the macro regime is structurally fragile.""",
+
+    "value": """\
+VALUE INTERVENTION REMINDER
+
+Your responsibility is valuation discipline.
+
+You should NOT abandon valuation arguments simply because other \
+agents prefer momentum or macro narratives.
+
+Re-evaluate:
+
+• earnings quality
+• valuation multiples
+• margin sustainability
+• balance sheet strength
+
+If consensus is forming around expensive growth stocks, your job \
+is to ask whether the valuation assumptions are justified.
+
+Consensus does not make an asset undervalued.""",
+
+    "technical": """\
+TECHNICAL INTERVENTION REMINDER
+
+Your role is to analyze price structure and market behavior.
+
+You should NOT abandon a technical signal simply because \
+fundamental narratives sound persuasive.
+
+Re-check:
+
+• trend structure
+• momentum persistence
+• support/resistance levels
+• volatility regimes
+• market breadth
+
+If fundamentals contradict price action, you must explain why.
+
+Price often reflects information before narratives catch up.""",
+
+    "risk": """\
+RISK INTERVENTION REMINDER
+
+Your role is to protect the portfolio from tail risk and \
+concentration risk.
+
+Do NOT converge toward high-return narratives without analyzing:
+
+• volatility regimes
+• correlation structure
+• drawdown risk
+• diversification
+
+If multiple agents are converging on the same assets, evaluate \
+whether the portfolio is becoming fragile.
+
+Consensus allocations often increase systemic risk.""",
+}
+
+
+def _indent_block(text: str, spaces: int = 12) -> str:
+    """Indent text for YAML block scalar.  Empty lines stay empty."""
+    prefix = " " * spaces
+    return "\n".join(
+        prefix + line if line.strip() else ""
+        for line in text.split("\n")
+    )
+
+
+def _build_js_nudge_yaml(roles: list[str]) -> str:
+    """Build the nudge_prompts YAML block for js_collapse intervention."""
+    lines: list[str] = ["        nudge_prompts:"]
+    for role in roles:
+        combined = (
+            _JS_NUDGE_DIRECTIVE + "\n\n"
+            + _JS_NUDGE_HEADER + "\n\n"
+            + _JS_NUDGE_ROLE[role] + "\n\n"
+            + _JS_NUDGE_CONSTRAINTS
+        )
+        lines.append(f"          {role}: |")
+        lines.append(_indent_block(combined))
+    return "\n".join(lines)
+
+
 _INTERVENTION_REASONING_ON = """\
       # Reasoning Quality (post_crit, per-agent, pillar-aware)
       # Fires when any agent's rho_i or pillar score falls below threshold.
@@ -154,6 +301,11 @@ _INTERVENTION_REASONING_ON = """\
             evidential_support: 0.45  # value must cite valuation evidence
             alternative_consideration: 0.40
             causal_alignment: 0.40
+          risk:
+            logical_validity: 0.40
+            evidential_support: 0.40
+            alternative_consideration: 0.45  # risk must consider tail scenarios
+            causal_alignment: 0.40
 """
 
 _INTERVENTION_REASONING_OFF = """\
@@ -177,6 +329,11 @@ _INTERVENTION_REASONING_OFF = """\
             logical_validity: 0.40
             evidential_support: 0.45
             alternative_consideration: 0.40
+            causal_alignment: 0.40
+          risk:
+            logical_validity: 0.40
+            evidential_support: 0.40
+            alternative_consideration: 0.45
             causal_alignment: 0.40
 """
 
@@ -273,6 +430,7 @@ def _build_yaml(cond: dict) -> str:
 
     if cond["js_collapse"]:
         parts.append(_INTERVENTION_JS_COLLAPSE_ON.rstrip())
+        parts.append(_build_js_nudge_yaml(["macro", "technical", "value", "risk"]))
     else:
         parts.append(_INTERVENTION_JS_COLLAPSE_OFF.rstrip())
 

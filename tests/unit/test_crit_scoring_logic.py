@@ -182,12 +182,14 @@ class TestRhoBarComputation:
 # ---------------------------------------------------------------------------
 
 class TestCritScorerErrors:
-    def test_invalid_json_raises(self):
+    def test_invalid_json_returns_fallback(self):
+        """Invalid JSON exhausts retries and returns fallback (rho_bar=0.25)."""
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: "not valid json at all")
-        with pytest.raises(json.JSONDecodeError):
-            scorer.score(BUNDLES_1)
+        result = scorer.score(BUNDLES_1)
+        assert result.rho_bar == pytest.approx(0.25)
 
-    def test_partial_response_missing_pillar_raises(self):
+    def test_partial_response_missing_pillar_returns_fallback(self):
+        """Missing pillar fields exhaust retries and return fallback."""
         incomplete = json.dumps({
             "pillar_scores": {
                 "logical_validity": 0.8,
@@ -209,8 +211,8 @@ class TestCritScorerErrors:
             },
         })
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: incomplete)
-        with pytest.raises(Exception):  # ValidationError from pydantic
-            scorer.score(BUNDLES_1)
+        result = scorer.score(BUNDLES_1)
+        assert result.rho_bar == pytest.approx(0.25)
 
     def test_empty_bundles_raises(self):
         scorer = _make_scorer_uniform()

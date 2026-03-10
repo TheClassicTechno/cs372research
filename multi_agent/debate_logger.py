@@ -732,6 +732,7 @@ class DebateLogger:
         terminated_early: bool,
         enriched_context: str,
         crit_captures: dict[str, dict] | None = None,
+        intervention_history: list[dict] | None = None,
     ) -> None:
         """Write final/ artifacts and update manifest.json."""
         if self._mode == "off":
@@ -762,6 +763,10 @@ class DebateLogger:
         # pid_crit_all_rounds.json — consolidated PID/CRIT data for all rounds
         if pid_phase_data:
             _write_json(final_dir / "pid_crit_all_rounds.json", pid_phase_data)
+
+        # interventions_all_rounds.json — all intervention events across rounds
+        if intervention_history:
+            _write_json(final_dir / "interventions_all_rounds.json", intervention_history)
 
         # debate_diagnostic.txt — plaintext casefile for LLM diagnosis
         casefile = self._build_diagnostic_casefile(

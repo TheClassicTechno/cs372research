@@ -682,7 +682,7 @@ class MultiAgentRunner:
         state = self.pipeline_graph.invoke(state)
 
         # Parse memo evidence once for CRIT citation enrichment
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self._intervention_engine:
             from eval.evidence import parse_memo_evidence
             self._memo_evidence_lookup = parse_memo_evidence(
                 state.get("enriched_context", "")
@@ -813,6 +813,7 @@ class MultiAgentRunner:
                 state, self._pid_phase_data, terminated_early,
                 state.get("enriched_context", ""),
                 crit_captures=self._crit_round1_captures,
+                intervention_history=self._intervention_history,
             )
             if not self.config.console_display:
                 print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
@@ -1040,17 +1041,22 @@ class MultiAgentRunner:
             # Log the intervention
             self._log_intervention(action, round_num, retry_count)
 
-            # Inject nudge and target roles into state config
+            # Inject nudge and target roles into state config.
+            # nudge_text may be a str (broadcast) or dict (per-agent).
+            nudge = action.nudge_text
             if action.target_roles:
                 # Per-agent targeting: only targeted roles see the nudge
                 # and only targeted roles re-run the LLM call
                 state["config"]["_intervention_nudge"] = None
                 state["config"]["_intervention_target_roles"] = action.target_roles
                 for role in action.target_roles:
-                    state["config"][f"_intervention_nudge_{role}"] = action.nudge_text
+                    if isinstance(nudge, dict):
+                        state["config"][f"_intervention_nudge_{role}"] = nudge.get(role, "")
+                    else:
+                        state["config"][f"_intervention_nudge_{role}"] = nudge
             else:
                 # Broadcast: all agents see the same nudge and re-run
-                state["config"]["_intervention_nudge"] = action.nudge_text
+                state["config"]["_intervention_nudge"] = nudge if isinstance(nudge, str) else ""
                 state["config"]["_intervention_target_roles"] = None
 
             # Console display
