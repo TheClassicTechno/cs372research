@@ -631,22 +631,31 @@ class DebateLogger:
         metrics: dict | None = None,
         crit_data: dict | None = None,
         pid_data: dict | None = None,
+        prior_revisions: list[dict] | None = None,
     ) -> None:
-        """Write round_state.json — compact round snapshot."""
+        """Write round_state.json — compact round snapshot.
+
+        For round 2+, propose is skipped so ``state["proposals"]`` contains
+        stale R1 data.  Pass ``prior_revisions`` (the previous round's
+        revisions) to record the effective input for this round instead.
+        """
         if self._mode == "off" or self._round_dir is None:
             return
 
-        # Only include proposals for round 1 — round 2+ skips the propose
-        # phase and the stale R1 proposals lingering in state are misleading.
         proposals_summary = {}
-        if round_num == 1:
-            for p in state.get("proposals", []):
-                role = p.get("role", "unknown")
-                action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
-                proposals_summary[role] = {
-                    "allocation": action.get("allocation", {}),
-                    "confidence": action.get("confidence", 0.5),
-                }
+        # Round 1: real proposals from state.
+        # Round 2+: use prior_revisions (the actual input to this round).
+        proposal_source = (
+            state.get("proposals", []) if round_num == 1
+            else (prior_revisions or [])
+        )
+        for p in proposal_source:
+            role = p.get("role", "unknown")
+            action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
+            proposals_summary[role] = {
+                "allocation": action.get("allocation", {}),
+                "confidence": action.get("confidence", 0.5),
+            }
 
         revisions_summary = {}
         for r in state.get("revisions", []):

@@ -877,6 +877,11 @@ def get_portfolio_trajectory(
         proposals = _read_phase_portfolios(rd / "proposals")
         revisions = _read_phase_portfolios(rd / "revisions")
 
+        # Round 2+: propose phase is skipped so the proposals dir is empty.
+        # The effective input was the prior round's revisions.
+        if not proposals and result:
+            proposals = result[-1].get("revisions", {})
+
         # Compute consensus (mean across revised agents)
         consensus: dict[str, float] = {}
         if revisions:
