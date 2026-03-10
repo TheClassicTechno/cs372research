@@ -5,7 +5,7 @@
  * cards and overview table, handles the Regenerate action.
  */
 
-import { fetchAblation, regenerateAblation } from '../api/runs.js';
+import { fetchAblation, regenerateAblation, fetchAblationDebateImpact } from '../api/runs.js';
 import { buildAblationOverview, buildExperimentCard } from '../components/ablation.js';
 import { ablationState, appState } from '../state.js';
 
@@ -13,7 +13,7 @@ import { ablationState, appState } from '../state.js';
  * Render the ablation content from fetched data into the DOM.
  * Accepts the view token and the data object.
  */
-function renderContent(token, data) {
+function renderContent(token, data, impactMap) {
   if (appState.viewToken !== token) return;
   var container = document.getElementById('ablation-content');
   if (container === null) {
@@ -31,9 +31,10 @@ function renderContent(token, data) {
     return;
   }
 
+  var impacts = impactMap !== undefined && impactMap !== null ? impactMap : {};
   var html = buildAblationOverview(data);
   for (var i = 0; i < names.length; i++) {
-    html += buildExperimentCard(names[i], data[names[i]]);
+    html += buildExperimentCard(names[i], data[names[i]], impacts[names[i]]);
   }
   container.innerHTML = html;
 }
@@ -51,11 +52,11 @@ export function renderAblationView(token) {
   html += '<div id="ablation-content" data-testid="ablation-content"><p class="loading">Loading\u2026</p></div>';
   appDiv.innerHTML = html;
 
-  fetchAblation()
-    .then(function (data) {
+  Promise.all([fetchAblation(), fetchAblationDebateImpact()])
+    .then(function (results) {
       if (appState.viewToken !== token) return;
-      ablationState.data = data;
-      renderContent(token, data);
+      ablationState.data = results[0];
+      renderContent(token, results[0], results[1]);
     })
     .catch(function (err) {
       if (appState.viewToken !== token) return;
@@ -82,13 +83,13 @@ function doRegenerate() {
         return;
       }
       if (status !== null) { status.textContent = 'Done. Reloading\u2026'; }
-      return fetchAblation();
+      return Promise.all([fetchAblation(), fetchAblationDebateImpact()]);
     })
-    .then(function (data) {
-      if (data === undefined) return;
+    .then(function (results) {
+      if (results === undefined) return;
       if (appState.viewToken !== token) return;
-      ablationState.data = data;
-      renderContent(token, data);
+      ablationState.data = results[0];
+      renderContent(token, results[0], results[1]);
       if (status !== null) { status.textContent = ''; }
     })
     .catch(function (err) {

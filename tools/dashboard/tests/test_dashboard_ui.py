@@ -419,3 +419,246 @@ class TestRunsDurationColumn:
         assert "s" in text or "m" in text, (
             f"Duration cell should show formatted time, got '{text}'"
         )
+
+
+# ---------------------------------------------------------------------------
+# TEST 13 — Per-round allocation and performance tables
+# ---------------------------------------------------------------------------
+
+class TestPerRoundAllocations:
+    def test_round_1_proposals_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Round 1 PROPOSALS allocation table renders with agent columns."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='round-1-proposals-alloc']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='round-1-proposals-alloc']")
+        assert table is not None, "Round 1 proposals alloc table not found"
+        headers = table.query_selector_all("tr:first-child th")
+        assert len(headers) >= 3, (
+            f"Expected at least 3 columns in round 1 proposals, got {len(headers)}"
+        )
+
+    def test_round_1_revisions_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Round 1 REVISIONS allocation table renders with agent columns."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='round-1-revisions-alloc']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='round-1-revisions-alloc']")
+        assert table is not None, "Round 1 revisions alloc table not found"
+        rows = table.query_selector_all("tr")
+        assert len(rows) >= 3, (
+            f"Expected header + ticker rows, got {len(rows)}"
+        )
+
+    def test_round_2_proposals_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Round 2 PROPOSALS allocation table renders."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='round-2-proposals-alloc']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='round-2-proposals-alloc']")
+        assert table is not None, "Round 2 proposals alloc table not found"
+
+    def test_round_section_titles_present(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Section titles for round proposals/revisions are present."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='round-1-proposals-title']", timeout=10000,
+        )
+        r1p = page.text_content("[data-testid='round-1-proposals-title']")
+        assert "ROUND 1" in r1p and "PROPOSALS" in r1p, (
+            f"Expected 'ROUND 1 — PROPOSALS' title, got '{r1p}'"
+        )
+        r1r = page.text_content("[data-testid='round-1-revisions-title']")
+        assert "ROUND 1" in r1r and "REVISIONS" in r1r, (
+            f"Expected 'ROUND 1 — REVISIONS' title, got '{r1r}'"
+        )
+
+    def test_round_perf_tables_appear(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Performance tables appear alongside round allocation tables."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='round-1-proposals-alloc']", timeout=10000,
+        )
+        # The per-round-sections div should contain perf tables
+        wrap = page.query_selector("#per-round-sections")
+        assert wrap is not None
+        text = wrap.text_content()
+        assert "Initial Capital" in text, (
+            "Performance tables should show 'Initial Capital'"
+        )
+        assert "Return" in text, (
+            "Performance tables should show 'Return'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 14 — Debate impact section
+# ---------------------------------------------------------------------------
+
+class TestDebateImpact:
+    def test_debate_impact_agents_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Debate impact table shows per-agent R1 proposal vs final revision."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='debate-impact-agents']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='debate-impact-agents']")
+        assert table is not None, "Debate impact agents table not found"
+        text = table.text_content()
+        assert "R1 Proposal" in text, "Missing 'R1 Proposal' column header"
+        assert "Final Revision" in text, "Missing 'Final Revision' column header"
+
+    def test_debate_impact_has_agent_rows(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Debate impact table has rows for each agent."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='debate-impact-agents']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='debate-impact-agents']")
+        rows = table.query_selector_all("tr")
+        # Header + at least 3 agent rows (risk, technical, value)
+        assert len(rows) >= 4, (
+            f"Expected header + 3 agent rows, got {len(rows)}"
+        )
+
+    def test_debate_impact_mean_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Mean portfolio comparison table shows R1 proposals vs R1 revisions."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='debate-impact-mean']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='debate-impact-mean']")
+        assert table is not None, "Mean portfolio table not found"
+        text = table.text_content()
+        assert "R1 Mean Portfolio" in text, "Missing 'R1 Mean Portfolio' header"
+        assert "Proposals" in text, "Missing 'Proposals' label"
+        assert "Revisions" in text, "Missing 'Revisions' label"
+        assert "Critique Impact" in text, "Missing 'Critique Impact' row"
+
+    def test_debate_impact_r2_mean_table_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """R2 mean portfolio comparison table renders when round 2 data exists."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='debate-impact-mean-r2']", timeout=10000,
+        )
+        table = page.query_selector("[data-testid='debate-impact-mean-r2']")
+        assert table is not None, "R2 mean portfolio table not found"
+        text = table.text_content()
+        assert "R2 Mean Portfolio" in text, "Missing 'R2 Mean Portfolio' header"
+        assert "Critique Impact" in text, "Missing 'Critique Impact' row"
+
+    def test_debate_impact_section_title(
+        self, page: Page, dashboard_url: str,
+    ):
+        """DEBATE IMPACT title appears above the section."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='debate-impact-agents']", timeout=10000,
+        )
+        section = page.query_selector("#judge-portfolio-section")
+        text = section.text_content()
+        assert "DEBATE IMPACT" in text, "Missing 'DEBATE IMPACT' title"
+
+
+# ---------------------------------------------------------------------------
+# TEST 15 — Ablation debate impact (per-agent-config breakdown)
+# ---------------------------------------------------------------------------
+
+class TestAblationDebateImpact:
+    def test_debate_impact_section_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Debate impact section renders inside the experiment card."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        section = page.wait_for_selector(
+            "[data-testid='debate-impact-section']", timeout=5000,
+        )
+        assert section is not None, "Debate impact section not found"
+
+    def test_debate_impact_shows_config_with_run_count(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Per-config subsection shows config name and run count."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        section = page.wait_for_selector(
+            "[data-testid='debate-impact-section']", timeout=5000,
+        )
+        text = section.text_content()
+        assert "runs)" in text, "Missing run count in config label"
+
+    def test_debate_impact_has_agent_deltas(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Debate impact section contains per-agent deltas table."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        section = page.wait_for_selector(
+            "[data-testid='debate-impact-section']", timeout=5000,
+        )
+        text = section.text_content()
+        assert "Debate Impact" in text, "Missing 'Debate Impact' label"
+        assert "R1 Proposal" in text, "Missing 'R1 Proposal' column"
+
+    def test_debate_impact_has_mean_portfolio(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Debate impact section contains mean portfolio critique summary."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        section = page.wait_for_selector(
+            "[data-testid='debate-impact-section']", timeout=5000,
+        )
+        text = section.text_content()
+        assert "Mean Portfolio" in text, "Missing 'Mean Portfolio' label"
+        assert "Critique" in text, "Missing 'Critique' delta row"

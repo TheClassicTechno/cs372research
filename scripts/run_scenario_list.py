@@ -8,6 +8,8 @@ import csv
 import math
 import hashlib
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
@@ -51,17 +53,24 @@ def get_processed_scenarios(tracking_file, current_config_hash):
                     }
     return processed
 
-def run_simulation(config_path, scenario_path, output_root, verbose=False):
+def run_simulation(config_path, scenario_path, output_root, verbose=False, is_parallel=False):
     # Derive a subdirectory for this specific run
     s_name = Path(scenario_path).stem
     c_name = Path(config_path).stem
+
+    # If running in parallel, put each scenario in its own unique subfolder to prevent race conditions
+    # on directory creation inside run_simulation.py
+    if is_parallel:
+        actual_output_root = output_root / c_name / s_name
+    else:
+        actual_output_root = output_root / c_name
 
     cmd = [
         "python3", "run_simulation.py",
         "--agents", config_path,
         "--scenario", scenario_path,
         "--no-display",
-        "--output-dir", str(output_root / c_name),
+        "--output-dir", str(actual_output_root),
         "--log-level", "WARNING"
     ]
 
@@ -70,7 +79,7 @@ def run_simulation(config_path, scenario_path, output_root, verbose=False):
     error = None
 
     try:
-        if verbose:
+        if verbose and not is_parallel:
             # Capture stdout so we can parse RESULTS_DIR, but also print it live
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
             for line in process.stdout:
@@ -92,7 +101,8 @@ def run_simulation(config_path, scenario_path, output_root, verbose=False):
                 elif "[Logged] " in line:
                     log_dir = line.split("[Logged] ")[1]
                 elif "Error" in line or "Exception" in line:
-                    print(f"  {line}", flush=True)
+                    if verbose:
+                        print(f"[{s_name}] {line}", flush=True)
 
             process.wait()
             if process.returncode != 0:
@@ -129,6 +139,7 @@ def aggregate_metrics(results_map):
     excluded_fields = {"episode_id", "initial_cash", "final_positions", "final_prices", "position_values"}
     all_metrics = []
     initial_cash = None
+    counts = set()
     
     for scenario, paths in results_map.items():
         res_dir = paths["results_dir"]
@@ -185,7 +196,10 @@ def aggregate_metrics(results_map):
             "sem": sem,
             "count": len(vals)
         }
-            
+        counts.add(len(vals))
+    print("COUNTS: ", counts)
+    if len(counts) > 1:
+        print("ERROR: Metrics have different counts, likely due to errors.")
     return stats, initial_cash
 
 def main():
@@ -195,6 +209,7 @@ def main():
     parser.add_argument("--output-dir", default="results/scenario_runs", help="Root dir for results")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--verbose", action="store_true", help="Print subprocess output to screen")
+    parser.add_argument("--parallel", type=int, default=1, help="Number of scenarios to run concurrently")
     args = parser.parse_args()
 
     scenarios, scale = load_scenario_list(args.scenarios)
@@ -211,60 +226,85 @@ def main():
     print(f"Running config '{args.config}' (hash: {current_config_hash})")
     print(f"Against {len(scenarios)} scenarios from {args.scenarios}")
     print(f"Tracking file: {tracking_file}")
+    if args.parallel > 1:
+        print(f"Running {args.parallel} scenarios in parallel")
     
-    run_count = 0
+    csv_lock = threading.Lock()
+    
+    # Filter scenarios to run
+    scenarios_to_run = []
     for scenario in scenarios:
         s_hash = get_file_hash(scenario)
-        
-        # Check if already processed with matching scenario content
         if scenario in processed:
             if processed[scenario]["scenario_hash"] == s_hash:
                 continue
             else:
                 print(f"  Scenario {scenario} content changed (hash {processed[scenario]['scenario_hash']} -> {s_hash}). Re-running.")
-
-        if args.limit and run_count >= args.limit:
-            break
-            
-        print(f"\n[{run_count+1}/{len(scenarios)}] Processing {scenario}...")
+        scenarios_to_run.append((scenario, s_hash))
         
+    if args.limit:
+        scenarios_to_run = scenarios_to_run[:args.limit]
+        
+    print(f"\n{len(scenarios_to_run)} scenarios left to run.")
+
+    def process_scenario(idx, total, scenario, s_hash):
+        print(f"[{idx}/{total}] Processing {scenario}...")
         t0 = time.monotonic()
-        res_dir, l_dir, err = run_simulation(args.config, scenario, output_root, verbose=args.verbose)
+        res_dir, l_dir, err = run_simulation(args.config, scenario, output_root, verbose=args.verbose, is_parallel=(args.parallel > 1))
         duration = time.monotonic() - t0
         now_ts = datetime.now(timezone.utc).isoformat()
         
-        # Log to tracking file
-        fieldnames = ["scenario", "scenario_hash", "results_dir", "log_dir", "config_hash", "duration_seconds", "timestamp", "error"]
-        file_exists = os.path.exists(tracking_file)
-        with open(tracking_file, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow({
-                "scenario": scenario,
-                "scenario_hash": s_hash,
-                "results_dir": res_dir, 
-                "log_dir": l_dir,
-                "config_hash": current_config_hash,
-                "duration_seconds": round(duration, 2),
-                "timestamp": now_ts,
-                "error": err
-            })
-            
-        if not err:
-            processed[scenario] = {
-                "results_dir": res_dir, 
-                "log_dir": l_dir,
-                "scenario_hash": s_hash,
-                "duration_seconds": duration,
-                "timestamp": now_ts
-            }
-            run_count += 1
-        else:
-            print(f"  FAILED: {err}")
+        with csv_lock:
+            # Log to tracking file
+            fieldnames = ["scenario", "scenario_hash", "results_dir", "log_dir", "config_hash", "duration_seconds", "timestamp", "error"]
+            file_exists = os.path.exists(tracking_file)
+            with open(tracking_file, "a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow({
+                    "scenario": scenario,
+                    "scenario_hash": s_hash,
+                    "results_dir": res_dir, 
+                    "log_dir": l_dir,
+                    "config_hash": current_config_hash,
+                    "duration_seconds": round(duration, 2),
+                    "timestamp": now_ts,
+                    "error": err
+                })
+                
+            if not err:
+                processed[scenario] = {
+                    "results_dir": res_dir, 
+                    "log_dir": l_dir,
+                    "scenario_hash": s_hash,
+                    "duration_seconds": duration,
+                    "timestamp": now_ts
+                }
+            else:
+                print(f"  FAILED: {err}")
+                
+        return scenario, not bool(err)
+
+    if args.parallel > 1:
+        with ThreadPoolExecutor(max_workers=args.parallel) as executor:
+            futures = [
+                executor.submit(process_scenario, idx+1, len(scenarios_to_run), scenario, s_hash) 
+                for idx, (scenario, s_hash) in enumerate(scenarios_to_run)
+            ]
+            for future in as_completed(futures):
+                scenario, success = future.result()
+                if success:
+                    print(f"  Finished {Path(scenario).stem}")
+    else:
+        for idx, (scenario, s_hash) in enumerate(scenarios_to_run):
+            process_scenario(idx+1, len(scenarios_to_run), scenario, s_hash)
+
+    # Filter processed to only include scenarios from the current list
+    processed_for_list = {s: processed[s] for s in scenarios if s in processed}
 
     # Aggregation
-    stats, initial_cash = aggregate_metrics(processed)
+    stats, initial_cash = aggregate_metrics(processed_for_list)
     if not stats:
         print("No summary data found to aggregate.")
         return
@@ -277,7 +317,7 @@ def main():
         "initial_cash": initial_cash,
         "scale": scale,
         "as_of": datetime.now(timezone.utc).isoformat(),
-        "num_scenarios": len(processed),
+        "num_scenarios": len(processed_for_list),
         "metrics": stats
     }
     
@@ -286,7 +326,7 @@ def main():
         json.dump(results_payload, f, indent=2)
 
     print("\n" + "=" * 85)
-    print(f"AGGREGATE PERFORMANCE (N={len(processed)} scenarios)")
+    print(f"AGGREGATE PERFORMANCE (N={len(processed_for_list)} scenarios)")
     print("-" * 85)
     print(f"{'Metric':<35} | {'Mean':>12} | {'SEM':>12}")
     print("-" * 85)

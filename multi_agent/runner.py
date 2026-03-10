@@ -274,10 +274,6 @@ def _extract_citations(
                     seen.add(eid)
                     citations.append({"evidence_id": eid})
         if citations:
-            logger.debug(
-                "%sExtracted %d evidence IDs from claims[].evidence (no top-level evidence_citations).",
-                tag, len(citations),
-            )
             return citations
 
     # 3. Fallback: regex extraction from raw response text

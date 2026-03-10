@@ -227,6 +227,7 @@ def _setup_logging(level: str) -> None:
     # Suppress noisy HTTP-level logs (e.g. "HTTP Request: POST ... 200 OK")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
 
 
 def _parse_invest_quarter(invest_quarter: str) -> tuple[int, str]:

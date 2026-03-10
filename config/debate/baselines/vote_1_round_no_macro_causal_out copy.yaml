@@ -1,0 +1,69 @@
+# ============================================================================
+# Debate Agent Simulation — Diverse Agents + PID Controller (7 rounds)
+# ============================================================================
+# Each agent uses a structurally different reasoning style to maximize
+# cognitive diversity in the debate:
+#   macro:     Bayesian regime updating (L2 intervention focus)
+#   value:     Inversion-first analysis (L3 counterfactual focus)
+#   technical: Quantitative signal scoring (L1 association focus)
+#   risk:      Scenario tree analysis (L3 counterfactual + override authority)
+#
+# Run with:
+#   python run_simulation.py --agents config/debate_diverse_agents.yaml
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+num_episodes: 1
+
+agents:
+  # macro: "macro_standard"
+  value: "value_standard"
+  technical: "technical_standard"
+  risk: "risk_standard"
+
+judge_profile: "judge_standard"
+
+debate_setup:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+
+  # 7 debate rounds for PID to have room to adjust
+  max_rounds: 1
+  propose_only: false
+
+  # prompt_file_overrides:
+    # causal_contract: "system_contract/system_causal_contract_slim.txt"
+    # scaffolding_causal: "scaffolding/causal_claim_format_slim.txt"
+    # output_allocation: "output_format/allocation_output_slim.txt"
+
+  pid_enabled: false
+  judge_type: "llm"
+
+  # Structured debate logging to logging/runs/<experiment>/run_<timestamp>/
+  # Modes:
+  #   "off"      — no files written
+  #   "standard" — responses, portfolios, critiques, CRIT prompts/scores,
+  #                PID metrics, round state (no raw prompts)
+  #   "debug"    — everything in standard PLUS prompt.txt files containing
+  #                the full system + user prompts sent to each agent in
+  #                proposals/, critiques/, revisions/, and final/ subdirs
+  logging_mode: "debug"
+
+  # PID + prompt logging
+  pid_log_metrics: false          # scalar PID stats each round (rho_bar, beta, JS, etc.)
+  pid_log_llm_calls: false       # full CRIT LLM prompts/responses (verbose)
+  log_rendered_prompts: false     # emit full prompts via debate.prompts Python logger
+  log_prompt_manifest: false      # log prompt file names once per round (compact)
+
+  # Parallel agent execution (max 2 concurrent LLM calls). This setting seems to avoid triggering rate limits
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+
+broker:
+  initial_cash: 100000.0

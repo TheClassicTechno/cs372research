@@ -4,8 +4,8 @@
  * Renders the FINAL ALLOCATIONS section on the run detail page:
  * combined allocation table, consensus performance, and per-agent performance.
  */
-import { fetchPortfolio, fetchPerformance, fetchAgentPerformance } from '../../api/runs.js';
-import { buildSimpleAllocTable, buildAgentPerfTable } from '../../components/table.js';
+import { fetchPortfolio, fetchPerformance, fetchAgentPerformance, fetchRoundPerformance, fetchDebateImpact } from '../../api/runs.js';
+import { buildSimpleAllocTable, buildAgentPerfTable, buildRoundAllocTable, buildDebateImpactTable, buildMeanPortfolioTable } from '../../components/table.js';
 import { esc } from '../../utils/dom.js';
 import { fmtPct, numFmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
@@ -123,7 +123,139 @@ function loadAgentPerf(experiment, runId, agentLabel, token) {
 }
 
 /**
+ * Build HTML for all rounds from trajectory and performance data.
+ * Returns concatenated HTML string for each round's phases.
+ */
+function buildAllRoundsHtml(trajectory, roundPerf, agentLabel) {
+  var perfByRound = {};
+  if (Array.isArray(roundPerf)) {
+    for (var p = 0; p < roundPerf.length; p++) {
+      perfByRound[roundPerf[p].round] = roundPerf[p];
+    }
+  }
+  var html = '';
+  for (var i = 0; i < trajectory.length; i++) {
+    var entry = trajectory[i];
+    var perf = perfByRound[entry.round];
+    html += buildRoundSection(entry, perf !== undefined ? perf : {}, entry.round, agentLabel);
+  }
+  return html;
+}
+
+/**
+ * Render per-round allocation and performance tables into #per-round-sections.
+ * Fetches portfolio trajectory and round performance data in parallel.
+ */
+function loadPerRoundSections(experiment, runId, agentLabel, token) {
+  Promise.all([
+    fetchPortfolio(experiment, runId),
+    fetchRoundPerformance(experiment, runId),
+  ])
+    .then(function (results) {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('per-round-sections');
+      if (!wrap) return;
+      var trajectory = results[0];
+      if (!Array.isArray(trajectory) || trajectory.length === 0) {
+        wrap.innerHTML = '';
+        return;
+      }
+      wrap.innerHTML = buildAllRoundsHtml(trajectory, results[1], agentLabel);
+    })
+    .catch(function () {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('per-round-sections');
+      if (wrap) wrap.innerHTML = '';
+    });
+}
+
+/**
+ * Build HTML for a single round's proposal and revision sections.
+ * Returns HTML string with allocation tables and performance tables.
+ */
+function buildRoundSection(entry, perf, roundNum, agentLabel) {
+  var h = '';
+  var phases = [
+    { key: 'proposals', label: 'PROPOSALS' },
+    { key: 'revisions', label: 'REVISIONS' },
+  ];
+  for (var p = 0; p < phases.length; p++) {
+    var phase = phases[p];
+    var agents = entry[phase.key] || {};
+    var agentNames = Object.keys(agents).sort();
+    if (agentNames.length === 0) continue;
+
+    var testId = 'round-' + roundNum + '-' + phase.key;
+    h += '<div class="ov-title" style="margin-top:16px;" data-testid="' + esc(testId) + '-title">';
+    h += 'ROUND ' + roundNum + ' — ' + phase.label + '</div>';
+    h += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+    h += buildRoundAllocTable(agents, agentNames, agentLabel, testId + '-alloc');
+    h += buildRoundPerfTables(perf, phase.key, agentNames, agentLabel);
+    h += '</div>';
+  }
+  return h;
+}
+
+/**
+ * Build per-agent performance tables for a round phase.
+ * Returns HTML string with agent perf tables in a flex row.
+ */
+function buildRoundPerfTables(perf, phaseKey, agentNames, agentLabel) {
+  var phasePerf = perf[phaseKey];
+  if (!phasePerf) return '';
+  var h = '';
+  for (var i = 0; i < agentNames.length; i++) {
+    var role = agentNames[i];
+    var agentPerf = phasePerf[role];
+    if (!agentPerf) continue;
+    var label = agentLabel(role).toUpperCase();
+    h += '<div>' + buildAgentPerfTable(agentPerf, label) + '</div>';
+  }
+  return h;
+}
+
+/**
+ * Load and render the debate impact section into #debate-impact-section.
+ * Shows per-agent R1→final deltas and mean portfolio comparison.
+ */
+function loadDebateImpact(experiment, runId, agentLabel, token) {
+  fetchDebateImpact(experiment, runId)
+    .then(function (data) {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('debate-impact-section');
+      if (!wrap) return;
+      if (data.error) { wrap.innerHTML = ''; return; }
+      var mp = data.mean_portfolios;
+      var html = '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+      html += buildDebateImpactTable(data.agent_deltas, agentLabel);
+      html += buildMeanPortfolioTable(mp.r1_proposals, mp.r1_revisions, 'R1', 'debate-impact-mean');
+      html += buildMeanPortfolioTable(mp.r2_proposals, mp.r2_revisions, 'R2', 'debate-impact-mean-r2');
+      html += '</div>';
+      wrap.innerHTML = html;
+    })
+    .catch(function () {
+      if (appState.viewToken !== token) return;
+      var wrap = document.getElementById('debate-impact-section');
+      if (wrap) wrap.innerHTML = '';
+    });
+}
+
+/**
+ * Build an agent label resolver from the manifest profile map.
+ * Returns a function that maps role keys to display names.
+ */
+function makeAgentLabel(manifest) {
+  var m = manifest !== undefined && manifest !== null ? manifest : {};
+  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
+  return function agentLabel(role) {
+    if (profileMap !== null && profileMap[role]) return profileMap[role];
+    return role;
+  };
+}
+
+/**
  * Orchestrate the FINAL ALLOCATIONS section: layout scaffolding + async fetches.
+ * Renders per-round allocation tables above the final allocations.
  */
 export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, token) {
   var div = document.getElementById('judge-portfolio-section');
@@ -133,24 +265,21 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
     return;
   }
 
-  var h = '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
+  var h = '<div class="ov-title" style="margin-top:16px;">DEBATE IMPACT</div>';
+  h += '<div id="debate-impact-section"></div>';
+  h += '<div id="per-round-sections"></div>';
+  h += '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
   h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';
   h += '<div id="judge-alloc-wrap"><span style="color:#666;font-size:0.85em;">Loading allocations...</span></div>';
   h += '<div id="perf-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
   h += '<div id="perf-metrics"><span style="color:#666;font-size:0.85em;">Loading performance...</span></div>';
   h += '<div id="agent-perf-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;"></div>';
-  h += '</div>';
-  h += '</div>';
+  h += '</div></div>';
   div.innerHTML = h;
 
-  var m = manifest || {};
-  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
-  /** Resolve agent role to display label via manifest profile map. */
-  function agentLabel(role) {
-    if (profileMap && profileMap[role]) return profileMap[role];
-    return role;
-  }
-
+  var agentLabel = makeAgentLabel(manifest);
+  loadPerRoundSections(experiment, runId, agentLabel, token);
+  loadDebateImpact(experiment, runId, agentLabel, token);
   loadAllocTable(experiment, runId, finalPortfolio, agentLabel, token);
   loadConsensusPerf(experiment, runId, token);
   loadAgentPerf(experiment, runId, agentLabel, token);

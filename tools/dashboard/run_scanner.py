@@ -813,14 +813,33 @@ def get_divergence_trajectory(
     return result
 
 
+def _read_phase_portfolios(phase_dir: Path) -> dict[str, dict]:
+    """Read per-agent portfolio.json files from a phase directory.
+
+    Returns ``{role: {ticker: weight}}``.
+    """
+    result: dict[str, dict] = {}
+    if not phase_dir.is_dir():
+        return result
+    for agent_dir in sorted(phase_dir.iterdir()):
+        if not agent_dir.is_dir():
+            continue
+        portfolio = _safe_json(agent_dir / "portfolio.json")
+        if isinstance(portfolio, dict):
+            result[agent_dir.name] = portfolio
+    return result
+
+
 def get_portfolio_trajectory(
     base_path: Path = DEFAULT_BASE,
     experiment: str = "default",
     run_id: str = "",
 ) -> list[dict]:
-    """Read each round's revised portfolio per agent.
+    """Read each round's proposed and revised portfolio per agent.
 
-    Returns list of ``{round, allocations: {role: {ticker: weight}}, consensus: {ticker: weight}}``.
+    Returns list of ``{round, proposals: {role: alloc}, revisions: {role: alloc},
+    allocations: {role: alloc}, consensus: {ticker: weight}}``.
+    ``allocations`` is an alias for ``revisions`` for backward compatibility.
     """
     run_dir = base_path / experiment / run_id
     rounds_dir = run_dir / "rounds"
@@ -834,33 +853,323 @@ def get_portfolio_trajectory(
         except (IndexError, ValueError):
             continue
 
-        allocations: dict[str, dict] = {}
-        rev_dir = rd / "revisions"
-        if rev_dir.is_dir():
-            for agent_dir in sorted(rev_dir.iterdir()):
-                if not agent_dir.is_dir():
-                    continue
-                portfolio = _safe_json(agent_dir / "portfolio.json")
-                if isinstance(portfolio, dict):
-                    allocations[agent_dir.name] = portfolio
+        proposals = _read_phase_portfolios(rd / "proposals")
+        revisions = _read_phase_portfolios(rd / "revisions")
 
-        # Compute consensus (mean across agents)
+        # Compute consensus (mean across revised agents)
         consensus: dict[str, float] = {}
-        if allocations:
+        if revisions:
             all_tickers: set[str] = set()
-            for alloc in allocations.values():
+            for alloc in revisions.values():
                 all_tickers.update(alloc.keys())
-            n = len(allocations)
+            n = len(revisions)
             for ticker in sorted(all_tickers):
-                total = sum(alloc.get(ticker, 0.0) for alloc in allocations.values())
+                total = sum(alloc.get(ticker, 0.0) for alloc in revisions.values())
                 consensus[ticker] = round(total / n, 4)
 
         result.append({
             "round": round_num,
-            "allocations": allocations,
+            "proposals": proposals,
+            "revisions": revisions,
+            "allocations": revisions,
             "consensus": consensus,
         })
     return result
+
+
+def compute_round_performance(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "default",
+    run_id: str = "",
+    prices_base: Path = DAILY_PRICES_BASE,
+) -> list[dict]:
+    """Compute per-round, per-phase, per-agent portfolio performance.
+
+    Returns ``[{round, proposals: {role: perf}, revisions: {role: perf}}]``
+    where each perf dict has ``{initial_capital, final_value, profit, return_pct}``.
+    """
+    run_dir = base_path / experiment / run_id
+    manifest = _safe_json(run_dir / "manifest.json")
+    if not manifest:
+        return []
+
+    invest_q = manifest.get("invest_quarter")
+    parsed = _quarter_from_date(invest_q) if invest_q else None
+    if parsed is None:
+        return []
+
+    year, quarter = parsed
+    trajectory = get_portfolio_trajectory(base_path, experiment, run_id)
+
+    result = []
+    for entry in trajectory:
+        round_entry: dict[str, Any] = {"round": entry["round"]}
+        for phase in ("proposals", "revisions"):
+            agents = entry.get(phase) or {}
+            phase_perf: dict[str, dict] = {}
+            for role, portfolio in agents.items():
+                phase_perf[role] = _portfolio_value(
+                    portfolio, prices_base, year, quarter,
+                )
+            round_entry[phase] = phase_perf
+        result.append(round_entry)
+    return result
+
+
+def _equal_weight_mean(portfolios: list[dict[str, float]]) -> dict[str, float]:
+    """Compute the equal-weight mean portfolio across agents.
+
+    Parameters: list of ``{ticker: weight}`` dicts.
+    Returns averaged ``{ticker: mean_weight}``.
+    """
+    if not portfolios:
+        return {}
+    n = len(portfolios)
+    agg: dict[str, float] = {}
+    for portfolio in portfolios:
+        for ticker, weight in portfolio.items():
+            agg[ticker] = agg.get(ticker, 0.0) + weight
+    return {ticker: round(total / n, 4) for ticker, total in agg.items()}
+
+
+def compute_debate_impact(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "default",
+    run_id: str = "",
+    prices_base: Path = DAILY_PRICES_BASE,
+) -> dict:
+    """Compute debate impact: per-agent R1→final deltas + mean portfolio comparison.
+
+    Returns ``{agent_deltas: {role: {initial, final, delta_dollars, delta_pct}},
+    mean_portfolios: {r1_proposals: perf, r1_revisions: perf}}``.
+    """
+    run_dir = base_path / experiment / run_id
+    manifest = _safe_json(run_dir / "manifest.json")
+    if not manifest:
+        return {"error": "Missing manifest"}
+
+    invest_q = manifest.get("invest_quarter")
+    parsed = _quarter_from_date(invest_q) if invest_q else None
+    if parsed is None:
+        return {"error": f"Cannot parse invest_quarter: {invest_q}"}
+
+    year, quarter = parsed
+    trajectory = get_portfolio_trajectory(base_path, experiment, run_id)
+    if not trajectory:
+        return {"error": "No portfolio trajectory data"}
+
+    first_round = trajectory[0]
+    last_round = trajectory[-1]
+    r1_proposals = first_round.get("proposals") or {}
+    final_revisions = last_round.get("revisions") or {}
+
+    # Per-agent deltas: R1 proposal → final revision
+    agent_deltas: dict[str, dict] = {}
+    for role in sorted(set(r1_proposals) | set(final_revisions)):
+        entry: dict[str, Any] = {}
+        if role in r1_proposals:
+            entry["initial"] = _portfolio_value(
+                r1_proposals[role], prices_base, year, quarter,
+            )
+        if role in final_revisions:
+            entry["final"] = _portfolio_value(
+                final_revisions[role], prices_base, year, quarter,
+            )
+        if "initial" in entry and "final" in entry:
+            entry["delta_dollars"] = round(
+                entry["final"]["final_value"] - entry["initial"]["final_value"], 2,
+            )
+            entry["delta_pct"] = round(
+                entry["final"]["return_pct"] - entry["initial"]["return_pct"], 2,
+            )
+        agent_deltas[role] = entry
+
+    # Equal-weight mean portfolios: R1 proposals vs R1 revisions
+    r1_revisions = first_round.get("revisions") or {}
+    mean_portfolios = _compute_round_means(
+        r1_proposals, r1_revisions, "r1", prices_base, year, quarter,
+    )
+
+    # R2: R1 revisions (input) vs R2 revisions (output)
+    # The logger re-writes R1 proposals into round_002/proposals/ so those
+    # are stale — use R1 revisions as the actual "before" for round 2.
+    if len(trajectory) >= 2:
+        r2 = trajectory[1]
+        r2_revisions = r2.get("revisions") or {}
+        r2_means = _compute_round_means(
+            r1_revisions, r2_revisions, "r2", prices_base, year, quarter,
+        )
+        mean_portfolios.update(r2_means)
+
+    return {
+        "agent_deltas": agent_deltas,
+        "mean_portfolios": mean_portfolios,
+    }
+
+
+def _compute_round_means(
+    proposals: dict,
+    revisions: dict,
+    prefix: str,
+    prices_base: Path,
+    year: int,
+    quarter: int,
+) -> dict[str, dict]:
+    """Compute equal-weight mean portfolio perf for a round's proposals and revisions."""
+    result: dict[str, dict] = {}
+    mean_p = _equal_weight_mean(list(proposals.values()))
+    mean_r = _equal_weight_mean(list(revisions.values()))
+    if mean_p:
+        result[f"{prefix}_proposals"] = _portfolio_value(
+            mean_p, prices_base, year, quarter,
+        )
+    if mean_r:
+        result[f"{prefix}_revisions"] = _portfolio_value(
+            mean_r, prices_base, year, quarter,
+        )
+    return result
+
+
+def _avg(values: list[float]) -> float:
+    """Compute the mean of a list of floats, rounded to 2 decimal places."""
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 2)
+
+
+def _get_run_roles(base_path: Path, experiment: str, run_id: str) -> str:
+    """Read sorted roles from a run's manifest and return as config key.
+
+    Returns a comma-separated string like ``"risk, technical, value"``,
+    or ``"unknown"`` if roles cannot be read.
+    """
+    manifest = _safe_json(base_path / experiment / run_id / "manifest.json")
+    if manifest is None:
+        return "unknown"
+    roles = manifest.get("roles")
+    if not roles or not isinstance(roles, list):
+        return "unknown"
+    return ", ".join(sorted(roles))
+
+
+def compute_ablation_debate_impact(
+    base_path: Path = DEFAULT_BASE,
+    prices_base: Path = DAILY_PRICES_BASE,
+) -> dict[str, dict]:
+    """Aggregate debate impact across all runs per experiment, grouped by agent config.
+
+    Returns ``{experiment: {configs: {config_key: {run_count, agent_deltas,
+    mean_portfolios}}}}``.  Each config key is a sorted comma-separated role
+    string (e.g. ``"risk, technical, value"``).
+    """
+    if not base_path.is_dir():
+        return {}
+
+    result: dict[str, dict] = {}
+    for exp_dir in sorted(base_path.iterdir()):
+        if not exp_dir.is_dir() or exp_dir.name.startswith("."):
+            continue
+        experiment = exp_dir.name
+        runs = list_runs(base_path, experiment)
+        if not runs:
+            continue
+
+        # Collect (config_key, impact) pairs
+        config_impacts: dict[str, list[dict]] = {}
+        for run in runs:
+            if run.get("status") == "incomplete":
+                continue
+            impact = compute_debate_impact(
+                base_path, experiment, run["run_id"], prices_base,
+            )
+            if "error" not in impact:
+                config_key = _get_run_roles(
+                    base_path, experiment, run["run_id"],
+                )
+                config_impacts.setdefault(config_key, []).append(impact)
+
+        if not config_impacts:
+            continue
+
+        configs: dict[str, dict] = {}
+        for key in sorted(config_impacts):
+            configs[key] = _aggregate_impacts(config_impacts[key])
+        result[experiment] = {"configs": configs}
+
+    return result
+
+
+def _aggregate_impacts(impacts: list[dict]) -> dict:
+    """Aggregate per-run debate impact dicts into experiment-level averages.
+
+    Returns ``{run_count, agent_deltas, mean_portfolios}``.
+    """
+    n = len(impacts)
+
+    # Collect per-agent deltas across runs
+    all_roles: set[str] = set()
+    for imp in impacts:
+        all_roles.update(imp.get("agent_deltas", {}).keys())
+
+    agent_agg: dict[str, dict] = {}
+    for role in sorted(all_roles):
+        init_returns: list[float] = []
+        final_returns: list[float] = []
+        deltas: list[float] = []
+        for imp in impacts:
+            ad = imp.get("agent_deltas", {}).get(role, {})
+            if "initial" in ad and "final" in ad:
+                init_returns.append(ad["initial"]["return_pct"])
+                final_returns.append(ad["final"]["return_pct"])
+            if "delta_pct" in ad:
+                deltas.append(ad["delta_pct"])
+        agent_agg[role] = {
+            "mean_initial_return": _avg(init_returns),
+            "mean_final_return": _avg(final_returns),
+            "mean_delta_pct": _avg(deltas),
+        }
+
+    # Collect mean portfolio returns across runs, per round
+    mean_portfolios: dict[str, dict] = {}
+    for rnd in ("r1", "r2"):
+        rnd_means = _aggregate_round_means(impacts, rnd)
+        if rnd_means:
+            mean_portfolios[rnd] = rnd_means
+
+    return {
+        "run_count": n,
+        "agent_deltas": agent_agg,
+        "mean_portfolios": mean_portfolios,
+    }
+
+
+def _aggregate_round_means(
+    impacts: list[dict], prefix: str,
+) -> dict:
+    """Aggregate mean portfolio returns for a round prefix (r1/r2) across runs.
+
+    Returns ``{proposals_return, revisions_return, critique_impact}``
+    or empty dict if no data.
+    """
+    p_key = f"{prefix}_proposals"
+    r_key = f"{prefix}_revisions"
+    p_returns: list[float] = []
+    r_returns: list[float] = []
+    for imp in impacts:
+        mp = imp.get("mean_portfolios", {})
+        if p_key in mp:
+            p_returns.append(mp[p_key]["return_pct"])
+        if r_key in mp:
+            r_returns.append(mp[r_key]["return_pct"])
+    if not p_returns and not r_returns:
+        return {}
+    p_avg = _avg(p_returns)
+    r_avg = _avg(r_returns)
+    return {
+        "proposals_return": p_avg,
+        "revisions_return": r_avg,
+        "critique_impact": round(r_avg - p_avg, 2),
+    }
 
 
 def get_round_detail(

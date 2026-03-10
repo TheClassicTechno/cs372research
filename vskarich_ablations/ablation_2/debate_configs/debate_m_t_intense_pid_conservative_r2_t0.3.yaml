@@ -12,11 +12,12 @@ debate_setup:
   llm_provider: openai
   max_retries: 3
   propose_only: false
-  logging_mode: debug
+  logging_mode: info
   parallel_agents: true
   llm_stagger_ms: 500
   max_concurrent_llm: 3
   llm_model: gpt-5-mini
+  crit_llm_model: gpt-5
   temperature: 0.3
   max_rounds: 2
   pid_enabled: true
