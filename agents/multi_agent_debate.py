@@ -129,7 +129,6 @@ class DebateAgentSystem(AgentSystem):
             mock=use_mock,
             max_rounds=config.max_rounds,
             propose_only=config.propose_only,
-            round_robin_mode=config.round_robin_mode,
             judge_type=config.judge_type,
             enable_adversarial=config.enable_adversarial,
             _pid_enabled_flag=config.pid_enabled,
