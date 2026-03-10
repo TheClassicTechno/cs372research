@@ -28,14 +28,24 @@ debate_setup:
   agent_system: "multi_agent_debate"
   llm_provider: "openai"
   llm_model: "gpt-5-mini"
-  crit_llm_model: "gpt-5"
-  role_llms:
-    macro:
+  crit_llm_model: "gpt-5-mini"
+  phase_llms:
+    propose:
       provider: "anthropic"
       model: "claude-sonnet-4-20250514"
-    risk:
+    critique:
+      provider: "anthropic"
+      model: "claude-sonnet-4-20250514"
+    revise:
+      provider: "anthropic"
+      model: "claude-sonnet-4-20250514"
+  role_llms:
+    macro:
       provider: "openai"
       model: "gpt-5-mini"
+    risk:
+      provider: "anthropic"
+      model: "claude-sonnet-4-20250514"
     judge:
       provider: "openai"
       model: "gpt-5"
