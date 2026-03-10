@@ -7,7 +7,10 @@ factories (for parallel execution), judge, aggregation, and trace builders.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 from ..config import DebateConfig
 from ..models import Observation
@@ -513,7 +516,15 @@ def revise_node(state: DebateState) -> dict:
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                target = crit.get("target_role", "").lower().split()[0]
+                raw_target = crit.get("target_role", "")
+                if not raw_target:
+                    logger.warning(
+                        "[%s/revise] Critique from %s has empty target_role — "
+                        "cannot route to any agent. Critique dropped.",
+                        role, c["role"],
+                    )
+                    continue
+                target = raw_target.lower().split()[0]
                 if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
@@ -924,7 +935,15 @@ def make_revise_node(role: str):
         critiques_received = []
         for c in all_critiques:
             for crit in c.get("critiques", []):
-                target = crit.get("target_role", "").lower().split()[0]
+                raw_target = crit.get("target_role", "")
+                if not raw_target:
+                    logger.warning(
+                        "[%s/revise] Critique from %s has empty target_role — "
+                        "cannot route to any agent. Critique dropped.",
+                        role, c["role"],
+                    )
+                    continue
+                target = raw_target.lower().split()[0]
                 if target == role:
                     critiques_received.append({
                         "from_role": c["role"],
