@@ -1,0 +1,1446 @@
+=== SYSTEM PROMPT ===
+You are a **CRIT reasoning auditor**.
+
+Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+
+You evaluate **reasoning quality only** — not prediction accuracy, profitability, or agreement with other agents.
+
+Your evaluation must be **strict, calibrated, and consistent**.
+
+CRIT is a **blind auditor**:
+you do NOT know the correct investment decision.
+
+Your task is only to evaluate whether the **reasoning process is sound**.
+
+---
+
+AGENT ROLE
+
+Agent specialization: value
+
+This agent specializes in **value reasoning**.
+
+Evaluate reasoning **within this domain specialization**.
+
+Do NOT penalize arguments for focusing on their specialty.
+
+---
+
+EVALUATION TARGET
+
+Evaluate the **REVISED ARGUMENT**.
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the agent's revised argument
+
+Use the proposal and critiques ONLY to determine whether:
+
+• weaknesses were addressed
+• critiques were handled correctly
+• alternative hypotheses were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+STRUCTURED REASONING FORMAT
+
+The revised argument contains structured reasoning with the following fields:
+
+• reasoning.claims — numbered causal claims, each with:
+  - claim_id, claim_text, claim_type (macro/sector/firm)
+  - pearl_level (L1/L2/L3)
+  - evidence (legacy citation list) + evidence_ids (normalized IDs)
+  - variables, assumptions, falsifiers
+  - impacts_positions (tickers affected by this claim)
+  - confidence (per-claim)
+• reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
+• reasoning.thesis — the agent's overall portfolio thesis
+• reasoning.confidence — the agent's self-assessed confidence
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — (revised argument only) how the agent responded to critiques:
+  which critiques were accepted, rejected, and why
+• portfolio_allocation — the allocation weights
+• evidence_citations — full evidence text for cited IDs
+
+Use these structured fields for cross-referencing.
+If evidence_ids exists on claims, use it as the canonical evidence reference.
+If only the legacy evidence field exists, interpret entries as citation references.
+Use revision_notes to evaluate critique handling (alternative_consideration pillar).
+Use assumptions and falsifiers to assess logical completeness.
+
+Cross-reference fields have distinct roles:
+• claims[*].impacts_positions — which assets the claim theoretically affects.
+  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
+• position_rationale[*].supporting_claims — which claims actually justify the allocation.
+  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
+
+---
+
+CLAIMS AND CRITIQUES STRUCTURE
+
+Arguments in the debate are organized using **numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Agents are expected to:
+
+• construct arguments using **explicit numbered claims**
+• critique specific claims using critique IDs
+• explicitly **accept or reject critiques during revision**
+
+You should use this structure to evaluate reasoning quality.
+
+Examples:
+
+A critique such as:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+represents **high-quality debate targeting**.
+
+A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
+
+---
+
+CLAIM REVISION EVALUATION
+
+Check whether the agent's revised argument properly engages with critiques.
+
+Specifically evaluate whether:
+
+• critiques targeting specific claims were addressed
+• accepted critiques resulted in meaningful reasoning updates
+• rejected critiques were justified with evidence or logic
+• claims were modified, strengthened, or abandoned appropriately
+
+If critiques_received is empty:
+• Do NOT penalize alternative_consideration for lack of critique handling
+• Evaluate whether the agent proactively considers alternative explanations
+• Absence of critiques does NOT imply strong reasoning — the agent must still demonstrate consideration of alternatives
+
+Potential failures include:
+
+• ignoring critiques entirely
+• rejecting critiques without justification
+• leaving challenged claims unchanged despite valid critiques
+• modifying the portfolio without explaining the reasoning change
+
+---
+
+CRIT PILLARS
+
+You score FOUR pillars of reasoning integrity.
+
+---
+
+PILLAR 1 — LOGICAL VALIDITY
+
+Does the reasoning logically support the conclusion?
+
+Detect:
+
+• contradictions within the argument
+• circular reasoning
+• non-sequitur conclusions
+• claims that invalidate earlier claims
+• reasoning steps missing between evidence and conclusion
+
+Also consider:
+
+• whether the portfolio allocation logically follows from the thesis
+• whether accepted critiques produce coherent reasoning updates
+
+---
+
+PILLAR 2 — EVIDENTIAL SUPPORT
+
+Are factual claims supported by evidence?
+
+Detect:
+
+• unsupported claims
+• missing citations for key assertions
+• citations that do not actually support the claim
+• cherry-picked evidence
+• claims stronger than the evidence allows
+
+Check whether:
+
+• claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
+• critiques identify evidence gaps
+• revisions introduce new supporting evidence where needed
+• count claims with zero valid citations — report as unsupported_claims_count
+
+---
+
+PILLAR 3 — ALTERNATIVE CONSIDERATION
+
+Does the agent consider competing explanations?
+
+Detect:
+
+• premature certainty
+• ignoring critiques
+• failure to address opposing arguments
+• failure to consider alternative interpretations of evidence
+• thesis changes without explanation
+
+Strong reasoning should:
+
+• engage with critiques directly
+• explain why critiques are accepted or rejected
+• consider competing causal explanations
+
+Use revision_notes to evaluate how critiques were handled.
+
+---
+
+PILLAR 4 — CAUSAL ALIGNMENT
+
+Are causal claims justified by the evidence?
+
+Use Pearl's causal hierarchy adapted for financial domain:
+
+L1 — association/correlation: may cite correlational evidence
+L2 — intervention: must describe a plausible intervention or policy transmission mechanism, and evidence must be consistent with that mechanism (not literal experimental evidence)
+L3 — counterfactual reasoning: must explicitly reason about an alternative state or counterfactual scenario
+
+Detect **causal overreach**:
+
+• L2 claim with only associational evidence and no mechanism described
+• L3 claim without counterfactual structure
+• causal conclusions drawn from purely correlational evidence
+• macro claims directly mapped to asset outcomes without mechanism
+• missing causal pathway between variables
+
+Also check whether critiques successfully expose **causal weaknesses in specific claims**.
+
+---
+
+INTERNAL REASONING TRACE
+
+Before scoring, you must internally perform these checks (do NOT include this trace in your output):
+
+1. List all claims and verify each has at least one evidence citation (use evidence_ids)
+2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
+3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
+4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
+5. Check for contradictions between claim pairs
+6. Verify Pearl level matches the type of reasoning used
+7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
+
+---
+
+PATHOLOGY DETECTION
+
+Before assigning scores, detect the following reasoning failures:
+
+• contradictions
+• unsupported claims
+• ignored critiques
+• premature certainty
+• causal overreach
+• conclusion drift
+
+Definitions:
+
+contradictions
+: reasoning statements that conflict internally
+
+unsupported claims
+: claims made without evidence citations
+
+ignored critiques
+: critiques (K#) that target claims but receive no meaningful response
+
+premature certainty
+: strong conclusions despite weak evidence
+
+causal overreach
+: causal claims unsupported by the evidence type
+
+conclusion drift
+: portfolio allocation that does not logically follow from the argument.
+  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
+  Count orphaned positions and report as orphaned_positions_count.
+
+Where possible, report counts for each pathology type in the diagnostics output.
+
+---
+
+SCORING PROCEDURE
+
+Follow this order:
+
+1. Identify reasoning failures.
+2. Determine which pillar each failure affects.
+3. Assign pillar scores based on severity.
+
+Multiple failures should **reduce scores proportionally**.
+
+---
+
+SCORING SCALE
+
+Scores must use the **continuous range [0.0 – 1.0]**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor gaps
+0.70 — acceptable but noticeable weaknesses
+0.55 — mixed reasoning with clear issues
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+CALIBRATION WARNING:
+• Scores above 0.90 should be RARE
+• Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Do NOT default to 0.5.
+
+Use the full scale.
+
+---
+
+WHAT YOU DO NOT EVALUATE
+
+Do NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• agreement with other agents
+• market outcomes
+
+You are evaluating **reasoning quality only**.
+
+UNCERTAINTY IS GOOD:
+• Hedging and qualification represent good reasoning — do NOT penalize
+• Penalize: certainty without evidence, confidence exceeding evidence support
+• Penalize: absence of qualification when evidence is ambiguous
+
+---
+
+OUTPUT FORMAT
+
+Return a single JSON object.
+
+No markdown.
+
+No text outside JSON.
+
+{
+"pillar_scores": {
+"logical_validity": <float>,
+"evidential_support": <float>,
+"alternative_consideration": <float>,
+"causal_alignment": <float>
+},
+"diagnostics": {
+"contradictions_detected": <bool>,
+"unsupported_claims_detected": <bool>,
+"ignored_critiques_detected": <bool>,
+"premature_certainty_detected": <bool>,
+"causal_overreach_detected": <bool>,
+"conclusion_drift_detected": <bool>,
+"contradictions_count": <int or null>,
+"unsupported_claims_count": <int or null>,
+"ignored_critiques_count": <int or null>,
+"causal_overreach_count": <int or null>,
+"orphaned_positions_count": <int or null>
+},
+"explanations": {
+"logical_validity": "<1-2 sentences explaining key reasoning issues>",
+"evidential_support": "<1-2 sentences explaining evidence usage>",
+"alternative_consideration": "<1-2 sentences explaining critique handling>",
+"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
+}
+}
+
+
+=== USER PROMPT ===
+## Round 1
+
+## Agent Under Evaluation
+
+VALUE
+
+You are evaluating the **REVISED ARGUMENT** produced by this agent after a debate round.
+
+Your task is to audit the **reasoning integrity of the revision**.
+
+The original proposal and critiques are provided only to determine:
+
+• whether critiques were addressed
+• whether contradictions were resolved
+• whether alternative explanations were considered
+
+Focus your evaluation on the **quality of reasoning in the revised argument**.
+
+You must NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• market outcomes
+• agreement with other agents
+
+Your task is strictly to evaluate **reasoning integrity**.
+
+---
+
+# Claims and Critiques Structure
+
+Arguments in this debate use **explicit numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Critiques typically target specific claims.
+
+Example:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+During revision, agents must explicitly respond to critiques by either:
+
+• **ACCEPTING** them (if they reveal a real flaw)
+• **REJECTING** them (if they do not materially affect the thesis)
+
+Use this structure when evaluating reasoning quality.
+
+---
+
+# Original Proposal
+
+The original proposal contains the agent's earlier reasoning and numbered claims.
+
+Use it only as reference to determine whether critiques exposed weaknesses.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 4.83%"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: -0.58% (inverted)"
+    },
+    {
+      "evidence_id": "CVX-EC1",
+      "evidence_text": "Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow."
+    },
+    {
+      "evidence_id": "CVX-EC5",
+      "evidence_text": "The company plans to increase share buybacks to an annual rate of $17.5 billion and expects to maintain strong cash returns to shareholders."
+    },
+    {
+      "evidence_id": "SLB-F4",
+      "evidence_text": "Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing."
+    },
+    {
+      "evidence_id": "SLB-F16",
+      "evidence_text": "Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity."
+    },
+    {
+      "evidence_id": "PG-EC1",
+      "evidence_text": "Procter \u0026 Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%."
+    },
+    {
+      "evidence_id": "PG-F4",
+      "evidence_text": "Gross margin compressed 160 basis points to 47.5% primarily from 380 basis points of increased commodity and input material costs, partially offset by 470 basis points from higher pricing and 80 basis points from manufacturing productivity savings."
+    },
+    {
+      "evidence_id": "PG-F9",
+      "evidence_text": "Share repurchases totaled $6.0 billion with dividends paid and quarterly dividend of $0.9133 per share declared."
+    },
+    {
+      "evidence_id": "CAT-F2",
+      "evidence_text": "Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines."
+    },
+    {
+      "evidence_id": "CAT-EC2",
+      "evidence_text": "Adjusted operating profit margins improved to 21.1%, significantly exceeding expectations due to better manufacturing costs and efficiencies."
+    },
+    {
+      "evidence_id": "RTX-F14",
+      "evidence_text": "The company maintains $175 billion total backlog providing strong foundation."
+    },
+    {
+      "evidence_id": "RTX-EC1",
+      "evidence_text": "Raytheon Technologies reported strong Q1 2023 results with sales of $17.2 billion, a 10% organic growth year-over-year, and an adjusted EPS of $1.22."
+    },
+    {
+      "evidence_id": "BAC-EC1",
+      "evidence_text": "Bank of America reported strong first quarter results with an 18% year-over-year increase in earnings per share (EPS), reaching $0.94."
+    },
+    {
+      "evidence_id": "BAC-EC2",
+      "evidence_text": "The bank achieved a 13% growth in revenue, driven by a 25% increase in net interest income and strong performance across all business segments."
+    },
+    {
+      "evidence_id": "BAC-RET252",
+      "evidence_text": "1Y Return: -33.2%"
+    },
+    {
+      "evidence_id": "BAC-EC3",
+      "evidence_text": "The CET1 ratio improved to 11.4%, and the bank maintained robust liquidity with over $900 billion in global liquidity sources."
+    }
+  ],
+  "portfolio_allocation": {
+    "AMD": 0.0,
+    "AMZN": 0.0,
+    "BAC": 0.1,
+    "CAT": 0.2,
+    "CVX": 0.25,
+    "PG": 0.2,
+    "RTX": 0.0,
+    "SLB": 0.2,
+    "_CASH_": 0.05
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Risk-free rate and discount-rate sensitivity remain elevated near current levels [L1-FF].",
+          "Market continues to price duration-sensitive multiples lower when curve inversion persists [L1-CURVE]."
+        ],
+        "claim_id": "C1",
+        "claim_text": "Higher policy rates and an inverted curve raise discount rates for long-duration growth expectations, which structurally pressures growth/volatile semiconductors and retail-growth multiple recoveries (relevant for AMD and AMZN) [L1-FF] [L1-CURVE]. This favors allocation to companies with nearer-term cash flows and lower duration earnings.",
+        "claim_type": "macro",
+        "confidence": 0.7,
+        "evidence": [
+          "[L1-FF]",
+          "[L1-CURVE]"
+        ],
+        "evidence_ids": [
+          "L1-CURVE",
+          "L1-FF"
+        ],
+        "falsifiers": [
+          "Sharp and sustained decline in Fed Funds rate or rapid steepening of the yield curve (e.g., [L1-FF] falling materially).",
+          "Evidence that AMD/AMZN valuations are driven purely by near-term cash flow improvements (e.g., large and sustained EPS beats reversing growth-duration narrative)."
+        ],
+        "impacts_positions": [
+          "AMD",
+          "AMZN"
+        ],
+        "pearl_level": "L1",
+        "variables": [
+          "fed_rate",
+          "term_spread",
+          "AMD_price",
+          "AMZN_price"
+        ]
+      },
+      {
+        "assumptions": [
+          "Commodity-driven cash flows remain adequate to support buybacks/dividends and upstream capex [CVX-EC5].",
+          "Global upstream activity and service pricing continue to improve in 2023 supporting SLB margins [SLB-F16]."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Energy producers and oilfield services show resilient cash generation and tangible capital returns that the market may underappreciate: Chevron reported strong Q1 cash/earnings and increased buybacks [CVX-EC1] [CVX-EC5]; SLB shows margin expansion and expects stronger 2023 activity and margin leverage [SLB-F4] [SLB-F16]. This supports relative upside for CVX and SLB vs. broader market.",
+        "claim_type": "sector",
+        "confidence": 0.75,
+        "evidence": [
+          "[CVX-EC1]",
+          "[CVX-EC5]",
+          "[SLB-F4]",
+          "[SLB-F16]"
+        ],
+        "evidence_ids": [
+          "CVX-EC1",
+          "CVX-EC5",
+          "SLB-F16",
+          "SLB-F4"
+        ],
+        "falsifiers": [
+          "Sustained collapse in oil prices materially reducing CVX operating cash flow [CVX-F1].",
+          "SLB activity and pricing falling short of 2023 guidance (contradicting [SLB-F16])."
+        ],
+        "impacts_positions": [
+          "CVX",
+          "SLB"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "CVX_cashflow",
+          "SLB_margin",
+          "WTI_price"
+        ]
+      },
+      {
+        "assumptions": [
+          "Pricing actions and productivity gains persist and offset commodity inflation [PG-F4] [PG-EC1].",
+          "Share repurchases and dividends continue to be funded by operating cash flow [PG-F9]."
+        ],
+        "claim_id": "C3",
+        "claim_text": "Procter \u0026 Gamble\u0027s pricing and productivity actions offset input-cost pressure, producing organic growth and stable cash returns that make its earnings power less risky than the headline margin compression implies [PG-EC1] [PG-F4] [PG-F9]. Market prices likely underweight durable cash flow and buyback/dividend capacity.",
+        "claim_type": "firm",
+        "confidence": 0.7,
+        "evidence": [
+          "[PG-EC1]",
+          "[PG-F4]",
+          "[PG-F9]"
+        ],
+        "evidence_ids": [
+          "PG-EC1",
+          "PG-F4",
+          "PG-F9"
+        ],
+        "falsifiers": [
+          "Volume declines accelerate materially and pricing elasticity forces a reduction in realized price increases (contradicting [PG-EC1]).",
+          "A material impairment or cash-flow shock that reduces ability to repurchase/share dividends."
+        ],
+        "impacts_positions": [
+          "PG"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "PG_organic_growth",
+          "PG_margin",
+          "PG_cash_returns"
+        ]
+      },
+      {
+        "assumptions": [
+          "Backlog conversion and supply-chain improvements lead to realized revenue and margin expansion as forecasted [CAT-F2] [CAT-EC2].",
+          "Commercial aerospace demand and aftermarket activity continue to recover toward pre-pandemic levels [RTX-EC1]."
+        ],
+        "claim_id": "C4",
+        "claim_text": "Industrial \u0026 commercial aerospace cyclicals show durable recovery evidence: Caterpillar backlog rose meaningfully and margins surprised to the upside [CAT-F2] [CAT-EC2]; Raytheon (RTX) shows record backlog and commercial aerospace recovery supporting revenue and margin tailwinds [RTX-F14] [RTX-EC1]. The market may be underpricing cyclical earnings recovery for heavy equipment and aerospace suppliers.",
+        "claim_type": "sector",
+        "confidence": 0.65,
+        "evidence": [
+          "[CAT-F2]",
+          "[CAT-EC2]",
+          "[RTX-F14]",
+          "[RTX-EC1]"
+        ],
+        "evidence_ids": [
+          "CAT-EC2",
+          "CAT-F2",
+          "RTX-EC1",
+          "RTX-F14"
+        ],
+        "falsifiers": [
+          "Backlog cancellations or delayed deliveries materially exceed current expectations.",
+          "Commercial air traffic fails to recover as anticipated, undermining RTX aftermarket volumes [RTX-EC1]."
+        ],
+        "impacts_positions": [
+          "CAT",
+          "RTX"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "CAT_backlog",
+          "CAT_margin",
+          "RTX_backlog",
+          "air_traffic_recovery"
+        ]
+      },
+      {
+        "assumptions": [
+          "Net interest income trends persist near management expectations and asset quality remains stable [BAC-EC2].",
+          "Market price weakness reflects macro risk repricing rather than imminent LICs or capital impairment."
+        ],
+        "claim_id": "C5",
+        "claim_text": "Bank of America shows improving NII and EPS growth while the equity has materially underperformed YTD/1Y (possible overshoot in risk-pricing): BAC reported 18% y/y EPS growth and 25% net interest income growth with CET1 improvement [BAC-EC1] [BAC-EC2] while the stock is down ~33% over 1 year [BAC-RET252]. This suggests valuation dislocation vs. improving core fundamentals.",
+        "claim_type": "firm",
+        "confidence": 0.6,
+        "evidence": [
+          "[BAC-EC1]",
+          "[BAC-EC2]",
+          "[BAC-RET252]",
+          "[BAC-EC3]"
+        ],
+        "evidence_ids": [
+          "BAC-EC1",
+          "BAC-EC2",
+          "BAC-EC3",
+          "BAC-RET252"
+        ],
+        "falsifiers": [
+          "Rapid deterioration in credit quality or surge in loan losses inconsistent with management commentary.",
+          "Material regulatory or capital requirement changes that impair dividend/repurchase capacity."
+        ],
+        "impacts_positions": [
+          "BAC"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "BAC_NII",
+          "BAC_CET1",
+          "BAC_price"
+        ]
+      }
+    ],
+    "confidence": 0.65,
+    "position_rationale": [
+      {
+        "explanation": "Allocate to CVX because strong Q1 earnings and announced buyback discipline ([CVX-EC1], [CVX-EC5]) indicate cash-return capacity and upstream resilience that the market may underprice; claim C2 argues commodity cash flows support valuation reversion.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "CVX",
+        "weight": 0.25
+      },
+      {
+        "explanation": "Overweight Caterpillar because backlog growth and surprise margin improvement ([CAT-F2], [CAT-EC2]) support earnings durability versus current price; C4 links industrial cycle recovery to re-rating potential.",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "CAT",
+        "weight": 0.2
+      },
+      {
+        "explanation": "Allocate to Procter \u0026 Gamble as a fundamentals-rich defensive holding: organic growth and pricing offset input inflation and support stable EPS and cash returns ([PG-EC1], [PG-F4], [PG-F9]); C3 frames PG as mispriced relative to enduring cash flow.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "PG",
+        "weight": 0.2
+      },
+      {
+        "explanation": "Large allocation to SLB because margin expansion and expected 2023 activity growth ([SLB-F4], [SLB-F16]) imply higher FCF potential than currently priced; C2 identifies SLB as an energy-services beneficiary of activity and pricing leverage.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "SLB",
+        "weight": 0.2
+      },
+      {
+        "explanation": "Modest overweight to Bank of America reflects improving NII and EPS growth ([BAC-EC1], [BAC-EC2]) versus a materially discounted stock price ([BAC-RET252]); C5 argues for partial recovery if credit and capital metrics hold.",
+        "supporting_claims": [
+          "C5"
+        ],
+        "ticker": "BAC",
+        "weight": 0.1
+      }
+    ],
+    "risks_or_falsifiers": [
+      "Sustained collapse in oil prices (invalidates C2) leading to materially lower CVX cash flows and SLB activity (contradicting [CVX-F1] and [SLB-F16]).",
+      "Recession-driven demand shock that causes backlog cancellations and margin pressure at CAT/RTX (contradicting [CAT-F2] and [RTX-F14]).",
+      "Rapid Fed easing or curve steepening that re-rates long-duration growth, making avoided names (AMD/AMZN) outperform (falsifies C1) [L1-FF] [L1-CURVE].",
+      "Material deterioration in bank asset quality or regulatory capital requirements that reverse BAC\u0027s improving fundamentals (contradicting [BAC-EC1], [BAC-EC3])."
+    ],
+    "thesis": "The portfolio tilts to value and cash-generative sectors where fundamental signals (cash flow, backlog, pricing power) point to earnings durability and potential multiple re-rating. C2 (energy and oilfield services) drives the largest conviction (CVX, SLB) because both firms show cash-return capacity and margin leverage ([CVX-EC1], [CVX-EC5], [SLB-F4], [SLB-F16]). C4 supports industrial cyclicals (CAT) given backlog and margin improvement ([CAT-F2], [CAT-EC2]) while C3 justifies a defensive consumer staple (PG) with pricing and buybacks ([PG-EC1], [PG-F9]). C5 provides a tactical exposure to BAC where NII and EPS trends contrast with a depressed equity price ([BAC-EC1], [BAC-RET252]). C1 explains the avoidance of growth/long-duration names (AMD, AMZN) due to elevated rates and curve inversion ([L1-FF], [L1-CURVE]). A small cash buffer (_CASH_ 5%) preserves optionality and limits liquidity-driven forced selling risk."
+  },
+  "thesis": "The portfolio tilts to value and cash-generative sectors where fundamental signals (cash flow, backlog, pricing power) point to earnings durability and potential multiple re-rating. C2 (energy and oilfield services) drives the largest conviction (CVX, SLB) because both firms show cash-return capacity and margin leverage ([CVX-EC1: Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow.], [CVX-EC5: The company plans to increase share buybacks to an annual rate of $17.5 billion and expects to maintain strong cash returns to shareholders.], [SLB-F4: Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing.], [SLB-F16: Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity.]). C4 supports industrial cyclicals (CAT) given backlog and margin improvement ([CAT-F2: Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines.], [CAT-EC2: Adjusted operating profit margins improved to 21.1%, significantly exceeding expectations due to better manufacturing costs and efficiencies.]) while C3 justifies a defensive consumer staple (PG) with pricing and buybacks ([PG-EC1: Procter \u0026 Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%.], [PG-F9: Share repurchases totaled $6.0 billion with dividends paid and quarterly dividend of $0.9133 per share declared.]). C5 provides a tactical exposure to BAC where NII and EPS trends contrast with a depressed equity price ([BAC-EC1: Bank of America reported strong first quarter results with an 18% year-over-year increase in earnings per share (EPS), reaching $0.94.], [BAC-RET252: 1Y Return: -33.2%]). C1 explains the avoidance of growth/long-duration names (AMD, AMZN) due to elevated rates and curve inversion ([L1-FF: Fed Funds: 4.83%], [L1-CURVE: 10Y-2Y Spread: -0.58% (inverted)]). A small cash buffer (_CASH_ 5%) preserves optionality and limits liquidity-driven forced selling risk."
+}
+
+---
+
+# Critiques Received
+
+
+Each critique is labeled with a critique ID (K1, K2, K3, ...).
+
+Critiques may target specific claims (C#) or the portfolio allocation.
+
+You must evaluate whether the revised argument **properly responds to these critiques**.
+
+
+[
+  {
+    "critique_text": "C2 overstates the safety of large, concentrated energy exposures (CVX 25%, SLB 20%). The claim that energy producers and oilfield services are durable cash generators neglects (1) explicit company-level warnings about commodity-price volatility and geopolitical/operational risks and (2) the high realized and downside volatility of SLB. Relying on cash-return narratives for large, concentrated weights in energy is fragile because a commodity shock or demand-driven recession would compress cashflows and create correlated losses across CVX, SLB and cyclicals (CAT).",
+    "evidence_citations": [
+      {
+        "evidence_id": "CVX-F1",
+        "evidence_text": "Chevron operates in a commodities business with significant exposure to crude oil price volatility, which represents the most significant factor affecting results of operations."
+      },
+      {
+        "evidence_id": "SLB-F1",
+        "evidence_text": "Full-year 2022 revenue of $28.1 billion increased 23% year-on-year with double-digit growth across all divisions and geographies."
+      },
+      {
+        "evidence_id": "SLB-VOL60",
+        "evidence_text": "60D Vol (ann): 40.9%"
+      },
+      {
+        "evidence_id": "SLB-DVOL60",
+        "evidence_text": "60D Downside Vol: 30.1%"
+      },
+      {
+        "evidence_id": "CVX-DD60",
+        "evidence_text": "60D Drawdown: -18.2%"
+      },
+      {
+        "evidence_id": "CAT-F2",
+        "evidence_text": "Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines."
+      },
+      {
+        "evidence_id": "L1-CURVE",
+        "evidence_text": "10Y-2Y Spread: -0.58% (inverted)"
+      },
+      {
+        "evidence_id": "L1-FF",
+        "evidence_text": "Fed Funds: 4.83%"
+      },
+      {
+        "evidence_id": "L1-VIX",
+        "evidence_text": "VIX: 18.70"
+      }
+    ],
+    "from_role": "risk"
+  },
+  {
+    "critique_text": "C4 assumes industrial backlog (CAT) converts to revenue and margins expand, justifying a 20% CAT weight. That is fragile: backlog conversion is explicitly uncertain and CAT calls out supply-chain, semiconductor and delivery risks that can reverse earnings expectations quickly.",
+    "evidence_citations": [
+      {
+        "evidence_id": "CAT-F2",
+        "evidence_text": "Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines."
+      },
+      {
+        "evidence_id": "CAT-F12",
+        "evidence_text": "Supply chain disruptions from material shortages, logistics constraints, and transportation capacity limitations continue creating production delays and increased costs."
+      },
+      {
+        "evidence_id": "CAT-F16",
+        "evidence_text": "Primary uncertainties include duration and severity of supply chain disruptions, semiconductor availability, and transportation capacity constraints affecting production schedules and customer deliveries."
+      },
+      {
+        "evidence_id": "CAT-EC6",
+        "evidence_text": "While they expect a seasonal increase in sales in the second quarter, they also foresee a decrease in dealer inventories compared to the first quarter, which may impact sales in the second half of the year."
+      },
+      {
+        "evidence_id": "L1-CURVE",
+        "evidence_text": "10Y-2Y Spread: -0.58% (inverted)"
+      },
+      {
+        "evidence_id": "L1-FF",
+        "evidence_text": "Fed Funds: 4.83%"
+      }
+    ],
+    "from_role": "risk"
+  },
+  {
+    "critique_text": "C1 asserts higher rates/inverted curve justify excluding growth/momentum leaders (AMD/AMZN). That conflicts with observable price action: AMD is a clear medium-term momentum leader trading well above its 50- and 200-day moving averages with very strong 60-day returns and relative strength. Omitting AMD entirely means the portfolio is intentionally fighting a strong, confirmed price trend rather than following market-implied information embedded in price.",
+    "evidence_citations": [
+      {
+        "evidence_id": "AMD-RET60",
+        "evidence_text": "60D Return: +52.9%"
+      },
+      {
+        "evidence_id": "AMD-RS60",
+        "evidence_text": "Relative Strength 60D: +56.8%"
+      },
+      {
+        "evidence_id": "AMD-SMA50",
+        "evidence_text": "SMA 50D: $84.09"
+      },
+      {
+        "evidence_id": "AMD-SMA200",
+        "evidence_text": "SMA 200D: $77.77"
+      },
+      {
+        "evidence_id": "AMZN-RET60",
+        "evidence_text": "60D Return: +18.9%"
+      },
+      {
+        "evidence_id": "AMZN-SMA200",
+        "evidence_text": "SMA 200D: $107.51"
+      },
+      {
+        "evidence_id": "CVX-RET60",
+        "evidence_text": "60D Return: -5.8%"
+      },
+      {
+        "evidence_id": "CVX-RS60",
+        "evidence_text": "Relative Strength 60D: -1.9%"
+      }
+    ],
+    "from_role": "technical"
+  }
+]
+
+---
+
+# Revised Argument
+
+The revised argument contains the agent's updated reasoning, claims, and portfolio.
+
+The reasoning field contains structured data:
+• reasoning.claims — with evidence_ids, assumptions, falsifiers, impacts_positions
+• reasoning.position_rationale — with supporting_claims linking positions to claims
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — how critiques were handled (if present)
+
+Your evaluation should focus primarily on this revision.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 4.83%"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: -0.58% (inverted)"
+    },
+    {
+      "evidence_id": "CVX-EC1",
+      "evidence_text": "Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow."
+    },
+    {
+      "evidence_id": "CVX-EC5",
+      "evidence_text": "The company plans to increase share buybacks to an annual rate of $17.5 billion and expects to maintain strong cash returns to shareholders."
+    },
+    {
+      "evidence_id": "SLB-F4",
+      "evidence_text": "Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing."
+    },
+    {
+      "evidence_id": "SLB-F16",
+      "evidence_text": "Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity."
+    },
+    {
+      "evidence_id": "CVX-F1",
+      "evidence_text": "Chevron operates in a commodities business with significant exposure to crude oil price volatility, which represents the most significant factor affecting results of operations."
+    },
+    {
+      "evidence_id": "SLB-F1",
+      "evidence_text": "Full-year 2022 revenue of $28.1 billion increased 23% year-on-year with double-digit growth across all divisions and geographies."
+    },
+    {
+      "evidence_id": "SLB-VOL60",
+      "evidence_text": "60D Vol (ann): 40.9%"
+    },
+    {
+      "evidence_id": "SLB-DVOL60",
+      "evidence_text": "60D Downside Vol: 30.1%"
+    },
+    {
+      "evidence_id": "PG-EC1",
+      "evidence_text": "Procter \u0026 Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%."
+    },
+    {
+      "evidence_id": "PG-F4",
+      "evidence_text": "Gross margin compressed 160 basis points to 47.5% primarily from 380 basis points of increased commodity and input material costs, partially offset by 470 basis points from higher pricing and 80 basis points from manufacturing productivity savings."
+    },
+    {
+      "evidence_id": "PG-F9",
+      "evidence_text": "Share repurchases totaled $6.0 billion with dividends paid and quarterly dividend of $0.9133 per share declared."
+    },
+    {
+      "evidence_id": "CAT-F2",
+      "evidence_text": "Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines."
+    },
+    {
+      "evidence_id": "CAT-EC2",
+      "evidence_text": "Adjusted operating profit margins improved to 21.1%, significantly exceeding expectations due to better manufacturing costs and efficiencies."
+    },
+    {
+      "evidence_id": "CAT-F12",
+      "evidence_text": "Supply chain disruptions from material shortages, logistics constraints, and transportation capacity limitations continue creating production delays and increased costs."
+    },
+    {
+      "evidence_id": "RTX-F14",
+      "evidence_text": "The company maintains $175 billion total backlog providing strong foundation."
+    },
+    {
+      "evidence_id": "RTX-EC1",
+      "evidence_text": "Raytheon Technologies reported strong Q1 2023 results with sales of $17.2 billion, a 10% organic growth year-over-year, and an adjusted EPS of $1.22."
+    },
+    {
+      "evidence_id": "BAC-EC1",
+      "evidence_text": "Bank of America reported strong first quarter results with an 18% year-over-year increase in earnings per share (EPS), reaching $0.94."
+    },
+    {
+      "evidence_id": "BAC-EC2",
+      "evidence_text": "The bank achieved a 13% growth in revenue, driven by a 25% increase in net interest income and strong performance across all business segments."
+    },
+    {
+      "evidence_id": "BAC-EC3",
+      "evidence_text": "The CET1 ratio improved to 11.4%, and the bank maintained robust liquidity with over $900 billion in global liquidity sources."
+    },
+    {
+      "evidence_id": "BAC-RET252",
+      "evidence_text": "1Y Return: -33.2%"
+    }
+  ],
+  "portfolio_allocation": {
+    "AMD": 0.0,
+    "AMZN": 0.0,
+    "BAC": 0.1,
+    "CAT": 0.12,
+    "CVX": 0.18,
+    "PG": 0.25,
+    "RTX": 0.08,
+    "SLB": 0.12,
+    "_CASH_": 0.15
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Policy rates and curve inversion materially affect discount rates applied to long-duration earnings [L1-FF] [L1-CURVE].",
+          "Current market pricing does not already fully reflect the increased discount-rate impact on growth multiples."
+        ],
+        "claim_id": "C1",
+        "claim_text": "Higher policy rates and an inverted yield curve increase discount rates and raise required returns for long-duration cash flows; therefore valuation discipline favors nearer-term cash-generative businesses and requires cautious sizing of duration-sensitive growth exposure [L1-FF] [L1-CURVE]. Growth names (AMD, AMZN) require either demonstrable near-term cash-flow improvement or evidence of a sustained easing in policy/steepening of the curve to justify meaningful allocation.",
+        "claim_type": "macro",
+        "confidence": 0.7,
+        "evidence": [
+          "[L1-FF]",
+          "[L1-CURVE]"
+        ],
+        "evidence_ids": [
+          "L1-CURVE",
+          "L1-FF"
+        ],
+        "falsifiers": [
+          "Sustained and material decline in Fed Funds or steepening of the curve that lowers discount-rate pressure (e.g., [L1-FF] falls significantly or [L1-CURVE] steepens).",
+          "Evidence that AMD/AMZN cash flows materially and durably shift to nearer-term generation sufficient to justify current multiples."
+        ],
+        "impacts_positions": [
+          "AMD",
+          "AMZN",
+          "_CASH_",
+          "PG"
+        ],
+        "pearl_level": "L1",
+        "variables": [
+          "risk_free_rate",
+          "term_spread",
+          "valuation_multiples",
+          "duration_exposure"
+        ]
+      },
+      {
+        "assumptions": [
+          "Commodity prices and upstream activity remain adequate to support current cash returns and margins (supporting [CVX-EC1], [CVX-EC5], [SLB-F16]).",
+          "Energy names are cyclical and can experience episodic volatility and downside risk, so position sizing should reflect that risk ([SLB-VOL60], [SLB-DVOL60])."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Energy producer (CVX) and oilfield-services (SLB) fundamentals show strong free-cash-generation and capital-return capacity that the market may underprice, but commodity and geopolitical sensitivity plus high downside volatility warrant size discipline and a diversified energy exposure rather than concentration [CVX-EC1] [CVX-EC5] [SLB-F4] [SLB-F16] [CVX-F1] [SLB-F1] [SLB-VOL60] [SLB-DVOL60].",
+        "claim_type": "sector",
+        "confidence": 0.75,
+        "evidence": [
+          "[CVX-EC1]",
+          "[CVX-EC5]",
+          "[SLB-F4]",
+          "[SLB-F16]",
+          "[CVX-F1]",
+          "[SLB-F1]",
+          "[SLB-VOL60]",
+          "[SLB-DVOL60]"
+        ],
+        "evidence_ids": [
+          "CVX-EC1",
+          "CVX-EC5",
+          "CVX-F1",
+          "SLB-DVOL60",
+          "SLB-F1",
+          "SLB-F16",
+          "SLB-F4",
+          "SLB-VOL60"
+        ],
+        "falsifiers": [
+          "A sustained collapse in oil prices or demand materially reducing CVX operating cash flow (contradicting [CVX-F1]) or SLB activity falling short of guidance (contradicting [SLB-F16]).",
+          "Evidence that CVX/SLB cash returns (buybacks/dividends) are discontinued or materially reduced due to impaired cash flow."
+        ],
+        "impacts_positions": [
+          "CVX",
+          "SLB",
+          "_CASH_"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "CVX_cash_flow",
+          "SLB_margin",
+          "WTI_price",
+          "share_repurchases"
+        ]
+      },
+      {
+        "assumptions": [
+          "Pricing and productivity gains continue to offset commodity/input cost pressure in the medium term ([PG-EC1], [PG-F4]).",
+          "Operating cash flow remains sufficient to fund targeted buybacks and dividends ([PG-F9])."
+        ],
+        "claim_id": "C3",
+        "claim_text": "Procter \u0026 Gamble exhibits defensive earnings power: pricing and productivity actions have delivered organic growth and allow durable cash returns (dividends and buybacks) that the market may underweight relative to headline margin compression [PG-EC1] [PG-F4] [PG-F9]. This supports a meaningful overweight within a value-oriented, lower-duration sleeve.",
+        "claim_type": "firm",
+        "confidence": 0.7,
+        "evidence": [
+          "[PG-EC1]",
+          "[PG-F4]",
+          "[PG-F9]"
+        ],
+        "evidence_ids": [
+          "PG-EC1",
+          "PG-F4",
+          "PG-F9"
+        ],
+        "falsifiers": [
+          "Accelerating volume declines or sustained inability to pass through input costs that materially reduce core EPS and cash flow (contradicting [PG-EC1], [PG-F4]).",
+          "Large impairment to indefinite-lived intangibles (Gillette) beyond the fair value cushion noted ([PG-F15])."
+        ],
+        "impacts_positions": [
+          "PG",
+          "_CASH_"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "PG_organic_sales",
+          "PG_margin",
+          "PG_cash_returns"
+        ]
+      },
+      {
+        "assumptions": [
+          "Backlog converts to revenue at rates broadly consistent with management guidance and improving supply-chain conditions ([CAT-F2], [CAT-EC2]).",
+          "Commercial aerospace aftermarket recovery continues supporting RTX revenue and margins ([RTX-EC1])."
+        ],
+        "claim_id": "C4",
+        "claim_text": "Industrial and aerospace suppliers (CAT, RTX) show evidence of backlog-driven revenue and improving margins, implying valuation upside if backlog converts and supply-chain constraints ease; however, backlog conversion risk and supply-chain/semiconductor uncertainty require capped sizing and partial allocation to less cyclical aerospace exposure (RTX) as ballast [CAT-F2] [CAT-EC2] [CAT-F12] [RTX-F14] [RTX-EC1].",
+        "claim_type": "sector",
+        "confidence": 0.65,
+        "evidence": [
+          "[CAT-F2]",
+          "[CAT-EC2]",
+          "[CAT-F12]",
+          "[RTX-F14]",
+          "[RTX-EC1]"
+        ],
+        "evidence_ids": [
+          "CAT-EC2",
+          "CAT-F12",
+          "CAT-F2",
+          "RTX-EC1",
+          "RTX-F14"
+        ],
+        "falsifiers": [
+          "Backlog cancellations or prolonged supply-chain/semiconductor disruptions that materially delay revenue recognition and margin expansion (contradicting [CAT-F2], [CAT-F12]).",
+          "Failure of global air traffic to recover, undermining RTX aftermarket activity (contradicting [RTX-EC1])."
+        ],
+        "impacts_positions": [
+          "CAT",
+          "RTX"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "CAT_backlog",
+          "CAT_margin",
+          "air_traffic_recovery",
+          "RTX_backlog"
+        ]
+      },
+      {
+        "assumptions": [
+          "NII growth and operating leverage persist near management expectations and credit conditions do not deteriorate materially ([BAC-EC1], [BAC-EC2]).",
+          "Market price weakness primarily reflects macro risk repricing rather than immediate credit losses."
+        ],
+        "claim_id": "C5",
+        "claim_text": "Bank of America shows improving net interest income (NII), EPS growth and stronger capital metrics that the market has priced aggressively low; this suggests a selective value opportunity if asset quality remains stable [BAC-EC1] [BAC-EC2] [BAC-EC3] [BAC-RET252].",
+        "claim_type": "firm",
+        "confidence": 0.6,
+        "evidence": [
+          "[BAC-EC1]",
+          "[BAC-EC2]",
+          "[BAC-EC3]",
+          "[BAC-RET252]"
+        ],
+        "evidence_ids": [
+          "BAC-EC1",
+          "BAC-EC2",
+          "BAC-EC3",
+          "BAC-RET252"
+        ],
+        "falsifiers": [
+          "Rapid deterioration in credit quality or unexpectedly large loan-loss provisions inconsistent with management commentary ([BAC-EC1]).",
+          "Regulatory or capital shocks materially impairing dividend or buyback capacity."
+        ],
+        "impacts_positions": [
+          "BAC"
+        ],
+        "pearl_level": "L2",
+        "variables": [
+          "BAC_NII",
+          "BAC_EPS",
+          "BAC_CET1",
+          "BAC_price"
+        ]
+      }
+    ],
+    "confidence": 0.64,
+    "position_rationale": [
+      {
+        "explanation": "Bank of America\u0027s improving NII and EPS alongside CET1 strength argue valuation is depressed relative to earnings power, justifying a modest overweight to capture mean reversion while sizing for credit/capital risk [BAC-EC1] [BAC-EC2] [BAC-RET252].",
+        "supporting_claims": [
+          "C5"
+        ],
+        "ticker": "BAC",
+        "weight": 0.1
+      },
+      {
+        "explanation": "Caterpillar\u0027s elevated backlog and surprising margin improvement support mean reversion, but supply-chain and backlog-conversion risk require a reduced, disciplined allocation relative to an earlier proposal [CAT-F2] [CAT-EC2] [CAT-F12].",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "CAT",
+        "weight": 0.12
+      },
+      {
+        "explanation": "Chevron\u0027s strong cash generation, consistent buyback plan and resilient Q1 results imply undervalued cash-return capacity, supporting a meaningful but size-controlled position given commodity sensitivity [CVX-EC1] [CVX-EC5] [CVX-F1].",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "CVX",
+        "weight": 0.18
+      },
+      {
+        "explanation": "Procter \u0026 Gamble\u0027s durable earnings power via pricing and productivity mitigates input-cost pressure and supports cash returns; larger defensive weighting reduces portfolio cyclicality and aligns with value discipline favoring nearer-term cash flows [PG-EC1] [PG-F4] [PG-F9].",
+        "supporting_claims": [
+          "C3",
+          "C1"
+        ],
+        "ticker": "PG",
+        "weight": 0.25
+      },
+      {
+        "explanation": "RTX\u0027s record backlog and commercial aerospace recovery provide valuation support; smaller allocation acts as lower-correlation industrial/aerospace ballast to reduce concentration in bulk cyclicals [RTX-F14] [RTX-EC1].",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "RTX",
+        "weight": 0.08
+      },
+      {
+        "explanation": "SLB\u0027s margin expansion and 2023 activity guidance suggest upside to free cash flow, but elevated realized and downside volatility justify a controlled weight rather than prior concentrated sizing [SLB-F4] [SLB-F16] [SLB-VOL60].",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "SLB",
+        "weight": 0.12
+      },
+      {
+        "explanation": "Higher policy rates, curve inversion and concentration risks in cyclical/commodity-exposed names justify a larger cash buffer to preserve optionality and reduce forced selling risk while retaining upside capture on valuation reversion [L1-FF] [L1-CURVE] [SLB-VOL60].",
+        "supporting_claims": [
+          "C1",
+          "C2"
+        ],
+        "ticker": "_CASH_",
+        "weight": 0.15
+      },
+      {
+        "explanation": "AMD is excluded given valuation-duration sensitivity under current rate/curve dynamics and company-specific execution and geopolitical dependencies highlighted in filings; inclusion would require clearer near-term cash-flow improvements or a policy-rate reversal [L1-FF] [L1-CURVE] [AMD-F6] [AMD-F10].",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AMD",
+        "weight": 0.0
+      },
+      {
+        "explanation": "Amazon remains excluded because its valuation depends on sustained higher-margin services growth and longer-duration optionality that is disadvantaged under elevated discount rates absent clearer margin/cash-flow re-rating evidence [L1-FF] [L1-CURVE] [AMZN-F2].",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AMZN",
+        "weight": 0.0
+      }
+    ],
+    "revision_notes": "Accepted critiques: Critique 1 (C2 concentration risk) \u2014 accepted as materially valid: I reduced combined energy weighting and implemented explicit sizing discipline for CVX and SLB, increased cash to 15%, and added RTX as a ballast to lower portfolio correlation to raw commodity moves. Evidence used: [CVX-EC1], [CVX-EC5], [SLB-F4], [SLB-F16], and downside/volatility signals [SLB-VOL60], [SLB-DVOL60], [CVX-F1]. Impact: changed portfolio sizing (CVX 0.25\u21920.18, SLB 0.20\u21920.12), increased _CASH_ (0.05\u21920.15) and added RTX 0.08. Accepted critiques: Critique 2 (C4 backlog conversion risk) \u2014 accepted in part: maintained exposure to CAT but reduced its weight to reflect explicit backlog-conversion and supply-chain risk [CAT-F2], [CAT-F12]. Added RTX allocation to capture aerospace backlog upside with lower cyclical correlation [RTX-F14], [RTX-EC1]. Rejected critiques: Critique 3 (momentum for AMD) \u2014 rejected: momentum is a technical signal that does not overturn the valuation-duration concern; I preserve exclusion of AMD/AMZN on valuation grounds given elevated policy rates and inverted curve which increase discount-rate sensitivity for long-duration earnings [L1-FF] [L1-CURVE], and company-specific operational/geopolitical risks at AMD [AMD-F6] [AMD-F10]. Reasoning updates: 1) Introduced explicit sizing rule for commodity/cyclical exposures to limit concentration risk (operationalized via lower CVX/SLB/CAT weights and higher cash). 2) Added RTX as a diversification/ballast allocation within the industrial/aerospace claim to reflect record backlog with different cyclical dynamics [RTX-F14] [RTX-EC1]. 3) Clarified falsifiers and tightened assumptions linking valuation reversion to observable cash-flow and backlog conversion metrics. Allocation changes are proportional to the materiality of accepted critiques (reduced energy/cat weights, increased cash and defensive PG) and preserve the core value-driven thesis that mispricings exist where earnings/cash flows are durable and markets under-appreciate them.",
+    "risks_or_falsifiers": [
+      "Sustained and material collapse in oil prices or demand that materially reduces CVX cash flows and forces cutbacks to buybacks/dividends (would falsify continued CVX cash-return thesis) [CVX-F1].",
+      "SLB activity or service pricing disappoints and margins revert lower, invalidating expected FCF expansion [SLB-F16] [SLB-F4].",
+      "Backlog cancellations or prolonged supply-chain/semiconductor constraints that prevent Caterpillar backlog conversion and margin realization (would falsify CAT thesis) [CAT-F2] [CAT-F12].",
+      "Rapid deterioration in bank asset quality or unexpected loan-loss provisions that reverse BAC\u0027s earnings improvement thesis (would falsify C5) [BAC-EC1] [BAC-EC2].",
+      "A decisive and sustained fall in policy rates or steepening of the yield curve that materially reduces discount-rate pressure and re-rates growth/momentum names (would falsify the exclusion of AMD/AMZN) [L1-FF] [L1-CURVE]."
+    ],
+    "thesis": "The portfolio prioritizes valuation-driven exposures to firms with demonstrable near-term earnings/cash-flow durability and credible paths to mean reversion while explicitly limiting concentration in commodity/cyclical risk. C2 still supports energy exposure (CVX, SLB) based on cash generation and buybacks but sizing is reduced to reflect commodity risk and realized downside volatility. C4 captures industrial/aerospace upside (CAT, RTX) but reduces CAT size to account for backlog-conversion uncertainty. C3 increases defensive allocation to PG where pricing/productivity underpins cash stability. C5 retains a modest bank exposure (BAC) to capture NII-driven mean reversion. A larger cash allocation (_CASH_ 15%) is maintained to manage macro uncertainty from high policy rates and an inverted curve and to preserve optionality if valuation divergences widen [L1-FF] [L1-CURVE] [CVX-EC1] [SLB-F16] [PG-EC1]."
+  },
+  "thesis": "The portfolio prioritizes valuation-driven exposures to firms with demonstrable near-term earnings/cash-flow durability and credible paths to mean reversion while explicitly limiting concentration in commodity/cyclical risk. C2 still supports energy exposure (CVX, SLB) based on cash generation and buybacks but sizing is reduced to reflect commodity risk and realized downside volatility. C4 captures industrial/aerospace upside (CAT, RTX) but reduces CAT size to account for backlog-conversion uncertainty. C3 increases defensive allocation to PG where pricing/productivity underpins cash stability. C5 retains a modest bank exposure (BAC) to capture NII-driven mean reversion. A larger cash allocation (_CASH_ 15%) is maintained to manage macro uncertainty from high policy rates and an inverted curve and to preserve optionality if valuation divergences widen [L1-FF: Fed Funds: 4.83%] [L1-CURVE: 10Y-2Y Spread: -0.58% (inverted)] [CVX-EC1: Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow.] [SLB-F16: Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity.] [PG-EC1: Procter \u0026 Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%.]."
+}
+
+---
+
+# Evaluation Procedure
+
+Follow the steps below **before assigning scores**.
+
+---
+
+STEP 1 — Detect Logical Failures
+
+Evaluate the internal logic of the revised argument.
+
+Identify reasoning failures such as:
+
+• internal contradictions
+• mutually incompatible claims
+• circular reasoning
+• conclusions not supported by earlier reasoning
+• reasoning steps missing between evidence and conclusions
+
+Also check whether critiques that target specific claims expose unresolved logical flaws.
+
+Record whether contradictions are present. If so, count them.
+
+---
+
+STEP 2 — Detect Evidence Failures
+
+Evaluate how evidence is used to support claims.
+
+Use reasoning.claims[*].evidence_ids to cross-reference with evidence_citations.
+
+Identify whether:
+
+• key claims lack evidence citations (count claims with zero evidence_ids)
+• citations do not support the claims they reference
+• evidence is selectively used or misinterpreted
+• claims are stronger than the cited evidence justifies
+
+Also check whether critiques that identified evidence gaps were addressed.
+
+Record whether unsupported claims exist. Report unsupported_claims_count.
+
+---
+
+STEP 3 — Detect Alternative Reasoning Failures
+
+Evaluate how the agent responds to critiques and competing explanations.
+
+
+Use reasoning.revision_notes (if present) to assess how critiques were handled.
+
+
+Identify whether:
+
+• critiques (K#) were ignored
+• critiques targeting claims were not addressed
+• accepted critiques produced no meaningful reasoning change
+• rejected critiques were dismissed without justification
+• alternative explanations were not considered
+• the agent demonstrates premature certainty
+
+Strong reasoning should acknowledge competing interpretations and respond to critiques directly.
+
+Report ignored_critiques_count if critiques were not addressed.
+
+---
+
+STEP 4 — Detect Causal Reasoning Failures
+
+Evaluate causal reasoning using **Pearl's causal hierarchy** (adapted for financial domain).
+
+Levels:
+
+L1 — correlation/association
+L2 — intervention: requires a plausible mechanism or policy transmission pathway (not literal experimental evidence)
+L3 — counterfactual reasoning: must explicitly reason about an alternative state
+
+Identify **causal overreach**, including:
+
+• L2 claims with only associational evidence and no mechanism
+• L3 claims without counterfactual structure
+• causal conclusions drawn from purely correlational evidence
+• macro claims mapped directly to asset outcomes without mechanism
+
+Also check whether critiques successfully exposed causal weaknesses in specific claims.
+
+Record whether causal overreach occurs. Report causal_overreach_count.
+
+---
+
+STEP 5 — Detect Conclusion Drift
+
+Determine whether the **final portfolio allocation logically follows from the reasoning**.
+
+Use reasoning.position_rationale[*].supporting_claims to verify each position cites a real claim.
+Use reasoning.claims[*].impacts_positions to verify causal completeness.
+
+Check for:
+
+• positions with weight >10% that have no supporting_claims entry
+• thesis statements inconsistent with allocation choices
+• claims that do not logically imply the portfolio allocation
+• revisions that ignore critiques without explanation
+
+Count orphaned positions (weight >10% with no supporting claim). Report orphaned_positions_count.
+
+---
+
+STEP 6 — Detect Critique Handling Failures
+
+Evaluate how the agent handles critiques.
+
+Identify whether:
+
+• critiques targeting claims were ignored
+• critiques were accepted but reasoning was not updated
+• critiques were rejected without justification
+• challenged claims remained unchanged despite valid critiques
+
+Poor critique handling should reduce the **alternative_consideration** score.
+
+---
+
+# Scoring
+
+After identifying failures, assign scores for the four CRIT pillars.
+
+logical_validity
+evidential_support
+alternative_consideration
+causal_alignment
+
+Scores must be in the range **0.0 – 1.0**.
+
+Use the full range.
+
+Use these anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor weaknesses
+0.70 — acceptable reasoning with noticeable gaps
+0.55 — mixed reasoning with clear problems
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+Important rules:
+
+• If contradictions are detected → logical_validity ≤ 0.70
+• If unsupported claims are detected → evidential_support ≤ 0.70
+• If critiques were ignored → alternative_consideration ≤ 0.70
+• If causal overreach occurs → causal_alignment ≤ 0.70
+• Scores above 0.90 should be RARE
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Avoid rounding scores to simple values such as **0.5 or 1.0** unless fully justified.
+
+When assigning scores, consider how many distinct reasoning failures were detected.
+
+1 failure → small penalty
+2-3 failures → moderate penalty
+4+ failures → severe penalty
+
+---
+
+# Output
+
+Return **only the JSON object defined in the system prompt**.
+
+Do not include explanations outside the JSON.
+
+Include optional count fields in diagnostics where you can determine the count.
+

@@ -1,0 +1,307 @@
+You are the TECHNICAL ANALYST agent in a multi-agent portfolio allocation debate.
+
+Your role is to evaluate other agents’ reasoning using **price action and momentum signals**.
+
+Markets frequently incorporate information into prices faster than fundamental or macro analysis.
+
+Your objective in this phase is to **stress-test the reasoning of other agents by comparing their claims to actual price behavior.**
+
+If their thesis contradicts price action, momentum, or trend structure, you should challenge it aggressively.
+
+Each agent’s proposal is structured around **numbered causal claims (C1, C2, C3, …)** that justify their portfolio allocation.
+
+Your critiques should therefore focus on:
+
+• claims that contradict observable price trends
+• reasoning that ignores momentum or relative strength
+• allocations that fight strong price trends
+• arguments relying on narratives not confirmed by market behavior
+
+You should challenge reasoning rigorously, but **only using evidence from the memo**.
+
+---
+
+## Financial Context
+## Portfolio Allocation Task
+- Cash to allocate: $100,<FLOAT>
+- Allocation universe: AAPL, MSFT, NVDA
+- As-of: <TIMESTAMP>
+## Market Summary
+Equity markets showed mixed signals. Tech leads on AI optimism.
+## Macro
+Fed Funds Rate: <FLOAT>%. CPI trending down.
+[AAPL-RET60]: AAPL 60-day return +<FLOAT>%
+[MSFT-VOL30]: MSFT 30-day volatility <FLOAT>%
+[NVDA-RET30]: NVDA 30-day return +<FLOAT>%
+[MACRO-FF]: Fed Funds Rate <FLOAT>%
+[AAPL-VOL60]: AAPL 60-day volatility <FLOAT>%
+
+---
+
+## Your Initial Allocation
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+technical proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on technical analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on technical analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on technical analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: technical claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: technical claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: technical claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+## Other Agents' Proposals
+
+Each proposal includes:
+
+• portfolio allocation
+• numbered causal claims (C1, C2, …)
+• claim evidence and assumptions
+• claim → allocation mapping
+
+### VALUE agent proposed:
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+value proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on value analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on value analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on value analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: value claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: value claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: value claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+### RISK agent proposed:
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+risk proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on risk analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on risk analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on risk analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: risk claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: risk claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: risk claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+---
+
+## Your Task
+
+Evaluate the **technical credibility** of the other agents' reasoning.
+
+Your critiques should focus on whether their claims are **consistent with observable price behavior and momentum signals.**
+
+For EACH other agent:
+
+1. Identify the **specific claim (C#)** that conflicts most strongly with price action.
+2. Explain **why the claim is inconsistent with current momentum or trend behavior.**
+3. Cite **counter-evidence from the memo**.
+4. Explain how ignoring price signals **weakens their portfolio allocation.**
+5. Suggest what **allocation adjustment would follow** if the technical signals were respected.
+6. State what evidence would **FALSIFY your objection**.
+
+Focus especially on detecting:
+
+• allocations fighting strong momentum trends
+• claims ignoring relative strength leadership
+• arguments relying on macro or fundamental narratives not reflected in price
+• portfolios overweighting securities in clear downtrends
+• claims assuming trend reversals without technical confirmation
+
+Avoid vague criticism — critiques should reference **specific claims (C1, C2, …)** whenever possible.
+
+---
+
+## Portfolio-Level Critique
+
+You may also critique portfolio structure where relevant.
+
+Focus on whether allocations are **consistent with the prevailing price regime**.
+
+Examples include:
+
+• overweighting securities with weakening momentum
+• underweighting clear relative strength leaders
+• ignoring strong trend persistence
+• allocations inconsistent with the dominant technical regime
+
+Your critiques should explicitly connect:
+
+price behavior → momentum implication → allocation consequence
+
+Example reasoning:
+
+"Agent’s claim C2 assumes improving fundamentals justify a large allocation, but price momentum remains negative [TSLA-RET60], suggesting the market has not confirmed that thesis."
+
+---
+
+IMPORTANT — Universe constraint
+
+All allocations must use ONLY the tickers from the allocation universe listed in the Financial Context.
+
+Do NOT suggest adding tickers outside the universe.
+
+---
+
+## Self-Critique Requirement
+
+You must also evaluate **your own proposal**.
+
+Identify the **single biggest technical vulnerability** in your reasoning or portfolio construction.
+
+Focus on:
+
+• positions where momentum may be weakening
+• trend structures that could break down
+• allocations relying on fragile momentum signals
+• price behavior that contradicts your thesis
+
+This improves debate robustness.
+
+---
+
+Respond with **valid JSON only** (no markdown or commentary).
+
+{
+ "critiques": [
+ {
+ "target_role": "...",
+
+ "target_claim": "C#",
+
+ "objection": "Explain why the claim conflicts with price action or momentum signals.",
+
+ "counter_evidence": ["[EVIDENCE-ID]", "..."],
+
+ "portfolio_implication": "Explain how ignoring price signals weakens the portfolio allocation.",
+
+ "suggested_adjustment": "Describe how their allocation should change if the technical signals were respected.",
+
+ "falsifier": "What evidence would prove your objection wrong?",
+
+ "objection_confidence": <FLOAT>-<FLOAT>
+ }
+ ],
+
+ "self_critique": {
+ "weakest_claim": "C# or 'portfolio construction'",
+ "explanation": "Describe the biggest technical weakness in your own proposal."
+ }
+}

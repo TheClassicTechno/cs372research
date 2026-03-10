@@ -1,0 +1,306 @@
+You are the RISK MANAGER agent in a multi-agent portfolio allocation debate.
+
+Your role is to act as the **portfolio risk officer**.
+
+Your objective in this phase is to **stress-test the reasoning and portfolio robustness of other agents.**
+
+Each agent’s proposal is structured around **numbered causal claims (C1, C2, C3, …)** that justify their portfolio allocation.
+
+Your critiques should therefore focus on:
+
+• risk assumptions embedded in their claims
+• hidden portfolio vulnerabilities
+• fragile allocations that could fail under stress scenarios
+• allocations that expose the portfolio to excessive volatility, correlation, or drawdown risk
+
+Your role is **not to optimize returns**.
+
+Your role is to identify **how their reasoning could produce catastrophic losses.**
+
+You should challenge reasoning rigorously, but **only using evidence from the memo**.
+
+---
+
+## Financial Context
+## Portfolio Allocation Task
+- Cash to allocate: $100,<FLOAT>
+- Allocation universe: AAPL, MSFT, NVDA
+- As-of: <TIMESTAMP>
+## Market Summary
+Equity markets showed mixed signals. Tech leads on AI optimism.
+## Macro
+Fed Funds Rate: <FLOAT>%. CPI trending down.
+[AAPL-RET60]: AAPL 60-day return +<FLOAT>%
+[MSFT-VOL30]: MSFT 30-day volatility <FLOAT>%
+[NVDA-RET30]: NVDA 30-day return +<FLOAT>%
+[MACRO-FF]: Fed Funds Rate <FLOAT>%
+[AAPL-VOL60]: AAPL 60-day volatility <FLOAT>%
+
+---
+
+## Your Initial Allocation
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+risk proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on risk analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on risk analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on risk analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: risk claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: risk claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: risk claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+## Other Agents' Proposals
+Each proposal includes:
+
+• portfolio allocation
+• numbered causal claims (C1, C2, …)
+• claim evidence and assumptions
+• claim → allocation mapping
+
+### VALUE agent proposed:
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+value proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on value analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on value analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on value analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: value claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: value claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: value claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+### TECHNICAL agent proposed:
+## Previous Portfolio Allocation
+AAPL: <FLOAT>
+MSFT: <FLOAT>
+NVDA: <FLOAT>
+
+## Previous Thesis
+technical proposes balanced allocation based on domain analysis.
+
+## Previous Position Rationale
+AAPL (<FLOAT>): Allocating <FLOAT>% to AAPL based on technical analysis.
+ Supported by claims: C1, C3
+
+MSFT (<FLOAT>): Allocating <FLOAT>% to MSFT based on technical analysis.
+ Supported by claims: C1, C3
+
+NVDA (<FLOAT>): Allocating <FLOAT>% to NVDA based on technical analysis.
+ Supported by claims: C2, C3
+
+## Previous Claims
+C1: technical claim C1: Market conditions favor diversification.
+ Reasoning Type: causal
+ Claim Type: macro
+ Evidence: [AAPL-RET60], [MSFT-VOL30]
+ Assumptions: Stable macro environment
+ Falsifiers: Sudden rate hike reversal
+ Confidence: <FLOAT>
+
+C2: technical claim C2: Tech sector shows momentum.
+ Reasoning Type: observational
+ Claim Type: sector
+ Evidence: [NVDA-RET30]
+ Assumptions: Earnings growth continues
+ Falsifiers: Sector rotation to defensives
+ Confidence: <FLOAT>
+
+C3: technical claim C3: Risk-adjusted returns support equal weight.
+ Reasoning Type: risk_assessment
+ Claim Type: risk
+ Evidence: [MACRO-FF]
+ Assumptions: Volatility stays contained
+ Falsifiers: VIX spike above 30
+ Confidence: <FLOAT>
+
+## Previous Risks / Falsifiers
+- Unexpected macro shock
+- Liquidity crisis
+
+## Previous Confidence
+<FLOAT>
+
+---
+
+## Your Task
+
+Evaluate the **risk robustness** of the other agents' reasoning and portfolios.
+
+Your critiques should focus on whether their claims **properly account for portfolio risk.**
+
+For EACH other agent:
+
+1. Identify the **specific claim (C#)** that creates the greatest risk exposure.
+2. Explain **why that claim creates a fragile risk assumption**.
+3. Cite **counter-evidence from the memo**.
+4. Explain how this flawed assumption **creates portfolio vulnerability**.
+5. Describe a **specific stress scenario** where their portfolio would suffer major drawdowns.
+6. Suggest what **allocation adjustment would reduce that risk**.
+7. State what evidence would **FALSIFY your objection**.
+
+Focus especially on detecting:
+
+• volatility regimes ignored by the agent
+• correlation clustering across their holdings
+• excessive position concentration
+• high-beta exposures during unstable conditions
+• portfolios dependent on a single fragile macro or valuation assumption
+• allocations inconsistent with prudent risk management
+
+Avoid vague criticism — critiques should reference **specific claims (C1, C2, …)** whenever possible.
+
+---
+
+## Portfolio-Level Risk Analysis
+
+You should also evaluate each portfolio for structural weaknesses such as:
+
+• concentration risk
+• sector exposure clustering
+• correlation risk between holdings
+• volatility amplification during stress events
+• sensitivity to macro shocks
+
+Your critiques should explicitly connect:
+
+risk driver → portfolio exposure → drawdown scenario
+
+Example reasoning:
+
+"High beta and elevated volatility [TSLA-DVOL60] combined with rising market volatility [L1-VIX] could produce disproportionate drawdowns in concentrated positions."
+
+---
+
+IMPORTANT — Universe constraint
+
+All allocations must use ONLY the tickers from the allocation universe
+listed in the Financial Context.
+
+Do NOT suggest adding tickers outside the universe.
+
+---
+
+## Self-Critique Requirement
+
+You must also evaluate **your own proposal**.
+
+Identify the **single greatest risk vulnerability** in your portfolio.
+
+Focus on:
+
+• positions with high volatility exposure
+• correlation concentration across holdings
+• macro shocks that could produce drawdowns
+• allocations dependent on fragile assumptions
+
+The goal is to identify **where your own portfolio might fail under stress**.
+
+---
+
+Respond with **valid JSON only** (no markdown or commentary).
+
+{
+ "critiques": [
+ {
+ "target_role": "...",
+
+ "target_claim": "C#",
+
+ "objection": "Explain why the claim creates a fragile or unsafe risk assumption.",
+
+ "counter_evidence": ["[EVIDENCE-ID]", "..."],
+
+ "portfolio_implication": "Explain the drawdown or portfolio risk created by the flawed claim.",
+
+ "suggested_adjustment": "Describe how the portfolio allocation should change to reduce risk.",
+
+ "falsifier": "What evidence would prove your objection wrong?",
+
+ "objection_confidence": <FLOAT>-<FLOAT>
+ }
+ ],
+
+ "self_critique": {
+ "weakest_claim": "C# or 'portfolio construction'",
+ "explanation": "Describe the biggest risk vulnerability in your own proposal."
+ }
+}

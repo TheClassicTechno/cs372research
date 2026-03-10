@@ -1,0 +1,27 @@
+{
+  "pillar_scores": {
+    "logical_validity": 0.87,
+    "evidential_support": 0.84,
+    "alternative_consideration": 0.89,
+    "causal_alignment": 0.68
+  },
+  "diagnostics": {
+    "contradictions_detected": false,
+    "unsupported_claims_detected": false,
+    "ignored_critiques_detected": false,
+    "premature_certainty_detected": false,
+    "causal_overreach_detected": true,
+    "conclusion_drift_detected": false,
+    "contradictions_count": 0,
+    "unsupported_claims_count": 0,
+    "ignored_critiques_count": 0,
+    "causal_overreach_count": 3,
+    "orphaned_positions_count": 0
+  },
+  "explanations": {
+    "logical_validity": "The revision ties portfolio changes directly to a volatility-adjusted sizing rule and a larger cash buffer, and all positions cite supporting claims; only a minor ambiguity appears in C2’s falsifier example language.",
+    "evidential_support": "All claims have valid evidence_ids that match the provided citations and support the stated technical signals, though some position rationales reference additional metrics (e.g., PG-VOL20/60, CVX/CAT/RTX evidence) not included in the evidence_citations.",
+    "alternative_consideration": "Critiques were explicitly addressed: the sizing/volatility critique was accepted with concrete portfolio and claim updates, and the fundamentals critique was partially accepted (for price-derived risk) with a reasoned rejection of non-price arguments.",
+    "causal_alignment": "Claims are labeled L2 but rely mainly on associational technical indicators (momentum, SMA regimes, VIX) without articulating explicit causal mechanisms, reflecting moderate causal overreach."
+  }
+}
