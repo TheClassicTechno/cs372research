@@ -226,6 +226,7 @@ def _make_enriched_output() -> dict:
         "portfolio_rationale": "Overweight AAPL on margin strength, tilt MSFT.",
         "confidence": 0.65,
         "risks_or_falsifiers": ["Rate shock beyond 5%", "Earnings miss in AAPL"],
+        "critique_responses": [],
     }
 
 
@@ -249,7 +250,9 @@ def _make_base_output() -> dict:
                 "confidence": 0.5,
             },
         ],
-        "risks_or_falsifiers": "VIX spike above 30",
+        "position_rationale": [],
+        "risks_or_falsifiers": ["VIX spike above 30"],
+        "critique_responses": [],
     }
 
 
@@ -1043,11 +1046,23 @@ def _make_base_critique_output() -> dict:
         "critiques": [
             {
                 "target_role": "risk",
+                "target_claim": "",
                 "objection": "Risk assessment is too conservative.",
+                "counter_evidence": [],
+                "portfolio_implication": "",
+                "suggested_adjustment": "",
+                "falsifier": "",
+                "objection_confidence": 0.5,
             },
             {
                 "target_role": "technical",
+                "target_claim": "",
                 "objection": "Momentum signals are unreliable in current regime.",
+                "counter_evidence": [],
+                "portfolio_implication": "",
+                "suggested_adjustment": "",
+                "falsifier": "",
+                "objection_confidence": 0.5,
             },
         ],
         "self_critique": "My allocation may be too aggressive.",
@@ -1440,13 +1455,21 @@ class TestFullPipelineHandoff:
         critiques = _make_critiques(enriched)
 
         # Simulate revisions — use the same structure as proposals but
-        # with revision_notes added.
+        # with revision_notes and critique_responses added.
         make = _make_enriched_output if enriched else _make_base_output
         macro_rev = make()
         macro_rev["revision_notes"] = "Adjusted AAPL weight down per risk critique."
+        macro_rev["critique_responses"] = [
+            {"from_agent": "risk", "target_claim": "C1", "disposition": "accept",
+             "justification": "Valid concern about concentration risk."},
+        ]
         risk_rev = make()
         risk_rev["allocation"] = {"AAPL": 0.25, "MSFT": 0.35, "GOOGL": 0.40}
         risk_rev["revision_notes"] = "Increased diversification per macro critique."
+        risk_rev["critique_responses"] = [
+            {"from_agent": "macro", "target_claim": "C1", "disposition": "rebut",
+             "justification": "Macro headwinds are already priced in."},
+        ]
 
         revisions = [
             {"role": "macro", "action_dict": macro_rev,

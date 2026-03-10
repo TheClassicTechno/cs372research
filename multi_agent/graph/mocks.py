@@ -32,11 +32,15 @@ def _mock_critique(role: str, proposals: list) -> dict:
         "critiques": [
             {
                 "target_role": o.get("role", "unknown"),
+                "target_claim": f"[{o.get('role', 'unknown')}] Equal-weight is optimal",
                 "objection": (
                     f"[mock] {role} challenges {o.get('role')}'s core assumption; "
                     f"possible confounder: regime change could invalidate their signal"
                 ),
+                "counter_evidence": [f"[L1-VIX]"],
                 "alternative_explanation": f"Market noise rather than genuine {o.get('role')} signal",
+                "portfolio_implication": f"Over-concentration risk if {o.get('role')} signal is noise",
+                "suggested_adjustment": f"Reduce weight on {o.get('role')} signal by 10-20%",
                 "falsifier": "Unexpected macro shock or data revision",
                 "objection_confidence": 0.6,
             }

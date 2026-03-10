@@ -503,4 +503,14 @@ def _parse_json(text: str) -> dict:
     try:
         return json.loads(json_str)
     except json.JSONDecodeError:
-        return {}
+        pass
+
+    # Sanitize common invalid escapes from LLM output (e.g. \$ \# \@)
+    # and retry before giving up.
+    sanitized = re.sub(r'\\([^"\\/bfnrtu])', r'\1', json_str)
+    try:
+        return json.loads(sanitized)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"LLM returned unparseable JSON (even after sanitizing invalid escapes): {exc}"
+        ) from exc

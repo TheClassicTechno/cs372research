@@ -13,7 +13,7 @@ import { loadJudgePortfolio } from './judgePortfolioSection.js';
 import { loadRoundAgents } from './roundsSection.js';
 import { esc } from '../../utils/dom.js';
 import { fmt } from '../../utils/format.js';
-import { appState } from '../../state.js';
+import { appState, setManifest } from '../../state.js';
 
 export function renderRunDetailView(experiment, runId, token) {
   var appDiv = document.getElementById('app');
@@ -34,6 +34,7 @@ export function renderRunDetailView(experiment, runId, token) {
 
 function renderRunDetail(detail, experiment, runId, token) {
   var m = detail.manifest || {};
+  setManifest(m);
   var appDiv = document.getElementById('app');
 
   var html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';

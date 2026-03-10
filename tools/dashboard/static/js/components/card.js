@@ -51,7 +51,11 @@ export function buildRunHeader(data) {
     esc(data.experiment + ' / ' + data.run_id) + ' &mdash; ' + esc(data.status) + '</div>';
 }
 
-export function buildAgentCards(detail) {
+/**
+ * Build expandable agent detail cards for a round.
+ * Accepts an agentLabel resolver to map role keys to display names.
+ */
+export function buildAgentCards(detail, agentLabel) {
   var agents = detail.agents || {};
   var h = '';
   Object.keys(agents).sort().forEach(function (role) {
@@ -100,8 +104,9 @@ export function buildAgentCards(detail) {
       agentBody += '<pre class="content">' + esc(a.crit_response) + '</pre>';
     }
 
+    var displayName = (typeof agentLabel === 'function') ? agentLabel(role) : role;
     h += '<div class="card">' +
-      '<div class="card-header"><span>' + esc(role.toUpperCase()) + '</span><span class="arrow">&#9654;</span></div>' +
+      '<div class="card-header"><span>' + esc(displayName.toUpperCase()) + '</span><span class="arrow">&#9654;</span></div>' +
       '<div class="card-body">' + agentBody + '</div></div>';
   });
   return h;

@@ -350,7 +350,9 @@ class DebateLogger:
         (self._run_dir / "final").mkdir(exist_ok=True)
 
         # Write partial manifest (completed_at is null until finalize)
-        manifest = {
+        # Start with full debate config so nothing is dropped.
+        manifest = self._config.to_dict()
+        manifest.update({
             "experiment_name": self._experiment_name,
             "run_id": self._run_id,
             "debate_id": debate_id,
@@ -358,12 +360,7 @@ class DebateLogger:
             "completed_at": None,
             "run_command": getattr(self._config, "run_command", None),
             "config_paths": getattr(self._config, "config_paths", []),
-            "model_name": getattr(self._config, "model_name", "unknown"),
             "crit_model_name": getattr(self._config, "crit_model_name", "gpt-5-mini"),
-            "temperature": getattr(self._config, "temperature", 0.3),
-            "roles": list(self._config.roles),
-            "agent_profiles": getattr(self._config, "agent_profile_names", None) or None,
-            "max_rounds": self._config.max_rounds,
             "actual_rounds": None,
             "terminated_early": None,
             "termination_reason": None,
@@ -371,10 +368,7 @@ class DebateLogger:
             "final_beta": None,
             "ticker_universe": observation.get("universe", []),
             "invest_quarter": observation.get("timestamp", ""),
-            "pid_enabled": self._config.pid_enabled,
-            "logging_mode": self._mode,
-            "parallel_agents": getattr(self._config, "parallel_agents", True),
-        }
+        })
         _write_json(self._run_dir / "manifest.json", manifest)
 
         # Write PID config if enabled

@@ -36,12 +36,16 @@ Include ALL universe tickers in your allocation (use 0.0 for tickers you do not 
 {{ forced_uncertainty }}
 
 ---SECTION: output_format---
-Respond with valid JSON only:
+Respond with valid JSON only.
+
+You MUST include one entry in `critique_responses` for every critique you received. Omitting a critique is not allowed.
+
 {% raw %}{
   "allocation": {"TICKER": 0.XX, ...for EVERY ticker in the universe},
   "justification": "Revised reasoning addressing critiques",
   "confidence": 0.0-1.0,
   "risks_or_falsifiers": "Updated falsifiers",
   "claims": [{"claim_text": "...", "reasoning_type": "causal"|"observational"|"risk_assessment"|"pattern", "assumptions": [...], "confidence": 0.5}],
-  "revision_notes": "What you changed and why (or why you stood firm)"
+  "critique_responses": [{"from_agent": "agent role", "target_claim": "C1", "disposition": "accept | rebut", "justification": "Why. Cite evidence IDs."}],
+  "revision_notes": "Summary of changes. Reference claim IDs."
 }{% endraw %}

@@ -95,6 +95,29 @@ def render_previous_proposal(action_dict: dict) -> str:
         else:
             parts.append(f"## Previous Risks / Falsifiers\n{falsifiers}")
 
+    # --- Critique Responses (how this agent responded to critiques) ---
+    critique_responses = action_dict.get("critique_responses")
+    if critique_responses and isinstance(critique_responses, list):
+        cr_lines: list[str] = []
+        for cr in critique_responses:
+            if not isinstance(cr, dict):
+                continue
+            from_agent = cr.get("from_agent", "?")
+            target_claim = cr.get("target_claim", "?")
+            disposition = cr.get("disposition", "?")
+            justification = cr.get("justification", "")
+            entry = f"- Critique from {from_agent} on {target_claim}: **{disposition}**"
+            if justification:
+                entry += f"\n  Justification: {justification}"
+            cr_lines.append(entry)
+        if cr_lines:
+            parts.append("## Previous Critique Responses\n" + "\n\n".join(cr_lines))
+
+    # --- Revision Notes (how this agent explained its changes) ---
+    revision_notes = action_dict.get("revision_notes")
+    if revision_notes:
+        parts.append(f"## Previous Revision Notes\n{revision_notes}")
+
     # --- Confidence ---
     confidence = action_dict.get("confidence")
     if confidence is not None:
