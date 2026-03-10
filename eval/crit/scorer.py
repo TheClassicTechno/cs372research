@@ -27,10 +27,41 @@ logger = logging.getLogger(__name__)
 from eval.crit.prompts import render_crit_prompts
 from eval.crit.schema import (
     CritResult,
+    Diagnostics,
+    Explanations,
+    PillarScores,
     RoundCritResult,
     aggregate_agent_scores,
     validate_raw_response,
 )
+
+# Default low-quality CritResult used when CRIT scoring fails after retries.
+# rho_bar = 0.25 signals poor quality to the PID controller without crashing.
+_FALLBACK_CRIT = CritResult(
+    pillar_scores=PillarScores(
+        logical_validity=0.25,
+        evidential_support=0.25,
+        alternative_consideration=0.25,
+        causal_alignment=0.25,
+    ),
+    diagnostics=Diagnostics(
+        contradictions_detected=False,
+        unsupported_claims_detected=True,
+        ignored_critiques_detected=False,
+        premature_certainty_detected=False,
+        causal_overreach_detected=False,
+        conclusion_drift_detected=False,
+    ),
+    explanations=Explanations(
+        logical_validity="CRIT scoring failed — fallback score assigned.",
+        evidential_support="CRIT scoring failed — fallback score assigned.",
+        alternative_consideration="CRIT scoring failed — fallback score assigned.",
+        causal_alignment="CRIT scoring failed — fallback score assigned.",
+    ),
+    rho_bar=0.25,
+)
+
+_CRIT_MAX_RETRIES = 2
 
 
 class CritScorer:
@@ -73,6 +104,10 @@ class CritScorer:
     def _score_single_agent(self, role: str, bundle: dict) -> tuple[str, CritResult]:
         """Score a single agent's reasoning bundle via one LLM call.
 
+        Retries up to _CRIT_MAX_RETRIES times on parse/validation failure,
+        then falls back to a low-quality default CritResult so the simulation
+        can continue.
+
         Args:
             role: Agent role name (e.g. "macro").
             bundle: Reasoning bundle dict with keys: round, agent_role,
@@ -80,9 +115,6 @@ class CritScorer:
 
         Returns:
             (role, CritResult) tuple.
-
-        Raises:
-            ValueError: If LLM response is malformed.
         """
         system_prompt, user_prompt = render_crit_prompts(
             bundle,
@@ -90,45 +122,50 @@ class CritScorer:
             user_template=self._crit_user_template,
         )
 
-        raw_text = self._llm_fn(
-            system_prompt, user_prompt,
-            role=role, round_num=bundle.get("round", 0),
+        last_error: Exception | None = None
+
+        for attempt in range(_CRIT_MAX_RETRIES + 1):
+            try:
+                raw_text = self._llm_fn(
+                    system_prompt, user_prompt,
+                    role=role, round_num=bundle.get("round", 0),
+                )
+
+                if self._capture_fn:
+                    self._capture_fn(role, system_prompt, user_prompt, raw_text)
+
+                # Strip markdown code fences if present
+                cleaned = raw_text.strip()
+                if cleaned.startswith("```"):
+                    cleaned = re.sub(r"^```(?:json)?\s*\n?", "", cleaned)
+                    cleaned = re.sub(r"\n?```\s*$", "", cleaned)
+
+                raw_dict = json.loads(cleaned)
+                result = validate_raw_response(raw_dict)
+                return role, result
+
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
+                last_error = e
+                if attempt < _CRIT_MAX_RETRIES:
+                    logger.warning(
+                        "CRIT scoring attempt %d/%d failed for %s: %s — retrying",
+                        attempt + 1, _CRIT_MAX_RETRIES + 1, role, e,
+                    )
+                else:
+                    logger.error(
+                        "CRIT scoring failed for %s after %d attempts: %s\n"
+                        "  Using fallback CritResult (rho_bar=0.25).\n"
+                        "  raw LLM response (%d chars): %.500s",
+                        role, _CRIT_MAX_RETRIES + 1, e,
+                        len(raw_text), raw_text,
+                    )
+
+        # All retries exhausted — return fallback instead of crashing
+        logger.warning(
+            "CRIT fallback activated for %s — debate will continue with low rho_bar.",
+            role,
         )
-
-        if self._capture_fn:
-            self._capture_fn(role, system_prompt, user_prompt, raw_text)
-
-        # Strip markdown code fences if present
-        cleaned = raw_text.strip()
-        if cleaned.startswith("```"):
-            cleaned = re.sub(r"^```(?:json)?\s*\n?", "", cleaned)
-            cleaned = re.sub(r"\n?```\s*$", "", cleaned)
-
-        try:
-            raw_dict = json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            logger.error(
-                "CRIT JSON parse failed for %s: %s\n"
-                "  prompt size: system=%d chars, user=%d chars\n"
-                "  raw LLM response (%d chars): %.500s",
-                role, e, len(system_prompt), len(user_prompt),
-                len(raw_text), raw_text,
-            )
-            raise
-
-        try:
-            result = validate_raw_response(raw_dict)
-        except (ValueError, KeyError) as e:
-            logger.error(
-                "CRIT validation failed for %s: %s\n"
-                "  prompt size: system=%d chars, user=%d chars\n"
-                "  raw LLM response (%d chars): %.500s",
-                role, e, len(system_prompt), len(user_prompt),
-                len(raw_text), raw_text,
-            )
-            raise
-
-        return role, result
+        return role, _FALLBACK_CRIT
 
     def score(self, reasoning_bundles: dict[str, dict]) -> RoundCritResult:
         """Run CRIT audit on one debate round, scoring each agent in parallel.
@@ -164,8 +201,9 @@ class CritScorer:
                     agent_scores[scored_role] = result
                 except Exception as e:
                     logger.error(
-                        "CRIT scoring failed for agent '%s': %s", role, e,
+                        "CRIT scoring failed for agent '%s': %s — using fallback",
+                        role, e,
                     )
-                    raise
+                    agent_scores[role] = _FALLBACK_CRIT
 
         return aggregate_agent_scores(agent_scores)
