@@ -141,17 +141,19 @@ def _unique_run_dir(output_dir: Path, run_name: str) -> Path:
     increment a suffix (_001, _002, ...) and retry.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
+    
     candidate = output_dir / run_name
     try:
-        candidate.mkdir(exist_ok=False)
+        candidate.mkdir(parents=True, exist_ok=False)
         return candidate
     except FileExistsError:
         pass
+
     idx = 1
     while True:
         candidate = output_dir / f"{run_name}_{idx:03d}"
         try:
-            candidate.mkdir(exist_ok=False)
+            candidate.mkdir(parents=True, exist_ok=False)
             return candidate
         except FileExistsError:
             idx += 1

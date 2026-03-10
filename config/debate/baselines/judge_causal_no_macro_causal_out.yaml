@@ -18,9 +18,12 @@ memo_format: "text"
 num_episodes: 1
 
 agents:
-  single_agent: "single_agent_slim"
+  # macro: "macro_standard"
+  value: "value_standard"
+  technical: "technical_standard"
+  risk: "risk_standard"
 
-judge_profile: "judge_slim"
+judge_profile: "judge_standard"
 
 debate_setup:
   agent_system: "multi_agent_debate"
@@ -33,13 +36,13 @@ debate_setup:
   max_rounds: 1
   propose_only: true
 
-  prompt_file_overrides:
+  # prompt_file_overrides:
     # causal_contract: "system_contract/system_causal_contract_slim.txt"
     # scaffolding_causal: "scaffolding/causal_claim_format_slim.txt"
-    output_allocation: "output_format/allocation_output_slim.txt"
+    # output_allocation: "output_format/allocation_output_slim.txt"
 
   pid_enabled: false
-  judge_type: "average"
+  judge_type: "llm"
 
   # Structured debate logging to logging/runs/<experiment>/run_<timestamp>/
   # Modes:

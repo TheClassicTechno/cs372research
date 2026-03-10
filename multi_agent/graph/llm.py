@@ -335,11 +335,11 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
             else:
                 print(f"  [LLM ERROR] {type(e).__name__}: {e}\n{_extra}\n  (all {max_retries} attempts failed)", flush=True)
                 logger.error(
-                    "_call_llm failed after %d attempts: %s: %s — returning empty JSON",
+                    "_call_llm failed after %d attempts: %s: %s — raising exception",
                     max_retries, type(e).__name__, e,
                 )
-                return "{}"
-    return "{}"
+                raise RuntimeError(f"LLM call failed after {max_retries} attempts: {e}")
+    raise RuntimeError(f"LLM call failed after {max_retries} attempts")
 
 
 def _extract_snapshot_id(enriched_context: str, observation: dict) -> str:
