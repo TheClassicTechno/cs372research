@@ -1,0 +1,43 @@
+{
+  "experiment_name": "enriched_no_macro_1rd_pid",
+  "run_id": "run_2026-03-07_19-50-06",
+  "debate_id": "bd16b828-bcbe-4807-bb05-b4671fdcd996",
+  "started_at": "2026-03-08T00:50:06.065583+00:00",
+  "completed_at": "2026-03-08T00:58:15.848538+00:00",
+  "run_command": "python run_simulation.py --agents config/debate/baselines/debate_enriched_no_macro.yaml --scenario config/scenarios/baseline_sweep/scenario_2023Q2_rand8_1c8e1d3e.yaml --output-dir results/scenario_runs/debate_enriched_no_macro --log-level WARNING --logging-mode debug --crit-model gpt-5 --no-display",
+  "config_paths": [
+    "/Users/vskarich/Desktop/important_docs/repos/cs372research/config/debate/baselines/debate_enriched_no_macro.yaml",
+    "/Users/vskarich/Desktop/important_docs/repos/cs372research/config/scenarios/baseline_sweep/scenario_2023Q2_rand8_1c8e1d3e.yaml"
+  ],
+  "model_name": "gpt-5-mini",
+  "crit_model_name": "gpt-5",
+  "temperature": 0.3,
+  "roles": [
+    "value",
+    "risk",
+    "technical"
+  ],
+  "agent_profiles": null,
+  "max_rounds": 2,
+  "actual_rounds": 2,
+  "terminated_early": false,
+  "termination_reason": "max_rounds",
+  "initial_beta": 0.4,
+  "final_beta": 0.324,
+  "ticker_universe": [
+    "AMD",
+    "AMZN",
+    "BAC",
+    "CAT",
+    "CVX",
+    "PG",
+    "RTX",
+    "SLB",
+    "_CASH_"
+  ],
+  "invest_quarter": "2023-03-31",
+  "pid_enabled": true,
+  "logging_mode": "debug",
+  "parallel_agents": true,
+  "final_js": 0.1274
+}

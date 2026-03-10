@@ -1,0 +1,151 @@
+{
+  "round": 1,
+  "beta": 0.4,
+  "proposals": {
+    "risk": {
+      "allocation": {
+        "AMD": 0.04,
+        "AMZN": 0.05,
+        "BAC": 0.08,
+        "CAT": 0.06,
+        "CVX": 0.15,
+        "PG": 0.2,
+        "RTX": 0.12,
+        "SLB": 0.05,
+        "_CASH_": 0.25
+      },
+      "confidence": 0.79
+    },
+    "technical": {
+      "allocation": {
+        "AMD": 0.3,
+        "AMZN": 0.05,
+        "BAC": 0.0,
+        "CAT": 0.05,
+        "CVX": 0.03,
+        "PG": 0.2,
+        "RTX": 0.1,
+        "SLB": 0.2,
+        "_CASH_": 0.07
+      },
+      "confidence": 0.72
+    },
+    "value": {
+      "allocation": {
+        "AMD": 0.0,
+        "AMZN": 0.0,
+        "BAC": 0.1,
+        "CAT": 0.2,
+        "CVX": 0.25,
+        "PG": 0.2,
+        "RTX": 0.0,
+        "SLB": 0.2,
+        "_CASH_": 0.05
+      },
+      "confidence": 0.65
+    }
+  },
+  "revisions": {
+    "risk": {
+      "allocation": {
+        "AMD": 0.04,
+        "AMZN": 0.05,
+        "BAC": 0.07,
+        "CAT": 0.09,
+        "CVX": 0.15,
+        "PG": 0.2,
+        "RTX": 0.14,
+        "SLB": 0.08,
+        "_CASH_": 0.18
+      },
+      "confidence": 0.78
+    },
+    "technical": {
+      "allocation": {
+        "AMD": 0.14,
+        "AMZN": 0.06,
+        "BAC": 0.0,
+        "CAT": 0.06,
+        "CVX": 0.1,
+        "PG": 0.2,
+        "RTX": 0.12,
+        "SLB": 0.12,
+        "_CASH_": 0.2
+      },
+      "confidence": 0.72
+    },
+    "value": {
+      "allocation": {
+        "AMD": 0.0,
+        "AMZN": 0.0,
+        "BAC": 0.1,
+        "CAT": 0.12,
+        "CVX": 0.18,
+        "PG": 0.25,
+        "RTX": 0.08,
+        "SLB": 0.12,
+        "_CASH_": 0.15
+      },
+      "confidence": 0.64
+    }
+  },
+  "metrics": {
+    "rho_bar": 0.8392,
+    "rho_i": {
+      "value": 0.875,
+      "risk": 0.875,
+      "technical": 0.7675
+    },
+    "js_divergence": 0.1261,
+    "evidence_overlap": 0.1905,
+    "beta_new": 0.36,
+    "quadrant": "healthy"
+  },
+  "crit": {
+    "rho_bar": 0.8392,
+    "value": {
+      "rho_i": 0.875,
+      "pillars": {
+        "LV": 0.88,
+        "ES": 0.85,
+        "AC": 0.89,
+        "CA": 0.88
+      }
+    },
+    "risk": {
+      "rho_i": 0.875,
+      "pillars": {
+        "LV": 0.88,
+        "ES": 0.84,
+        "AC": 0.91,
+        "CA": 0.87
+      }
+    },
+    "technical": {
+      "rho_i": 0.7675,
+      "pillars": {
+        "LV": 0.68,
+        "ES": 0.87,
+        "AC": 0.9,
+        "CA": 0.62
+      }
+    }
+  },
+  "pid": {
+    "beta_in": 0.4,
+    "beta_new": 0.36,
+    "tone_bucket": "balanced",
+    "e_t": -0.0092,
+    "p_term": -0.0032,
+    "i_term": -0.0003,
+    "d_term": -0.0006,
+    "u_t": -0.0041,
+    "quadrant": "healthy",
+    "sycophancy": 0,
+    "convergence": {
+      "stable_rounds": 0,
+      "delta_rho_actual": null,
+      "delta_rho_threshold": 0.02
+    }
+  }
+}

@@ -63,7 +63,7 @@ Load real prompts and responses from a canonical run directory and replay them t
 
 **Canonical run source:**
 ```
-logging/runs/test/run_2026-03-07_19-50-06/
+tests/integration/fixtures/canonical_run/
   manifest.json                         # run metadata (roles, tickers, rounds)
   rounds/round_001/
     proposals/{value,risk,technical}/
@@ -92,7 +92,7 @@ This run has:
 
 **Canonical replay loader:**
 ```python
-CANONICAL_RUN = Path("logging/runs/test/run_2026-03-07_19-50-06")
+CANONICAL_RUN = Path("tests/integration/fixtures/canonical_run")
 
 def _load_canonical_responses(run_dir: Path, round_num: int) -> dict:
     """Load all LLM responses from a canonical run directory.
@@ -670,7 +670,7 @@ TICKERS = ["AAPL", "MSFT", "NVDA"]
 ROLES = ["value", "risk", "technical"]
 GOLDEN_DIR = Path(__file__).parent / "golden_prompts"
 CANONICAL_RUN = Path(__file__).resolve().parent.parent.parent / (
-    "logging/runs/test/run_2026-03-07_19-50-06"
+    "tests/integration/fixtures/canonical_run"
 )
 
 # --- Fixture Factories ---
@@ -769,7 +769,7 @@ Same as above but with `max_rounds=2`. Additional verifications:
 
 ### Canonical Replay Flow
 ```
-1. Load responses from logging/runs/test/run_2026-03-07_19-50-06/
+1. Load responses from tests/integration/fixtures/canonical_run/
 2. Build CanonicalReplayLLM that returns stored responses by (phase, role)
 3. Run pipeline with same config as canonical run
 4. Verify rendered prompts ≈ stored prompts (after normalization)
@@ -887,7 +887,7 @@ This test is **optional** — the golden snapshot tests provide the same regress
 - No new pip dependencies required
 - Uses existing: `pytest`, `multi_agent.runner`, `multi_agent.config`, `eval.crit`
 - Agent profiles: must load from `config/agent_profiles/` (existing enriched profiles)
-- Canonical run: `logging/runs/test/run_2026-03-07_19-50-06/` (checked into repo)
+- Canonical run: `tests/integration/fixtures/canonical_run/` (checked into repo)
 
 ---
 

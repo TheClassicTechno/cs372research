@@ -1,0 +1,27 @@
+{
+  "pillar_scores": {
+    "logical_validity": 0.88,
+    "evidential_support": 0.84,
+    "alternative_consideration": 0.91,
+    "causal_alignment": 0.87
+  },
+  "diagnostics": {
+    "contradictions_detected": false,
+    "unsupported_claims_detected": false,
+    "ignored_critiques_detected": false,
+    "premature_certainty_detected": false,
+    "causal_overreach_detected": false,
+    "conclusion_drift_detected": false,
+    "contradictions_count": 0,
+    "unsupported_claims_count": 0,
+    "ignored_critiques_count": 0,
+    "causal_overreach_count": 0,
+    "orphaned_positions_count": 0
+  },
+  "explanations": {
+    "logical_validity": "The revision integrates macro risk controls with conditional firm-level allowances and adjusts weights coherently (cash reduced, selective cyclicals increased) while enforcing an explicit cyclical cap. No internal contradictions or conclusion drift detected.",
+    "evidential_support": "All claims have relevant evidence_ids that match the evidence list and support the stated risk logic. Minor gaps appear in position rationales that reference additional data (e.g., BAC-EC1, ADVOL/DVOL metrics) not included in the evidence set, but core claims remain supported.",
+    "alternative_consideration": "Both critiques are explicitly addressed with clear accept/reject reasoning and concrete portfolio changes; firm-level and momentum evidence are incorporated conditionally without abandoning the risk framework.",
+    "causal_alignment": "Causal levels are appropriate: L1 associations for macro/volatility signals and a mechanism-based L2 sector claim describing correlated tail exposure. No causal overreach is evident given the described pathways and constraints."
+  }
+}

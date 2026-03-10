@@ -35,10 +35,7 @@ TICKERS = ["AAPL", "MSFT", "NVDA"]
 ROLES = ["value", "risk", "technical"]
 GOLDEN_DIR = Path(__file__).parent / "golden_prompts"
 HASH_FILE = Path(__file__).parent / "prompt_hashes.json"
-CANONICAL_RUN = (
-    Path(__file__).resolve().parent.parent.parent
-    / "logging" / "runs" / "test" / "run_2026-03-07_19-50-06"
-)
+CANONICAL_RUN = Path(__file__).resolve().parent / "fixtures" / "canonical_run"
 
 # Agent profile map — enriched profiles for each role
 AGENT_PROFILE_MAP = {
