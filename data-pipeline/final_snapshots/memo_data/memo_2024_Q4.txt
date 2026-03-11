@@ -1,6 +1,6 @@
 QUARTERLY SNAPSHOT MEMO — 2024 Q4
 As-of date: 2024-12-31
-Tickers: 9
+Tickers: 35
 
 This document is the complete data payload for agent deliberation.
 It contains macro regime, per-ticker price/fundamental metrics,
@@ -41,6 +41,302 @@ Volatility:
   [L1-EQBC]  Equity-Bond Correlation: 0.04
 
 ======================================================================
+TICKER: AAPL
+======================================================================
+
+  Price & Returns:
+    [AAPL-PX]       Close: $249.06
+    [AAPL-RET20]    20D Return: +4.5%
+    [AAPL-RET60]    60D Return: +10.5%
+    [AAPL-RET120]   120D Return: +10.3%
+    [AAPL-RET252]   1Y Return: +30.7%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 16.5%
+    [AAPL-VOL60]    60D Vol (ann): 17.2%
+    [AAPL-DVOL60]   60D Downside Vol: 11.8%
+    [AAPL-DD60]     60D Drawdown: -6.1%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -15.3%
+    [AAPL-SHARPE]   60D Sharpe: 2.45
+    [AAPL-BETA]     1Y Beta: 0.97
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $248.45
+    [AAPL-SMA50]    SMA 50D: $236.24
+    [AAPL-SMA200]   SMA 200D: $211.91
+    [AAPL-MOM200]   200D Momentum: 1.18
+    [AAPL-MOM12_1]  12-1M Momentum: +23.9%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.0816
+    [AAPL-TREND]    Trend Consistency: 0.60
+    [AAPL-RS60]     Relative Strength 60D: +9.0%
+    [AAPL-ESURP]    Earnings Surprise: +2.1%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $11,564,109,925
+
+  Sentiment (from earnings call):
+    [AAPL-SENT]     Mean Sentiment: 0.2032
+    [AAPL-SVOL]     Sentiment Volatility: 0.5359
+
+  Filing Evidence (10-K, filed 2024-11-01, fiscal period: FY2024 [FYE: Sep 30]):
+    [AAPL-F1] Total revenue increased 2% to $391 billion driven by 13% Services growth from advertising, App Store and cloud services, offsetting flat iPhone revenue and declines in iPad and Wearables.
+    [AAPL-F2] Regional performance showed growth in Americas, Europe and Japan while Greater China declined due to iPhone weakness and currency headwinds.
+    [AAPL-F3] Global operations maintain international sales majority with supply chain concentrated across Asia through outsourcing partners.
+    [AAPL-F4] Gross margin expanded to 46.2% from 44.1% as Products margin improved from cost savings despite mix pressures, while Services margin reached 73.9% from mix benefits.
+    [AAPL-F5] Operating expenses increased with R&D and SG&A growth.
+    [AAPL-F6] Component supply risks from single sources create capacity constraints until supplier yields mature, with manufacturing equipment maintained at partner facilities under long-term agreements.
+    [AAPL-F7] Company executed $95 billion in share repurchases and paid dividends under expanded capital return program with new $110 billion buyback authorization and quarterly dividend raised to $0.25 per share.
+    [AAPL-F8] Product launches included iPhone 16 series, Apple Watch Series 10, updated MacBooks and iPads, plus Apple Intelligence introduction.
+    [AAPL-F9] Apple appointed Kevan Parekh as CFO effective January 2025. iOS and App Store changes implemented in EU for Digital Markets Act compliance including alternative distribution methods.
+    [AAPL-F10] Foreign exchange headwinds from dollar strength adversely impacted international pricing and revenue translation, particularly affecting Greater China and Japan operations.
+    [AAPL-F11] U.S.-China trade tensions pose escalation risks beyond current tariffs to operational restrictions.
+    [AAPL-F12] Global semiconductor shortages historically impacted component availability while currency fluctuations, inflation and economic slowdowns threaten demand given significant international exposure and consumer discretionary positioning.
+    [AAPL-F13] Management expects continued annual dividend increases and full execution of current share repurchase program while implementing compliance measures for evolving global regulations.
+    [AAPL-F14] Continued R&D investment planned to maintain competitive positioning through innovative product introductions.
+    [AAPL-F15] Supply chain diversification efforts continue despite substantial Asian manufacturing concentration, with gross margins anticipated to remain subject to volatility from competitive pricing and product mix shifts.
+    [AAPL-F16] Multiple patent infringement litigations across jurisdictions pose broad injunctive relief and substantial damages exposure.
+    [AAPL-F17] Antitrust litigation including US smartphone monopolization claims and EU App Store investigations threaten significant fines and business practice changes.
+    [AAPL-F18] Google search licensing arrangements under DOJ scrutiny with proposed remedies potentially restricting revenue-sharing agreements.
+    [AAPL-F19] State Aid Decision resulted in $10.2 billion tax charge with ongoing European Commission DMA compliance challenges.
+
+  Earnings Call Evidence:
+    [AAPL-EC1] Apple reported Q4 FY2024 revenue of $94.9 billion, up 6% year-over-year and a September quarter record. iPhone revenue reached $46.2 billion (up 6%) with growth across all geographic segments, while Services hit an all-time record of $25 billion (up 12%).
+    [AAPL-EC2] The company launched Apple Intelligence features in US English on iOS 18.1, with adoption rates twice as fast as the previous year's comparable release.
+    [AAPL-EC3] Mac revenue grew 2% to $7.7 billion and iPad revenue increased 8% to $7 billion, while Wearables declined 3% to $9 billion.
+    [AAPL-EC4] Apple expects December quarter total company revenue to grow low- to mid-single digits year-over-year, with Services continuing double-digit growth at rates similar to fiscal 2024.
+    [AAPL-EC5] The company anticipates gross margins between 46-47% and operating expenses of $15.3-15.5 billion.
+    [AAPL-EC6] Management emphasized the staged rollout of Apple Intelligence features, with additional capabilities launching in December including ChatGPT integration and localized English support for several countries, followed by more languages starting in April 2025.
+    [AAPL-EC7] The company faces potential supply constraints on iPhone 16 Pro models through October, though management expects to resolve these soon.
+    [AAPL-EC8] Apple Intelligence rollout is geographically staged rather than simultaneous, which could impact normal demand patterns across regions.
+    [AAPL-EC9] The guidance assumes macroeconomic conditions don't worsen from current projections.
+    [AAPL-EC10] There are ongoing legal uncertainties regarding the DOJ case related to Google revenue sharing agreements.
+    [AAPL-EC11] Apple Intelligence adoption is showing strong early momentum with 18.1 iOS adoption twice as fast as the previous year, positioning it as a compelling upgrade driver.
+    [AAPL-EC12] The installed base reached all-time highs across all product categories and geographic segments, with high customer satisfaction rates (95-98% across products).
+    [AAPL-EC13] Services growth is supported by over 1 billion paid subscriptions growing double-digits, with the recurring portion growing faster than transactional services.
+    [AAPL-EC14] International markets showed strength, particularly India setting all-time revenue records and China showing sequential improvement.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $120.79
+    [AMD-RET20]    20D Return: -15.0%
+    [AMD-RET60]    60D Return: -29.3%
+    [AMD-RET120]   120D Return: -33.6%
+    [AMD-RET252]   1Y Return: -18.1%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 34.7%
+    [AMD-VOL60]    60D Vol (ann): 40.6%
+    [AMD-DVOL60]   60D Downside Vol: 33.4%
+    [AMD-DD60]     60D Drawdown: -31.2%
+    [AMD-MDD1Y]    1Y Max Drawdown: -43.8%
+    [AMD-SHARPE]   60D Sharpe: -3.59
+    [AMD-BETA]     1Y Beta: 2.19
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $128.39
+    [AMD-SMA50]    SMA 50D: $138.37
+    [AMD-SMA200]   SMA 200D: $153.47
+    [AMD-MOM200]   200D Momentum: 0.79
+    [AMD-MOM12_1]  12-1M Momentum: -6.9%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: -0.3848
+    [AMD-TREND]    Trend Consistency: 0.42
+    [AMD-RS60]     Relative Strength 60D: -30.8%
+    [AMD-ESURP]    Earnings Surprise: +0.0%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $4,979,305,153
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: -0.0475
+    [AMD-SVOL]     Sentiment Volatility: 0.5435
+
+  Filing Evidence (10-Q, filed 2024-10-30, fiscal period: 2024-Q3):
+    [AMD-F1] AMD reported Q3 2024 revenue of $6.8 billion, up 18% year-over-year, driven by record Data Center performance from AI accelerator demand and Client segment growth from Ryzen processors.
+    [AMD-F2] Gaming segment declined significantly due to lower semi-custom revenue, while Embedded segment decreased reflecting normalization from elevated prior levels.
+    [AMD-F3] The company maintains concentrated customer relationships and experiences quarterly volatility from month-end weighted sales patterns.
+    [AMD-F4] Gross margin expanded to 50% in Q3 2024 from 45% in the prior year, driven by favorable product mix with higher Data Center contribution and improved pricing dynamics.
+    [AMD-F5] Operating expenses increased year-over-year from higher R&D investments in AI and data center technologies, increased employee compensation, and acquisition-related costs.
+    [AMD-F6] Manufacturing remains dependent on third-party foundries with TSMC handling advanced nodes, creating exposure to foundry pricing and capacity allocation decisions.
+    [AMD-F7] AMD completed the Silo AI acquisition in August 2024 and entered a definitive agreement to acquire ZT Systems for approximately $4.9 billion, expected to close in H1 2025 subject to regulatory approvals.
+    [AMD-F8] Victor Peng retired as President effective August 30, 2024.
+    [AMD-F9] The company maintains $4.9 billion remaining under its share repurchase authorization.
+    [AMD-F10] Export control restrictions implemented in October 2023 prevent shipment of certain AMD products to China without licenses, requiring advance notifications for specific products.
+    [AMD-F11] Ongoing US-China geopolitical tensions create uncertainty around future trade restrictions and licensing requirements.
+    [AMD-F12] Climate-related regulations and carbon pricing mechanisms may increase operational costs through higher energy expenses and supply chain compliance requirements.
+    [AMD-F13] Management expects continued strong AI and data center demand driving revenue growth, with the ZT Systems acquisition enhancing manufacturing capabilities and customer relationships in AI infrastructure markets.
+    [AMD-F14] AMD plans to divest ZT's manufacturing business to a strategic partner while retaining design capabilities post-closing.
+    [AMD-F15] The company continues heavy investment in AI software development and next-generation processor architectures.
+    [AMD-F16] The ZT Systems acquisition faces regulatory approval requirements across multiple jurisdictions with integration risks and potential difficulties executing the planned manufacturing divestiture.
+    [AMD-F17] Cybersecurity threats are escalating with AI-enhanced attack sophistication, while supply chain dependencies on TSMC for advanced nodes create concentration risk.
+    [AMD-F18] Goodwill and intangible assets from recent acquisitions face potential impairment risk if integration challenges arise.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD delivered record Q4 2024 revenue of $7.7 billion, up 24% year-over-year, driven by strong performance in data center and client segments.
+    [AMD-EC2] Full-year revenue reached $25.8 billion, up 14%, with data center revenue nearly doubling and client revenue growing 52%.
+    [AMD-EC3] The data center segment achieved record revenue of $3.9 billion, up 69% year-over-year, driven by both EPYC CPU and Instinct GPU growth.
+    [AMD-EC4] AMD's data center AI business exceeded $5 billion in annual revenue, establishing a multi-billion dollar franchise with strong customer adoption across hyperscalers and enterprises.
+    [AMD-EC5] Management expects Q1 2025 revenue of approximately $7.1 billion, up 30% year-over-year but down 7% sequentially due to seasonality.
+    [AMD-EC6] The company anticipates strong double-digit revenue and EPS growth for full-year 2025, with data center and client businesses driving growth while gaming and embedded show modest increases.
+    [AMD-EC7] AMD is accelerating MI350 series production to mid-year from second half, citing strong customer demand and better-than-expected silicon performance.
+    [AMD-EC8] The company sees the data center AI business growing to tens of billions of dollars annually over the coming years.
+    [AMD-EC9] The company faces sequential revenue decline in Q1 due to seasonality across all segments, with client and embedded businesses expected to decline more than the corporate average.
+    [AMD-EC10] Gaming segment revenue declined 59% year-over-year due to console inventory normalization, though this is expected to stabilize.
+    [AMD-EC11] The embedded segment continues to face mixed demand with slower-than-expected market recovery, particularly in industrial and communications markets.
+    [AMD-EC12] Competitive pressure in the server CPU market remains intense, with potential pricing pressures from competitors attempting to defend market share.
+    [AMD-EC13] Data center segment growth is driven by strong EPYC CPU adoption with over 50% share at major hyperscalers and expanding enterprise deployments, plus rapid scaling of the Instinct GPU business with new customer wins and product launches.
+    [AMD-EC14] Client segment benefits from record desktop sell-out, strong Ryzen AI 300 series notebook adoption, and new commercial PC partnerships including Dell.
+    [AMD-EC15] The accelerated MI350 series launch and strong customer feedback on the MI400 series roadmap position AMD well for continued AI market expansion.
+    [AMD-EC16] ROCm software improvements and expanding ecosystem support enhance competitive positioning in AI workloads.
+
+======================================================================
+TICKER: AMT
+======================================================================
+
+  Price & Returns:
+    [AMT-PX]       Close: $177.19
+    [AMT-RET20]    20D Return: -10.8%
+    [AMT-RET60]    60D Return: -16.7%
+    [AMT-RET120]   120D Return: -10.1%
+    [AMT-RET252]   1Y Return: -12.2%
+
+  Volatility & Risk:
+    [AMT-VOL20]    20D Vol (ann): 27.6%
+    [AMT-VOL60]    60D Vol (ann): 28.9%
+    [AMT-DVOL60]   60D Downside Vol: 28.8%
+    [AMT-DD60]     60D Drawdown: -21.8%
+    [AMT-MDD1Y]    1Y Max Drawdown: -25.6%
+    [AMT-SHARPE]   60D Sharpe: -2.65
+    [AMT-BETA]     1Y Beta: 0.02
+
+  Trend & Momentum:
+    [AMT-SMA20]    SMA 20D: $185.52
+    [AMT-SMA50]    SMA 50D: $193.71
+    [AMT-SMA200]   SMA 200D: $194.66
+    [AMT-MOM200]   200D Momentum: 0.91
+    [AMT-MOM12_1]  12-1M Momentum: -0.8%
+    [AMT-IDMOM]    Idiosyncratic Momentum 60D: -0.1803
+    [AMT-TREND]    Trend Consistency: 0.50
+    [AMT-RS60]     Relative Strength 60D: -18.2%
+    [AMT-ESURP]    Earnings Surprise: -42.6%
+    [AMT-ADVOL]    Avg Dollar Volume 20D: $479,081,848
+
+  Sentiment (from earnings call):
+    [AMT-SENT]     Mean Sentiment: 0.0553
+    [AMT-SVOL]     Sentiment Volatility: 0.6771
+
+  Filing Evidence (10-Q, filed 2024-07-30, fiscal period: 2024-Q2):
+    [AMT-F1] Total revenue increased 4.6% to $5.7 billion for six months driven by property revenue growth across all regions, with Asia-Pacific surging from VIL revenue recognition and Data Centers expanding from new lease commencements.
+    [AMT-F2] Operating income surged 53% to $2.5 billion primarily due to reduced depreciation expense following extension of tower asset useful lives from 20 to 30 years.
+    [AMT-F3] Operating cash flows increased to $2.6 billion driven by higher operating profits and reduced working capital requirements.
+    [AMT-F4] Property operating costs decreased despite revenue growth, with property gross margin expanding to 72% from 70% year-over-year.
+    [AMT-F5] Depreciation and amortization expense declined significantly due to extended asset life accounting change, expected to reduce annual depreciation by $730 million.
+    [AMT-F6] Capital expenditures totaled $730 million with full-year guidance of $1.6 to $1.7 billion.
+    [AMT-F7] Completed $2.4 billion in senior note issuances while repaying $2.2 billion of maturing debt using credit facility borrowings.
+    [AMT-F8] Finalized VIL divestiture generating $46.4 million total gain and signed agreement for DIT to acquire ATC TIPL for up to $2.5 billion expected to close second half 2024.
+    [AMT-F9] Distributed $1.56 billion to common stockholders with quarterly dividend declared at $1.62 per share.
+    [AMT-F10] Foreign currency translation adjustments resulted in $842 million negative impact on comprehensive income, with Africa segment facing significant impact from Nigerian Naira and Ghanaian Cedi devaluation.
+    [AMT-F11] The company maintains foreign currency exposure across revenues and operating expenses with EUR debt outstanding creating translation risk.
+    [AMT-F12] Interest rate sensitivity on variable rate debt would produce additional expense from rate increases.
+    [AMT-F13] Management expects over $57 billion in non-cancellable customer lease revenue based on existing leases, with pending ATC TIPL transaction proceeds used to repay existing indebtedness.
+    [AMT-F14] U.S. & Canada churn expected to remain elevated through 2025 due to T-Mobile contractual lease cancellations.
+    [AMT-F15] The company maintains $9.2 billion total liquidity and $2.0 billion remaining under stock buyback programs.
+    [AMT-F16] India operations face ongoing tenant payment risks with combined intangible assets and goodwill exposure requiring continued cash flow monitoring.
+    [AMT-F17] Pending ATC TIPL transaction subject to government and regulatory approvals with potential for additional asset impairment charges.
+    [AMT-F18] Unrecognized tax benefits with potential changes over next twelve months, while asset retirement obligation settlement dates were extended increasing liability by $470 million.
+
+  Earnings Call Evidence:
+    [AMT-EC1] American Tower reported strong Q4 2024 results with property revenue growth of nearly 1% (3% FX-neutral) and adjusted EBITDA growth of approximately 2% (4% FX-neutral).
+    [AMT-EC2] The company achieved significant cost reductions with cash SG&A declining $35 million year-over-year and cash margin expansion of 140 basis points to 66.8%.
+    [AMT-EC3] For 2025, AMT expects organic tenant billings growth of approximately 5%, property revenue growth over 0.5%, and attributable AFFO per share of $10.40 representing 4% growth.
+    [AMT-EC4] The company successfully strengthened its balance sheet, reaching its 5x leverage target ahead of schedule and reducing floating rate debt exposure to 3%.
+    [AMT-EC5] Management maintains a positive long-term outlook driven by sustained 5G investment cycles and emerging AI-driven demand.
+    [AMT-EC6] They expect mobile network capacity requirements to more than double over the next five years, with roughly half needing to be addressed through network densification.
+    [AMT-EC7] The company anticipates continued mid-single digit organic growth in developed markets through 2027, supported by ongoing 5G mid-band deployments which currently cover 65% of their U.S. portfolio sites.
+    [AMT-EC8] CoreSite data center business is expected to maintain strong double-digit growth with mid-teens stabilized yields on new development investments.
+    [AMT-EC9] Key risks include ongoing carrier consolidation pressures, particularly in Latin America where elevated churn of approximately 5% is expected through 2027.
+    [AMT-EC10] Foreign exchange volatility continues to impact results with over 2% negative headwind from FX and straight-line revenue reductions.
+    [AMT-EC11] Interest rate uncertainty poses refinancing challenges with $3.7 billion in debt maturities during 2025, though the company has reduced floating rate exposure to mitigate this risk.
+    [AMT-EC12] Macroeconomic volatility across global markets and potential delays in customer equipment deployment timing could affect growth trajectories.
+    [AMT-EC13] Primary growth drivers include accelerating 5G deployment activity with four consecutive quarters of sequential application growth in the U.S. and carriers upgrading from 50% to 65% mid-band coverage during 2024.
+    [AMT-EC14] Data center demand remains robust with record leasing activity and $80+ million backlog supporting continued expansion.
+    [AMT-EC15] The company is strategically reallocating capital toward higher-return developed markets, with 75% of unlevered AFFO expected from U.S., Canada, Europe and CoreSite operations.
+    [AMT-EC16] Operational efficiency initiatives and global cost management are driving margin expansion and supporting the path to sustained mid-to-high single-digit AFFO per share growth.
+
+======================================================================
+TICKER: AMZN
+======================================================================
+
+  Price & Returns:
+    [AMZN-PX]       Close: $219.39
+    [AMZN-RET20]    20D Return: +4.1%
+    [AMZN-RET60]    60D Return: +17.6%
+    [AMZN-RET120]   120D Return: +12.5%
+    [AMZN-RET252]   1Y Return: +44.4%
+
+  Volatility & Risk:
+    [AMZN-VOL20]    20D Vol (ann): 28.2%
+    [AMZN-VOL60]    60D Vol (ann): 29.7%
+    [AMZN-DVOL60]   60D Downside Vol: 19.6%
+    [AMZN-DD60]     60D Drawdown: -7.9%
+    [AMZN-MDD1Y]    1Y Max Drawdown: -19.5%
+    [AMZN-SHARPE]   60D Sharpe: 2.30
+    [AMZN-BETA]     1Y Beta: 1.55
+
+  Trend & Momentum:
+    [AMZN-SMA20]    SMA 20D: $224.77
+    [AMZN-SMA50]    SMA 50D: $209.85
+    [AMZN-SMA200]   SMA 200D: $189.74
+    [AMZN-MOM200]   200D Momentum: 1.16
+    [AMZN-MOM12_1]  12-1M Momentum: +36.8%
+    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.1198
+    [AMZN-TREND]    Trend Consistency: 0.58
+    [AMZN-RS60]     Relative Strength 60D: +16.1%
+    [AMZN-ESURP]    Earnings Surprise: +25.4%
+    [AMZN-ADVOL]    Avg Dollar Volume 20D: $8,099,833,152
+
+  Sentiment (from earnings call):
+    [AMZN-SENT]     Mean Sentiment: 0.2534
+    [AMZN-SVOL]     Sentiment Volatility: 0.6552
+
+  Filing Evidence (10-Q, filed 2024-08-02, fiscal period: 2024-Q2):
+    [AMZN-F1] Total net sales increased 10.1% to $147.977 billion driven by AWS growth accelerating to 18.7%, North America segment expanding 9.1%, and International segment growing 6.6% despite foreign exchange headwinds.
+    [AMZN-F2] International segment operating income turned positive at $273 million versus prior year loss.
+    [AMZN-F3] Third-party seller services and advertising services drove operating income doubling to $14.672 billion from $7.681 billion.
+    [AMZN-F4] Operating expenses increased 5.2% while revenue growth outpaced cost increases, driving significant operating leverage.
+    [AMZN-F5] Cost of sales decreased to 49.9% of net sales from 51.6% prior year.
+    [AMZN-F6] Technology infrastructure costs remained flat at $22.304 billion, benefiting from extended server useful lives and decreased payroll costs despite higher infrastructure spending.
+    [AMZN-F7] Extended server useful lives from five to six years effective January 2024, reducing Q2 depreciation expense by $786 million and benefiting net income by $601 million.
+    [AMZN-F8] Adam Selipsky resigned as AWS CEO effective June 3, 2024.
+    [AMZN-F9] Board amended bylaws establishing Delaware Court of Chancery as exclusive forum for corporate law claims.
+    [AMZN-F10] Terminated $240 million secured revolving credit facility in July.
+    [AMZN-F11] Foreign currency translation resulted in $637 million negative impact on comprehensive income with $18.4 billion in foreign-denominated cash exposed to currency fluctuations.
+    [AMZN-F12] Multiple jurisdictions implemented new revenue-based taxes targeting online commerce operations.
+    [AMZN-F13] Income tax contingencies increased to $5.6 billion with ongoing disputes including Luxembourg intangible asset distributions and Indian cloud services taxation claims.
+    [AMZN-F14] AWS performance obligations for multi-year contracts totaled $156.6 billion with 3.9-year weighted-average remaining life, though revenue recognition depends on customer usage patterns.
+    [AMZN-F15] Capital expenditures increased to $17.620 billion from $11.455 billion prior year for infrastructure expansion.
+    [AMZN-F16] Management expects cash capital expenditures to meaningfully increase in 2024 driven by technology infrastructure investments.
+    [AMZN-F17] Ongoing FTC and state attorneys general antitrust litigation alleging monopolization in online marketplace services creates potential for material settlements or operational restrictions.
+    [AMZN-F18] Patent infringement claims emerged in Germany regarding Intel processor usage in AWS EC2 instances.
+    [AMZN-F19] Tax controversies across multiple jurisdictions present significant assessment risks with outcomes potentially materially different from current accruals.
+
+  Earnings Call Evidence:
+    [AMZN-EC1] Amazon reported Q4 2024 revenue of $187.8 billion, up 10% year-over-year, with operating income of $21.2 billion, up 61%.
+    [AMZN-EC2] AWS grew 19% to a $115 billion annualized run rate, while advertising revenue reached $17.3 billion, up 18%.
+    [AMZN-EC3] The company delivered over 9 billion units same or next day globally and expanded same-day delivery sites by 60%.
+    [AMZN-EC4] Amazon reduced global cost-to-serve per unit for the second consecutive year while improving delivery speed and safety.
+    [AMZN-EC5] Management expects Q1 2025 revenue between $151-155.5 billion with operating income of $14-18 billion.
+    [AMZN-EC6] Capital investments of approximately $26.3 billion quarterly run rate will continue in 2025, primarily for AI infrastructure supporting AWS and fulfillment network expansion.
+    [AMZN-EC7] The company anticipates supply constraints in AI capacity to ease in the second half of 2025, potentially enabling faster AWS growth.
+    [AMZN-EC8] Amazon plans further cost reductions through improved inventory placement, same-day delivery expansion, and increased robotics automation.
+    [AMZN-EC9] Foreign exchange headwinds created $700 million more impact than anticipated in Q4, with $2.1 billion expected headwind in Q1.
+    [AMZN-EC10] Supply chain constraints including chip availability, power limitations, and component shortages are moderating AWS growth potential.
+    [AMZN-EC11] The company faces margin pressure from heavy AI investments in the near term.
+    [AMZN-EC12] Useful life changes for servers and network equipment will decrease 2025 operating income by approximately $700 million due to accelerated technology development in AI.
+    [AMZN-EC13] AI services are driving triple-digit growth within AWS, with Amazon launching Nova frontier models and expanding Bedrock capabilities.
+    [AMZN-EC14] The company's custom Trainium 2 chips offer 30-40% better price performance than GPU alternatives, attracting major customers like Anthropic.
+    [AMZN-EC15] Prime membership growth accelerated due to expanded benefits including fuel discounts and faster delivery.
+    [AMZN-EC16] Robotics and automation investments in fulfillment centers are showing significant productivity improvements, with plans to expand beyond the successful Shreveport facility implementation.
+
+======================================================================
 TICKER: AVGO
 ======================================================================
 
@@ -68,7 +364,7 @@ TICKER: AVGO
     [AVGO-MOM12_1]  12-1M Momentum: +46.8%
     [AVGO-IDMOM]    Idiosyncratic Momentum 60D: 0.2140
     [AVGO-TREND]    Trend Consistency: 0.45
-    [AVGO-RS60]     Relative Strength 60D: +27.4%
+    [AVGO-RS60]     Relative Strength 60D: +30.1%
     [AVGO-ESURP]    Earnings Surprise: +2.2%
     [AVGO-ADVOL]    Avg Dollar Volume 20D: $10,033,556,178
 
@@ -113,6 +409,77 @@ TICKER: AVGO
     [AVGO-EC14] The company expects AI networking content to increase from 5-10% today to 15-20% as clusters scale to 500,000-1 million XPUs, with next-generation 3nm XPUs launching in H2 2025.
 
 ======================================================================
+TICKER: BAC
+======================================================================
+
+  Price & Returns:
+    [BAC-PX]       Close: $42.71
+    [BAC-RET20]    20D Return: -6.0%
+    [BAC-RET60]    60D Return: +10.2%
+    [BAC-RET120]   120D Return: +6.4%
+    [BAC-RET252]   1Y Return: +33.9%
+
+  Volatility & Risk:
+    [BAC-VOL20]    20D Vol (ann): 18.3%
+    [BAC-VOL60]    60D Vol (ann): 25.3%
+    [BAC-DVOL60]   60D Downside Vol: 10.7%
+    [BAC-DD60]     60D Drawdown: -8.7%
+    [BAC-MDD1Y]    1Y Max Drawdown: -17.0%
+    [BAC-SHARPE]   60D Sharpe: 1.61
+    [BAC-BETA]     1Y Beta: 0.82
+
+  Trend & Momentum:
+    [BAC-SMA20]    SMA 20D: $43.84
+    [BAC-SMA50]    SMA 50D: $43.46
+    [BAC-SMA200]   SMA 200D: $39.09
+    [BAC-MOM200]   200D Momentum: 1.09
+    [BAC-MOM12_1]  12-1M Momentum: +43.9%
+    [BAC-IDMOM]    Idiosyncratic Momentum 60D: 0.0683
+    [BAC-TREND]    Trend Consistency: 0.45
+    [BAC-RS60]     Relative Strength 60D: +8.7%
+    [BAC-ESURP]    Earnings Surprise: +6.6%
+    [BAC-ADVOL]    Avg Dollar Volume 20D: $1,350,816,861
+
+  Sentiment (from earnings call):
+    [BAC-SENT]     Mean Sentiment: 0.1976
+    [BAC-SVOL]     Sentiment Volatility: 0.6532
+
+  Filing Evidence (10-Q, filed 2024-10-29, fiscal period: 2024-Q3):
+    [BAC-F1] Total revenue decreased $77 million to $25.3 billion for Q3 2024, with net interest income declining $412 million to $14.0 billion driven by higher deposit costs partially offset by higher asset yields.
+    [BAC-F2] Noninterest income increased $590 million to $11.4 billion, led by higher investment and brokerage services fees from elevated equity market valuations and positive asset flows, plus increased investment banking fees from debt issuance activity.
+    [BAC-F3] Global Markets revenue increased with strong FICC and Equities performance driven by improved client activity.
+    [BAC-F4] Client balances increased 18% to $4.2 trillion driven by higher market valuations and positive net flows.
+    [BAC-F5] Noninterest expense increased $641 million to $16.5 billion driven by higher revenue-related compensation and continued investments in people and technology, deteriorating the efficiency ratio to 65.0% from 62.9% prior year.
+    [BAC-F6] Net charge-offs increased to $1.5 billion from $931 million prior year, with consumer credit card losses and commercial real estate office portfolio deterioration driving the 0.58% charge-off rate compared to 0.35% prior year.
+    [BAC-F7] The Board authorized a $25 billion common stock repurchase program effective August 1, 2024, replacing the previous program, and repurchased $3.5 billion during Q3.
+    [BAC-F8] The Federal Reserve increased the stress capital buffer to 3.2% from 2.5%, resulting in a minimum CET1 capital ratio requirement of 10.7% effective October 1, 2024.
+    [BAC-F9] The G-SIB surcharge increased 50 basis points to 3.0% effective January 1, 2024, while the Board declared a quarterly dividend of $0.26 per share.
+    [BAC-F10] Provision for credit losses increased $308 million to $1.5 billion driven by commercial real estate office portfolio stress and normalized consumer credit conditions.
+    [BAC-F11] Interest rate sensitivity analysis shows $1.8 billion potential net interest income benefit from 100 basis point parallel rate increase under dynamic deposit assumptions.
+    [BAC-F12] Commercial real estate office portfolio reservable criticized exposure reached $5.1 billion with approximately 80% loan-to-value based on recent appraisals.
+    [BAC-F13] Forward rate assumptions project federal funds rate declining to 3.25% and SOFR to 3.10% over twelve months from current levels.
+    [BAC-F14] Management continues strategic investments in business capabilities while optimizing the consumer banking network with 121 fewer financial centers since September 2023.
+    [BAC-F15] Digital banking adoption continues with active mobile users reaching 39.6 million, up approximately two million year-over-year.
+    [BAC-F16] Commercial real estate office portfolio remains under pressure with ongoing credit deterioration and approximately $3.5 billion of office loans scheduled to mature by end of 2024.
+    [BAC-F17] The Corporation faces ongoing litigation and regulatory investigations across multiple areas.
+    [BAC-F18] Large interest rate scenarios may produce non-linear sensitivity outcomes due to mortgage prepayment behaviors and deposit pricing dynamics.
+
+  Earnings Call Evidence:
+    [BAC-EC1] Bank of America reported Q4 2024 net income of $6.7 billion ($0.82 EPS), finishing a strong year with $102 billion in revenue and $27.1 billion in full-year net income.
+    [BAC-EC2] The company achieved growth across all revenue categories in Q4, with net interest income bottoming out in Q2 2024 at $13.9 billion and recovering to $14.5 billion by Q4.
+    [BAC-EC3] Deposit growth resumed for six consecutive quarters, while loan growth accelerated with $20 billion added in Q4.
+    [BAC-EC4] The company maintained strong credit quality with net charge-offs stable around $1.5 billion and returned $21 billion to shareholders in 2024.
+    [BAC-EC5] Management expects record NII in 2025, projecting 6-7% growth with Q4 2025 exit rate of $15.5-15.7 billion on a fully taxable equivalent basis.
+    [BAC-EC6] They anticipate modest Q1 NII growth despite fewer calendar days, with acceleration through the year driven by continued deposit and loan growth in a 2-3% GDP environment.
+    [BAC-EC7] Expense growth is expected to moderate to 2-3% in 2025 from higher 2024 levels, while credit losses should remain stable at 50-60 basis points assuming current economic conditions persist.
+    [BAC-EC8] Key risks include potential volatility in interest rate expectations affecting NII projections, which assume the current forward curve materializes with only one rate cut expected in 2025.
+    [BAC-EC9] The company faces ongoing compliance costs related to an OCC consent order, though management indicates peak quarterly costs occurred in Q4 2024.
+    [BAC-EC10] Economic uncertainties include potential changes in GDP growth, employment levels, and geopolitical factors that could impact loan demand and credit quality.
+    [BAC-EC11] Primary growth drivers include organic client acquisition with over 1 million net new checking accounts and 24,000 new wealth management households in 2024, plus continued digital engagement with 14 billion platform logins.
+    [BAC-EC12] Investment banking gained market share with 44% Q4 growth, while sales and trading achieved an 11th consecutive quarter of year-over-year growth.
+    [BAC-EC13] The company benefits from asset repricing as fixed-rate securities and loans roll off at higher rates, plus $953 billion in liquidity providing flexibility for growth and capital deployment.
+
+======================================================================
 TICKER: BLK
 ======================================================================
 
@@ -140,7 +507,7 @@ TICKER: BLK
     [BLK-MOM12_1]  12-1M Momentum: +28.4%
     [BLK-IDMOM]    Idiosyncratic Momentum 60D: 0.0633
     [BLK-TREND]    Trend Consistency: 0.53
-    [BLK-RS60]     Relative Strength 60D: +4.3%
+    [BLK-RS60]     Relative Strength 60D: +7.0%
     [BLK-ESURP]    Earnings Surprise: +11.2%
     [BLK-ADVOL]    Avg Dollar Volume 20D: $780,765,804
 
@@ -164,6 +531,153 @@ TICKER: BLK
     [BLK-EC11] Primary growth drivers include record ETF flows ($390 billion annually), strong technology services growth (12% ACV growth), and expanding private markets capabilities through acquisitions.
     [BLK-EC12] The company benefits from structural trends toward portfolio consolidation, with clients seeking integrated public-private market solutions.
     [BLK-EC13] Fixed income strength ($164 billion flows), cash management growth ($153 billion flows), and international expansion opportunities, particularly in India and Saudi Arabia, provide additional momentum alongside the steepening yield curve creating reinvestment opportunities from $10 trillion in money market funds.
+
+======================================================================
+TICKER: CAT
+======================================================================
+
+  Price & Returns:
+    [CAT-PX]       Close: $356.53
+    [CAT-RET20]    20D Return: -9.9%
+    [CAT-RET60]    60D Return: -8.3%
+    [CAT-RET120]   120D Return: +10.4%
+    [CAT-RET252]   1Y Return: +24.7%
+
+  Volatility & Risk:
+    [CAT-VOL20]    20D Vol (ann): 18.4%
+    [CAT-VOL60]    60D Vol (ann): 27.2%
+    [CAT-DVOL60]   60D Downside Vol: 14.8%
+    [CAT-DD60]     60D Drawdown: -13.6%
+    [CAT-MDD1Y]    1Y Max Drawdown: -15.8%
+    [CAT-SHARPE]   60D Sharpe: -1.34
+    [CAT-BETA]     1Y Beta: 1.22
+
+  Trend & Momentum:
+    [CAT-SMA20]    SMA 20D: $371.62
+    [CAT-SMA50]    SMA 50D: $379.39
+    [CAT-SMA200]   SMA 200D: $352.13
+    [CAT-MOM200]   200D Momentum: 1.01
+    [CAT-MOM12_1]  12-1M Momentum: +39.6%
+    [CAT-IDMOM]    Idiosyncratic Momentum 60D: -0.1162
+    [CAT-TREND]    Trend Consistency: 0.42
+    [CAT-RS60]     Relative Strength 60D: -9.8%
+    [CAT-ESURP]    Earnings Surprise: -3.4%
+    [CAT-ADVOL]    Avg Dollar Volume 20D: $678,417,109
+
+  Sentiment (from earnings call):
+    [CAT-SENT]     Mean Sentiment: 0.0907
+    [CAT-SVOL]     Sentiment Volatility: 0.4626
+
+  Filing Evidence (10-Q, filed 2024-08-07, fiscal period: 2024-Q2):
+    [CAT-F1] Total sales and revenues decreased 4% to $16.689 billion in Q2 2024, driven by lower sales volume of $1.206 billion partially offset by favorable price realization of $578 million.
+    [CAT-F2] The volume decline primarily reflected dealer inventory decreases during Q2 2024 versus increases in Q2 2023.
+    [CAT-F3] Order backlog reached $28.6 billion at quarter-end, up $0.7 billion from Q1 2024.
+    [CAT-F4] Consolidated operating cash flow increased $251 million to $5.07 billion in the first six months driven by higher profit before taxes and lower working capital requirements.
+    [CAT-F5] Operating profit margin compressed to 20.9% from 21.1% in Q2 2023, though adjusted operating profit margin improved to 22.4% from 21.3%.
+    [CAT-F6] Favorable price realization was more than offset by lower sales volume profit impact, higher restructuring costs, and increased expenses from strategic initiative investments.
+    [CAT-F7] Capital expenditures increased with full-year 2024 expectations at $2.0-2.5 billion.
+    [CAT-F8] The company divested two non-U.S. entities during Q2 2024, generating restructuring costs with full-year 2024 restructuring costs expected to reach approximately $450 million.
+    [CAT-F9] The Board approved an 8 percent quarterly dividend increase to $1.41 per share and authorized an additional $20.0 billion share repurchase program, bringing total remaining authorization to $21.6 billion.
+    [CAT-F10] The company repurchased $6.28 billion of common stock in the first six months of 2024.
+    [CAT-F11] The company continues monitoring supply chain disruptions, inflationary cost pressures, and labor constraints across transportation, components, and raw materials.
+    [CAT-F12] Weak economic conditions persist in Europe and Asia Pacific outside China, while China excavator demand above 10-tons remains at relatively low levels.
+    [CAT-F13] Mixed construction activity continues across Latin America alongside ongoing exposure to commodity price changes, international trade policies, and currency fluctuations.
+    [CAT-F14] Management expects slightly lower full-year 2024 sales versus 2023, with second-half revenues slightly higher than first-half following normal seasonal patterns and machine dealer inventories anticipated to decrease slightly.
+    [CAT-F15] Services revenues expected to grow in second-half 2024, while price realization benefits will significantly diminish as favorable 2023 trends normalize.
+    [CAT-F16] The company maintains its strategy to return substantially all free cash flow to shareholders over time while maintaining its mid-A credit rating.
+    [CAT-F17] The company faces ongoing supply chain challenges that may impact customer demand fulfillment capabilities, with dealer inventory management subject to independent dealer expectations regarding future demand and macroeconomic conditions.
+    [CAT-F18] Energy transition dynamics create both commodity demand opportunities and market timing uncertainties across customer capital discipline decisions.
+    [CAT-F19] The company maintains global credit facilities with total debt decreasing to $37.31 billion and cash position at $4.34 billion.
+
+  Earnings Call Evidence:
+    [CAT-EC1] Caterpillar reported Q4 2024 sales of $16.2B (down 5% YoY) and full-year sales of $64.8B (down 3% YoY).
+    [CAT-EC2] The company achieved record adjusted EPS of $21.90 for 2024, up 3% from 2023, with adjusted operating margin of 20.7% exceeding the top of target range.
+    [CAT-EC3] ME&T free cash flow was $9.4B, near the top of the $5-10B target range.
+    [CAT-EC4] Services revenue grew 4% to a record $24B.
+    [CAT-EC5] The company returned $10.3B to shareholders through $7.7B in share repurchases and $2.6B in dividends.
+    [CAT-EC6] For 2025, Caterpillar expects slightly lower sales and revenues compared to 2024, with continued strength in energy & transportation offsetting declines in construction industries and resource industries.
+    [CAT-EC7] The company anticipates adjusted operating profit margins in the top half of the target range and ME&T free cash flow also in the top half of the $5-10B range.
+    [CAT-EC8] Services revenue is expected to grow across all three primary segments.
+    [CAT-EC9] Management expects dealer machine inventory to end 2025 at similar levels to year-end 2024.
+    [CAT-EC10] Key risks include continued weak economic conditions in Europe and Asia Pacific, ongoing capital discipline by resource industry customers despite elevated commodity prices, and unfavorable price realization due to post-sales merchandising programs impacting margins through the first half of 2025.
+    [CAT-EC11] The company faces manufacturing cost headwinds from higher depreciation due to capacity investments and potential absorption issues from lower production volumes.
+    [CAT-EC12] First quarter 2025 margins are expected to be pressured by lower than usual volume and unfavorable pricing.
+    [CAT-EC13] Strong demand for power generation equipment driven by data center growth related to cloud computing and AI is a major growth driver, with the company investing to expand large engine capacity by 125% over 2023 levels.
+    [CAT-EC14] Services growth remains resilient with over 1.5 million connected assets and digital tools driving customer value agreements.
+    [CAT-EC15] The energy transition is expected to support increased commodity demand over time, expanding total addressable market.
+    [CAT-EC16] Autonomous solutions continue to see strong customer acceptance in resource industries.
+
+======================================================================
+TICKER: COP
+======================================================================
+
+  Price & Returns:
+    [COP-PX]       Close: $95.11
+    [COP-RET20]    20D Return: -6.6%
+    [COP-RET60]    60D Return: -12.8%
+    [COP-RET120]   120D Return: -11.8%
+    [COP-RET252]   1Y Return: -12.2%
+
+  Volatility & Risk:
+    [COP-VOL20]    20D Vol (ann): 18.4%
+    [COP-VOL60]    60D Vol (ann): 26.1%
+    [COP-DVOL60]   60D Downside Vol: 18.8%
+    [COP-DD60]     60D Drawdown: -16.5%
+    [COP-MDD1Y]    1Y Max Drawdown: -27.3%
+    [COP-SHARPE]   60D Sharpe: -2.21
+    [COP-BETA]     1Y Beta: 0.26
+
+  Trend & Momentum:
+    [COP-SMA20]    SMA 20D: $95.64
+    [COP-SMA50]    SMA 50D: $100.66
+    [COP-SMA200]   SMA 200D: $107.16
+    [COP-MOM200]   200D Momentum: 0.89
+    [COP-MOM12_1]  12-1M Momentum: -4.0%
+    [COP-IDMOM]    Idiosyncratic Momentum 60D: -0.1372
+    [COP-TREND]    Trend Consistency: 0.43
+    [COP-RS60]     Relative Strength 60D: -14.3%
+    [COP-ESURP]    Earnings Surprise: +8.5%
+    [COP-ADVOL]    Avg Dollar Volume 20D: $734,210,233
+
+  Sentiment (from earnings call):
+    [COP-SENT]     Mean Sentiment: 0.4449
+    [COP-SVOL]     Sentiment Volatility: 0.3942
+
+  Filing Evidence (10-Q, filed 2024-10-31, fiscal period: 2024-Q3):
+    [COP-F1] Third-quarter production reached 1,917 MBOED, increasing 111 MBOED year-over-year driven by new wells across Lower 48, Alaska, Australia, Canada, China, Libya and Norway, plus the October 2023 Surmont acquisition.
+    [COP-F2] Lower 48 achieved record production with growth partially offset by normal field decline and planned turnarounds across global operations.
+    [COP-F3] Total average realized price decreased to $54.18 per BOE from $60.05 per BOE year-over-year, driven by lower commodity prices across all segments.
+    [COP-F4] Brent crude averaged $80.18 per barrel versus $86.76 prior year, while Henry Hub natural gas fell to $2.15 per MMBTU from $2.54.
+    [COP-F5] Lower 48 natural gas prices compressed to $0.18 per MCF due to pipeline capacity constraints and regional pricing pressures.
+    [COP-F6] Marathon Oil acquisition progressed with stockholder approval received in August and FTC Second Request issued in July, with closing expected in Q4 2024.
+    [COP-F7] Board increased ordinary dividend 34% to $0.78 per share and authorized additional share repurchase program.
+    [COP-F8] Company signed agreement to acquire additional working interests in Alaska units and elected Nelda Connors to Board in September.
+    [COP-F9] Oil prices declined due to slower global demand growth and higher non-OPEC Plus supplies.
+    [COP-F10] Natural gas pricing pressured by excess North American storage following mild winter and pipeline capacity constraints.
+    [COP-F11] Bitumen pricing impacted by widening WCS differentials and reduced heavy oil refinery demand on U.S.
+    [COP-F12] Gulf Coast.
+    [COP-F13] Fourth-quarter production guidance raised to 1.99-2.03 MMBOED with full-year guidance increased to 1.94-1.95 MMBOED.
+    [COP-F14] Marathon Oil acquisition expected to deliver synergies significantly exceeding initial targets within first year.
+    [COP-F15] Company plans substantial share repurchases in first year post-closing and asset disposition program targeting proceeds continues.
+    [COP-F16] Marathon Oil acquisition remains subject to regulatory clearances including FTC review following Second Request issuance, with potential for conditions or delays.
+    [COP-F17] Integration challenges could impact expected synergies realization and operational effectiveness.
+    [COP-F18] Commodity price volatility continues to affect profitability with exposure to global economic conditions and geopolitical tensions.
+
+  Earnings Call Evidence:
+    [COP-EC1] ConocoPhillips reported strong Q4 2024 results with $1.98 per share adjusted earnings and 2,183,000 boe/d production.
+    [COP-EC2] The company delivered 4% standalone production growth for the year, exceeding guidance, with strong performance across all regions.
+    [COP-EC3] The Marathon Oil acquisition closed in November, adding 126,000 boe/d and over 2 billion barrels of sub-$40 cost supply.
+    [COP-EC4] For 2025, the company expects production of 2.34-2.38 million boe/d with $12.9 billion capex, representing a 15% reduction in lower 48 spending while maintaining low single-digit growth through operational efficiencies and Marathon synergies.
+    [COP-EC5] Management remains confident in delivering low single-digit production growth while reducing capital spending through significant operational efficiencies and Marathon synergies.
+    [COP-EC6] The company expects 2025 to be peak year for long-cycle project spending at $3 billion, followed by steady project startups from 2026-2029 that will generate $3.5 billion incremental CFO and $6 billion additional annual free cash flow by completion.
+    [COP-EC7] ConocoPhillips targets returning $10 billion to shareholders in 2025 ($4 billion dividends, $6 billion buybacks) and expects to complete $2 billion in asset sales, with $600 million already under agreement.
+    [COP-EC8] Key risks include commodity price volatility, with recent WTI weakness potentially impacting cash flow generation and shareholder return capacity.
+    [COP-EC9] The company faces execution risks on major projects including Willow construction in Alaska during peak winter season and LNG project developments.
+    [COP-EC10] Potential trade policy impacts from proposed tariffs could affect Canadian operations, though the company believes its diversified portfolio provides some natural hedging.
+    [COP-EC11] Weather-related disruptions already impacted Q1 2025 production by 20,000 boe/d.
+    [COP-EC12] Primary growth drivers include operational efficiency gains delivering 15% more scope with similar activity levels, Marathon acquisition synergies of over $1 billion run-rate by end-2025, and major project developments including NFV (2026), Port Arthur LNG, NFS, and Willow (2029).
+    [COP-EC13] The company achieved 123% organic reserve replacement ratio and expects continued inventory optimization across combined Marathon assets.
+    [COP-EC14] Improved regulatory environment under new administration could accelerate permitting and federal land development, particularly benefiting Alaska operations and infrastructure buildout.
 
 ======================================================================
 TICKER: COST
@@ -193,7 +707,7 @@ TICKER: COST
     [COST-MOM12_1]  12-1M Momentum: +48.1%
     [COST-IDMOM]    Idiosyncratic Momentum 60D: 0.0182
     [COST-TREND]    Trend Consistency: 0.48
-    [COST-RS60]     Relative Strength 60D: -0.4%
+    [COST-RS60]     Relative Strength 60D: +2.4%
     [COST-ESURP]    Earnings Surprise: +6.3%
     [COST-ADVOL]    Avg Dollar Volume 20D: $2,052,002,643
 
@@ -242,6 +756,142 @@ TICKER: COST
     [COST-EC19] Kirkland Signature continues outpacing overall business growth with new product launches and localized production reducing costs while improving member value.
 
 ======================================================================
+TICKER: CVX
+======================================================================
+
+  Price & Returns:
+    [CVX-PX]       Close: $137.08
+    [CVX-RET20]    20D Return: -10.7%
+    [CVX-RET60]    60D Return: -2.9%
+    [CVX-RET120]   120D Return: -4.7%
+    [CVX-RET252]   1Y Return: +1.3%
+
+  Volatility & Risk:
+    [CVX-VOL20]    20D Vol (ann): 21.2%
+    [CVX-VOL60]    60D Vol (ann): 19.4%
+    [CVX-DVOL60]   60D Downside Vol: 14.7%
+    [CVX-DD60]     60D Drawdown: -13.2%
+    [CVX-MDD1Y]    1Y Max Drawdown: -15.3%
+    [CVX-SHARPE]   60D Sharpe: -0.64
+    [CVX-BETA]     1Y Beta: 0.42
+
+  Trend & Momentum:
+    [CVX-SMA20]    SMA 20D: $142.06
+    [CVX-SMA50]    SMA 50D: $145.01
+    [CVX-SMA200]   SMA 200D: $143.19
+    [CVX-MOM200]   200D Momentum: 0.96
+    [CVX-MOM12_1]  12-1M Momentum: +13.2%
+    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.0400
+    [CVX-TREND]    Trend Consistency: 0.52
+    [CVX-RS60]     Relative Strength 60D: -4.4%
+    [CVX-ESURP]    Earnings Surprise: +3.7%
+    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,356,662,728
+
+  Sentiment (from earnings call):
+    [CVX-SENT]     Mean Sentiment: 0.1311
+    [CVX-SVOL]     Sentiment Volatility: 0.5609
+
+  Filing Evidence (10-Q, filed 2024-11-07, fiscal period: 2024-Q3):
+    [CVX-F1] Third quarter 2024 earnings reached $4.4 billion as reported in August, reflecting continued operational performance across the integrated energy portfolio.
+    [CVX-F2] Asset retirement obligations decreased to $12.4 billion from $13.8 billion at year-start, driven by $1.8 billion in settlements during the nine-month period, partially offset by $441 million in accretion expense.
+    [CVX-F3] Asset retirement obligation liabilities were settled at $1.8 billion during the nine months, representing increased decommissioning activity compared to $1.1 billion in the prior year period.
+    [CVX-F4] Accretion expense on retirement obligations totaled $441 million, down from $457 million in the comparable period, reflecting the impact of settlements on the liability base.
+    [CVX-F5] The Federal Trade Commission completed its review of the Hess acquisition on September 30, 2024, accepting a consent agreement that prohibits John B.
+    [CVX-F6] Hess from joining Chevron's board following merger completion.
+    [CVX-F7] The HSR Act waiting period expired July 1, 2024, providing one year to close the transaction subject to Stabroek Block arbitration resolution.
+    [CVX-F8] The Hess merger faces continued uncertainty from ongoing arbitration with Exxon and CNOOC regarding right of first refusal provisions in the Stabroek Block operating agreement offshore Guyana.
+    [CVX-F9] The arbitration merits hearing is scheduled for May 2025 with a decision expected within three months thereafter.
+    [CVX-F10] Chevron and Hess remain committed to completing the merger following satisfactory resolution of the Stabroek Block arbitration proceedings.
+    [CVX-F11] The companies will take appropriate steps to maintain HSR clearance for merger closing, including filing additional HSR notifications if necessary before the one-year deadline.
+    [CVX-F12] Merger completion remains contingent on resolving the Stabroek Block joint operating agreement arbitration, with Chevron and Hess maintaining confidence that the right of first refusal does not apply to the transaction.
+    [CVX-F13] The arbitration timeline extends the merger uncertainty through mid-2025, with potential for additional regulatory filings to preserve antitrust clearance.
+
+  Earnings Call Evidence:
+    [CVX-EC1] Chevron reported Q4 2024 earnings of $3.2 billion ($1.84 per share) with adjusted earnings of $3.6 billion ($2.06 per share).
+    [CVX-EC2] The company achieved record global and US production, with Permian production growing 18% year-over-year.
+    [CVX-EC3] Key milestones included completing PDC Energy integration, achieving first oil at FGP at TCO, and starting up Anchor and Whale projects in the Gulf of Mexico.
+    [CVX-EC4] Chevron returned a record $27 billion to shareholders through dividends and buybacks, announced a 5% dividend increase marking 38 consecutive years of increases, and maintained strong balance sheet with 10% net debt ratio.
+    [CVX-EC5] Management expects industry-leading free cash flow growth with $10 billion additional annual free cash flow by 2026, driven by advantaged upstream assets.
+    [CVX-EC6] Production is expected to grow around 6% annually through 2026, with growth weighted toward second half of 2025 as key projects ramp up.
+    [CVX-EC7] The company plans to moderate Permian growth and CapEx to drive predictable free cash flow generation, targeting 1 million boe/d in 2025.
+    [CVX-EC8] Organic CapEx is expected to remain within $14-16 billion guidance range, with affiliate CapEx trending down as major projects complete.
+    [CVX-EC9] The company faces margin pressure in downstream and chemicals businesses due to softer refining margins and timing effects.
+    [CVX-EC10] Geopolitical risks remain in key operating regions including Kazakhstan (TCO concession extension negotiations), Eastern Mediterranean, and Venezuela (sanctions compliance).
+    [CVX-EC11] Execution risks exist with major project ramp-ups at FGP, Anchor, and Whale, requiring safe and reliable operations in challenging technical environments.
+    [CVX-EC12] Policy and regulatory changes could impact operations, particularly regarding permitting and environmental regulations.
+    [CVX-EC13] Major production growth drivers include FGP at TCO reaching 1 million boe/d capacity within three months, Gulf of Mexico projects (Anchor, Whale ramping, Ballymore mid-2025), and Permian reaching 1 million boe/d in 2025.
+    [CVX-EC14] The company is targeting $2-3 billion in structural cost reductions by end-2026 through asset sales, technology deployment, and operational efficiency improvements.
+    [CVX-EC15] New energy initiatives include renewable diesel expansion, ACES hydrogen project startup, and new behind-the-meter power business targeting data center demand with seven GE Vernova turbines secured for delivery starting late 2026.
+
+======================================================================
+TICKER: DAL
+======================================================================
+
+  Price & Returns:
+    [DAL-PX]       Close: $59.62
+    [DAL-RET20]    20D Return: -4.6%
+    [DAL-RET60]    60D Return: +23.1%
+    [DAL-RET120]   120D Return: +35.3%
+    [DAL-RET252]   1Y Return: +52.0%
+
+  Volatility & Risk:
+    [DAL-VOL20]    20D Vol (ann): 29.8%
+    [DAL-VOL60]    60D Vol (ann): 33.9%
+    [DAL-DVOL60]   60D Downside Vol: 15.5%
+    [DAL-DD60]     60D Drawdown: -10.5%
+    [DAL-MDD1Y]    1Y Max Drawdown: -29.7%
+    [DAL-SHARPE]   60D Sharpe: 2.58
+    [DAL-BETA]     1Y Beta: 1.27
+
+  Trend & Momentum:
+    [DAL-SMA20]    SMA 20D: $61.09
+    [DAL-SMA50]    SMA 50D: $60.27
+    [DAL-SMA200]   SMA 200D: $49.64
+    [DAL-MOM200]   200D Momentum: 1.20
+    [DAL-MOM12_1]  12-1M Momentum: +60.4%
+    [DAL-IDMOM]    Idiosyncratic Momentum 60D: 0.1693
+    [DAL-TREND]    Trend Consistency: 0.50
+    [DAL-RS60]     Relative Strength 60D: +21.6%
+    [DAL-ESURP]    Earnings Surprise: -1.3%
+    [DAL-ADVOL]    Avg Dollar Volume 20D: $419,387,171
+
+  Sentiment (from earnings call):
+    [DAL-SENT]     Mean Sentiment: 0.0248
+    [DAL-SVOL]     Sentiment Volatility: 0.6173
+
+  Filing Evidence (10-Q, filed 2024-07-11, fiscal period: 2024-Q2):
+    [DAL-F1] Total revenue increased 7% to $1.1 billion above prior year driven by 8% capacity expansion on strong operational performance.
+    [DAL-F2] Passenger revenue grew 5% from robust travel demand particularly for premium products, partially offset by yield compression.
+    [DAL-F3] Operating income declined $224 million to $2.3 billion despite revenue growth.
+    [DAL-F4] Total operating expense increased 10% or $1.3 billion primarily from higher employee costs due to wage increases, elevated fuel expense, and capacity-related cost expansion.
+    [DAL-F5] Cost per available seat mile increased 2% while non-fuel unit costs rose 0.6% driven by wage inflation.
+    [DAL-F6] Operating margin compression occurred as expense growth outpaced revenue expansion.
+    [DAL-F7] Board elected Maria Black and Willie CW Chiang as directors effective April 26, 2024.
+    [DAL-F8] Annual shareholder meeting on June 20, 2024 elected all twelve director nominees and approved advisory executive compensation vote.
+    [DAL-F9] Shareholders ratified Ernst & Young LLP as 2024 independent auditors while rejecting proposals on political contribution reporting and non-interference policy adoption.
+    [DAL-F10] No material changes from risk factors described in Form 10-K were disclosed during the quarter.
+    [DAL-F11] Management guidance and strategic direction were not specified in the available filing excerpts.
+    [DAL-F12] No new material contingencies, regulatory matters, or accounting standard changes were disclosed beyond standard risk factors previously reported.
+
+  Earnings Call Evidence:
+    [DAL-EC1] Delta reported record Q4 2024 results with $14.4B revenue (+5.7% YoY) and $1.85 EPS at the top end of guidance.
+    [DAL-EC2] Full-year revenue reached $57B (+4% YoY) with $6.16 EPS and industry-leading 13% ROIC.
+    [DAL-EC3] The company achieved investment-grade status across all three credit agencies and generated $3.4B in free cash flow.
+    [DAL-EC4] Delta announced $1.4B in profit sharing for employees and expects 2025 to be the best financial year in company history with EPS guidance above $7.35 (+20% YoY).
+    [DAL-EC5] Management expects strong momentum continuing into 2025 with Q1 revenue growth of 7-9% and margin expansion of 200+ basis points.
+    [DAL-EC6] Full-year guidance includes EPS >$7.35, free cash flow >$4B, and leverage ratio declining to 2x or less.
+    [DAL-EC7] The company plans 3-4% capacity growth focused 85% in premium cabins and 80% in profitable core hubs.
+    [DAL-EC8] Management highlighted improving industry dynamics with competitors removing unprofitable capacity, creating a more constructive pricing environment.
+    [DAL-EC9] Key risks include potential impact from LA wildfires on demand, though management expects this to be temporary.
+    [DAL-EC10] The company faces ongoing maintenance cost normalization challenges and supply chain constraints in the industry.
+    [DAL-EC11] Competitive capacity additions, particularly in Boston, could pressure yields.
+    [DAL-EC12] International operations remain subject to currency fluctuations and geopolitical uncertainties, though current trends favor US point-of-sale travel to Europe.
+    [DAL-EC13] Premium revenue growth continues to outpace main cabin (+8% YoY) with strong corporate demand (+10% YoY in Q4).
+    [DAL-EC14] American Express co-brand partnership generated $7.4B annually with high single-digit growth expected in 2025.
+    [DAL-EC15] Transatlantic performance exceeded expectations due to favorable USD/EUR exchange rates and extended travel seasons.
+    [DAL-EC16] New partnerships with Uber and YouTube enhance SkyMiles value proposition, while operational excellence maintains industry-leading completion factors and on-time performance.
+
+======================================================================
 TICKER: DE
 ======================================================================
 
@@ -269,7 +919,7 @@ TICKER: DE
     [DE-MOM12_1]  12-1M Momentum: +17.8%
     [DE-IDMOM]    Idiosyncratic Momentum 60D: 0.0249
     [DE-TREND]    Trend Consistency: 0.48
-    [DE-RS60]     Relative Strength 60D: +0.0%
+    [DE-RS60]     Relative Strength 60D: +2.7%
     [DE-ESURP]    Earnings Surprise: +15.8%
     [DE-ADVOL]    Avg Dollar Volume 20D: $486,455,301
 
@@ -319,6 +969,157 @@ TICKER: DE
     [DE-EC15] Strong dealer network health and targeted pool fund deployment support used equipment inventory reduction while maintaining market position.
 
 ======================================================================
+TICKER: DIS
+======================================================================
+
+  Price & Returns:
+    [DIS-PX]       Close: $110.13
+    [DIS-RET20]    20D Return: -4.5%
+    [DIS-RET60]    60D Return: +17.5%
+    [DIS-RET120]   120D Return: +15.8%
+    [DIS-RET252]   1Y Return: +24.4%
+
+  Volatility & Risk:
+    [DIS-VOL20]    20D Vol (ann): 12.4%
+    [DIS-VOL60]    60D Vol (ann): 22.9%
+    [DIS-DVOL60]   60D Downside Vol: 10.1%
+    [DIS-DD60]     60D Drawdown: -5.4%
+    [DIS-MDD1Y]    1Y Max Drawdown: -30.0%
+    [DIS-SHARPE]   60D Sharpe: 2.97
+    [DIS-BETA]     1Y Beta: 0.53
+
+  Trend & Momentum:
+    [DIS-SMA20]    SMA 20D: $111.98
+    [DIS-SMA50]    SMA 50D: $106.47
+    [DIS-SMA200]   SMA 200D: $100.54
+    [DIS-MOM200]   200D Momentum: 1.10
+    [DIS-MOM12_1]  12-1M Momentum: +30.7%
+    [DIS-IDMOM]    Idiosyncratic Momentum 60D: 0.1560
+    [DIS-TREND]    Trend Consistency: 0.53
+    [DIS-RS60]     Relative Strength 60D: +16.0%
+    [DIS-ESURP]    Earnings Surprise: +2.7%
+    [DIS-ADVOL]    Avg Dollar Volume 20D: $891,599,122
+
+  Sentiment (from earnings call):
+    [DIS-SENT]     Mean Sentiment: 0.2341
+    [DIS-SVOL]     Sentiment Volatility: 0.4897
+
+  Filing Evidence (10-K, filed 2024-11-14, fiscal period: FY2024 [FYE: Sep 30]):
+    [DIS-F1] Total revenues increased 3% to $91.4 billion driven by Direct-to-Consumer subscription revenue growth and higher theme park attendance.
+    [DIS-F2] Disney+ reached 153.4 million global subscribers with domestic growth to 86.7 million through multi-product offerings expansion.
+    [DIS-F3] The company consolidated entertainment businesses into a single reporting unit due to operational interdependencies across streaming, linear networks, and content licensing.
+    [DIS-F4] Cost of services decreased 1% to $52.5 billion as lower non-sports programming costs offset higher sports rights and parks inflation pressures.
+    [DIS-F5] Labor costs increased significantly following new collective bargaining agreements with entertainment guilds and theme park unions.
+    [DIS-F6] Depreciation declined 7% from reduced domestic parks depreciation and lower acquisition amortization.
+    [DIS-F7] Disney paid $8.6 billion to acquire Hulu's redeemable noncontrolling interest and resumed dividend payments after suspension.
+    [DIS-F8] The company recorded $3.6 billion in restructuring and impairment charges including Star India assets and goodwill impairments at entertainment linear networks.
+    [DIS-F9] Share repurchases totaled $3.0 billion with $3 billion targeted for fiscal 2025, and the company made a $1.5 billion investment in Epic Games.
+    [DIS-F10] Foreign exchange impacts reduced revenues by approximately 1 percentage point with sustained dollar strength affecting international operations.
+    [DIS-F11] Inflationary pressures elevated operational costs particularly for labor and goods with expectations for continued elevation.
+    [DIS-F12] The company maintains exposure to advertising market volatility with domestic linear advertising declining, while economic downturns reduce consumer discretionary spending on entertainment and travel experiences.
+    [DIS-F13] Management projects fiscal 2025 content spending of approximately $24 billion excluding Star India and capital expenditures increasing to $8 billion for cruise fleet expansion and new theme park offerings.
+    [DIS-F14] The Star India joint venture transaction closes November 2024 with Disney retaining 37% ownership and transitioning to equity method accounting.
+    [DIS-F15] Strategic focus remains on streaming profitability through pricing optimization while managing linear network subscriber declines.
+    [DIS-F16] The entertainment reporting unit goodwill remains vulnerable to impairment with fair value exceeding carrying amount by less than 10% and sensitivity to discount rate increases.
+    [DIS-F17] Cybersecurity risks escalated with over a terabyte of data improperly exfiltrated from company systems in fiscal 2024.
+    [DIS-F18] Content revenue projections face ongoing reassessment with impairments recognized from strategic curation changes, while intellectual property protection faces challenges from AI-generated content creation.
+
+  Earnings Call Evidence:
+    [DIS-EC1] Disney reported strong Q4 2024 results with 174 million Disney+ Core and Hulu subscribers, driven by successful content including Inside Out 2 and Deadpool & Wolverine.
+    [DIS-EC2] The company provided multi-year guidance expecting high single-digit adjusted EPS growth in fiscal 2025, accelerating to double-digit growth in 2026-2027.
+    [DIS-EC3] Streaming business achieved profitability with plans to launch ESPN flagship DTC offering in fall 2025, while Experiences segment faced some softness but expects gradual consumer strengthening.
+    [DIS-EC4] Management expressed confidence in sustained growth beyond 2024, citing strong content pipeline including Captain America, Zootopia 2, and Avatar sequels for 2025-2026.
+    [DIS-EC5] They expect streaming margins to reach double-digits by 2026 through subscriber growth, pricing increases, and improved technology features.
+    [DIS-EC6] The company plans selective international content investment and anticipates gradual consumer strengthening in Parks, with positive bookings for the back half of 2025.
+    [DIS-EC7] Key risks include continued linear network decline, consumer softness in domestic and international parks (particularly Shanghai), and execution challenges with ESPN flagship launch.
+    [DIS-EC8] The company faces hurricane impacts and pre-launch costs affecting Q1 2025 Experiences performance.
+    [DIS-EC9] International expansion requires careful content investment timing, and password sharing initiatives are still rolling out globally.
+    [DIS-EC10] Primary growth drivers include streaming subscriber additions and pricing optimization, with 60% of new US subscribers choosing ad-supported tiers.
+    [DIS-EC11] Strong film performance creates multiplier effects across all business segments, while Parks expansion and cruise ship additions (Disney Treasure launch) support Experiences growth.
+    [DIS-EC12] Technology improvements including AI-driven personalization and integrated ad tech stack enhance monetization capabilities across platforms.
+
+======================================================================
+TICKER: GOOG
+======================================================================
+
+  Price & Returns:
+    [GOOG-PX]       Close: $189.70
+    [GOOG-RET20]    20D Return: +10.2%
+    [GOOG-RET60]    60D Return: +13.1%
+    [GOOG-RET120]   120D Return: +1.9%
+    [GOOG-RET252]   1Y Return: +35.6%
+
+  Volatility & Risk:
+    [GOOG-VOL20]    20D Vol (ann): 35.7%
+    [GOOG-VOL60]    60D Vol (ann): 29.5%
+    [GOOG-DVOL60]   60D Downside Vol: 16.5%
+    [GOOG-DD60]     60D Drawdown: -9.1%
+    [GOOG-MDD1Y]    1Y Max Drawdown: -22.3%
+    [GOOG-SHARPE]   60D Sharpe: 1.75
+    [GOOG-BETA]     1Y Beta: 1.24
+
+  Trend & Momentum:
+    [GOOG-SMA20]    SMA 20D: $188.29
+    [GOOG-SMA50]    SMA 50D: $178.65
+    [GOOG-SMA200]   SMA 200D: $169.97
+    [GOOG-MOM200]   200D Momentum: 1.12
+    [GOOG-MOM12_1]  12-1M Momentum: +21.3%
+    [GOOG-IDMOM]    Idiosyncratic Momentum 60D: 0.0922
+    [GOOG-TREND]    Trend Consistency: 0.57
+    [GOOG-RS60]     Relative Strength 60D: +11.6%
+    [GOOG-ESURP]    Earnings Surprise: +14.6%
+    [GOOG-ADVOL]    Avg Dollar Volume 20D: $4,073,624,109
+
+  Sentiment (from earnings call):
+    [GOOG-SENT]     Mean Sentiment: -0.0999
+    [GOOG-SVOL]     Sentiment Volatility: 0.4886
+
+  Filing Evidence (10-Q, filed 2024-07-24, fiscal period: 2024-Q2):
+    [GOOG-F1] Total revenues increased 14% to $84.7 billion in Q2 2024, driven by Google Search acceleration and Google Cloud growing 29% from AI-driven infrastructure demand.
+    [GOOG-F2] YouTube ads expanded while Google Network declined, with Services revenues growing 12%.
+    [GOOG-F3] Operating cash flow rose to $55.5 billion for the six-month period reflecting increased customer receipts partially offset by higher tax payments.
+    [GOOG-F4] The company maintained $100.7 billion in cash and short-term marketable securities.
+    [GOOG-F5] Cost of revenues increased 11% with TAC rate decreasing from 21.6% to 20.7% due to revenue mix shift toward Search properties.
+    [GOOG-F6] Operating expenses increased 5% primarily from compensation and depreciation increases.
+    [GOOG-F7] Capital expenditures surged to $25.2 billion for the six months, nearly doubling from prior year for AI-supporting servers, network equipment, and data center construction.
+    [GOOG-F8] Operating margin expanded as revenue growth outpaced cost increases.
+    [GOOG-F9] Board declared inaugural quarterly dividend of $0.20 per share and authorized additional $70 billion share repurchase program.
+    [GOOG-F10] The company repurchased $31.7 billion of shares during the six-month period, retiring 203 million shares.
+    [GOOG-F11] Anat Ashkenazi was appointed Chief Financial Officer effective July 31, 2024.
+    [GOOG-F12] Consolidated AI model development teams from Google Research into Google DeepMind under Alphabet-level activities beginning Q2 2024.
+    [GOOG-F13] Foreign exchange headwinds continued with revenue growth unfavorably affected by U.S. dollar strengthening against multiple currencies including Turkish lira, Japanese yen, and Argentine peso.
+    [GOOG-F14] The company faces exposure to OECD minimum global tax rate implementation of 15% across multiple jurisdictions, with some countries already enacting legislation effective January 2024.
+    [GOOG-F15] Digital services tax from Canada's retroactive law implementation increased cost structure.
+    [GOOG-F16] Management expects continued increases in technical infrastructure investment relative to 2023 levels to support AI products and services growth.
+    [GOOG-F17] The company intends to pay quarterly dividends subject to Board approval and maintains $74.9 billion available for future share repurchases.
+    [GOOG-F18] Revenue backlog reached $78.8 billion with approximately half expected to be recognized over the next 24 months.
+    [GOOG-F19] Multiple ongoing antitrust proceedings including DOJ Search advertising trial decision expected in 2024, advertising technology trial scheduled September 2024, and state Attorneys General trial scheduled March 2025.
+    [GOOG-F20] European Commission competition fines totaling approximately $9.5 billion remain under appeal with bank guarantees provided.
+    [GOOG-F21] The company holds $7.7 billion in long-term uncertain tax position liabilities and faces ongoing regulatory discussions regarding advertising practices.
+
+  Earnings Call Evidence:
+    [GOOG-EC1] Alphabet delivered strong Q4 2024 results with revenue of $96.5 billion (up 12% YoY) and full-year revenue of $350 billion (up 14% YoY).
+    [GOOG-EC2] Google Services grew 10% to $84.1 billion, driven by Search (up 13%) and YouTube ads (up 14%).
+    [GOOG-EC3] Google Cloud accelerated to 30% growth reaching $12 billion quarterly revenue.
+    [GOOG-EC4] The company achieved its goal of $110 billion combined annual run rate for YouTube and Cloud.
+    [GOOG-EC5] Operating margin expanded significantly to 32%, and the company returned nearly $70 billion to shareholders in 2024.
+    [GOOG-EC6] AI innovations including Gemini 2.0 and AI Overviews are driving user engagement and developer adoption.
+    [GOOG-EC7] Management expects 2025 to be a significant year for Search innovation with continued AI integration and agentic capabilities.
+    [GOOG-EC8] They plan to invest approximately $75 billion in CapEx for 2025, primarily for technical infrastructure including servers and data centers.
+    [GOOG-EC9] The company will focus on headcount growth in key areas like AI and Cloud while driving operational efficiencies.
+    [GOOG-EC10] Management sees strong demand for AI products exceeding current capacity, requiring continued infrastructure investment throughout the year to meet customer needs.
+    [GOOG-EC11] Q1 2025 faces headwinds from foreign exchange rates due to dollar strengthening and one less day of revenue compared to leap year Q1 2024.
+    [GOOG-EC12] The company will lap strong financial services vertical performance from 2024, particularly in insurance.
+    [GOOG-EC13] Cloud revenue growth may show variability depending on timing of new capacity deployment.
+    [GOOG-EC14] Increasing CapEx investments will create pressure on P&L through higher depreciation, with depreciation growth expected to accelerate in 2025.
+    [GOOG-EC15] The company currently has more AI product demand than available capacity.
+    [GOOG-EC16] AI infrastructure and model capabilities are driving growth across all segments, with Gemini 2.0 powering enhanced user experiences and developer adoption doubling to 4.4 million.
+    [GOOG-EC17] Search benefits from AI Overviews expansion to 100+ countries and Circle to Search on 200+ million devices.
+    [GOOG-EC18] Cloud growth is fueled by AI infrastructure demand, generative AI solutions, and strategic enterprise deals over $1 billion.
+    [GOOG-EC19] YouTube maintains streaming leadership with record market share, strong Shorts monetization progress, and successful podcast integration.
+    [GOOG-EC20] The full-stack AI approach provides competitive advantages in cost, performance, and latency optimization.
+
+======================================================================
 TICKER: GS
 ======================================================================
 
@@ -346,7 +1147,7 @@ TICKER: GS
     [GS-MOM12_1]  12-1M Momentum: +60.8%
     [GS-IDMOM]    Idiosyncratic Momentum 60D: 0.1056
     [GS-TREND]    Trend Consistency: 0.52
-    [GS-RS60]     Relative Strength 60D: +12.0%
+    [GS-RS60]     Relative Strength 60D: +14.7%
     [GS-ESURP]    Earnings Surprise: +21.4%
     [GS-ADVOL]    Avg Dollar Volume 20D: $1,048,298,703
 
@@ -392,6 +1193,371 @@ TICKER: GS
     [GS-EC17] Operating efficiency initiatives through AI, automation, and organizational optimization are expected to create capacity for reinvestment while improving margins.
 
 ======================================================================
+TICKER: HD
+======================================================================
+
+  Price & Returns:
+    [HD-PX]       Close: $379.53
+    [HD-RET20]    20D Return: -8.9%
+    [HD-RET60]    60D Return: -4.2%
+    [HD-RET120]   120D Return: +11.2%
+    [HD-RET252]   1Y Return: +15.0%
+
+  Volatility & Risk:
+    [HD-VOL20]    20D Vol (ann): 20.0%
+    [HD-VOL60]    60D Vol (ann): 20.9%
+    [HD-DVOL60]   60D Downside Vol: 13.9%
+    [HD-DD60]     60D Drawdown: -10.7%
+    [HD-MDD1Y]    1Y Max Drawdown: -17.7%
+    [HD-SHARPE]   60D Sharpe: -0.87
+    [HD-BETA]     1Y Beta: 0.78
+
+  Trend & Momentum:
+    [HD-SMA20]    SMA 20D: $398.34
+    [HD-SMA50]    SMA 50D: $396.29
+    [HD-SMA200]   SMA 200D: $359.70
+    [HD-MOM200]   200D Momentum: 1.06
+    [HD-MOM12_1]  12-1M Momentum: +26.9%
+    [HD-IDMOM]    Idiosyncratic Momentum 60D: -0.0578
+    [HD-TREND]    Trend Consistency: 0.45
+    [HD-RS60]     Relative Strength 60D: -5.8%
+    [HD-ESURP]    Earnings Surprise: +0.3%
+    [HD-ADVOL]    Avg Dollar Volume 20D: $1,249,783,826
+
+  Sentiment (from earnings call):
+    [HD-SENT]     Mean Sentiment: 0.1179
+    [HD-SVOL]     Sentiment Volatility: 0.5794
+
+  Filing Evidence (10-Q, filed 2024-11-19, fiscal period: 2024-Q4 [FYE: Jan 31]):
+    [HD-F1] Net sales reached $40.2 billion in Q3 2024, increasing 6.6% driven primarily by the SRS acquisition contributing $2.9 billion, partially offset by negative comparable sales of 1.3% reflecting decreased customer transactions and average ticket.
+    [HD-F2] Online sales represented 14.0% of quarterly sales, growing 4.0% year-over-year, with Power, Outdoor Garden, and Building Materials departments posting positive comparable sales while other merchandising categories declined.
+    [HD-F3] Gross margin compressed to 33.4% from 33.8% primarily reflecting SRS inclusion partially offset by lower shrink in the Primary segment.
+    [HD-F4] SG&A expenses increased to 17.9% of sales from 17.6%, driven by higher payroll costs and deleverage from negative comparable sales, while depreciation and amortization rose to 2.0% from 1.8% due to SRS-related intangible amortization.
+    [HD-F5] Completed $17.7 billion SRS acquisition on June 18, 2024, funded through commercial paper borrowings and long-term debt issuance.
+    [HD-F6] Increased quarterly dividend 7.7% to $2.25 per share in February 2024, paying $6.7 billion in dividends during nine months.
+    [HD-F7] Paused share repurchases in March 2024 ahead of SRS acquisition, completing $649 million in buybacks prior to suspension.
+    [HD-F8] Heightened macroeconomic uncertainties and persistent high interest rate environment continue pressuring home improvement demand, contributing to decreased comparable customer transactions and average ticket.
+    [HD-F9] Stronger U.S. dollar negatively impacted net sales by $131 million in Q3.
+    [HD-F10] Hurricane-related demand provided incremental sales benefit during the third quarter.
+    [HD-F11] Capital expenditure guidance maintained at $3.0-3.5 billion for fiscal 2024, approximately 2% of net sales, focused on new stores and customer experience improvements including technology investments.
+    [HD-F12] Management does not plan to resume share repurchases until excess cash is used to reduce outstanding debt following SRS acquisition financing.
+    [HD-F13] ROIC declined to 31.5% from 38.7% due to higher average debt and equity from SRS acquisition financing along with lower operating income.
+    [HD-F14] Outstanding commercial paper borrowings of $1.3 billion at quarter-end with weighted average rate of 4.8%, supported by revolving credit facilities.
+    [HD-F15] Business combination accounting for SRS remains subject to measurement period adjustments.
+
+  Earnings Call Evidence:
+    [HD-EC1] Home Depot reported Q4 2024 sales of $39.7 billion, up 14% year-over-year, with total fiscal 2024 sales of $159.5 billion, up 4.5%.
+    [HD-EC2] Comparable sales increased 0.8% in Q4 after declining 1.8% for the full year.
+    [HD-EC3] The company exceeded expectations with broad-based engagement across geographies, with 15 of 19 U.S. regions delivering positive comps.
+    [HD-EC4] SRS acquisition contributed $6.4 billion in sales over seven months of ownership and is performing ahead of expectations with mid-single digit organic growth expected in 2025.
+    [HD-EC5] Management expects fiscal 2025 total sales growth of approximately 2.8% with comparable sales growth of about 1%, driven by continued underlying business momentum from H2 2024.
+    [HD-EC6] They anticipate the home improvement market to remain flat to slightly positive, with no meaningful changes expected in the macroeconomic environment or interest rate environment.
+    [HD-EC7] Adjusted diluted earnings per share are expected to decline approximately 2% compared to 2024, with operating margin guidance of 13.4% (adjusted) reflecting natural deleverage and continued strategic investments.
+    [HD-EC8] The company faces continued pressure on larger remodeling projects due to the higher interest rate environment, which impacts financing-dependent home improvement spending.
+    [HD-EC9] Potential tariff implementations could affect sourcing costs, though management believes their diversification efforts and vendor relationships position them well to navigate such challenges.
+    [HD-EC10] Weather impacts and macroeconomic uncertainties remain headwinds, with housing turnover still at 40-year lows affecting overall home improvement demand.
+    [HD-EC11] Strategic investments in interconnected shopping experience are delivering results, with fastest delivery speeds in company history driving increased customer engagement and spending.
+    [HD-EC12] Pro ecosystem investments have generated over $1 billion in incremental annualized sales across 17 markets, with all pro cohorts showing positive performance.
+    [HD-EC13] The SRS acquisition is exceeding expectations and providing cross-selling opportunities, while new store openings (13 planned for 2025) continue outperforming expectations and contributing to market share gains.
+
+======================================================================
+TICKER: JNJ
+======================================================================
+
+  Price & Returns:
+    [JNJ-PX]       Close: $139.58
+    [JNJ-RET20]    20D Return: -6.6%
+    [JNJ-RET60]    60D Return: -9.0%
+    [JNJ-RET120]   120D Return: -1.9%
+    [JNJ-RET252]   1Y Return: -4.8%
+
+  Volatility & Risk:
+    [JNJ-VOL20]    20D Vol (ann): 15.2%
+    [JNJ-VOL60]    60D Vol (ann): 13.8%
+    [JNJ-DVOL60]   60D Downside Vol: 9.1%
+    [JNJ-DD60]     60D Drawdown: -12.9%
+    [JNJ-MDD1Y]    1Y Max Drawdown: -13.7%
+    [JNJ-SHARPE]   60D Sharpe: -2.88
+    [JNJ-BETA]     1Y Beta: -0.05
+
+  Trend & Momentum:
+    [JNJ-SMA20]    SMA 20D: $141.53
+    [JNJ-SMA50]    SMA 50D: $147.08
+    [JNJ-SMA200]   SMA 200D: $147.16
+    [JNJ-MOM200]   200D Momentum: 0.95
+    [JNJ-MOM12_1]  12-1M Momentum: +2.0%
+    [JNJ-IDMOM]    Idiosyncratic Momentum 60D: -0.0959
+    [JNJ-TREND]    Trend Consistency: 0.47
+    [JNJ-RS60]     Relative Strength 60D: -10.6%
+    [JNJ-ESURP]    Earnings Surprise: +9.5%
+    [JNJ-ADVOL]    Avg Dollar Volume 20D: $1,209,742,305
+
+  Sentiment (from earnings call):
+    [JNJ-SENT]     Mean Sentiment: -0.2167
+    [JNJ-SVOL]     Sentiment Volatility: 0.4928
+
+  Filing Evidence (10-Q, filed 2024-07-25, fiscal period: 2024-Q2):
+    [JNJ-F1] Total revenue increased 4.3% to $22.4 billion in Q2 2024, with six-month revenue reaching $43.8 billion up 3.3% driven by 5.2% operational growth offset by 1.9% negative currency impact.
+    [JNJ-F2] Innovative Medicine grew from oncology performance with DARZALEX and CARVYKTI expansion, while MedTech growth reflected cardiovascular segment expansion including Shockwave acquisition contribution.
+    [JNJ-F3] Worldwide income before tax decreased to $5.7 billion from $6.3 billion with margin compression to 25.6% from 29.3%.
+    [JNJ-F4] Cost of products sold increased to 30.6% of sales from 30.0% reflecting unfavorable product mix and macroeconomic pressures, compressing gross margin to 69.4% from 70.0%.
+    [JNJ-F5] Research and development expenses decreased to 15.3% from 17.2% driven by lower milestone payments and portfolio prioritization, while selling and administrative expenses remained stable at 25.3% of sales.
+    [JNJ-F6] Operating expenses included Shockwave acquisition and integration costs plus in-process R&D impairment.
+    [JNJ-F7] Completed Shockwave Medical acquisition for $13.1 billion in May 2024 funded through senior unsecured notes, plus additional acquisitions totaling $2.05 billion.
+    [JNJ-F8] Recorded $3.0 billion incremental talc litigation charge bringing total reserve to $10.6 billion present value as part of proposed comprehensive settlement covering 99.75% of pending lawsuits.
+    [JNJ-F9] Completed debt-to-equity exchange of remaining Kenvue stake and maintained quarterly dividend at $1.24 per share with $1.6 billion in share repurchases.
+    [JNJ-F10] Foreign currency translation created 1.9% negative impact on worldwide sales with international operations experiencing negative currency effects.
+    [JNJ-F11] China volume-based procurement pressured multiple MedTech franchises.
+    [JNJ-F12] Interest rate exposure managed through notional swaps with weighted average debt cost of 3.28% and derivative positions totaling $85.5 billion notional across foreign exchange and cross-currency instruments.
+    [JNJ-F13] Management expects no COVID-19 vaccine revenue for remainder of fiscal 2024 and STELARA biosimilar competition beginning January 2025 following litigation settlements.
+    [JNJ-F14] Pursuing comprehensive talc litigation resolution through proposed settlement with three-month solicitation period initiated.
+    [JNJ-F15] Continuing integration of recent acquisitions including Shockwave's intravascular lithotripsy technology and bispecific antibody platforms, with MedTech orthopaedics restructuring program completing by end of fiscal 2025.
+    [JNJ-F16] Talc litigation remains unresolved with approximately 62,370 plaintiffs despite proposed settlement framework, while opioid litigation continues with remaining cases and outstanding payments.
+    [JNJ-F17] Multiple patent infringement cases pending across key products with various generic manufacturers.
+    [JNJ-F18] Government investigations active including DOJ Civil Investigative Demands regarding intraocular lenses, FTC inquiries into contracting practices, and Foreign Corrupt Practices Act investigations related to Brazilian medical device operations.
+
+  Earnings Call Evidence:
+    [JNJ-EC1] Johnson & Johnson reported strong Q4 2024 results with worldwide sales of $22.5 billion, up 6.7% operationally.
+    [JNJ-EC2] Full year 2024 sales reached $88.8 billion with 5.9% growth, achieving their $57 billion target a year early.
+    [JNJ-EC3] Innovative Medicine delivered $14.3 billion in Q4 with 10 key brands showing double-digit growth, while MedTech generated $8.2 billion with 7.6% growth.
+    [JNJ-EC4] The company completed significant M&A activity including Shockwave, V-Wave, and announced the Intra-Cellular Therapies acquisition, representing over $32 billion in strategic investments.
+    [JNJ-EC5] For 2025, J&J expects operational sales growth of 2.5-3.5% (midpoint 3.0%) despite headwinds from STELARA biosimilar competition and Part D redesign impacts of approximately $2 billion.
+    [JNJ-EC6] The company projects strong adjusted operational EPS growth of 8.7% at midpoint, demonstrating resilience through diversification.
+    [JNJ-EC7] Management anticipates higher growth in the second half of 2025 versus first half, with new product launches including TREMFYA in IBD and RYBREVANT plus LAZCLUZE in lung cancer driving momentum.
+    [JNJ-EC8] Key risks include accelerating STELARA biosimilar erosion throughout 2025, temporary pause of VARIPULSE procedures in the US due to safety investigation, and continued macroeconomic pressures in China affecting MedTech performance.
+    [JNJ-EC9] The company faces competitive pressures in US electrophysiology from rival PFA technologies and potential revenue recognition challenges.
+    [JNJ-EC10] Currency headwinds are expected to negatively impact reported results by approximately $1.7 billion or 2.0%.
+    [JNJ-EC11] Growth will be driven by the multiple myeloma franchise with DARZALEX exceeding $3 billion quarterly sales, CARVYKTI approaching $1 billion annually, and bispecifics TECVAYLI and TALVEY gaining traction.
+    [JNJ-EC12] SPRAVATO surpassed $1 billion in annual sales with 45% growth and received monotherapy approval for treatment-resistant depression.
+    [JNJ-EC13] MedTech growth supported by Abiomed's 13% growth, Shockwave integration contributing $258 million, and continued innovation across cardiovascular, vision, and surgical portfolios.
+
+======================================================================
+TICKER: JPM
+======================================================================
+
+  Price & Returns:
+    [JPM-PX]       Close: $233.69
+    [JPM-RET20]    20D Return: -2.7%
+    [JPM-RET60]    60D Return: +13.5%
+    [JPM-RET120]   120D Return: +16.3%
+    [JPM-RET252]   1Y Return: +44.3%
+
+  Volatility & Risk:
+    [JPM-VOL20]    20D Vol (ann): 18.7%
+    [JPM-VOL60]    60D Vol (ann): 29.8%
+    [JPM-DVOL60]   60D Downside Vol: 15.3%
+    [JPM-DD60]     60D Drawdown: -8.0%
+    [JPM-MDD1Y]    1Y Max Drawdown: -10.1%
+    [JPM-SHARPE]   60D Sharpe: 1.78
+    [JPM-BETA]     1Y Beta: 0.79
+
+  Trend & Momentum:
+    [JPM-SMA20]    SMA 20D: $234.73
+    [JPM-SMA50]    SMA 50D: $231.79
+    [JPM-SMA200]   SMA 200D: $205.73
+    [JPM-MOM200]   200D Momentum: 1.14
+    [JPM-MOM12_1]  12-1M Momentum: +50.3%
+    [JPM-IDMOM]    Idiosyncratic Momentum 60D: 0.0943
+    [JPM-TREND]    Trend Consistency: 0.52
+    [JPM-RS60]     Relative Strength 60D: +12.0%
+    [JPM-ESURP]    Earnings Surprise: +9.5%
+    [JPM-ADVOL]    Avg Dollar Volume 20D: $2,013,825,410
+
+  Sentiment (from earnings call):
+    [JPM-SENT]     Mean Sentiment: 0.4936
+    [JPM-SVOL]     Sentiment Volatility: 0.3687
+
+  Filing Evidence (10-Q, filed 2024-10-30, fiscal period: 2024-Q3):
+    [JPM-F1] No specific revenue or operating performance data provided in the filing excerpts.
+    [JPM-F2] The company held an investor presentation for second quarter 2024 earnings on July 12, 2024, but detailed financial metrics were not disclosed in these regulatory filings.
+    [JPM-F3] No cost structure or margin information disclosed in the provided filing excerpts.
+    [JPM-F4] Operating expense trends and gross margin dynamics were not addressed in these regulatory documents.
+    [JPM-F5] JPMorgan Chase completed a $9 billion debt issuance on July 22, 2024, comprising floating rate notes and fixed-to-floating rate notes with maturities ranging from 2028 to 2035.
+    [JPM-F6] The company redeemed all outstanding Series FF preferred stock depositary shares on August 1, 2024, and announced the October 1, 2024 redemption of all Series X preferred stock depositary shares.
+    [JPM-F7] The company filed a prospectus supplement on September 27, 2024 for its dividend reinvestment plan.
+    [JPM-F8] No new or materially escalated macro risk exposures were disclosed in the provided filing excerpts.
+    [JPM-F9] The company referenced existing risk factors from its 2023 Form 10-K without identifying specific changes or new exposures for the third quarter period.
+    [JPM-F10] No specific management guidance, strategic direction changes, or capital allocation commitments were disclosed in the provided filing excerpts.
+    [JPM-F11] Forward-looking statements were limited to standard legal disclaimers referencing potential differences between actual and expected results.
+    [JPM-F12] No material unresolved contingencies, pending regulatory matters, or accounting standard changes were specifically disclosed in the provided filing excerpts.
+    [JPM-F13] The company maintained standard forward-looking statement disclaimers regarding potential risks and uncertainties affecting future performance.
+
+  Earnings Call Evidence:
+    [JPM-EC1] JPMorgan Chase reported strong Q4 2024 results with net income of $14 billion and EPS of $4.81 on revenue of $43.7 billion, achieving a 21% ROTCE.
+    [JPM-EC2] For the full year, the firm delivered record revenue and net income with an ROTCE of 20%.
+    [JPM-EC3] The CET1 ratio increased to 15.7%, reflecting substantial excess capital generation.
+    [JPM-EC4] Management provided 2025 guidance of approximately $90 billion for NII ex-markets and $95 billion for expenses, with expectations for NII to trough mid-year before returning to growth.
+    [JPM-EC5] Management expects 2025 NII ex-markets of approximately $90 billion with a potential trough in mid-year followed by growth in the second half.
+    [JPM-EC6] Card loan growth is expected to continue but decelerate from the 12% pace in 2024 as revolve normalization tailwinds diminish.
+    [JPM-EC7] Firm-wide deposits have stabilized with visible growth trends expected in the second half of 2025.
+    [JPM-EC8] The company plans to arrest further growth in excess capital through increased share repurchases while maintaining patience for better deployment opportunities.
+    [JPM-EC9] Key risks include potential stagflation scenarios combining higher rates with higher unemployment, which would drive credit losses across all segments.
+    [JPM-EC10] The firm acknowledges tension between current market optimism and underlying economic uncertainties.
+    [JPM-EC11] Regulatory uncertainty remains despite expectations for a more rational framework under the new administration.
+    [JPM-EC12] Credit normalization continues with wholesale credit potentially moving toward more historical loss rates after an extended period of exceptionally low charge-offs.
+    [JPM-EC13] Primary revenue drivers include strong investment banking performance with 49% growth in fees and record markets revenue up 21% year-over-year.
+    [JPM-EC14] Asset & Wealth Management delivered record long-term net inflows of $234 billion with 18% growth in AUM.
+    [JPM-EC15] Card Services showed robust growth with 11% increase in outstandings driven by strong account acquisition.
+    [JPM-EC16] The firm's continued investment in technology, branch expansion, and talent acquisition supports long-term franchise growth across all business segments.
+
+======================================================================
+TICKER: LLY
+======================================================================
+
+  Price & Returns:
+    [LLY-PX]       Close: $765.01
+    [LLY-RET20]    20D Return: -3.5%
+    [LLY-RET60]    60D Return: -12.8%
+    [LLY-RET120]   120D Return: -17.1%
+    [LLY-RET252]   1Y Return: +33.3%
+
+  Volatility & Risk:
+    [LLY-VOL20]    20D Vol (ann): 23.9%
+    [LLY-VOL60]    60D Vol (ann): 31.2%
+    [LLY-DVOL60]   60D Downside Vol: 23.0%
+    [LLY-DD60]     60D Drawdown: -21.9%
+    [LLY-MDD1Y]    1Y Max Drawdown: -24.1%
+    [LLY-SHARPE]   60D Sharpe: -1.85
+    [LLY-BETA]     1Y Beta: 0.87
+
+  Trend & Momentum:
+    [LLY-SMA20]    SMA 20D: $784.28
+    [LLY-SMA50]    SMA 50D: $797.68
+    [LLY-SMA200]   SMA 200D: $829.77
+    [LLY-MOM200]   200D Momentum: 0.92
+    [LLY-MOM12_1]  12-1M Momentum: +37.3%
+    [LLY-IDMOM]    Idiosyncratic Momentum 60D: -0.1592
+    [LLY-TREND]    Trend Consistency: 0.43
+    [LLY-RS60]     Relative Strength 60D: -14.3%
+    [LLY-ESURP]    Earnings Surprise: -19.7%
+    [LLY-ADVOL]    Avg Dollar Volume 20D: $2,511,579,931
+
+  Sentiment (from earnings call):
+    [LLY-SENT]     Mean Sentiment: 0.2667
+    [LLY-SVOL]     Sentiment Volatility: 0.5812
+
+  Filing Evidence (10-Q, filed 2024-08-08, fiscal period: 2024-Q2):
+    [LLY-F1] Revenue increased 36% to $11.3 billion driven by Mounjaro ($3.1 billion), Zepbound ($1.2 billion), and Verzenio ($1.3 billion), partially offset by Trulicity declines.
+    [LLY-F2] Incretin medicine growth reflected production increases improving channel dynamics and stocking levels, with Mounjaro and Zepbound U.S. sales benefiting from high-teens to mid-20s percent channel stocking.
+    [LLY-F3] International revenue grew 25% led by Mounjaro and Verzenio expansion.
+    [LLY-F4] Gross margin expanded to 80.8% from 78.3% driven by higher realized prices and favorable product mix toward incretin medicines.
+    [LLY-F5] Research and development expenses increased 15% reflecting continued portfolio investment.
+    [LLY-F6] Marketing, selling, and administrative expenses rose 10% primarily from launch investments and personnel expansion.
+    [LLY-F7] Donanemab received FDA approval for early Alzheimer's disease treatment in July 2024.
+    [LLY-F8] Asset impairment and restructuring charges of $435 million related to anticipated litigation payments.
+    [LLY-F9] The company issued $6.5 billion in fixed-rate notes in February 2024 for general business purposes including debt refinancing.
+    [LLY-F10] CFO Anat Ashkenazi resigned in June 2024 to pursue opportunities outside pharmaceuticals.
+    [LLY-F11] Inflation Reduction Act selected Jardiance for government price-setting effective 2026, with additional significant products expected in future years accelerating revenue erosion.
+    [LLY-F12] Supply chain constraints continue affecting incretin medicine production despite improved balance between supply and demand.
+    [LLY-F13] Foreign currency headwinds reduced consolidated revenue growth by approximately 1 percentage point.
+    [LLY-F14] Manufacturing capacity expansion continues through 2024 with additional capacity operational over several years to meet incretin demand.
+    [LLY-F15] Zepbound 2.5mg and 5mg single-dose vials planned for Q3 2024 U.S. launch.
+    [LLY-F16] The company announced agreement to acquire Morphic Holding for approximately $3.2 billion, subject to customary closing conditions including majority share tender.
+    [LLY-F17] Incretin medicine sales growth remains constrained by production capacity with periodic supply tightness expected for certain presentations.
+    [LLY-F18] Pending regulatory reviews include tirzepatide for obstructive sleep apnea and lebrikizumab resubmission in the U.S.
+    [LLY-F19] Multiple Phase 3 trials ongoing across cardiometabolic, immunology, and neuroscience portfolios with regulatory submissions anticipated.
+
+  Earnings Call Evidence:
+    [LLY-EC1] Lilly delivered strong Q4 2024 results with 45% revenue growth driven by Mounjaro ($3.5B) and Zepbound ($1.9B).
+    [LLY-EC2] Full-year revenue grew 32% to exceed guidance by $4B.
+    [LLY-EC3] The company expanded manufacturing capacity, achieving 1.5x incretin production in H2 2024 vs H2 2023, with no wholesaler backorders by year-end.
+    [LLY-EC4] New product launches progressed well including Kisunla for Alzheimer's and Ebglyss for atopic dermatitis.
+    [LLY-EC5] For 2025, Lilly guides to $58-61B revenue (32% growth at midpoint) with continued incretin market expansion and international Mounjaro launches.
+    [LLY-EC6] Management expects continued U.S. incretin class growth consistent with 2024 prescription trends and anticipates producing 1.6x incretin doses in H1 2025 vs H1 2024.
+    [LLY-EC7] Multiple Orforglipron Phase III readouts are expected in 2025, with obesity submissions planned for late 2025 and diabetes following in 2026.
+    [LLY-EC8] The company plans to initiate new Phase III programs for olomorasib in lung cancer and Orforglipron in hypertension.
+    [LLY-EC9] Tirzepatide cardiovascular outcome data (SURPASS-CVOT) is expected in Q3 2025, with potential for labeled cardiovascular indication.
+    [LLY-EC10] Key risks include mid-to-high single-digit net price declines including U.S.
+    [LLY-EC11] Part D changes, foreign exchange headwinds from dollar strengthening, and ongoing compounding litigation with uncertain outcomes under new government.
+    [LLY-EC12] Manufacturing scale-up execution remains critical to meet global demand.
+    [LLY-EC13] Orforglipron's first Phase III diabetes readout in Q2 2025 carries execution risk as the lead oral GLP-1 program.
+    [LLY-EC14] Competitive dynamics in the incretin market continue to intensify with multiple players expanding capacity.
+    [LLY-EC15] Primary growth drivers include continued Mounjaro/Zepbound market share gains in the expanding incretin market, international Mounjaro launches throughout 2025, and new indication approvals including OSA for Zepbound and potential heart failure indication.
+    [LLY-EC16] Manufacturing capacity expansion with Concord facility coming online in 2025 should support growth.
+    [LLY-EC17] Orforglipron represents a significant catalyst with multiple Phase III readouts and potential oral GLP-1 market creation.
+    [LLY-EC18] Oncology, immunology, and neuroscience portfolios provide diversified growth with Jaypirca, Omvoh, and Kisunla uptake continuing.
+
+======================================================================
+TICKER: META
+======================================================================
+
+  Price & Returns:
+    [META-PX]       Close: $583.67
+    [META-RET20]    20D Return: -1.2%
+    [META-RET60]    60D Return: -1.7%
+    [META-RET120]   120D Return: +14.4%
+    [META-RET252]   1Y Return: +66.0%
+
+  Volatility & Risk:
+    [META-VOL20]    20D Vol (ann): 27.9%
+    [META-VOL60]    60D Vol (ann): 26.2%
+    [META-DVOL60]   60D Downside Vol: 17.8%
+    [META-DD60]     60D Drawdown: -7.4%
+    [META-MDD1Y]    1Y Max Drawdown: -18.4%
+    [META-SHARPE]   60D Sharpe: -0.27
+    [META-BETA]     1Y Beta: 1.53
+
+  Trend & Momentum:
+    [META-SMA20]    SMA 20D: $607.16
+    [META-SMA50]    SMA 50D: $585.58
+    [META-SMA200]   SMA 200D: $525.58
+    [META-MOM200]   200D Momentum: 1.11
+    [META-MOM12_1]  12-1M Momentum: +62.7%
+    [META-IDMOM]    Idiosyncratic Momentum 60D: -0.0487
+    [META-TREND]    Trend Consistency: 0.45
+    [META-RS60]     Relative Strength 60D: -3.2%
+    [META-ESURP]    Earnings Surprise: +14.0%
+    [META-ADVOL]    Avg Dollar Volume 20D: $7,573,855,325
+
+  Sentiment (from earnings call):
+    [META-SENT]     Mean Sentiment: 0.3213
+    [META-SVOL]     Sentiment Volatility: 0.5633
+
+  Filing Evidence (10-Q, filed 2024-08-01, fiscal period: 2024-Q2):
+    [META-F1] Total revenue reached $39.1 billion in Q2 2024, up 22% year-over-year, driven by advertising revenue growth with ad impressions and average price per ad each increasing 10%.
+    [META-F2] Reality Labs contributed growth from consumer hardware sales despite deepened operating losses.
+    [META-F3] Growth was broadly positive across all geographic regions with particular strength in Asia-Pacific, driven by online commerce, gaming, and entertainment verticals despite ongoing iOS targeting limitations.
+    [META-F4] Total costs and expenses increased to $24.2 billion from $22.6 billion year-over-year, with cost of revenue rising primarily from higher infrastructure and data center depreciation costs.
+    [META-F5] Research and development expenses grew driven by 9% headcount growth in engineering functions and AI infrastructure investments.
+    [META-F6] Reality Labs operating losses deepened as metaverse technology investments accelerated, while Family of Apps operating margin expanded to 50% from 41%.
+    [META-F7] The company initiated its first quarterly dividend program, paying $0.50 per share and completed $6.3 billion in share repurchases with $60.1 billion remaining authorized.
+    [META-F8] A settlement was reached with Texas regarding facial recognition technology violations in July 2024.
+    [META-F9] Multiple executive trading plans were established during the quarter, and the annual shareholder meeting approved amendments to officer liability limitations while rejecting dual class structure elimination proposals.
+    [META-F10] The company faces escalated regulatory uncertainty from potential EU-U.S.
+    [META-F11] Data Privacy Framework invalidation by CJEU, which could prevent Facebook and Instagram operations in Europe.
+    [META-F12] European Commission opened formal DMA proceedings in March 2024 with preliminary adverse findings regarding subscription advertising models and data combination practices.
+    [META-F13] Foreign currency headwinds reduced revenue while ongoing legal-related accruals increased from regulatory and litigation pressures.
+    [META-F14] Management expects Reality Labs operating losses to increase meaningfully in 2024 as metaverse investments accelerate, with capital expenditures guidance of $37-40 billion for 2024 and significant growth expected in 2025 for AI infrastructure.
+    [META-F15] The company maintains substantial non-cancelable contractual commitments primarily for servers and network infrastructure.
+    [META-F16] Continued quarterly dividend payments are planned subject to board approval.
+    [META-F17] FTC administrative proceedings seek substantial consent order modifications including restrictions on minor data usage and board composition changes, while multiple European investigations under Digital Services Act and Digital Markets Act create exposure to operational restrictions.
+    [META-F18] The company faces potential federal tax liability from ongoing IRS transfer pricing disputes with Tax Court decision expected in 2024.
+    [META-F19] Multiple class action lawsuits regarding youth mental health impacts and platform practices continue with unpredictable monetary and operational impacts.
+
+  Earnings Call Evidence:
+    [META-EC1] Meta reported strong Q4 2024 results with $48.4B revenue (up 21% YoY) and $20.8B net income.
+    [META-EC2] Daily active users across Meta's apps reached 3.3 billion people.
+    [META-EC3] Meta AI now has over 700 million monthly active users and is positioned to reach 1 billion users in 2025.
+    [META-EC4] The company expects significant AI infrastructure investments with $60-65B CapEx planned for 2025, including deployment of nearly 1 gigawatt of capacity.
+    [META-EC5] Revenue growth was driven by online commerce vertical and improved ad performance through new ML systems like Andromeda.
+    [META-EC6] Management expects 2025 to be a pivotal year with multiple long-term initiatives reaching clarity.
+    [META-EC7] They anticipate Q1 2025 revenue of $39.5-41.8B (8-15% growth) and full-year expenses of $114-119B.
+    [META-EC8] Llama 4 is progressing well in training with plans for multimodal and agentic capabilities.
+    [META-EC9] The company expects continued strong revenue growth throughout 2025 driven by core business investments.
+    [META-EC10] Ray-Ban Meta glasses momentum will determine if AI glasses become the next major computing platform, with this year being defining for the category's trajectory.
+    [META-EC11] The company faces active regulatory headwinds in both EU and US that could significantly impact business and financial results.
+    [META-EC12] Foreign currency is expected to be a 3% headwind to revenue growth.
+    [META-EC13] Supply availability constraints could affect CapEx execution plans.
+    [META-EC14] The massive AI infrastructure investments ($60-65B CapEx) represent substantial capital intensity with uncertain long-term returns.
+    [META-EC15] Competition in AI space is intensifying, particularly with new entrants like DeepSeek demonstrating novel approaches that could impact Meta's investment trajectory.
+    [META-EC16] AI infrastructure investments are the primary expense growth driver, followed by technical talent hiring in priority areas.
+    [META-EC17] Meta AI's rapid adoption (700M+ MAUs) positions it as the leading AI assistant globally.
+    [META-EC18] Advantage+ shopping campaigns reached $20B annual run rate with 70% YoY growth.
+    [META-EC19] Video engagement showed double-digit growth on both Instagram globally and Facebook in the US.
+    [META-EC20] Threads reached 320M monthly actives with over 1M daily signups.
+    [META-EC21] The new Andromeda ML system delivered 8% improvement in ad quality and 10,000x increase in model complexity for ad retrieval.
+
+======================================================================
 TICKER: MS
 ======================================================================
 
@@ -419,7 +1585,7 @@ TICKER: MS
     [MS-MOM12_1]  12-1M Momentum: +46.3%
     [MS-IDMOM]    Idiosyncratic Momentum 60D: 0.1189
     [MS-TREND]    Trend Consistency: 0.43
-    [MS-RS60]     Relative Strength 60D: +13.2%
+    [MS-RS60]     Relative Strength 60D: +16.0%
     [MS-ESURP]    Earnings Surprise: +19.0%
     [MS-ADVOL]    Avg Dollar Volume 20D: $723,743,206
 
@@ -474,7 +1640,7 @@ TICKER: MSFT
     [MSFT-MOM12_1]  12-1M Momentum: +13.5%
     [MSFT-IDMOM]    Idiosyncratic Momentum 60D: -0.0168
     [MSFT-TREND]    Trend Consistency: 0.60
-    [MSFT-RS60]     Relative Strength 60D: -2.7%
+    [MSFT-RS60]     Relative Strength 60D: +0.0%
     [MSFT-ESURP]    Earnings Surprise: +6.1%
     [MSFT-ADVOL]    Avg Dollar Volume 20D: $9,150,519,844
 
@@ -518,6 +1684,79 @@ TICKER: MSFT
     [MSFT-EC17] Strong commercial bookings and long-term customer commitments indicate sustained demand momentum.
 
 ======================================================================
+TICKER: NFLX
+======================================================================
+
+  Price & Returns:
+    [NFLX-PX]       Close: $89.13
+    [NFLX-RET20]    20D Return: -0.7%
+    [NFLX-RET60]    60D Return: +23.8%
+    [NFLX-RET120]   120D Return: +36.5%
+    [NFLX-RET252]   1Y Return: +83.1%
+
+  Volatility & Risk:
+    [NFLX-VOL20]    20D Vol (ann): 23.8%
+    [NFLX-VOL60]    60D Vol (ann): 31.7%
+    [NFLX-DVOL60]   60D Downside Vol: 15.2%
+    [NFLX-DD60]     60D Drawdown: -5.8%
+    [NFLX-MDD1Y]    1Y Max Drawdown: -13.5%
+    [NFLX-SHARPE]   60D Sharpe: 2.83
+    [NFLX-BETA]     1Y Beta: 1.15
+
+  Trend & Momentum:
+    [NFLX-SMA20]    SMA 20D: $91.41
+    [NFLX-SMA50]    SMA 50D: $85.31
+    [NFLX-SMA200]   SMA 200D: $70.21
+    [NFLX-MOM200]   200D Momentum: 1.27
+    [NFLX-MOM12_1]  12-1M Momentum: +82.1%
+    [NFLX-IDMOM]    Idiosyncratic Momentum 60D: 0.1851
+    [NFLX-TREND]    Trend Consistency: 0.60
+    [NFLX-RS60]     Relative Strength 60D: +22.3%
+    [NFLX-ESURP]    Earnings Surprise: +5.9%
+    [NFLX-ADVOL]    Avg Dollar Volume 20D: $2,506,350,365
+
+  Sentiment (from earnings call):
+    [NFLX-SENT]     Mean Sentiment: 0.3851
+    [NFLX-SVOL]     Sentiment Volatility: 0.3928
+
+  Filing Evidence (10-Q, filed 2024-07-19, fiscal period: 2024-Q2):
+    [NFLX-F1] Total revenue reached $9.6 billion in Q2 2024, up 17% year-over-year, driven by 16% growth in average paying memberships to 277.7 million and successful pricing optimization across regions.
+    [NFLX-F2] Global paid net membership additions reached 8.0 million, representing 37% growth versus prior year, with broad strength across all regions.
+    [NFLX-F3] Revenue per membership improved across all regions reflecting successful price increases and plan mix optimization, partially offset by unfavorable foreign exchange rates.
+    [NFLX-F4] Operating margin expanded 500 basis points to 27% as revenue growth significantly outpaced expense increases.
+    [NFLX-F5] Cost of revenues declined as percentage of revenues to 54% from 57% prior year despite higher content amortization.
+    [NFLX-F6] Technology and development expenses rose driven by personnel costs and infrastructure investments, while marketing expenses increased modestly with higher personnel costs offset by lower advertising spend due to content release timing.
+    [NFLX-F7] Netflix repurchased $1.6 billion of shares during Q2 and $3.6 billion year-to-date under the $15 billion authorization program, with $4.8 billion remaining available.
+    [NFLX-F8] The company established a new $3 billion revolving credit facility in April 2024, replacing the previous facility, and repaid $400 million of maturing Senior Notes.
+    [NFLX-F9] The 2024 annual meeting concluded with all nine directors elected and executive compensation approved.
+    [NFLX-F10] Foreign currency headwinds reduced revenues by approximately $430 million for the quarter and $701 million year-to-date compared to constant currency rates.
+    [NFLX-F11] The company expanded cash flow hedging programs to $9.5 billion notional amount to mitigate exchange rate volatility on forecasted foreign currency revenues and content obligations.
+    [NFLX-F12] Brazilian tax authorities continue assessments with potential exposure estimated at approximately $300 million.
+    [NFLX-F13] Content obligations increased to $23.3 billion from $21.7 billion at year-end, with management anticipating additional obligations over the next three years beyond contractual commitments.
+    [NFLX-F14] Production costs are paid upfront well before content availability and amortization.
+    [NFLX-F15] The company expects cash flows from operations, available funds, and financing sources including the new revolving credit facility will be sufficient to meet cash needs for the next twelve months and beyond.
+    [NFLX-F16] Content obligations include $16.9 billion not reflected on the balance sheet representing future titles with payment timing ranging from less than one year to more than five years.
+    [NFLX-F17] Brazilian non-income tax disputes remain unresolved with inherent complexity around tax treatment, while the company faces debt principal and interest payments due within twelve months and ongoing tax examinations with uncertain timing and outcomes.
+
+  Recent 8-K Events (1):
+    [NFLX-EV1] 8-K filed 2024-10-17
+      Netflix announced Q3 2024 financial results through its quarterly shareholder letter on October 17, 2024. No other material corporate events were disclosed in this current report filing.
+
+  Earnings Call Evidence:
+    [NFLX-EC1] Netflix reported strong Q4 2024 results with 19 million subscriber additions driven by broad content strength rather than just live events like Jake Paul fight and NFL games.
+    [NFLX-EC2] The company exceeded ads revenue targets and doubled ads revenue year-over-year, with ads plans representing over 55% of sign-ups in ads countries.
+    [NFLX-EC3] Content spending will increase from $17 billion in 2024 to $18 billion in 2025, while operating margins are expected to improve to 12-14% revenue growth with high single-digit expense growth.
+    [NFLX-EC4] Management expects continued strong performance in 2025 with returning seasons of major hits like Wednesday, Stranger Things, and Squid Game, plus new content from acclaimed directors.
+    [NFLX-EC5] The company will transition from 'crawl to walk' phase in advertising by rolling out its own ad stack starting with the U.S. in April.
+    [NFLX-EC6] Netflix sees significant runway for growth given less than 50% penetration of connected households globally and capturing only 6% of estimated revenue market opportunity.
+    [NFLX-EC7] Currency headwinds pose margin pressure as roughly 60% of revenue comes from non-U.S. dollar currencies, though the company hedges about 50% on a rolling 12-month basis.
+    [NFLX-EC8] Competition from short-form video platforms for younger audiences requires continued investment in engaging content.
+    [NFLX-EC9] Full-season sports rights remain economically challenging despite successful live events, limiting expansion opportunities in that high-cost content category.
+    [NFLX-EC10] Advertising revenue growth is accelerating with expectations to double again in 2025, supported by growing scale and improving monetization through proprietary ad technology.
+    [NFLX-EC11] Content engagement remains the primary flywheel driver, with average members watching about two hours daily and strong retention from diverse global programming slate.
+    [NFLX-EC12] Live events and sports content like WWE Raw and NFL games are expanding the platform's appeal while maintaining economic discipline on rights acquisitions.
+
+======================================================================
 TICKER: NKE
 ======================================================================
 
@@ -545,7 +1784,7 @@ TICKER: NKE
     [NKE-MOM12_1]  12-1M Momentum: -26.6%
     [NKE-IDMOM]    Idiosyncratic Momentum 60D: -0.0833
     [NKE-TREND]    Trend Consistency: 0.43
-    [NKE-RS60]     Relative Strength 60D: -11.8%
+    [NKE-RS60]     Relative Strength 60D: -9.0%
     [NKE-ESURP]    Earnings Surprise: +23.8%
     [NKE-ADVOL]    Avg Dollar Volume 20D: $994,712,231
 
@@ -586,6 +1825,149 @@ TICKER: NKE
     [NKE-EC14] Wholesale order books show double-digit growth in key categories like North American running specialty.
 
 ======================================================================
+TICKER: NVDA
+======================================================================
+
+  Price & Returns:
+    [NVDA-PX]       Close: $134.25
+    [NVDA-RET20]    20D Return: -3.1%
+    [NVDA-RET60]    60D Return: +7.5%
+    [NVDA-RET120]   120D Return: +5.4%
+    [NVDA-RET252]   1Y Return: +171.2%
+
+  Volatility & Risk:
+    [NVDA-VOL20]    20D Vol (ann): 34.0%
+    [NVDA-VOL60]    60D Vol (ann): 36.7%
+    [NVDA-DVOL60]   60D Downside Vol: 21.5%
+    [NVDA-DD60]     60D Drawdown: -13.4%
+    [NVDA-MDD1Y]    1Y Max Drawdown: -27.1%
+    [NVDA-SHARPE]   60D Sharpe: 0.83
+    [NVDA-BETA]     1Y Beta: 2.64
+
+  Trend & Momentum:
+    [NVDA-SMA20]    SMA 20D: $137.11
+    [NVDA-SMA50]    SMA 50D: $139.85
+    [NVDA-SMA200]   SMA 200D: $117.82
+    [NVDA-MOM200]   200D Momentum: 1.14
+    [NVDA-MOM12_1]  12-1M Momentum: +179.2%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.0322
+    [NVDA-TREND]    Trend Consistency: 0.52
+    [NVDA-RS60]     Relative Strength 60D: +6.0%
+    [NVDA-ESURP]    Earnings Surprise: +8.0%
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $26,717,009,767
+
+  Sentiment (from earnings call):
+    [NVDA-SENT]     Mean Sentiment: 0.3971
+    [NVDA-SVOL]     Sentiment Volatility: 0.5517
+
+  Filing Evidence (10-Q, filed 2024-11-20, fiscal period: 2024-Q4 [FYE: Jan 31]):
+    [NVDA-F1] Revenue reached $35.1 billion, up 94% year-over-year and 17% sequentially, driven by Data Center platforms generating 112% year-over-year growth from Hopper architecture demand for large language model training and inference.
+    [NVDA-F2] Cloud service providers represented approximately 50% of Data Center revenue with strong growth across all customer types.
+    [NVDA-F3] Gaming revenue increased while Professional Visualization and Automotive segments showed modest growth.
+    [NVDA-F4] The company continues transitioning from Hopper to Blackwell architecture with initial Blackwell shipments beginning in Q4.
+    [NVDA-F5] Gross margin decreased sequentially to 73.0% from 75.1% due to mix shift to more complex Data Center systems and inventory provisions for low-yielding Blackwell material, though remained above prior year driven by favorable Data Center product mix.
+    [NVDA-F6] Operating expenses increased 44% year-over-year driven by employee expansion, compute infrastructure costs, and engineering development costs for accelerated product roadmap transitions.
+    [NVDA-F7] Board approved additional $50 billion share repurchase authorization and appointed Ellen Ochoa as new director.
+    [NVDA-F8] Company repurchased $11.1 billion of shares in Q3 and $26.2 billion in first nine months of fiscal 2025.
+    [NVDA-F9] Completed successful mask change for Blackwell architecture improving production yields.
+    [NVDA-F10] NVIDIA transitioned certain testing, validation, and supply operations out of China and Hong Kong following export control implementations.
+    [NVDA-F11] USG export controls continue restricting shipments of high-performance products including A100, H100, and Blackwell systems to China and other specified regions, with no licenses received through the NAC process.
+    [NVDA-F12] Geopolitical conflict in Israel affects approximately 4,300 employees primarily supporting networking product development, with substantial numbers called for military duty potentially disrupting operations.
+    [NVDA-F13] Supply chain constraints affect both Hopper and Blackwell systems with critical suppliers and manufacturing partners concentrated in Taiwan.
+    [NVDA-F14] Blackwell production shipments scheduled to begin Q4 fiscal 2025 with continued ramp into fiscal 2026, though demand expected to exceed supply for several quarters.
+    [NVDA-F15] Company implementing annual Data Center architecture cadence with greater product variety to meet diverse AI opportunities while expanding supply chain capacity through prepaid manufacturing agreements and new supplier relationships.
+    [NVDA-F16] Regulatory inquiries from multiple jurisdictions including EU, US, UK, China, and South Korea regarding GPU sales, supply allocation, and AI partnerships create ongoing compliance burdens with potential new legislation imposing additional operational restrictions.
+    [NVDA-F17] Complex product transitions requiring simultaneous shipping of multiple architectures create demand prediction challenges and inventory management complexity.
+    [NVDA-F18] Export control rules remain subject to frequent changes with potential expansion to broader product categories and geographic scope.
+
+  Earnings Call Evidence:
+    [NVDA-EC1] NVIDIA reported record Q4 2024 revenue of $22.1 billion, up 22% sequentially and 265% year-over-year, driven primarily by data center revenue of $18.4 billion (up 409% YoY).
+    [NVDA-EC2] Full-year revenue reached $60.9 billion, up 126% from prior year.
+    [NVDA-EC3] Data center growth was fueled by strong demand for Hopper GPU computing platform and InfiniBand networking across training and inference workloads.
+    [NVDA-EC4] The company estimates approximately 40% of data center revenue came from AI inference, representing a significant shift from CPU-based to GPU-accelerated recommender systems and generative AI applications.
+    [NVDA-EC5] Management expects continued strong growth through calendar 2024-2025, driven by two major industry transitions: the shift from general-purpose to accelerated computing and the emergence of generative AI.
+    [NVDA-EC6] Q1 2025 revenue guidance is $24 billion (±2%), with sequential growth in data center and ProViz offset by seasonal gaming decline.
+    [NVDA-EC7] The company anticipates next-generation products (Blackwell) will be supply constrained due to ramping from zero to large volumes.
+    [NVDA-EC8] Management believes these trends will drive doubling of global data center infrastructure over the next five years, representing hundreds of billions in annual market opportunity.
+    [NVDA-EC9] Supply constraints are expected to continue for next-generation products despite overall supply improvements, with demand significantly exceeding supply capabilities.
+    [NVDA-EC10] China data center revenue declined significantly following October export controls, now representing mid-single digit percentage of data center revenue.
+    [NVDA-EC11] Gross margins are expected to normalize to mid-70s range after Q1, down from current 76-77% levels that benefited from favorable component costs.
+    [NVDA-EC12] The company faces allocation challenges across competing customers and must balance fair distribution while avoiding unnecessary inventory buildup.
+    [NVDA-EC13] Data center growth is driven by diverse end markets including hyperscale cloud providers (>50% of data center revenue), consumer internet companies, enterprise software platforms, and vertical industries like automotive ($1B+ data center revenue), healthcare, and financial services.
+    [NVDA-EC14] Sovereign AI initiatives are emerging as countries invest in domestic AI infrastructure and language models.
+    [NVDA-EC15] The software and services business reached $1 billion annualized run rate, with NVIDIA AI Enterprise positioned as an AI operating system at $4,500 per GPU annually.
+    [NVDA-EC16] Gaming revenue of $2.87 billion was supported by RTX 40 Super Series launch and AI-enabled PC applications.
+
+======================================================================
+TICKER: OXY
+======================================================================
+
+  Price & Returns:
+    [OXY-PX]       Close: $48.35
+    [OXY-RET20]    20D Return: -1.6%
+    [OXY-RET60]    60D Return: -11.0%
+    [OXY-RET120]   120D Return: -18.9%
+    [OXY-RET252]   1Y Return: -15.9%
+
+  Volatility & Risk:
+    [OXY-VOL20]    20D Vol (ann): 26.5%
+    [OXY-VOL60]    60D Vol (ann): 23.4%
+    [OXY-DVOL60]   60D Downside Vol: 15.8%
+    [OXY-DD60]     60D Drawdown: -18.5%
+    [OXY-MDD1Y]    1Y Max Drawdown: -33.7%
+    [OXY-SHARPE]   60D Sharpe: -2.09
+    [OXY-BETA]     1Y Beta: 0.44
+
+  Trend & Momentum:
+    [OXY-SMA20]    SMA 20D: $46.85
+    [OXY-SMA50]    SMA 50D: $48.41
+    [OXY-SMA200]   SMA 200D: $55.80
+    [OXY-MOM200]   200D Momentum: 0.87
+    [OXY-MOM12_1]  12-1M Momentum: -14.3%
+    [OXY-IDMOM]    Idiosyncratic Momentum 60D: -0.1234
+    [OXY-TREND]    Trend Consistency: 0.45
+    [OXY-RS60]     Relative Strength 60D: -12.5%
+    [OXY-ESURP]    Earnings Surprise: +33.3%
+    [OXY-ADVOL]    Avg Dollar Volume 20D: $602,964,499
+
+  Sentiment (from earnings call):
+    [OXY-SENT]     Mean Sentiment: -0.0188
+    [OXY-SVOL]     Sentiment Volatility: 0.6994
+
+  Filing Evidence (10-Q, filed 2024-11-12, fiscal period: 2024-Q3):
+    [OXY-F1] Total revenue increased to $7.2 billion in Q3 2024 from $6.8 billion in Q2 2024, driven by higher domestic crude oil and NGL volumes from the CrownRock acquisition completed August 1, 2024, partially offset by lower WTI prices averaging $75.09 versus $80.56 in Q2.
+    [OXY-F2] Oil and gas segment earnings declined despite volume increases of 151 Mboe/d, primarily due to lower commodity pricing, while midstream and marketing earnings surged benefiting from asset sale gains.
+    [OXY-F3] Operating expenses increased reflecting higher activity levels from CrownRock integration.
+    [OXY-F4] Depreciation, depletion and amortization rose to $1.9 billion from $1.8 billion quarter-over-quarter, driven by increased production volumes and asset base expansion from the acquisition.
+    [OXY-F5] Completed $12.4 billion CrownRock acquisition on August 1, 2024, after issuing $5 billion in senior notes across five series with maturities from 2027 to 2054.
+    [OXY-F6] Sold non-core Powder River Basin and Delaware Basin assets for $779 million net proceeds and divested WES limited partner units for $697 million, generating net gains.
+    [OXY-F7] Repaid $4.0 billion of debt during Q3 2024.
+    [OXY-F8] Operations remain highly dependent on oil price volatility, with WTI averaging $75.09 in Q3 versus $82.26 in Q3 2023, driven by geopolitical risks including Russia-Ukraine war and Middle East conflicts.
+    [OXY-F9] Natural gas pricing pressure continued with domestic realized prices at $0.40 per Mcf versus $2.09 in Q3 2023.
+    [OXY-F10] Management prioritizes debt reduction with proceeds from asset divestitures and excess cash flow until principal debt falls below $15 billion from current levels.
+    [OXY-F11] Strategic focus remains on maintaining production base integrity, delivering sustainable dividend growth, and advancing low-carbon ventures including STRATOS direct air capture facility construction.
+    [OXY-F12] Credit ratings remain at Baa3/BBB-/BB+ with potential downgrade risks affecting capital market access and costs.
+    [OXY-F13] Approximately $1.0 billion in debt maturities due within 12 months, with Zero Coupons puttable in October 2025.
+    [OXY-F14] Environmental remediation liabilities continue under CERCLA and similar regulations with retroactive application.
+
+  Earnings Call Evidence:
+    [OXY-EC1] Occidental delivered strong Q4 2024 results with $1.4 billion free cash flow and record US quarterly production of 1.46 million BOE/day.
+    [OXY-EC2] The company achieved its $4.5 billion debt reduction target seven months early and announced a 9% dividend increase.
+    [OXY-EC3] Full-year 2024 production reached a record 1.33 million BOE/day with $4.9 billion in free cash flow.
+    [OXY-EC4] The Crown Rock acquisition continues outperforming expectations, and all three business segments exceeded guidance in Q4.
+    [OXY-EC5] Management expects 2025 production to average 1.42 million BOE/day with $7.4-7.6 billion in total capital investment.
+    [OXY-EC6] The Stratos direct air capture facility is on track for commercial operations in 2025, with commissioning beginning in Q2 and ramp-up through year-end.
+    [OXY-EC7] The company maintains focus on debt reduction with $1.2 billion in announced divestitures and expects to reach the $15 billion net debt target by early 2027.
+    [OXY-EC8] Permian production is expected to grow over 15% in 2025 driven by Crown Rock integration and operational efficiencies.
+    [OXY-EC9] The company faces potential headwinds from reduced government support for carbon capture initiatives under the new administration, though management remains optimistic about securing necessary subsidies.
+    [OXY-EC10] OxyChem earnings are expected to decline in 2025 due to winter storm impacts, unplanned outages, higher raw material costs, and an oversupplied market in the first half.
+    [OXY-EC11] Midstream earnings may be pressured by reduced gas marketing optimization opportunities as additional takeaway capacity comes online.
+    [OXY-EC12] Crown Rock integration is delivering significant synergies with 7% well cost reductions and over $1 million per well savings across the Midland Basin program.
+    [OXY-EC13] The company achieved 12% drilling and completion cost improvements in 2024 and expects another 7% improvement in 2025.
+    [OXY-EC14] Stratos startup represents a major milestone for the low-carbon ventures business, while Gulf of America 2.0 projects offer low-cost, long-term production growth opportunities.
+    [OXY-EC15] Operational excellence continues with record safety performance and 230% reserves replacement ratio.
+
+======================================================================
 TICKER: PFE
 ======================================================================
 
@@ -613,7 +1995,7 @@ TICKER: PFE
     [PFE-MOM12_1]  12-1M Momentum: -3.4%
     [PFE-IDMOM]    Idiosyncratic Momentum 60D: -0.0670
     [PFE-TREND]    Trend Consistency: 0.47
-    [PFE-RS60]     Relative Strength 60D: -10.0%
+    [PFE-RS60]     Relative Strength 60D: -7.2%
     [PFE-ESURP]    Earnings Surprise: +73.8%
     [PFE-ADVOL]    Avg Dollar Volume 20D: $1,027,409,039
 
@@ -662,6 +2044,503 @@ TICKER: PFE
     [PFE-EC14] ELREXFIO shows promising uptake with $130+ million first-year revenue and four Phase 3 studies ongoing.
     [PFE-EC15] The company's robust pipeline includes potential blockbusters like atirmociclib (CDK4 inhibitor), sigvotatug vedotin (ADC), and next-generation vaccines PCV-25/30+.
     [PFE-EC16] Cost reduction programs targeting $4.5 billion in net savings by end-2025, combined with $10-15 billion BD capacity, position the company for enhanced capital deployment and shareholder returns.
+
+======================================================================
+TICKER: PG
+======================================================================
+
+  Price & Returns:
+    [PG-PX]       Close: $162.18
+    [PG-RET20]    20D Return: -6.7%
+    [PG-RET60]    60D Return: -0.1%
+    [PG-RET120]   120D Return: +2.5%
+    [PG-RET252]   1Y Return: +17.2%
+
+  Volatility & Risk:
+    [PG-VOL20]    20D Vol (ann): 13.8%
+    [PG-VOL60]    60D Vol (ann): 15.3%
+    [PG-DVOL60]   60D Downside Vol: 11.6%
+    [PG-DD60]     60D Drawdown: -7.0%
+    [PG-MDD1Y]    1Y Max Drawdown: -8.9%
+    [PG-SHARPE]   60D Sharpe: -0.04
+    [PG-BETA]     1Y Beta: 0.00
+
+  Trend & Momentum:
+    [PG-SMA20]    SMA 20D: $165.20
+    [PG-SMA50]    SMA 50D: $164.64
+    [PG-SMA200]   SMA 200D: $160.92
+    [PG-MOM200]   200D Momentum: 1.01
+    [PG-MOM12_1]  12-1M Momentum: +25.4%
+    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0038
+    [PG-TREND]    Trend Consistency: 0.57
+    [PG-RS60]     Relative Strength 60D: -1.7%
+    [PG-ESURP]    Earnings Surprise: +1.6%
+    [PG-ADVOL]    Avg Dollar Volume 20D: $1,057,471,034
+
+  Sentiment (from earnings call):
+    [PG-SENT]     Mean Sentiment: 0.0361
+    [PG-SVOL]     Sentiment Volatility: 0.5045
+
+  Filing Evidence (10-Q, filed 2024-10-18, fiscal period: 2024-Q3 [FYE: Jun 30]):
+    [PG-F1] Net sales decreased 1% to $21.7 billion driven by foreign exchange headwinds offsetting 1% pricing gains and 1% organic volume growth, delivering 2% organic sales growth.
+    [PG-F2] Health Care achieved 4% organic growth while Fabric & Home Care and Grooming each delivered 3% organic growth, offsetting Beauty's 2% organic decline from super-premium SK-II weakness and China market contraction.
+    [PG-F3] Operating income increased 1% with operating margin expanding 30 basis points to 26.7%.
+    [PG-F4] Gross margin improved 10 basis points to 52.1% driven by manufacturing productivity savings and higher pricing, partially offset by higher commodity costs and unfavorable product mix.
+    [PG-F5] Operating expenses decreased as percentage of sales with marketing spending increases offset by disciplined cost management in other operating areas.
+    [PG-F6] Company completed substantial liquidation of Argentina operations recording $554 million non-cash foreign currency translation loss as part of Enterprise Markets portfolio restructuring totaling $1.2 billion after-tax charges since December 2023 inception.
+    [PG-F7] Returned $4.4 billion to shareholders through dividends and share repurchases with quarterly dividend declared at $1.0065 per share.
+    [PG-F8] Foreign exchange translation negatively impacted results with significant exposure to currency devaluation in emerging markets, particularly Argentina where operations were liquidated due to challenging macroeconomic conditions.
+    [PG-F9] Company maintains exposure to commodity price volatility especially oil-derived materials and paper-based inputs, alongside ongoing geopolitical tensions affecting less than 2% of consolidated sales.
+    [PG-F10] Management reaffirmed fiscal 2025 share repurchase guidance of $6-7 billion to be financed through operating cash flows and debt issuance while maintaining focus on organic sales growth momentum across core categories.
+    [PG-F11] Strategic emphasis remains on productivity improvements and supply chain optimization to offset inflationary cost pressures with continued portfolio optimization in challenging markets.
+    [PG-F12] Current liabilities exceed current assets by $9.0 billion requiring continued strong operational cash generation while Gillette indefinite-lived intangible asset remains susceptible to impairment risk from adverse macroeconomic changes.
+    [PG-F13] Company faces ongoing tax audits across multiple jurisdictions and ongoing restructuring activities beyond normal annual levels related to Enterprise Markets optimization.
+
+  Earnings Call Evidence:
+    [PG-EC1] P&G delivered fiscal 2024 results that met or exceeded all guidance ranges with 4% organic sales growth, 12% core EPS growth, and 105% cash productivity.
+    [PG-EC2] Fourth quarter organic sales grew 2% with volume up 2%, showing sequential improvement.
+    [PG-EC3] Growth was broad-based across categories and regions, though headwinds persisted in China (down 8%) and some enterprise markets.
+    [PG-EC4] The company maintained strong margins with core gross margin at a 17-year high while significantly increasing marketing investments.
+    [PG-EC5] Management provided fiscal 2025 guidance of 3-5% organic sales growth and 5-7% core EPS growth, consistent with long-term algorithms.
+    [PG-EC6] They expect markets to grow 3-4% with roughly balanced volume and price-mix contributions.
+    [PG-EC7] The outlook assumes annualization of current headwinds in China, Middle East, and other challenged markets by the second half, with no material improvement assumed.
+    [PG-EC8] Management emphasized confidence in their integrated strategy and ability to deliver balanced growth despite ongoing volatility.
+    [PG-EC9] Key risks include continued weakness in China markets and SK-II brand performance, ongoing geopolitical tensions affecting Middle East operations, and commodity cost headwinds of approximately $300 million.
+    [PG-EC10] Foreign exchange presents a $200 million headwind, and the company faces difficult comparisons in the first half of fiscal 2025.
+    [PG-EC11] Consumer pressure remains a watch item, though not currently evident in P&G's categories.
+    [PG-EC12] Growth drivers include strong innovation pipelines across categories, continued investment in marketing and brand building, and productivity improvements enabling reinvestment.
+    [PG-EC13] North America showed consistent 4% growth with volume acceleration, while Europe focus markets delivered strong performance.
+    [PG-EC14] The company's focus on superiority across all five vectors (product, package, communication, retail execution, value) and supply chain 3.0 initiatives are expected to drive future performance.
+
+======================================================================
+TICKER: PLD
+======================================================================
+
+  Price & Returns:
+    [PLD-PX]       Close: $102.06
+    [PLD-RET20]    20D Return: -8.0%
+    [PLD-RET60]    60D Return: -12.9%
+    [PLD-RET120]   120D Return: -10.8%
+    [PLD-RET252]   1Y Return: -18.1%
+
+  Volatility & Risk:
+    [PLD-VOL20]    20D Vol (ann): 27.5%
+    [PLD-VOL60]    60D Vol (ann): 26.9%
+    [PLD-DVOL60]   60D Downside Vol: 17.3%
+    [PLD-DD60]     60D Drawdown: -19.4%
+    [PLD-MDD1Y]    1Y Max Drawdown: -24.0%
+    [PLD-SHARPE]   60D Sharpe: -2.16
+    [PLD-BETA]     1Y Beta: 0.82
+
+  Trend & Momentum:
+    [PLD-SMA20]    SMA 20D: $104.76
+    [PLD-SMA50]    SMA 50D: $108.40
+    [PLD-SMA200]   SMA 200D: $111.38
+    [PLD-MOM200]   200D Momentum: 0.92
+    [PLD-MOM12_1]  12-1M Momentum: -10.3%
+    [PLD-IDMOM]    Idiosyncratic Momentum 60D: -0.1563
+    [PLD-TREND]    Trend Consistency: 0.43
+    [PLD-RS60]     Relative Strength 60D: -14.4%
+    [PLD-ESURP]    Earnings Surprise: +68.8%
+    [PLD-ADVOL]    Avg Dollar Volume 20D: $471,154,805
+
+  Sentiment (from earnings call):
+    [PLD-SENT]     Mean Sentiment: 0.4707
+    [PLD-SVOL]     Sentiment Volatility: 0.4924
+
+  Filing Evidence (10-Q, filed 2024-10-25, fiscal period: 2024-Q3):
+    [PLD-F1] Total revenues increased to $6.0 billion driven by rental revenue growth from positive rent change on lease rollovers and same-store NOI growth, with consolidated operating portfolio occupancy at 96.2%.
+    [PLD-F2] Real Estate Segment NOI increased driven by rental rate growth, acquisitions, and development completions, while Strategic Capital Segment NOI decreased due to lower promote revenues.
+    [PLD-F3] Operating distributions from unconsolidated entities totaled $417 million versus $536 million in prior year.
+    [PLD-F4] Rental expenses increased to $1.3 billion driven by portfolio growth and inflationary pressures.
+    [PLD-F5] General and administrative expenses rose due to inflationary increases and higher compensation expenses, partially offset by capitalized G&A costs.
+    [PLD-F6] Cash paid for interest net of capitalized amounts rose significantly to $573 million from $340 million reflecting higher borrowing costs.
+    [PLD-F7] Generated $2.4 billion in net proceeds from property contributions to co-investment ventures and third-party sales.
+    [PLD-F8] Completed $5.3 billion total debt issuance including senior notes with 4.8% weighted average interest rate and 14-year weighted average maturity.
+    [PLD-F9] Established commercial paper program for short-term funding flexibility and acquired land in India through consolidated joint ventures.
+    [PLD-F10] Experiencing customer caution in leasing decisions due to uncertainty in economic and geopolitical environment, with slower decision-making on build-to-suits expected to limit speculative development.
+    [PLD-F11] Foreign currency exposure creates ongoing volatility, partially mitigated through natural hedging via borrowing in functional currencies and derivative instruments.
+    [PLD-F12] Unconsolidated co-investment ventures carry third-party debt with 6-year weighted average maturity.
+    [PLD-F13] Management expects customers to exercise caution through remainder of 2024 but believes company is well-positioned for long-term organic revenue growth given cumulative market rent increases and existing high lease mark-to-market of approximately 34%.
+    [PLD-F14] Development pipeline includes properties that are 32.8% leased.
+    [PLD-F15] Land bank and redevelopment sites support potential future development opportunities, while quarterly common stock dividends increased to $0.96 per share.
+    [PLD-F16] Consolidated development portfolio investment requires additional funding to complete, with leasing success dependent on market conditions.
+    [PLD-F17] Debt maturities require refinancing or repayment, while equity commitments to co-investment ventures may require property contributions or cash funding through 2033.
+    [PLD-F18] REIT status maintenance requires meeting dividend distribution requirements while retaining sufficient cash for capital deployment.
+
+  Earnings Call Evidence:
+    [PLD-EC1] Prologis reported strong Q4 2024 results with record quarterly leasing of 60 million square feet and core FFO of $1.50 per share including promotes.
+    [PLD-EC2] Full-year core FFO growth of 8.4% placed the company in the 86th percentile of all REITs.
+    [PLD-EC3] Average occupancy was 95.8% for the quarter and 96.3% for the year, with net effective rent change of 66% quarterly and 69% annually.
+    [PLD-EC4] The company successfully recycled $2.1 billion in dispositions and reinvested $2.3 billion in acquisitions at a positive 170 basis point IRR spread.
+    [PLD-EC5] Management expects market conditions to improve with vacancy topping out and rents inflecting later in 2025.
+    [PLD-EC6] They forecast 20% improvement in net absorption for 2025 with completions declining 35% below 2024 levels.
+    [PLD-EC7] Development starts are guided at $2.25-2.75 billion with data center projects expected at 200-400 megawatts.
+    [PLD-EC8] The company sees 10 gigawatts of data center development potential over the next 10 years and expects to reach 1 gigawatt of solar generation by year-end 2025.
+    [PLD-EC9] Key risks include potential occupancy decline in the next 1-2 quarters before rebuilding, with average occupancy guided at 94.5%-95.5%.
+    [PLD-EC10] Bad debt is expected to increase to 20-30 basis points from historical levels below 20 basis points due to known tenant concerns.
+    [PLD-EC11] Market rent growth remains uncertain with potential for flat, down, or modest positive growth in 2025.
+    [PLD-EC12] The Los Angeles wildfire impact is still being assessed, and broader economic uncertainties around trade policy and immigration could affect operations.
+    [PLD-EC13] Post-election leasing acceleration has driven improved customer decision-making and a 17% increase in pipeline activity January-to-January.
+    [PLD-EC14] The company maintains a significant 30% lease mark-to-market representing $1.4 billion of incremental NOI potential.
+    [PLD-EC15] Replacement costs are 50% higher than in-place rents, providing long-term rent growth runway.
+    [PLD-EC16] The data center business generated $112 million in value creation fees from the Elk Grove transaction, demonstrating the platform's monetization capabilities and comprehensive development expertise.
+
+======================================================================
+TICKER: RTX
+======================================================================
+
+  Price & Returns:
+    [RTX-PX]       Close: $113.23
+    [RTX-RET20]    20D Return: -2.5%
+    [RTX-RET60]    60D Return: -6.9%
+    [RTX-RET120]   120D Return: +15.0%
+    [RTX-RET252]   1Y Return: +40.8%
+
+  Volatility & Risk:
+    [RTX-VOL20]    20D Vol (ann): 15.1%
+    [RTX-VOL60]    60D Vol (ann): 18.9%
+    [RTX-DVOL60]   60D Downside Vol: 14.4%
+    [RTX-DD60]     60D Drawdown: -9.6%
+    [RTX-MDD1Y]    1Y Max Drawdown: -9.6%
+    [RTX-SHARPE]   60D Sharpe: -1.58
+    [RTX-BETA]     1Y Beta: 0.27
+
+  Trend & Momentum:
+    [RTX-SMA20]    SMA 20D: $114.42
+    [RTX-SMA50]    SMA 50D: $116.93
+    [RTX-SMA200]   SMA 200D: $108.72
+    [RTX-MOM200]   200D Momentum: 1.04
+    [RTX-MOM12_1]  12-1M Momentum: +48.2%
+    [RTX-IDMOM]    Idiosyncratic Momentum 60D: -0.0864
+    [RTX-TREND]    Trend Consistency: 0.52
+    [RTX-RS60]     Relative Strength 60D: -8.4%
+    [RTX-ESURP]    Earnings Surprise: +8.2%
+    [RTX-ADVOL]    Avg Dollar Volume 20D: $492,736,992
+
+  Sentiment (from earnings call):
+    [RTX-SENT]     Mean Sentiment: -0.2100
+    [RTX-SVOL]     Sentiment Volatility: 0.6092
+
+  Filing Evidence (10-Q, filed 2024-10-22, fiscal period: 2024-Q3):
+    [RTX-F1] RTX generated $20.1 billion in net sales for Q3 2024, representing a $6.6 billion increase driven primarily by the absence of the $5.4 billion Powder Metal Matter charge recorded in Q3 2023.
+    [RTX-F2] Organic growth of $1.6 billion reflected strength across all segments with Pratt & Whitney contributing from commercial OEM favorable mix and aftermarket expansion, Collins from defense volume increases, and Raytheon from land and air defense systems.
+    [RTX-F3] Commercial aerospace sales comprised 46.7% of total revenue versus 25.6% in the prior year.
+    [RTX-F4] Cost of sales increased to $16.1 billion, with the cost margin improving to 79.9% from 94.7% in the prior year primarily due to the absence of the Powder Metal Matter impact.
+    [RTX-F5] Operating profit margins improved across segments with Pratt & Whitney reaching 7.7% quarterly margins versus prior year losses, driven by volume leverage and favorable commercial aerospace mix.
+    [RTX-F6] Collins maintained stable margins despite higher research and development investments, while Raytheon sustained margins supported by favorable program mix.
+    [RTX-F7] RTX completed divestiture of Raytheon's Cybersecurity, Intelligence and Services business for $1.3 billion cash proceeds in first quarter 2024.
+    [RTX-F8] The company executed legal settlements covering DOJ deferred prosecution agreements, SEC settlements, and export control violations, with an additional State Department consent agreement for ITAR compliance matters.
+    [RTX-F9] Collins recorded charges related to Canadian sanctions on Russian titanium suppliers, requiring alternative sourcing arrangements.
+    [RTX-F10] The company faces ongoing supply chain disruptions from geopolitical conflicts, sanctions, and labor shortages, with particular exposure to titanium sourcing constraints from Russian supplier sanctions.
+    [RTX-F11] High inflation continues pressuring material costs, component prices, and labor rates across fixed-price contracts where cost pass-through is limited.
+    [RTX-F12] Chinese sanctions against multiple RTX entities create potential operational disruptions.
+    [RTX-F13] Defense bookings momentum continued with quarterly awards at Raytheon, including major international Patriot and missile defense contracts.
+    [RTX-F14] Collins secured FAA air traffic control sustainment awards, while Pratt & Whitney booked F117 and F135 engine core upgrade development contracts.
+    [RTX-F15] Management expects continued recovery in commercial aerospace aftermarket driven by flight hour growth and sustained defense program execution.
+    [RTX-F16] RTX faces ongoing cash utilization of approximately $1.0 billion annually for powder metal matter customer compensation aligned with fleet management plan execution requiring accelerated GTF fleet inspections.
+    [RTX-F17] The company operates under three-year State Department consent agreement requiring external compliance oversight, with credit ratings at BBB+/negative and Baa1/negative reflecting balance sheet pressures from legal settlements.
+
+  Earnings Call Evidence:
+    [RTX-EC1] RTX delivered strong Q4 2024 results with adjusted sales of $80.8 billion (up 11% organically), adjusted EPS of $5.73 (up 13%), and free cash flow of $4.5 billion.
+    [RTX-EC2] The company ended with a record $218 billion backlog, including $125 billion commercial and $93 billion defense.
+    [RTX-EC3] All three business segments achieved 90+ basis points of margin expansion.
+    [RTX-EC4] For 2025, RTX expects sales of $83-84 billion (4-6% organic growth), adjusted EPS of $6.00-6.15, and free cash flow of $7.0-7.5 billion.
+    [RTX-EC5] Management expressed confidence in sustained growth driven by robust commercial aerospace demand (IATA estimates 8% RPK growth) and strong defense requirements globally.
+    [RTX-EC6] They expect commercial aftermarket growth of ~10%, mid-single-digit growth in both commercial OE and defense sales.
+    [RTX-EC7] The company anticipates continued segment margin expansion across all three businesses with 10-13% segment profit growth.
+    [RTX-EC8] Management highlighted significant capacity investments, AI implementation across 40+ use cases, and over $7.5 billion planned R&D spending to support future growth.
+    [RTX-EC9] The primary risk remains the GTF powder metal issue, with expected cash outflows of $1.1-1.3 billion in 2025 and residual amounts in 2026.
+    [RTX-EC10] Supply chain constraints continue across structural castings, isothermal forgings, microelectronics, and rocket motors, though some improvements noted.
+    [RTX-EC11] Boeing 737 MAX production ramp uncertainty and potential airline inventory destocking present commercial aerospace risks.
+    [RTX-EC12] Geopolitical tensions and defense program timing changes could impact Raytheon's performance.
+    [RTX-EC13] Commercial aftermarket growth is the primary driver, supported by aging fleet demographics and robust air travel demand.
+    [RTX-EC14] GTF aftermarket margins approaching double-digits with profitable operations for several years.
+    [RTX-EC15] Defense backlog growth driven by international demand (44% of Raytheon backlog now international) and replenishment needs.
+    [RTX-EC16] Productivity improvements through core operating system implementation, with 11% sales growth achieved with only 2% headcount increase.
+    [RTX-EC17] Working capital improvements expected to contribute $1.3 billion cash flow benefit in 2025.
+
+======================================================================
+TICKER: TSLA
+======================================================================
+
+  Price & Returns:
+    [TSLA-PX]       Close: $403.84
+    [TSLA-RET20]    20D Return: +13.1%
+    [TSLA-RET60]    60D Return: +61.5%
+    [TSLA-RET120]   120D Return: +67.5%
+    [TSLA-RET252]   1Y Return: +62.5%
+
+  Volatility & Risk:
+    [TSLA-VOL20]    20D Vol (ann): 67.2%
+    [TSLA-VOL60]    60D Vol (ann): 76.5%
+    [TSLA-DVOL60]   60D Downside Vol: 37.8%
+    [TSLA-DD60]     60D Drawdown: -15.8%
+    [TSLA-MDD1Y]    1Y Max Drawdown: -42.8%
+    [TSLA-SHARPE]   60D Sharpe: 2.63
+    [TSLA-BETA]     1Y Beta: 2.38
+
+  Trend & Momentum:
+    [TSLA-SMA20]    SMA 20D: $418.91
+    [TSLA-SMA50]    SMA 50D: $346.18
+    [TSLA-SMA200]   SMA 200D: $238.84
+    [TSLA-MOM200]   200D Momentum: 1.69
+    [TSLA-MOM12_1]  12-1M Momentum: +38.9%
+    [TSLA-IDMOM]    Idiosyncratic Momentum 60D: 0.4048
+    [TSLA-TREND]    Trend Consistency: 0.48
+    [TSLA-RS60]     Relative Strength 60D: +60.0%
+    [TSLA-ESURP]    Earnings Surprise: +20.0%
+    [TSLA-ADVOL]    Avg Dollar Volume 20D: $38,658,783,609
+
+  Sentiment (from earnings call):
+    [TSLA-SENT]     Mean Sentiment: 0.6514
+    [TSLA-SVOL]     Sentiment Volatility: 0.3852
+
+  Filing Evidence (10-Q, filed 2024-07-24, fiscal period: 2024-Q2):
+    [TSLA-F1] Total revenues increased 2% to $25.5 billion in Q2 2024, driven by energy storage revenue doubling from increased Megapack deployments while automotive sales revenue declined 9% due to lower average selling prices from price reductions and attractive financing options, partially offset by Cybertruck production ramp.
+    [TSLA-F2] Regulatory credits revenue surged 216% to $890 million as other manufacturers scaled back electric vehicle plans.
+    [TSLA-F3] Total gross margin compressed to 18.0% from 18.2% year-over-year as automotive gross margin declined to 18.5% from 19.2% due to lower average selling prices and temporary manufacturing capacity under-utilization during production ramps, partially offset by lower raw material costs and higher IRA manufacturing credits.
+    [TSLA-F4] Energy storage gross margin expanded significantly to 24.6% from 18.4% due to increased IRA credits and higher-margin business mix.
+    [TSLA-F5] Tesla completed global restructuring in Q2 2024 reducing headcount by over 10%, recognizing $583 million in employee termination expenses.
+    [TSLA-F6] Andrew Baglino, Senior Vice President of Powertrain and Energy Engineering, resigned effective April 14, 2024 after 18 years with the company.
+    [TSLA-F7] Stockholders approved redomestication from Delaware to Texas and ratified Elon Musk's 2018 performance-based stock option award at the June 2024 annual meeting.
+    [TSLA-F8] Operations face heightened sensitivity to political and regulatory uncertainty affecting trade and environmental policies, compounded by inflationary pressures and central bank interest rate increases impacting vehicle financing affordability.
+    [TSLA-F9] Foreign currency exchange rate fluctuations on significant intercompany balances created unfavorable impacts of $308 million in Q2 without typical hedging protection.
+    [TSLA-F10] Red Sea shipping conflicts and geopolitical tensions disrupted production at Gigafactory Berlin-Brandenburg through supply chain diversions.
+    [TSLA-F11] Management expects capital expenditures to exceed $10.0 billion in 2024 and range between $8.0-$10.0 billion annually in following two fiscal years for global factory expansion, AI infrastructure, and next-generation platform development.
+    [TSLA-F12] Production growth depends on continued factory ramps, autonomy advances, and new product introductions including robotaxi capabilities while expanding Supercharger network capacity to accommodate NACS adoption by other manufacturers.
+    [TSLA-F13] Manufacturing ramp execution remains subject to new product and technology introduction complexities, concurrent international project management, and potential industry-wide component constraints.
+    [TSLA-F14] Energy storage deployment timing varies significantly quarter-to-quarter based on project milestones and logistics coordination while supplier liquidity challenges in the North American automotive industry could affect component access and pricing.
+
+  Earnings Call Evidence:
+    [TSLA-EC1] Tesla delivered record Q4 2024 volumes at nearly 2 million annualized rate, with Model Y becoming the best-selling vehicle globally of any kind.
+    [TSLA-EC2] The company reduced automotive costs below $35,000 per vehicle and achieved $2 billion quarterly free cash flow despite $2.4 billion annual CapEx increase.
+    [TSLA-EC3] Energy storage reached all-time highs and remains supply constrained.
+    [TSLA-EC4] Tesla will transition all factories to new Model Y production in February, causing temporary production disruption but positioning for future growth.
+    [TSLA-EC5] Management expects 2025 to be Tesla's most pivotal year, launching unsupervised Full Self Driving as paid service in Austin by June and expanding to multiple US cities by year-end.
+    [TSLA-EC6] The company plans to produce several thousand Optimus robots internally in 2025, with external sales beginning in second half of 2026.
+    [TSLA-EC7] Energy storage deployments expected to grow at least 50% year-over-year in 2025.
+    [TSLA-EC8] CapEx will remain flat year-over-year as the company focuses on AI infrastructure and manufacturing preparation for what management calls an 'epic 2026' and 'ridiculous 2027-2028.'
+    [TSLA-EC9] Battery production constraints limit current vehicle output growth, with management identifying this as the primary near-term bottleneck.
+    [TSLA-EC10] Tariff uncertainty poses significant risks given global supply chain dependencies across all business segments.
+    [TSLA-EC11] The Model Y factory retooling will result in several weeks of lost production and margin pressure in Q1 2025.
+    [TSLA-EC12] Regulatory approval timelines for FSD deployment remain uncertain, particularly in Europe where bureaucratic processes could delay rollout until May 2026 or later.
+    [TSLA-EC13] Autonomous vehicle technology advancement represents the primary value driver, with management projecting FSD could enable 5x higher vehicle utilization rates and create the largest asset value increase in human history.
+    [TSLA-EC14] Optimus humanoid robot development targets eventual $10+ trillion revenue opportunity with aspirational 10x annual production ramps.
+    [TSLA-EC15] Real-world AI capabilities position Tesla significantly ahead of competitors, with management claiming no visible second place.
+    [TSLA-EC16] The combination of autonomy, robotics, and energy storage creates multiple exponential growth vectors converging in the 2026-2028 timeframe.
+
+======================================================================
+TICKER: UNH
+======================================================================
+
+  Price & Returns:
+    [UNH-PX]       Close: $493.70
+    [UNH-RET20]    20D Return: -16.6%
+    [UNH-RET60]    60D Return: -14.1%
+    [UNH-RET120]   120D Return: +1.0%
+    [UNH-RET252]   1Y Return: -2.4%
+
+  Volatility & Risk:
+    [UNH-VOL20]    20D Vol (ann): 42.8%
+    [UNH-VOL60]    60D Vol (ann): 36.9%
+    [UNH-DVOL60]   60D Downside Vol: 32.7%
+    [UNH-DD60]     60D Drawdown: -22.1%
+    [UNH-MDD1Y]    1Y Max Drawdown: -22.1%
+    [UNH-SHARPE]   60D Sharpe: -1.73
+    [UNH-BETA]     1Y Beta: 0.12
+
+  Trend & Momentum:
+    [UNH-SMA20]    SMA 20D: $514.90
+    [UNH-SMA50]    SMA 50D: $548.63
+    [UNH-SMA200]   SMA 200D: $522.74
+    [UNH-MOM200]   200D Momentum: 0.94
+    [UNH-MOM12_1]  12-1M Momentum: +17.3%
+    [UNH-IDMOM]    Idiosyncratic Momentum 60D: -0.1665
+    [UNH-TREND]    Trend Consistency: 0.50
+    [UNH-RS60]     Relative Strength 60D: -15.6%
+    [UNH-ESURP]    Earnings Surprise: +1.7%
+    [UNH-ADVOL]    Avg Dollar Volume 20D: $3,582,022,046
+
+  Sentiment (from earnings call):
+    [UNH-SENT]     Mean Sentiment: 0.2400
+    [UNH-SVOL]     Sentiment Volatility: 0.6141
+
+  Filing Evidence (10-Q, filed 2024-08-09, fiscal period: 2024-Q2):
+    [UNH-F1] Consolidated revenues grew 6% to $98.9 billion driven by UnitedHealthcare's 5% growth from 1.6 million additional commercial members, partially offset by 945,000 Medicaid redetermination losses, and Optum's 12% expansion from value-based care growth and higher prescription volumes.
+    [UNH-F2] Medical care ratio increased 190 basis points to 85.1% driven by Medicare funding reductions, Change Healthcare cyberattack costs, and decreased favorable reserve development.
+    [UNH-F3] Operating cost ratio improved 160 basis points to 13.3% from cost management initiatives, partially offset by cyberattack response costs.
+    [UNH-F4] Overall operating margin compressed 70 basis points to 8.0%.
+    [UNH-F5] Change Healthcare cyberattack resulted in $1.4 billion direct response costs and $613 million business disruption impacts through June, with $9 billion in accelerated provider funding.
+    [UNH-F6] Completed Brazil operations sale recording $7.1 billion loss including foreign currency translation impact.
+    [UNH-F7] Board increased quarterly dividend to $8.40 annually and authorized repurchase of additional 35 million shares.
+    [UNH-F8] Medicare Advantage funding pressures intensified with rate notices producing base rate decreases below medical cost trends, compounded by risk adjustment model revisions reducing funding for higher-acuity patients.
+    [UNH-F9] Commercial markets remain highly competitive across all segments with continued broad-based pricing pressure.
+    [UNH-F10] Management expects continued cyberattack-related costs through remainder of year including ongoing service restoration expenses.
+    [UNH-F11] Healthcare sector transactions totaling $6 billion await regulatory approval with $10 billion completed in July.
+    [UNH-F12] Company maintains focus on balancing growth and profitability while managing Medicare funding pressures through network and benefit modifications.
+    [UNH-F13] Change Healthcare data breach investigation ongoing with protected health information covering substantial proportion of Americans, creating potential litigation, regulatory and reputational risks.
+    [UNH-F14] South American operations held for sale with recorded losses.
+    [UNH-F15] DOJ risk adjustment submission matter remains unresolved with potential material financial impact.
+
+  Earnings Call Evidence:
+    [UNH-EC1] UnitedHealth Group reported Q4 2024 revenues exceeding $400 billion and adjusted EPS of $27.66, within guidance ranges despite significant challenges.
+    [UNH-EC2] The medical care ratio was 150 basis points above original outlook due to member mix changes, Medicaid rate lag, cyberattack costs, and accelerated specialty drug prescribing.
+    [UNH-EC3] The company navigated approximately $6 billion in unanticipated impacts while maintaining growth across all segments.
+    [UNH-EC4] For 2025, UHG expects to serve 1.9 million additional people with revenues approaching $340 billion for UnitedHealthcare and strong growth across Optum divisions.
+    [UNH-EC5] Management expressed confidence in 2025 pricing adequacy and expects full-year medical care ratio of 86.5% ±50 basis points, 100 basis points above 2024 levels.
+    [UNH-EC6] The company maintains its long-term 13-16% growth objective and expects cash flow from operations to approach $33 billion.
+    [UNH-EC7] UHG anticipates Medicare Advantage growth of up to 800,000 members, Optum Health serving 5.4 million value-based care patients, and continued strong retention rates.
+    [UNH-EC8] Management emphasized ongoing investments in digital capabilities and AI-driven efficiencies to improve consumer experience.
+    [UNH-EC9] Key risks include continued Medicare rate cuts in the second year of the three-year CMS reduction cycle, ongoing hospital coding intensity increases, and accelerated specialty drug prescribing trends.
+    [UNH-EC10] The company faces potential PBM reform legislation and regulatory scrutiny.
+    [UNH-EC11] Medicaid rate updates continue to lag member health status changes, though this gap is expected to narrow.
+    [UNH-EC12] The elevated care activity environment from 2024 is assumed to persist into 2025, requiring careful medical management.
+    [UNH-EC13] Growth is driven by strong Medicare Advantage retention and returning members, balanced commercial and public sector expansion, and continued Optum segment momentum.
+    [UNH-EC14] Digital engagement increased significantly with mobile app visits up 66% year-over-year and overall digital engagement up 33%.
+    [UNH-EC15] The company is implementing 100% PBM rebate pass-through by 2028 and investing heavily in value-based care expansion.
+    [UNH-EC16] Operating cost improvements of 150 basis points in 2024 are expected to continue, driven by AI implementation and digital transformation initiatives.
+
+======================================================================
+TICKER: WMT
+======================================================================
+
+  Price & Returns:
+    [WMT-PX]       Close: $89.49
+    [WMT-RET20]    20D Return: -2.3%
+    [WMT-RET60]    60D Return: +11.9%
+    [WMT-RET120]   120D Return: +30.1%
+    [WMT-RET252]   1Y Return: +74.0%
+
+  Volatility & Risk:
+    [WMT-VOL20]    20D Vol (ann): 19.4%
+    [WMT-VOL60]    60D Vol (ann): 17.9%
+    [WMT-DVOL60]   60D Downside Vol: 10.3%
+    [WMT-DD60]     60D Drawdown: -5.4%
+    [WMT-MDD1Y]    1Y Max Drawdown: -5.8%
+    [WMT-SHARPE]   60D Sharpe: 2.63
+    [WMT-BETA]     1Y Beta: 0.30
+
+  Trend & Momentum:
+    [WMT-SMA20]    SMA 20D: $92.46
+    [WMT-SMA50]    SMA 50D: $87.54
+    [WMT-SMA200]   SMA 200D: $72.86
+    [WMT-MOM200]   200D Momentum: 1.23
+    [WMT-MOM12_1]  12-1M Momentum: +77.7%
+    [WMT-IDMOM]    Idiosyncratic Momentum 60D: 0.1007
+    [WMT-TREND]    Trend Consistency: 0.60
+    [WMT-RS60]     Relative Strength 60D: +10.4%
+    [WMT-ESURP]    Earnings Surprise: +7.5%
+    [WMT-ADVOL]    Avg Dollar Volume 20D: $1,687,841,392
+
+  Sentiment (from earnings call):
+    [WMT-SENT]     Mean Sentiment: -0.1377
+    [WMT-SVOL]     Sentiment Volatility: 0.5623
+
+  Filing Evidence (10-Q, filed 2024-12-06, fiscal period: 2024-Q4 [FYE: Jan 31]):
+    [WMT-F1] Walmart maintained consistent segment contribution rates to consolidated net sales and operating income across its three business segments during the period.
+    [WMT-F2] The company operates in a highly competitive omni-channel retail environment facing competition from discount retailers, warehouse clubs, eCommerce businesses, and companies offering digital advertising and fulfillment services.
+    [WMT-F3] Comparable store and club sales methodology includes all digitally initiated transactions and omni-channel fulfillment through stores and clubs, encompassing the Walmart Connect advertising business within the ecosystem measurement.
+    [WMT-F4] Cost structure details were not disclosed in the available filing excerpts for this period.
+    [WMT-F5] Operating expense trends and gross margin dynamics require additional financial statement data not present in the provided management discussion overview and regulatory filings.
+    [WMT-F6] The company reached a settlement agreement subject to court approval resolving shareholder derivative actions related to prescription opioid distribution oversight, with insurance carriers paying $123 million less legal fees and the company maintaining specified corporate governance practices for five years.
+    [WMT-F7] Kathryn McLay, President and CEO of Walmart International, established a Rule 10b5-1 trading plan to sell 40,000 shares over ten months beginning March 2025 as part of asset diversification strategy.
+    [WMT-F8] The company faces exposure to currency exchange rate fluctuations affecting Walmart International segment results and contribution rates.
+    [WMT-F9] Operational risks include potential impacts from tariff impositions, labor availability and cost pressures, supply chain disruptions, and general economic conditions affecting consumer disposable income and buying patterns.
+    [WMT-F10] Management guidance and strategic direction details were not provided in the available filing excerpts.
+    [WMT-F11] Forward-looking statements regarding capital allocation plans, growth initiatives, or financial targets require additional disclosure not present in the regulatory filings provided.
+    [WMT-F12] The derivative action settlement remains subject to Delaware Court of Chancery approval with no admission of liability by defendants.
+    [WMT-F13] Standard retail industry uncertainties persist including competitive pressures, consumer credit availability, inventory management disruptions, and potential cybersecurity attacks, though no material changes to previously disclosed risk factors occurred during the period.
+
+  Earnings Call Evidence:
+    [WMT-EC1] Walmart delivered strong Q4 2024 results with 4.9% sales growth and 10.9% adjusted operating profit growth in constant currency.
+    [WMT-EC2] The company surpassed $100 billion in global e-commerce sales for the first time and gained market share across segments.
+    [WMT-EC3] Walmart US comp sales grew 4% with strong transaction counts, while international sales increased 13% led by Flipkart, Walmex, and China.
+    [WMT-EC4] E-commerce losses improved by over 40% year-over-year due to lower fulfillment costs and improved last-mile efficiency.
+    [WMT-EC5] The company announced plans for significant store expansion with 150+ new US locations over five years and agreed to acquire Vizio to enhance its advertising platform.
+    [WMT-EC6] Management provided FY2025 guidance of 3-4% constant currency sales growth and 4-6% operating income growth, maintaining their framework of growing operating income faster than sales.
+    [WMT-EC7] They expect continued momentum from higher-margin businesses including advertising (which grew 28% to $3.4 billion), marketplace, and membership services.
+    [WMT-EC8] The company plans 650 US store remodels in FY2025 and expects supply chain automation benefits to accelerate in the second half.
+    [WMT-EC9] Management expressed confidence in their omni-channel strategy and ability to serve customers across all income segments while maintaining pricing flexibility.
+    [WMT-EC10] The company faces potential headwinds from persistent category mix pressure as general merchandise remains weaker than food/consumables, with GM weakness expected to continue into FY2025.
+    [WMT-EC11] SG&A deleverage is anticipated due to business mix changes and higher variable compensation.
+    [WMT-EC12] The Vizio acquisition is expected to be slightly dilutive to EPS in the near term due to transaction costs.
+    [WMT-EC13] Economic uncertainty could impact consumer spending patterns, and the company noted variability in guidance ranges given business scale and market conditions.
+    [WMT-EC14] Key growth drivers include supply chain automation reaching 55% of fulfillment centers by end of FY2026, expansion of higher-margin services (advertising, marketplace, membership), and continued e-commerce profitability improvements through route densification and fulfillment cost reductions.
+    [WMT-EC15] Store remodels and new locations are driving market share gains, particularly among higher-income households.
+    [WMT-EC16] International operations, especially India, Mexico, and China, are expected to contribute significantly to growth with the international segment targeting $200 billion GMV by FY2028.
+
+======================================================================
+TICKER: XOM
+======================================================================
+
+  Price & Returns:
+    [XOM-PX]       Close: $103.07
+    [XOM-RET20]    20D Return: -8.7%
+    [XOM-RET60]    60D Return: -13.1%
+    [XOM-RET120]   120D Return: -3.5%
+    [XOM-RET252]   1Y Return: +11.3%
+
+  Volatility & Risk:
+    [XOM-VOL20]    20D Vol (ann): 15.8%
+    [XOM-VOL60]    60D Vol (ann): 17.3%
+    [XOM-DVOL60]   60D Downside Vol: 13.4%
+    [XOM-DD60]     60D Drawdown: -15.2%
+    [XOM-MDD1Y]    1Y Max Drawdown: -15.2%
+    [XOM-SHARPE]   60D Sharpe: -3.42
+    [XOM-BETA]     1Y Beta: 0.19
+
+  Trend & Momentum:
+    [XOM-SMA20]    SMA 20D: $105.10
+    [XOM-SMA50]    SMA 50D: $110.35
+    [XOM-SMA200]   SMA 200D: $109.94
+    [XOM-MOM200]   200D Momentum: 0.94
+    [XOM-MOM12_1]  12-1M Momentum: +22.0%
+    [XOM-IDMOM]    Idiosyncratic Momentum 60D: -0.1452
+    [XOM-TREND]    Trend Consistency: 0.42
+    [XOM-RS60]     Relative Strength 60D: -14.6%
+    [XOM-ESURP]    Earnings Surprise: +2.7%
+    [XOM-ADVOL]    Avg Dollar Volume 20D: $1,799,937,389
+
+  Sentiment (from earnings call):
+    [XOM-SENT]     Mean Sentiment: 0.3286
+    [XOM-SVOL]     Sentiment Volatility: 0.4452
+
+  Filing Evidence (10-Q, filed 2024-08-05, fiscal period: 2024-Q2):
+    [XOM-F1] Second quarter 2024 earnings reached $9.2 billion, up from $7.9 billion in the prior year, driven by improved upstream realizations and increased volumes from advantaged assets.
+    [XOM-F2] The Pioneer acquisition completed May 3, 2024, contributed significantly to upstream production growth alongside record performance in Guyana and heritage Permian operations.
+    [XOM-F3] Oil-equivalent production increased 750 thousand barrels per day to 4.4 million barrels daily.
+    [XOM-F4] Structural cost savings delivered $450 million in earnings benefits across segments, bringing cumulative savings to $10.7 billion versus 2019 levels.
+    [XOM-F5] Energy Products margins compressed significantly due to weaker industry refining conditions, while Chemical Products maintained relatively stable margins despite bottom-of-cycle industry conditions.
+    [XOM-F6] Operating expenses increased primarily from higher depreciation and planned maintenance activities, partially offset by operational efficiencies.
+    [XOM-F7] ExxonMobil completed the $60 billion Pioneer Natural Resources acquisition on May 3, 2024, adding significant Permian Basin production capacity.
+    [XOM-F8] The company distributed $8.1 billion in dividends and repurchased $8.3 billion of common stock during the first six months.
+    [XOM-F9] Pioneer's convertible notes were redeemed at premium while Maria Dreyfus joined the Board in connection with the transaction.
+    [XOM-F10] Crude oil prices remained near the middle of the 10-year historical range with relatively balanced market conditions.
+    [XOM-F11] Natural gas prices declined due to milder weather reducing demand, while industry refining margins fell from historically high levels to the lower half of the 10-year range as supply increases exceeded record global demand.
+    [XOM-F12] Chemical margins remained at bottom-of-cycle conditions as capacity additions continued to outpace demand growth.
+    [XOM-F13] Management anticipates approximately $28 billion in capital investment for 2024, with actual spending subject to project progress and property acquisitions.
+    [XOM-F14] The company maintains capital allocation priorities of investing in competitively advantaged high-return projects, maintaining balance sheet strength, and consistent shareholder returns through share repurchases and growing dividends.
+    [XOM-F15] Strategic focus continues on advantaged assets including Permian, Guyana, Brazil, and LNG developments.
+    [XOM-F16] The company assumed $4.9 billion in take-or-pay obligations from the Pioneer acquisition covering long-term purchase, gathering, processing, and transportation commitments.
+    [XOM-F17] Forward-looking emissions reduction plans and low-carbon investment guidance remain subject to policy support, technological advancement, permitting timelines, and partner alignment.
+
+  Earnings Call Evidence:
+    [XOM-EC1] ExxonMobil reported strong Q4 2024 results with $34 billion in earnings and $55 billion in cash flow from operations, marking the third highest results in a decade despite softer market conditions.
+    [XOM-EC2] The company achieved record production from advantaged assets and highest liquid production in over 40 years.
+    [XOM-EC3] Key accomplishments include record Permian production from both legacy and Pioneer assets, with combined synergies now expected to exceed $3 billion annually.
+    [XOM-EC4] The company is preparing for a busy 2025 with multiple major project startups including Yellowtail in Guyana, Singapore resid upgrade, and advanced recycling facilities at Baytown.
+    [XOM-EC5] Management expects over $3 billion in earnings potential from 2025 project startups by 2026, with production growing from 1.5 million to 2.3 million barrels per day in the Permian by 2030.
+    [XOM-EC6] The company reaffirmed its 2030 targets of $20 billion more in earnings and $30 billion more in cash flow on a constant price basis.
+    [XOM-EC7] Capital expenditure is guided at $27-29 billion for 2025 and $28-33 billion annually through 2030.
+    [XOM-EC8] Management emphasized confidence in achieving structural cost reductions of $18 billion by 2030 while funding profitable growth in new technology-driven businesses like Proxxima products and carbon materials.
+    [XOM-EC9] Key risks include execution challenges on multiple simultaneous project startups in 2025, potential impacts from North American tariff policies, and regulatory uncertainties around low-carbon investments requiring policy support.
+    [XOM-EC10] The chemicals business continues facing margin pressures from oversupply conditions despite strong demand.
+    [XOM-EC11] Geopolitical risks remain for international LNG projects, and the company faces legal challenges including defamation suits related to advanced recycling operations in California.
+    [XOM-EC12] Primary value drivers include successful startup and ramp-up of major projects across Guyana, Permian, and downstream facilities, with particular focus on Yellowtail and Singapore resid upgrade projects.
+    [XOM-EC13] Pioneer integration synergies exceeding $3 billion annually represent significant value creation.
+    [XOM-EC14] The company's unique end-to-end carbon capture and storage capabilities position it advantageously for data center decarbonization opportunities.
+    [XOM-EC15] New business development in Proxxima products and carbon materials targeting $100 billion addressable markets by 2030 provides growth beyond traditional energy commodities.
 
 ======================================================================
 END OF MEMO
