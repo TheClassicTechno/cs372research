@@ -278,7 +278,7 @@ def ablation_summary():
 def ablation_regenerate():
     """Re-run aggregate_metrics.py and return the result."""
     result = subprocess.run(
-        [sys.executable, "logging/aggregate_metrics.py"],
+        [sys.executable, "scripts/aggregate_metrics.py"],
         capture_output=True,
         text=True,
     )

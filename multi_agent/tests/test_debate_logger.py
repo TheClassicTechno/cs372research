@@ -54,6 +54,11 @@ class _StubConfig:
     convergence_window: int = 2
     delta_rho: float = 0.02
 
+    def to_dict(self) -> dict:
+        """Minimal serialisation matching DebateConfig.to_dict()."""
+        from dataclasses import asdict
+        return asdict(self)
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

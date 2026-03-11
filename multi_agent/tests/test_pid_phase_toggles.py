@@ -126,8 +126,9 @@ class TestBetaValuePropagation:
         state = {"config": {}}
         runner._run_round_with_pid(state, round_num=2)
 
-        # Propose has no tone
-        assert recorded["propose_beta"] is None
+        # Propose is skipped in round 2+ (uses prior revisions), so no
+        # propose_beta is recorded.
+        assert "propose_beta" not in recorded
         # Critique + Revise use the updated beta from controller
         assert recorded["critique_beta"] == pytest.approx(0.85)
         assert recorded["revise_beta"] == pytest.approx(0.85)
