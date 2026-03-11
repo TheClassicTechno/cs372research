@@ -1,0 +1,164 @@
+# ===========================================================================
+# Ablation 9 — PID enabled + JS Intervention (threshold 0.8)
+# 2 agents, 2 rounds
+# Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> judge  (×2 rounds, PID adjusts beta)
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+# --- Agent profiles ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini
+  crit_llm_model: gpt-5
+  temperature: 0.3
+
+  max_rounds: 2
+  max_retries: 3
+  propose_only: false
+
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_9
+
+  # --- PID controller ---
+  pid_enabled: true
+  pid_kp: 0.55
+  pid_ki: 0.06
+  pid_kd: 0.05
+  pid_rho_star: 0.83
+  pid_initial_beta: 0.4
+  pid_epsilon: 0.015
+
+  # --- Intervention engine ---
+  intervention_config:
+    enabled: true
+    revision_limits:
+      max_changed_tickers: 2
+      max_change_pct: 5
+    rules:
+      js_collapse:
+        enabled: true
+        threshold: 0.8
+        min_js_proposal: 0.10
+        max_retries: 1
+        nudge_prompts:
+          macro: |
+            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
+
+            DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+            Rapid consensus formation has been detected in the debate.
+
+            In complex financial analysis, early consensus often indicates
+            premature convergence or sycophancy rather than strong evidence.
+
+            To maintain analytical rigor:
+
+            - Defensible dissent is valuable and encouraged.
+            - You should not abandon a well-supported thesis solely because
+              other agents appear to agree.
+            - Rapid agreement requires explicit justification.
+
+            Agreement without independent reasoning is considered a debate failure.
+
+            Your objective is rigorous reasoning, not agreement.
+
+            MACRO INTERVENTION REMINDER
+
+            Your responsibility is to analyze macro regime dynamics.
+
+            Do NOT anchor on individual stock narratives if they conflict with macro conditions.
+
+            Re-check:
+
+            - interest rate regime
+            - inflation trajectory
+            - liquidity conditions
+            - credit spreads
+            - global growth signals
+
+            If other agents ignored macro constraints, you should challenge them.
+
+            A portfolio that ignores the macro regime is structurally fragile.
+
+            Before finalizing your revision:
+
+            1. Re-examine your original thesis.
+            2. Identify whether critiques genuinely invalidate it.
+            3. Defend at least one element of your original reasoning unless
+               it has been clearly disproven.
+            4. Identify one vulnerability in the emerging consensus view.
+            5. Explain which agent you disagree with most and why.
+            6. List ONE reason why another agent's argument is still flawed.
+          technical: |
+            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
+
+            DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+            Rapid consensus formation has been detected in the debate.
+
+            In complex financial analysis, early consensus often indicates
+            premature convergence or sycophancy rather than strong evidence.
+
+            To maintain analytical rigor:
+
+            - Defensible dissent is valuable and encouraged.
+            - You should not abandon a well-supported thesis solely because
+              other agents appear to agree.
+            - Rapid agreement requires explicit justification.
+
+            Agreement without independent reasoning is considered a debate failure.
+
+            Your objective is rigorous reasoning, not agreement.
+
+            TECHNICAL INTERVENTION REMINDER
+
+            Your role is to analyze price structure and market behavior.
+
+            You should NOT abandon a technical signal simply because fundamental narratives sound persuasive.
+
+            Re-check:
+
+            - trend structure
+            - momentum persistence
+            - support/resistance levels
+            - volatility regimes
+            - market breadth
+
+            If fundamentals contradict price action, you must explain why.
+
+            Price often reflects information before narratives catch up.
+
+            Before finalizing your revision:
+
+            1. Re-examine your original thesis.
+            2. Identify whether critiques genuinely invalidate it.
+            3. Defend at least one element of your original reasoning unless
+               it has been clearly disproven.
+            4. Identify one vulnerability in the emerging consensus view.
+            5. Explain which agent you disagree with most and why.
+            6. List ONE reason why another agent's argument is still flawed.
+
+      reasoning_quality:
+        enabled: false
+        rho_threshold: 0.5
+        max_retries: 1
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0
