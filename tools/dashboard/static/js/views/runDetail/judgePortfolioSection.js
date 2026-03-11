@@ -252,7 +252,7 @@ function renderCollapseDiagnostics(collapse, agentLabel) {
   var collapseWrap = document.getElementById('collapse-section');
   if (!collapseWrap) return;
   var ch = '<div class="ov-title">COLLAPSE DIAGNOSTICS</div>';
-  ch += '<div style="font-size:0.85em;color:#888;line-height:1.5;margin-bottom:12px;max-width:720px;">';
+  ch += '<div style="font-size:0.95em;line-height:1.6;margin-bottom:12px;max-width:720px;">';
   ch += '<strong>Movement</strong> &mdash; L\u2081 distance between proposal and revision vectors. How much the agent changed its portfolio.';
   ch += '<br><strong>Toward Consensus</strong> &mdash; ';
   ch += 'dist(proposal, consensus) \u2212 dist(revision, consensus), where consensus is the equal-weight mean of all proposals and dist is L\u2081. ';
