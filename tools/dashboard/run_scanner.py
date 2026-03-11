@@ -7,6 +7,7 @@ for the dashboard API.  Pure filesystem module — no FastAPI dependency.
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,21 @@ def _safe_json(path: Path) -> dict | list | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
+
+
+def _relative_run_dir(run_dir: Path) -> str:
+    """Return run_dir as a path relative to the repo content root.
+
+    Looks for ``logging/runs/`` in the resolved path and returns
+    everything from that point.  Falls back to the full path if the
+    marker is not found.
+    """
+    resolved = str(run_dir.resolve())
+    marker = "logging/runs/"
+    idx = resolved.find(marker)
+    if idx != -1:
+        return resolved[idx:]
+    return resolved
 
 
 def _get_run_status(run_dir: Path) -> str:
@@ -641,6 +657,51 @@ def list_runs(base_path: Path = DEFAULT_BASE, experiment: str = "default") -> li
     return runs
 
 
+def _persist_metric(run_dir: Path, metric_name: str, data: Any) -> None:
+    """Write a computed metric to the _dashboard artifact directory.
+
+    Only writes if the content has changed, avoiding unnecessary disk writes.
+    """
+    dashboard_dir = run_dir / "_dashboard"
+    dashboard_dir.mkdir(exist_ok=True)
+    path = dashboard_dir / f"{metric_name}.json"
+    serialized = json.dumps(data, indent=2)
+    if path.exists() and path.read_text() == serialized:
+        return
+    path.write_text(serialized)
+
+
+def _compute_ticker_performance(
+    tickers: list[str],
+    prices_base: Path,
+    year: str,
+    quarter: str,
+) -> list[dict]:
+    """Compute per-ticker quarter performance (open, close, pct_change).
+
+    Sorted by ticker. Excludes _CASH_. Returns [] if no price data.
+    """
+    result = []
+    for ticker in sorted(tickers):
+        if ticker == "_CASH_":
+            continue
+        price_file = prices_base / ticker / f"{year}_{quarter}.json"
+        price_data = _safe_json(price_file)
+        if not price_data or not price_data.get("daily_close"):
+            continue
+        closes = price_data["daily_close"]
+        open_price = closes[0]["close"]
+        close_price = closes[-1]["close"]
+        pct_change = round((close_price - open_price) / open_price * 100, 2)
+        result.append({
+            "ticker": ticker,
+            "open": round(open_price, 2),
+            "close": round(close_price, 2),
+            "pct_change": pct_change,
+        })
+    return result
+
+
 def get_run_detail(
     base_path: Path = DEFAULT_BASE,
     experiment: str = "default",
@@ -658,7 +719,7 @@ def get_run_detail(
         "run_id": run_id,
         "experiment": experiment,
         "status": _get_run_status(run_dir),
-        "run_dir": str(run_dir.resolve()),
+        "run_dir": _relative_run_dir(run_dir),
     }
 
     manifest = _safe_json(run_dir / "manifest.json")
@@ -672,6 +733,39 @@ def get_run_detail(
     detail["pid_config"] = _safe_json(run_dir / "pid_config.json")
     detail["final_portfolio"] = _safe_json(run_dir / "final" / "final_portfolio.json")
     detail["quality"] = _extract_quality_metrics(run_dir)
+
+    # Load debate + scenario config YAMLs from final/ directory.
+    debate_config = None
+    scenario_config = None
+    final_dir = run_dir / "final"
+    if final_dir.is_dir():
+        for f in sorted(final_dir.iterdir()):
+            if f.suffix == ".yaml":
+                try:
+                    data = yaml.safe_load(f.read_text(encoding="utf-8"))
+                    if not isinstance(data, dict):
+                        continue
+                    if "debate_setup" in data:
+                        debate_config = data
+                    elif "invest_quarter" in data:
+                        scenario_config = data
+                except Exception:
+                    continue
+    detail["debate_config"] = debate_config
+    detail["scenario_config"] = scenario_config
+
+    # Ticker performance
+    if manifest:
+        invest_q = manifest.get("invest_quarter")
+        parsed = _quarter_from_date(invest_q) if invest_q else None
+        if parsed is not None:
+            year, quarter = parsed
+            tp = _compute_ticker_performance(
+                manifest.get("ticker_universe", []),
+                DAILY_PRICES_BASE, year, quarter,
+            )
+            detail["ticker_performance"] = tp
+            _persist_metric(run_dir, "ticker_performance", tp)
 
     # Round summaries from round_state.json
     round_summaries = []
@@ -989,16 +1083,187 @@ def _equal_weight_mean(portfolios: list[dict[str, float]]) -> dict[str, float]:
     return {ticker: round(total / n, 4) for ticker, total in agg.items()}
 
 
+def _pv_with_delta(
+    portfolio: dict[str, float] | None,
+    prices_base: Path,
+    year: str,
+    quarter: str,
+    initial_capital: float = 100_000.0,
+) -> dict | None:
+    """Compute portfolio value and delta vs initial capital.
+
+    Returns ``{pv, delta_pct}`` or ``None`` if portfolio is None/empty.
+    """
+    if not portfolio:
+        return None
+    perf = _portfolio_value(portfolio, prices_base, year, quarter, initial_capital)
+    pv = perf["final_value"]
+    delta_pct = round((pv - initial_capital) / initial_capital * 100, 2)
+    return {"pv": pv, "delta_pct": delta_pct}
+
+
+def _l1_distance(a: dict[str, float], b: dict[str, float]) -> float:
+    """L1 distance between two portfolio weight vectors."""
+    all_keys = set(a) | set(b)
+    return sum(abs(a.get(k, 0.0) - b.get(k, 0.0)) for k in all_keys)
+
+
+def _sharpe_from_weights(
+    portfolio: dict[str, float],
+    prices_base: Path,
+    year: str,
+    quarter: str,
+) -> float | None:
+    """Compute annualized Sharpe ratio from daily portfolio returns.
+
+    Uses up to 60 trading days in the investment quarter.
+    Sharpe = (mean_daily_return / std_daily_return) * sqrt(252).
+    Uses sample variance (N-1 denominator).
+    Returns None if fewer than 2 daily returns or std < 1e-10.
+    """
+    ticker_closes_by_date: dict[str, dict[str, float]] = {}
+    for ticker, weight in portfolio.items():
+        if abs(weight) < 1e-8 or ticker == "_CASH_":
+            continue
+        price_file = prices_base / ticker / f"{year}_{quarter}.json"
+        price_data = _safe_json(price_file)
+        if price_data and price_data.get("daily_close"):
+            ticker_closes_by_date[ticker] = {
+                d["date"]: float(d["close"])
+                for d in price_data["daily_close"]
+            }
+    if not ticker_closes_by_date:
+        return None
+
+    date_sets = [set(v.keys()) for v in ticker_closes_by_date.values()]
+    common_dates = sorted(set.intersection(*date_sets))
+    common_dates = common_dates[:61]
+    if len(common_dates) < 2:
+        return None
+
+    ticker_returns_by_date: dict[str, dict[str, float]] = {}
+    for ticker, closes_map in ticker_closes_by_date.items():
+        returns = {}
+        for i in range(1, len(common_dates)):
+            prev_date = common_dates[i - 1]
+            curr_date = common_dates[i]
+            returns[curr_date] = (closes_map[curr_date] - closes_map[prev_date]) / closes_map[prev_date]
+        ticker_returns_by_date[ticker] = returns
+
+    return_dates = common_dates[1:]
+    daily_returns: list[float] = []
+    for date in return_dates:
+        day_return = 0.0
+        for ticker, weight in portfolio.items():
+            if ticker in ticker_returns_by_date:
+                day_return += float(weight) * ticker_returns_by_date[ticker][date]
+        daily_returns.append(day_return)
+
+    if len(daily_returns) < 2:
+        return None
+
+    mean_r = sum(daily_returns) / len(daily_returns)
+    variance = sum((r - mean_r) ** 2 for r in daily_returns) / (len(daily_returns) - 1)
+    std = math.sqrt(variance)
+    if std < 1e-10:
+        return None
+    return round((mean_r / std) * math.sqrt(252), 4)
+
+
+def compute_collapse_diagnostics(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "default",
+    run_id: str = "",
+    persist: bool = True,
+) -> list[dict]:
+    """Per-round agent collapse diagnostics.
+
+    For each round, computes per-agent movement, toward_consensus,
+    collapse_share, and dissent. Identifies collapse leader and index.
+    """
+    run_dir = base_path / experiment / run_id
+    rounds_dir = run_dir / "rounds"
+    if not rounds_dir.is_dir():
+        return []
+
+    result = []
+    for round_dir in sorted(rounds_dir.iterdir()):
+        if not round_dir.name.startswith("round_"):
+            continue
+        try:
+            round_num = int(round_dir.name.split("_")[1])
+        except (IndexError, ValueError):
+            continue
+
+        proposals = _read_phase_portfolios(round_dir / "proposals")
+        revisions = _read_phase_portfolios(round_dir / "revisions")
+        if not proposals or not revisions:
+            continue
+
+        consensus = _equal_weight_mean(list(proposals.values()))
+        if not consensus:
+            continue
+
+        agents: dict[str, dict] = {}
+        roles = sorted(set(proposals) & set(revisions))
+        for role in roles:
+            prop = proposals[role]
+            rev = revisions[role]
+            movement = round(_l1_distance(prop, rev), 4)
+            dist_prop_to_consensus = _l1_distance(prop, consensus)
+            dist_rev_to_consensus = _l1_distance(rev, consensus)
+            toward = round(dist_prop_to_consensus - dist_rev_to_consensus, 4)
+            dissent = round(_l1_distance(rev, consensus), 4)
+            agents[role] = {
+                "movement": movement,
+                "toward_consensus": toward,
+                "dissent": dissent,
+            }
+
+        positive_toward = sum(
+            max(agents[r]["toward_consensus"], 0) for r in roles
+        )
+        for role in roles:
+            if positive_toward < 1e-10:
+                agents[role]["collapse_share"] = None
+            else:
+                agents[role]["collapse_share"] = round(
+                    max(agents[role]["toward_consensus"], 0) / positive_toward, 4
+                )
+
+        collapse_leader = None
+        collapse_index = None
+        shares = [
+            (r, agents[r]["collapse_share"])
+            for r in roles
+            if agents[r]["collapse_share"] is not None
+        ]
+        if shares:
+            shares.sort(key=lambda x: x[1], reverse=True)
+            collapse_leader = shares[0][0]
+            collapse_index = shares[0][1]
+
+        result.append({
+            "round": round_num,
+            "agents": agents,
+            "collapse_leader": collapse_leader,
+            "collapse_index": collapse_index,
+        })
+
+    if persist:
+        _persist_metric(run_dir, "collapse_diagnostics", result)
+    return result
+
+
 def compute_debate_impact(
     base_path: Path = DEFAULT_BASE,
     experiment: str = "default",
     run_id: str = "",
     prices_base: Path = DAILY_PRICES_BASE,
 ) -> dict:
-    """Compute debate impact: per-agent R1→final deltas + mean portfolio comparison.
+    """Compute debate impact: per-agent deltas, mean portfolios, Sharpe, summary, collapse.
 
-    Returns ``{agent_deltas: {role: {initial, final, delta_dollars, delta_pct}},
-    mean_portfolios: {r1_proposals: perf, r1_revisions: perf}}``.
+    Returns ``{agent_deltas, mean_portfolios, sharpe, summary, collapse}``.
     """
     run_dir = base_path / experiment / run_id
     manifest = _safe_json(run_dir / "manifest.json")
@@ -1018,12 +1283,36 @@ def compute_debate_impact(
     first_round = trajectory[0]
     last_round = trajectory[-1]
     r1_proposals = first_round.get("proposals") or {}
+    r1_revisions = first_round.get("revisions") or {}
     final_revisions = last_round.get("revisions") or {}
 
-    # Per-agent deltas: R1 proposal → final revision
+    # Read JS intervention portfolios per round
+    rounds_dir = run_dir / "rounds"
+    r1_js: dict[str, dict] = {}
+    r2_js: dict[str, dict] = {}
+    r2_revisions: dict[str, dict] = {}
+    if rounds_dir.is_dir():
+        r1_dir = rounds_dir / "round_001" / "revisions_retry_001"
+        r1_js = _read_phase_portfolios(r1_dir)
+        if len(trajectory) >= 2:
+            r2_dir = rounds_dir / "round_002" / "revisions_retry_001"
+            r2_js = _read_phase_portfolios(r2_dir)
+            r2_revisions = trajectory[1].get("revisions") or {}
+
+    # Read and validate judge portfolio
+    final_portfolio = _safe_json(run_dir / "final" / "final_portfolio.json")
+    judge_delta = None
+    if isinstance(final_portfolio, dict):
+        valid_weights = all(isinstance(v, (int, float)) for v in final_portfolio.values())
+        if valid_weights and final_portfolio:
+            judge_delta = _pv_with_delta(final_portfolio, prices_base, year, quarter)
+
+    # Per-agent deltas with PV for every phase
     agent_deltas: dict[str, dict] = {}
     for role in sorted(set(r1_proposals) | set(final_revisions)):
         entry: dict[str, Any] = {}
+
+        # Legacy fields (backward compat)
         if role in r1_proposals:
             entry["initial"] = _portfolio_value(
                 r1_proposals[role], prices_base, year, quarter,
@@ -1039,29 +1328,114 @@ def compute_debate_impact(
             entry["delta_pct"] = round(
                 entry["final"]["return_pct"] - entry["initial"]["return_pct"], 2,
             )
+
+        # Extended PV fields for each phase
+        entry["r1_proposal"] = _pv_with_delta(r1_proposals.get(role), prices_base, year, quarter)
+        entry["r1_revision"] = _pv_with_delta(r1_revisions.get(role), prices_base, year, quarter)
+        entry["r1_js"] = _pv_with_delta(r1_js.get(role), prices_base, year, quarter)
+        entry["r2_revision"] = _pv_with_delta(r2_revisions.get(role), prices_base, year, quarter)
+        entry["r2_js"] = _pv_with_delta(r2_js.get(role), prices_base, year, quarter)
+
+        # Judge comparison
+        entry["judge"] = None
+        final_agent_pv = entry.get("r2_revision") or entry.get("r1_revision")
+        if final_agent_pv and judge_delta:
+            entry["judge"] = {
+                "pv": judge_delta["pv"],
+                "delta_pct": judge_delta["delta_pct"],
+                "vs_agent_delta_pct": round(
+                    final_agent_pv["delta_pct"] - judge_delta["delta_pct"], 2,
+                ),
+            }
+
         agent_deltas[role] = entry
 
-    # Equal-weight mean portfolios: R1 proposals vs R1 revisions
-    r1_revisions = first_round.get("revisions") or {}
+    # Equal-weight mean portfolios
     mean_portfolios = _compute_round_means(
         r1_proposals, r1_revisions, "r1", prices_base, year, quarter,
     )
 
-    # R2: R1 revisions (input) vs R2 revisions (output)
-    # Propose is skipped in round 2+ so round_002/proposals/ is empty.
-    # Use R1 revisions as the actual "before" for round 2.
+    # R1 JS intervention mean
+    if r1_js:
+        mean_r1_js = _equal_weight_mean(list(r1_js.values()))
+        if mean_r1_js:
+            mean_portfolios["r1_js"] = _portfolio_value(mean_r1_js, prices_base, year, quarter)
+
+    # R2 means
     if len(trajectory) >= 2:
-        r2 = trajectory[1]
-        r2_revisions = r2.get("revisions") or {}
         r2_means = _compute_round_means(
             r1_revisions, r2_revisions, "r2", prices_base, year, quarter,
         )
         mean_portfolios.update(r2_means)
 
-    return {
+    # R2 JS intervention mean
+    if r2_js:
+        mean_r2_js = _equal_weight_mean(list(r2_js.values()))
+        if mean_r2_js:
+            mean_portfolios["r2_js"] = _portfolio_value(mean_r2_js, prices_base, year, quarter)
+
+    # Sharpe ratios for equal-weight mean portfolio of each phase
+    sharpe: dict[str, float | None] = {}
+    for phase_key, phase_portfolios in [
+        ("r1_proposal", r1_proposals),
+        ("r1_revision", r1_revisions),
+        ("r1_js", r1_js),
+        ("r2_revision", r2_revisions),
+        ("r2_js", r2_js),
+    ]:
+        if phase_portfolios:
+            mean_p = _equal_weight_mean(list(phase_portfolios.values()))
+            if mean_p:
+                sharpe[phase_key] = _sharpe_from_weights(mean_p, prices_base, year, quarter)
+
+    # --- Debate Summary (all server-side) ---
+    mean_prop_return = None
+    if "r1_proposals" in mean_portfolios:
+        mean_prop_return = mean_portfolios["r1_proposals"]["return_pct"]
+
+    final_rev_perf = (
+        mean_portfolios.get("r2_revisions")
+        or mean_portfolios.get("r1_revisions")
+        or mean_portfolios.get("r1_proposals")
+    )
+    final_debate_return = final_rev_perf["return_pct"] if final_rev_perf else None
+
+    debate_alpha = None
+    if mean_prop_return is not None and final_debate_return is not None:
+        debate_alpha = round(final_debate_return - mean_prop_return, 2)
+
+    judge_return = None
+    if judge_delta:
+        judge_return = judge_delta["delta_pct"]
+
+    agent_vs_judge = None
+    if final_debate_return is not None and judge_return is not None:
+        agent_vs_judge = round(final_debate_return - judge_return, 2)
+
+    final_sharpe = sharpe.get("r2_revision") or sharpe.get("r1_revision")
+
+    summary = {
+        "mean_proposal_return": mean_prop_return,
+        "final_debate_return": final_debate_return,
+        "debate_alpha": debate_alpha,
+        "judge_return": judge_return,
+        "agent_vs_judge": agent_vs_judge,
+        "final_sharpe": final_sharpe,
+    }
+
+    # Collapse diagnostics (persist=False to avoid double writes)
+    collapse = compute_collapse_diagnostics(base_path, experiment, run_id, persist=False)
+
+    result = {
         "agent_deltas": agent_deltas,
         "mean_portfolios": mean_portfolios,
+        "sharpe": sharpe,
+        "summary": summary,
+        "collapse": collapse,
     }
+
+    _persist_metric(run_dir, "debate_impact", result)
+    return result
 
 
 def _compute_round_means(

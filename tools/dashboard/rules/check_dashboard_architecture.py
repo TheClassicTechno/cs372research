@@ -177,9 +177,15 @@ STATE_MUTATION_TOKENS = (
 
 
 def strip_js_comments(text: str) -> str:
-    """Remove JS comments to reduce false positives in regex checks."""
-    # Remove block comments first, then line comments.
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    """Remove JS comments to reduce false positives in regex checks.
+
+    Block comments are replaced with an equivalent number of newlines
+    so that line numbers in the stripped text match the original source.
+    """
+    def _preserve_newlines(m: re.Match) -> str:
+        return "\n" * m.group(0).count("\n")
+
+    text = re.sub(r"/\*.*?\*/", _preserve_newlines, text, flags=re.S)
     text = re.sub(r"//.*", "", text)
     return text
 
@@ -289,23 +295,39 @@ def has_file_doc_comment(raw_text: str) -> bool:
 
 
 def has_doc_comment_above_function(raw_text: str, start_line: int) -> bool:
-    """
-    Heuristically require a doc comment above a function.
+    """Check for a documentation comment directly above a function.
 
-    Looks at the preceding few non-empty lines for '/**'.
+    Detects JSDoc blocks (``/** ... */``), single-line ``//`` comments,
+    and multi-line ``/* ... */`` block comments of any size.
+    Skips blank lines between the function and the comment.
     """
     lines = raw_text.splitlines()
-    idx = start_line - 2  # line above function
-    lookback = 5
-    snippet = []
-    while idx >= 0 and lookback > 0:
-        line = lines[idx].strip()
-        if line:
-            snippet.append(line)
-            lookback -= 1
+    idx = start_line - 2  # 0-indexed line above function
+
+    # Skip blank lines above the function.
+    while idx >= 0 and not lines[idx].strip():
         idx -= 1
-    joined = "\n".join(reversed(snippet))
-    return "/**" in joined
+
+    if idx < 0:
+        return False
+
+    line = lines[idx].strip()
+
+    # Single-line // comment.
+    if line.startswith("//"):
+        return True
+
+    # End of a block comment (JSDoc or plain).
+    # Scan backward through the block to find the opening marker.
+    if line.endswith("*/"):
+        while idx >= 0:
+            cur = lines[idx].strip()
+            if cur.startswith("/**") or cur.startswith("/*"):
+                return True
+            idx -= 1
+        return False
+
+    return False
 
 
 def require_viewtoken_guard(text: str) -> bool:

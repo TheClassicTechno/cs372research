@@ -521,7 +521,7 @@ class TestDebateImpact:
         assert table is not None, "Debate impact agents table not found"
         text = table.text_content()
         assert "R1 Proposal" in text, "Missing 'R1 Proposal' column header"
-        assert "Final Revision" in text, "Missing 'Final Revision' column header"
+        assert "R1 Revision" in text, "Missing 'R1 Revision' column header"
 
     def test_debate_impact_has_agent_rows(
         self, page: Page, dashboard_url: str,
@@ -662,3 +662,236 @@ class TestAblationDebateImpact:
         text = section.text_content()
         assert "Mean Portfolio" in text, "Missing 'Mean Portfolio' label"
         assert "Critique" in text, "Missing 'Critique' delta row"
+
+
+# ---------------------------------------------------------------------------
+# TEST 16 — Run overview config parameter grids
+# ---------------------------------------------------------------------------
+
+class TestRunOverviewConfigPanel:
+    def test_debate_config_grid_renders(self, page: Page, dashboard_url: str):
+        """Debate config grid appears with config parameters."""
+        _goto_run_detail(page, dashboard_url)
+        grid = page.query_selector("[data-testid='debate-config-grid']")
+        assert grid is not None, "Debate config grid not found"
+        text = grid.text_content()
+        assert "pid_kp" in text, "Missing pid_kp in debate config grid"
+
+    def test_scenario_config_grid_renders(self, page: Page, dashboard_url: str):
+        """Scenario config grid appears with config parameters."""
+        _goto_run_detail(page, dashboard_url)
+        grid = page.query_selector("[data-testid='scenario-config-grid']")
+        assert grid is not None, "Scenario config grid not found"
+        text = grid.text_content()
+        assert "invest_quarter" in text, "Missing invest_quarter in scenario config grid"
+
+    def test_run_dir_shown(self, page: Page, dashboard_url: str):
+        """Run directory is displayed and contains the run ID."""
+        _goto_run_detail(page, dashboard_url)
+        overview_text = page.text_content(".run-overview")
+        assert "Run Dir" in overview_text, "Run Dir label not found"
+        assert "run_2026-03-07_19-50-06" in overview_text, (
+            "Run dir should contain run ID"
+        )
+
+    def test_config_grid_has_monospace_values(self, page: Page, dashboard_url: str):
+        """Config values use monospace font."""
+        _goto_run_detail(page, dashboard_url)
+        cell = page.query_selector("[data-testid='debate-config-grid'] .ov-config-val")
+        assert cell is not None, "No config value cell found"
+        font = cell.evaluate("el => getComputedStyle(el).fontFamily")
+        assert "monospace" in font.lower() or "courier" in font.lower(), (
+            f"Config values should use monospace font, got: {font}"
+        )
+
+    def test_temperature_displayed(self, page: Page, dashboard_url: str):
+        """Temperature is visible in the overview."""
+        _goto_run_detail(page, dashboard_url)
+        overview_text = page.text_content(".run-overview")
+        assert "Temperature" in overview_text, "Temperature label not found"
+
+
+# ---------------------------------------------------------------------------
+# TEST 17 — Extended debate impact (PV columns, Judge, Sharpe)
+# ---------------------------------------------------------------------------
+
+class TestExtendedDebateImpact:
+    def test_debate_impact_has_pv_columns(self, page: Page, dashboard_url: str):
+        """Extended table has PV and delta sub-columns."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-impact-agents']", timeout=10000)
+        table = page.query_selector("[data-testid='debate-impact-agents']")
+        text = table.text_content()
+        assert "PV" in text, "Missing PV column header"
+
+    def test_debate_impact_has_judge_column(self, page: Page, dashboard_url: str):
+        """Extended table has Judge column."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-impact-agents']", timeout=10000)
+        table = page.query_selector("[data-testid='debate-impact-agents']")
+        text = table.text_content()
+        assert "Judge" in text, "Missing Judge column header"
+
+    def test_sharpe_table_renders(self, page: Page, dashboard_url: str):
+        """Sharpe ratios table renders with phase rows."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-impact-sharpe']", timeout=10000)
+        table = page.query_selector("[data-testid='debate-impact-sharpe']")
+        assert table is not None, "Sharpe table not found"
+        text = table.text_content()
+        assert "Sharpe" in text, "Missing Sharpe header"
+        assert "R1 Proposal" in text, "Missing R1 Proposal row"
+        assert "R1 Revision" in text, "Missing R1 Revision row"
+
+    def test_sharpe_table_has_numeric_values(self, page: Page, dashboard_url: str):
+        """Sharpe table has numeric values (not all dashes)."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-impact-sharpe']", timeout=10000)
+        table = page.query_selector("[data-testid='debate-impact-sharpe']")
+        cells = table.query_selector_all("td")
+        numeric_count = 0
+        for cell in cells:
+            txt = cell.text_content().strip()
+            try:
+                float(txt)
+                numeric_count += 1
+            except ValueError:
+                pass
+        assert numeric_count >= 2, (
+            f"Expected at least 2 numeric Sharpe values, got {numeric_count}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TEST 18 — Debate summary panel
+# ---------------------------------------------------------------------------
+
+class TestDebateSummaryPanel:
+    def test_summary_panel_renders(self, page: Page, dashboard_url: str):
+        """Debate summary panel appears with key metrics."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-summary-panel']", timeout=10000)
+        panel = page.query_selector("[data-testid='debate-summary-panel']")
+        assert panel is not None
+        text = panel.text_content()
+        assert "Debate Alpha" in text
+
+    def test_summary_debate_alpha_is_numeric(self, page: Page, dashboard_url: str):
+        """Debate Alpha shows a numeric percentage value."""
+        import re
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-summary-panel']", timeout=10000)
+        panel = page.query_selector("[data-testid='debate-summary-panel']")
+        text = panel.text_content()
+        assert re.search(r'[+-]?\d+\.\d+%', text), "No numeric % found in summary"
+
+    def test_summary_has_judge_return(self, page: Page, dashboard_url: str):
+        """Summary shows Judge Return metric."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-summary-panel']", timeout=10000)
+        panel = page.query_selector("[data-testid='debate-summary-panel']")
+        text = panel.text_content()
+        assert "Judge Return" in text
+
+
+# ---------------------------------------------------------------------------
+# TEST 19 — Collapse diagnostics
+# ---------------------------------------------------------------------------
+
+class TestCollapseDiagnostics:
+    def test_collapse_section_renders(self, page: Page, dashboard_url: str):
+        """Collapse diagnostics section renders with content."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("#collapse-section", timeout=10000)
+        section = page.query_selector("#collapse-section")
+        text = section.text_content()
+        assert len(text.strip()) > 0, "Collapse section is empty"
+
+    def test_collapse_has_movement_column(self, page: Page, dashboard_url: str):
+        """Collapse table has Movement column."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("#collapse-section", timeout=10000)
+        text = page.text_content("#collapse-section")
+        assert "Movement" in text
+
+    def test_collapse_identifies_leader(self, page: Page, dashboard_url: str):
+        """Collapse diagnostics show a collapse leader."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("#collapse-section", timeout=10000)
+        text = page.text_content("#collapse-section")
+        assert "Leader" in text or "leader" in text
+
+
+# ---------------------------------------------------------------------------
+# TEST 20 — Ticker performance table
+# ---------------------------------------------------------------------------
+
+class TestTickerPerformance:
+    def test_ticker_perf_table_renders(self, page: Page, dashboard_url: str):
+        """Ticker performance table renders in overview."""
+        _goto_run_detail(page, dashboard_url)
+        table = page.query_selector("[data-testid='ticker-perf-table']")
+        assert table is not None
+        text = table.text_content()
+        assert "AMD" in text, "Missing AMD in ticker perf table"
+
+    def test_ticker_perf_has_delta_column(self, page: Page, dashboard_url: str):
+        """Ticker performance shows percentage values."""
+        _goto_run_detail(page, dashboard_url)
+        table = page.query_selector("[data-testid='ticker-perf-table']")
+        text = table.text_content()
+        assert "%" in text
+
+    def test_ticker_perf_color_coding(self, page: Page, dashboard_url: str):
+        """Positive ticker returns use perf-profit class."""
+        _goto_run_detail(page, dashboard_url)
+        table = page.query_selector("[data-testid='ticker-perf-table']")
+        profit_cells = table.query_selector_all(".perf-profit")
+        loss_cells = table.query_selector_all(".perf-loss")
+        assert len(profit_cells) + len(loss_cells) > 0, "No color-coded cells"
+
+
+# ---------------------------------------------------------------------------
+# TEST 21 — Color formatting
+# ---------------------------------------------------------------------------
+
+class TestColorFormatting:
+    def test_positive_values_green(self, page: Page, dashboard_url: str):
+        """Positive percentage values use perf-profit (green) class."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-summary-panel']", timeout=10000)
+        profit_spans = page.query_selector_all(".perf-profit")
+        loss_spans = page.query_selector_all(".perf-loss")
+        assert len(profit_spans) + len(loss_spans) > 0, "No color-coded values found"
+
+
+# ---------------------------------------------------------------------------
+# TEST 22 — Backward compatibility (no JS intervention data)
+# ---------------------------------------------------------------------------
+
+class TestBackwardCompatibility:
+    def test_dashboard_works_without_js_interventions(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Dashboard renders correctly when JS intervention data is missing."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("[data-testid='debate-impact-agents']", timeout=10000)
+        table = page.query_selector("[data-testid='debate-impact-agents']")
+        assert table is not None
+
+
+# ---------------------------------------------------------------------------
+# TEST 23 — No truncation in ov-htable cells
+# ---------------------------------------------------------------------------
+
+class TestNoTruncation:
+    def test_ov_htable_cells_not_truncated(self, page: Page, dashboard_url: str):
+        """ov-htable cells should not use text-overflow: ellipsis."""
+        _goto_run_detail(page, dashboard_url)
+        cells = page.query_selector_all(".ov-htable td")
+        assert len(cells) > 0, "No ov-htable cells found"
+        for cell in cells[:5]:
+            overflow = cell.evaluate("el => getComputedStyle(el).textOverflow")
+            assert overflow != "ellipsis", (
+                f"ov-htable cell should not truncate, got text-overflow: {overflow}"
+            )
