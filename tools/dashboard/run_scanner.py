@@ -1612,10 +1612,14 @@ def _aggregate_impacts(impacts: list[dict]) -> dict:
         if rnd_means:
             mean_portfolios[rnd] = rnd_means
 
+    # Aggregate Sharpe ratios across runs
+    sharpe_agg = _aggregate_sharpe(impacts)
+
     return {
         "run_count": n,
         "agent_deltas": agent_agg,
         "mean_portfolios": mean_portfolios,
+        "sharpe": sharpe_agg,
     }
 
 
@@ -1646,6 +1650,24 @@ def _aggregate_round_means(
         "revisions_return": r_avg,
         "critique_impact": round(r_avg - p_avg, 2),
     }
+
+
+def _aggregate_sharpe(impacts: list[dict]) -> dict[str, float | None]:
+    """Aggregate Sharpe ratios across runs by phase.
+
+    Returns ``{r1_proposal: mean, r1_revision: mean, ...}`` with None
+    for phases that have no data.
+    """
+    phases = ("r1_proposal", "r1_revision", "r1_js", "r2_revision", "r2_js")
+    result: dict[str, float | None] = {}
+    for phase in phases:
+        values = []
+        for imp in impacts:
+            s = imp.get("sharpe", {})
+            if s and s.get(phase) is not None:
+                values.append(s[phase])
+        result[phase] = round(sum(values) / len(values), 4) if values else None
+    return result
 
 
 def get_round_detail(

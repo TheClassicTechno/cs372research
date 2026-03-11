@@ -230,6 +230,9 @@ function buildDebateImpactConfig(configKey, cfg) {
       }
     }
   }
+  if (cfg.sharpe !== undefined && cfg.sharpe !== null) {
+    row += col(buildAblationSharpeTable(cfg.sharpe));
+  }
   if (row !== '') {
     h += '<div class="metrics-row">' + row + '</div>';
   }
@@ -326,6 +329,35 @@ function buildMeanPortfolioSummary(mp, roundLabel) {
   h += '<tr><td>Revisions</td><td>' + fmt(mp.revisions_return, 2) + '%</td></tr>';
   h += '<tr><td style="font-weight:600;">Critique \u0394</td>';
   h += '<td class="' + cls + '" style="font-weight:600;">' + sign + fmt(mp.critique_impact, 2) + '%</td></tr>';
+  h += '</table>';
+  return h;
+}
+
+/**
+ * Build aggregate Sharpe ratio table for one config group.
+ * Shows mean annualized Sharpe per debate phase.
+ *
+ * @param {object} sharpe - {r1_proposal, r1_revision, r1_js, r2_revision, r2_js}
+ * @returns {string} HTML table string
+ */
+function buildAblationSharpeTable(sharpe) {
+  var phases = [
+    { key: 'r1_proposal', label: 'R1 Proposal' },
+    { key: 'r1_revision', label: 'R1 Revision' },
+    { key: 'r1_js', label: 'R1 JS' },
+    { key: 'r2_revision', label: 'R2 Revision' },
+    { key: 'r2_js', label: 'R2 JS' },
+  ];
+  var h = '<div class="section-label">Sharpe (ann.)</div>';
+  h += '<table class="data-table" data-testid="ablation-sharpe">';
+  h += '<tr><th>Phase</th><th>Mean</th></tr>';
+  for (var i = 0; i < phases.length; i++) {
+    var val = sharpe[phases[i].key];
+    h += '<tr><td>' + esc(phases[i].label) + '</td>';
+    h += '<td style="text-align:right;">';
+    h += (val !== null && val !== undefined) ? fmt(val, 4) : '\u2014';
+    h += '</td></tr>';
+  }
   h += '</table>';
   return h;
 }
