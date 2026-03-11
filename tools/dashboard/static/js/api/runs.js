@@ -47,6 +47,12 @@ export function fetchDebateImpact(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance/debate-impact');
 }
 
+/** Fetch per-round agent collapse diagnostics. */
+export function fetchCollapse(experiment, runId) {
+  return fetchJSON('/runs/' + encodeURIComponent(experiment) +
+                   '/' + encodeURIComponent(runId) + '/collapse');
+}
+
 export function fetchRound(experiment, runId, roundNum) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/round/' + roundNum);
 }

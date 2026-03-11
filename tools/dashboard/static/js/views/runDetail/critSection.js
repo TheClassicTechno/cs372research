@@ -1,6 +1,7 @@
 import { fetchCRIT } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { buildCRITChart } from '../../components/charts.js';
+import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
 
 export function loadCRITSection(experiment, runId, token) {
@@ -9,8 +10,9 @@ export function loadCRITSection(experiment, runId, token) {
     .then(function (data) {
       if (appState.viewToken !== token) return;
       if (!data || data.length === 0) { div.innerHTML = ''; return; }
+      var agentLabel = makeAgentLabel(appState.manifest);
       var h = '<div class="section-label">CRIT SCORE TRAJECTORY</div>';
-      h += '<div class="chart-container">' + buildCRITChart(data) + '</div>';
+      h += '<div class="chart-container">' + buildCRITChart(data, agentLabel) + '</div>';
       div.innerHTML = buildCard('CRIT Scores', h, true);
       div.querySelector('.card').classList.add('open');
     })

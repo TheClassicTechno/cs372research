@@ -1,374 +1,9 @@
 === SYSTEM PROMPT ===
-You are a **CRIT reasoning auditor**.
+You are a CRIT reasoning auditor.
 
-Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+Evaluate the reasoning integrity of a trading agent’s argument.
 
-You evaluate **reasoning quality only** — not prediction accuracy, profitability, or agreement with other agents.
-
-Your evaluation must be **strict, calibrated, and consistent**.
-
-CRIT is a **blind auditor**:
-you do NOT know the correct investment decision.
-
-Your task is only to evaluate whether the **reasoning process is sound**.
-
----
-
-AGENT ROLE
-
-Agent specialization: technical
-
-This agent specializes in **technical reasoning**.
-
-Evaluate reasoning **within this domain specialization**.
-
-Do NOT penalize arguments for focusing on their specialty.
-
----
-
-EVALUATION TARGET
-
-Evaluate the **REVISED ARGUMENT**.
-
-You are provided:
-
-• the original proposal
-• critiques from other agents
-• the agent's revised argument
-
-Use the proposal and critiques ONLY to determine whether:
-
-• weaknesses were addressed
-• critiques were handled correctly
-• alternative hypotheses were considered
-
-The **primary object of evaluation is the revised argument**.
-
----
-
-STRUCTURED REASONING FORMAT
-
-The revised argument contains structured reasoning with the following fields:
-
-• reasoning.claims — numbered causal claims, each with:
-  - claim_id, claim_text, claim_type (macro/sector/firm)
-  - pearl_level (L1/L2/L3)
-  - evidence (legacy citation list) + evidence_ids (normalized IDs)
-  - variables, assumptions, falsifiers
-  - impacts_positions (tickers affected by this claim)
-  - confidence (per-claim)
-• reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
-• reasoning.thesis — the agent's overall portfolio thesis
-• reasoning.confidence — the agent's self-assessed confidence
-• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
-• reasoning.revision_notes — (revised argument only) how the agent responded to critiques:
-  which critiques were accepted, rejected, and why
-• portfolio_allocation — the allocation weights
-• evidence_citations — full evidence text for cited IDs
-
-Use these structured fields for cross-referencing.
-If evidence_ids exists on claims, use it as the canonical evidence reference.
-If only the legacy evidence field exists, interpret entries as citation references.
-Use revision_notes to evaluate critique handling (alternative_consideration pillar).
-Use assumptions and falsifiers to assess logical completeness.
-
-Cross-reference fields have distinct roles:
-• claims[*].impacts_positions — which assets the claim theoretically affects.
-  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
-• position_rationale[*].supporting_claims — which claims actually justify the allocation.
-  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
-
----
-
-CLAIMS AND CRITIQUES STRUCTURE
-
-Arguments in the debate are organized using **numbered claims and critiques**.
-
-Claims are labeled:
-
-C1, C2, C3, ...
-
-Critiques are labeled:
-
-K1, K2, K3, ...
-
-Agents are expected to:
-
-• construct arguments using **explicit numbered claims**
-• critique specific claims using critique IDs
-• explicitly **accept or reject critiques during revision**
-
-You should use this structure to evaluate reasoning quality.
-
-Examples:
-
-A critique such as:
-
-K2: Claim C1 assumes inflation persistence without wage evidence.
-
-represents **high-quality debate targeting**.
-
-A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
-
----
-
-CLAIM REVISION EVALUATION
-
-Check whether the agent's revised argument properly engages with critiques.
-
-Specifically evaluate whether:
-
-• critiques targeting specific claims were addressed
-• accepted critiques resulted in meaningful reasoning updates
-• rejected critiques were justified with evidence or logic
-• claims were modified, strengthened, or abandoned appropriately
-
-If critiques_received is empty:
-• Do NOT penalize alternative_consideration for lack of critique handling
-• Evaluate whether the agent proactively considers alternative explanations
-• Absence of critiques does NOT imply strong reasoning — the agent must still demonstrate consideration of alternatives
-
-Potential failures include:
-
-• ignoring critiques entirely
-• rejecting critiques without justification
-• leaving challenged claims unchanged despite valid critiques
-• modifying the portfolio without explaining the reasoning change
-
----
-
-CRIT PILLARS
-
-You score FOUR pillars of reasoning integrity.
-
----
-
-PILLAR 1 — LOGICAL VALIDITY
-
-Does the reasoning logically support the conclusion?
-
-Detect:
-
-• contradictions within the argument
-• circular reasoning
-• non-sequitur conclusions
-• claims that invalidate earlier claims
-• reasoning steps missing between evidence and conclusion
-
-Also consider:
-
-• whether the portfolio allocation logically follows from the thesis
-• whether accepted critiques produce coherent reasoning updates
-
----
-
-PILLAR 2 — EVIDENTIAL SUPPORT
-
-Are factual claims supported by evidence?
-
-Detect:
-
-• unsupported claims
-• missing citations for key assertions
-• citations that do not actually support the claim
-• cherry-picked evidence
-• claims stronger than the evidence allows
-
-Check whether:
-
-• claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
-• critiques identify evidence gaps
-• revisions introduce new supporting evidence where needed
-• count claims with zero valid citations — report as unsupported_claims_count
-
----
-
-PILLAR 3 — ALTERNATIVE CONSIDERATION
-
-Does the agent consider competing explanations?
-
-Detect:
-
-• premature certainty
-• ignoring critiques
-• failure to address opposing arguments
-• failure to consider alternative interpretations of evidence
-• thesis changes without explanation
-
-Strong reasoning should:
-
-• engage with critiques directly
-• explain why critiques are accepted or rejected
-• consider competing causal explanations
-
-Use revision_notes to evaluate how critiques were handled.
-
----
-
-PILLAR 4 — CAUSAL ALIGNMENT
-
-Are causal claims justified by the evidence?
-
-Use Pearl's causal hierarchy adapted for financial domain:
-
-L1 — association/correlation: may cite correlational evidence
-L2 — intervention: must describe a plausible intervention or policy transmission mechanism, and evidence must be consistent with that mechanism (not literal experimental evidence)
-L3 — counterfactual reasoning: must explicitly reason about an alternative state or counterfactual scenario
-
-Detect **causal overreach**:
-
-• L2 claim with only associational evidence and no mechanism described
-• L3 claim without counterfactual structure
-• causal conclusions drawn from purely correlational evidence
-• macro claims directly mapped to asset outcomes without mechanism
-• missing causal pathway between variables
-
-Also check whether critiques successfully expose **causal weaknesses in specific claims**.
-
----
-
-INTERNAL REASONING TRACE
-
-Before scoring, you must internally perform these checks (do NOT include this trace in your output):
-
-1. List all claims and verify each has at least one evidence citation (use evidence_ids)
-2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
-3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
-4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
-5. Check for contradictions between claim pairs
-6. Verify Pearl level matches the type of reasoning used
-7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
-
----
-
-PATHOLOGY DETECTION
-
-Before assigning scores, detect the following reasoning failures:
-
-• contradictions
-• unsupported claims
-• ignored critiques
-• premature certainty
-• causal overreach
-• conclusion drift
-
-Definitions:
-
-contradictions
-: reasoning statements that conflict internally
-
-unsupported claims
-: claims made without evidence citations
-
-ignored critiques
-: critiques (K#) that target claims but receive no meaningful response
-
-premature certainty
-: strong conclusions despite weak evidence
-
-causal overreach
-: causal claims unsupported by the evidence type
-
-conclusion drift
-: portfolio allocation that does not logically follow from the argument.
-  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
-  Count orphaned positions and report as orphaned_positions_count.
-
-Where possible, report counts for each pathology type in the diagnostics output.
-
----
-
-SCORING PROCEDURE
-
-Follow this order:
-
-1. Identify reasoning failures.
-2. Determine which pillar each failure affects.
-3. Assign pillar scores based on severity.
-
-Multiple failures should **reduce scores proportionally**.
-
----
-
-SCORING SCALE
-
-Scores must use the **continuous range [0.0 – 1.0]**.
-
-Use the following anchors:
-
-1.00 — excellent reasoning
-0.85 — strong reasoning with minor gaps
-0.70 — acceptable but noticeable weaknesses
-0.55 — mixed reasoning with clear issues
-0.40 — weak reasoning with major flaws
-0.20 — very weak reasoning
-0.00 — severe reasoning failure
-
-CALIBRATION WARNING:
-• Scores above 0.90 should be RARE
-• Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
-• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
-
-Do NOT default to 0.5.
-
-Use the full scale.
-
----
-
-WHAT YOU DO NOT EVALUATE
-
-Do NOT evaluate:
-
-• prediction accuracy
-• trading profitability
-• agreement with other agents
-• market outcomes
-
-You are evaluating **reasoning quality only**.
-
-UNCERTAINTY IS GOOD:
-• Hedging and qualification represent good reasoning — do NOT penalize
-• Penalize: certainty without evidence, confidence exceeding evidence support
-• Penalize: absence of qualification when evidence is ambiguous
-
----
-
-OUTPUT FORMAT
-
-Return a single JSON object.
-
-No markdown.
-
-No text outside JSON.
-
-{
-"pillar_scores": {
-"logical_validity": <float>,
-"evidential_support": <float>,
-"alternative_consideration": <float>,
-"causal_alignment": <float>
-},
-"diagnostics": {
-"contradictions_detected": <bool>,
-"unsupported_claims_detected": <bool>,
-"ignored_critiques_detected": <bool>,
-"premature_certainty_detected": <bool>,
-"causal_overreach_detected": <bool>,
-"conclusion_drift_detected": <bool>,
-"contradictions_count": <int or null>,
-"unsupported_claims_count": <int or null>,
-"ignored_critiques_count": <int or null>,
-"causal_overreach_count": <int or null>,
-"orphaned_positions_count": <int or null>
-},
-"explanations": {
-"logical_validity": "<1-2 sentences explaining key reasoning issues>",
-"evidential_support": "<1-2 sentences explaining evidence usage>",
-"alternative_consideration": "<1-2 sentences explaining critique handling>",
-"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
-}
-}
-
+Return the evaluation strictly as JSON.
 
 === USER PROMPT ===
 ## Round 1
@@ -377,17 +12,9 @@ No text outside JSON.
 
 TECHNICAL
 
-You are evaluating the **REVISED ARGUMENT** produced by this agent after a debate round.
+Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
 
-Your task is to audit the **reasoning integrity of the revision**.
-
-The original proposal and critiques are provided only to determine:
-
-• whether critiques were addressed
-• whether contradictions were resolved
-• whether alternative explanations were considered
-
-Focus your evaluation on the **quality of reasoning in the revised argument**.
+CRIT evaluates **reasoning quality only**.
 
 You must NOT evaluate:
 
@@ -396,317 +23,556 @@ You must NOT evaluate:
 • market outcomes
 • agreement with other agents
 
-Your task is strictly to evaluate **reasoning integrity**.
+You do **not know the correct investment decision**.
+
+Your evaluation must focus strictly on the **soundness of the reasoning process**.
 
 ---
 
-# Claims and Critiques Structure
+# Evaluation Target
 
-Arguments in this debate use **explicit numbered claims and critiques**.
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the revised argument
+
+Use the proposal and critiques **only to determine**:
+
+• whether critiques exposed reasoning weaknesses
+• whether the revision addressed those weaknesses
+• whether competing explanations were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+# Agent Specialization
+
+Agent specialization: **technical**
+
+This agent focuses on **technical reasoning**.
+
+Evaluate reasoning **within this specialization**.
+
+Do NOT penalize arguments for focusing on their domain expertise.
+
+---
+
+# Structured Reasoning Format
+
+The revised argument contains structured reasoning fields.
+
+**reasoning.claims**
+
+Each claim includes:
+
+• claim_id
+• claim_text
+• claim_type (macro / sector / firm)
+• reasoning_type (causal / observational / risk_assessment / pattern)
+• evidence_ids (normalized evidence references)
+• assumptions
+• falsifiers
+• impacts_positions (tickers affected by this claim)
+• confidence
+
+**reasoning.position_rationale**
+
+Per-position explanations containing:
+
+• ticker
+• weight
+• supporting_claims (claim IDs that justify the position)
+• explanation
+
+**reasoning.risks_or_falsifiers**
+
+Portfolio-level invalidation conditions.
+
+**reasoning.revision_notes**
+
+Explanation of how critiques were handled.
+
+**portfolio_allocation**
+
+Final asset allocation.
+
+**evidence_citations**
+
+Full text for evidence references.
+
+Important distinctions:
+
+• **claims[*].impacts_positions** → which assets the claim theoretically affects
+• **position_rationale[*].supporting_claims** → which claims justify the allocation
+
+These serve different purposes:
+
+• impacts_positions → **causal completeness**
+• supporting_claims → **conclusion consistency**
+
+Important note about impacts_positions:
+
+The impacts_positions field may legitimately be empty.
+
+Some claims describe macro or market-wide relationships that affect the portfolio indirectly
+(e.g., interest rates affecting equity valuations broadly).
+
+Absence of impacts_positions is NOT automatically a reasoning failure.
+
+Only penalize causal completeness when a specific portfolio position is clearly implied
+by a claim but the reasoning fails to connect that claim to the position.
+
+---
+
+# Debate Structure
+
+Arguments are structured using explicit claims.
 
 Claims are labeled:
 
 C1, C2, C3, ...
 
-Critiques are labeled:
+Critiques may target specific claims or the portfolio allocation.
 
-K1, K2, K3, ...
+During revision agents may:
 
-Critiques typically target specific claims.
+• **ACCEPT** critiques
+• **REJECT** critiques with justification
 
-Example:
-
-K2: Claim C1 assumes inflation persistence without wage evidence.
-
-During revision, agents must explicitly respond to critiques by either:
-
-• **ACCEPTING** them (if they reveal a real flaw)
-• **REJECTING** them (if they do not materially affect the thesis)
-
-Use this structure when evaluating reasoning quality.
+Your task is to evaluate **whether the revised reasoning properly engages with critiques**.
 
 ---
 
 # Original Proposal
 
-The original proposal contains the agent's earlier reasoning and numbered claims.
-
-Use it only as reference to determine whether critiques exposed weaknesses.
+Use the proposal only to determine whether critiques revealed weaknesses.
 
 {
   "evidence_citations": [
     {
-      "evidence_id": "AMD-RET60",
-      "evidence_text": "60D Return: +52.9%"
+      "evidence_id": "NVDA-MOM200",
+      "evidence_text": "200D Momentum: 1.88"
     },
     {
-      "evidence_id": "AMD-RS60",
-      "evidence_text": "Relative Strength 60D: +56.8%"
+      "evidence_id": "NVDA-RS60",
+      "evidence_text": "Relative Strength 60D: +43.6%"
     },
     {
-      "evidence_id": "AMD-IDMOM",
-      "evidence_text": "Idiosyncratic Momentum 60D: 0.3136"
+      "evidence_id": "NVDA-RET120",
+      "evidence_text": "120D Return: +184.8%"
     },
     {
-      "evidence_id": "SLB-MOM12_1",
-      "evidence_text": "12-1M Momentum: +30.9%"
+      "evidence_id": "AMZN-MOM200",
+      "evidence_text": "200D Momentum: 1.25"
     },
     {
-      "evidence_id": "SLB-TREND",
-      "evidence_text": "Trend Consistency: 0.57"
+      "evidence_id": "AMZN-RS60",
+      "evidence_text": "Relative Strength 60D: +14.9%"
     },
     {
-      "evidence_id": "PG-SMA20",
-      "evidence_text": "SMA 20D: $131.82"
+      "evidence_id": "AAPL-MOM200",
+      "evidence_text": "200D Momentum: 1.26"
     },
     {
-      "evidence_id": "PG-SMA50",
-      "evidence_text": "SMA 50D: $130.68"
+      "evidence_id": "MSFT-MOM200",
+      "evidence_text": "200D Momentum: 1.28"
     },
     {
-      "evidence_id": "PG-SMA200",
-      "evidence_text": "SMA 200D: $129.96"
+      "evidence_id": "AAPL-SMA50",
+      "evidence_text": "SMA 50D: $174.25"
     },
     {
-      "evidence_id": "AMD-SMA50",
-      "evidence_text": "SMA 50D: $84.09"
+      "evidence_id": "AAPL-SMA200",
+      "evidence_text": "SMA 200D: $152.25"
     },
     {
-      "evidence_id": "AMD-SMA200",
-      "evidence_text": "SMA 200D: $77.77"
+      "evidence_id": "MSFT-SMA50",
+      "evidence_text": "SMA 50D: $312.72"
     },
     {
-      "evidence_id": "BAC-RET20",
-      "evidence_text": "20D Return: -15.5%"
+      "evidence_id": "MSFT-SMA200",
+      "evidence_text": "SMA 200D: $260.95"
     },
     {
-      "evidence_id": "BAC-IDMOM",
-      "evidence_text": "Idiosyncratic Momentum 60D: -0.2332"
+      "evidence_id": "NVDA-SMA20",
+      "evidence_text": "SMA 20D: $40.95"
+    },
+    {
+      "evidence_id": "NVDA-SMA50",
+      "evidence_text": "SMA 50D: $34.61"
+    },
+    {
+      "evidence_id": "NVDA-SMA200",
+      "evidence_text": "SMA 200D: $22.43"
+    },
+    {
+      "evidence_id": "AMZN-SMA20",
+      "evidence_text": "SMA 20D: $126.56"
+    },
+    {
+      "evidence_id": "AMZN-SMA50",
+      "evidence_text": "SMA 50D: $117.13"
     },
     {
       "evidence_id": "AMZN-SMA200",
-      "evidence_text": "SMA 200D: $107.51"
+      "evidence_text": "SMA 200D: $104.22"
     },
     {
-      "evidence_id": "AMZN-RET60",
-      "evidence_text": "60D Return: +18.9%"
+      "evidence_id": "CAT-SMA20",
+      "evidence_text": "SMA 20D: $228.13"
+    },
+    {
+      "evidence_id": "CAT-SMA50",
+      "evidence_text": "SMA 50D: $214.03"
+    },
+    {
+      "evidence_id": "CAT-SMA200",
+      "evidence_text": "SMA 200D: $212.88"
+    },
+    {
+      "evidence_id": "NVDA-ADVOL",
+      "evidence_text": "Avg Dollar Volume 20D: $20,322,947,786"
+    },
+    {
+      "evidence_id": "AMZN-ADVOL",
+      "evidence_text": "Avg Dollar Volume 20D: $7,514,995,622"
+    },
+    {
+      "evidence_id": "AAPL-ADVOL",
+      "evidence_text": "Avg Dollar Volume 20D: $11,176,726,270"
+    },
+    {
+      "evidence_id": "MSFT-ADVOL",
+      "evidence_text": "Avg Dollar Volume 20D: $8,547,796,452"
+    },
+    {
+      "evidence_id": "XOM-RET60",
+      "evidence_text": "60D Return: -5.9%"
+    },
+    {
+      "evidence_id": "XOM-RS60",
+      "evidence_text": "Relative Strength 60D: -16.4%"
+    },
+    {
+      "evidence_id": "CVX-RET60",
+      "evidence_text": "60D Return: -6.0%"
+    },
+    {
+      "evidence_id": "CVX-RS60",
+      "evidence_text": "Relative Strength 60D: -16.5%"
+    },
+    {
+      "evidence_id": "GS-RS60",
+      "evidence_text": "Relative Strength 60D: -9.7%"
+    },
+    {
+      "evidence_id": "GS-IDMOM",
+      "evidence_text": "Idiosyncratic Momentum 60D: -0.0743"
     }
   ],
   "portfolio_allocation": {
-    "AMD": 0.3,
-    "AMZN": 0.05,
-    "BAC": 0.0,
-    "CAT": 0.05,
+    "AAPL": 0.12,
+    "AMZN": 0.12,
+    "CAT": 0.13,
     "CVX": 0.03,
-    "PG": 0.2,
-    "RTX": 0.1,
-    "SLB": 0.2,
-    "_CASH_": 0.07
+    "GS": 0.03,
+    "JPM": 0.12,
+    "MSFT": 0.1,
+    "NVDA": 0.18,
+    "PG": 0.02,
+    "RTX": 0.02,
+    "WMT": 0.08,
+    "XOM": 0.05
   },
   "reasoning": {
     "claims": [
       {
         "assumptions": [
-          "Momentum persistence continues in the current market regime",
-          "No immediate idiosyncratic shock (earnings surprise or operational news) overwhelms price momentum"
+          "Momentum persistence holds in the current regime (no abrupt regime shift).",
+          "Daily/weekly liquidity remains sufficient to express momentum (no sudden market microstructure shock)."
         ],
         "claim_id": "C1",
-        "claim_text": "Stocks exhibiting strong medium-term momentum and relative strength are likely to continue outperforming in the near term due to momentum persistence; AMD shows outsized short/medium momentum and RS (e.g., [AMD-RET60], [AMD-RS60], [AMD-IDMOM]) and SLB shows strong 12-month momentum and trend consistency ([SLB-MOM12_1], [SLB-TREND]) implying persistent upside pressure for these leaders.",
-        "claim_type": "sector",
-        "confidence": 0.78,
+        "claim_text": "Assets with the strongest medium\u2011term momentum and relative strength are likely to continue outperforming in the near term due to momentum persistence \u2014 evidenced by NVDA\u0027s extreme 200\u2011day momentum and RS leadership [NVDA-MOM200] [NVDA-RS60], and corroborated by AMZN, AAPL and MSFT medium\u2011term momentum metrics [AMZN-MOM200] [AMZN-RS60] [AAPL-MOM200] [MSFT-MOM200].",
+        "claim_type": "technical",
+        "confidence": 0.85,
         "evidence": [
-          "[AMD-RET60]",
-          "[AMD-RS60]",
-          "[AMD-IDMOM]",
-          "[SLB-MOM12_1]",
-          "[SLB-TREND]"
+          "[NVDA-MOM200]",
+          "[NVDA-RS60]",
+          "[NVDA-RET120]",
+          "[AMZN-MOM200]",
+          "[AMZN-RS60]",
+          "[AAPL-MOM200]",
+          "[MSFT-MOM200]"
         ],
         "evidence_ids": [
-          "AMD-IDMOM",
-          "AMD-RET60",
-          "AMD-RS60",
-          "SLB-MOM12_1",
-          "SLB-TREND"
+          "AAPL-MOM200",
+          "AMZN-MOM200",
+          "AMZN-RS60",
+          "MSFT-MOM200",
+          "NVDA-MOM200",
+          "NVDA-RET120",
+          "NVDA-RS60"
         ],
         "falsifiers": [
-          "Significant drop in short/medium returns for leaders (e.g., AMD losing recent gains) or reversal of idiosyncratic momentum metrics",
-          "Volume-confirmed distribution leading to break below short-term moving averages for these names"
+          "Rapid deterioration of these momentum metrics (e.g., NVDA MOM200 falls meaningfully) or sharp price breaks below key trend levels (e.g., below SMA50).",
+          "60D relative strength turns negative for these names (e.g., AMZN-RS60 declines sharply)."
         ],
         "impacts_positions": [
-          "AMD",
-          "SLB",
+          "NVDA",
+          "AMZN",
+          "AAPL",
+          "MSFT"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Moving averages reasonably capture the primary trend for these stocks over the relevant horizon.",
+          "No exogenous shock forces simultaneous margin or liquidity stress that breaks multiple SMAs at once."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Price trading above short and medium moving averages signals trend continuation; several universe names trade above SMAs (AAPL above SMA50/SMA200 [AAPL-SMA50] [AAPL-SMA200], MSFT above SMA50/SMA200 [MSFT-SMA50] [MSFT-SMA200], NVDA above SMA20/50/200 [NVDA-SMA20] [NVDA-SMA50] [NVDA-SMA200], AMZN above SMA20/50/200 [AMZN-SMA20] [AMZN-SMA50] [AMZN-SMA200], CAT above SMA20/50/200 [CAT-SMA20] [CAT-SMA50] [CAT-SMA200]) \u2014 when price sits above these bands the probability of continuation is higher than mean\u2011reversion in the near term.",
+        "claim_type": "technical",
+        "confidence": 0.78,
+        "evidence": [
+          "[AAPL-SMA50]",
+          "[AAPL-SMA200]",
+          "[MSFT-SMA50]",
+          "[MSFT-SMA200]",
+          "[NVDA-SMA20]",
+          "[NVDA-SMA50]",
+          "[NVDA-SMA200]",
+          "[AMZN-SMA20]",
+          "[AMZN-SMA50]",
+          "[AMZN-SMA200]",
+          "[CAT-SMA20]",
+          "[CAT-SMA50]",
+          "[CAT-SMA200]"
+        ],
+        "evidence_ids": [
+          "AAPL-SMA200",
+          "AAPL-SMA50",
+          "AMZN-SMA20",
+          "AMZN-SMA200",
+          "AMZN-SMA50",
+          "CAT-SMA20",
+          "CAT-SMA200",
+          "CAT-SMA50",
+          "MSFT-SMA200",
+          "MSFT-SMA50",
+          "NVDA-SMA20",
+          "NVDA-SMA200",
+          "NVDA-SMA50"
+        ],
+        "falsifiers": [
+          "Sustained price closes below the SMA50/SMA200 for these names (e.g., AAPL or NVDA closing below their SMA50/SMA200).",
+          "Systemic risk event causing correlation spike and broad SMA breakdowns."
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "MSFT",
+          "NVDA",
+          "AMZN",
+          "CAT",
+          "JPM",
+          "WMT",
           "PG",
           "RTX"
         ],
-        "pearl_level": "L2",
-        "variables": [
-          "momentum",
-          "AMD_price",
-          "SLB_price",
-          "relative_strength"
-        ]
+        "reasoning_type": "pattern"
       },
       {
         "assumptions": [
-          "Moving-average regime remains a reliable trend filter in current market conditions",
-          "Short-term pullbacks that stay above SMA200 are normal and do not invalidate the uptrend"
-        ],
-        "claim_id": "C2",
-        "claim_text": "Price trading above key trend levels (20/50/200 SMAs) signals higher probability of trend continuation; PG is above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) and AMD is trading well above medium and long SMAs ([AMD-SMA50], [AMD-SMA200]), supporting overweight positions in names that are in a bullish moving-average regime.",
-        "claim_type": "firm",
-        "confidence": 0.72,
-        "evidence": [
-          "[PG-SMA20]",
-          "[PG-SMA50]",
-          "[PG-SMA200]",
-          "[AMD-SMA50]",
-          "[AMD-SMA200]"
-        ],
-        "evidence_ids": [
-          "AMD-SMA200",
-          "AMD-SMA50",
-          "PG-SMA20",
-          "PG-SMA200",
-          "PG-SMA50"
-        ],
-        "falsifiers": [
-          "Sustained break and close below SMA200 on higher volume for the security",
-          "Trend consistency metric collapses (large negative TREND) concurrent with SMA regime breach"
-        ],
-        "impacts_positions": [
-          "PG",
-          "AMD",
-          "RTX",
-          "SLB",
-          "CVX",
-          "CAT"
-        ],
-        "pearl_level": "L2",
-        "variables": [
-          "price_vs_sma20",
-          "price_vs_sma50",
-          "price_vs_sma200"
-        ]
-      },
-      {
-        "assumptions": [
-          "Being below the 200-day SMA reduces the probability of sustained outperformance in the near term",
-          "Negative idiosyncratic momentum is a sign of trend breakdown rather than short-lived noise"
+          "High RS60 and ADVOL correlate with persistent fund flows and continued leadership in rallies.",
+          "Liquidity remains available to scale positions without severe impact costs."
         ],
         "claim_id": "C3",
-        "claim_text": "Momentum divergence and breakdown in short-term trend implies lower forward returns and argues for underweight or cash allocation: BAC exhibits clear negative short/medium returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]), and AMZN remains below the long-term trend ([AMZN-SMA200]) despite recent short-term gains ([AMZN-RET60]) \u2014 allocate minimally to names below their long-term trend and hold cash as a hedge.",
-        "claim_type": "sector",
-        "confidence": 0.7,
+        "claim_text": "High relative strength and heavy dollar volume confirm leadership and reduce execution risk; NVDA and AMZN show outsized RS and trading liquidity (NVDA RS60 and ADVOL [NVDA-RS60] [NVDA-ADVOL]; AMZN RS60 and ADVOL [AMZN-RS60] [AMZN-ADVOL]), implying they are primary momentum conduits for the portfolio.",
+        "claim_type": "technical",
+        "confidence": 0.8,
         "evidence": [
-          "[BAC-RET20]",
-          "[BAC-IDMOM]",
-          "[AMZN-SMA200]",
-          "[AMZN-RET60]"
+          "[NVDA-RS60]",
+          "[NVDA-ADVOL]",
+          "[AMZN-RS60]",
+          "[AMZN-ADVOL]",
+          "[AAPL-ADVOL]",
+          "[MSFT-ADVOL]"
         ],
         "evidence_ids": [
-          "AMZN-RET60",
-          "AMZN-SMA200",
-          "BAC-IDMOM",
-          "BAC-RET20"
+          "AAPL-ADVOL",
+          "AMZN-ADVOL",
+          "AMZN-RS60",
+          "MSFT-ADVOL",
+          "NVDA-ADVOL",
+          "NVDA-RS60"
         ],
         "falsifiers": [
-          "AMZN decisively reclaims SMA200 with confirming volume (invalidates underweight)",
-          "BAC reverses and posts several consecutive positive medium-term returns with improving IDMOM"
+          "RS60 leadership reverses (large negative RS60 readings) or ADVOL dries up materially.",
+          "Regulatory or exchange-level restrictions reduce tradability of these securities."
         ],
         "impacts_positions": [
-          "BAC",
+          "NVDA",
           "AMZN",
-          "CASH"
+          "AAPL",
+          "MSFT"
         ],
-        "pearl_level": "L2",
-        "variables": [
-          "short_return",
-          "idiosyncratic_momentum",
-          "price_vs_sma200",
-          "cash_allocation"
-        ]
+        "reasoning_type": "observational"
+      },
+      {
+        "assumptions": [
+          "Negative recent returns and RS60 indicate continuing underperformance absent an external catalyst.",
+          "Sector rotation into defensives or into high\u2011momentum tech persists near term."
+        ],
+        "claim_id": "C4",
+        "claim_text": "Momentum divergence and negative medium\u2011term returns signal relative weakness \u2014 energy names XOM and CVX show negative 60\u2011day returns and negative RS60 suggesting reduced near\u2011term upside [XOM-RET60] [XOM-RS60] [CVX-RET60] [CVX-RS60]; Goldman shows weak RS and negative idiosyncratic momentum [GS-RS60] [GS-IDMOM], warranting underweight relative to momentum leaders.",
+        "claim_type": "technical",
+        "confidence": 0.7,
+        "evidence": [
+          "[XOM-RET60]",
+          "[XOM-RS60]",
+          "[CVX-RET60]",
+          "[CVX-RS60]",
+          "[GS-RS60]",
+          "[GS-IDMOM]"
+        ],
+        "evidence_ids": [
+          "CVX-RET60",
+          "CVX-RS60",
+          "GS-IDMOM",
+          "GS-RS60",
+          "XOM-RET60",
+          "XOM-RS60"
+        ],
+        "falsifiers": [
+          "Sustained reversal where XOM/CVX recover positive 60D returns and RS60 turns positive or GS posts consecutive strong momentum readings.",
+          "Major commodity shock (e.g., sharp crude price jump) that re\u2011rates energy cyclicals immediately."
+        ],
+        "impacts_positions": [
+          "XOM",
+          "CVX",
+          "GS"
+        ],
+        "reasoning_type": "risk_assessment"
       }
     ],
-    "confidence": 0.72,
+    "confidence": 0.75,
     "position_rationale": [
       {
-        "explanation": "High-conviction momentum leader: strong medium-term returns and RS ([AMD-RET60], [AMD-RS60]) plus price above SMA50/200 ([AMD-SMA50], [AMD-SMA200]) support largest overweight under momentum persistence and bullish SMA regime. Downside risk: rapid trend reversal or break below SMA50/SMA200 on heavy volume.",
+        "explanation": "AAPL has strong medium momentum (AAPL-MOM200) and trades above SMA50/SMA200 [AAPL-MOM200] [AAPL-SMA50] [AAPL-SMA200]; combine momentum persistence (C1), trend\u2011above\u2011SMA continuation (C2) and high ADVOL confirming execution (C3) to justify overweight exposure. Downside risk: broad tech reversal or break below SMA50/SMA200.",
         "supporting_claims": [
           "C1",
-          "C2"
-        ],
-        "ticker": "AMD",
-        "weight": 0.3
-      },
-      {
-        "explanation": "Stable trend continuation candidate: price sits above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) with low volatility enabling trend persistence. Serves as ballast to higher-volatility momentum names. Downside risk: commodity-driven margin shocks or broad retail selloff that erodes trend.",
-        "supporting_claims": [
           "C2",
-          "C1"
+          "C3"
         ],
-        "ticker": "PG",
-        "weight": 0.2
+        "ticker": "AAPL",
+        "weight": 0.12
       },
       {
-        "explanation": "Momentum and long-term strength: strong 12-month momentum ([SLB-MOM12_1]) and trend consistency ([SLB-TREND]) with price above SMA200 ([SLB-SMA200]) justify material overweight despite elevated volatility. Downside risk: commodity-price driven drawdowns and heightened downside vol.",
+        "explanation": "MSFT displays medium\u2011term momentum and sits above SMA50/SMA200 with positive RS60 [MSFT-MOM200] [MSFT-SMA50] [MSFT-SMA200] \u2014 technical profile consistent with momentum continuation (C1,C2) and liquidity (C3). Key risk: rapid drawdown in cloud/AI sentiment that flips momentum metrics.",
         "supporting_claims": [
           "C1",
-          "C2"
-        ],
-        "ticker": "SLB",
-        "weight": 0.2
-      },
-      {
-        "explanation": "Positive trend above longer-term SMA ([RTX-SMA200]) and solid multi-month returns ([RTX-RET120]) support a tactical growth allocation; lower weight reflects more modest RS and idiosyncratic momentum. Downside risk: supply-chain or backlog shocks that reverse the uptrend.",
-        "supporting_claims": [
           "C2",
-          "C1"
+          "C3"
         ],
-        "ticker": "RTX",
+        "ticker": "MSFT",
         "weight": 0.1
       },
       {
-        "explanation": "Small tactical exposure: short/medium momentum exists ([AMZN-RET60]) but price remains below the 200-day SMA ([AMZN-SMA200]) which reduces continuation probability\u2014small position to capture a potential reclaim of long-term trend. Downside risk: failing to reclaim SMA200 leading to underperformance.",
+        "explanation": "NVDA is the strongest momentum and RS leader in the universe [NVDA-MOM200] [NVDA-RS60] [NVDA-ADVOL] and trades well above SMAs [NVDA-SMA20] [NVDA-SMA50] [NVDA-SMA200]; highest conviction long to capture momentum persistence (C1) with trend confirmation (C2) and liquidity (C3). Downside: sharp momentum collapse or regulatory/export shock altering demand.",
         "supporting_claims": [
+          "C1",
+          "C2",
           "C3"
         ],
-        "ticker": "AMZN",
+        "ticker": "NVDA",
+        "weight": 0.18
+      },
+      {
+        "explanation": "JPM shows consistent trend above SMAs and positive momentum metrics [JPM-SMA20] [JPM-SMA50] [JPM-SMA200] and strong earnings surprise [JPM-ESURP]; technical continuation (C2) supports a meaningful allocation to financials. Risk: banking\u2011specific shocks or deposit flight that reverses trend.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "JPM",
+        "weight": 0.12
+      },
+      {
+        "explanation": "GS exhibits weaker RS60 and negative idiosyncratic momentum [GS-RS60] [GS-IDMOM]; small, tactical exposure only given underperformer signals (C4). Risk: investment banking recovery that rapidly flips momentum.",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "GS",
+        "weight": 0.03
+      },
+      {
+        "explanation": "XOM shows negative 60D returns and weak RS60 despite positive longer\u2011term returns [XOM-RET60] [XOM-RS60]; allocate modestly (energy minimum) given momentum divergence (C4). Downside: crude price spike that reverses momentum.",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "XOM",
         "weight": 0.05
       },
       {
-        "explanation": "Modest allocation to a name near/just above its 200-day SMA ([CVX-SMA200]) to capture trend continuation in commodities-linked sector if energy tailwinds persist. Kept small due to mixed short-term returns ([CVX-RET60]). Downside risk: oil-price weakness or operational shocks.",
+        "explanation": "CVX has negative medium\u2011term returns and weak RS60 [CVX-RET60] [CVX-RS60]; keep exposure minimal until technical leadership re\u2011emerges (C4). Risk: sudden commodity\u2011driven momentum reversal.",
         "supporting_claims": [
-          "C2"
+          "C4"
         ],
         "ticker": "CVX",
         "weight": 0.03
       },
       {
-        "explanation": "Small exposure to a longer-term uptrender (positive 200D momentum [CAT-MOM200] and strong 120D performance [CAT-RET120]) that is in a short-term pullback (price below SMA20/50) \u2014 position sized conservatively to capture mean-reversion into the broader uptrend. Downside risk: deeper pullback that breaches SMA200.",
+        "explanation": "CAT shows strong recent 20D strength and trades above key SMAs [CAT-RET20] [CAT-SMA20] [CAT-SMA50] [CAT-SMA200]; trend continuation (C2) and positive momentum (C1) justify sizable cyclical exposure. Downside: global growth slowing sharply, reversing industrial momentum.",
+        "supporting_claims": [
+          "C2",
+          "C1"
+        ],
+        "ticker": "CAT",
+        "weight": 0.13
+      },
+      {
+        "explanation": "RTX is slightly above short\u2011term SMAs [RTX-SMA20] and benefits from a stable backlog, supporting a small tactical position for industrial exposure (C2). Key risk: program inspection or cashflow headwinds that flip trend signals.",
         "supporting_claims": [
           "C2"
         ],
-        "ticker": "CAT",
-        "weight": 0.05
+        "ticker": "RTX",
+        "weight": 0.02
       },
       {
-        "explanation": "Convex hedge against momentum breakdowns identified in C3 (e.g., BAC negative momentum [BAC-RET20], AMZN below SMA200 [AMZN-SMA200]) \u2014 maintains dry powder if leaders\u0027 momentum fails. Cash earns the Fed funds rate [L1-FF].",
+        "explanation": "WMT trades above SMAs and shows steady low volatility trend support [WMT-SMA20] [WMT-SMA50] [WMT-SMA200]; used as defensive exposure with trend confirmation (C2). Downside: consumer demand shock that erodes margins and trend.",
         "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "WMT",
+        "weight": 0.08
+      },
+      {
+        "explanation": "PG shows moderate trend consistency and trades near/above SMA200 [PG-SMA200]; small defensive allocation for portfolio ballast per trend signals (C2). Risk: commodity cost shocks compressing margins and flipping trend.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "PG",
+        "weight": 0.02
+      },
+      {
+        "explanation": "AMZN exhibits strong medium momentum, high RS60 and trend above SMAs with large ADVOL [AMZN-MOM200] [AMZN-RS60] [AMZN-SMA20] [AMZN-ADVOL]; composite technical leadership (C1\u2013C3) supports a material allocation to capture momentum and liquidity. Risk: AWS deceleration or large tabular drawdown reversing momentum.",
+        "supporting_claims": [
+          "C1",
+          "C2",
           "C3"
         ],
-        "ticker": "CASH",
-        "weight": 0.07
+        "ticker": "AMZN",
+        "weight": 0.12
       }
     ],
     "risks_or_falsifiers": [
-      "Market-wide momentum reversal evidenced by a sharp VIX spike and broad negative returns across leaders (e.g., VIX rising \u003e\u003e current [L1-VIX]) would invalidate momentum bets.",
-      "AMD breaks and closes below its 50-day and 200-day SMAs on volume (e.g., price action breaching [AMD-SMA50] and [AMD-SMA200]) \u2014 would trigger rapid de-risking of AMD weight.",
-      "AMZN decisively reclaims and sustains price above its 200-day SMA with confirming volume (contradicting C3) \u2014 would require increasing AMZN weight ([AMZN-SMA200]).",
-      "Banking-sector stress or repo/liquidity shock causing forced selling that flips the trend dynamics (e.g., sustained deterioration in BAC short-term returns [BAC-RET20]) would force re-evaluation toward cash."
+      "Broad momentum collapse: sustained VIX spike and multi\u2011week reversal where NVDA, AMZN, AAPL, MSFT all close below their SMA50s (e.g., NVDA closing under [NVDA-SMA50] and AMZN under [AMZN-SMA50]) would invalidate the momentum premise.",
+      "Macro shock that reverses trend structure (e.g., rapid decline in 10Y yields or liquidity freeze) causing coordinated breaks below SMA200 across leaders.",
+      "Sector\u2011specific catalyst: crude price spike that pushes XOM/CVX 60D returns positive and RS60 turns positive (contradicting [XOM-RET60] [XOM-RS60] [CVX-RET60] [CVX-RS60]) would require reallocating to energy.",
+      "Banking stress: unexpected negative news that flips JPM/GS momentum (e.g., GS RS60 improvement or JPM sharp drawdown) would force rebalancing away from financials."
     ],
-    "thesis": "This portfolio overweights clear momentum leaders and securities trading in bullish SMA regimes (AMD: strong medium-term returns and RS [AMD-RET60], [AMD-RS60]; SLB: strong 12-month momentum [SLB-MOM12_1]; PG: above SMA20/50/200 [PG-SMA20], [PG-SMA50], [PG-SMA200]). Smaller positions are held in names with mixed signals (RTX, CAT, CVX) that are above longer-term SMAs but exhibit less pronounced RS. Minimal exposure to AMZN reflects short-term strength but failure to clear the 200-day SMA ([AMZN-SMA200]). CASH (backstop) is sized to limit portfolio drawdown if momentum leadership reverses; cash rate referenced [L1-FF]. The structure follows technical principles: overweight momentum persistence and SMA-confirmed trends, limit exposure to names below long-term trends, and keep cash to manage regime-change risk."
-  },
-  "thesis": "This portfolio overweights clear momentum leaders and securities trading in bullish SMA regimes (AMD: strong medium-term returns and RS [AMD-RET60: 60D Return: +52.9%], [AMD-RS60: Relative Strength 60D: +56.8%]; SLB: strong 12-month momentum [SLB-MOM12_1: 12-1M Momentum: +30.9%]; PG: above SMA20/50/200 [PG-SMA20: SMA 20D: $131.82], [PG-SMA50: SMA 50D: $130.68], [PG-SMA200: SMA 200D: $129.96]). Smaller positions are held in names with mixed signals (RTX, CAT, CVX) that are above longer-term SMAs but exhibit less pronounced RS. Minimal exposure to AMZN reflects short-term strength but failure to clear the 200-day SMA ([AMZN-SMA200: SMA 200D: $107.51]). CASH (backstop) is sized to limit portfolio drawdown if momentum leadership reverses; cash rate referenced [L1-FF: Fed Funds: 4.83%]. The structure follows technical principles: overweight momentum persistence and SMA-confirmed trends, limit exposure to names below long-term trends, and keep cash to manage regime-change risk."
+    "thesis": "This portfolio overweighted proven momentum leaders (NVDA, AMZN, AAPL, MSFT) within the technical limit for tech (40%) to capture momentum persistence and liquidity (C1,C3). Trend\u2011above\u2011SMA evidence (C2) justifies midweight exposure to cyclicals with confirmed uptrends (CAT, JPM) while keeping defensive positions (WMT, PG) for drawdown control. Energy and GS are purposely underweighted due to negative recent momentum/RS (C4). Position sizes scale with conviction: highest weights to strongest, persistent momentum leaders; smallest weights to names with negative medium\u2011term momentum or idiosyncratic weakness. The allocation respects sector constraints (tech 40%, consumer 22%, defensive ~10%, financials 15%, energy 8%, industrials 15%) and reflects a technical, momentum\u2011driven portfolio construction."
+  }
 }
 
 ---
@@ -714,110 +580,126 @@ Use it only as reference to determine whether critiques exposed weaknesses.
 # Critiques Received
 
 
-Each critique is labeled with a critique ID (K1, K2, K3, ...).
-
-Critiques may target specific claims (C#) or the portfolio allocation.
-
-You must evaluate whether the revised argument **properly responds to these critiques**.
+Evaluate whether critiques were meaningfully addressed in the revision.
 
 
 [
   {
-    "critique_text": "C1 relies on momentum persistence to justify very large weights in high-volatility securities (AMD 30%, SLB 20%). This is fragile because it underweights realized/downside volatility and the risk of momentum reversal during elevated market volatility. AMD shows very high realized vol, large historical drawdowns, and a negative 1Y return that indicate momentum is brittle; SLB has high downside vol and commodity exposure that can reverse momentum quickly.",
+    "critique_text": "Relying on momentum persistence for concentrated tech exposure (NVDA/AMZN/AAPL/MSFT) is fragile because it assumes low realized volatility and no regime shift; it ignores tail\u2011risk where volatility spikes and correlations converge, which disproportionately hurts high\u2011beta/high\u2011drawdown names (NVDA/AMZN).",
     "evidence_citations": [
       {
-        "evidence_id": "AMD-RET60",
-        "evidence_text": "60D Return: +52.9%"
-      },
-      {
-        "evidence_id": "AMD-RS60",
-        "evidence_text": "Relative Strength 60D: +56.8%"
-      },
-      {
-        "evidence_id": "AMD-VOL60",
-        "evidence_text": "60D Vol (ann): 51.1%"
-      },
-      {
-        "evidence_id": "AMD-DVOL60",
-        "evidence_text": "60D Downside Vol: 21.4%"
-      },
-      {
-        "evidence_id": "AMD-MDD1Y",
-        "evidence_text": "1Y Max Drawdown: -54.6%"
-      },
-      {
-        "evidence_id": "SLB-MOM12_1",
-        "evidence_text": "12-1M Momentum: +30.9%"
-      },
-      {
-        "evidence_id": "SLB-VOL60",
-        "evidence_text": "60D Vol (ann): 40.9%"
-      },
-      {
-        "evidence_id": "SLB-DVOL60",
-        "evidence_text": "60D Downside Vol: 30.1%"
-      },
-      {
-        "evidence_id": "SLB-F1",
-        "evidence_text": "Full-year 2022 revenue of $28.1 billion increased 23% year-on-year with double-digit growth across all divisions and geographies."
-      },
-      {
         "evidence_id": "L1-VIX",
-        "evidence_text": "VIX: 18.70"
+        "evidence_text": "VIX: 13.59"
+      },
+      {
+        "evidence_id": "NVDA-VOL60",
+        "evidence_text": "60D Vol (ann): 57.9%"
+      },
+      {
+        "evidence_id": "NVDA-MDD1Y",
+        "evidence_text": "1Y Max Drawdown: -41.5%"
+      },
+      {
+        "evidence_id": "AMZN-VOL60",
+        "evidence_text": "60D Vol (ann): 32.1%"
+      },
+      {
+        "evidence_id": "AMZN-MDD1Y",
+        "evidence_text": "1Y Max Drawdown: -43.5%"
+      },
+      {
+        "evidence_id": "MSFT-BETA",
+        "evidence_text": "1Y Beta: 1.32"
+      },
+      {
+        "evidence_id": "NVDA-F10",
+        "evidence_text": "U.S. export controls require licenses for A100 and H100 exports to China, Hong Kong, Macau and Russia, creating material revenue exposure for any future chips achieving specified performance thresholds."
+      },
+      {
+        "evidence_id": "L0-RATE-SHOCK",
+        "evidence_text": "Higher real interest rates increase discount rates applied to future earnings, placing structural pressure on long-duration growth assets."
+      },
+      {
+        "evidence_id": "L1-10Y",
+        "evidence_text": "10Y Treasury: 3.81% (+33bps QoQ)"
       }
     ],
     "from_role": "risk"
   },
   {
-    "critique_text": "C1/C2 rely on price momentum and moving-average regimes to justify large allocations (notably AMD 0.30 and SLB 0.20) but underweight fundamental signals that contradict persistent earnings-strength assumptions. AMD\u2019s recent fundamentals show revenue headwinds and segment weakness (Q1 revenue decline, client segment down sharply) and margin pressure from acquisition accounting\u2014these are fundamentals that can undermine momentum if earnings fail to reaccelerate ([AMD-EC1: AMD reported first quarter 2023 revenue of $5.4 billion, a 9% year-over-year decline, with data center and embedded products contributing over 50% of total revenue.], [AMD-EC2: The data center segment remained flat year-over-year at $1.3 billion, driven by strong cloud sales, while client segment revenue fell 65% to $739 million due to inventory reduction efforts.], [AMD-EC4: For the second quarter of 2023, AMD expects revenue to be approximately $5.3 billion, down 19% year-over-year but flat sequentially.], [AMD-F4: Gross margin compressed to 45% from 48% primarily due to acquisition-related intangible asset amortization from Xilinx acquisition.], [AMD-F7: Completed strategic acquisitions of Xilinx in February 2022 for adaptable hardware platforms and Pensando Systems in May 2022 for data processing units, recording significant goodwill and intangible assets.]). AMD also exhibits high realized volatility and large historical drawdowns that increase valuation risk for a momentum-weighted large position ([AMD-VOL60: 60D Vol (ann): 51.1%], [AMD-MDD1Y: 1Y Max Drawdown: -54.6%]). Similarly, SLB\u2019s momentum ignores working capital consumption and geopolitical/transition risks that can impair free cash flow despite margin improvement ([SLB-F6: Working capital consumed $1.7 billion primarily from receivables and inventories increasing to support activity growth.], [SLB-F11: Company repurchased senior notes reducing net debt by $1.7 billion to $9.3 billion.], [SLB-F13: Energy transition acceleration could reduce demand for traditional services if transition occurs faster than anticipated.]). Allocating heavily to momentum leaders without aligning to earnings power risks paying for momentum that is not backed by sustainable EPS growth.",
+    "critique_text": "TECH\u0027s C1 asserts momentum persistence (particularly in NVDA) justifies heavy allocation, but this neglects critical fundamental fragilities in NVIDIA\u0027s earnings power. NVDA\u0027s revenue declined year\u2011over\u2011year and its results show sharp gaming weakness and inventory/forecasting risk despite AI enthusiasm; filings describe a 13% revenue decline, a 38% fall in Gaming, concentrated cloud-provider revenue exposure, growing inventory and supply commitments, and material export control risks that could impair future top-line access to China \u2014 all undermining the claim that price momentum maps to sustainable earnings power [NVDA-F1: Revenue reached $7.19 billion, declining 13% year-over-year but increasing 19% sequentially, driven by explosive Data Center growth from generative AI and large language model demand using Hopper and Ampere architectures.][NVDA-F2: Gaming revenue fell 38% annually due to macroeconomic slowdown and channel inventory normalization, while Automotive surged from self-driving platforms and AI cockpit solutions.][NVDA-F3: Revenue concentration among cloud service providers and consumer internet companies intensified.][NVDA-F10: U.S. export controls require licenses for A100 and H100 exports to China, Hong Kong, Macau and Russia, creating material revenue exposure for any future chips achieving specified performance thresholds.][NVDA-F14: Inventory and supply commitments have grown significantly due to supply chain conditions and long lead times, creating potential for provisions if misaligned with demand.]. Relying on momentum without reconciling these fundamentals risks paying a multiple that requires continued outsized AI demand and no geopolitical or inventory corrections.",
     "evidence_citations": [
       {
-        "evidence_id": "AMD-EC1",
-        "evidence_text": "AMD reported first quarter 2023 revenue of $5.4 billion, a 9% year-over-year decline, with data center and embedded products contributing over 50% of total revenue."
+        "evidence_id": "NVDA-F1",
+        "evidence_text": "Revenue reached $7.19 billion, declining 13% year-over-year but increasing 19% sequentially, driven by explosive Data Center growth from generative AI and large language model demand using Hopper and Ampere architectures."
       },
       {
-        "evidence_id": "AMD-EC2",
-        "evidence_text": "The data center segment remained flat year-over-year at $1.3 billion, driven by strong cloud sales, while client segment revenue fell 65% to $739 million due to inventory reduction efforts."
+        "evidence_id": "NVDA-F2",
+        "evidence_text": "Gaming revenue fell 38% annually due to macroeconomic slowdown and channel inventory normalization, while Automotive surged from self-driving platforms and AI cockpit solutions."
       },
       {
-        "evidence_id": "AMD-EC4",
-        "evidence_text": "For the second quarter of 2023, AMD expects revenue to be approximately $5.3 billion, down 19% year-over-year but flat sequentially."
+        "evidence_id": "NVDA-F3",
+        "evidence_text": "Revenue concentration among cloud service providers and consumer internet companies intensified."
       },
       {
-        "evidence_id": "AMD-F4",
-        "evidence_text": "Gross margin compressed to 45% from 48% primarily due to acquisition-related intangible asset amortization from Xilinx acquisition."
+        "evidence_id": "NVDA-F10",
+        "evidence_text": "U.S. export controls require licenses for A100 and H100 exports to China, Hong Kong, Macau and Russia, creating material revenue exposure for any future chips achieving specified performance thresholds."
       },
       {
-        "evidence_id": "AMD-F7",
-        "evidence_text": "Completed strategic acquisitions of Xilinx in February 2022 for adaptable hardware platforms and Pensando Systems in May 2022 for data processing units, recording significant goodwill and intangible assets."
+        "evidence_id": "NVDA-F14",
+        "evidence_text": "Inventory and supply commitments have grown significantly due to supply chain conditions and long lead times, creating potential for provisions if misaligned with demand."
       },
       {
-        "evidence_id": "AMD-VOL60",
-        "evidence_text": "60D Vol (ann): 51.1%"
+        "evidence_id": "NVDA-EC1",
+        "evidence_text": "NVIDIA reported Q2 fiscal 2023 revenue of $6.7 billion, down 19% sequentially and up 3% year-on-year, missing the $8.1 billion outlook."
+      }
+    ],
+    "from_role": "value"
+  },
+  {
+    "critique_text": "TECH\u0027s C2 treats price above SMAs as a sufficient signal to allocate, but that technical rule ignores whether current prices reflect sustainable earnings. Several tech names (AAPL, MSFT, AMZN) trade above SMAs on momentum, yet fundamental signals differ: Apple revenue is down and management warns margins remain volatile, Microsoft flags decelerating Azure growth and hardware weakness, and Amazon\u0027s AWS growth is moderating with operating costs and legal/regulatory risks noted \u2014 using SMAs alone risks buying stocks where price already embeds optimistic future earnings [AAPL-F1: Total revenue declined 3% to $94.8 billion driven by Mac revenue falling 31% and foreign currency headwinds of $2.4 billion.][AAPL-F13: Management expects gross margins to remain subject to volatility and downward pressure going forward.][MSFT-EC4: Management anticipates continued cautious spending from customers, particularly in the U.S. market, and expects a deceleration in Azure growth rates.][AMZN-F15: AWS performance obligations for contracts exceeding one year totaled $122.0 billion with 3.9-year weighted-average remaining life indicating strong future revenue visibility.][AMZN-F16: Management expects cash capital expenditures to decrease in 2023 primarily due to lower fulfillment network spending.].",
+    "evidence_citations": [
+      {
+        "evidence_id": "AAPL-F1",
+        "evidence_text": "Total revenue declined 3% to $94.8 billion driven by Mac revenue falling 31% and foreign currency headwinds of $2.4 billion."
       },
       {
-        "evidence_id": "AMD-MDD1Y",
-        "evidence_text": "1Y Max Drawdown: -54.6%"
+        "evidence_id": "AAPL-F13",
+        "evidence_text": "Management expects gross margins to remain subject to volatility and downward pressure going forward."
       },
       {
-        "evidence_id": "SLB-F6",
-        "evidence_text": "Working capital consumed $1.7 billion primarily from receivables and inventories increasing to support activity growth."
+        "evidence_id": "MSFT-EC4",
+        "evidence_text": "Management anticipates continued cautious spending from customers, particularly in the U.S. market, and expects a deceleration in Azure growth rates."
       },
       {
-        "evidence_id": "SLB-F11",
-        "evidence_text": "Company repurchased senior notes reducing net debt by $1.7 billion to $9.3 billion."
+        "evidence_id": "AMZN-F15",
+        "evidence_text": "AWS performance obligations for contracts exceeding one year totaled $122.0 billion with 3.9-year weighted-average remaining life indicating strong future revenue visibility."
       },
       {
-        "evidence_id": "SLB-F13",
-        "evidence_text": "Energy transition acceleration could reduce demand for traditional services if transition occurs faster than anticipated."
+        "evidence_id": "AMZN-F16",
+        "evidence_text": "Management expects cash capital expenditures to decrease in 2023 primarily due to lower fulfillment network spending."
+      }
+    ],
+    "from_role": "value"
+  },
+  {
+    "critique_text": "TECH\u0027s C4 underweights energy (XOM, CVX) based on short-term negative returns/RS while ignoring clear fundamental cash-generation and shareholder-return evidence that supports intrinsic value above what short-term momentum implies. Exxon and Chevron repurchased billions and emphasize capital returns and project execution \u2014 these are durable cash-flow drivers that momentum snapshots do not capture [XOM-F7: The company repurchased $4.3 billion of shares during the quarter as part of the ongoing buyback program.][CVX-F8: Board authorized new $75 billion share repurchase program effective April 2023, replacing the previous $25 billion program.][XOM-EC1: Exxon Mobil reported second-quarter earnings of nearly $8 billion, doubling earnings compared to the same period in 2018 under similar commodity prices.][CVX-EC5: The company anticipates a free cash flow inflection in 2024 as capital expenditures decrease, with a projected $5 billion in free cash flow at $60 Brent by 2025.]. Discounting energy on 60\u2011day returns risks missing valuation reversion toward cash\u2011flow\u2011backed intrinsic value.",
+    "evidence_citations": [
+      {
+        "evidence_id": "XOM-F7",
+        "evidence_text": "The company repurchased $4.3 billion of shares during the quarter as part of the ongoing buyback program."
       },
       {
-        "evidence_id": "SLB-F4",
-        "evidence_text": "Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing."
+        "evidence_id": "CVX-F8",
+        "evidence_text": "Board authorized new $75 billion share repurchase program effective April 2023, replacing the previous $25 billion program."
       },
       {
-        "evidence_id": "SLB-F16",
-        "evidence_text": "Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity."
+        "evidence_id": "XOM-EC1",
+        "evidence_text": "Exxon Mobil reported second-quarter earnings of nearly $8 billion, doubling earnings compared to the same period in 2018 under similar commodity prices."
+      },
+      {
+        "evidence_id": "CVX-EC5",
+        "evidence_text": "The company anticipates a free cash flow inflection in 2024 as capital expenditures decrease, with a projected $5 billion in free cash flow at $60 Brent by 2025."
       }
     ],
     "from_role": "value"
@@ -828,488 +710,654 @@ You must evaluate whether the revised argument **properly responds to these crit
 
 # Revised Argument
 
-The revised argument contains the agent's updated reasoning, claims, and portfolio.
-
-The reasoning field contains structured data:
-• reasoning.claims — with evidence_ids, assumptions, falsifiers, impacts_positions
-• reasoning.position_rationale — with supporting_claims linking positions to claims
-• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
-• reasoning.revision_notes — how critiques were handled (if present)
-
-Your evaluation should focus primarily on this revision.
+Focus primarily on the reasoning quality in this revision.
 
 {
   "evidence_citations": [
     {
-      "evidence_id": "AMD-RET60",
-      "evidence_text": "60D Return: +52.9%"
+      "evidence_id": "NVDA-MOM200",
+      "evidence_text": "200D Momentum: 1.88"
     },
     {
-      "evidence_id": "AMD-RS60",
-      "evidence_text": "Relative Strength 60D: +56.8%"
+      "evidence_id": "NVDA-RS60",
+      "evidence_text": "Relative Strength 60D: +43.6%"
     },
     {
-      "evidence_id": "AMD-VOL60",
-      "evidence_text": "60D Vol (ann): 51.1%"
+      "evidence_id": "AMZN-MOM200",
+      "evidence_text": "200D Momentum: 1.25"
     },
     {
-      "evidence_id": "AMD-MDD1Y",
-      "evidence_text": "1Y Max Drawdown: -54.6%"
+      "evidence_id": "AMZN-RS60",
+      "evidence_text": "Relative Strength 60D: +14.9%"
     },
     {
-      "evidence_id": "SLB-MOM12_1",
-      "evidence_text": "12-1M Momentum: +30.9%"
+      "evidence_id": "AAPL-MOM200",
+      "evidence_text": "200D Momentum: 1.26"
     },
     {
-      "evidence_id": "SLB-TREND",
-      "evidence_text": "Trend Consistency: 0.57"
+      "evidence_id": "MSFT-MOM200",
+      "evidence_text": "200D Momentum: 1.28"
     },
     {
-      "evidence_id": "SLB-VOL60",
-      "evidence_text": "60D Vol (ann): 40.9%"
+      "evidence_id": "AAPL-SMA50",
+      "evidence_text": "SMA 50D: $174.25"
     },
     {
-      "evidence_id": "SLB-DVOL60",
-      "evidence_text": "60D Downside Vol: 30.1%"
+      "evidence_id": "AAPL-SMA200",
+      "evidence_text": "SMA 200D: $152.25"
     },
     {
-      "evidence_id": "PG-SMA20",
-      "evidence_text": "SMA 20D: $131.82"
+      "evidence_id": "MSFT-SMA50",
+      "evidence_text": "SMA 50D: $312.72"
     },
     {
-      "evidence_id": "PG-SMA50",
-      "evidence_text": "SMA 50D: $130.68"
+      "evidence_id": "MSFT-SMA200",
+      "evidence_text": "SMA 200D: $260.95"
     },
     {
-      "evidence_id": "PG-SMA200",
-      "evidence_text": "SMA 200D: $129.96"
+      "evidence_id": "AMZN-SMA20",
+      "evidence_text": "SMA 20D: $126.56"
     },
     {
-      "evidence_id": "AMD-SMA50",
-      "evidence_text": "SMA 50D: $84.09"
-    },
-    {
-      "evidence_id": "AMD-SMA200",
-      "evidence_text": "SMA 200D: $77.77"
-    },
-    {
-      "evidence_id": "SLB-SMA200",
-      "evidence_text": "SMA 200D: $42.12"
+      "evidence_id": "AMZN-SMA50",
+      "evidence_text": "SMA 50D: $117.13"
     },
     {
       "evidence_id": "AMZN-SMA200",
-      "evidence_text": "SMA 200D: $107.51"
+      "evidence_text": "SMA 200D: $104.22"
     },
     {
-      "evidence_id": "AMD-TREND",
-      "evidence_text": "Trend Consistency: 0.55"
+      "evidence_id": "CAT-SMA20",
+      "evidence_text": "SMA 20D: $228.13"
     },
     {
-      "evidence_id": "BAC-RET20",
-      "evidence_text": "20D Return: -15.5%"
+      "evidence_id": "CAT-SMA50",
+      "evidence_text": "SMA 50D: $214.03"
     },
     {
-      "evidence_id": "BAC-IDMOM",
-      "evidence_text": "Idiosyncratic Momentum 60D: -0.2332"
+      "evidence_id": "CAT-SMA200",
+      "evidence_text": "SMA 200D: $212.88"
     },
     {
-      "evidence_id": "AMZN-RET60",
-      "evidence_text": "60D Return: +18.9%"
+      "evidence_id": "NVDA-VOL60",
+      "evidence_text": "60D Vol (ann): 57.9%"
     },
     {
-      "evidence_id": "L1-VIX",
-      "evidence_text": "VIX: 18.70"
+      "evidence_id": "NVDA-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -41.5%"
+    },
+    {
+      "evidence_id": "AMZN-VOL60",
+      "evidence_text": "60D Vol (ann): 32.1%"
+    },
+    {
+      "evidence_id": "AMZN-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -43.5%"
+    },
+    {
+      "evidence_id": "MSFT-BETA",
+      "evidence_text": "1Y Beta: 1.32"
+    },
+    {
+      "evidence_id": "AAPL-VOL60",
+      "evidence_text": "60D Vol (ann): 18.4%"
     }
   ],
   "portfolio_allocation": {
-    "AMD": 0.14,
-    "AMZN": 0.06,
-    "BAC": 0.0,
-    "CAT": 0.06,
-    "CVX": 0.1,
-    "PG": 0.2,
-    "RTX": 0.12,
-    "SLB": 0.12,
-    "_CASH_": 0.2
+    "AAPL": 0.08,
+    "AMZN": 0.12,
+    "CAT": 0.13,
+    "CVX": 0.03,
+    "GS": 0.03,
+    "JPM": 0.12,
+    "MSFT": 0.08,
+    "NVDA": 0.12,
+    "PG": 0.05,
+    "RTX": 0.02,
+    "WMT": 0.08,
+    "XOM": 0.14
   },
   "reasoning": {
     "claims": [
       {
         "assumptions": [
-          "Momentum persistence holds at the security level absent immediate volume-confirmed distribution.",
-          "Realized volatility and historical drawdowns are meaningful proxies for tail risk and should cap position sizes."
+          "Momentum persistence holds absent an abrupt market regime shift.",
+          "Price reflects the aggregate of positioning and flow; continued positive momentum indicates ongoing demand concentration."
         ],
         "claim_id": "C1",
-        "claim_text": "Momentum persistence identifies likely near-term leaders but position size must be scaled to realized volatility and drawdown risk. Stocks showing strong medium-term returns and RS (momentum) are more likely to continue outperformance (price signal) \u2014 e.g., AMD shows strong 60-day returns and RS \u2014 however AMD\u0027s elevated realized volatility and large 1y drawdown increase tail risk, so technical sizing should be volatility-adjusted ([AMD-RET60], [AMD-RS60], [AMD-VOL60], [AMD-MDD1Y]). SLB retains durable 12-month momentum and trend consistency but also shows elevated downside vol that makes large concentrated sizing fragile ([SLB-MOM12_1], [SLB-TREND], [SLB-VOL60], [SLB-DVOL60]).",
-        "claim_type": "firm",
-        "confidence": 0.78,
+        "claim_text": "Momentum leadership (strong multi\u2011month absolute momentum and 60D relative strength) signals higher near\u2011term continuation probability; leaders in this universe are likely to maintain directional bias while their momentum metrics remain intact.",
+        "claim_type": "technical",
+        "confidence": 0.8,
         "evidence": [
-          "[AMD-RET60]",
-          "[AMD-RS60]",
-          "[AMD-VOL60]",
-          "[AMD-MDD1Y]",
-          "[SLB-MOM12_1]",
-          "[SLB-TREND]",
-          "[SLB-VOL60]",
-          "[SLB-DVOL60]"
+          "[NVDA-MOM200]",
+          "[NVDA-RS60]",
+          "[AMZN-MOM200]",
+          "[AMZN-RS60]",
+          "[AAPL-MOM200]",
+          "[MSFT-MOM200]"
         ],
         "evidence_ids": [
-          "AMD-MDD1Y",
-          "AMD-RET60",
-          "AMD-RS60",
-          "AMD-VOL60",
-          "SLB-DVOL60",
-          "SLB-MOM12_1",
-          "SLB-TREND",
-          "SLB-VOL60"
+          "AAPL-MOM200",
+          "AMZN-MOM200",
+          "AMZN-RS60",
+          "MSFT-MOM200",
+          "NVDA-MOM200",
+          "NVDA-RS60"
         ],
         "falsifiers": [
-          "Sustained compression in realized volatility for a leader (observable reduction in [AMD-VOL60] and [SLB-VOL60] over 60 trading days) combined with continued positive medium-term returns ([AMD-RET60], [SLB-MOM12_1]) would invalidate the need for reduced sizing.",
-          "Clear, volume-confirmed break below short- and medium-term SMAs for a leader (e.g., AMD closing below [AMD-SMA50] on high volume) would falsify the safety of a large allocation."
+          "Sustained deterioration of momentum metrics (e.g., NVDA-MOM200 materially falls or NVDA-RS60 turns negative).",
+          "Simultaneous breakdowns below key trend levels (many leaders closing below their SMA50/SMA200)."
         ],
         "impacts_positions": [
-          "AMD",
-          "SLB",
-          "PG",
-          "_CASH_"
+          "NVDA",
+          "AMZN",
+          "AAPL",
+          "MSFT"
         ],
-        "pearl_level": "L2",
-        "variables": [
-          "momentum",
-          "realized_volatility",
-          "max_drawdown",
-          "position_size"
-        ]
+        "reasoning_type": "causal"
       },
       {
         "assumptions": [
-          "Being above multi-horizon SMAs with trend consistency increases probability of near-term continuation.",
-          "Short-term pullbacks that remain above SMA200 are normal within a broader uptrend."
+          "Moving averages capture prevailing trend structure for the near-to-medium horizon used for allocation decisions.",
+          "RS60 provides a cross\u2011asset confirmation that funds are rotating into the candidate security."
         ],
         "claim_id": "C2",
-        "claim_text": "Moving-average regime (price relative to SMA20/50/200 and trend consistency) is a reliable filter for trend continuation: names trading above key SMAs with confirmed trend consistency are higher probability continuation candidates (e.g., PG above SMA20/50/200; AMD above SMA50/200; SLB above SMA200 and positive long-term momentum). Use SMA regime to prefer trend-confirmed securities while avoiding large weights in names that remain below their long-term SMA (e.g., AMZN remains below its 200-day SMA) ([PG-SMA20], [PG-SMA50], [PG-SMA200], [AMD-SMA50], [AMD-SMA200], [SLB-SMA200], [AMZN-SMA200], [AMD-TREND], [SLB-TREND]).",
-        "claim_type": "firm",
-        "confidence": 0.72,
+        "claim_text": "Trend confirmation requires price above short/medium SMAs plus relative strength; price above SMA50/SMA200 combined with positive RS60 and trend consistency increases the odds of continuation versus mean reversion in the near term.",
+        "claim_type": "technical",
+        "confidence": 0.75,
         "evidence": [
-          "[PG-SMA20]",
-          "[PG-SMA50]",
-          "[PG-SMA200]",
-          "[AMD-SMA50]",
-          "[AMD-SMA200]",
-          "[SLB-SMA200]",
+          "[AAPL-SMA50]",
+          "[AAPL-SMA200]",
+          "[MSFT-SMA50]",
+          "[MSFT-SMA200]",
+          "[AMZN-SMA20]",
+          "[AMZN-SMA50]",
           "[AMZN-SMA200]",
-          "[AMD-TREND]",
-          "[SLB-TREND]"
+          "[CAT-SMA20]",
+          "[CAT-SMA50]",
+          "[CAT-SMA200]"
         ],
         "evidence_ids": [
-          "AMD-SMA200",
-          "AMD-SMA50",
-          "AMD-TREND",
+          "AAPL-SMA200",
+          "AAPL-SMA50",
+          "AMZN-SMA20",
           "AMZN-SMA200",
-          "PG-SMA20",
-          "PG-SMA200",
-          "PG-SMA50",
-          "SLB-SMA200",
-          "SLB-TREND"
+          "AMZN-SMA50",
+          "CAT-SMA20",
+          "CAT-SMA200",
+          "CAT-SMA50",
+          "MSFT-SMA200",
+          "MSFT-SMA50"
         ],
         "falsifiers": [
-          "Sustained closes below SMA200 on confirming volume for a security (e.g., AMZN reclaiming/closing above [AMZN-SMA200] or falling further below) that contradicts the SMA regime signal.",
-          "Rapid collapse in trend consistency metric concurrent with SMA breaches (e.g., [AMD-TREND] or [SLB-TREND] dropping materially)."
+          "Sustained closes below SMA50/SMA200 for names currently above those bands (e.g., AAPL or AMZN closing and staying below SMA50).",
+          "RS60 for a previously-confirmed name turning negative while price remains above SMAs."
         ],
         "impacts_positions": [
-          "PG",
-          "AMD",
+          "AAPL",
+          "MSFT",
           "AMZN",
-          "SLB",
-          "RTX",
           "CAT",
-          "CVX"
+          "WMT",
+          "PG"
         ],
-        "pearl_level": "L2",
-        "variables": [
-          "price_vs_SMA20",
-          "price_vs_SMA50",
-          "price_vs_SMA200",
-          "trend_consistency"
-        ]
+        "reasoning_type": "pattern"
       },
       {
         "assumptions": [
-          "Negative short-term returns and negative idiosyncratic momentum degrade the probability of near-term recovery absent clear price-based reversal.",
-          "A measured cash buffer reduces portfolio drawdown risk if momentum leadership reverses or volatility spikes."
+          "Higher realized volatility and larger historical drawdowns increase the probability of large, rapid price reversals that can overwhelm momentum persistence.",
+          "Volatility\u2011scaled sizing reduces portfolio sensitivity to single\u2011name tail events while retaining directional exposure to leaders."
         ],
         "claim_id": "C3",
-        "claim_text": "Short-term momentum breakdowns and negative idiosyncratic momentum indicate elevated near-term downside probability and justify defensive capital (cash/low-beta exposure). BAC shows clear negative short/medium returns and negative idiosyncratic momentum, implying avoid/zero tactical weight; AMZN remains below its 200-day SMA despite short-run gains, so keep small tactical exposure until price reclaims the long-term SMA with volume-confirmation ([BAC-RET20], [BAC-IDMOM], [AMZN-SMA200], [AMZN-RET60], [L1-VIX]). Current VIX (moderate) warrants a cash buffer to limit drawdowns in the event of a volatility spike ([L1-VIX]).",
-        "claim_type": "sector",
-        "confidence": 0.7,
+        "claim_text": "Position sizing must be volatility\u2011aware: scale down absolute weights for high realized\u2011volatility / large historical drawdown names to limit tail exposure even when momentum is strong. That preserves exposure to momentum while reducing single\u2011name tail risk.",
+        "claim_type": "risk",
+        "confidence": 0.85,
         "evidence": [
-          "[BAC-RET20]",
-          "[BAC-IDMOM]",
-          "[AMZN-SMA200]",
-          "[AMZN-RET60]",
-          "[L1-VIX]"
+          "[NVDA-VOL60]",
+          "[NVDA-MDD1Y]",
+          "[AMZN-VOL60]",
+          "[AMZN-MDD1Y]",
+          "[MSFT-BETA]",
+          "[AAPL-VOL60]"
         ],
         "evidence_ids": [
-          "AMZN-RET60",
-          "AMZN-SMA200",
-          "BAC-IDMOM",
-          "BAC-RET20",
-          "L1-VIX"
+          "AAPL-VOL60",
+          "AMZN-MDD1Y",
+          "AMZN-VOL60",
+          "MSFT-BETA",
+          "NVDA-MDD1Y",
+          "NVDA-VOL60"
         ],
         "falsifiers": [
-          "AMZN decisively reclaims and sustains a close above [AMZN-SMA200] with volume confirmation and improving multi-month momentum ([AMZN-RET120]).",
-          "BAC posts several consecutive positive medium-term returns and improved idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising)."
+          "Persistent low realized vol regime (VIX stays low and high\u2011vol names compress realized vol) combined with uninterrupted momentum (e.g., NVDA/AMZN vol metrics falling materially).",
+          "Idiosyncratic risk event(s) for high\u2011vol names failing to materialize over the sizing window so the volatility penalty is excessive."
         ],
         "impacts_positions": [
-          "BAC",
+          "NVDA",
           "AMZN",
-          "_CASH_",
-          "PG"
+          "AAPL",
+          "MSFT",
+          "XOM"
         ],
-        "pearl_level": "L2",
-        "variables": [
-          "short_return",
-          "idiosyncratic_momentum",
-          "price_vs_SMA200",
-          "cash_allocation",
-          "volatility_regime"
-        ]
+        "reasoning_type": "risk_assessment"
       }
     ],
-    "confidence": 0.72,
+    "confidence": 0.77,
     "position_rationale": [
       {
-        "explanation": "AMD displays strong medium-term momentum and relative strength which supports a tactical overweight ([AMD-RET60], [AMD-RS60]), and it trades above its SMA50/200 supporting trend continuation ([AMD-SMA50], [AMD-SMA200], [AMD-TREND]). Per C1 sizing is reduced from prior concentration due to elevated realized volatility and large 1y drawdown ([AMD-VOL60], [AMD-MDD1Y]) \u2014 therefore a meaningful but capped position (14%) to capture momentum while limiting tail risk.",
+        "explanation": "AAPL displays positive medium momentum and trades above major SMAs ([AAPL-MOM200], [AAPL-SMA50], [AAPL-SMA200]). Price action and trend confirmation justify overweight exposure, but weight is tempered by realized vol-based sizing per C3 ([AAPL-VOL60]).",
         "supporting_claims": [
           "C1",
-          "C2"
-        ],
-        "ticker": "AMD",
-        "weight": 0.14
-      },
-      {
-        "explanation": "AMZN shows short-term positive returns ([AMZN-RET60]) but remains below its 200-day SMA ([AMZN-SMA200]); under C2/C3 this implies limited tactical upside until long-term SMA is reclaimed with confirming volume \u2014 maintain a small tactical allocation (6%) to capture a potential trend reclaim without betting on a full reversal.",
-        "supporting_claims": [
           "C2",
           "C3"
         ],
-        "ticker": "AMZN",
-        "weight": 0.06
+        "ticker": "AAPL",
+        "weight": 0.08
       },
       {
-        "explanation": "BAC exhibits negative short-term returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]); C3 supports avoiding tactical exposure until price/momentum metrics recover.",
+        "explanation": "MSFT shows multi\u2011month momentum and trades above SMA50/200 ([MSFT-MOM200], [MSFT-SMA50], [MSFT-SMA200]); technical leadership supports a meaningful allocation while C3 caps size given elevated beta ([MSFT-BETA]).",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "MSFT",
+        "weight": 0.08
+      },
+      {
+        "explanation": "NVDA is the strongest pure momentum leader ([NVDA-MOM200], [NVDA-RS60], [NVDA-ADVOL]) and trades well above SMAs ([NVDA-SMA20], [NVDA-SMA50], [NVDA-SMA200]). Because realized vol and historical drawdown are large ([NVDA-VOL60], [NVDA-MDD1Y]), C3 mandates a reduced absolute weight versus a pure momentum bet.",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "NVDA",
+        "weight": 0.12
+      },
+      {
+        "explanation": "JPM trades above its key SMAs and shows consistent trend metrics ([JPM-SMA20], [JPM-SMA50], [JPM-SMA200]) supporting trend\u2011following allocation to financials under C2.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "JPM",
+        "weight": 0.12
+      },
+      {
+        "explanation": "GS exhibits weaker RS and negative idiosyncratic momentum ([GS-RS60], [GS-IDMOM]); maintain a small tactical exposure with size constrained by C3 risk sizing.",
         "supporting_claims": [
           "C3"
         ],
-        "ticker": "BAC",
-        "weight": 0.0
+        "ticker": "GS",
+        "weight": 0.03
       },
       {
-        "explanation": "CAT has positive 120-day and 200D momentum ([CAT-RET120], [CAT-MOM200]) but is in a short-term pullback (price below SMA20/50). Under C2 this is a trend-confirmed candidate; C1 sizing is moderate due to idiosyncratic pullback risk \u2014 small tactical position (6%) to capture mean-reversion into the broader uptrend.",
+        "explanation": "XOM has positive longer\u2011term returns ([XOM-RET252]) and neutral 200D momentum ([XOM-MOM200]); given energy\u0027s current price dynamics show mixed short\u2011term weakness but longer\u2011term momentum, C3 allows a larger tactical exposure sized to limit concentration risk while meeting energy allocation needs.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "XOM",
+        "weight": 0.14
+      },
+      {
+        "explanation": "CVX shows weak 60D returns and RS but remains tradable; hold a small technical exposure while awaiting clearer trend confirmation.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "CVX",
+        "weight": 0.03
+      },
+      {
+        "explanation": "CAT trades above short/medium SMAs and has strong short\u2011term returns ([CAT-SMA20], [CAT-SMA50], [CAT-SMA200], [CAT-RET20]); technical trend confirmation and momentum justify meaningful cyclical exposure.",
         "supporting_claims": [
           "C2",
           "C1"
         ],
         "ticker": "CAT",
-        "weight": 0.06
+        "weight": 0.13
       },
       {
-        "explanation": "CVX sits near/above its 200-day SMA ([CVX-SMA200]) with positive long-term momentum ([CVX-MOM200]); C2 justifies a tactical allocation, and C1 limits size given mixed short-term returns ([CVX-RET60]) \u2014 allocate 10% to capture sector trend exposure while avoiding concentration.",
+        "explanation": "RTX sits marginally above short SMAs ([RTX-SMA20]) and benefits from steady backlog; maintain a small position as tactical industrial exposure under C2.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "RTX",
+        "weight": 0.02
+      },
+      {
+        "explanation": "WMT is a defensive trend name trading above SMAs ([WMT-SMA20], [WMT-SMA50], [WMT-SMA200]) with low realized vol, providing ballast to the momentum book; size increased versus prior to reduce portfolio tail sensitivity per C3.",
         "supporting_claims": [
           "C2",
-          "C1"
+          "C3"
         ],
-        "ticker": "CVX",
-        "weight": 0.1
+        "ticker": "WMT",
+        "weight": 0.08
       },
       {
-        "explanation": "PG is above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) with low volatility vs peers ([PG-VOL20], [PG-VOL60]) which favors trend persistence per C2. C3\u0027s defensive tilt increases PG\u0027s role as ballast; raise to 20% to stabilize portfolio momentum exposure.",
+        "explanation": "PG shows trend consistency around longer SMAs ([PG-SMA200]) and low vol profile; included as defensive ballast and sized per volatility-aware rule.",
         "supporting_claims": [
           "C2",
           "C3"
         ],
         "ticker": "PG",
-        "weight": 0.2
+        "weight": 0.05
       },
       {
-        "explanation": "RTX trades above its 200-day SMA ([RTX-SMA200]) and has positive medium-term returns ([RTX-RET120]) indicating trend confirmation per C2. Idiosyncratic momentum is muted; under C1 maintain a moderate position (12%) to capture continued trend with lower volatility than higher-beta momentum names.",
-        "supporting_claims": [
-          "C2",
-          "C1"
-        ],
-        "ticker": "RTX",
-        "weight": 0.12
-      },
-      {
-        "explanation": "SLB shows durable 12-month momentum and trend consistency ([SLB-MOM12_1], [SLB-TREND]) and trades above its 200-day SMA ([SLB-SMA200]), supporting trend continuation. Per C1, reduce prior concentration because downside and realized vol are elevated ([SLB-VOL60], [SLB-DVOL60]) \u2014 keep a material but size-capped exposure (12%).",
+        "explanation": "AMZN displays strong momentum and RS ([AMZN-MOM200], [AMZN-RS60]) and trades above SMAs ([AMZN-SMA20], [AMZN-SMA50], [AMZN-SMA200]) supporting a material allocation. Elevated vol metrics and large historical drawdown ([AMZN-VOL60], [AMZN-MDD1Y]) prevented a larger weight per C3.",
         "supporting_claims": [
           "C1",
-          "C2"
+          "C2",
+          "C3"
         ],
-        "ticker": "SLB",
+        "ticker": "AMZN",
         "weight": 0.12
-      },
-      {
-        "explanation": "Maintain a 20% cash buffer as a technical risk-management lever: C3 (momentum breakdown risk in BAC/AMZN and market volatility) and C1 (concentration risk in high-vol names like AMD/SLB) justify holding dry powder to de-risk on volume-confirmed trend failures and redeploy into fresh momentum breakouts. Cash yields the Fed Funds reference rate ([L1-FF]).",
-        "supporting_claims": [
-          "C3",
-          "C1"
-        ],
-        "ticker": "_CASH_",
-        "weight": 0.2
       }
     ],
-    "revision_notes": "Addressing critiques: \n\nAccepted (material \u0026 partial): Critique 1 (RISK) correctly exposed a concentration sizing flaw driven by volatility and drawdown risk. I accepted its technical point that realized volatility and historical drawdowns meaningfully raise tail risk for momentum leaders and therefore revised sizing rules (C1) and materially reduced single-stock concentrations (AMD from 30% \u2192 14%; SLB from 20% \u2192 12%) and increased cash (7% \u2192 20%) to manage regime change risk. This is a technical acceptance: sizing is now volatility-adjusted using price-derived vol and drawdown metrics ([AMD-VOL60], [AMD-MDD1Y], [SLB-VOL60], [SLB-DVOL60]). The causal mechanism changed by adding a volatility-cap to momentum sizing rather than relying solely on momentum magnitude. Portfolio implication: lower concentration, higher cash buffer, higher allocation to low-vol trend-confirmed PG.\n\nAccepted (limited): Critique 2 (VALUE) raised legitimate concerns about fundamental headwinds for AMD and SLB, but I rejected the leap from fundamentals to eliminating momentum exposure because the decision framework must remain price-based. However, I accepted the portion of the critique that used price-derived indicators (volatility, drawdowns) to argue for reduced sizing. Thus I partially accepted the recommendation to reduce AMD/SLB but rejected the valuation-driven suggestion to reduce them to near-zero absent price-based breakdowns. The revision narrows the claim: momentum remains actionable (C2), but sizing must be tempered by observed price risk (C1).\n\nRejected: I rejected the parts of both critiques that rely primarily on fundamental/valuation arguments as standalone reasons to abandon technical signals. Those arguments do not invalidate the observed price behavior (momentum and SMA regimes) and therefore do not by themselves falsify the technical case. Where fundamentals translate into observable price deterioration (e.g., volatility spike, SMA breach), I will act \u2014 but until then, price remains the primary signal.\n\nReasoning updates (substantive): \n- Added explicit volatility-adjusted sizing rule to the causal chain: momentum -\u003e check realized vol \u0026 drawdown -\u003e size cap (C1). \n- Tightened SMA-regime filter to require multi-horizon confirmation (C2). \n- Made cash a tactical risk-management lever tied to observable volatility regime and short-term momentum breakdowns (C3). \n\nNet portfolio changes vs prior: reduced AMD and SLB weights to limit concentration and tail risk; increased PG and RTX modestly as trend-confirmed, lower-vol ballast; increased cash to 20% to preserve optionality. These changes are proportional to the material critique about sizing risk and preserve the technical thesis that price/momentum drive allocation decisions.",
+    "revision_notes": "Addressed critiques explicitly: Accepted/modified Critique 1 (RISK) \u2014 partially accepted: the critique correctly flagged concentration and volatility\u2011driven tail risk in the original portfolio. I revised sizing rules (C3) and reduced single\u2011name and aggregate tech concentration to meet a 40% tech cap and to scale weights by realized vol/historical drawdown (trimmed NVDA from 0.18 \u2192 0.12, modestly reduced AAPL and MSFT to 0.08 each, kept AMZN material but volatility\u2011capped at 0.12). This change preserves momentum exposure while reducing tail risk. Evidence for the acceptance: [NVDA-VOL60], [NVDA-MDD1Y], [AMZN-VOL60], [AMZN-MDD1Y], [MSFT-BETA].\n\nAccepted (limited) Critique 2 (VALUE on NVDA fundamentals) \u2014 accepted as a sizing/positioning concern only: I did not adopt fundamental valuation logic but acknowledged that material idiosyncratic risk (export controls and inventory) increases technical fragility and justifies a smaller absolute NVDA weight under volatility\u2011aware sizing (C3). The reduction is supported by technical risk signals ([NVDA-VOL60], [NVDA-MDD1Y]) rather than by fundamental narrative. I did not reduce NVDA to an immaterial allocation because price momentum and RS remain strong ([NVDA-MOM200], [NVDA-RS60]) which supports continued technical exposure per C1.\n\nRejected (but qualified) Critique 3 (VALUE on SMA sufficiency) \u2014 rejected insofar as it substitutes fundamentals for price evidence. However I accepted the limited methodological point that SMA-based signals should be combined with RS/momentum confirmation; therefore I revised C2 to require SMA + RS60/trend consistency confirmation before overweighting. Evidence used: [AAPL-SMA50], [AAPL-SMA200], [MSFT-SMA50], [MSFT-SMA200], [AMZN-SMA20]. This is a technical refinement, not a shift to fundamentals.\n\nRejected Critique 4 (VALUE on energy fundamentals) \u2014 rejected as a reason to abandon price signals. Energy names show weaker short\u2011term momentum/RS ([XOM-RET60], [XOM-RS60], [CVX-RET60]) so technical framework favors limited exposure. That said, I increased XOM allocation vs original (to 0.14) to satisfy portfolio balance, sector minimums, and because XOM exhibits reasonable longer\u2011term returns and neutral 200D momentum ([XOM-RET252], [XOM-MOM200]). This is a tactical, price\u2011driven compromise rather than a fundamentals-driven overweight. \n\nSummary of material changes to reasoning: 1) Added C3 (volatility\u2011scaled sizing) as a core claim that changes position sizing rules; 2) Enforced a hard cap on aggregate tech exposure (40%) consistent with both technical risk control and the mandatory sector limits; 3) Refined C2 to require SMA confirmation plus RS60/trend consistency. Portfolio adjustments follow directly from these technical rule changes.",
     "risks_or_falsifiers": [
-      "Market-wide momentum reversal: VIX spikes materially above current level (current [L1-VIX]) accompanied by broad negative returns across momentum leaders \u2014 would invalidate short-term momentum bets.",
-      "AMD loses trend confirmation: sustained close(s) below [AMD-SMA50] and/or [AMD-SMA200] with increasing downside returns (collapse in [AMD-RET60]) \u2014 would require cutting AMD exposure.",
-      "SLB momentum reverses: multi-day negative 12-month momentum signal (observable decline in [SLB-MOM12_1] and breach of [SLB-SMA200]) or material increase in downside vol ([SLB-DVOL60]) \u2014 would require de-risking SLB.",
-      "AMZN reclaims 200-day SMA on confirming volume (sustained closes above [AMZN-SMA200]) and improving multi-month momentum ([AMZN-RET120]) \u2014 would prompt increasing AMZN weight.",
-      "BAC shows technical recovery: consecutive positive medium-term returns and improvement in idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising) \u2014 would prompt reconsideration of a tactical BAC allocation."
+      "Broad momentum collapse where leaders simultaneously close and remain below SMA50/SMA200 (e.g., NVDA, AMZN, AAPL breaks their SMA50/SMA200) would invalidate C1/C2.",
+      "Large volatility spike or regime shift (VIX surge) causing correlation convergence and rapid reversals [L1-VIX].",
+      "Material, rapid deterioration in momentum metrics for high\u2011vol names (e.g., NVDA-MOM200 falls sharply or NVDA-RS60 turns negative) would falsify continued weighting in those names [NVDA-MOM200] [NVDA-RS60].",
+      "Sustained compression of realized vol for previously high\u2011vol names (invalidating the volatility penalty) would weaken C3\u0027s sizing justification (observable via [NVDA-VOL60], [AMZN-VOL60])."
     ],
-    "thesis": "The revised portfolio keeps the technical core: overweight securities with confirmed momentum and SMA regimes (PG, RTX, AMD, SLB, CVX, CAT) while explicitly scaling position sizes to realized volatility and drawdown risk (C1). SMA regime filtering (C2) ensures holdings are trend-confirmed; short-term breakdowns and idiosyncratic negative momentum (C3) justify a meaningful cash buffer and zero weighting for BAC. This produces a diversified momentum portfolio with reduced concentration risk versus the prior proposal while preserving exposure to the strongest price-based leaders and providing capital to act on new technical breakouts."
-  },
-  "thesis": "The revised portfolio keeps the technical core: overweight securities with confirmed momentum and SMA regimes (PG, RTX, AMD, SLB, CVX, CAT) while explicitly scaling position sizes to realized volatility and drawdown risk (C1). SMA regime filtering (C2) ensures holdings are trend-confirmed; short-term breakdowns and idiosyncratic negative momentum (C3) justify a meaningful cash buffer and zero weighting for BAC. This produces a diversified momentum portfolio with reduced concentration risk versus the prior proposal while preserving exposure to the strongest price-based leaders and providing capital to act on new technical breakouts."
+    "thesis": "The revised portfolio preserves a momentum\u2011first framework: overweight names with intact multi\u2011month momentum and SMA confirmation (C1/C2) while enforcing volatility\u2011aware sizing (C3) to limit single\u2011name and high\u2011vol tech tail risk. Tech exposure is capped at the sector maximum (40%) to limit correlation concentration; defensive positions (WMT, PG) provide lower\u2011vol ballast and industrials/energy/financials hold trend-confirmed exposures sized to balance momentum capture with tail risk control. Each position is driven by observable price behavior (momentum, SMAs, RS) and sized to reflect realized volatility and historical drawdowns."
+  }
 }
 
 ---
 
-# Evaluation Procedure
+# Evaluation Method
 
-Follow the steps below **before assigning scores**.
+Your evaluation must follow **two phases**.
+
+**PHASE 1 — Detection**
+Identify objective reasoning failures.
+
+**PHASE 2 — Judgment**
+Assign pillar scores based on detected failures.
+
+Detection should be **conservative and objective**.
+Scores must reflect the **number and severity of detected failures**.
+
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
 
 ---
 
-STEP 1 — Detect Logical Failures
+# PHASE 1 — Detect Reasoning Failures
 
-Evaluate the internal logic of the revised argument.
+Before assigning scores, detect the following reasoning failures.
 
-Identify reasoning failures such as:
+Record counts where possible.
 
-• internal contradictions
+---
+
+## Logical Failures
+
+Detect:
+
+• contradictions within the argument
 • mutually incompatible claims
 • circular reasoning
-• conclusions not supported by earlier reasoning
-• reasoning steps missing between evidence and conclusions
+• missing reasoning steps between evidence and conclusions
+• conclusions that do not logically follow from earlier reasoning
 
-Also check whether critiques that target specific claims expose unresolved logical flaws.
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
 
-Record whether contradictions are present. If so, count them.
+Example:
 
----
+• one claim implies recession
+• another implies strong cyclical expansion
 
-STEP 2 — Detect Evidence Failures
+Also evaluate whether the **portfolio allocation logically follows from the thesis**.
 
-Evaluate how evidence is used to support claims.
-
-Use reasoning.claims[*].evidence_ids to cross-reference with evidence_citations.
-
-Identify whether:
-
-• key claims lack evidence citations (count claims with zero evidence_ids)
-• citations do not support the claims they reference
-• evidence is selectively used or misinterpreted
-• claims are stronger than the cited evidence justifies
-
-Also check whether critiques that identified evidence gaps were addressed.
-
-Record whether unsupported claims exist. Report unsupported_claims_count.
+If contradictions exist, count them.
 
 ---
 
-STEP 3 — Detect Alternative Reasoning Failures
+## Evidence Failures
 
-Evaluate how the agent responds to critiques and competing explanations.
+Evaluate how evidence supports claims.
 
+Cross-reference:
 
-Use reasoning.revision_notes (if present) to assess how critiques were handled.
+`reasoning.claims[*].evidence_ids` with `evidence_citations`.
 
+If `evidence_ids` is present and non-empty on a claim, use it as the canonical evidence reference.
 
-Identify whether:
+If `evidence_ids` is empty or absent, check whether the claim's `claim_text` contains
+inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references exist
+but `evidence_ids` is empty, treat the claim as having evidence — the references were
+not captured in the structured field but are present in the text.
 
-• critiques (K#) were ignored
-• critiques targeting claims were not addressed
-• accepted critiques produced no meaningful reasoning change
-• rejected critiques were dismissed without justification
-• alternative explanations were not considered
-• the agent demonstrates premature certainty
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
 
-Strong reasoning should acknowledge competing interpretations and respond to critiques directly.
+Let:
 
-Report ignored_critiques_count if critiques were not addressed.
+total_claims = number of claims in reasoning.claims
+unsupported_claims = number of claims failing the evidence rule
 
----
+unsupported_claim_rate = unsupported_claims / total_claims
 
-STEP 4 — Detect Causal Reasoning Failures
+Detect:
 
-Evaluate causal reasoning using **Pearl's causal hierarchy** (adapted for financial domain).
+• claims with no evidence citations
+• citations that do not support the claim
+• misinterpretation of evidence
+• claims stronger than the cited evidence justifies
 
-Levels:
-
-L1 — correlation/association
-L2 — intervention: requires a plausible mechanism or policy transmission pathway (not literal experimental evidence)
-L3 — counterfactual reasoning: must explicitly reason about an alternative state
-
-Identify **causal overreach**, including:
-
-• L2 claims with only associational evidence and no mechanism
-• L3 claims without counterfactual structure
-• causal conclusions drawn from purely correlational evidence
-• macro claims mapped directly to asset outcomes without mechanism
-
-Also check whether critiques successfully exposed causal weaknesses in specific claims.
-
-Record whether causal overreach occurs. Report causal_overreach_count.
+Count unsupported claims.
 
 ---
 
-STEP 5 — Detect Conclusion Drift
+## Alternative Reasoning Failures
 
-Determine whether the **final portfolio allocation logically follows from the reasoning**.
+Evaluate how the agent handles competing explanations and critiques.
 
-Use reasoning.position_rationale[*].supporting_claims to verify each position cites a real claim.
-Use reasoning.claims[*].impacts_positions to verify causal completeness.
+Detect:
 
-Check for:
+• ignored critiques
+• critiques rejected without justification
+• accepted critiques that produce no meaningful reasoning change
+• failure to consider alternative explanations
+• premature certainty
 
-• positions with weight >10% that have no supporting_claims entry
-• thesis statements inconsistent with allocation choices
-• claims that do not logically imply the portfolio allocation
-• revisions that ignore critiques without explanation
+A critique is considered ADDRESSED only if the revision provides
+explicit reasoning responding to the critique.
 
-Count orphaned positions (weight >10% with no supporting claim). Report orphaned_positions_count.
+Evidence of addressing may include:
+
+• revision_notes that explain why the critique is accepted or rejected
+• claim structure changes motivated by the critique
+• portfolio allocation changes motivated by the critique
+• new evidence introduced to evaluate the critique
+
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
+• revision_notes explicitly reference the critique
+• claim structure changes
+• portfolio allocation changes
+• new evidence is introduced responding to the critique
+
+If none of these occur, treat the critique as **ignored**.
+
+Strong reasoning should:
+
+• directly address critiques
+• justify accepting or rejecting them
+• acknowledge competing interpretations of evidence
+
+Count ignored critiques when applicable.
 
 ---
 
-STEP 6 — Detect Critique Handling Failures
+## Causal Reasoning Failures
 
-Evaluate how the agent handles critiques.
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
 
-Identify whether:
+For each claim, independently determine its causal level:
 
-• critiques targeting claims were ignored
-• critiques were accepted but reasoning was not updated
-• critiques were rejected without justification
-• challenged claims remained unchanged despite valid critiques
+L1 — correlation / association: citing data patterns or statistical relationships.
 
-Poor critique handling should reduce the **alternative_consideration** score.
+L2 — intervention / mechanism: the claim describes a plausible causal pathway
+(e.g., "Fed raises rates → higher discount rates → lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
+
+L3 — counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** (causal overreach), including:
+
+• L2 claims where no mechanism is described in the claim text
+• L3 claims without explicit counterfactual reasoning
+• claims whose conclusions require L2/L3 reasoning but evidence is purely L1
+• macro claims mapped to asset outcomes without transmission mechanisms
+
+Count causal overreach cases.
+
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
 
 ---
 
-# Scoring
+## Assumption Failures
 
-After identifying failures, assign scores for the four CRIT pillars.
+Detect:
 
-logical_validity
-evidential_support
-alternative_consideration
-causal_alignment
+• critical assumptions that are not acknowledged
+• assumptions contradicted by evidence
+• assumptions doing most of the explanatory work
 
-Scores must be in the range **0.0 – 1.0**.
+These typically reduce evidential_support.
 
-Use the full range.
+## Conclusion Consistency Failures
 
-Use these anchors:
+Determine whether the **portfolio allocation follows logically from the reasoning**.
+
+Use:
+
+• `position_rationale[*].supporting_claims`
+• `claims[*].impacts_positions`
+
+Detect:
+
+• positions >10% with no `supporting_claims` entries
+• `supporting_claims` entries that reference claim IDs not present in the claims array
+• claims that do not logically imply the allocation
+• portfolio changes without reasoning explanation
+
+Count orphaned positions (positions >10% that have no valid supporting claim).
+
+---
+
+# Failure → Pillar Mapping
+
+When failures are detected, penalties MUST map to pillars as follows:
+
+logical_validity penalties may only result from:
+
+• contradictions
+• missing reasoning steps
+• portfolio reasoning mismatch
+
+evidential_support penalties may only result from:
+
+• unsupported claims
+• evidence misuse
+
+alternative_consideration penalties may only result from:
+
+• ignored critiques
+• unjustified rejection of critiques
+• premature certainty
+
+causal_alignment penalties may only result from:
+
+• causal overreach
+• missing causal mechanisms
+
+premature certainty is detected when:
+
+• strong conclusions are asserted
+• while evidence is weak or ambiguous
+• or competing explanations are ignored
+---
+
+# PHASE 2 — Assign Pillar Scores
+
+After detecting failures in Phase 1, assign scores for the four CRIT pillars.
+
+Scores MUST be **consistent with the detected counts**.
+
+---
+
+# CRIT Pillar Definitions
+
+Each pillar measures a different dimension of reasoning quality.
+
+**logical_validity**
+
+Internal logical consistency of the argument.
+
+Penalize for:
+
+• contradictions
+• circular reasoning
+• missing reasoning steps
+• conclusions that do not follow from premises
+
+---
+
+**evidential_support**
+
+Whether factual claims are supported by evidence.
+
+Penalize for:
+
+• unsupported claims
+• weak or irrelevant citations
+• evidence misinterpretation
+• claims stronger than evidence allows
+
+---
+
+**alternative_consideration**
+
+Whether competing explanations are considered.
+
+Definition of premature certainty:
+
+strong conclusions expressed despite weak or limited evidence.
+
+Penalize for:
+
+• ignored critiques
+• rejecting critiques without justification
+• premature certainty
+• failure to consider alternative interpretations
+
+---
+
+**causal_alignment**
+
+Whether causal claims are justified by the evidence and reasoning.
+
+Penalize for:
+
+• causal overreach
+• missing causal mechanisms
+• counterfactual claims without counterfactual reasoning
+• mapping macro relationships to asset outcomes without causal explanation
+
+---
+
+# Score Interpretation
+
+Scores must be within **0.0 – 1.0**.
+
+Use the following anchors:
 
 1.00 — excellent reasoning
 0.85 — strong reasoning with minor weaknesses
@@ -1319,30 +1367,72 @@ Use these anchors:
 0.20 — very weak reasoning
 0.00 — severe reasoning failure
 
-Important rules:
+---
 
-• If contradictions are detected → logical_validity ≤ 0.70
-• If unsupported claims are detected → evidential_support ≤ 0.70
-• If critiques were ignored → alternative_consideration ≤ 0.70
-• If causal overreach occurs → causal_alignment ≤ 0.70
-• Scores above 0.90 should be RARE
-• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+# Score Constraints
 
-Avoid rounding scores to simple values such as **0.5 or 1.0** unless fully justified.
+Apply these rules when failures are detected:
 
-When assigning scores, consider how many distinct reasoning failures were detected.
+• contradictions → logical_validity ≤ 0.70
+• unsupported claims → evidential_support ≤ 0.70
+• ignored critiques → alternative_consideration ≤ 0.70
+• causal overreach → causal_alignment ≤ 0.70
 
-1 failure → small penalty
-2-3 failures → moderate penalty
-4+ failures → severe penalty
+Severity guidance:
+
+• **1 failure** → small penalty
+• **2–3 failures** → moderate penalty (typically ≤ 0.55)
+• **4+ failures** → severe penalty (typically ≤ 0.40)
+
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
+
+Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
+
+---
+
+# Diagnostic Boolean Rules
+
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
 
 ---
 
 # Output
 
-Return **only the JSON object defined in the system prompt**.
+Return **only the JSON object below**.
 
-Do not include explanations outside the JSON.
+No markdown.
+No text outside JSON.
 
-Include optional count fields in diagnostics where you can determine the count.
-
+```json
+{
+  "pillar_scores": {
+    "logical_validity": <float>,
+    "evidential_support": <float>,
+    "alternative_consideration": <float>,
+    "causal_alignment": <float>
+  },
+  "diagnostics": {
+    "contradictions_detected": <bool>,
+    "unsupported_claims_detected": <bool>,
+    "ignored_critiques_detected": <bool>,
+    "premature_certainty_detected": <bool>,
+    "causal_overreach_detected": <bool>,
+    "conclusion_drift_detected": <bool>,
+    "contradictions_count": <int or null>,
+    "unsupported_claims_count": <int or null>,
+    "ignored_critiques_count": <int or null>,
+    "causal_overreach_count": <int or null>,
+    "orphaned_positions_count": <int or null>
+  },
+  "explanations": {
+    "logical_validity": "<1–2 sentences explaining key reasoning issues>",
+    "evidential_support": "<1–2 sentences explaining evidence usage>",
+    "alternative_consideration": "<1–2 sentences explaining critique handling>",
+    "causal_alignment": "<1–2 sentences explaining causal reasoning quality>"
+  }
+}

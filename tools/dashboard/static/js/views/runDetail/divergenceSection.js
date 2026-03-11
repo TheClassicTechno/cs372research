@@ -42,6 +42,18 @@ export function loadDivergenceSection(experiment, runId, token) {
         h += '<td>' + fmt(revise.js_divergence) + '</td>';
         h += '<td>' + fmt(revise.mean_overlap) + '</td></tr>';
 
+        // Retry phases (retry_001, retry_002, ...)
+        var phaseKeys = Object.keys(phases).sort();
+        for (var p = 0; p < phaseKeys.length; p++) {
+          var pk = phaseKeys[p];
+          if (pk.indexOf('retry_') !== 0) continue;
+          var retryData = phases[pk];
+          var retryNum = pk.replace('retry_', '').replace(/^0+/, '') || '1';
+          h += '<tr><td>Retry ' + retryNum + '</td>';
+          h += '<td>' + fmt(retryData.js_divergence) + '</td>';
+          h += '<td>' + fmt(retryData.mean_overlap) + '</td></tr>';
+        }
+
         h += '</table>';
       }
 

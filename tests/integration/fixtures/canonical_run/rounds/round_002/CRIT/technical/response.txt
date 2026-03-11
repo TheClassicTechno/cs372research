@@ -1,9 +1,9 @@
 {
   "pillar_scores": {
-    "logical_validity": 0.87,
-    "evidential_support": 0.84,
-    "alternative_consideration": 0.89,
-    "causal_alignment": 0.68
+    "logical_validity": 0.88,
+    "evidential_support": 0.80,
+    "alternative_consideration": 0.88,
+    "causal_alignment": 0.70
   },
   "diagnostics": {
     "contradictions_detected": false,
@@ -15,13 +15,13 @@
     "contradictions_count": 0,
     "unsupported_claims_count": 0,
     "ignored_critiques_count": 0,
-    "causal_overreach_count": 3,
+    "causal_overreach_count": 1,
     "orphaned_positions_count": 0
   },
   "explanations": {
-    "logical_validity": "The revision ties portfolio changes directly to a volatility-adjusted sizing rule and a larger cash buffer, and all positions cite supporting claims; only a minor ambiguity appears in C2’s falsifier example language.",
-    "evidential_support": "All claims have valid evidence_ids that match the provided citations and support the stated technical signals, though some position rationales reference additional metrics (e.g., PG-VOL20/60, CVX/CAT/RTX evidence) not included in the evidence_citations.",
-    "alternative_consideration": "Critiques were explicitly addressed: the sizing/volatility critique was accepted with concrete portfolio and claim updates, and the fundamentals critique was partially accepted (for price-derived risk) with a reasoned rejection of non-price arguments.",
-    "causal_alignment": "Claims are labeled L2 but rely mainly on associational technical indicators (momentum, SMA regimes, VIX) without articulating explicit causal mechanisms, reflecting moderate causal overreach."
+    "logical_validity": "The revised argument is internally consistent: claims, sizing rule (C3), and the 40% tech cap align with the portfolio changes and thesis. There are no clear claim-to-claim contradictions and position rationale maps to claims.",
+    "evidential_support": "All formal claims include evidence_ids that appear in the evidence_citations and the agent limited claims to observable momentum/vol metrics; small issues arise from a few position texts referencing ancillary IDs not present in the evidence block, but claim-level support is present.",
+    "alternative_consideration": "The agent explicitly addressed the critiques: added volatility-aware sizing, reduced tech weights, and refined SMA+RS confirmation. Critiques were accepted or rejected with documented reasoning and corresponding changes, so alternative explanations were considered.",
+    "causal_alignment": "Some claims assert persistence/causality (C1 labelled causal) without articulating a clear mechanism beyond generic flow/positioning assumptions; this is a single instance of causal overreach (L1 evidence used to support stronger causal wording), so causal alignment is moderately penalized."
   }
 }

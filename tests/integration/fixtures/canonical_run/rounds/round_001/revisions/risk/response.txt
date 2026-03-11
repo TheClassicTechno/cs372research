@@ -1,212 +1,216 @@
 {
   "allocation": {
-    "AMD": 0.04,
-    "AMZN": 0.05,
-    "BAC": 0.07,
-    "CAT": 0.09,
-    "CVX": 0.15,
-    "PG": 0.20,
-    "RTX": 0.14,
-    "SLB": 0.08,
-    "_CASH_": 0.18
+    "AAPL": 0.00,
+    "MSFT": 0.07,
+    "NVDA": 0.03,
+    "JPM": 0.20,
+    "GS": 0.10,
+    "XOM": 0.05,
+    "CVX": 0.05,
+    "CAT": 0.04,
+    "RTX": 0.03,
+    "WMT": 0.10,
+    "PG": 0.15,
+    "AMZN": 0.18
   },
 
   "claims": [
     {
       "claim_id": "C1",
-      "claim_text": "Yield-curve inversion and elevated policy rates raise recession probability and amplify drawdown risk for cyclical, capital-goods, and credit-sensitive names; therefore cap aggregate cyclical exposure and retain a meaningful cash buffer to preserve optionality. Tactical increases in cyclicals are permitted only when firm-level evidence shows durable backlog/margin resilience (conditional, not a repeal of the macro risk sizing rule).",
+      "claim_text": "Rate-driven bank NII is a near-term risk/reward driver but is likely partially transitory and brings integration/credit fragility; size banks to capture NII tailwind while limiting concentration and reserving capital for defensive buffers. Evidence shows policy rates are elevated [L1-FF] [L1-2Y], JPM reported materially higher NII in 2023 but expects normalization and flags integration risk from First Republic [JPM-EC2] [JPM-EC4] [JPM-F12], and GS filings highlight increased interest-rate sensitivity [GS-F12].",
       "claim_type": "macro",
-      "pearl_level": "L1",
+      "reasoning_type": "causal",
       "evidence": [
-        "[L1-CURVE]",
-        "[L1-FF]"
-      ],
-      "variables": [
-        "10y_2y_spread",
-        "fed_funds_rate"
+        "[L1-FF]",
+        "[L1-2Y]",
+        "[JPM-EC2]",
+        "[JPM-EC4]",
+        "[JPM-F12]",
+        "[GS-F12]"
       ],
       "assumptions": [
-        "Inverted 10y-2y spread signals higher near-term recession probability which tends to stress cyclicals and credit-sensitive firms",
-        "Cash provides liquidity and flexibility to survive a macro drawdown and redeploy into stressed opportunities"
+        "Elevated short-term rates persist long enough to lift NII materially in the near term.",
+        "Bank integration/credit risks can materialize and erode earnings; therefore prudent sizing reduces drawdown risk."
       ],
       "falsifiers": [
-        "10Y-2Y spread steepens and remains positive for 60 trading days (reversal of [L1-CURVE])",
-        "Sustained macro surprise to the upside: industrial & activity data show durable expansion despite inversion (e.g., materially higher readings vs [L1-INDPRO])"
+        "JPM and GS report sustainable NII at or above current elevated levels with stable credit/integration metrics in subsequent filings (e.g., sustained $87bn NII guidance and clean integration updates) which would support larger bank sizing [JPM-EC2] [JPM-EC4]."
       ],
       "impacts_positions": [
-        "CAT",
-        "SLB",
-        "RTX",
-        "BAC",
-        "CVX",
-        "_CASH_"
+        "JPM",
+        "GS"
       ],
-      "confidence": 0.78
+      "confidence": 0.70
     },
     {
       "claim_id": "C2",
-      "claim_text": "Current volatility regime and security-level realized vol metrics indicate elevated downside risk for high-volatility/high-beta equities; size those names conservatively and allocate more to low-downside-vol securities to reduce portfolio realized drawdown contribution.",
-      "claim_type": "macro",
-      "pearl_level": "L1",
+      "claim_text": "Low current implied volatility masks tail-risk: volatility spikes and correlation clustering will disproportionately hurt high-volatility, high-beta growth names. Limit and size high-vol/long-duration positions to control drawdown contribution and ensure liquidity in stress. Historical large drawdowns and realized vol of leaders (NVDA, AMZN, MSFT) demonstrate tail vulnerability [L1-VIX] [NVDA-MDD1Y] [AMZN-MDD1Y] [NVDA-VOL60] [AMZN-VOL60] [MSFT-BETA].",
+      "claim_type": "risk",
+      "reasoning_type": "risk_assessment",
       "evidence": [
         "[L1-VIX]",
-        "[AMD-VOL60]",
+        "[NVDA-MDD1Y]",
+        "[AMZN-MDD1Y]",
+        "[NVDA-VOL60]",
         "[AMZN-VOL60]",
-        "[SLB-VOL60]",
-        "[PG-VOL20]"
-      ],
-      "variables": [
-        "vix",
-        "security_volatilities",
-        "downside_volatility"
+        "[MSFT-BETA]"
       ],
       "assumptions": [
-        "Higher realized/implied volatility increases likely drawdown magnitude for a given notional exposure",
-        "Low downside-vol securities (e.g., consumer staples) reduce portfolio downside in stress"
+        "Volatility can re-price quickly from current low levels and correlations can converge upwards in stress.",
+        "Past realized large drawdowns are informative of future tail vulnerability absent new structural hedges."
       ],
       "falsifiers": [
-        "VIX compresses below 12 and stays low for 60 trading days (contrary to [L1-VIX])",
-        "Security-level volatilities for high-vol names decline >30% and downside vol metrics materially compress"
+        "Sustained low realized volatility across growth leaders with no correlation clustering in stress (e.g., NVDA/Microsoft/AMZN all showing sustained low vol and small drawdowns) would weaken this sizing discipline."
       ],
       "impacts_positions": [
-        "AMD",
+        "NVDA",
         "AMZN",
-        "PG",
-        "SLB"
+        "MSFT",
+        "AAPL"
       ],
-      "confidence": 0.82
+      "confidence": 0.85
     },
     {
       "claim_id": "C3",
-      "claim_text": "Sector/capex concentration (energy, industrials, services) creates correlated tail exposure to commodity-price swings and capex cycles. Firm-level evidence (backlog, margin improvement, momentum) can justify modestly above-minimum sizing for specific cyclicals, but the portfolio enforces an explicit aggregate cap on cyclical/commodity exposure to limit systemic tail risk.",
+      "claim_text": "Defensive ballast should be diversified across low-vol staples, low-vol retail, and selective cash-flow-rich cyclicals (energy/industrial) to reduce single-name concentration risk and improve resilience. PG and WMT provide lower realized vol and stable cash-flows [PG-VOL60] [WMT-VOL60] [WMT-EC1]; but PG's margin improvement was driven by pricing and productivity and is therefore vulnerable—avoid single-name concentration [PG-F4] [PG-F1]. Select smaller allocations to industrials and energy provide alternative cash-flow drivers and reduce correlation concentration (CAT backlog and XOM buybacks/repurchases evidence) [CAT-EC1] [XOM-F7] [CVX-F8].",
       "claim_type": "sector",
-      "pearl_level": "L2",
+      "reasoning_type": "causal",
       "evidence": [
-        "[CVX-F1]",
-        "[SLB-F1]",
-        "[CAT-F2]",
-        "[SLB-F4]",
-        "[SLB-F16]",
-        "[RTX-F14]",
-        "[SLB-MOM12_1]",
-        "[SLB-TREND]",
-        "[CAT-RET120]",
-        "[RTX-RET120]"
-      ],
-      "variables": [
-        "commodity_price_risk",
-        "order_backlog",
-        "sector_momentum"
+        "[PG-VOL60]",
+        "[WMT-VOL60]",
+        "[WMT-EC1]",
+        "[PG-F4]",
+        "[PG-F1]",
+        "[CAT-EC1]",
+        "[XOM-F7]",
+        "[CVX-F8]"
       ],
       "assumptions": [
-        "Commodity and capex cycles can revert quickly and lead to correlated drawdowns across energy and industrials",
-        "Backlog and margin evidence reduce but do not eliminate recession sensitivity — they permit only measured increases under an aggregate cap"
+        "Staples and large discount retail will retain relatively lower downside volatility in stress compared with high-beta tech.",
+        "Industrial backlog and energy cash returns offer diversification benefits versus purely defensive staples."
       ],
       "falsifiers": [
-        "Persistent positive commodity shock with stable high prices (WTI > $90 for 60 days) and uninterrupted backlog-to-revenue conversion across cyclicals",
-        "Order backlogs convert smoothly with no guidance cuts in subsequent quarters for CAT/RTX/SLB"
+        "PG (or WMT) reports sharp demand or margin deterioration that drives large idiosyncratic drawdowns, removing their ballast role [PG-F4] [WMT-EC1]."
       ],
       "impacts_positions": [
-        "CVX",
-        "SLB",
+        "PG",
+        "WMT",
         "CAT",
-        "RTX"
+        "XOM",
+        "CVX"
       ],
-      "confidence": 0.70
+      "confidence": 0.75
     }
   ],
 
   "position_rationale": [
     {
-      "ticker": "AMD",
-      "weight": 0.04,
-      "supported_by_claims": [
-        "C2"
-      ],
-      "explanation": "High security vol and beta ([AMD-VOL60], [AMD-BETA]) increase drawdown contribution; keep a small, liquid tactical stake given high ADVOL ([AMD-ADVOL]) but size is constrained by volatility-based rule."
-    },
-    {
-      "ticker": "AMZN",
-      "weight": 0.05,
-      "supported_by_claims": [
-        "C2"
-      ],
-      "explanation": "Elevated realized and downside vol ([AMZN-VOL60], [AMZN-DVOL60]) justify limited sizing despite liquidity ([AMZN-ADVOL]); small tactical exposure retained for optionality but constrained to control tail risk."
-    },
-    {
-      "ticker": "BAC",
-      "weight": 0.07,
+      "ticker": "JPM",
+      "weight": 0.20,
       "supported_by_claims": [
         "C1"
       ],
-      "explanation": "Bank exposure is credit- and macro-sensitive; reduced from prior allocation to limit portfolio vulnerability to recession/credit stress while maintaining a modest position to capture potential NII benefits noted in earnings ([BAC-EC1])."
+      "explanation": "Moderate bank exposure to capture near-term NII benefits [L1-FF] [L1-2Y] and JPM's Q2 NII lift [JPM-EC2], but sized down from prior proposal to limit concentration and integration/credit fragility risk flagged by management [JPM-EC4] [JPM-F12]."
     },
     {
-      "ticker": "CAT",
-      "weight": 0.09,
+      "ticker": "GS",
+      "weight": 0.10,
       "supported_by_claims": [
         "C1",
-        "C3"
+        "C2"
       ],
-      "explanation": "Capped cyclical exposure from macro claim (C1) but increased modestly because firm-level backlog and margin evidence supports resilience ([CAT-F2], [CAT-EC2], [CAT-EC3]). Weight remains limited to contain aggregate cap on capex/cyclical exposure."
-    },
-    {
-      "ticker": "CVX",
-      "weight": 0.15,
-      "supported_by_claims": [
-        "C3",
-        "C1"
-      ],
-      "explanation": "Energy provides commodity diversification but is sectorally correlated and commodity-sensitive ([CVX-F1]); size is meaningful but capped so the portfolio is not overexposed to an energy price reversal."
+      "explanation": "Smaller allocation to GS captures potential rate-linked upside while limiting idiosyncratic drawdown risk and revenue sensitivity to market-activity cycles [GS-F1] [GS-F12]."
     },
     {
       "ticker": "PG",
-      "weight": 0.20,
+      "weight": 0.15,
       "supported_by_claims": [
-        "C2"
+        "C3"
       ],
-      "explanation": "Defensive, low downside volatility ([PG-VOL20]) anchors the portfolio and reduces realized downside in stress; this justifies the largest equity weight under the risk-first mandate."
+      "explanation": "Defense anchor but trimmed materially from prior concentration: PG provides lower realized volatility and margin resiliency benefits [PG-VOL60] while acknowledging margins were driven by pricing/productivity and hence the position is capped to limit single-name risk [PG-F4]."
     },
     {
-      "ticker": "RTX",
-      "weight": 0.14,
+      "ticker": "WMT",
+      "weight": 0.10,
       "supported_by_claims": [
-        "C3",
-        "C1"
+        "C3"
       ],
-      "explanation": "Moderate increase recognizing backlog and order-strength evidence ([RTX-F14], [RTX-EC1]) while preserving macro cap constraints; defense/industrial exposure diversifies away from consumer cyclicals but is sized to limit concentration and backlog conversion risk."
+      "explanation": "Complementary defensive retail exposure with low realized vol and operational/liquidity strengths to stabilize drawdowns [WMT-VOL60] [WMT-EC1]."
     },
     {
-      "ticker": "SLB",
-      "weight": 0.08,
+      "ticker": "AMZN",
+      "weight": 0.18,
       "supported_by_claims": [
         "C2",
         "C3"
       ],
-      "explanation": "High realized/downside vol ([SLB-VOL60], [SLB-DVOL60]) requires conservative sizing despite margin improvement and positive momentum ([SLB-F4], [SLB-F16], [SLB-MOM12_1], [SLB-TREND]). Position increased modestly from prior allocation to reflect firm-level signal but capped to limit tail exposure."
+      "explanation": "Moderate consumer-discretionary exposure limited by tail-risk sizing: AWS provides cash-flow visibility [AMZN-F15] but AMZN's history of large drawdowns and elevated vol requires a controlled position to capture secular cloud resilience without overexposure [AMZN-MDD1Y] [AMZN-VOL60]."
     },
     {
-      "ticker": "_CASH_",
-      "weight": 0.18,
+      "ticker": "MSFT",
+      "weight": 0.07,
       "supported_by_claims": [
-        "C1",
         "C2"
       ],
-      "explanation": "Cash buffer preserved to reduce immediate exposure to macro and volatility-driven drawdowns ([L1-CURVE], [L1-VIX]) while enabling opportunistic redeployment if stress presents attractive entry points."
+      "explanation": "Small tactical participation in high-quality tech (cloud/AI exposure) but sized to limit drawdown contribution given elevated beta and downside vol [MSFT-BETA] [MSFT-VOL60]."
+    },
+    {
+      "ticker": "NVDA",
+      "weight": 0.03,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Token exposure to NVDA's AI upside while keeping position tiny due to extreme realized vol and prior large drawdowns [NVDA-VOL60] [NVDA-MDD1Y]."
+    },
+    {
+      "ticker": "AAPL",
+      "weight": 0.00,
+      "supported_by_claims": [],
+      "explanation": "Excluded to limit overlapping tech/cyclical exposure and reduce portfolio beta; kept at zero to reduce concentration in duration-sensitive names despite strong momentum signals [AAPL-RET120]."
+    },
+    {
+      "ticker": "XOM",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Small energy allocation for cash-flow diversification and shareholder returns (buybacks/dividends), providing a different correlation driver than equities/tech [XOM-F7] [XOM-EC1]."
+    },
+    {
+      "ticker": "CVX",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Complementary energy exposure with capital-return programs and downstream earnings that diversify portfolio cash flows [CVX-F8] [CVX-EC1]."
+    },
+    {
+      "ticker": "CAT",
+      "weight": 0.04,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Small industrial cyclicals exposure (backlog and margin improvements) as a diversification sleeve to reduce correlated tech/bank risk in a growth scenario [CAT-EC1] while keeping sizing modest to limit cyclical drawdowns."
+    },
+    {
+      "ticker": "RTX",
+      "weight": 0.03,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Limited aerospace/defense exposure for revenue/backlog diversification; position size is small given program-level inspection risks and supply-chain uncertainty [RTX-EC1] [RTX-F12]."
     }
   ],
 
-  "portfolio_rationale": "Maintain drawdown control given an inverted curve and elevated policy rates ([L1-CURVE], [L1-FF]) and a volatility regime that elevates downside risk ([L1-VIX], [AMD-VOL60], [AMZN-VOL60], [SLB-VOL60]). The portfolio keeps a significant defensive allocation to PG and a material cash buffer to preserve capital and optionality. It accepts the critiques' firm-level and momentum evidence (CAT backlog [CAT-F2], RTX backlog [RTX-F14], SLB margin/momentum [SLB-F4], [SLB-MOM12_1]) by allowing measured increases in select cyclicals, but enforces an explicit aggregate cap on cyclical/commodity exposure to limit correlated tail risk (implemented in allocation: combined CAT+SLB+RTX+CVX = 0.46). High-vol, high-beta names (AMD, AMZN) remain small to limit their drawdown contribution while preserving liquid tactical exposure. Overall, the portfolio trades some return opportunity for improved resilience under recession/volatility spikes while recognizing validated firm-level signals within strict position-size limits.",
+  "portfolio_rationale": "The revised portfolio prioritizes drawdown control by (1) moderating bank exposure to capture rate-driven NII while limiting concentration and integration/credit fragility (C1); (2) enforcing strict sizing on high-volatility, high-beta growth names to limit tail-risk contribution and preserve liquidity in stress (C2); and (3) diversifying defensive ballast across staples, retail and small sleeves of industrials/energy to avoid single-name defensive concentration and provide alternative cash-flow drivers (C3). Overall sizing reduces the prior large PG concentration and the prior heavy single-bank weight, keeping exposures balanced to survive volatility spikes and correlation convergence while retaining moderate participation in secular growth through small, controlled tech/consumer positions. Position sizes reflect volatility and drawdown histories rather than chasing momentum alone [L1-VIX] [NVDA-VOL60] [AMZN-MDD1Y] [PG-VOL60].",
 
-  "confidence": 0.78,
+  "confidence": 0.72,
 
   "risks_or_falsifiers": [
-    "VIX compresses below 12 and remains low for 60 trading days, materially reducing implied downside risk (falsifies volatility premise) — see [L1-VIX].",
-    "10Y-2Y spread steepens above 0 and remains positive for 60 trading days (reversal of [L1-CURVE]) indicating materially lower recession risk.",
-    "Industrial production and activity data show durable expansion inconsistent with recession pathway (contradicting the macro signal) — reference [L1-INDPRO].",
-    "Sustained commodity rally with WTI > $90 for 60+ days and no demand pullback, which would materially reduce sector tail risk and invalidate strict cyclical caps — reference [L1-WTI].",
-    "CAT/RTX/SLB subsequent quarterly releases show material backlog cancellations, margin compression or guidance cuts (contradicting [CAT-F2], [RTX-F14], [SLB-F4])."
+    "Policy rates and short-term yields decline materially (Fed Funds and 2y fall), removing the NII tailwind and making bank allocations a liability rather than a ballast [L1-FF] [L1-2Y].",
+    "Volatility remains suppressed and momentum leadership persists without correlation clustering (e.g., NVDA/AMZN/MSFT deliver sustained positive returns and low realized vol), making the defensive tilt costly [L1-VIX] [NVDA-RET60] [AMZN-RET60].",
+    "PG or WMT report sharp demand deterioration or margin contraction that causes large idiosyncratic drawdowns, invalidating their ballast role [PG-F4] [WMT-EC1].",
+    "Material negative surprises from JPM or GS related to integration, credit losses, or reserve builds that cause substantial drawdowns beyond current sizing protections [JPM-F12] [GS-F11]."
   ],
 
-  "revision_notes": "I addressed both critiques explicitly. Critique 1 (TECHNICAL) argued momentum signals justify much lower cash and higher cyclical weights. I rejected the core of that critique: momentum does not eliminate macro and volatility-driven drawdown risk (evidence: [L1-CURVE], [L1-VIX], [AMD-VOL60]) and so cannot alone justify removing a cash buffer or removing size caps on cyclicals. However, I accepted the limited point that price/momentum evidence is relevant as a conditional signal: therefore I modestly reduced cash from 0.25 to 0.18 and increased SLB, CAT, and RTX modestly to reflect momentum/fundamental signals ([SLB-MOM12_1], [SLB-TREND], [CAT-RET120], [RTX-RET120]) while keeping explicit aggregate cyclical exposure limits. Critique 2 (VALUE) highlighted firm-level backlog/margin evidence for CAT/RTX/SLB. I accepted that firm-level evidence increases resilience versus a blind macro cut and adjusted weights upward for CAT, RTX, SLB (from 0.06→0.09, 0.12→0.14, 0.05→0.08 respectively) citing [CAT-F2], [RTX-F14], [SLB-F4]. But I did not accept the recommendation to materially reduce cash to ~0.07 or to remove position caps: accepting firm fundamentals does not negate recession or volatility risk, so increases are measured and constrained by an explicit aggregate cap (combined cyclical/commodity exposure = 0.46). Changes made: (1) cash reduced modestly to 0.18 (material but limited acceptance of technical/value critiques); (2) CAT, RTX, SLB increased modestly reflecting firm/backlog/momentum evidence; (3) BAC trimmed slightly to reduce credit/macro sensitivity exposure; (4) AMD and AMZN remain small per volatility rule. These revisions update the causal mechanism by adding a conditional, firm-level allowance (C3) while preserving the original macro/volatility-driven sizing discipline (C1, C2). Rejected critiques: total removal of cash and large re-weights into cyclicals (TECHNICAL suggested cash ~0.07; VALUE suggested CAT ~0.15+/SLB ~0.12+/RTX up to 0.15) were rejected as they would materially increase portfolio tail-risk and concentration, inconsistent with the risk-manager mandate. Accepted critiques: both technical and value critiques validly flagged firm-level resilience and momentum; I incorporated those as constrained, conditional increases rather than overturning the core risk sizing rules."
+  "revision_notes": "I addressed each critique explicitly and updated claims/weights where critiques revealed genuine risk weaknesses or violated portfolio constraints.\n\nAccepted critiques (material or limited acceptances):\n- Critique 2 (VALUE re C1): Accepted (limited/material). Evidence that JPM's 2023 NII is a spike and management expects normalization ([JPM-EC4], [JPM-EC5]) plus integration risks from First Republic ([JPM-F12]) weaken the prior thesis that justified a 30% JPM weight. Diagnosis: the critique exposed that my prior sizing over-relied on a transient earnings spike and under-weighted integration/credit fragility. Repair: reduced JPM from 30% to 20% and added GS at 10% to diversify bank idiosyncratic risk; lowered confidence on C1 to 0.70 and added explicit falsifier tied to sustainable NII disclosures. Portfolio implication: lower single-bank concentration while retaining measured exposure to rates.\n\n- Critique 3 (VALUE re C3): Accepted (material). The point that PG's margin expansion was driven by pricing/productivity ([PG-F4]) and that volumes declined ([PG-F1]) exposes single-name concentration risk. Diagnosis: large PG concentration was fragile to margin reversion. Repair: trimmed PG from 35% to 15% and added diversified defensive/low-vol positions (WMT 10%) and small industrial/energy sleeves (CAT/XOM/CVX/RTX) to reduce dependence on a single defensive name while preserving ballast. Portfolio implication: reduced single-name defensive tail risk and improved cross-driver diversification.\n\nRejected critique (or accepted but limited):\n- Critique 1 (TECHNICAL re C2): Rejected in substance but accepted a constraint-driven modification. The technical critique correctly points out momentum in tech (e.g., NVDA, AMZN) [NVDA-RET60] [AMZN-RET60] but it is largely a return-focused objection that downplays tail-risk and correlation-clustering concerns central to my mandate. Diagnosis: momentum signals do not invalidate the risk that volatility spikes will cluster and that high-beta names will amplify drawdowns [L1-VIX] [NVDA-MDD1Y]. Repair: I did not reweight heavily into momentum leaders; instead I preserved small controlled exposure to AMZN/MSFT/NVDA to participate in upside while limiting drawdown contribution (AMZN 18%, MSFT 7%, NVDA 3%). Portfolio implication: preserves risk-first posture while allowing measured participation in secular winners. I did accept that my prior PG weight violated defensive concentration prudence highlighted by the technical critique and reduced it accordingly.\n\nReasoning updates (how causal explanation/assumptions changed):\n- Reduced reliance on the persistence of 2023 NII as a structural earnings uplift; now assume NII is a near-to-medium-term driver but likely to normalize, so banks are sized to capture the window without creating concentration fragility (C1 updated). Evidence: [JPM-EC4] [JPM-EC5] [JPM-F12].\n- Elevated emphasis on portfolio-level concentration risk: single-name defensive (PG) and single-bank (JPM) concentrations were principal failure modes; updated allocation deliberately reduces those concentrations and spreads defensive exposure across different correlation drivers (staples, retail, industrials, energy) (C3 updated). Evidence: [PG-F4] [WMT-EC1] [CAT-EC1] [XOM-F7].\n- Reinforced strict sizing discipline on high-vol tech/AI leaders: rather than eliminating exposure, I enforce small position caps informed by realized vol and historical max drawdowns to limit tail risk (C2 updated). Evidence: [NVDA-VOL60] [NVDA-MDD1Y] [AMZN-VOL60] [AMZN-MDD1Y].\n\nWhy I rejected the technical critique's main prescription: The technical agent prioritized momentum capture; however, as RISK my mandate is drawdown control. Momentum may boost short-term returns but materially increases tail-risk if volatility reverts or correlations spike. The critique did not demonstrate that momentum reduces drawdown risk; therefore I did not shift to a momentum-heavy posture. I did, however, accept its point about excessive PG concentration and adjusted sizing.\n\nNet allocation changes (high level):\n- JPM reduced from 30% -> 20% (accepting VALUE critique on NII transience).\n- PG reduced from 35% -> 15% (accepting VALUE critique on pricing-driven margins and concentration fragility).\n- AMZN increased modestly from 20% -> 18% (rebalanced participation within risk caps).\n- Introduced small, diversified sleeves in energy (XOM, CVX) and industrials (CAT, RTX) to reduce single-driver risk and add cash-flow diversification (consistent with C3).\n\nOverall coherence: The revised portfolio remains risk-first: it captures near-term macro drivers (rates, cloud) but reduces concentration and caps exposure to historically large-drawdown names. Changes were proportional to the critiques' materiality and preserve the original objective — minimize large drawdowns while retaining prudent return sources."
 }

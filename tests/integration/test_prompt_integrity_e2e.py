@@ -1065,3 +1065,250 @@ class TestCanonicalReplay:
             for claim in parsed["claims"]:
                 assert "claim_id" in claim, f"{role} claim missing claim_id"
                 assert "claim_text" in claim, f"{role} claim missing claim_text"
+
+
+# ---------------------------------------------------------------------------
+# Intervention Retry Integration Tests
+# ---------------------------------------------------------------------------
+
+class _CollapsingLLM:
+    """LLM that returns diverse proposals but collapsing revisions on first pass.
+
+    Proposals have distinct per-role allocations (high JS).
+    First revise call returns near-identical allocations (JS collapse).
+    Subsequent revise calls return diverse allocations (retry success).
+    """
+
+    # Per-role diverse allocations for proposals (high JS divergence)
+    _DIVERSE_ALLOCS = {
+        "value":     {"AAPL": 0.60, "MSFT": 0.25, "NVDA": 0.15},
+        "risk":      {"AAPL": 0.20, "MSFT": 0.50, "NVDA": 0.30},
+        "technical": {"AAPL": 0.10, "MSFT": 0.20, "NVDA": 0.70},
+    }
+    # Per-role diverse allocations for retry revisions
+    _RETRY_ALLOCS = {
+        "value":     {"AAPL": 0.55, "MSFT": 0.30, "NVDA": 0.15},
+        "risk":      {"AAPL": 0.25, "MSFT": 0.45, "NVDA": 0.30},
+        "technical": {"AAPL": 0.15, "MSFT": 0.20, "NVDA": 0.65},
+    }
+
+    def __init__(self, tickers: list[str], roles: list[str]):
+        self.calls: list[dict] = []
+        self._tickers = tickers
+        self._roles = roles
+        self._revise_call_count = 0
+
+    def __call__(
+        self, config, system_prompt, user_prompt,
+        role=None, phase=None, round_num=0,
+    ) -> str:
+        self.calls.append({
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "role": role,
+            "phase": phase,
+            "round_num": round_num,
+        })
+        if phase == "crit":
+            return _make_crit_response()
+        if phase == "judge":
+            return _make_judge_response(self._tickers)
+        if phase == "propose":
+            return self._make_diverse_proposal(role)
+        if phase == "critique":
+            return _make_enriched_critique(role, self._roles)
+        if phase == "revise":
+            self._revise_call_count += 1
+            if self._revise_call_count <= len(self._roles):
+                # First revise pass: near-identical allocations (collapse)
+                return self._make_collapsed_revision(role)
+            else:
+                # Retry pass: diverse allocations
+                return self._make_diverse_revision(role)
+        raise ValueError(f"Unexpected phase={phase!r} role={role!r}")
+
+    def _make_diverse_proposal(self, role: str) -> str:
+        """Each agent proposes a distinct allocation (high JS divergence)."""
+        alloc = self._DIVERSE_ALLOCS.get(role, _equal_allocation(self._tickers))
+        return self._make_response(role, alloc, "proposes diverse allocation")
+
+    def _make_collapsed_revision(self, role: str) -> str:
+        """All agents return nearly identical allocations to trigger JS collapse."""
+        alloc = {t: round(1.0 / len(self._tickers), 4) for t in self._tickers}
+        remainder = round(1.0 - sum(alloc.values()), 4)
+        alloc[self._tickers[0]] = round(alloc[self._tickers[0]] + remainder, 4)
+        return self._make_response(role, alloc, "collapsed to consensus")
+
+    def _make_diverse_revision(self, role: str) -> str:
+        """Retry revisions: diverse allocations (intervention success)."""
+        alloc = self._RETRY_ALLOCS.get(role, _equal_allocation(self._tickers))
+        return self._make_response(role, alloc, "revised with diversity after intervention")
+
+    def _make_response(self, role: str, alloc: dict, rationale: str) -> str:
+        result = {
+            "allocation": alloc,
+            "portfolio_rationale": f"{role} {rationale}.",
+            "confidence": 0.7,
+            "revision_notes": f"{role} {rationale}.",
+            "claims": [{
+                "claim_id": "C1",
+                "claim_text": f"{role} claim C1: Analysis-based position.",
+                "claim_type": "macro",
+                "reasoning_type": "causal",
+                "evidence": [f"[{self._tickers[0]}-RET60]"],
+                "assumptions": ["Stable conditions"],
+                "falsifiers": ["Market shock"],
+                "impacts_positions": self._tickers[:],
+                "confidence": 0.7,
+            }],
+            "position_rationale": [
+                {
+                    "ticker": t,
+                    "weight": alloc[t],
+                    "supported_by_claims": ["C1"],
+                    "explanation": f"Weight {alloc[t]:.2%} for {t}.",
+                }
+                for t in self._tickers
+            ],
+            "risks_or_falsifiers": ["Unexpected macro shock"],
+        }
+        return json.dumps(result, indent=2)
+
+    def calls_for(self, phase=None, role=None) -> list[dict]:
+        result = self.calls
+        if phase is not None:
+            result = [c for c in result if c["phase"] == phase]
+        if role is not None:
+            result = [c for c in result if c["role"] == role]
+        return result
+
+
+def _make_intervention_config(
+    max_rounds: int = 1,
+) -> DebateConfig:
+    """Build a DebateConfig with intervention engine enabled."""
+    from eval.PID.types import PIDConfig, PIDGains
+
+    profiles = get_agent_profiles(AGENT_PROFILE_MAP, judge_profile_name=JUDGE_PROFILE)
+    judge_profile = profiles.pop("judge", {})
+
+    return DebateConfig(
+        roles=list(ROLES),
+        max_rounds=max_rounds,
+        mock=False,
+        parallel_agents=False,
+        console_display=False,
+        verbose=False,
+        trace_dir="/tmp/test_intervention",
+        agent_profiles=profiles,
+        agent_profile_names={r: AGENT_PROFILE_MAP[r] for r in ROLES},
+        judge_profile=judge_profile,
+        pid_config=PIDConfig(
+            gains=PIDGains(Kp=0.15, Ki=0.01, Kd=0.03),
+            rho_star=0.8,
+        ),
+        initial_beta=0.5,
+        logging_mode="off",
+        crit_model_name="gpt-5-mini",
+        intervention_config={
+            "enabled": True,
+            "rules": {
+                "js_collapse": {
+                    "threshold": 0.4,
+                    "min_js_proposal": 0.05,
+                    "max_retries": 2,
+                },
+            },
+        },
+    )
+
+
+class TestInterventionRetry:
+    """Integration tests for intervention-triggered retries."""
+
+    @pytest.fixture
+    def collapsing_llm(self, monkeypatch):
+        """Install a CollapsingLLM that triggers JS collapse on first revise."""
+        llm = _CollapsingLLM(TICKERS, ROLES)
+        monkeypatch.setattr("multi_agent.graph.nodes._call_llm", llm)
+        monkeypatch.setattr("multi_agent.runner._call_llm", llm)
+        return llm
+
+    @pytest.fixture
+    def intervention_state(self, collapsing_llm):
+        """Run a 1-round pipeline with intervention engine and collapsing LLM."""
+        config = _make_intervention_config(max_rounds=1)
+        runner = MultiAgentRunner(config)
+        state = runner.run_returning_state(_make_observation())
+        return state
+
+    def test_retry_revise_calls_increase(self, intervention_state, collapsing_llm):
+        """Intervention retry causes extra revise LLM calls."""
+        revise_calls = collapsing_llm.calls_for(phase="revise")
+        # Initial revise (3 agents) + at least 1 retry (3 agents) = 6+
+        assert len(revise_calls) >= 6, (
+            f"Expected at least 6 revise calls (initial + retry), got {len(revise_calls)}"
+        )
+
+    def test_intervention_nudge_in_retry_prompts(self, intervention_state, collapsing_llm):
+        """INTERVENTION NOTICE appears in retry prompts but not initial ones."""
+        revise_calls = collapsing_llm.calls_for(phase="revise")
+        initial_calls = revise_calls[:len(ROLES)]
+        retry_calls = revise_calls[len(ROLES):]
+
+        # Initial prompts should NOT have the nudge
+        for call in initial_calls:
+            assert "INTERVENTION NOTICE" not in call["user_prompt"], (
+                f"Initial revise for {call['role']} should not have INTERVENTION NOTICE"
+            )
+
+        # Retry prompts SHOULD have the nudge
+        assert len(retry_calls) > 0, "No retry calls found"
+        for call in retry_calls:
+            assert "INTERVENTION NOTICE" in call["user_prompt"], (
+                f"Retry revise for {call['role']} missing INTERVENTION NOTICE"
+            )
+
+    def test_intervention_history_populated(self, intervention_state):
+        """state['intervention_history'] is populated after intervention fires."""
+        history = intervention_state.get("intervention_history", [])
+        assert len(history) >= 1, "Expected at least one intervention history entry"
+
+        entry = history[0]
+        assert entry["round"] == 1
+        assert entry["stage"] == "post_revision"
+        assert entry["rule"] == "js_collapse"
+        assert entry["retry"] == 1
+        assert entry["action"] == "retry_revision"
+        assert "collapse_ratio" in entry["metrics"]
+        assert "js_proposal" in entry["metrics"]
+        assert "js_revision" in entry["metrics"]
+
+    def test_no_intervention_without_config(self, monkeypatch):
+        """With intervention_config=None, no retries and no history."""
+        llm = CapturingLLM(TICKERS, ROLES)
+        monkeypatch.setattr("multi_agent.graph.nodes._call_llm", llm)
+        monkeypatch.setattr("multi_agent.runner._call_llm", llm)
+
+        config = _make_config(max_rounds=1, pid_enabled=True)
+        assert config.intervention_config is None
+        runner = MultiAgentRunner(config)
+        state = runner.run_returning_state(_make_observation())
+
+        # No intervention history
+        assert "intervention_history" not in state or len(state.get("intervention_history", [])) == 0
+
+        # Standard call count (no retries)
+        revise_calls = llm.calls_for(phase="revise")
+        assert len(revise_calls) == len(ROLES)
+
+    def test_max_retries_respected(self, intervention_state, collapsing_llm):
+        """Engine stops retrying after max_retries is exhausted."""
+        history = intervention_state.get("intervention_history", [])
+        # max_retries=2 for js_collapse, but the retry should succeed
+        # (diverse allocations on retry), so we expect 1 retry
+        # If both retries fire, max would be 2
+        retry_nums = [e["retry"] for e in history]
+        assert all(r <= 2 for r in retry_nums), (
+            f"Retry numbers exceeded max_retries=2: {retry_nums}"
+        )
