@@ -128,8 +128,9 @@ class TestCollapse:
 
 
 class TestTickerPerformance:
-    def test_ticker_performance_values(self):
+    def test_ticker_performance_values(self, monkeypatch):
         """pct_change matches (close-open)/open*100."""
+        monkeypatch.chdir(Path(__file__).resolve().parents[3])
         detail = get_run_detail(RUNS_BASE, EXPERIMENT, RUN_ID)
         for t in detail.get("ticker_performance", []):
             expected = round((t["close"] - t["open"]) / t["open"] * 100, 2)
@@ -137,8 +138,9 @@ class TestTickerPerformance:
                 f"{t['ticker']}: pct_change={t['pct_change']} expected={expected}"
             )
 
-    def test_ticker_performance_has_tickers(self):
+    def test_ticker_performance_has_tickers(self, monkeypatch):
         """Ticker performance should include the portfolio tickers."""
+        monkeypatch.chdir(Path(__file__).resolve().parents[3])
         detail = get_run_detail(RUNS_BASE, EXPERIMENT, RUN_ID)
         tp = detail.get("ticker_performance", [])
         assert len(tp) > 0, "No ticker performance data"

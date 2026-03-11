@@ -34,8 +34,8 @@ def _make_state(
         "confidence": 0.8,
         "claims": proposal_claims or [],
         "position_rationale": [
-            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Test position"},
-            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Test position"},
+            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Test position"},
+            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Test position"},
         ],
         "risks_or_falsifiers": ["Test risk: market downturn"],
     }
@@ -49,8 +49,8 @@ def _make_state(
         "claims": revision_claims or [],
         "critique_responses": [],
         "position_rationale": [
-            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "explanation": "Revised position"},
-            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "explanation": "Revised position"},
+            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "supported_by_claims": [], "explanation": "Revised position"},
+            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "supported_by_claims": [], "explanation": "Revised position"},
         ],
         "risks_or_falsifiers": ["Test risk: revised market downturn"],
     }
@@ -90,8 +90,8 @@ def _make_enriched_state(
         "confidence": 0.8,
         "claims": proposal_claims or [],
         "position_rationale": [
-            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Enriched position"},
-            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Enriched position"},
+            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Enriched position"},
+            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Enriched position"},
         ],
         "risks_or_falsifiers": ["Test risk: enriched market downturn"],
     }
@@ -103,8 +103,8 @@ def _make_enriched_state(
         "claims": revision_claims or [],
         "critique_responses": [],
         "position_rationale": [
-            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "explanation": "Revised enriched position"},
-            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "explanation": "Revised enriched position"},
+            {"ticker": "AAPL", "weight": 0.4, "supporting_claims": [], "supported_by_claims": [], "explanation": "Revised enriched position"},
+            {"ticker": "NVDA", "weight": 0.6, "supporting_claims": [], "supported_by_claims": [], "explanation": "Revised enriched position"},
         ],
         "risks_or_falsifiers": ["Test risk: revised enriched market downturn"],
     }
@@ -1119,8 +1119,8 @@ class TestMultiRoundRevisionLookup:
                         "confidence": 0.8,
                         "claims": [],
                         "position_rationale": [
-                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
-                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Proposal position"},
                         ],
                         "risks_or_falsifiers": ["Test risk: proposal"],
                     },
@@ -1138,8 +1138,8 @@ class TestMultiRoundRevisionLookup:
                         "claims": [],
                         "critique_responses": [],
                         "position_rationale": [
-                            {"ticker": "AAPL", "weight": 0.45, "supporting_claims": [], "explanation": "Round 1 position"},
-                            {"ticker": "NVDA", "weight": 0.55, "supporting_claims": [], "explanation": "Round 1 position"},
+                            {"ticker": "AAPL", "weight": 0.45, "supporting_claims": [], "supported_by_claims": [], "explanation": "Round 1 position"},
+                            {"ticker": "NVDA", "weight": 0.55, "supporting_claims": [], "supported_by_claims": [], "explanation": "Round 1 position"},
                         ],
                         "risks_or_falsifiers": ["Test risk: round 1"],
                     },
@@ -1156,8 +1156,8 @@ class TestMultiRoundRevisionLookup:
                         "claims": [],
                         "critique_responses": [],
                         "position_rationale": [
-                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": [], "explanation": "Round 2 position"},
-                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "explanation": "Round 2 position"},
+                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": [], "supported_by_claims": [], "explanation": "Round 2 position"},
+                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "supported_by_claims": [], "explanation": "Round 2 position"},
                         ],
                         "risks_or_falsifiers": ["Test risk: round 2"],
                     },
@@ -1211,8 +1211,8 @@ class TestMultiRoundRevisionLookup:
                         "confidence": 0.8,
                         "claims": [],
                         "position_rationale": [
-                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
-                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "AAPL", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Proposal position"},
+                            {"ticker": "NVDA", "weight": 0.5, "supporting_claims": [], "supported_by_claims": [], "explanation": "Proposal position"},
                         ],
                         "risks_or_falsifiers": ["Test risk: proposal"],
                     },
@@ -1242,11 +1242,11 @@ class TestMultiRoundRevisionLookup:
                         "allocation": {"AAPL": 0.3, "NVDA": 0.7},
                         "justification": "recovered thesis with [L1-CPI] evidence",
                         "confidence": 0.88,
-                        "claims": [{"claim_id": "C1", "claim_text": "valid claim", "evidence": ["[L1-CPI]"]}],
+                        "claims": [{"claim_id": "C1", "claim_text": "valid claim", "evidence": ["[L1-CPI]"], "assumptions": ["CPI data is accurate"], "falsifiers": ["CPI revision"], "impacts_positions": ["AAPL"]}],
                         "critique_responses": [],
                         "position_rationale": [
-                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": ["C1"], "explanation": "Recovered position"},
-                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "explanation": "Recovered position"},
+                            {"ticker": "AAPL", "weight": 0.3, "supporting_claims": ["C1"], "supported_by_claims": ["C1"], "explanation": "Recovered position"},
+                            {"ticker": "NVDA", "weight": 0.7, "supporting_claims": [], "supported_by_claims": [], "explanation": "Recovered position"},
                         ],
                         "risks_or_falsifiers": ["Test risk: recovered"],
                     },

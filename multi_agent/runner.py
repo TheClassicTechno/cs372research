@@ -183,7 +183,7 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             continue
         if not claim.get("claim_text"):
             continue
-        raw_evidence = claim["evidence"]
+        raw_evidence = claim.get("evidence", [])
         normalized.append({
             "claim_id": claim.get("claim_id", ""),
             "claim_text": claim.get("claim_text", ""),
@@ -193,9 +193,9 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             "evidence_ids": sorted(set(
                 normalize_evidence_id(e) for e in raw_evidence if isinstance(e, str)
             )),
-            "assumptions": claim["assumptions"],
-            "falsifiers": claim["falsifiers"],
-            "impacts_positions": claim["impacts_positions"],
+            "assumptions": claim.get("assumptions", []),
+            "falsifiers": claim.get("falsifiers", []),
+            "impacts_positions": claim.get("impacts_positions", []),
             "confidence": claim.get("confidence", 0.5),
         })
     return normalized
@@ -210,7 +210,7 @@ def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
         normalized.append({
             "ticker": entry.get("ticker", ""),
             "weight": entry.get("weight", 0.0),
-            "supporting_claims": entry.get("supporting_claims") or entry["supported_by_claims"],
+            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
             "explanation": entry.get("explanation") or entry.get("rationale") or "",
         })
     return normalized
@@ -1829,7 +1829,7 @@ class MultiAgentRunner:
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
-        for o in d["orders"]:
+        for o in d.get("orders", []):
             orders.append(
                 Order(
                     ticker=o.get("ticker", ""),
