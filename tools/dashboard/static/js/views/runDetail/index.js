@@ -52,12 +52,12 @@ function renderRunDetail(detail, experiment, runId, token) {
   var sectionsDiv = document.getElementById('detail-sections');
   var sectionsHtml = '';
 
+  // Config card (top)
+  sectionsHtml += buildCard('Config', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
+
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';
   sectionsHtml += '<div id="portfolio-section"></div>';
-
-  // Config card
-  sectionsHtml += buildCard('Config', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
 
   // Rounds (debate replay)
   if (detail.round_summaries && detail.round_summaries.length > 0) {
