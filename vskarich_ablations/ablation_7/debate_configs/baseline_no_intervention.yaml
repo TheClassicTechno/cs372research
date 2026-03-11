@@ -1,0 +1,51 @@
+# ===========================================================================
+# Ablation 7 — Baseline: No intervention control
+# Config: baseline_no_intervention
+# Pipeline:  propose -> critique -> revise -> CRIT -> judge
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+# --- Agent profiles (intense enriched) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini            # debate agent model
+  crit_llm_model: gpt-5            # CRIT auditor model (higher capability)
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 1
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_7
+
+  # --- PID controller ---
+  pid_enabled: false                # no inter-round beta adjustment
+
+  # --- Intervention engine (disabled for baseline) ---
+  intervention_config:
+    enabled: false
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0
