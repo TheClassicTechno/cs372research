@@ -1,234 +1,152 @@
 {
   "allocation": {
-    "AMD": 0.04,
-    "AMZN": 0.05,
-    "BAC": 0.08,
-    "CAT": 0.06,
-    "CVX": 0.15,
-    "PG": 0.20,
-    "RTX": 0.12,
-    "SLB": 0.05,
-    "_CASH_": 0.25
+    "AAPL": 0.0,
+    "MSFT": 0.0,
+    "NVDA": 0.0,
+    "JPM": 0.30,
+    "GS": 0.10,
+    "XOM": 0.0,
+    "CVX": 0.0,
+    "CAT": 0.0,
+    "RTX": 0.0,
+    "WMT": 0.05,
+    "PG": 0.35,
+    "AMZN": 0.20
   },
   "claims": [
     {
       "claim_id": "C1",
-      "claim_text": "Inverted yield curve and elevated policy rates increase recession risk and amplify drawdowns for cyclical, capital-goods, and high-leverage firms (signal: [L1-CURVE], policy level: [L1-FF]); therefore reduce size of highly cyclical exposures (CAT, SLB, RTX) and maintain elevated cash to preserve capital.",
-      "pearl_level": "L1",
+      "claim_text": "Higher-for-longer policy rates and elevated short-term yields (Fed Funds 5.08% and 2Y at 4.87%) increase banks' net interest income potential but also raise integration and deposit/repricing risks for large banks; therefore, selectively overweight higher-quality banks while sizing to limit idiosyncratic exposure [L1-FF] [L1-2Y] [JPM-EC2] [GS-F12].",
+      "reasoning_type": "causal",
       "claim_type": "macro",
       "evidence": [
-        "[L1-CURVE]",
-        "[L1-FF]"
-      ],
-      "variables": [
-        "10y_2y_spread",
-        "fed_funds_rate"
+        "[L1-FF]",
+        "[L1-2Y]",
+        "[JPM-EC2]",
+        "[GS-F12]"
       ],
       "assumptions": [
-        "Yield curve inversion precedes or signals higher probability of economic slowdown",
-        "Cyclicals and capital goods (CAT, SLB, RTX) are more sensitive to recessionary revenue declines"
+        "Policy rates remain elevated or do not quickly revert to prior lows.",
+        "Banks can preserve net interest margins without outsized deposit flight or credit deterioration."
       ],
       "falsifiers": [
-        "10Y-2Y spread steepens materially (spread > 0) and stays positive for 60 trading days",
-        "Macro data show sustained expansion while curve remains inverted (e.g., industrial production rising and unemployment falling)"
+        "Policy rates rapidly decline and yield curve normalizes (Fed Funds and 2Y fall materially) which would remove the NII tailwind [L1-FF] [L1-2Y].",
+        "Material bank losses or integration failure at JPM/GS emerge in filings or earnings that reverse NII benefits."
       ],
       "impacts_positions": [
-        "CAT",
-        "SLB",
-        "RTX",
-        "BAC",
-        "AMD",
-        "AMZN"
+        "JPM",
+        "GS"
       ],
-      "confidence": 0.78
+      "confidence": 0.80
     },
     {
       "claim_id": "C2",
-      "claim_text": "Current volatility regime and security-level volatilities indicate elevated downside risk for high-beta/high-volatility equities (market VIX [L1-VIX]; AMD VOL60 [AMD-VOL60], AMZN VOL60 [AMZN-VOL60], SLB VOL60 [SLB-VOL60]), so cap position sizes in these names and favor lower-vol positions to limit portfolio drawdown contribution.",
-      "pearl_level": "L1",
-      "claim_type": "macro",
+      "claim_text": "Low contemporaneous implied volatility (VIX 13.59) masks tail-risk: volatility spikes and correlation clustering in stress disproportionately hurt high-volatility, high-beta names (historical large drawdowns in growth/tech/large-cap cyclical names), so the portfolio must limit exposure to such assets and increase defensive ballast to control drawdown [L1-VIX] [NVDA-MDD1Y] [AMZN-MDD1Y] [MSFT-BETA].",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "risk",
       "evidence": [
         "[L1-VIX]",
-        "[AMD-VOL60]",
-        "[AMZN-VOL60]",
-        "[SLB-VOL60]"
-      ],
-      "variables": [
-        "vix",
-        "AMD_vol",
-        "AMZN_vol",
-        "SLB_vol"
+        "[NVDA-MDD1Y]",
+        "[AMZN-MDD1Y]",
+        "[MSFT-BETA]"
       ],
       "assumptions": [
-        "Higher realized/implied volatility translates into larger potential drawdowns for given notional exposure",
-        "Volatility will re-spike in stress events, increasing downside for high-vol names"
+        "Volatility can spike rapidly from currently low levels, and cross-asset correlations will rise during stress.",
+        "High historical max drawdowns are indicative of tail vulnerability under stress."
       ],
       "falsifiers": [
-        "VIX compresses below 12 and stays low for 60 trading days",
-        "Volatility measures for AMD/AMZN/SLB decline by >30% and downside volatility metrics fall materially"
+        "Volatility remains suppressed for an extended period and drawdown-prone names show sustained lower realized volatility.",
+        "Evidence that correlations fall rather than rise during adverse events."
       ],
       "impacts_positions": [
-        "AMD",
         "AMZN",
-        "SLB",
-        "BAC"
+        "WMT",
+        "PG",
+        "JPM",
+        "GS"
       ],
-      "confidence": 0.82
+      "confidence": 0.85
     },
     {
       "claim_id": "C3",
-      "claim_text": "Sector concentration in commodity/cyclicals creates tail exposure to commodity-price swings and capex cycles (Chevron commodity dependence [CVX-F1], SLB revenue sensitivity [SLB-F1], Caterpillar backlog/capacity exposure [CAT-F2]); therefore limit combined energy/capex exposure and offset with defensive consumer (PG) and cash.",
-      "pearl_level": "L2",
+      "claim_text": "Defensive consumer staples and lower-vol retailers (PG volatility ~14.8% and Walmart volatility ~11.3%) provide drawdown protection and stable cash flows in a higher-rate, uncertain growth environment; allocate material weight to these defensive cash-flow names to reduce portfolio downside and improve risk-adjusted returns [PG-VOL60] [WMT-VOL60] [PG-F1] [WMT-EC1].",
+      "reasoning_type": "causal",
       "claim_type": "sector",
       "evidence": [
-        "[CVX-F1]",
-        "[SLB-F1]",
-        "[CAT-F2]"
-      ],
-      "variables": [
-        "commodity_price_risk",
-        "equipment_backlog"
+        "[PG-VOL60]",
+        "[WMT-VOL60]",
+        "[PG-F1]",
+        "[WMT-EC1]"
       ],
       "assumptions": [
-        "Commodity price and capex cycles can reverse quickly, causing correlated drawdowns across energy and industrials",
-        "CVX and SLB have meaningful exposure to commodity cycles and operational/geopolitical risks"
+        "Defensive consumer companies maintain stable demand and cash flow despite macro volatility.",
+        "Lower realized volatility in these names persists during near-term stress relative to high-beta growth names."
       ],
       "falsifiers": [
-        "Oil prices stabilize or trend higher with no sign of demand shock and energy revenues remain stable for 6 months",
-        "Industrial order backlogs convert to revenue smoothly without cancellations"
-      ],
-      "impacts_positions": [
-        "CVX",
-        "SLB",
-        "CAT",
-        "RTX"
-      ],
-      "confidence": 0.74
-    },
-    {
-      "claim_id": "C4",
-      "claim_text": "Liquidity and idiosyncratic risk should govern position sizing: favor liquid, low-downside-vol stocks for larger allocations (PG VOL20 low [PG-VOL20], AMD and AMZN show high ADVOL but also high downside vol [AMD-ADVOL] [AMZN-ADVOL] and downside vol metrics [AMD-DVOL60] [AMZN-DVOL60]); size PG and cash larger to reduce portfolio tail-risk while keeping small tactical exposures to liquid growth names.",
-      "pearl_level": "L2",
-      "claim_type": "firm",
-      "evidence": [
-        "[PG-VOL20]",
-        "[AMD-ADVOL]",
-        "[AMZN-ADVOL]",
-        "[AMD-DVOL60]",
-        "[AMZN-DVOL60]"
-      ],
-      "variables": [
-        "avg_dollar_volume",
-        "downside_volatility"
-      ],
-      "assumptions": [
-        "High average dollar volume enables faster liquidation in stress but does not eliminate downside exposure",
-        "Low downside vol names (PG) will materially reduce portfolio realized downside during stress"
-      ],
-      "falsifiers": [
-        "PG downside volatility rises to match cyclical peers for 60 trading days",
-        "Liquidity for AMD/AMZN dries up (ADVOL falls >50%) during market stress"
+        "Consumer discretionary/retail collapses while staples suffer similar drawdowns (e.g., large negative surprises in staples sales or margins).",
+        "Evidence of materially rising downside volatility for PG or WMT in following quarters."
       ],
       "impacts_positions": [
         "PG",
-        "AMD",
-        "AMZN",
-        "CVX",
-        "RTX"
+        "WMT",
+        "AMZN"
       ],
       "confidence": 0.80
     }
   ],
   "position_rationale": [
     {
-      "ticker": "AMD",
-      "weight": 0.04,
-      "supported_by_claims": [
-        "C2",
-        "C4"
-      ],
-      "explanation": "Small tactical exposure due to high volatility and beta ([AMD-VOL60], [AMD-BETA]) per C2; liquid execution possible ([AMD-ADVOL]) but downside vol ([AMD-DVOL60]) mandates tight sizing (C4)."
-    },
-    {
-      "ticker": "AMZN",
-      "weight": 0.05,
-      "supported_by_claims": [
-        "C2",
-        "C4"
-      ],
-      "explanation": "Limited allocation because of elevated downside volatility ([AMZN-VOL60], [AMZN-DVOL60]) per C2; high liquidity ([AMZN-ADVOL]) allows small tactical exposure with controlled risk (C4)."
-    },
-    {
-      "ticker": "BAC",
-      "weight": 0.08,
+      "ticker": "JPM",
+      "weight": 0.30,
       "supported_by_claims": [
         "C1",
         "C2"
       ],
-      "explanation": "Moderate, controlled exposure: BAC has recent strong earnings but bank-sector sensitivity to macro and elevated short-term volatility ([BAC-EC1], [BAC-VOL20]); C1 and C2 argue for smaller allocation to limit recession-driven credit/drawdown risk."
+      "explanation": "C1: Overweight JPM to capture higher net interest income driven by elevated policy rates and NII tailwinds noted in JPM's results [L1-FF] [L1-2Y] [JPM-EC2]. C2: Size at 30% to benefit from rate environment while limiting concentration risk and exposure to volatility spikes by splitting bank exposure with GS."
     },
     {
-      "ticker": "CAT",
-      "weight": 0.06,
+      "ticker": "GS",
+      "weight": 0.10,
       "supported_by_claims": [
         "C1",
-        "C3"
+        "C2"
       ],
-      "explanation": "Small position because CAT is cyclical with sizable backlog exposure ([CAT-F2]); C1 (inversion/recession risk) and C3 (capex/commodity cycle tail risk) justify conservative sizing."
+      "explanation": "C1: Maintain a smaller allocation to GS to capture potential benefit from higher rates but limit exposure because GS shows weaker near-term revenue/momentum and explicit interest-rate risk sensitivity in filings [GS-F1] [GS-F12]. C2: Smaller size reduces idiosyncratic drawdown risk if market stress hits investment-banking revenues."
     },
     {
-      "ticker": "CVX",
-      "weight": 0.15,
-      "supported_by_claims": [
-        "C3",
-        "C4"
-      ],
-      "explanation": "Tactical overweight relative to other cyclicals as a hedge to energy-driven inflation/commodity exposure: CVX has commodity sensitivity ([CVX-F1]) but lower volatility versus SLB (supports a larger but still capped weight under sector concentration controls in C3 and liquidity/size rules in C4)."
-    },
-    {
-      "ticker": "PG",
+      "ticker": "AMZN",
       "weight": 0.20,
       "supported_by_claims": [
         "C2",
-        "C4"
-      ],
-      "explanation": "Largest equity allocation to PG as defensive, low-volatility consumer staple ([PG-VOL20]) to reduce portfolio downside and improve stability per C2 and C4."
-    },
-    {
-      "ticker": "RTX",
-      "weight": 0.12,
-      "supported_by_claims": [
-        "C1",
         "C3"
       ],
-      "explanation": "Moderate allocation to RTX as lower-beta industrial/defense exposure with large backlog ([RTX-F14])—provides diversification away from cyclic commercial capex while remaining sensitive to macro (C1); size limited due to potential supply-chain and backlog conversion risks (C3)."
+      "explanation": "C2: AMZN has higher realized volatility and historical large drawdowns [AMZN-VOL60] [AMZN-MDD1Y], so exposure is limited to 20%. C3: AMZN's AWS cash flow visibility (AWS obligations, AWS growth) provides some resilience, justifying a modest consumer-growth allocation [AMZN-F15] while keeping drawdown risk contained."
     },
     {
-      "ticker": "SLB",
+      "ticker": "WMT",
       "weight": 0.05,
       "supported_by_claims": [
-        "C1",
         "C2",
         "C3"
       ],
-      "explanation": "Small allocation because SLB is high-volatility energy-services with elevated downside risk ([SLB-VOL60], [SLB-DVOL60]) and commodity/geopolitical exposure ([SLB-F12]); kept small to limit tail contribution per C1–C3."
+      "explanation": "C3: Small allocation to Walmart provides low-volatility retail exposure and defensive revenue (WMT-VOL60 low) to dampen portfolio drawdowns and add liquidity [WMT-VOL60] [WMT-EC1]. C2: Size kept small to avoid over-concentration in single consumer retail idiosyncrasies."
     },
     {
-      "ticker": "_CASH_",
-      "weight": 0.25,
+      "ticker": "PG",
+      "weight": 0.35,
       "supported_by_claims": [
-        "C1",
         "C2",
-        "C4"
+        "C3"
       ],
-      "explanation": "Elevated cash allocation to preserve capital and provide dry powder during potential drawdowns signaled by inverted curve and elevated volatility ([L1-CURVE], [L1-VIX]); cash yields risk-free rate buffer and enables opportunistic rebalancing."
+      "explanation": "C3: Large allocation to PG because it is a defensive staple with relatively low volatility and stable margins that reduces portfolio downside [PG-VOL60] [PG-F1]. C2: PG acts as primary drawdown buffer given tail-risk concerns in the market (low VIX today masks spike risk) and helps preserve capital during stress."
     }
   ],
-  "portfolio_rationale": "Given an inverted curve and elevated policy rates ([L1-CURVE], [L1-FF]) that raise recession probability (C1), and a volatility regime with elevated security-level volatilities ([L1-VIX], [AMD-VOL60], [AMZN-VOL60], [SLB-VOL60]) that increases drawdown risk (C2), the portfolio prioritizes capital preservation: (1) sizable cash (25%) to reduce immediate exposure and provide optionality; (2) a defensive equity overweight to PG (20%) for low downside volatility ([PG-VOL20]) per C2/C4; (3) capped allocations to cyclical/capex and high-vol names (CAT, SLB, AMD, AMZN) to limit tail contribution per C1–C3; (4) measured exposure to energy (CVX 15%) for commodity diversification while limiting combined commodity/cyclical risk (C3); (5) moderate allocation to defense/industrial RTX (12%) and a small bank exposure (BAC 8%) acknowledging liquidity and idiosyncratic factors but constraining size because of macro sensitivity. The weights follow volatility- and scenario-aware sizing: higher weight to low-downside contributors (PG, CASH), capped weights for high-vol/sector-correlated names, and use of liquid names for tactical exposure (supported by ADVOL metrics) to enable rapid deleveraging if stress materializes (C4).",
-  "confidence": 0.79,
+  "portfolio_rationale": "Given an environment of elevated short-term rates and an outsized risk of volatility spikes, the portfolio emphasizes capital preservation: (1) overweight high-quality banks to capture NII tailwinds while controlling idiosyncratic risk by splitting exposure between JPM (larger) and GS (smaller) supported by C1; (2) materially overweight defensive staples (PG) and modestly allocate to low-vol retail (WMT) per C3 to reduce drawdown and stabilize cash flows; (3) limit higher-vol consumer-growth exposure (AMZN) per C2 to capture secular cloud/AWS resilience while keeping tail-risk exposure constrained. This structure reduces exposure to high-beta tech (zero weight) and concentrates the portfolio into lower-net-drawdown drivers (PG + banks) consistent with the risk-management objective of minimizing large drawdowns while retaining reasonable risk-adjusted return potential.",
+  "confidence": 0.70,
   "risks_or_falsifiers": [
-    "VIX compresses and remains below 12 for 60 trading days, indicating a sustained low-volatility regime and reducing need for high cash/defensive tilt (reference start: [L1-VIX])",
-    "10Y-2Y spread steepens above 0.00% and stays positive for 60 trading days (reversal of [L1-CURVE]), reducing recession probability and supporting larger cyclical allocations",
-    "Oil/commodity price rally that persistently strengthens energy cashflows and lowers operational volatility for energy names (contradicts C3); observable as WTI > $90 and stable for 60 days (reference WTI baseline [L1-WTI])"
+    "Policy rates unexpectedly decline rapidly (Fed Funds and 2Y materially lower), removing banks' NII tailwind and reversing the C1 thesis [L1-FF] [L1-2Y].",
+    "Volatility remains suppressed and correlations do not increase in stress (VIX stays low), which would reduce the defensive benefit of PG relative to growth names [L1-VIX].",
+    "Defensive consumer fundamentals deteriorate materially (PG or WMT report sharp demand/margin weakness), invalidating their role as drawdown buffers [PG-F1] [WMT-EC1].",
+    "A large firm-specific shock at JPM or GS (credit losses, integration failure) that erodes capital or causes outsized drawdowns would break the allocation; such outcomes would be visible in subsequent filings or material EPS/margin deterioration [GS-F1] [JPM-F12]."
   ]
 }

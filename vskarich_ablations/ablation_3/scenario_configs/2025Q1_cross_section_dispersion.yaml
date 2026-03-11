@@ -1,0 +1,106 @@
+# ============================================================================
+# Scenario: 2025 Q1 Cross-Section Dispersion — Tariff Uncertainty & Rotation
+# Q4 2024 data → Q1 2025 investment decision
+# ============================================================================
+# Ablation 2: Stock selection under mixed macro with policy uncertainty.
+# Energy/financials up (CVX +15%, GS +12%) vs megacap tech down (NVDA -22%, MSFT -9%).
+# EW return ~-1.75% — correct sector and stock selection required to outperform.
+
+scenario_type: "vskarich_ablation"
+experiment_group: "ablation_2_stock_selection"
+universe_size: 18
+
+invest_quarter: "2025Q1"
+
+macro_context: |
+  ## Macro Environment Overview
+
+  [L0-MACRO-REGIME] As of the end of Q4 2024, financial markets face a complex and uncertain environment shaped by trade policy shifts, uneven corporate earnings, and ongoing debate about the trajectory of monetary policy.
+
+  [L0-TARIFF-UNCERTAINTY] The incoming U.S. administration has announced plans for significant tariff increases on imports from major trading partners, creating uncertainty about supply chains, input costs, and corporate margins across multiple sectors.
+
+  [L0-EARNINGS-DIVERGENCE] Q4 2024 earnings have been uneven. Technology companies face questions about the sustainability of AI-driven capital expenditure, while energy and financial firms have reported strong results driven by commodity prices and trading revenues.
+
+  [L0-RATE-TRAJECTORY] The Federal Reserve has begun a rate-cutting cycle after inflation moderated, but the pace and magnitude of further cuts remain uncertain given sticky services inflation and potential tariff-driven price pressures.
+
+  [L0-ROTATION-DYNAMICS] After two years of mega-cap technology dominance, market leadership has begun to shift as investors reassess valuations and seek exposure to undervalued sectors with improving fundamentals.
+
+  These conditions create an environment where macro reasoning and stock selection interact — agents must navigate both sector-level rotation and within-sector dispersion.
+
+  ## Competing Macro Theses
+
+  The following interpretations represent plausible explanations for current market behavior.
+
+  Agents should evaluate which interpretation is most consistent with the available evidence.
+
+  ### Thesis A — Tariff-Driven Rotation
+
+  [L0-TARIFF-UNCERTAINTY] Escalating trade tensions may disproportionately impact companies with global supply chains and high import exposure, while benefiting domestically oriented firms.
+
+  [L0-EARNINGS-DIVERGENCE] Companies with domestic revenue bases and commodity exposure may be relatively insulated from tariff-related margin compression.
+
+  [L0-ENERGY-RESILIENCE] Under this interpretation, energy producers (XOM, CVX) and domestically focused industrials (CAT) may outperform as trade barriers support domestic production.
+
+  ### Thesis B — Tech Valuation Correction
+
+  [L0-ROTATION-DYNAMICS] After two years of AI-fueled appreciation, mega-cap technology stocks may face a valuation reset as the market demands proof of return on massive AI infrastructure investments.
+
+  [L0-EARNINGS-DIVERGENCE] If AI monetization takes longer than expected, the capital expenditure cycle may weigh on near-term margins for cloud and semiconductor companies.
+
+  [L0-TECH-DERATING] Under this interpretation, names such as NVDA, MSFT, and META may underperform as investors rotate capital into sectors with stronger near-term earnings visibility.
+
+  ### Thesis C — Financial Sector Tailwind
+
+  [L0-RATE-TRAJECTORY] Even with rate cuts underway, the yield curve normalization and strong trading revenues may continue to support bank earnings.
+
+  [L0-TARIFF-UNCERTAINTY] Trade policy volatility tends to increase market volatility, which benefits financial institutions with large trading operations.
+
+  [L0-FINANCIALS-STRENGTH] Under this interpretation, financials (JPM, GS, BAC) may continue their recent outperformance driven by net interest income and capital markets activity.
+
+  ### Thesis D — Defensive Healthcare
+
+  [L0-MACRO-REGIME] Rising policy uncertainty, potential economic deceleration from tariffs, and elevated valuations in cyclical sectors may favor companies with inelastic demand and strong pricing power.
+
+  [L0-EARNINGS-DIVERGENCE] Healthcare companies with diversified product pipelines and demographic tailwinds may provide earnings stability regardless of the macro outcome.
+
+  [L0-HEALTHCARE-STABILITY] Under this interpretation, healthcare names (UNH, LLY, JNJ) may offer attractive risk-adjusted returns in a period of elevated uncertainty.
+
+  Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+  These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+tickers:
+  # Mega-cap technology
+  - AAPL
+  - MSFT
+  - NVDA
+  - AMZN
+  - META
+  - GOOG
+
+  # Financials
+  - JPM
+  - GS
+  - BAC
+
+  # Energy
+  - XOM
+  - CVX
+
+  # Industrials / Defense
+  - CAT
+  - RTX
+
+  # Healthcare
+  - UNH
+  - LLY
+  - JNJ
+
+  # Consumer staples / Defensive
+  - WMT
+  - COST
+
+allocation_constraints:
+  max_weight: 0.20
+  min_holdings: 5
+  fully_invested: true
+  max_tickers: 18

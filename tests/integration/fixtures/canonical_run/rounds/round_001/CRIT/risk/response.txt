@@ -1,27 +1,27 @@
 {
   "pillar_scores": {
-    "logical_validity": 0.88,
-    "evidential_support": 0.84,
-    "alternative_consideration": 0.91,
-    "causal_alignment": 0.87
+    "logical_validity": 0.70,
+    "evidential_support": 0.88,
+    "alternative_consideration": 0.90,
+    "causal_alignment": 0.90
   },
   "diagnostics": {
-    "contradictions_detected": false,
+    "contradictions_detected": true,
     "unsupported_claims_detected": false,
     "ignored_critiques_detected": false,
     "premature_certainty_detected": false,
     "causal_overreach_detected": false,
-    "conclusion_drift_detected": false,
-    "contradictions_count": 0,
+    "conclusion_drift_detected": true,
+    "contradictions_count": 1,
     "unsupported_claims_count": 0,
     "ignored_critiques_count": 0,
     "causal_overreach_count": 0,
     "orphaned_positions_count": 0
   },
   "explanations": {
-    "logical_validity": "The revision integrates macro risk controls with conditional firm-level allowances and adjusts weights coherently (cash reduced, selective cyclicals increased) while enforcing an explicit cyclical cap. No internal contradictions or conclusion drift detected.",
-    "evidential_support": "All claims have relevant evidence_ids that match the evidence list and support the stated risk logic. Minor gaps appear in position rationales that reference additional data (e.g., BAC-EC1, ADVOL/DVOL metrics) not included in the evidence set, but core claims remain supported.",
-    "alternative_consideration": "Both critiques are explicitly addressed with clear accept/reject reasoning and concrete portfolio changes; firm-level and momentum evidence are incorporated conditionally without abandoning the risk framework.",
-    "causal_alignment": "Causal levels are appropriate: L1 associations for macro/volatility signals and a mechanism-based L2 sector claim describing correlated tail exposure. No causal overreach is evident given the described pathways and constraints."
+    "logical_validity": "The argument is internally coherent in claims and causal logic, but there is a clear contradiction between the top-level portfolio_allocation object and the position_rationale weights (two different final allocations). This inconsistency undermines the conclusion-level integrity and reduces logical score.",
+    "evidential_support": "All claims include explicit evidence_ids mapped to cited items, and the revision incorporated critique evidence (e.g., JPM NII normalization, PG margin drivers). Citations appear relevant and not evidently misused.",
+    "alternative_consideration": "The agent explicitly addressed all three critiques, accepted or rejected them with justification, and modified claims and sizing where appropriate — demonstrating substantive engagement with competing views.",
+    "causal_alignment": "Claims articulate plausible causal pathways (rates → NII → bank sizing; vol spikes → correlation clustering → drawdown) and evidence is consistent with those mechanisms; no clear causal overreach detected."
   }
 }

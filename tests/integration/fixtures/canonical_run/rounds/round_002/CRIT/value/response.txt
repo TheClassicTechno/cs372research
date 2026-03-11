@@ -1,9 +1,9 @@
 {
   "pillar_scores": {
-    "logical_validity": 0.87,
-    "evidential_support": 0.86,
+    "logical_validity": 0.70,
+    "evidential_support": 0.92,
     "alternative_consideration": 0.88,
-    "causal_alignment": 0.88
+    "causal_alignment": 0.90
   },
   "diagnostics": {
     "contradictions_detected": false,
@@ -11,7 +11,7 @@
     "ignored_critiques_detected": false,
     "premature_certainty_detected": false,
     "causal_overreach_detected": false,
-    "conclusion_drift_detected": false,
+    "conclusion_drift_detected": true,
     "contradictions_count": 0,
     "unsupported_claims_count": 0,
     "ignored_critiques_count": 0,
@@ -19,9 +19,9 @@
     "orphaned_positions_count": 0
   },
   "explanations": {
-    "logical_validity": "The revision coherently reduces cyclical concentration, increases cash, and adds RTX as ballast consistent with accepted risk critiques, while keeping exclusions of AMD/AMZN aligned with the macro claim. No internal contradictions or conclusion drift were found.",
-    "evidential_support": "All claims cite valid evidence IDs that match the provided citations, and key assertions (energy volatility, backlog risk, NII strength) are supported. Minor references in position rationale to AMD/AMZN filings are not backed by included evidence, but the core claims are well-evidenced.",
-    "alternative_consideration": "The agent explicitly accepts the concentration-risk critique and adjusts allocations meaningfully, and it rejects the AMD momentum critique with a clear value-based rationale and falsifiers for reversal. It also proactively addresses backlog conversion risk via sizing and diversification.",
-    "causal_alignment": "Causal pathways (rates to duration valuations; commodity activity to cash flows/margins; backlog to revenues/margins; NII to EPS) are articulated and matched to L1/L2 levels appropriately, avoiding causal overreach and including clear falsifiers."
+    "logical_validity": "Reasoning is generally coherent, claims are consistent, and falsifiers are acknowledged; however the revision shows a mismatch between the position_rationale weights (e.g., PG/WMT included with material weights) and the final portfolio_allocation (PG/WMT = 0.0), and the stated allocation changes (\"increased defensive consumer names\") are not reflected in the numeric portfolio—this gap reduces internal consistency.",
+    "evidential_support": "All explicit claims cite evidence_ids that are present in evidence_citations and the citations are reasonable support for the claims; there are no unsupported claims or clear evidence misinterpretations in the revised argument.",
+    "alternative_consideration": "The agent explicitly responds to both critiques in revision_notes, partially accepts the risk critique with concrete portfolio and confidence changes, and justifies rejecting the momentum critique while moderating weights—critiques were meaningfully engaged and alternative explanations were considered.",
+    "causal_alignment": "Causal links (rates → NII → bank earnings, buybacks/FCF → EPS support, backlog → revenue/margin conversion) are stated and consistent with cited evidence; there is no clear causal overreach or unsupported counterfactual reasoning."
   }
 }

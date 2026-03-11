@@ -469,12 +469,11 @@ Your role is to defend **valuation discipline and fundamental analysis.**
 ## Financial Context
 ## Portfolio Allocation Task
 - Cash to allocate: $100,000.00
-- Allocation universe: AMD, AMZN, BAC, CAT, CVX, PG, RTX, SLB, _CASH_
-- As-of: 2023-03-31
-- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).
-[INFO] QUARTERLY SNAPSHOT MEMO — 2023 Q1
-As-of date: 2023-03-31
-Tickers: 8
+- Allocation universe: AAPL, MSFT, NVDA, JPM, GS, XOM, CVX, CAT, RTX, WMT, PG, AMZN
+- As-of: 2023-06-30
+[INFO] QUARTERLY SNAPSHOT MEMO — 2023 Q2
+As-of date: 2023-06-30
+Tickers: 12
 
 This document is the complete data payload for agent deliberation.
 It contains macro regime, per-ticker price/fundamental metrics,
@@ -486,563 +485,906 @@ Agents must:
   - Treat all interpretations as non-binding hypotheses.
 
 ======================================================================
+LAYER 0 — SCENARIO CONTEXT
+======================================================================
+
+## Macro Environment Overview
+
+[L0-MACRO-REGIME] As of the end of Q2 2023, financial markets are attempting to interpret a complex macro environment characterized by persistent inflation, resilient economic growth, and rapidly rising interest rates.
+
+[L0-INFLATION-PERSISTENCE] Inflation has moderated from its 2022 peak but remains above the Federal Reserve’s long-run target, raising the possibility that policy rates may remain elevated for an extended period.
+
+[L0-GROWTH-RESILIENCE] Economic activity and labor markets have remained more resilient than many forecasters expected despite aggressive monetary tightening during 2022–2023.
+
+[L0-RATE-SHOCK] Long-term Treasury yields and real interest rates have increased significantly over the past year, tightening financial conditions and raising discount rates applied to future corporate earnings.
+
+[L0-AI-RALLY] Equity markets have nevertheless rallied during 2023, led primarily by large-cap technology companies benefiting from strong investor enthusiasm surrounding artificial intelligence.
+
+These conditions create several competing interpretations of the current macroeconomic regime.
+
+## Competing Macro Theses
+
+The following interpretations represent plausible explanations for current market behavior.
+
+Agents should evaluate which interpretation is most consistent with the available evidence.
+
+### Thesis A — Higher-for-Longer Interest Rates
+
+[L0-INFLATION-PERSISTENCE] Persistent inflation may require central banks to maintain elevated policy rates for longer than markets previously expected.
+
+[L0-RATE-SHOCK] Higher real interest rates increase discount rates applied to future earnings, placing structural pressure on long-duration growth assets.
+
+[L0-CASHFLOW-PREMIUM] Under this interpretation, sectors with strong current cash flows and inflation sensitivity may outperform more duration-sensitive sectors.
+
+### Thesis B — Growth Resilience
+
+[L0-GROWTH-RESILIENCE] Economic activity has remained stronger than expected despite tighter monetary policy and rising borrowing costs.
+
+[L0-CYCLICAL-DEMAND] If growth continues to exceed expectations, corporate earnings may remain robust across cyclical sectors.
+
+[L0-RISK-APPETITE] Under this interpretation, markets may sustain risk-taking behavior despite higher interest rates.
+
+### Thesis C — AI Productivity Boom
+
+[L0-AI-RALLY] Rapid advances in artificial intelligence have generated strong investor demand for semiconductor and cloud infrastructure companies.
+
+[L0-AI-PRODUCTIVITY] If AI adoption produces meaningful productivity gains across the economy, technology earnings growth may justify elevated valuations even in a higher-rate environment.
+
+[L0-TECH-LEADERSHIP] Under this interpretation, technology leadership could persist despite macro headwinds.
+
+### Thesis D — Delayed Recession Risk
+
+[L0-POLICY-LAGS] Monetary policy operates with long and variable lags, meaning the full economic impact of higher interest rates may not yet be reflected in current economic data.
+
+[L0-DEMAND-SLOWDOWN] If tighter financial conditions eventually slow consumption and investment, economic growth could weaken in coming quarters.
+
+[L0-DEFENSIVE-ROTATION] Under this interpretation, defensive sectors may outperform if economic conditions deteriorate.
+
+Agents may adopt, reject, or combine these interpretations when forming their investment thesis.
+These interpretations are not mutually exclusive, and multiple mechanisms may be operating simultaneously in the current macro environment.
+
+======================================================================
 LAYER 1 — MACRO REGIME
 ======================================================================
 
 Rates & Yields:
-  [L1-FF]    Fed Funds: 4.83%
-  [L1-2Y]    2Y Treasury: 4.06% (-35bps QoQ)
-  [L1-10Y]   10Y Treasury: 3.48% (-40bps QoQ)
-  [L1-30Y]   30Y Treasury: 3.67%
-  [L1-CURVE] 10Y-2Y Spread: -0.58% (inverted)
-  [L1-REAL]  10Y Real Yield: 1.16%
+  [L1-FF]    Fed Funds: 5.08%
+  [L1-2Y]    2Y Treasury: 4.87% (+81bps QoQ)
+  [L1-10Y]   10Y Treasury: 3.81% (+33bps QoQ)
+  [L1-30Y]   30Y Treasury: 3.85%
+  [L1-CURVE] 10Y-2Y Spread: -1.06% (inverted)
+  [L1-REAL]  10Y Real Yield: 1.59%
 
 Inflation:
-  [L1-CPI]   CPI YoY: 4.92%
-  [L1-CORE]  Core CPI YoY: 5.57%
+  [L1-CPI]   CPI YoY: 3.07%
+  [L1-CORE]  Core CPI YoY: 4.85%
 
 Growth & Labor:
-  [L1-INDPRO] Industrial Production Index: 101.02
-  [L1-UNEMP] Unemployment: 3.50%
+  [L1-INDPRO] Industrial Production Index: 100.12
+  [L1-UNEMP] Unemployment: 3.60%
 
 Credit & Commodities:
-  [L1-HY]    HY OAS Spread: 4.58%
+  [L1-HY]    HY OAS Spread: 4.05%
   [L1-DXY]   Dollar Index: 119.36
-  [L1-WTI]   WTI Crude: $75.68
+  [L1-WTI]   WTI Crude: $70.66
 
 Volatility:
-  [L1-VIX]   VIX: 18.70
-  [L1-EQBC]  Equity-Bond Correlation: 0.05
+  [L1-VIX]   VIX: 13.59
+  [L1-EQBC]  Equity-Bond Correlation: -0.26
 
 ======================================================================
-TICKER: AMD
-======================================================================
-
-  Price & Returns:
-    [AMD-PX]       Close: $97.88
-    [AMD-RET20]    20D Return: +21.7%
-    [AMD-RET60]    60D Return: +52.9%
-    [AMD-RET120]   120D Return: +44.3%
-    [AMD-RET252]   1Y Return: -20.6%
-
-  Volatility & Risk:
-    [AMD-VOL20]    20D Vol (ann): 43.1%
-    [AMD-VOL60]    60D Vol (ann): 51.1%
-    [AMD-DVOL60]   60D Downside Vol: 21.4%
-    [AMD-DD60]     60D Drawdown: -13.2%
-    [AMD-MDD1Y]    1Y Max Drawdown: -54.6%
-    [AMD-SHARPE]   60D Sharpe: 3.49
-    [AMD-BETA]     1Y Beta: 1.96
-
-  Trend & Momentum:
-    [AMD-SMA20]    SMA 20D: $91.21
-    [AMD-SMA50]    SMA 50D: $84.09
-    [AMD-SMA200]   SMA 200D: $77.77
-    [AMD-MOM200]   200D Momentum: 1.26
-    [AMD-MOM12_1]  12-1M Momentum: -36.5%
-    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.3136
-    [AMD-TREND]    Trend Consistency: 0.55
-    [AMD-RS60]     Relative Strength 60D: +56.8%
-    [AMD-ESURP]    Earnings Surprise: +3.0%
-    [AMD-ADVOL]    Avg Dollar Volume 20D: $6,870,064,090
-
-  Sentiment (from earnings call):
-    [AMD-SENT]     Mean Sentiment: 0.0189
-    [AMD-SVOL]     Sentiment Volatility: 0.5140
-
-  Filing Evidence (10-K, filed 2023-02-27, fiscal period: FY2022):
-    [AMD-F1] AMD achieved $23.6 billion net revenue in 2022, increasing 44% from prior year driven by Data Center growth from EPYC server processors, Gaming segment expansion from console SoC demand, and Embedded revenue from acquired Xilinx products.
-    [AMD-F2] Client segment declined due to weak PC market conditions and supply chain inventory corrections.
-    [AMD-F3] International sales comprised 66% of revenue with company depending on small customer base including semi-custom SoC revenue tied to console success.
-    [AMD-F4] Gross margin compressed to 45% from 48% primarily due to acquisition-related intangible asset amortization from Xilinx acquisition.
-    [AMD-F5] Research and development and administrative expenses increased substantially driven by strategic investments, headcount expansion through acquisitions, and increased go-to-market activities.
-    [AMD-F6] Manufacturing depends on third-party foundries with TSMC handling advanced nodes while GLOBALFOUNDRIES provides larger node capacity through 2025 wafer supply agreement.
-    [AMD-F7] Completed strategic acquisitions of Xilinx in February 2022 for adaptable hardware platforms and Pensando Systems in May 2022 for data processing units, recording significant goodwill and intangible assets.
-    [AMD-F8] Issued senior notes and established commercial paper program for operational flexibility.
-    [AMD-F9] Returned $3.7 billion to shareholders through share repurchases under stock repurchase program with John Caldwell retiring as Lead Independent Director.
-    [AMD-F10] Operations face heightened geopolitical risks from US-China tensions and potential Taiwan disruptions affecting third-party foundries, with nearly all assembly and testing performed in Asia-Pacific facilities.
-    [AMD-F11] Export control restrictions limit product shipments to China and Russia while expanding regulations target advanced computing semiconductors.
-    [AMD-F12] Global economic uncertainty and potential recession conditions may reduce consumer confidence with particular vulnerability to PC market downturns.
-    [AMD-F13] Integration of Xilinx and Pensando acquisitions expected to deliver operational synergies and product innovations while company maintains growth strategy through potential complementary acquisitions.
-    [AMD-F14] Management expects continued dependence on small customer base with semi-custom SoC success tied to next-generation console performance and ongoing research investment to maintain competitive positioning.
-    [AMD-F15] Goodwill and intangible assets from recent acquisitions subject to annual impairment testing with significant judgment required for fair value determinations.
-    [AMD-F16] Wafer supply agreement with GLOBALFOUNDRIES creates financial exposure if annual purchase targets not met requiring shortfall payments through 2025.
-    [AMD-F17] Total debt includes cross-default provisions with acceleration triggers and maintains valuation allowance for tax attributes due to regulatory limitations.
-
-  Recent 8-K Events (1):
-    [AMD-EV1] 8-K filed 2023-01-11
-      Devinder Kumar retired as CFO effective January 23, 2023, with Jean Hu appointed as his replacement from Marvell Technology. Hu received $725,000 base salary, $5 million sign-on equity award, $12 million make-whole equity compensation, and $2 million cash bonus. Executive bonuses totaling $2.26 million were approved for fiscal 2022 performance, including $918,800 for CEO Lisa Su.
-
-  Earnings Call Evidence:
-    [AMD-EC1] AMD reported first quarter 2023 revenue of $5.4 billion, a 9% year-over-year decline, with data center and embedded products contributing over 50% of total revenue.
-    [AMD-EC2] The data center segment remained flat year-over-year at $1.3 billion, driven by strong cloud sales, while client segment revenue fell 65% to $739 million due to inventory reduction efforts.
-    [AMD-EC3] The gaming segment saw a 6% decline to $1.8 billion, and the embedded segment achieved record revenue of $1.6 billion, reflecting strong demand across various markets.
-    [AMD-EC4] For the second quarter of 2023, AMD expects revenue to be approximately $5.3 billion, down 19% year-over-year but flat sequentially.
-    [AMD-EC5] Management anticipates growth in the client and data center segments, offset by declines in gaming and embedded segments.
-    [AMD-EC6] Looking ahead, AMD is confident in achieving double-digit growth in the data center segment for the full year, driven by the ramp of new products and improving demand trends.
-    [AMD-EC7] AMD faces risks from a mixed demand environment influenced by macroeconomic uncertainties, particularly in the enterprise sector.
-    [AMD-EC8] The company is also navigating inventory challenges in the client segment and potential competitive pressures in the data center market.
-    [AMD-EC9] Additionally, the success of its AI strategy and product launches, such as the MI300 GPUs, will be critical in determining future growth.
-    [AMD-EC10] Key drivers for AMD's growth include the successful ramp of its Zen 4 EPYC CPU portfolio, the upcoming launches of Bergamo and Genoa-X processors, and the expansion of its AI product offerings.
-    [AMD-EC11] The company is also focused on enhancing its embedded solutions and capitalizing on strong demand in industrial and automotive markets.
-    [AMD-EC12] The integration of Xilinx's capabilities is expected to further strengthen AMD's position in the embedded and data center segments.
-
-======================================================================
-TICKER: AMZN
+TICKER: AAPL
 ======================================================================
 
   Price & Returns:
-    [AMZN-PX]       Close: $102.00
-    [AMZN-RET20]    20D Return: +10.7%
-    [AMZN-RET60]    60D Return: +18.9%
-    [AMZN-RET120]   120D Return: -15.2%
-    [AMZN-RET252]   1Y Return: -39.8%
+    [AAPL-PX]       Close: $191.46
+    [AAPL-RET20]    20D Return: +7.7%
+    [AAPL-RET60]    60D Return: +17.3%
+    [AAPL-RET120]   120D Return: +50.1%
+    [AAPL-RET252]   1Y Return: +40.2%
 
   Volatility & Risk:
-    [AMZN-VOL20]    20D Vol (ann): 29.8%
-    [AMZN-VOL60]    60D Vol (ann): 39.3%
-    [AMZN-DVOL60]   60D Downside Vol: 25.5%
-    [AMZN-DD60]     60D Drawdown: -19.6%
-    [AMZN-MDD1Y]    1Y Max Drawdown: -51.7%
-    [AMZN-SHARPE]   60D Sharpe: 1.85
-    [AMZN-BETA]     1Y Beta: 1.66
+    [AAPL-VOL20]    20D Vol (ann): 14.9%
+    [AAPL-VOL60]    60D Vol (ann): 18.4%
+    [AAPL-DVOL60]   60D Downside Vol: 6.8%
+    [AAPL-DD60]     60D Drawdown: -3.3%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -28.3%
+    [AAPL-SHARPE]   60D Sharpe: 3.64
+    [AAPL-BETA]     1Y Beta: 1.28
 
   Trend & Momentum:
-    [AMZN-SMA20]    SMA 20D: $96.65
-    [AMZN-SMA50]    SMA 50D: $97.79
-    [AMZN-SMA200]   SMA 200D: $107.51
-    [AMZN-MOM200]   200D Momentum: 0.95
-    [AMZN-MOM12_1]  12-1M Momentum: -45.6%
-    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.0679
-    [AMZN-TREND]    Trend Consistency: 0.52
-    [AMZN-RS60]     Relative Strength 60D: +22.7%
-    [AMZN-ESURP]    Earnings Surprise: -82.3%
-    [AMZN-ADVOL]    Avg Dollar Volume 20D: $5,726,432,053
+    [AAPL-SMA20]    SMA 20D: $182.11
+    [AAPL-SMA50]    SMA 50D: $174.25
+    [AAPL-SMA200]   SMA 200D: $152.25
+    [AAPL-MOM200]   200D Momentum: 1.26
+    [AAPL-MOM12_1]  12-1M Momentum: +28.1%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.0570
+    [AAPL-TREND]    Trend Consistency: 0.52
+    [AAPL-RS60]     Relative Strength 60D: +6.8%
+    [AAPL-ESURP]    Earnings Surprise: +6.3%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $11,176,726,270
 
   Sentiment (from earnings call):
-    [AMZN-SENT]     Mean Sentiment: 0.3379
-    [AMZN-SVOL]     Sentiment Volatility: 0.5796
+    [AAPL-SENT]     Mean Sentiment: 0.1636
+    [AAPL-SVOL]     Sentiment Volatility: 0.5066
 
-  Filing Evidence (10-K, filed 2023-02-03, fiscal period: FY2022):
-    [AMZN-F1] Amazon reported total net sales of $514.0 billion for fiscal 2022, representing 9% growth year-over-year, with North America achieving growth while International declined and AWS accelerated to strong double-digit expansion.
-    [AMZN-F2] Operating income declined sharply to $12.2 billion from $24.9 billion as North America shifted to operating losses and International losses expanded, while AWS operating income increased substantially.
-    [AMZN-F3] Consumer business growth moderated significantly from pandemic-elevated levels as retail patterns normalized and discretionary spending faced macroeconomic headwinds.
-    [AMZN-F4] Operating expenses increased driven by stock-based compensation expense surging to $19.6 billion from $12.8 billion, with technology and content expenses absorbing substantial equity costs.
-    [AMZN-F5] Fulfillment and technology costs rose due to wage inflation, capacity expansion, AWS infrastructure investments, and original content production.
-    [AMZN-F6] Cost of sales increased 6% with improved margin mix as higher-margin services revenue grew faster than products revenue.
-    [AMZN-F7] Amazon completed MGM acquisition for $6.1 billion in March 2022 and authorized a $10 billion share repurchase program, executing $6 billion during the year.
-    [AMZN-F8] The company issued $21.1 billion in new debt with maturities extending to 2032.
-    [AMZN-F9] Leadership transitions included Andy Jassy as CEO and Douglas Herrington as CEO Worldwide Amazon Stores, while the company announced pending acquisitions of One Medical and iRobot.
-    [AMZN-F10] Foreign exchange headwinds reduced net sales by $15.5 billion with International segment particularly impacted by dollar strength.
-    [AMZN-F11] European authorities imposed significant GDPR and competition fines totaling over $1.8 billion.
-    [AMZN-F12] Inflationary pressures across labor, transportation, and energy costs elevated operational expenses while supply chain disruptions continued affecting inventory management and fulfillment operations.
-    [AMZN-F13] Q1 2023 guidance anticipates net sales between $121-126 billion representing 4-8% growth with continued foreign exchange headwinds and operating income between $0-4 billion.
-    [AMZN-F14] Management signaled sustained investment in AWS infrastructure expansion, artificial intelligence capabilities, and original content production.
-    [AMZN-F15] Capital allocation priorities emphasize technology infrastructure, fulfillment network optimization, and emerging technologies including satellite broadband and autonomous vehicles.
-    [AMZN-F16] Amazon faces approximately $4 billion in accrued tax contingencies across multiple jurisdictions with ongoing disputes regarding transfer pricing and service taxation.
-    [AMZN-F17] Multiple antitrust lawsuits in the U.S. and Canada allege price-fixing arrangements with courts allowing certain claims to proceed, while patent litigation exposure includes potential damages ranging from $130-986 million across multiple cases.
-    [AMZN-F18] The company increased self-insurance reserves by $1.3 billion in Q4 2022 for general, product, and automobile liabilities driven by revised claims cost estimates.
+  Filing Evidence (10-Q, filed 2023-05-05, fiscal period: 2023-Q2 [FYE: Sep 30]):
+    [AAPL-F1] Total revenue declined 3% to $94.8 billion driven by Mac revenue falling 31% and foreign currency headwinds of $2.4 billion.
+    [AAPL-F2] Services revenue grew 5% led by cloud services, music and advertising, while iPhone revenue remained flat despite new model launches.
+    [AAPL-F3] Regional performance showed mixed results with Rest of Asia Pacific up strongly and Europe positive, offset by declines in Americas, Greater China, and Japan.
+    [AAPL-F4] Total gross margin percentage improved to 44.3% from 43.7% driven by favorable product mix offsetting currency headwinds and lower volumes.
+    [AAPL-F5] Products gross margin increased due to mix benefits while Services gross margin compressed due to currency impacts and higher service costs.
+    [AAPL-F6] Operating expenses increased to 14% of revenue from 13%, with R&D expense rising to 8% driven by headcount expansion.
+    [AAPL-F7] The company repurchased $19.1 billion of common stock and paid $3.7 billion in dividends during the quarter.
+    [AAPL-F8] Apple launched MacBook Pro models with M2 Pro and M2 Max chips, Mac mini with M2 processors, and second-generation HomePod.
+    [AAPL-F9] The Board authorized an additional $90 billion share repurchase program and raised the quarterly dividend from $0.23 to $0.24 per share effective Q3 2023.
+    [AAPL-F10] Apple issued $5.25 billion in new debt across multiple tranches with maturities from 2026 to 2053.
+    [AAPL-F11] Foreign currency weakness relative to the U.S. dollar created significant headwinds across all international markets, with particular impact on renminbi and yen exposures.
+    [AAPL-F12] Macroeconomic conditions including inflation, interest rate changes, and currency fluctuations continue to directly and indirectly impact operations and financial condition.
+    [AAPL-F13] Management expects gross margins to remain subject to volatility and downward pressure going forward.
+    [AAPL-F14] The company intends to increase dividends annually subject to Board approval and maintains sufficient liquidity through cash balances, operational cash generation, and debt market access to meet requirements and capital return commitments.
+    [AAPL-F15] No material changes to risk factors or critical accounting estimates were reported during the quarter.
+    [AAPL-F16] The company maintains standard forward-looking statement disclaimers regarding potential impacts from macroeconomic conditions on future business performance.
 
   Earnings Call Evidence:
-    [AMZN-EC1] In Q1 2023, Amazon reported net sales of $127.4 billion, a 9% increase year-over-year, exceeding guidance.
-    [AMZN-EC2] The growth was driven by strong performance in worldwide stores and a 16% increase in AWS sales, totaling $21.4 billion.
-    [AMZN-EC3] Operating income reached $4.8 billion, despite a $470 million employee severance charge, while net income was $3.2 billion, impacted by a $467 million loss from Rivian investments.
-    [AMZN-EC4] Management remains optimistic about future growth, particularly in AWS and advertising, despite ongoing economic uncertainties.
-    [AMZN-EC5] They are focused on optimizing costs and improving operational efficiency, with a shift towards a regional fulfillment model expected to enhance delivery speeds and reduce costs.
-    [AMZN-EC6] Investments in generative AI and large language models are seen as key growth areas, with expectations of significant long-term returns.
-    [AMZN-EC7] The company faces risks from economic uncertainties, including inflation and cautious consumer spending, which may impact demand for discretionary items.
-    [AMZN-EC8] Additionally, fluctuations in foreign exchange rates and potential changes in global economic conditions could materially affect financial results.
-    [AMZN-EC9] The ongoing optimization efforts in AWS may also lead to short-term revenue growth challenges as customers adjust their spending.
-    [AMZN-EC10] Key drivers of growth include the expansion of third-party seller participation, which accounted for 59% of unit sales, and a 23% increase in advertising revenue.
-    [AMZN-EC11] The transition to a regional fulfillment network is expected to improve delivery efficiency.
-    [AMZN-EC12] In AWS, the focus on cost optimization and customer support during economic uncertainty is anticipated to strengthen long-term customer relationships and drive future growth.
+    [AAPL-EC1] Apple reported Q2 Fiscal Year 2023 revenue of $94.8 billion, a 3% year-over-year decline, primarily due to foreign exchange headwinds and macroeconomic challenges. iPhone revenue reached a record $51.3 billion, while Services set an all-time high at $20.9 billion.
+    [AAPL-EC2] The company saw strong performance in emerging markets, with records in several countries, and maintained a high level of customer satisfaction across its product lines.
+    [AAPL-EC3] For the June quarter, Apple expects revenue performance to be similar to the March quarter, with continued foreign exchange headwinds impacting results.
+    [AAPL-EC4] The company anticipates gross margins between 44% and 44.5% and operating expenses between $13.6 billion and $13.8 billion.
+    [AAPL-EC5] Management remains focused on long-term growth and innovation despite current macroeconomic challenges.
+    [AAPL-EC6] Apple faces risks from ongoing macroeconomic uncertainties, including foreign exchange fluctuations and potential declines in consumer spending.
+    [AAPL-EC7] The company also highlighted challenges in specific service areas like digital advertising and mobile gaming, which are being affected by the current economic environment.
+    [AAPL-EC8] Additionally, the competitive landscape in emerging markets poses a risk to maintaining growth momentum.
+    [AAPL-EC9] Key drivers of Apple's performance include the strong demand for iPhones, particularly in emerging markets, and the growth of its Services segment, which has seen a significant increase in paid subscriptions.
+    [AAPL-EC10] The installed base of active devices continues to grow, providing a solid foundation for future service monetization.
+    [AAPL-EC11] Apple's commitment to innovation and customer satisfaction remains central to its strategy.
 
 ======================================================================
-TICKER: BAC
+TICKER: MSFT
 ======================================================================
 
   Price & Returns:
-    [BAC-PX]       Close: $26.18
-    [BAC-RET20]    20D Return: -15.5%
-    [BAC-RET60]    60D Return: -15.0%
-    [BAC-RET120]   120D Return: -8.9%
-    [BAC-RET252]   1Y Return: -33.2%
+    [MSFT-PX]       Close: $333.39
+    [MSFT-RET20]    20D Return: +2.4%
+    [MSFT-RET60]    60D Return: +18.8%
+    [MSFT-RET120]   120D Return: +52.1%
+    [MSFT-RET252]   1Y Return: +32.1%
 
   Volatility & Risk:
-    [BAC-VOL20]    20D Vol (ann): 45.8%
-    [BAC-VOL60]    60D Vol (ann): 30.6%
-    [BAC-DVOL60]   60D Downside Vol: 25.6%
-    [BAC-DD60]     60D Drawdown: -26.2%
-    [BAC-MDD1Y]    1Y Max Drawdown: -36.4%
-    [BAC-SHARPE]   60D Sharpe: -2.23
-    [BAC-BETA]     1Y Beta: 0.97
+    [MSFT-VOL20]    20D Vol (ann): 24.7%
+    [MSFT-VOL60]    60D Vol (ann): 26.7%
+    [MSFT-DVOL60]   60D Downside Vol: 12.2%
+    [MSFT-DD60]     60D Drawdown: -5.6%
+    [MSFT-MDD1Y]    1Y Max Drawdown: -26.8%
+    [MSFT-SHARPE]   60D Sharpe: 2.72
+    [MSFT-BETA]     1Y Beta: 1.32
 
   Trend & Momentum:
-    [BAC-SMA20]    SMA 20D: $27.24
-    [BAC-SMA50]    SMA 50D: $30.25
-    [BAC-SMA200]   SMA 200D: $30.70
-    [BAC-MOM200]   200D Momentum: 0.85
-    [BAC-MOM12_1]  12-1M Momentum: -20.0%
-    [BAC-IDMOM]    Idiosyncratic Momentum 60D: -0.2332
-    [BAC-TREND]    Trend Consistency: 0.45
-    [BAC-RS60]     Relative Strength 60D: -11.1%
-    [BAC-ESURP]    Earnings Surprise: +10.4%
-    [BAC-ADVOL]    Avg Dollar Volume 20D: $2,587,227,420
+    [MSFT-SMA20]    SMA 20D: $327.74
+    [MSFT-SMA50]    SMA 50D: $312.72
+    [MSFT-SMA200]   SMA 200D: $260.95
+    [MSFT-MOM200]   200D Momentum: 1.28
+    [MSFT-MOM12_1]  12-1M Momentum: +27.4%
+    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: 0.0612
+    [MSFT-TREND]    Trend Consistency: 0.52
+    [MSFT-RS60]     Relative Strength 60D: +8.4%
+    [MSFT-ESURP]    Earnings Surprise: +9.4%
+    [MSFT-ADVOL]    Avg Dollar Volume 20D: $8,547,796,452
 
   Sentiment (from earnings call):
-    [BAC-SENT]     Mean Sentiment: 0.2116
-    [BAC-SVOL]     Sentiment Volatility: 0.5171
+    [MSFT-SENT]     Mean Sentiment: 0.1315
+    [MSFT-SVOL]     Sentiment Volatility: 0.5785
 
-  Filing summary: not available
+  Filing Evidence (10-Q, filed 2023-04-25, fiscal period: 2023-Q1 [FYE: Jun 30]):
+    [MSFT-F1] Microsoft Cloud revenue increased 22% to $28.5 billion driven by Azure growth of 27% and Office 365 Commercial growth of 14%.
+    [MSFT-F2] Server products and cloud services revenue increased 17% while Dynamics 365 grew 25%.
+    [MSFT-F3] Consumer segments showed mixed performance with Office Consumer revenue up 1% and Microsoft 365 Consumer subscribers reaching 65.4 million, while Windows OEM revenue declined 28% and Devices revenue fell 30%.
+    [MSFT-F4] The company announced a $1.2 billion restructuring charge in Q2 fiscal 2023 representing $0.12 negative impact to diluted earnings per share.
+    [MSFT-F5] Primary expense categories remain employee compensation, product design and manufacturing costs, datacenter infrastructure supporting cloud services, and income taxes.
+    [MSFT-F6] The restructuring includes workforce reductions, hardware portfolio changes, and lease consolidation initiatives.
+    [MSFT-F7] Microsoft announced workforce reductions of approximately 10,000 employees by the end of Q3 fiscal 2023 in response to macroeconomic conditions and changing customer priorities.
+    [MSFT-F8] The company implemented changes to its hardware portfolio and consolidated leases to create higher workspace density.
+    [MSFT-F9] The company cited macroeconomic conditions and changing customer priorities as drivers for its restructuring actions.
+    [MSFT-F10] Windows OEM revenue declined 28% reflecting broader PC market weakness, while Devices revenue fell 30% indicating consumer hardware demand pressures.
+    [MSFT-F11] Management indicated the workforce reduction of 10,000 employees will be completed by the end of the third fiscal quarter of 2023.
+    [MSFT-F12] The restructuring actions including hardware portfolio changes and lease consolidation are designed to optimize operations amid shifting market conditions.
+    [MSFT-F13] The company maintains standard forward-looking statement disclaimers regarding risks and uncertainties that could cause actual results to differ materially from expectations.
+    [MSFT-F14] No specific new contingencies or pending regulatory matters were disclosed beyond the announced restructuring activities.
 
   Earnings Call Evidence:
-    [BAC-EC1] Bank of America reported strong first quarter results with an 18% year-over-year increase in earnings per share (EPS), reaching $0.94.
-    [BAC-EC2] The bank achieved a 13% growth in revenue, driven by a 25% increase in net interest income and strong performance across all business segments.
-    [BAC-EC3] The CET1 ratio improved to 11.4%, and the bank maintained robust liquidity with over $900 billion in global liquidity sources.
-    [BAC-EC4] Management anticipates a shallow recession beginning in Q3 2023, but consumer financial positions remain healthy with strong account balances and access to credit.
-    [BAC-EC5] They expect net interest income (NII) to decrease slightly in Q2 due to anticipated lower deposit balances and a shift towards interest-bearing accounts.
-    [BAC-EC6] Overall, they remain optimistic about organic growth and operational leverage.
-    [BAC-EC7] Key risks include potential economic slowdown impacting loan demand and consumer spending, as well as regulatory changes that could affect capital requirements.
-    [BAC-EC8] The bank is also monitoring the impact of Federal Reserve actions on interest rates and the overall economic environment, which could influence deposit behaviors and asset quality.
-    [BAC-EC9] The bank's performance was driven by strong organic growth in client accounts, particularly in consumer banking, where they opened 130,000 new checking accounts and 1.3 million credit card accounts.
-    [BAC-EC10] Additionally, the bank's focus on digital engagement and customer relationships has enhanced customer satisfaction and retention, contributing to overall revenue growth.
+    [MSFT-EC1] Microsoft reported Q2 FY2023 revenue of $52.7 billion, a 2% increase year-over-year, with a 7% increase in constant currency.
+    [MSFT-EC2] The Microsoft Cloud segment generated $27.1 billion in revenue, up 22% year-over-year and 29% in constant currency.
+    [MSFT-EC3] Despite strong growth in cloud services, the company faced challenges in its consumer business, particularly in the Surface segment and advertising revenue, which was impacted by a cautious spending environment.
+    [MSFT-EC4] Management anticipates continued cautious spending from customers, particularly in the U.S. market, and expects a deceleration in Azure growth rates.
+    [MSFT-EC5] For Q3, they project revenue growth in the Productivity and Business Processes segment to be between 11% and 13% in constant currency, while Intelligent Cloud revenue is expected to grow between 17% and 19%.
+    [MSFT-EC6] The company remains focused on aligning its cost structure with revenue growth and investing in AI opportunities.
+    [MSFT-EC7] Key risks include macroeconomic uncertainty affecting customer spending, particularly in the U.S., and the potential for continued declines in the PC market impacting Windows OEM and device revenues.
+    [MSFT-EC8] Additionally, the company faces challenges in its advertising business due to a cautious ad market, which could further affect revenue growth in LinkedIn and search advertising.
+    [MSFT-EC9] The primary drivers of growth include the strong performance of Microsoft Cloud services, particularly Azure, which continues to gain traction with enterprise customers.
+    [MSFT-EC10] The adoption of AI technologies and the integration of AI capabilities across Microsoft products are expected to enhance customer value and drive future growth.
+    [MSFT-EC11] Additionally, the ongoing expansion of Microsoft 365 subscriptions and the success of Dynamics 365 are contributing positively to overall revenue.
 
 ======================================================================
-TICKER: CAT
+TICKER: NVDA
 ======================================================================
 
   Price & Returns:
-    [CAT-PX]       Close: $213.86
-    [CAT-RET20]    20D Return: -11.0%
-    [CAT-RET60]    60D Return: -5.5%
-    [CAT-RET120]   120D Return: +27.0%
-    [CAT-RET252]   1Y Return: +4.0%
+    [NVDA-PX]       Close: $42.27
+    [NVDA-RET20]    20D Return: +6.4%
+    [NVDA-RET60]    60D Return: +54.1%
+    [NVDA-RET120]   120D Return: +184.8%
+    [NVDA-RET252]   1Y Return: +172.4%
 
   Volatility & Risk:
-    [CAT-VOL20]    20D Vol (ann): 34.6%
-    [CAT-VOL60]    60D Vol (ann): 29.0%
-    [CAT-DVOL60]   60D Downside Vol: 21.2%
-    [CAT-DD60]     60D Drawdown: -18.7%
-    [CAT-MDD1Y]    1Y Max Drawdown: -30.1%
-    [CAT-SHARPE]   60D Sharpe: -0.83
-    [CAT-BETA]     1Y Beta: 0.90
+    [NVDA-VOL20]    20D Vol (ann): 38.7%
+    [NVDA-VOL60]    60D Vol (ann): 57.9%
+    [NVDA-DVOL60]   60D Downside Vol: 20.2%
+    [NVDA-DD60]     60D Drawdown: -7.2%
+    [NVDA-MDD1Y]    1Y Max Drawdown: -41.5%
+    [NVDA-SHARPE]   60D Sharpe: 3.14
+    [NVDA-BETA]     1Y Beta: 2.06
 
   Trend & Momentum:
-    [CAT-SMA20]    SMA 20D: $217.19
-    [CAT-SMA50]    SMA 50D: $228.97
-    [CAT-SMA200]   SMA 200D: $200.82
-    [CAT-MOM200]   200D Momentum: 1.06
-    [CAT-MOM12_1]  12-1M Momentum: +15.1%
-    [CAT-IDMOM]    Idiosyncratic Momentum 60D: -0.1131
-    [CAT-TREND]    Trend Consistency: 0.53
-    [CAT-RS60]     Relative Strength 60D: -1.7%
-    [CAT-ESURP]    Earnings Surprise: -4.2%
-    [CAT-ADVOL]    Avg Dollar Volume 20D: $721,429,956
+    [NVDA-SMA20]    SMA 20D: $40.95
+    [NVDA-SMA50]    SMA 50D: $34.61
+    [NVDA-SMA200]   SMA 200D: $22.43
+    [NVDA-MOM200]   200D Momentum: 1.88
+    [NVDA-MOM12_1]  12-1M Momentum: +143.6%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.2435
+    [NVDA-TREND]    Trend Consistency: 0.52
+    [NVDA-RS60]     Relative Strength 60D: +43.6%
+    [NVDA-ESURP]    Earnings Surprise: +22.2%
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $20,322,947,786
 
   Sentiment (from earnings call):
-    [CAT-SENT]     Mean Sentiment: -0.0359
-    [CAT-SVOL]     Sentiment Volatility: 0.6965
+    [NVDA-SENT]     Mean Sentiment: 0.3297
+    [NVDA-SVOL]     Sentiment Volatility: 0.5148
 
-  Filing Evidence (10-K, filed 2023-02-15, fiscal period: FY2022):
-    [CAT-F1] Caterpillar achieved $59.4 billion in sales and revenues for 2022, representing 17% growth driven by favorable price realization and higher sales volume across all three primary segments, partially offset by unfavorable currency impacts.
-    [CAT-F2] Order backlog increased to $30.4 billion from $23.1 billion in 2021, with approximately $5.5 billion expected to remain unfilled in 2023 indicating extended delivery timelines.
-    [CAT-F3] Operating profit margin remained stable at 13.3% despite a $925 million goodwill impairment charge for the Rail reporting unit.
-    [CAT-F4] Manufacturing costs increased significantly due to higher material costs, freight expenses, and manufacturing inefficiencies from supply chain disruptions, partially offsetting benefits from favorable price realization.
-    [CAT-F5] Operating expenses rose driven by strategic investments in services growth, digital technology, electrification, and autonomy initiatives, plus higher short-term incentive compensation expense.
-    [CAT-F6] Restructuring costs totaled $299 million versus $90 million prior year reflecting ongoing operational optimization efforts.
-    [CAT-F7] The company recorded a $925 million goodwill impairment charge for the Rail reporting unit reflecting reduced locomotive demand forecasts, lower margins from inflationary pressures, and higher discount rates.
-    [CAT-F8] Management reached a $490 million settlement with the IRS resolving all tax disputes for 2007-2016 without penalties, generating a $41 million discrete tax benefit.
-    [CAT-F9] The Board approved a new $15 billion share repurchase authorization with the company repurchasing $4.2 billion of common stock and paying $2.4 billion in dividends.
-    [CAT-F10] The company faces heightened exposure to commodity price volatility affecting energy and mining customers whose equipment purchase decisions depend on expected future commodity dynamics.
-    [CAT-F11] Foreign exchange sensitivity increased with a hypothetical 10% dollar weakening potentially adversely affecting 2023 cash flow by approximately $98 million, with primary exposures to major global currencies.
-    [CAT-F12] Supply chain disruptions from material shortages, logistics constraints, and transportation capacity limitations continue creating production delays and increased costs.
-    [CAT-F13] Management expects continued price realization benefits and volume growth across segments supported by strong demand fundamentals and infrastructure investment dynamics.
-    [CAT-F14] Expected net periodic benefit cost is projected to increase $273 million in 2023 primarily due to higher interest costs from elevated discount rates.
-    [CAT-F15] Enterprise operating cash flow reached $7.8 billion with enterprise cash position of $7.0 billion providing liquidity for operations and capital allocation.
-    [CAT-F16] Primary uncertainties include duration and severity of supply chain disruptions, semiconductor availability, and transportation capacity constraints affecting production schedules and customer deliveries.
-    [CAT-F17] Pending tax examinations for years 2017-2019 with unrecognized tax benefits remain unresolved alongside ongoing federal investigation regarding cash movements and parts transactions among subsidiaries.
-    [CAT-F18] Rail division faces continued challenges with locomotive market outlook remaining below expectations, while China excavator industry expected to remain below 2022 levels.
+  Filing Evidence (10-Q, filed 2023-05-26, fiscal period: 2023-Q2 [FYE: Jan 31]):
+    [NVDA-F1] Revenue reached $7.19 billion, declining 13% year-over-year but increasing 19% sequentially, driven by explosive Data Center growth from generative AI and large language model demand using Hopper and Ampere architectures.
+    [NVDA-F2] Gaming revenue fell 38% annually due to macroeconomic slowdown and channel inventory normalization, while Automotive surged from self-driving platforms and AI cockpit solutions.
+    [NVDA-F3] Revenue concentration among cloud service providers and consumer internet companies intensified.
+    [NVDA-F4] Gross margin compressed to 64.6% from 65.5% year-over-year, reflecting lower Gaming margins partially offset by higher Data Center compute margins as Hopper architecture ramped.
+    [NVDA-F5] Operating expenses decreased 30% annually due to prior year's Arm acquisition termination charge, while current period expenses increased from employee growth and AI cloud services investments.
+    [NVDA-F6] Supply chain costs increased from wafer, component, and logistics premiums driven by inflationary conditions and extended lead times.
+    [NVDA-F7] Company launched four AI inference platforms combining full-stack software with Ada, Hopper and Grace Hopper processors for generative AI workloads.
+    [NVDA-F8] NVIDIA introduced AI Foundations for custom large language models and announced partnerships with Google Cloud and ServiceNow for enterprise generative AI solutions.
+    [NVDA-F9] The company transitioned certain operations out of China and Hong Kong following export control restrictions, introducing alternative A800 and H800 chips for the Chinese market.
+    [NVDA-F10] U.S. export controls require licenses for A100 and H100 exports to China, Hong Kong, Macau and Russia, creating material revenue exposure for any future chips achieving specified performance thresholds.
+    [NVDA-F11] Supply chain remains concentrated in Asia-Pacific including Taiwan where critical manufacturing partners operate, creating vulnerability to geopolitical tensions and additional trade restrictions.
+    [NVDA-F12] Company procured substantially higher Data Center supply for second half of fiscal 2024 compared to first half, anticipating continued generative AI demand growth.
+    [NVDA-F13] Management committed to expanding cloud service provider partnerships and scaling infrastructure to support growing AI workload demands while investing in AI cloud services and standalone software solutions.
+    [NVDA-F14] Inventory and supply commitments have grown significantly due to supply chain conditions and long lead times, creating potential for provisions if misaligned with demand.
+    [NVDA-F15] Pending export control modifications could subject additional products to licensing requirements, potentially disrupting supply chains and market access.
+    [NVDA-F16] Demand forecasting complexity increased due to cryptocurrency mining volatility, generative AI adoption uncertainty, and gray market resale dynamics.
 
   Earnings Call Evidence:
-    [CAT-EC1] Caterpillar reported a strong first quarter of 2023 with sales and revenues increasing by 17% year-over-year to $15.9 billion, driven by strong price realization and volume growth.
-    [CAT-EC2] Adjusted operating profit margins improved to 21.1%, significantly exceeding expectations due to better manufacturing costs and efficiencies.
-    [CAT-EC3] The backlog remained healthy at $30.4 billion, and the company generated $1.4 billion in ME&T free cash flow, returning $1 billion to shareholders through dividends and stock repurchases.
-    [CAT-EC4] Management expects 2023 to be even better than previously anticipated, with strong demand across end markets.
-    [CAT-EC5] They anticipate being in the top half of the targeted range for adjusted operating profit margin and ME&T free cash flow.
-    [CAT-EC6] While they expect a seasonal increase in sales in the second quarter, they also foresee a decrease in dealer inventories compared to the first quarter, which may impact sales in the second half of the year.
-    [CAT-EC7] Caterpillar continues to monitor global macroeconomic conditions, which could impact demand.
-    [CAT-EC8] There are pockets of supply chain challenges that remain, particularly for large engines and some larger machines.
-    [CAT-EC9] Additionally, the company faces potential headwinds from pension expenses and restructuring costs, which could affect profitability.
-    [CAT-EC10] Key drivers of Caterpillar's performance include strong customer demand across various end markets, particularly in Energy & Transportation and Resource Industries.
-    [CAT-EC11] The company benefits from improving supply chain conditions, which have allowed for increased equipment availability and dealer inventory levels.
-    [CAT-EC12] Strategic investments in sustainability and new technologies are also expected to support long-term growth.
+    [NVDA-EC1] NVIDIA reported Q2 fiscal 2023 revenue of $6.7 billion, down 19% sequentially and up 3% year-on-year, missing the $8.1 billion outlook.
+    [NVDA-EC2] Gaming revenue fell sharply by 44% sequentially and 33% year-on-year due to macroeconomic headwinds and reduced consumer demand, particularly in Europe and China.
+    [NVDA-EC3] Data Center revenue grew 1% sequentially and 61% year-on-year, driven by strong demand from hyperscale customers, while Automotive revenue increased 59% sequentially and 45% year-on-year.
+    [NVDA-EC4] For Q3, NVIDIA expects revenue to decline sequentially in Gaming and Professional Visualization due to inventory corrections, while anticipating growth in Data Center and Automotive segments.
+    [NVDA-EC5] The revenue guidance is set at approximately $5.9 billion, with gross margins expected to be around 62.4% GAAP and 65% non-GAAP.
+    [NVDA-EC6] Management remains optimistic about long-term growth drivers in Gaming and the upcoming product launches.
+    [NVDA-EC7] NVIDIA faces significant risks from macroeconomic conditions impacting consumer demand, particularly in the Gaming segment.
+    [NVDA-EC8] Additionally, supply chain disruptions have affected product availability, and there is uncertainty regarding the performance of the Chinese hyperscale market.
+    [NVDA-EC9] The company has also taken substantial inventory write-downs, reflecting a need to adjust to changing demand expectations.
+    [NVDA-EC10] Key growth drivers include the ongoing demand for AI solutions in the Data Center and Automotive sectors, with NVIDIA's Hopper architecture expected to enhance performance in large language models and other AI applications.
+    [NVDA-EC11] The company is also focused on expanding its Omniverse platform and leveraging its leadership in 3D graphics and gaming technology to capture new market opportunities.
+
+======================================================================
+TICKER: JPM
+======================================================================
+
+  Price & Returns:
+    [JPM-PX]       Close: $136.53
+    [JPM-RET20]    20D Return: +5.7%
+    [JPM-RET60]    60D Return: +14.1%
+    [JPM-RET120]   120D Return: +6.3%
+    [JPM-RET252]   1Y Return: +30.4%
+
+  Volatility & Risk:
+    [JPM-VOL20]    20D Vol (ann): 18.2%
+    [JPM-VOL60]    60D Vol (ann): 23.4%
+    [JPM-DVOL60]   60D Downside Vol: 10.9%
+    [JPM-DD60]     60D Drawdown: -5.2%
+    [JPM-MDD1Y]    1Y Max Drawdown: -16.8%
+    [JPM-SHARPE]   60D Sharpe: 2.38
+    [JPM-BETA]     1Y Beta: 0.92
+
+  Trend & Momentum:
+    [JPM-SMA20]    SMA 20D: $132.42
+    [JPM-SMA50]    SMA 50D: $130.27
+    [JPM-SMA200]   SMA 200D: $123.10
+    [JPM-MOM200]   200D Momentum: 1.11
+    [JPM-MOM12_1]  12-1M Momentum: +21.6%
+    [JPM-IDMOM]    Idiosyncratic Momentum 60D: 0.0520
+    [JPM-TREND]    Trend Consistency: 0.55
+    [JPM-RS60]     Relative Strength 60D: +3.7%
+    [JPM-ESURP]    Earnings Surprise: +21.7%
+    [JPM-ADVOL]    Avg Dollar Volume 20D: $1,288,890,757
+
+  Sentiment (from earnings call):
+    [JPM-SENT]     Mean Sentiment: 0.4058
+    [JPM-SVOL]     Sentiment Volatility: 0.4843
+
+  Filing Evidence (10-Q, filed 2023-05-03, fiscal period: 2023-Q1):
+    [JPM-F1] JPMorgan Chase reported Q4 2022 net income of $11.0 billion or $3.57 per share, compared to $10.4 billion or $3.33 per share in the prior year quarter.
+    [JPM-F2] The firm achieved record revenue of $132.3 billion for the fifth consecutive year with return on tangible common equity of 18%.
+    [JPM-F3] During 2022, the firm raised over $2.4 trillion of credit and capital for consumer and institutional clients globally.
+    [JPM-F4] The firm maintained disciplined expense management while continuing strategic investments in technology, people, systems and products.
+    [JPM-F5] Operating performance remained stable throughout the three-year pandemic period despite volatility from large reserve builds in 2020 followed by subsequent releases in 2021.
+    [JPM-F6] The firm elected Alicia Boler Davis as director effective March 20, 2023, with appointment as CEO of Alto Pharmacy.
+    [JPM-F7] CEO James Dimon's 2022 compensation was maintained at $34.5 million unchanged from prior year, comprising $1.5 million base salary and $33 million performance-based variable compensation delivered primarily through at-risk Performance Share Units.
+    [JPM-F8] The firm announced CME Term SOFR as replacement reference rate for certain LIBOR-based securities effective after June 30, 2023.
+    [JPM-F9] The firm operated amid significant challenges including strong competition, growing geopolitical tensions, global economic uncertainty, mounting inflation and higher interest rates, plus lingering COVID-19 impacts.
+    [JPM-F10] The firm maintained its quarterly common dividend of $1.00 per share and continued reinforcing its fortress balance sheet position.
+    [JPM-F11] Management emphasized continued focus on serving clients globally while executing long-term strategic initiatives and investing in future growth opportunities.
+    [JPM-F12] The May 1, 2023 acquisition of First Republic Bank assets and liabilities from the FDIC presents integration risks including total cost uncertainty, time requirements for completion, longer-term cost savings realization, asset and liability performance, and potential business disruptions.
+    [JPM-F13] Integration efforts could divert management attention and resources while potentially causing client losses to competing institutions.
+
+  Earnings Call Evidence:
+    [JPM-EC1] JPMorgan Chase reported a net income of $14.5 billion and EPS of $4.75 for Q2 2023, driven by a revenue of $42.4 billion, which included a $2.7 billion bargain purchase gain from the First Republic acquisition.
+    [JPM-EC2] Excluding First Republic's impact, revenue was $38.4 billion, up 21% year-on-year, with net interest income (NII) increasing significantly due to higher rates.
+    [JPM-EC3] The firm also noted strong client investment asset growth and record inflows in asset and wealth management.
+    [JPM-EC4] Management expects 2023 NII to be approximately $87 billion, driven by higher rates and slower deposit repricing.
+    [JPM-EC5] They anticipate a normalization of NII to a mid-$70 billion run rate in the future, emphasizing that current levels are not sustainable.
+    [JPM-EC6] The firm remains cautious about economic uncertainties and competition for deposits, while expressing confidence in its ability to deliver strong performance across various scenarios.
+    [JPM-EC7] Key risks include potential economic downturns, competition for deposits, and the impact of upcoming Basel III capital requirements, which could increase costs and affect credit availability.
+    [JPM-EC8] Management highlighted the uncertainty surrounding the credit cycle and the potential for normalization of loss rates, particularly in the consumer segment, as a significant concern moving forward.
+    [JPM-EC9] The primary drivers of performance included higher net interest income from rising rates, strong client investment inflows, and effective management of expenses despite wage inflation.
+    [JPM-EC10] The integration of First Republic is also expected to contribute positively to revenue and client retention, with significant deposit inflows observed since the acquisition.
+
+======================================================================
+TICKER: GS
+======================================================================
+
+  Price & Returns:
+    [GS-PX]       Close: $301.98
+    [GS-RET20]    20D Return: +1.9%
+    [GS-RET60]    60D Return: +0.7%
+    [GS-RET120]   120D Return: -6.0%
+    [GS-RET252]   1Y Return: +9.5%
+
+  Volatility & Risk:
+    [GS-VOL20]    20D Vol (ann): 23.4%
+    [GS-VOL60]    60D Vol (ann): 20.8%
+    [GS-DVOL60]   60D Downside Vol: 11.0%
+    [GS-DD60]     60D Drawdown: -8.8%
+    [GS-MDD1Y]    1Y Max Drawdown: -20.9%
+    [GS-SHARPE]   60D Sharpe: 0.15
+    [GS-BETA]     1Y Beta: 0.95
+
+  Trend & Momentum:
+    [GS-SMA20]    SMA 20D: $306.77
+    [GS-SMA50]    SMA 50D: $306.30
+    [GS-SMA200]   SMA 200D: $314.06
+    [GS-MOM200]   200D Momentum: 0.96
+    [GS-MOM12_1]  12-1M Momentum: +9.9%
+    [GS-IDMOM]    Idiosyncratic Momentum 60D: -0.0743
+    [GS-TREND]    Trend Consistency: 0.47
+    [GS-RS60]     Relative Strength 60D: -9.7%
+    [GS-ESURP]    Earnings Surprise: +8.9%
+    [GS-ADVOL]    Avg Dollar Volume 20D: $785,263,550
+
+  Sentiment (from earnings call):
+    [GS-SENT]     Mean Sentiment: 0.1539
+    [GS-SVOL]     Sentiment Volatility: 0.4756
+
+  Filing Evidence (10-Q, filed 2023-05-04, fiscal period: 2023-Q1):
+    [GS-F1] Net revenues declined 5% to $12.22 billion driven by significantly lower investment banking fees from reduced M&A and debt underwriting volumes, and 10% lower market making revenues despite solid activity levels.
+    [GS-F2] Global Banking & Markets revenues fell with FICC intermediation declining in currencies and commodities, partially offset by higher interest rate products.
+    [GS-F3] Asset & Wealth Management revenues increased from NNIP inclusion and higher management fees, while Platform Solutions revenues more than doubled driven by Consumer platforms growth.
+    [GS-F4] Operating expenses increased 9% to $8.40 billion primarily from real estate investment impairments and NNIP inclusion, driving efficiency ratio to 68.7% versus 59.7% prior year.
+    [GS-F5] Compensation remained flat including severance costs from headcount reduction initiatives that reduced workforce 6%.
+    [GS-F6] The G-SIB surcharge increased from 2.5% to 3.0% effective January 2023, raising the Standardized CET1 capital ratio requirement to 13.8%.
+    [GS-F7] Executed partial sale of Marcus loans portfolio with remainder transferred to held for sale, generating approximately $470 million loss largely offset by reserve reduction.
+    [GS-F8] Returned $3.41 billion to shareholders through share repurchases and dividends, with Board approving new $30 billion share repurchase program.
+    [GS-F9] Participated in consortium deposit to support First Republic Bank during March banking sector stress.
+    [GS-F10] Banking sector stress including regional bank failures created interest rate volatility with 2-year Treasury yields moving over 15 basis points daily for seven consecutive days in March.
+    [GS-F11] Recorded provision for credit losses primarily related to First Republic exposure reflecting banking sector contagion risks.
+    [GS-F12] Interest rate risk exposure increased significantly with Earnings-at-Risk sensitivity rising to $221 million gain for 100 basis point parallel rate increases from $104 million in December 2022.
+    [GS-F13] Reaffirmed through-the-cycle targets of 14-16% ROE, 15-17% ROTE, and approximately 60% efficiency ratio with expected 2023 tax rate between 21-22%.
+    [GS-F14] Management targets firmwide management fees exceeding $10 billion including alternatives by 2024, with Asset & Wealth Management targeting mid-twenties pre-tax margins within three to five years.
+    [GS-F15] Platform Solutions targets sub-100% efficiency ratio in 2023 and pre-tax profitability by end-2025.
+    [GS-F16] Consumer platforms reporting unit goodwill remains at risk given fair value proximity to carrying value and potential GreenSky sale implications.
+    [GS-F17] Allowance for credit losses modeling incorporates weighted economic scenarios with adverse weighting potentially requiring additional provision.
+    [GS-F18] The firm awaits FDIC rulemaking on special assessments for bank failures which could materially impact results depending on final assessment application.
+
+  Earnings Call Evidence:
+    [GS-EC1] Goldman Sachs reported net revenues of $10.9 billion and earnings per share of $3.08 for Q2 2023, with a return on equity (ROE) of 4% and return on tangible equity (ROTE) of 4.4%.
+    [GS-EC2] The results were negatively impacted by strategic transitions in the asset wealth management business and a cautious macroeconomic environment, which led to reduced client activity in investment banking.
+    [GS-EC3] The firm is focused on executing its strategic goals and has seen some positive trends in equity capital markets and M&A dialogue.
+    [GS-EC4] Management remains optimistic about future opportunities, citing a potential recovery in investment banking activity as economic conditions improve.
+    [GS-EC5] They are committed to executing their strategic goals, including reducing capital intensity and enhancing shareholder returns through a $30 billion share repurchase program and a 10% increase in dividends.
+    [GS-EC6] The firm aims to achieve mid-teens ROE through the cycle, with expectations of gradual improvement over the next 2 to 3 years.
+    [GS-EC7] Goldman Sachs faces several risks, including a challenging macroeconomic environment characterized by persistent inflation, geopolitical tensions, and slower growth, which have led to low activity levels in investment banking.
+    [GS-EC8] Additionally, the firm is navigating the strategic transition of its consumer business, which may involve further impairments and operational adjustments.
+    [GS-EC9] The uncertainty surrounding regulatory changes, particularly related to capital requirements, also poses a risk to future capital deployment strategies.
+    [GS-EC10] Key drivers for Goldman Sachs include the performance of its Global Banking and Markets segment, which has shown resilience despite current market conditions, and the growth of its Asset & Wealth Management business, particularly in management fees and private banking.
+    [GS-EC11] The firm is also focused on enhancing its financing capabilities in equities and fixed income, which are expected to provide more stable revenue streams.
+    [GS-EC12] The ongoing reduction of the historical principal investment portfolio is anticipated to improve capital efficiency and overall returns.
+
+======================================================================
+TICKER: XOM
+======================================================================
+
+  Price & Returns:
+    [XOM-PX]       Close: $97.68
+    [XOM-RET20]    20D Return: +3.8%
+    [XOM-RET60]    60D Return: -5.9%
+    [XOM-RET120]   120D Return: -1.4%
+    [XOM-RET252]   1Y Return: +25.9%
+
+  Volatility & Risk:
+    [XOM-VOL20]    20D Vol (ann): 19.2%
+    [XOM-VOL60]    60D Vol (ann): 22.7%
+    [XOM-DVOL60]   60D Downside Vol: 14.5%
+    [XOM-DD60]     60D Drawdown: -12.9%
+    [XOM-MDD1Y]    1Y Max Drawdown: -16.1%
+    [XOM-SHARPE]   60D Sharpe: -1.14
+    [XOM-BETA]     1Y Beta: 0.73
+
+  Trend & Momentum:
+    [XOM-SMA20]    SMA 20D: $96.12
+    [XOM-SMA50]    SMA 50D: $97.63
+    [XOM-SMA200]   SMA 200D: $96.87
+    [XOM-MOM200]   200D Momentum: 1.01
+    [XOM-MOM12_1]  12-1M Momentum: +20.0%
+    [XOM-IDMOM]    Idiosyncratic Momentum 60D: -0.1269
+    [XOM-TREND]    Trend Consistency: 0.50
+    [XOM-RS60]     Relative Strength 60D: -16.4%
+    [XOM-ESURP]    Earnings Surprise: +9.3%
+    [XOM-ADVOL]    Avg Dollar Volume 20D: $1,483,919,054
+
+  Sentiment (from earnings call):
+    [XOM-SENT]     Mean Sentiment: 0.2102
+    [XOM-SVOL]     Sentiment Volatility: 0.5080
+
+  Filing Evidence (10-Q, filed 2023-05-02, fiscal period: 2023-Q1):
+    [XOM-F1] First quarter 2023 earnings reached $11.4 billion, up from $5.5 billion in the prior year, driven by higher Energy Products and Specialty Products margins alongside increased volume and improved mix.
+    [XOM-F2] Upstream production increased to 3.8 million oil-equivalent barrels per day with growth in Guyana and Permian offsetting divestments and Russia expropriation impacts.
+    [XOM-F3] Energy Products earnings surged from negative territory due to stronger refining margins while Chemical Products earnings declined reflecting weaker industry margins and softening market conditions.
+    [XOM-F4] Capital and exploration expenditures increased to $6.4 billion from $4.9 billion with upstream spending comprising the majority.
+    [XOM-F5] Operating expenses increased across segments driven by higher scheduled maintenance costs impacting downstream performance.
+    [XOM-F6] The effective income tax rate decreased to 34 percent from 40 percent due to jurisdictional mix changes and one-time prior period impacts.
+    [XOM-F7] The company repurchased $4.3 billion of shares during the quarter as part of the ongoing buyback program.
+    [XOM-F8] Total shareholder distributions reached $8.0 billion including dividends.
+    [XOM-F9] European Member States imposed additional energy sector taxes resulting in $188 million after-tax charges primarily reflected in income tax expense.
+    [XOM-F10] Crude oil prices decreased 23 percent during the quarter despite remaining above 10-year averages, with OPEC+ announcing further output reductions in early April.
+    [XOM-F11] Natural gas prices remained elevated above 10-year ranges but declined significantly due to milder weather and increased storage levels.
+    [XOM-F12] Refining margins stayed above 10-year ranges due to low petroleum product inventory levels.
+    [XOM-F13] The corporation plans capital investments of $23 billion to $25 billion for 2023 with actual spending dependent on project progress and property acquisitions.
+    [XOM-F14] Management maintains capital allocation priorities of investing in competitively advantaged high-return projects, maintaining balance sheet strength, and consistent shareholder returns.
+    [XOM-F15] The ongoing asset management program continues evaluating portfolio mix with dispositions expected to continue.
+    [XOM-F16] Forward-looking statements depend on global supply and demand dynamics for oil, natural gas, and petrochemicals along with economic conditions affecting product prices and differentials.
+    [XOM-F17] Government policies supporting lower carbon investments or limiting investment attractiveness through additional energy sector taxes create regulatory uncertainty.
+    [XOM-F18] Reservoir performance variability, project completion timing, and geopolitical disturbances represent ongoing operational risks.
+
+  Earnings Call Evidence:
+    [XOM-EC1] Exxon Mobil reported second-quarter earnings of nearly $8 billion, doubling earnings compared to the same period in 2018 under similar commodity prices.
+    [XOM-EC2] The company highlighted its ongoing transformation, including the acquisition of Denbury, which will enhance its carbon capture and storage capabilities.
+    [XOM-EC3] Production in the Permian reached a record, and Guyana achieved a gross production rate of 380,000 barrels per day, with expectations to increase capacity further.
+    [XOM-EC4] Management remains optimistic about future growth, expecting to bring on two significant projects in the second half of the year, which will further enhance earnings capacity.
+    [XOM-EC5] They are focused on driving value rather than just volume and are committed to achieving their cost-saving target of $9 billion by year-end.
+    [XOM-EC6] The integration of new centralized organizations is expected to improve performance and lower costs across the business.
+    [XOM-EC7] The company faces risks related to market volatility, particularly in refining margins and global gas prices, which have shown significant declines.
+    [XOM-EC8] Additionally, the successful execution of their carbon capture strategy depends on regulatory developments and the ability to secure long-term contracts with customers.
+    [XOM-EC9] The ongoing geopolitical landscape and OPEC production cuts also pose potential challenges to production levels.
+    [XOM-EC10] Key drivers of performance include the successful execution of the Growing the Gulf initiative, which has seen 11 of 13 projects operational, and the strategic acquisition of Denbury, which will bolster Exxon Mobil's low-carbon solutions.
+    [XOM-EC11] The company's focus on capital efficiency and technological advancements in the Permian and Guyana are also critical to sustaining production growth and improving margins.
 
 ======================================================================
 TICKER: CVX
 ======================================================================
 
   Price & Returns:
-    [CVX-PX]       Close: $143.03
-    [CVX-RET20]    20D Return: -0.1%
-    [CVX-RET60]    60D Return: -5.8%
-    [CVX-RET120]   120D Return: +2.3%
-    [CVX-RET252]   1Y Return: +2.2%
+    [CVX-PX]       Close: $139.95
+    [CVX-RET20]    20D Return: +3.4%
+    [CVX-RET60]    60D Return: -6.0%
+    [CVX-RET120]   120D Return: -9.2%
+    [CVX-RET252]   1Y Return: +10.9%
 
   Volatility & Risk:
-    [CVX-VOL20]    20D Vol (ann): 26.3%
-    [CVX-VOL60]    60D Vol (ann): 25.8%
-    [CVX-DVOL60]   60D Downside Vol: 17.2%
-    [CVX-DD60]     60D Drawdown: -18.2%
-    [CVX-MDD1Y]    1Y Max Drawdown: -24.9%
-    [CVX-SHARPE]   60D Sharpe: -0.98
+    [CVX-VOL20]    20D Vol (ann): 20.2%
+    [CVX-VOL60]    60D Vol (ann): 21.2%
+    [CVX-DVOL60]   60D Downside Vol: 14.2%
+    [CVX-DD60]     60D Drawdown: -11.8%
+    [CVX-MDD1Y]    1Y Max Drawdown: -18.3%
+    [CVX-SHARPE]   60D Sharpe: -1.23
     [CVX-BETA]     1Y Beta: 0.74
 
   Trend & Momentum:
-    [CVX-SMA20]    SMA 20D: $140.00
-    [CVX-SMA50]    SMA 50D: $145.60
-    [CVX-SMA200]   SMA 200D: $142.53
-    [CVX-MOM200]   200D Momentum: 1.00
-    [CVX-MOM12_1]  12-1M Momentum: +2.0%
-    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.1020
-    [CVX-TREND]    Trend Consistency: 0.52
-    [CVX-RS60]     Relative Strength 60D: -1.9%
-    [CVX-ESURP]    Earnings Surprise: -4.9%
-    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,290,192,427
+    [CVX-SMA20]    SMA 20D: $138.86
+    [CVX-SMA50]    SMA 50D: $139.96
+    [CVX-SMA200]   SMA 200D: $145.86
+    [CVX-MOM200]   200D Momentum: 0.96
+    [CVX-MOM12_1]  12-1M Momentum: +6.2%
+    [CVX-IDMOM]    Idiosyncratic Momentum 60D: -0.1189
+    [CVX-TREND]    Trend Consistency: 0.47
+    [CVX-RS60]     Relative Strength 60D: -16.5%
+    [CVX-ESURP]    Earnings Surprise: +5.0%
+    [CVX-ADVOL]    Avg Dollar Volume 20D: $1,184,436,534
 
   Sentiment (from earnings call):
-    [CVX-SENT]     Mean Sentiment: 0.4816
-    [CVX-SVOL]     Sentiment Volatility: 0.3941
+    [CVX-SENT]     Mean Sentiment: 0.4869
+    [CVX-SVOL]     Sentiment Volatility: 0.3590
 
-  Filing Evidence (10-K, filed 2023-02-23, fiscal period: FY2022):
-    [CVX-F1] Chevron operates in a commodities business with significant exposure to crude oil price volatility, which represents the most significant factor affecting results of operations.
-    [CVX-F2] Extended periods of low crude oil prices can materially adversely impact results, financial condition, and liquidity, potentially affecting production, proved reserves, and upstream asset valuations.
-    [CVX-F3] Downstream earnings depend on refined product supply, demand, and associated margins.
-    [CVX-F4] The company's cost structure experiences direct impacts from commodity price fluctuations, with upstream operations particularly affected during price downturns.
-    [CVX-F5] Operational costs may increase substantially due to climate change-related legislation requiring capital expenditures for compliance, emissions reduction technologies, and carbon credits purchases.
-    [CVX-F6] The company maintains significant self-insurance exposure rather than commercial coverage for operational risks, creating substantial financial exposure to catastrophic events.
-    [CVX-F7] The Board of Directors approved amended and restated By-Laws effective December 7, 2022, updating stockholder meeting procedures, nomination requirements, and proxy solicitation rules.
-    [CVX-F8] Third quarter 2022 earnings of $11.2 billion were announced on October 28, 2022.
-    [CVX-F9] Chevron faces heightened exposure to geopolitical risks including the ongoing Ukraine conflict, COVID-19 pandemic effects on demand and operations, and evolving cybersecurity threats from state-sponsored and criminal actors targeting process control networks.
-    [CVX-F10] The company operates in politically unstable regions subject to government actions including forced contract renegotiations, increased public ownership requirements, additional taxes or royalties, and trade restrictions that could materially impact operations and financial results.
-    [CVX-F11] The company announced an aspiration to achieve net zero Scope 1 and 2 emissions in upstream operations by 2050, with nearer-term targets for zero routine flaring and carbon intensity reductions.
-    [CVX-F12] Achievement of climate-related aspirations depends on commercially viable technology progress, regulatory permit approvals, cost-effective carbon credit availability, and evolving customer preferences.
-    [CVX-F13] The company continues evaluating lower carbon business opportunities through its Chevron New Energies organization.
-    [CVX-F14] The company faces substantial uncertainty from evolving ESG reporting standards, potential windfall profit taxes in multiple jurisdictions including California and Australia, and ongoing Congressional investigations related to climate change.
-    [CVX-F15] Management estimates for asset impairments, reserve calculations, and litigation accruals remain subject to material revision based on changing business plans and market conditions.
-    [CVX-F16] Increasing stakeholder pressure on ESG matters creates risks of divestment, reduced capital access, and potential litigation exposure related to climate-related disclosures.
+  Filing Evidence (10-Q, filed 2023-05-04, fiscal period: 2023-Q1):
+    [CVX-F1] Total revenues declined to $50.8 billion from $54.4 billion driven by lower commodity prices despite higher volumes.
+    [CVX-F2] Upstream earnings decreased to $5.2 billion from $6.9 billion due to lower crude oil and natural gas realizations globally.
+    [CVX-F3] Downstream earnings surged to $1.8 billion from $331 million driven by significantly higher refining margins, with international downstream swinging from loss to profit.
+    [CVX-F4] Net oil-equivalent production decreased 3 percent to 2.98 million barrels per day primarily due to the end of the Erawan concession in Thailand.
+    [CVX-F5] Purchased crude oil and products costs decreased to $29.4 billion from $33.4 billion reflecting lower commodity price environment.
+    [CVX-F6] Operating expenses increased to $6.0 billion from $5.6 billion driven by higher transportation expenses and services fees, partially offset by lower employee benefit expenses.
+    [CVX-F7] Depreciation, depletion and amortization decreased to $3.5 billion from $3.7 billion due to lower production and rates.
+    [CVX-F8] Board authorized new $75 billion share repurchase program effective April 2023, replacing the previous $25 billion program.
+    [CVX-F9] Company returned $6.5 billion to shareholders through dividends at $1.51 per share and share repurchases.
+    [CVX-F10] Capital expenditures increased to $3.0 billion from $2.0 billion with higher upstream spending.
+    [CVX-F11] Achieved first oil at Mad Dog 2 project in Gulf of Mexico.
+    [CVX-F12] California Senate Bill SBx1-2 signed March 2023 authorizes establishment of maximum gross gasoline refining margins and associated fees with uncertain timing and impact.
+    [CVX-F13] Continued exposure to sanctions affecting Caspian Pipeline Consortium operations potentially impacting Tengiz field in Kazakhstan.
+    [CVX-F14] Venezuela operations resumed crude oil liftings under U.S.
+    [CVX-F15] License 41 with positive contribution to results.
+    [CVX-F16] Company expects to repurchase $4.375 billion of common stock during second quarter 2023 under new authorization while maintaining focus on delivering higher returns, lower carbon and superior shareholder value.
+    [CVX-F17] Management continues developing oil and gas resources while growing lower carbon businesses in renewable fuels, hydrogen, carbon capture and other emerging technologies.
+    [CVX-F18] Effective tax rate subject to substantial volatility during earnings fluctuations due to jurisdictional mix effects with tax examinations remaining open across major jurisdictions.
+    [CVX-F19] Credit loss allowance of $951 million concentrated in non-trade receivables including government joint venture partners.
+    [CVX-F20] Environmental contingencies exist across operating, closed and divested sites with future costs not fully determinable.
 
   Earnings Call Evidence:
-    [CVX-EC1] Chevron reported first quarter 2023 earnings of $6.6 billion, or $3.46 per share, with adjusted earnings of $6.7 billion, reflecting a 6% increase in dividends and strong cash flow.
-    [CVX-EC2] The company achieved a return on capital employed greater than 12% for the seventh consecutive quarter, despite a 20% decline in oil prices.
-    [CVX-EC3] Production was down approximately 80,000 barrels per day year-over-year, primarily due to asset sales and contract expirations, but growth is expected in the Permian Basin in the latter half of the year.
-    [CVX-EC4] Looking ahead, Chevron anticipates production growth in the Permian to be back-end loaded, with increased activity in New Mexico and a focus on capital discipline.
-    [CVX-EC5] The company plans to increase share buybacks to an annual rate of $17.5 billion and expects to maintain strong cash returns to shareholders.
-    [CVX-EC6] Key milestones include the startup of the WPMP project in Kazakhstan by the end of 2023 and continued operational improvements in LNG facilities in Australia.
-    [CVX-EC7] Chevron faces risks related to commodity price volatility, regulatory changes, and operational challenges in its various projects.
-    [CVX-EC8] The company is also monitoring potential impacts from new regulations in California regarding profit penalties, which could affect investment and supply dynamics in the region.
-    [CVX-EC9] Additionally, the ongoing geopolitical situation and market conditions in Venezuela present uncertainties for future production and sales.
-    [CVX-EC10] Key drivers of Chevron's performance include its diverse production portfolio, particularly in the Permian Basin, and strong refining margins in the downstream segment.
-    [CVX-EC11] The company's focus on capital and cost discipline, along with strategic investments in carbon capture and storage projects, positions it to navigate market fluctuations effectively.
-    [CVX-EC12] The ability to optimize production and maintain a strong balance sheet further supports its commitment to returning cash to shareholders.
+    [CVX-EC1] Chevron reported strong financial performance in Q2 2023, achieving a return on capital employed greater than 12% for the eighth consecutive quarter and setting a record in shareholder distributions exceeding $7 billion.
+    [CVX-EC2] The company experienced a slight decrease in adjusted earnings compared to the previous year, primarily due to lower realizations in upstream earnings, while downstream earnings were impacted by reduced refining margins.
+    [CVX-EC3] Production in the Permian set a new record, and Chevron expects to maintain production levels in the upcoming quarters, with significant growth anticipated in 2025.
+    [CVX-EC4] Looking ahead, Chevron remains confident in its production guidance, expecting to complete key projects at TCO and maintain a strong focus on maximizing value from its resource base.
+    [CVX-EC5] The company anticipates a free cash flow inflection in 2024 as capital expenditures decrease, with a projected $5 billion in free cash flow at $60 Brent by 2025.
+    [CVX-EC6] Chevron plans to resume share buybacks at a rate of $17.5 billion annually following the acquisition of PDC Energy, with expectations for increased dividends from TCO in the fourth quarter.
+    [CVX-EC7] Chevron faces several risks, including potential impacts from planned turnarounds and maintenance activities that may affect production levels in the short term.
+    [CVX-EC8] Additionally, external factors such as commodity price fluctuations and operational challenges in regions like Canada and Thailand could influence overall performance.
+    [CVX-EC9] The company is also navigating a complex regulatory environment, particularly regarding its projects in Cyprus and Argentina, which could affect timelines and profitability.
+    [CVX-EC10] Key drivers of Chevron's performance include its strong operational execution in the Permian and TCO, where production is expected to exceed 1 million barrels of oil equivalent per day by 2025.
+    [CVX-EC11] The company's focus on optimizing its large resource base, along with strategic investments in new energy projects and carbon capture initiatives, positions it for sustained growth.
+    [CVX-EC12] Additionally, Chevron's ability to manage costs effectively and maintain a low net debt ratio supports its commitment to returning capital to shareholders.
 
 ======================================================================
-TICKER: PG
+TICKER: CAT
 ======================================================================
 
   Price & Returns:
-    [PG-PX]       Close: $136.58
-    [PG-RET20]    20D Return: +5.4%
-    [PG-RET60]    60D Return: -2.1%
-    [PG-RET120]   120D Return: +18.1%
-    [PG-RET252]   1Y Return: -2.7%
+    [CAT-PX]       Close: $235.62
+    [CAT-RET20]    20D Return: +17.7%
+    [CAT-RET60]    60D Return: +13.8%
+    [CAT-RET120]   120D Return: -0.1%
+    [CAT-RET252]   1Y Return: +37.3%
 
   Volatility & Risk:
-    [PG-VOL20]    20D Vol (ann): 14.7%
-    [PG-VOL60]    60D Vol (ann): 16.3%
-    [PG-DVOL60]   60D Downside Vol: 10.2%
-    [PG-DD60]     60D Drawdown: -10.7%
-    [PG-MDD1Y]    1Y Max Drawdown: -23.8%
-    [PG-SHARPE]   60D Sharpe: -0.55
-    [PG-BETA]     1Y Beta: 0.49
+    [CAT-VOL20]    20D Vol (ann): 36.9%
+    [CAT-VOL60]    60D Vol (ann): 28.4%
+    [CAT-DVOL60]   60D Downside Vol: 11.4%
+    [CAT-DD60]     60D Drawdown: -8.2%
+    [CAT-MDD1Y]    1Y Max Drawdown: -21.8%
+    [CAT-SHARPE]   60D Sharpe: 1.91
+    [CAT-BETA]     1Y Beta: 1.00
 
   Trend & Momentum:
-    [PG-SMA20]    SMA 20D: $131.82
-    [PG-SMA50]    SMA 50D: $130.68
-    [PG-SMA200]   SMA 200D: $129.96
-    [PG-MOM200]   200D Momentum: 1.05
-    [PG-MOM12_1]  12-1M Momentum: -9.2%
-    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0467
-    [PG-TREND]    Trend Consistency: 0.47
-    [PG-RS60]     Relative Strength 60D: +1.8%
-    [PG-ESURP]    Earnings Surprise: +0.0%
-    [PG-ADVOL]    Avg Dollar Volume 20D: $884,248,165
+    [CAT-SMA20]    SMA 20D: $228.13
+    [CAT-SMA50]    SMA 50D: $214.03
+    [CAT-SMA200]   SMA 200D: $212.88
+    [CAT-MOM200]   200D Momentum: 1.11
+    [CAT-MOM12_1]  12-1M Momentum: +14.8%
+    [CAT-IDMOM]    Idiosyncratic Momentum 60D: 0.0200
+    [CAT-TREND]    Trend Consistency: 0.48
+    [CAT-RS60]     Relative Strength 60D: +3.3%
+    [CAT-ESURP]    Earnings Surprise: +29.5%
+    [CAT-ADVOL]    Avg Dollar Volume 20D: $773,210,970
 
   Sentiment (from earnings call):
-    [PG-SENT]     Mean Sentiment: 0.0736
-    [PG-SVOL]     Sentiment Volatility: 0.6136
+    [CAT-SENT]     Mean Sentiment: -0.0933
+    [CAT-SVOL]     Sentiment Volatility: 0.6050
 
-  Filing Evidence (10-Q, filed 2023-01-19, fiscal period: 2022-Q4 [FYE: Jun 30]):
-    [PG-F1] Net sales decreased 1% to $20.8 billion driven by 6% unfavorable foreign exchange and 6% volume decline, partially offset by 10% pricing increases.
-    [PG-F2] Organic sales increased 5% excluding foreign exchange with Health Care and Fabric & Home Care delivering high single-digit growth while Grooming declined high single digits.
-    [PG-F3] Volume declines were broad-based across regions with double-digit decreases in Europe and high single-digit decreases in Greater China.
-    [PG-F4] Gross margin compressed 160 basis points to 47.5% primarily from 380 basis points of increased commodity and input material costs, partially offset by 470 basis points from higher pricing and 80 basis points from manufacturing productivity savings.
-    [PG-F5] Cost increases reflected commodity inflation for oil-derived materials and pulp, transportation inflation, and labor constraints.
-    [PG-F6] SG&A increased 10 basis points to 24.5% as overhead cost inflation was partially offset by reduced marketing spending.
-    [PG-F7] The company completed integration of Grooming Sector Business Unit combining Shave Care and Appliances categories into unified reporting structure effective July 2022.
-    [PG-F8] Operations in Russia were suspended beginning March 2022 including discontinued capital investments and media activity.
-    [PG-F9] Share repurchases totaled $6.0 billion with dividends paid and quarterly dividend of $0.9133 per share declared.
-    [PG-F10] Russia-Ukraine war negatively impacted operations with combined exposure representing less than 3% of sales, creating uncertainty from potential facility damage and sanctions.
-    [PG-F11] Foreign exchange translation exposures continue across multiple currencies with particular volatility in emerging markets.
-    [PG-F12] Commodity price inflation affecting oil-derived materials and paper-based materials directly impacts cost structure alongside supply chain disruptions from COVID-19 lockdowns and freight container shortages.
-    [PG-F13] Management expects share repurchases during fiscal year 2023, financed by operating cash flows and debt issuance.
-    [PG-F14] The company continues implementing cost improvement plans including supply chain optimization and workforce optimization while managing inflationary impacts through pricing actions and productivity improvements.
-    [PG-F15] Gillette indefinite-lived intangible asset remains susceptible to impairment with fair value cushion of approximately 5%, vulnerable to adverse business changes or currency devaluation.
-    [PG-F16] Commodity and input material cost inflation may continue impacting margins if not offset by pricing actions and cost savings projects.
-    [PG-F17] Currency exchange controls and import authorization restrictions in Argentina, Egypt, Nigeria and Pakistan create operational challenges alongside ongoing tax audits across multiple jurisdictions.
+  Filing Evidence (10-Q, filed 2023-05-03, fiscal period: 2023-Q1):
+    [CAT-F1] Total sales and revenues increased 17 percent to $15.862 billion driven by favorable price realization and higher sales volume, partially offset by unfavorable currency impacts from the euro, Japanese yen and Australian dollar.
+    [CAT-F2] Sales increased across all three primary segments with double-digit growth reflecting increased equipment sales to end users, partially offset by lower services volume.
+    [CAT-F3] Operating profit margin expanded to 17.2 percent from 13.7 percent in the prior year, with adjusted operating profit margin reaching 21.1 percent.
+    [CAT-F4] The improvement was driven by favorable price realization and higher sales volume, partially offset by higher manufacturing costs primarily reflecting increased material costs.
+    [CAT-F5] Operating expenses increased reflecting higher compensation costs and strategic investments.
+    [CAT-F6] The company completed the divestiture of its Longwall business on February 1, 2023, resulting in a $586 million pre-tax loss primarily from accumulated foreign currency translation release.
+    [CAT-F7] Share repurchases totaled $400 million during the quarter with $12.40 billion remaining under the 2022 authorization.
+    [CAT-F8] Board composition changed with Edward Rust's decision not to seek re-election and the appointment of two new directors effective March 1, 2023.
+    [CAT-F9] The company continues monitoring supply chain disruptions, inflationary cost pressures, and labor constraints with particular focus on component availability, transportation shortages, and raw materials.
+    [CAT-F10] Transportation shortages have resulted in delays and increased costs while suppliers face availability issues and freight delays that could impact production.
+    [CAT-F11] Economic conditions in key markets including China excavator demand and European construction activity remain uncertain despite recent resilience.
+    [CAT-F12] Management expects strong full-year 2023 top line performance supported by price realization and higher equipment sales to end users with no significant change in dealer inventory levels.
+    [CAT-F13] Operating profit is expected to increase in 2023 with continued favorable price realization, though moderation of both price realization and input cost inflation is anticipated throughout the year.
+    [CAT-F14] Second quarter 2023 sales and operating profit are expected to be substantially stronger than the prior year.
+    [CAT-F15] The company expects approximately $700 million in total restructuring costs for 2023, including the completed Longwall divestiture and strategic product actions.
+    [CAT-F16] Pension expense is expected to increase by just over $300 million for the full year due to higher interest costs from elevated interest rates.
+    [CAT-F17] Standard forward-looking risks encompass global economic conditions, supply chain disruptions, regulatory changes, commodity price volatility, and potential impacts from geopolitical events.
 
   Earnings Call Evidence:
-    [PG-EC1] Procter & Gamble reported a 7% organic sales growth for the quarter, driven by a 9% increase in pricing, while volume declined by 3%.
-    [PG-EC2] The company maintained its guidance for organic sales growth and core EPS growth despite facing high commodity costs, inflation, and geopolitical challenges.
-    [PG-EC3] Core earnings per share were $1.57, down 2% year-over-year, with a significant impact from rising costs and foreign exchange headwinds.
-    [PG-EC4] Management expects continued volatility in costs and consumer dynamics throughout the fiscal year but remains confident in their integrated strategies to manage these challenges.
-    [PG-EC5] They reaffirmed guidance for organic sales growth of 3% to 5% and core EPS growth of 4%, while planning to return $15 billion to $17 billion to shareholders through dividends and share repurchases.
-    [PG-EC6] The focus will remain on productivity improvements and maintaining investments in innovation.
-    [PG-EC7] Key risks include ongoing high commodity and transportation costs, foreign exchange fluctuations, and potential geopolitical disruptions.
-    [PG-EC8] The company anticipates a $3.9 billion after-tax headwind from these factors, which could significantly impact EPS growth.
-    [PG-EC9] Additionally, consumer behavior changes due to inflation and economic pressures may affect demand and volume in certain categories.
-    [PG-EC10] The primary drivers of growth include effective pricing strategies, a diverse product portfolio, and a focus on innovation and productivity.
-    [PG-EC11] The company is seeing broad-based growth across all product categories, with personal health care and feminine care leading the way.
-    [PG-EC12] Management emphasizes the importance of maintaining brand superiority and adapting to consumer needs in a challenging economic environment.
+    [CAT-EC1] Caterpillar reported a strong second quarter for 2023, with sales and revenues increasing by 22% to $17.3 billion, driven by higher sales volume and price realization.
+    [CAT-EC2] The adjusted operating profit margin improved to 21.3%, and the company generated $2.6 billion in ME&T free cash flow.
+    [CAT-EC3] The backlog at the end of the quarter stood at $30.7 billion, reflecting healthy demand across most end markets.
+    [CAT-EC4] Management expects full-year 2023 results to exceed previous forecasts, anticipating adjusted operating profit margins to be near the top of the targeted range and ME&T free cash flow to be around the top of the $4 billion to $8 billion range.
+    [CAT-EC5] They foresee continued growth in non-residential construction in North America and healthy mining demand, although they acknowledge potential challenges in Europe and China.
+    [CAT-EC6] Caterpillar faces risks related to global macroeconomic conditions, supply chain challenges, and potential fluctuations in dealer inventory levels.
+    [CAT-EC7] The company is monitoring these factors closely, particularly in relation to large engines and certain machines that are still experiencing supply constraints.
+    [CAT-EC8] Key drivers of Caterpillar's performance include strong demand in the Energy & Transportation segment, particularly for oil and gas applications, and robust sales in Resource Industries supported by high commodity prices.
+    [CAT-EC9] Additionally, improvements in dealer inventory levels and production capabilities have contributed positively to sales growth.
 
 ======================================================================
 TICKER: RTX
 ======================================================================
 
   Price & Returns:
-    [RTX-PX]       Close: $91.20
-    [RTX-RET20]    20D Return: -1.7%
-    [RTX-RET60]    60D Return: -2.9%
-    [RTX-RET120]   120D Return: +16.9%
-    [RTX-RET252]   1Y Return: -1.4%
+    [RTX-PX]       Close: $92.32
+    [RTX-RET20]    20D Return: +4.1%
+    [RTX-RET60]    60D Return: -0.9%
+    [RTX-RET120]   120D Return: -3.3%
+    [RTX-RET252]   1Y Return: +7.5%
 
   Volatility & Risk:
-    [RTX-VOL20]    20D Vol (ann): 20.9%
-    [RTX-VOL60]    60D Vol (ann): 20.2%
-    [RTX-DVOL60]   60D Downside Vol: 13.5%
-    [RTX-DD60]     60D Drawdown: -8.0%
-    [RTX-MDD1Y]    1Y Max Drawdown: -21.9%
-    [RTX-SHARPE]   60D Sharpe: -0.61
+    [RTX-VOL20]    20D Vol (ann): 19.8%
+    [RTX-VOL60]    60D Vol (ann): 18.7%
+    [RTX-DVOL60]   60D Downside Vol: 13.1%
+    [RTX-DD60]     60D Drawdown: -11.4%
+    [RTX-MDD1Y]    1Y Max Drawdown: -16.0%
+    [RTX-SHARPE]   60D Sharpe: -0.21
     [RTX-BETA]     1Y Beta: 0.68
 
   Trend & Momentum:
-    [RTX-SMA20]    SMA 20D: $91.09
-    [RTX-SMA50]    SMA 50D: $91.77
-    [RTX-SMA200]   SMA 200D: $87.43
-    [RTX-MOM200]   200D Momentum: 1.04
-    [RTX-MOM12_1]  12-1M Momentum: -0.7%
-    [RTX-IDMOM]    Idiosyncratic Momentum 60D: -0.0618
+    [RTX-SMA20]    SMA 20D: $92.04
+    [RTX-SMA50]    SMA 50D: $91.33
+    [RTX-SMA200]   SMA 200D: $89.58
+    [RTX-MOM200]   200D Momentum: 1.03
+    [RTX-MOM12_1]  12-1M Momentum: +1.1%
+    [RTX-IDMOM]    Idiosyncratic Momentum 60D: -0.0728
     [RTX-TREND]    Trend Consistency: 0.50
-    [RTX-RS60]     Relative Strength 60D: +1.0%
-    [RTX-ESURP]    Earnings Surprise: +1.6%
-    [RTX-ADVOL]    Avg Dollar Volume 20D: $456,016,427
+    [RTX-RS60]     Relative Strength 60D: -11.4%
+    [RTX-ESURP]    Earnings Surprise: +8.0%
+    [RTX-ADVOL]    Avg Dollar Volume 20D: $436,251,366
 
   Sentiment (from earnings call):
-    [RTX-SENT]     Mean Sentiment: -0.0596
-    [RTX-SVOL]     Sentiment Volatility: 0.5514
+    [RTX-SENT]     Mean Sentiment: 0.2387
+    [RTX-SVOL]     Sentiment Volatility: 0.6826
 
-  Filing Evidence (10-K, filed 2023-02-07, fiscal period: FY2022):
-    [RTX-F1] RTX generated $67.1 billion consolidated revenue in 2022, up 4% driven by commercial aerospace recovery with Collins and Pratt & Whitney achieving double-digit organic growth from increased aftermarket sales and aircraft utilization.
-    [RTX-F2] Defense segments experienced organic declines due to supply chain constraints and lower production volumes.
-    [RTX-F3] Operating cash flows remained stable at $6.8 billion despite higher tax payments from research expenditure capitalization requirements.
-    [RTX-F4] Consolidated operating profit increased to $5.4 billion with margins improving to 8.1% from 7.7%, driven by commercial aerospace aftermarket recovery and reduced acquisition accounting adjustments.
-    [RTX-F5] Commercial segments achieved significant margin expansion while defense segments experienced compression due to unfavorable program mix and supply chain impacts.
-    [RTX-F6] Capital expenditures increased primarily for Pratt & Whitney production facility investments.
-    [RTX-F7] RTX reversed $1.3 billion of Russian backlog in Q1 2022 due to global sanctions, recognizing $296 million in associated charges.
-    [RTX-F8] The company executed $2.8 billion in share repurchases and paid $3.1 billion in dividends.
-    [RTX-F9] Management announced organizational restructuring from four to three business segments consolidating defense operations into a single Raytheon segment for H2 2023 implementation.
-    [RTX-F10] Global supply chain disruptions continue causing material shortages, delivery delays, and price increases across raw materials and microelectronics, while labor market constraints persist for specialized engineering and security clearance personnel.
-    [RTX-F11] Geopolitical tensions escalated with Russian sanctions impacting operations and potential Chinese sanctions related to Taiwan military sales.
-    [RTX-F12] Climate-related physical risks including extreme weather events pose increased threats to facilities and supply chains.
-    [RTX-F13] Management expects continued commercial aerospace recovery driving growth through increased aftermarket demand and OEM production, though timing of full capacity restoration remains uncertain.
-    [RTX-F14] The company maintains $175 billion total backlog providing strong foundation.
-    [RTX-F15] Strategic focus remains on digital transformation initiatives, sustainable aviation technology investments, and structural cost reductions including facility optimization and advanced manufacturing capabilities.
-    [RTX-F16] RTX faces ongoing DOJ investigation into defense contract pricing matters with $147 million accrual established, while maintaining exposure to annual acquisition accounting adjustments from merger intangibles.
-    [RTX-F17] Two Collins reporting units have fair values exceeding book values by only 15-17% representing $9.5 billion combined goodwill exposure.
-    [RTX-F18] Long-term contract accounting involves significant estimation uncertainty around labor productivity and material costs, while pension obligations remain sensitive to discount rate assumptions.
+  Filing Evidence (10-Q, filed 2023-04-25, fiscal period: 2023-Q1):
+    [RTX-F1] Total revenue increased 9.5% to $17.2 billion driven by organic growth across all segments, with commercial aerospace recovery continuing as aftermarket sales expanded reflecting increased flight hours and fleet utilization.
+    [RTX-F2] Defense revenue grew modestly with higher F135 production and Advanced Technologies programs contributing to overall performance.
+    [RTX-F3] Gross margin improved to 20.7% from 20.1% as organic cost increases were offset by absence of prior-year Russia-related charges.
+    [RTX-F4] Operating margin expanded to 9.6% from 6.9% driven by commercial aerospace recovery and elimination of prior-year impairments.
+    [RTX-F5] Company-funded R&D decreased while customer-funded R&D increased.
+    [RTX-F6] Issued $3.0 billion in long-term debt to fund upcoming note maturities and general corporate purposes.
+    [RTX-F7] Board elected Leanne G.
+    [RTX-F8] Caret as independent director while reducing board size to thirteen directors.
+    [RTX-F9] Announced organizational restructuring to consolidate four segments into three beginning July 2023.
+    [RTX-F10] Repurchased $562 million of common stock and declared quarterly dividend of $0.59 per share.
+    [RTX-F11] China formalized sanctions against RMD including fines and sanctioned CEO Gregory Hayes.
+    [RTX-F12] Supply chain and labor constraints persist with materials shortages, delivery delays, and specialized personnel scarcity affecting production costs.
+    [RTX-F13] Russia-Ukraine conflict maintains broad economic sanctions with Russian counter-sanctions affecting management team.
+    [RTX-F14] Commercial aerospace recovery trajectory remains positive with long-term industry fundamentals intact despite uncertain timing for full capacity restoration.
+    [RTX-F15] Defense bookings support backlog growth to $180 billion total.
+    [RTX-F16] Management expects continued supply chain challenges with uncertain resolution timing and plans continued defense product sales to Taiwan despite potential future Chinese sanctions.
+    [RTX-F17] EAC adjustments turned negative $124 million versus positive $36 million prior year across multiple programs.
+    [RTX-F18] Impact of Chinese sanctions remains uncertain with potential for additional actions that could disrupt operations.
+    [RTX-F19] Contract liabilities include advance payments from Middle East customer where regulatory approvals are no longer expected.
 
   Earnings Call Evidence:
-    [RTX-EC1] Raytheon Technologies reported strong Q1 2023 results with sales of $17.2 billion, a 10% organic growth year-over-year, and an adjusted EPS of $1.22.
-    [RTX-EC2] The company exited the quarter with a record backlog of $180 billion, driven by robust demand in both commercial aerospace and defense sectors.
-    [RTX-EC3] Free cash flow was an outflow of $1.4 billion, attributed to higher working capital and seasonal factors, but the company remains confident in achieving $4.8 billion in free cash flow for the full year.
-    [RTX-EC4] Management is optimistic about the demand environment, expecting total global air traffic to recover to pre-pandemic levels by year-end.
-    [RTX-EC5] They anticipate continued growth in both commercial aerospace and defense, supported by a favorable fiscal year 2024 budget request from the President.
-    [RTX-EC6] The company is focused on operational performance and supply chain stabilization, with plans to enhance capacity and efficiency across its business units.
-    [RTX-EC7] Key risks include ongoing supply chain challenges, particularly in castings and raw materials, which could impact production and delivery timelines.
-    [RTX-EC8] Additionally, inflationary pressures remain a concern, affecting costs across the supply chain.
-    [RTX-EC9] The company is also monitoring the impact of geopolitical factors on defense spending and international demand.
-    [RTX-EC10] The primary drivers of growth include strong demand in commercial aerospace, particularly in aftermarket services, and significant defense contracts, including recent awards for the Patriot missile system.
-    [RTX-EC11] The company is also benefiting from a strategic realignment of its business units to enhance collaboration and operational efficiency, which is expected to unlock further synergies.
+    [RTX-EC1] RTX reported a strong Q2 2023 with $25 billion in new orders, bringing the total backlog to a record $185 billion.
+    [RTX-EC2] Sales reached $18.3 billion, reflecting a 13% organic growth year-over-year, driven by robust demand in both commercial aerospace and defense sectors.
+    [RTX-EC3] Adjusted earnings per share were $1.29, up 11% from the previous year, while free cash flow was $193 million.
+    [RTX-EC4] For the full year, RTX raised its sales outlook to between $73 billion and $74 billion, with adjusted EPS expected to be between $4.95 and $5.05.
+    [RTX-EC5] However, cash flow expectations were reduced by $500 million to $4.3 billion due to issues at Pratt & Whitney related to engine inspections.
+    [RTX-EC6] Management remains confident in the strength of their end markets and operational capabilities.
+    [RTX-EC7] A significant risk identified is the need for accelerated inspections of Pratt & Whitney engines due to a rare condition in powdered metal, which may impact operational capacity and customer service.
+    [RTX-EC8] This situation could lead to increased costs and potential disruptions in cash flow, particularly as the company ramps up inspection activities over the next year.
+    [RTX-EC9] Key drivers of RTX's performance include strong demand in commercial aerospace, evidenced by record aircraft orders, and robust defense spending supported by government appropriations.
+    [RTX-EC10] The company also noted a positive trend in aftermarket sales and operational efficiencies, particularly in the Collins and Raytheon segments, which are expected to contribute to continued growth.
 
 ======================================================================
-TICKER: SLB
+TICKER: WMT
 ======================================================================
 
   Price & Returns:
-    [SLB-PX]       Close: $45.16
-    [SLB-RET20]    20D Return: -11.9%
-    [SLB-RET60]    60D Return: -4.9%
-    [SLB-RET120]   120D Return: +15.7%
-    [SLB-RET252]   1Y Return: +16.2%
+    [WMT-PX]       Close: $50.91
+    [WMT-RET20]    20D Return: +6.6%
+    [WMT-RET60]    60D Return: +7.2%
+    [WMT-RET120]   120D Return: +7.9%
+    [WMT-RET252]   1Y Return: +31.0%
 
   Volatility & Risk:
-    [SLB-VOL20]    20D Vol (ann): 52.4%
-    [SLB-VOL60]    60D Vol (ann): 40.9%
-    [SLB-DVOL60]   60D Downside Vol: 30.1%
-    [SLB-DD60]     60D Drawdown: -23.4%
-    [SLB-MDD1Y]    1Y Max Drawdown: -36.8%
-    [SLB-SHARPE]   60D Sharpe: -0.52
-    [SLB-BETA]     1Y Beta: 0.86
+    [WMT-VOL20]    20D Vol (ann): 12.6%
+    [WMT-VOL60]    60D Vol (ann): 11.3%
+    [WMT-DVOL60]   60D Downside Vol: 6.1%
+    [WMT-DD60]     60D Drawdown: -4.6%
+    [WMT-MDD1Y]    1Y Max Drawdown: -10.4%
+    [WMT-SHARPE]   60D Sharpe: 2.58
+    [WMT-BETA]     1Y Beta: 0.55
 
   Trend & Momentum:
-    [SLB-SMA20]    SMA 20D: $45.41
-    [SLB-SMA50]    SMA 50D: $48.73
-    [SLB-SMA200]   SMA 200D: $42.12
-    [SLB-MOM200]   200D Momentum: 1.07
-    [SLB-MOM12_1]  12-1M Momentum: +30.9%
-    [SLB-IDMOM]    Idiosyncratic Momentum 60D: -0.0968
-    [SLB-TREND]    Trend Consistency: 0.57
-    [SLB-RS60]     Relative Strength 60D: -1.0%
-    [SLB-ESURP]    Earnings Surprise: +4.4%
-    [SLB-ADVOL]    Avg Dollar Volume 20D: $489,994,841
+    [WMT-SMA20]    SMA 20D: $49.87
+    [WMT-SMA50]    SMA 50D: $49.13
+    [WMT-SMA200]   SMA 200D: $46.52
+    [WMT-MOM200]   200D Momentum: 1.09
+    [WMT-MOM12_1]  12-1M Momentum: +22.4%
+    [WMT-IDMOM]    Idiosyncratic Momentum 60D: 0.0393
+    [WMT-TREND]    Trend Consistency: 0.55
+    [WMT-RS60]     Relative Strength 60D: -3.3%
+    [WMT-ESURP]    Earnings Surprise: +11.4%
+    [WMT-ADVOL]    Avg Dollar Volume 20D: $923,115,963
 
-  Sentiment: not available
+  Sentiment (from earnings call):
+    [WMT-SENT]     Mean Sentiment: 0.0646
+    [WMT-SVOL]     Sentiment Volatility: 0.5420
 
-  Filing Evidence (10-K, filed 2023-01-25, fiscal period: FY2022):
-    [SLB-F1] Full-year 2022 revenue of $28.1 billion increased 23% year-on-year with double-digit growth across all divisions and geographies.
-    [SLB-F2] International revenue grew broadly with strong performance in Latin America and Europe/CIS/Africa, while North America increased significantly driven by robust onshore drilling activity.
-    [SLB-F3] Fourth quarter revenue increased 5% sequentially with strong digital sales and Middle East activity inflection as capacity expansion projects mobilized.
-    [SLB-F4] Full-year pretax operating margin of 18% expanded 316 basis points driven by improved operating leverage from higher activity, favorable mix, and improving pricing.
-    [SLB-F5] Fourth-quarter pretax segment operating margin of 19.8% reached highest level since 2015.
-    [SLB-F6] Working capital consumed $1.7 billion primarily from receivables and inventories increasing to support activity growth.
-    [SLB-F7] Pension obligations reflect higher discount rates reducing liability valuations but increasing future expense sensitivity.
-    [SLB-F8] SLB suspended new investment and technology deployment to Russia operations in March 2022, with Russia representing approximately 6% of worldwide revenue.
-    [SLB-F9] Company sold Liberty shares for $732 million proceeds recognizing $325 million gain.
-    [SLB-F10] SLB increased quarterly dividend 40% to $0.175 per share in April 2022, followed by further 43% increase to $0.25 per share in January 2023.
-    [SLB-F11] Company repurchased senior notes reducing net debt by $1.7 billion to $9.3 billion.
-    [SLB-F12] Company faces heightened geopolitical risks from Ukraine conflict and related sanctions affecting operations and supply chains.
-    [SLB-F13] Energy transition acceleration could reduce demand for traditional services if transition occurs faster than anticipated.
-    [SLB-F14] Climate change regulations may impose taxes, require emissions reductions, or accelerate product obsolescence.
-    [SLB-F15] Company operates in over 100 tax jurisdictions with evolving regulations creating ongoing audit exposure.
-    [SLB-F16] Management expects strong growth and margin expansion in 2023 based on broad-based international activity acceleration, higher service pricing, and tighter service sector capacity.
-    [SLB-F17] Global upstream spending projections continue trending positively with activity growth expected across international basins.
-    [SLB-F18] Capital investments projected at $2.5 to $2.6 billion in 2023 to support continued revenue growth.
-    [SLB-F19] Company resumed share buyback program under existing authorization following debt optimization.
-    [SLB-F20] SLB maintains peso-denominated net assets in Argentina subject to currency controls and parallel exchange rate risk approximately 93% higher than official rate.
-    [SLB-F21] Company faces potential transaction losses if official rate converges with parallel rate.
-    [SLB-F22] Sustainability goals and net-zero targets expose company to operational, reputational, and legal risks if targets are not achieved within announced timelines.
-    [SLB-F23] Goodwill and asset valuations depend on cash flow projections subject to commodity price changes.
+  Filing Evidence (10-Q, filed 2023-06-02, fiscal period: 2023-Q2 [FYE: Jan 31]):
+    [WMT-F1] Walmart maintained consistent segment contribution rates to consolidated net sales and operating income during Q2 2023, with each segment performing within historical patterns.
+    [WMT-F2] The company continued executing its omni-channel retail strategy across all markets, integrating eCommerce sales including digitally-initiated transactions fulfilled through stores and clubs.
+    [WMT-F3] Comparable store and club sales methodology includes all locations open for 12 months plus eCommerce impact from digital initiatives and omni-channel fulfillment.
+    [WMT-F4] Walmart experienced continued merchandise cost inflation impacting gross profit margins, responding through mixed pricing strategies including selective cost absorption, targeted price reductions in certain categories, and strategic pass-through of increases when necessary.
+    [WMT-F5] The company implemented merchandising strategies focused on supplier cost collaboration, private label emphasis, adjusted purchasing timing and volumes, and secured ocean carrier capacity to manage supply chain costs.
+    [WMT-F6] Walmart completed a $5.0 billion debt issuance in April 2023 across five note series with maturities from 2026 to 2053, generating net proceeds of approximately $4.97 billion after underwriting discounts.
+    [WMT-F7] The company held its annual shareholder meeting in May 2023, with shareholders approving all director elections and rejecting nine shareholder proposals on various governance and social issues.
+    [WMT-F8] The company faces exposure to currency exchange rate volatility affecting Walmart International segment results, with translation impacts calculated against comparable prior year rates.
+    [WMT-F9] Walmart operates within competitive pressures from discount, department, specialty stores and eCommerce businesses while managing risks from inflation, supply chain disruptions, labor availability and costs, and potential tariff impositions.
+    [WMT-F10] Management issued forward-looking statements in connection with April 2023 investment community meetings, though specific guidance details were not disclosed in available filings.
+    [WMT-F11] The company continues focusing on everyday low prices supported by everyday low costs strategy while navigating inflationary pressures through adaptive pricing and merchandising approaches.
+    [WMT-F12] No material changes occurred in previously disclosed risk factors during the quarter, with existing risk profile maintained from prior annual report disclosures.
+    [WMT-F13] The company remains subject to standard retail industry uncertainties including competitive pressures, consumer spending patterns, supply chain management, and macroeconomic conditions affecting operations across all segments.
 
-  Earnings call: not available
+  Earnings Call Evidence:
+    [WMT-EC1] Walmart's Q2 fiscal 2023 results exceeded expectations, driven by strong sales in food and consumables, with total constant currency revenue up over 9%.
+    [WMT-EC2] The company faced challenges from inflation, excess inventory, and markdowns, particularly in apparel, which pressured margins.
+    [WMT-EC3] Despite these challenges, Walmart is seeing increased customer traffic, particularly from middle and higher-income shoppers seeking value, and is making progress in reducing inventory levels.
+    [WMT-EC4] Looking ahead, Walmart expects a strong finish to the back-to-school season and is preparing for the holiday season with a cleaner inventory position.
+    [WMT-EC5] The company anticipates continued inflationary pressures influencing consumer behavior and is adjusting pricing strategies accordingly.
+    [WMT-EC6] For Q3, Walmart projects net sales growth of about 5% and comp sales growth of approximately 3% for Walmart U.S.
+    [WMT-EC7] Walmart acknowledges significant risks related to ongoing inflation, which could impact consumer spending and purchasing behavior.
+    [WMT-EC8] The company is also facing challenges from excess inventory and markdown pressures, particularly in general merchandise categories.
+    [WMT-EC9] Additionally, macroeconomic uncertainties may affect overall profitability and operational performance in the coming quarters.
+    [WMT-EC10] Key drivers of Walmart's performance include strong growth in food and consumables, increased customer traffic, and the expansion of e-commerce and digital services.
+    [WMT-EC11] The company is also focusing on improving operational efficiencies, reducing costs, and enhancing its advertising and marketplace offerings.
+    [WMT-EC12] The introduction of new benefits for Walmart+ members, such as a Paramount+ subscription, is expected to further attract and retain customers.
+
+======================================================================
+TICKER: PG
+======================================================================
+
+  Price & Returns:
+    [PG-PX]       Close: $141.44
+    [PG-RET20]    20D Return: +5.4%
+    [PG-RET60]    60D Return: +1.6%
+    [PG-RET120]   120D Return: -0.2%
+    [PG-RET252]   1Y Return: +9.5%
+
+  Volatility & Risk:
+    [PG-VOL20]    20D Vol (ann): 13.8%
+    [PG-VOL60]    60D Vol (ann): 14.8%
+    [PG-DVOL60]   60D Downside Vol: 9.3%
+    [PG-DD60]     60D Drawdown: -9.0%
+    [PG-MDD1Y]    1Y Max Drawdown: -17.4%
+    [PG-SHARPE]   60D Sharpe: 0.46
+    [PG-BETA]     1Y Beta: 0.46
+
+  Trend & Momentum:
+    [PG-SMA20]    SMA 20D: $137.74
+    [PG-SMA50]    SMA 50D: $140.42
+    [PG-SMA200]   SMA 200D: $133.10
+    [PG-MOM200]   200D Momentum: 1.06
+    [PG-MOM12_1]  12-1M Momentum: +2.9%
+    [PG-IDMOM]    Idiosyncratic Momentum 60D: -0.0156
+    [PG-TREND]    Trend Consistency: 0.55
+    [PG-RS60]     Relative Strength 60D: -8.8%
+    [PG-ESURP]    Earnings Surprise: +3.8%
+    [PG-ADVOL]    Avg Dollar Volume 20D: $876,408,279
+
+  Sentiment (from earnings call):
+    [PG-SENT]     Mean Sentiment: 0.1564
+    [PG-SVOL]     Sentiment Volatility: 0.5546
+
+  Filing Evidence (10-Q, filed 2023-04-21, fiscal period: 2023-Q1 [FYE: Jun 30]):
+    [PG-F1] Net sales increased 1% to $20.1 billion driven by organic growth of 7% from 10% pricing increases and favorable mix, offset by 6% foreign exchange headwinds and 3% volume decline.
+    [PG-F2] Health Care and Fabric & Home Care delivered mid-single digit organic growth while Beauty remained flat and Grooming showed low single digit increases.
+    [PG-F3] Volume declined broadly across international markets with North America unchanged.
+    [PG-F4] Gross margin expanded 150 basis points to 48.2% as 470 basis points from pricing and 210 basis points from manufacturing productivity offset 270 basis points of commodity cost increases and 140 basis points from unfavorable mix.
+    [PG-F5] Cost increases concentrated in oil-derived materials and paper-based inputs.
+    [PG-F6] SG&A rose 100 basis points to 27.0% from overhead inflation and foreign exchange charges, partially offset by productivity savings.
+    [PG-F7] The company reduced Russian operations beginning March 2022, discontinuing capital investments and media activity, with Russian operations representing less than 2% of sales.
+    [PG-F8] Board declared quarterly dividend of $0.9133 per share payable February 2023.
+    [PG-F9] Completed debt issuance and $7.4 billion treasury stock purchases during nine-month period.
+    [PG-F10] Russia-Ukraine war creates uncertainty around duration and escalation with potential asset impairments and supply chain disruptions affecting Ukrainian facilities.
+    [PG-F11] Significant commodity price volatility in oil-derived resins and paper-based materials directly impacts cost structure.
+    [PG-F12] Foreign exchange headwinds from currency devaluation across Argentina, Brazil, UK, Japan, Russia and Turkey reduced sales by 6 percentage points.
+    [PG-F13] Management expects fiscal 2023 share repurchases of $7.4 to $8 billion financed through operating cash flows and debt issuance.
+    [PG-F14] Strategic focus remains on productivity improvements and cost savings initiatives while implementing pricing actions to offset inflationary impacts.
+    [PG-F15] Capital allocation strategy emphasizes share repurchases and dividend payments supported by strong cash generation capabilities.
+    [PG-F16] Gillette indefinite-lived intangible asset valued at $14.1 billion maintains 5% fair value cushion with sensitivity to discount rate or growth rate changes.
+    [PG-F17] War duration and evolution remain unpredictable with potential physical damage to Ukrainian facilities and operational restrictions in Russia.
+    [PG-F18] Ongoing tax audits across multiple jurisdictions with potential settlements over next twelve months.
+
+  Earnings Call Evidence:
+    [PG-EC1] Procter & Gamble reported a 5% organic sales growth for the quarter, driven by a 10% increase in pricing, while volume declined by 6%.
+    [PG-EC2] The company maintained its market share and saw growth across nine of its ten product categories, with notable performance in Personal Health Care and Fabric Care.
+    [PG-EC3] Core earnings per share were $1.59, down 4% year-over-year, primarily due to gross margin pressure from commodities and foreign exchange.
+    [PG-EC4] P&G raised its organic sales growth guidance from 3-5% to 4-5% for the fiscal year, while maintaining its core EPS growth outlook.
+    [PG-EC5] The company anticipates continued volatility in costs and consumer dynamics but believes its integrated strategies will help navigate these challenges.
+    [PG-EC6] Management remains committed to investing in brand superiority and productivity improvements to drive long-term growth.
+    [PG-EC7] The company faces significant headwinds from input costs, foreign exchange fluctuations, and geopolitical issues, particularly in Europe and China.
+    [PG-EC8] High inflation rates and consumer confidence challenges may impact spending behavior.
+    [PG-EC9] Additionally, ongoing supply chain disruptions and the potential for further COVID-related impacts in China pose risks to future performance.
+    [PG-EC10] Key drivers of growth include successful pricing strategies, strong brand innovation, and effective marketing execution.
+    [PG-EC11] The company is focusing on enhancing supply chain efficiency and expanding capacity to meet demand.
+    [PG-EC12] P&G's commitment to maintaining market share and driving household penetration through product superiority and targeted investments is expected to support future sales growth.
+
+======================================================================
+TICKER: AMZN
+======================================================================
+
+  Price & Returns:
+    [AMZN-PX]       Close: $130.36
+    [AMZN-RET20]    20D Return: +6.2%
+    [AMZN-RET60]    60D Return: +25.4%
+    [AMZN-RET120]   120D Return: +51.4%
+    [AMZN-RET252]   1Y Return: +19.7%
+
+  Volatility & Risk:
+    [AMZN-VOL20]    20D Vol (ann): 28.8%
+    [AMZN-VOL60]    60D Vol (ann): 32.1%
+    [AMZN-DVOL60]   60D Downside Vol: 19.9%
+    [AMZN-DD60]     60D Drawdown: -7.1%
+    [AMZN-MDD1Y]    1Y Max Drawdown: -43.5%
+    [AMZN-SHARPE]   60D Sharpe: 2.96
+    [AMZN-BETA]     1Y Beta: 1.57
+
+  Trend & Momentum:
+    [AMZN-SMA20]    SMA 20D: $126.56
+    [AMZN-SMA50]    SMA 50D: $117.13
+    [AMZN-SMA200]   SMA 200D: $104.22
+    [AMZN-MOM200]   200D Momentum: 1.25
+    [AMZN-MOM12_1]  12-1M Momentum: +10.7%
+    [AMZN-IDMOM]    Idiosyncratic Momentum 60D: 0.1207
+    [AMZN-TREND]    Trend Consistency: 0.60
+    [AMZN-RS60]     Relative Strength 60D: +14.9%
+    [AMZN-ESURP]    Earnings Surprise: +47.6%
+    [AMZN-ADVOL]    Avg Dollar Volume 20D: $7,514,995,622
+
+  Sentiment (from earnings call):
+    [AMZN-SENT]     Mean Sentiment: 0.2846
+    [AMZN-SVOL]     Sentiment Volatility: 0.5672
+
+  Filing Evidence (10-Q, filed 2023-04-28, fiscal period: 2023-Q1):
+    [AMZN-F1] Total net sales increased 9.4% to $127.4 billion driven by AWS growth and third-party seller services expansion.
+    [AMZN-F2] North America segment achieved 11.0% revenue growth with operating income of $898 million versus prior year loss of $1.6 billion, while International segment revenue remained flat with narrowing operating losses despite foreign exchange headwinds.
+    [AMZN-F3] Operating income rose 30% to $4.8 billion as revenue growth outpaced expense increases.
+    [AMZN-F4] Operating expenses increased 8.7% with technology and content costs rising from increased payroll for technical teams and infrastructure investments.
+    [AMZN-F5] Stock-based compensation expense increased 46.1% across all segments while fulfillment costs rose modestly.
+    [AMZN-F6] Cost of sales decreased as percentage of revenue to 53.2% from 57.1% due to fulfillment network efficiencies offsetting increased product and shipping costs.
+    [AMZN-F7] Cost pressures persist from transportation fuel, energy products, commodities, and constrained labor markets driving higher payroll costs.
+    [AMZN-F8] Completed One Medical acquisition for $3.5 billion in February 2023, adding goodwill and intangible assets.
+    [AMZN-F9] Recorded approximately $470 million in severance costs related to planned role eliminations across segments.
+    [AMZN-F10] Established $8.0 billion unsecured term loan facility in January 2023 with 364-day maturity for general corporate purposes.
+    [AMZN-F11] Operating cash flow turned positive at $4.8 billion versus negative $2.8 billion in prior year quarter.
+    [AMZN-F12] Foreign currency translation provided $386 million positive impact versus negative impact in prior year, with foreign-denominated cash and securities subject to potential losses under adverse currency movements.
+    [AMZN-F13] Enterprise customer cost optimization efforts expected to impact AWS revenue growth rates through Q2 2023 amid macroeconomic factors including inflation, rising interest rates, and recessionary fears.
+    [AMZN-F14] Q2 2023 guidance expects net sales between $127.0-133.0 billion with 5-10% growth and operating income of $2.0-5.5 billion, assuming unfavorable foreign exchange impact.
+    [AMZN-F15] AWS performance obligations for contracts exceeding one year totaled $122.0 billion with 3.9-year weighted-average remaining life indicating strong future revenue visibility.
+    [AMZN-F16] Management expects cash capital expenditures to decrease in 2023 primarily due to lower fulfillment network spending.
+    [AMZN-F17] Multiple ongoing legal proceedings including potential damages in patent cases and antitrust litigation.
+    [AMZN-F18] Tax contingencies increased to $4.2 billion with ongoing disputes across multiple jurisdictions including Luxembourg, India, and European Commission state aid matters.
+    [AMZN-F19] Regulatory investigations continue across competition, data privacy, and marketplace operations in multiple jurisdictions with potential for substantial fines or operational restrictions.
+
+  Earnings Call Evidence:
+    [AMZN-EC1] In Q2 2023, Amazon reported revenue of $134.4 billion and operating income of $7.7 billion, both exceeding guidance.
+    [AMZN-EC2] The company is focused on lowering costs in its fulfillment network through regionalization, which has improved delivery efficiency and reduced transportation costs.
+    [AMZN-EC3] AWS revenue grew 12% year-over-year, stabilizing as customers shift from cost optimization to innovation and new workloads.
+    [AMZN-EC4] Management remains optimistic about future growth, particularly in AWS, where they anticipate continued demand for new workloads and generative AI solutions.
+    [AMZN-EC5] They are committed to enhancing customer experiences across all business segments, including grocery and Amazon Business, with a focus on expanding selection and improving delivery speeds.
+    [AMZN-EC6] The company aims to achieve pre-COVID margin levels in North America retail while investing in new initiatives.
+    [AMZN-EC7] Potential risks include fluctuations in foreign exchange rates, changes in global economic conditions, and customer demand influenced by recessionary fears and inflation.
+    [AMZN-EC8] The unpredictability of fulfillment costs and the need for ongoing optimization in the fulfillment network also pose challenges.
+    [AMZN-EC9] Additionally, the company must navigate the competitive landscape in cloud services and grocery markets.
+    [AMZN-EC10] Key drivers of Amazon's performance include improvements in delivery speed and fulfillment efficiency, particularly through regionalization and same-day delivery facilities.
+    [AMZN-EC11] The growth of AWS is supported by a diverse customer base and ongoing innovation in machine learning and generative AI.
+    [AMZN-EC12] The company's focus on enhancing customer experiences and expanding product selection, especially in everyday essentials, is also crucial for driving sales.
 
 ======================================================================
 END OF MEMO
@@ -1053,102 +1395,88 @@ END OF MEMO
 
 ## Your Initial Allocation
 ## Previous Portfolio Allocation
-AMD: 0.0
+AAPL: 0.0
 AMZN: 0.0
-BAC: 0.1
-CAT: 0.12
-CVX: 0.18
-PG: 0.25
-RTX: 0.08
-SLB: 0.12
-_CASH_: 0.15
+CAT: 0.19
+CVX: 0.13
+GS: 0.13
+JPM: 0.23
+MSFT: 0.0
+NVDA: 0.0
+PG: 0.0
+RTX: 0.13
+WMT: 0.0
+XOM: 0.19
 
 ## Previous Thesis
-The portfolio prioritizes valuation-driven exposures to firms with demonstrable near-term earnings/cash-flow durability and credible paths to mean reversion while explicitly limiting concentration in commodity/cyclical risk. C2 still supports energy exposure (CVX, SLB) based on cash generation and buybacks but sizing is reduced to reflect commodity risk and realized downside volatility. C4 captures industrial/aerospace upside (CAT, RTX) but reduces CAT size to account for backlog-conversion uncertainty. C3 increases defensive allocation to PG where pricing/productivity underpins cash stability. C5 retains a modest bank exposure (BAC) to capture NII-driven mean reversion. A larger cash allocation (_CASH_ 15%) is maintained to manage macro uncertainty from high policy rates and an inverted curve and to preserve optionality if valuation divergences widen [L1-FF] [L1-CURVE] [CVX-EC1] [SLB-F16] [PG-EC1].
+This portfolio expresses a valuation‑driven view: (1) energy positions (XOM, CVX) capture buyback/dividend‑supported intrinsic value where cash returns and project execution create a margin of safety [XOM-F7][CVX-F8]; (2) banks (JPM, GS) capitalize on elevated policy rates and explicit NII guidance, implying earnings reversion if credit remains benign [L1-FF][JPM-EC4]; (3) industrials (CAT, RTX) and defensive consumer names (PG, WMT) combine backlog/margin recovery and staple pricing power to deliver earnings durability and downside protection [CAT-EC1][RTX-EC1][PG-F4][WMT-EC1]. We reduced concentration relative to the original proposal to address legitimate commodity and cyclical concentration risk while preserving conviction in company fundamentals that imply reversion toward intrinsic value.
 
 ## Previous Position Rationale
-BAC (0.1): Bank of America's improving NII and EPS alongside CET1 strength argue valuation is depressed relative to earnings power, justifying a modest overweight to capture mean reversion while sizing for credit/capital risk [BAC-EC1] [BAC-EC2] [BAC-RET252].
-  Supported by claims: C5
-
-CAT (0.12): Caterpillar's elevated backlog and surprising margin improvement support mean reversion, but supply-chain and backlog-conversion risk require a reduced, disciplined allocation relative to an earlier proposal [CAT-F2] [CAT-EC2] [CAT-F12].
-  Supported by claims: C4
-
-CVX (0.18): Chevron's strong cash generation, consistent buyback plan and resilient Q1 results imply undervalued cash-return capacity, supporting a meaningful but size-controlled position given commodity sensitivity [CVX-EC1] [CVX-EC5] [CVX-F1].
-  Supported by claims: C2
-
-PG (0.25): Procter & Gamble's durable earnings power via pricing and productivity mitigates input-cost pressure and supports cash returns; larger defensive weighting reduces portfolio cyclicality and aligns with value discipline favoring nearer-term cash flows [PG-EC1] [PG-F4] [PG-F9].
-  Supported by claims: C3, C1
-
-RTX (0.08): RTX's record backlog and commercial aerospace recovery provide valuation support; smaller allocation acts as lower-correlation industrial/aerospace ballast to reduce concentration in bulk cyclicals [RTX-F14] [RTX-EC1].
-  Supported by claims: C4
-
-SLB (0.12): SLB's margin expansion and 2023 activity guidance suggest upside to free cash flow, but elevated realized and downside volatility justify a controlled weight rather than prior concentrated sizing [SLB-F4] [SLB-F16] [SLB-VOL60].
-  Supported by claims: C2
-
-_CASH_ (0.15): Higher policy rates, curve inversion and concentration risks in cyclical/commodity-exposed names justify a larger cash buffer to preserve optionality and reduce forced selling risk while retaining upside capture on valuation reversion [L1-FF] [L1-CURVE] [SLB-VOL60].
-  Supported by claims: C1, C2
-
-AMD (0.0): AMD is excluded given valuation-duration sensitivity under current rate/curve dynamics and company-specific execution and geopolitical dependencies highlighted in filings; inclusion would require clearer near-term cash-flow improvements or a policy-rate reversal [L1-FF] [L1-CURVE] [AMD-F6] [AMD-F10].
+XOM (0.15): Exxon shows materially improved earnings and continues meaningful repurchases and shareholder distributions, supporting a valuation premium to current price if commodity realizations remain reasonable; buybacks and project execution underpin expected EPS/cash‑flow reversion to intrinsic value [XOM-F7][XOM-EC1].
   Supported by claims: C1
 
-AMZN (0.0): Amazon remains excluded because its valuation depends on sustained higher-margin services growth and longer-duration optionality that is disadvantaged under elevated discount rates absent clearer margin/cash-flow re-rating evidence [L1-FF] [L1-CURVE] [AMZN-F2].
+CVX (0.1): Chevron's authorized $75bn repurchase program and management guidance for FCF inflection imply near-term cash returns and earnings support that the market may underweight, creating a valuation opportunity [CVX-F8][CVX-EC5].
   Supported by claims: C1
+
+JPM (0.18): JPM projects materially higher NII for 2023 and benefits directly from higher short‑term yields; if credit remains benign, earnings reversion should support upside beyond current pricing [JPM-EC4][L1-FF].
+  Supported by claims: C2
+
+GS (0.1): Goldman's buyback program and strategic shifts (Platform Solutions, AWM) provide optionality for EPS upside when capital markets activity recovers; current softness in revenues offers a potential re-rating path if margins and fee mixes improve [GS-F8][GS-EC1].
+  Supported by claims: C2
+
+CAT (0.15): Caterpillar's strong Q2 sales, margin expansion and large backlog suggest durable earnings upside that the market may not fully price—backlog conversion and ME&T FCF support valuation reversion [CAT-EC1][CAT-F3].
+  Supported by claims: C3
+
+RTX (0.1): RTX's record backlog and raised guidance point to earnings acceleration; defense backlog provides downside protection and potential upside on backlog conversion, despite inspection‑related near-term cash hits [RTX-EC1][RTX-EC4][RTX-EC5].
+  Supported by claims: C3
+
+PG (0.12): P&G expanded gross margins through pricing and productivity, indicating sustainable earnings power and cash generation that can anchor the portfolio and provide downside protection versus cyclicals [PG-F4][PG-F1].
+  Supported by claims: C3
+
+WMT (0.1): Walmart's resilient food/consumables performance, omni‑channel execution and inventory management support stable earnings through cycles and provide a defensive complement to more cyclical value positions [WMT-EC1][WMT-F2].
+  Supported by claims: C3
+
+AAPL (0.0): Excluded from this value portfolio because it sits in the technology sector—outside the VALUE agent's allowed sectors—and would require growth/technology valuation frameworks rather than the fundamental mean‑reversion lens applied here.
+
+MSFT (0.0): MSFT is a technology growth name and outside the allowed sectors for this value‑oriented portfolio.
+
+NVDA (0.0): NVDA is excluded due to being a tech/momentum leader; while highly valued by the market, it does not fit the valuation mean‑reversion trade expressed in this portfolio.
+
+AMZN (0.0): AMZN is in the technology/consumer tech bucket and not included in this VALUE agent portfolio which focuses on consumer staples, energy, financials and industrials.
 
 ## Previous Claims
-C1: Higher policy rates and an inverted yield curve increase discount rates and raise required returns for long-duration cash flows; therefore valuation discipline favors nearer-term cash-generative businesses and requires cautious sizing of duration-sensitive growth exposure [L1-FF] [L1-CURVE]. Growth names (AMD, AMZN) require either demonstrable near-term cash-flow improvement or evidence of a sustained easing in policy/steepening of the curve to justify meaningful allocation.
-  Pearl Level: L1
-  Claim Type: macro
-  Evidence: [L1-FF], [L1-CURVE]
-  Variables: risk_free_rate, term_spread, valuation_multiples, duration_exposure
-  Assumptions: Policy rates and curve inversion materially affect discount rates applied to long-duration earnings [L1-FF] [L1-CURVE]., Current market pricing does not already fully reflect the increased discount-rate impact on growth multiples.
-  Falsifiers: Sustained and material decline in Fed Funds or steepening of the curve that lowers discount-rate pressure (e.g., [L1-FF] falls significantly or [L1-CURVE] steepens)., Evidence that AMD/AMZN cash flows materially and durably shift to nearer-term generation sufficient to justify current multiples.
-  Confidence: 0.7
-
-C2: Energy producer (CVX) and oilfield-services (SLB) fundamentals show strong free-cash-generation and capital-return capacity that the market may underprice, but commodity and geopolitical sensitivity plus high downside volatility warrant size discipline and a diversified energy exposure rather than concentration [CVX-EC1] [CVX-EC5] [SLB-F4] [SLB-F16] [CVX-F1] [SLB-F1] [SLB-VOL60] [SLB-DVOL60].
-  Pearl Level: L2
+C1: Energy firms Exxon Mobil and Chevron currently trade at prices that underweight recurring cash returns and near-term project-driven production gains; documented buybacks/dividends and recent upstream/production execution create a valuation margin of safety if commodity realizations remain around recent multi‑year levels.
+  Reasoning Type: causal
   Claim Type: sector
-  Evidence: [CVX-EC1], [CVX-EC5], [SLB-F4], [SLB-F16], [CVX-F1], [SLB-F1], [SLB-VOL60], [SLB-DVOL60]
-  Variables: CVX_cash_flow, SLB_margin, WTI_price, share_repurchases
-  Assumptions: Commodity prices and upstream activity remain adequate to support current cash returns and margins (supporting [CVX-EC1], [CVX-EC5], [SLB-F16])., Energy names are cyclical and can experience episodic volatility and downside risk, so position sizing should reflect that risk ([SLB-VOL60], [SLB-DVOL60]).
-  Falsifiers: A sustained collapse in oil prices or demand materially reducing CVX operating cash flow (contradicting [CVX-F1]) or SLB activity falling short of guidance (contradicting [SLB-F16])., Evidence that CVX/SLB cash returns (buybacks/dividends) are discontinued or materially reduced due to impaired cash flow.
-  Confidence: 0.75
-
-C3: Procter & Gamble exhibits defensive earnings power: pricing and productivity actions have delivered organic growth and allow durable cash returns (dividends and buybacks) that the market may underweight relative to headline margin compression [PG-EC1] [PG-F4] [PG-F9]. This supports a meaningful overweight within a value-oriented, lower-duration sleeve.
-  Pearl Level: L2
-  Claim Type: firm
-  Evidence: [PG-EC1], [PG-F4], [PG-F9]
-  Variables: PG_organic_sales, PG_margin, PG_cash_returns
-  Assumptions: Pricing and productivity gains continue to offset commodity/input cost pressure in the medium term ([PG-EC1], [PG-F4])., Operating cash flow remains sufficient to fund targeted buybacks and dividends ([PG-F9]).
-  Falsifiers: Accelerating volume declines or sustained inability to pass through input costs that materially reduce core EPS and cash flow (contradicting [PG-EC1], [PG-F4])., Large impairment to indefinite-lived intangibles (Gillette) beyond the fair value cushion noted ([PG-F15]).
-  Confidence: 0.7
-
-C4: Industrial and aerospace suppliers (CAT, RTX) show evidence of backlog-driven revenue and improving margins, implying valuation upside if backlog converts and supply-chain constraints ease; however, backlog conversion risk and supply-chain/semiconductor uncertainty require capped sizing and partial allocation to less cyclical aerospace exposure (RTX) as ballast [CAT-F2] [CAT-EC2] [CAT-F12] [RTX-F14] [RTX-EC1].
-  Pearl Level: L2
-  Claim Type: sector
-  Evidence: [CAT-F2], [CAT-EC2], [CAT-F12], [RTX-F14], [RTX-EC1]
-  Variables: CAT_backlog, CAT_margin, air_traffic_recovery, RTX_backlog
-  Assumptions: Backlog converts to revenue at rates broadly consistent with management guidance and improving supply-chain conditions ([CAT-F2], [CAT-EC2])., Commercial aerospace aftermarket recovery continues supporting RTX revenue and margins ([RTX-EC1]).
-  Falsifiers: Backlog cancellations or prolonged supply-chain/semiconductor disruptions that materially delay revenue recognition and margin expansion (contradicting [CAT-F2], [CAT-F12])., Failure of global air traffic to recover, undermining RTX aftermarket activity (contradicting [RTX-EC1]).
+  Evidence: [XOM-F7], [XOM-F1], [XOM-EC1], [CVX-F8], [CVX-EC5]
+  Assumptions: WTI and downstream margin environment do not experience a sustained multi‑year collapse below levels that make currently sanctioned projects uneconomic (i.e., no prolonged WTI << current ranges)., Managements maintain stated capital return priorities (repurchases/dividends) rather than immediately cutting to preserve liquidity.
+  Falsifiers: Sustained collapse in crude prices materially below recent ranges (e.g., prolonged WTI < $50) that eliminates the cash-flow cushion [L1-WTI]., Regulatory, tax or material impairment actions that force buyback/dividend suspension or large one‑time charges (see [XOM-F17], [CVX-F12])., Material evidence of management reversing buyback programs in subsequent filings.
   Confidence: 0.65
 
-C5: Bank of America shows improving net interest income (NII), EPS growth and stronger capital metrics that the market has priced aggressively low; this suggests a selective value opportunity if asset quality remains stable [BAC-EC1] [BAC-EC2] [BAC-EC3] [BAC-RET252].
-  Pearl Level: L2
-  Claim Type: firm
-  Evidence: [BAC-EC1], [BAC-EC2], [BAC-EC3], [BAC-RET252]
-  Variables: BAC_NII, BAC_EPS, BAC_CET1, BAC_price
-  Assumptions: NII growth and operating leverage persist near management expectations and credit conditions do not deteriorate materially ([BAC-EC1], [BAC-EC2])., Market price weakness primarily reflects macro risk repricing rather than immediate credit losses.
-  Falsifiers: Rapid deterioration in credit quality or unexpectedly large loan-loss provisions inconsistent with management commentary ([BAC-EC1])., Regulatory or capital shocks materially impairing dividend or buyback capacity.
-  Confidence: 0.6
+C2: Banks with strong franchises and explicit NII tailwinds (JPM) and buyback capacity (GS) are undervalued relative to the earnings power implied by a higher‑for‑longer rate environment; recent company guidance and Fed/curve levels imply elevated NII that can re-rate earnings if credit remains benign.
+  Reasoning Type: causal
+  Claim Type: macro | firm
+  Evidence: [L1-FF], [L1-2Y], [JPM-EC4], [GS-F8]
+  Assumptions: Policy rates remain elevated enough through the year to sustain above‑trend net interest income [L1-FF]., Credit losses do not surge (no deep recession) to offset NII gains materially.
+  Falsifiers: Rapid policy easing (Fed Funds materially below current levels) compresses NII [L1-FF]., A deterioration in credit quality requiring large provisions that offset interest income gains (observable in subsequent quarterly provision builds).
+  Confidence: 0.7
+
+C3: Selected industrials (CAT, RTX) and defensive consumer names (PG, WMT) display valuation mispricing: backlog-driven revenue/margin expansion and cost‑realization offset near-term input pressures, while staples' pricing/productivity create durable cash flow that the market may underprice amid macro uncertainty.
+  Reasoning Type: causal | observational
+  Claim Type: sector | firm
+  Evidence: [CAT-EC1], [CAT-F3], [RTX-EC1], [RTX-EC4], [PG-F4], [WMT-EC1]
+  Assumptions: Backlogs convert to revenue without large-scale cancellations and input-cost inflation moderates or is offset by price realization., Consumer staples retain pricing power and base demand, supporting margins and cash generation.
+  Falsifiers: Sharp global industrial demand collapse that triggers backlog cancellations and margin compression (observable in order/backlog revisions)., Severe consumer demand destruction that forces staples to cut prices and lose margin despite prior pricing [PG-F4], [WMT-EC1]., Inspection or one-time operational costs that materially reduce FCF (e.g., worsening of Pratt & Whitney issues) [RTX-EC5].
+  Confidence: 0.7
 
 ## Previous Risks / Falsifiers
-- Sustained and material collapse in oil prices or demand that materially reduces CVX cash flows and forces cutbacks to buybacks/dividends (would falsify continued CVX cash-return thesis) [CVX-F1].
-- SLB activity or service pricing disappoints and margins revert lower, invalidating expected FCF expansion [SLB-F16] [SLB-F4].
-- Backlog cancellations or prolonged supply-chain/semiconductor constraints that prevent Caterpillar backlog conversion and margin realization (would falsify CAT thesis) [CAT-F2] [CAT-F12].
-- Rapid deterioration in bank asset quality or unexpected loan-loss provisions that reverse BAC's earnings improvement thesis (would falsify C5) [BAC-EC1] [BAC-EC2].
-- A decisive and sustained fall in policy rates or steepening of the yield curve that materially reduces discount-rate pressure and re-rates growth/momentum names (would falsify the exclusion of AMD/AMZN) [L1-FF] [L1-CURVE].
+- Sustained multi‑quarter collapse in crude prices (WTI significantly and persistently < ~$50) that materially reduces upstream cash flows and forces buyback/dividend cuts [L1-WTI][XOM-F10].
+- A swift policy pivot (Fed Funds materially lower than current 5.08%) that collapses the NII tailwind and re‑rates bank earnings assumptions [L1-FF].
+- A meaningful recession or credit shock producing large bank provisions that offset NII gains (observable through sequentially rising provision expense and NCOs in bank filings).
+- Large cancellations or material downward revisions in industrial backlogs (CAT/RTX) or unexpected inspection/quality charges that materially reduce free cash flow (e.g., worsening of issues described in [RTX-EC5]).
 
 ## Previous Confidence
-0.64
+0.66
 
 ## Other Agents' Proposals
 
@@ -1161,165 +1489,180 @@ Each proposal includes:
 
 ### RISK agent proposed:
 ## Previous Portfolio Allocation
-AMD: 0.04
-AMZN: 0.05
-BAC: 0.07
-CAT: 0.09
-CVX: 0.15
-PG: 0.2
-RTX: 0.14
-SLB: 0.08
-_CASH_: 0.18
+AAPL: 0.0
+AMZN: 0.25
+CAT: 0.0
+CVX: 0.0
+GS: 0.14
+JPM: 0.26
+MSFT: 0.0
+NVDA: 0.0
+PG: 0.21
+RTX: 0.0
+WMT: 0.14
+XOM: 0.0
 
 ## Previous Thesis
-Maintain drawdown control given an inverted curve and elevated policy rates ([L1-CURVE], [L1-FF]) and a volatility regime that elevates downside risk ([L1-VIX], [AMD-VOL60], [AMZN-VOL60], [SLB-VOL60]). The portfolio keeps a significant defensive allocation to PG and a material cash buffer to preserve capital and optionality. It accepts the critiques' firm-level and momentum evidence (CAT backlog [CAT-F2], RTX backlog [RTX-F14], SLB margin/momentum [SLB-F4], [SLB-MOM12_1]) by allowing measured increases in select cyclicals, but enforces an explicit aggregate cap on cyclical/commodity exposure to limit correlated tail risk (implemented in allocation: combined CAT+SLB+RTX+CVX = 0.46). High-vol, high-beta names (AMD, AMZN) remain small to limit their drawdown contribution while preserving liquid tactical exposure. Overall, the portfolio trades some return opportunity for improved resilience under recession/volatility spikes while recognizing validated firm-level signals within strict position-size limits.
+The revised portfolio prioritizes drawdown control by (1) moderating bank exposure to capture rate-driven NII while limiting concentration and integration/credit fragility (C1); (2) enforcing strict sizing on high-volatility, high-beta growth names to limit tail-risk contribution and preserve liquidity in stress (C2); and (3) diversifying defensive ballast across staples, retail and small sleeves of industrials/energy to avoid single-name defensive concentration and provide alternative cash-flow drivers (C3). Overall sizing reduces the prior large PG concentration and the prior heavy single-bank weight, keeping exposures balanced to survive volatility spikes and correlation convergence while retaining moderate participation in secular growth through small, controlled tech/consumer positions. Position sizes reflect volatility and drawdown histories rather than chasing momentum alone [L1-VIX] [NVDA-VOL60] [AMZN-MDD1Y] [PG-VOL60].
 
 ## Previous Position Rationale
-AMD (0.04): High security vol and beta ([AMD-VOL60], [AMD-BETA]) increase drawdown contribution; keep a small, liquid tactical stake given high ADVOL ([AMD-ADVOL]) but size is constrained by volatility-based rule.
-  Supported by claims: C2
-
-AMZN (0.05): Elevated realized and downside vol ([AMZN-VOL60], [AMZN-DVOL60]) justify limited sizing despite liquidity ([AMZN-ADVOL]); small tactical exposure retained for optionality but constrained to control tail risk.
-  Supported by claims: C2
-
-BAC (0.07): Bank exposure is credit- and macro-sensitive; reduced from prior allocation to limit portfolio vulnerability to recession/credit stress while maintaining a modest position to capture potential NII benefits noted in earnings ([BAC-EC1]).
+JPM (0.2): Moderate bank exposure to capture near-term NII benefits [L1-FF] [L1-2Y] and JPM's Q2 NII lift [JPM-EC2], but sized down from prior proposal to limit concentration and integration/credit fragility risk flagged by management [JPM-EC4] [JPM-F12].
   Supported by claims: C1
 
-CAT (0.09): Capped cyclical exposure from macro claim (C1) but increased modestly because firm-level backlog and margin evidence supports resilience ([CAT-F2], [CAT-EC2], [CAT-EC3]). Weight remains limited to contain aggregate cap on capex/cyclical exposure.
-  Supported by claims: C1, C3
-
-CVX (0.15): Energy provides commodity diversification but is sectorally correlated and commodity-sensitive ([CVX-F1]); size is meaningful but capped so the portfolio is not overexposed to an energy price reversal.
-  Supported by claims: C3, C1
-
-PG (0.2): Defensive, low downside volatility ([PG-VOL20]) anchors the portfolio and reduces realized downside in stress; this justifies the largest equity weight under the risk-first mandate.
-  Supported by claims: C2
-
-RTX (0.14): Moderate increase recognizing backlog and order-strength evidence ([RTX-F14], [RTX-EC1]) while preserving macro cap constraints; defense/industrial exposure diversifies away from consumer cyclicals but is sized to limit concentration and backlog conversion risk.
-  Supported by claims: C3, C1
-
-SLB (0.08): High realized/downside vol ([SLB-VOL60], [SLB-DVOL60]) requires conservative sizing despite margin improvement and positive momentum ([SLB-F4], [SLB-F16], [SLB-MOM12_1], [SLB-TREND]). Position increased modestly from prior allocation to reflect firm-level signal but capped to limit tail exposure.
-  Supported by claims: C2, C3
-
-_CASH_ (0.18): Cash buffer preserved to reduce immediate exposure to macro and volatility-driven drawdowns ([L1-CURVE], [L1-VIX]) while enabling opportunistic redeployment if stress presents attractive entry points.
+GS (0.1): Smaller allocation to GS captures potential rate-linked upside while limiting idiosyncratic drawdown risk and revenue sensitivity to market-activity cycles [GS-F1] [GS-F12].
   Supported by claims: C1, C2
 
-## Previous Claims
-C1: Yield-curve inversion and elevated policy rates raise recession probability and amplify drawdown risk for cyclical, capital-goods, and credit-sensitive names; therefore cap aggregate cyclical exposure and retain a meaningful cash buffer to preserve optionality. Tactical increases in cyclicals are permitted only when firm-level evidence shows durable backlog/margin resilience (conditional, not a repeal of the macro risk sizing rule).
-  Pearl Level: L1
-  Claim Type: macro
-  Evidence: [L1-CURVE], [L1-FF]
-  Variables: 10y_2y_spread, fed_funds_rate
-  Assumptions: Inverted 10y-2y spread signals higher near-term recession probability which tends to stress cyclicals and credit-sensitive firms, Cash provides liquidity and flexibility to survive a macro drawdown and redeploy into stressed opportunities
-  Falsifiers: 10Y-2Y spread steepens and remains positive for 60 trading days (reversal of [L1-CURVE]), Sustained macro surprise to the upside: industrial & activity data show durable expansion despite inversion (e.g., materially higher readings vs [L1-INDPRO])
-  Confidence: 0.78
-
-C2: Current volatility regime and security-level realized vol metrics indicate elevated downside risk for high-volatility/high-beta equities; size those names conservatively and allocate more to low-downside-vol securities to reduce portfolio realized drawdown contribution.
-  Pearl Level: L1
-  Claim Type: macro
-  Evidence: [L1-VIX], [AMD-VOL60], [AMZN-VOL60], [SLB-VOL60], [PG-VOL20]
-  Variables: vix, security_volatilities, downside_volatility
-  Assumptions: Higher realized/implied volatility increases likely drawdown magnitude for a given notional exposure, Low downside-vol securities (e.g., consumer staples) reduce portfolio downside in stress
-  Falsifiers: VIX compresses below 12 and stays low for 60 trading days (contrary to [L1-VIX]), Security-level volatilities for high-vol names decline >30% and downside vol metrics materially compress
-  Confidence: 0.82
-
-C3: Sector/capex concentration (energy, industrials, services) creates correlated tail exposure to commodity-price swings and capex cycles. Firm-level evidence (backlog, margin improvement, momentum) can justify modestly above-minimum sizing for specific cyclicals, but the portfolio enforces an explicit aggregate cap on cyclical/commodity exposure to limit systemic tail risk.
-  Pearl Level: L2
-  Claim Type: sector
-  Evidence: [CVX-F1], [SLB-F1], [CAT-F2], [SLB-F4], [SLB-F16], [RTX-F14], [SLB-MOM12_1], [SLB-TREND], [CAT-RET120], [RTX-RET120]
-  Variables: commodity_price_risk, order_backlog, sector_momentum
-  Assumptions: Commodity and capex cycles can revert quickly and lead to correlated drawdowns across energy and industrials, Backlog and margin evidence reduce but do not eliminate recession sensitivity — they permit only measured increases under an aggregate cap
-  Falsifiers: Persistent positive commodity shock with stable high prices (WTI > $90 for 60 days) and uninterrupted backlog-to-revenue conversion across cyclicals, Order backlogs convert smoothly with no guidance cuts in subsequent quarters for CAT/RTX/SLB
-  Confidence: 0.7
-
-## Previous Risks / Falsifiers
-- VIX compresses below 12 and remains low for 60 trading days, materially reducing implied downside risk (falsifies volatility premise) — see [L1-VIX].
-- 10Y-2Y spread steepens above 0 and remains positive for 60 trading days (reversal of [L1-CURVE]) indicating materially lower recession risk.
-- Industrial production and activity data show durable expansion inconsistent with recession pathway (contradicting the macro signal) — reference [L1-INDPRO].
-- Sustained commodity rally with WTI > $90 for 60+ days and no demand pullback, which would materially reduce sector tail risk and invalidate strict cyclical caps — reference [L1-WTI].
-- CAT/RTX/SLB subsequent quarterly releases show material backlog cancellations, margin compression or guidance cuts (contradicting [CAT-F2], [RTX-F14], [SLB-F4]).
-
-## Previous Confidence
-0.78
-
-### TECHNICAL agent proposed:
-## Previous Portfolio Allocation
-AMD: 0.14
-AMZN: 0.06
-BAC: 0.0
-CAT: 0.06
-CVX: 0.1
-PG: 0.2
-RTX: 0.12
-SLB: 0.12
-_CASH_: 0.2
-
-## Previous Thesis
-The revised portfolio keeps the technical core: overweight securities with confirmed momentum and SMA regimes (PG, RTX, AMD, SLB, CVX, CAT) while explicitly scaling position sizes to realized volatility and drawdown risk (C1). SMA regime filtering (C2) ensures holdings are trend-confirmed; short-term breakdowns and idiosyncratic negative momentum (C3) justify a meaningful cash buffer and zero weighting for BAC. This produces a diversified momentum portfolio with reduced concentration risk versus the prior proposal while preserving exposure to the strongest price-based leaders and providing capital to act on new technical breakouts.
-
-## Previous Position Rationale
-AMD (0.14): AMD displays strong medium-term momentum and relative strength which supports a tactical overweight ([AMD-RET60], [AMD-RS60]), and it trades above its SMA50/200 supporting trend continuation ([AMD-SMA50], [AMD-SMA200], [AMD-TREND]). Per C1 sizing is reduced from prior concentration due to elevated realized volatility and large 1y drawdown ([AMD-VOL60], [AMD-MDD1Y]) — therefore a meaningful but capped position (14%) to capture momentum while limiting tail risk.
-  Supported by claims: C1, C2
-
-AMZN (0.06): AMZN shows short-term positive returns ([AMZN-RET60]) but remains below its 200-day SMA ([AMZN-SMA200]); under C2/C3 this implies limited tactical upside until long-term SMA is reclaimed with confirming volume — maintain a small tactical allocation (6%) to capture a potential trend reclaim without betting on a full reversal.
-  Supported by claims: C2, C3
-
-BAC (0.0): BAC exhibits negative short-term returns and negative idiosyncratic momentum ([BAC-RET20], [BAC-IDMOM]); C3 supports avoiding tactical exposure until price/momentum metrics recover.
+PG (0.15): Defense anchor but trimmed materially from prior concentration: PG provides lower realized volatility and margin resiliency benefits [PG-VOL60] while acknowledging margins were driven by pricing/productivity and hence the position is capped to limit single-name risk [PG-F4].
   Supported by claims: C3
 
-CAT (0.06): CAT has positive 120-day and 200D momentum ([CAT-RET120], [CAT-MOM200]) but is in a short-term pullback (price below SMA20/50). Under C2 this is a trend-confirmed candidate; C1 sizing is moderate due to idiosyncratic pullback risk — small tactical position (6%) to capture mean-reversion into the broader uptrend.
-  Supported by claims: C2, C1
+WMT (0.1): Complementary defensive retail exposure with low realized vol and operational/liquidity strengths to stabilize drawdowns [WMT-VOL60] [WMT-EC1].
+  Supported by claims: C3
 
-CVX (0.1): CVX sits near/above its 200-day SMA ([CVX-SMA200]) with positive long-term momentum ([CVX-MOM200]); C2 justifies a tactical allocation, and C1 limits size given mixed short-term returns ([CVX-RET60]) — allocate 10% to capture sector trend exposure while avoiding concentration.
-  Supported by claims: C2, C1
-
-PG (0.2): PG is above SMA20/50/200 ([PG-SMA20], [PG-SMA50], [PG-SMA200]) with low volatility vs peers ([PG-VOL20], [PG-VOL60]) which favors trend persistence per C2. C3's defensive tilt increases PG's role as ballast; raise to 20% to stabilize portfolio momentum exposure.
+AMZN (0.18): Moderate consumer-discretionary exposure limited by tail-risk sizing: AWS provides cash-flow visibility [AMZN-F15] but AMZN's history of large drawdowns and elevated vol requires a controlled position to capture secular cloud resilience without overexposure [AMZN-MDD1Y] [AMZN-VOL60].
   Supported by claims: C2, C3
 
-RTX (0.12): RTX trades above its 200-day SMA ([RTX-SMA200]) and has positive medium-term returns ([RTX-RET120]) indicating trend confirmation per C2. Idiosyncratic momentum is muted; under C1 maintain a moderate position (12%) to capture continued trend with lower volatility than higher-beta momentum names.
-  Supported by claims: C2, C1
+MSFT (0.07): Small tactical participation in high-quality tech (cloud/AI exposure) but sized to limit drawdown contribution given elevated beta and downside vol [MSFT-BETA] [MSFT-VOL60].
+  Supported by claims: C2
 
-SLB (0.12): SLB shows durable 12-month momentum and trend consistency ([SLB-MOM12_1], [SLB-TREND]) and trades above its 200-day SMA ([SLB-SMA200]), supporting trend continuation. Per C1, reduce prior concentration because downside and realized vol are elevated ([SLB-VOL60], [SLB-DVOL60]) — keep a material but size-capped exposure (12%).
-  Supported by claims: C1, C2
+NVDA (0.03): Token exposure to NVDA's AI upside while keeping position tiny due to extreme realized vol and prior large drawdowns [NVDA-VOL60] [NVDA-MDD1Y].
+  Supported by claims: C2
 
-_CASH_ (0.2): Maintain a 20% cash buffer as a technical risk-management lever: C3 (momentum breakdown risk in BAC/AMZN and market volatility) and C1 (concentration risk in high-vol names like AMD/SLB) justify holding dry powder to de-risk on volume-confirmed trend failures and redeploy into fresh momentum breakouts. Cash yields the Fed Funds reference rate ([L1-FF]).
-  Supported by claims: C3, C1
+AAPL (0.0): Excluded to limit overlapping tech/cyclical exposure and reduce portfolio beta; kept at zero to reduce concentration in duration-sensitive names despite strong momentum signals [AAPL-RET120].
+
+XOM (0.05): Small energy allocation for cash-flow diversification and shareholder returns (buybacks/dividends), providing a different correlation driver than equities/tech [XOM-F7] [XOM-EC1].
+  Supported by claims: C3
+
+CVX (0.05): Complementary energy exposure with capital-return programs and downstream earnings that diversify portfolio cash flows [CVX-F8] [CVX-EC1].
+  Supported by claims: C3
+
+CAT (0.04): Small industrial cyclicals exposure (backlog and margin improvements) as a diversification sleeve to reduce correlated tech/bank risk in a growth scenario [CAT-EC1] while keeping sizing modest to limit cyclical drawdowns.
+  Supported by claims: C3
+
+RTX (0.03): Limited aerospace/defense exposure for revenue/backlog diversification; position size is small given program-level inspection risks and supply-chain uncertainty [RTX-EC1] [RTX-F12].
+  Supported by claims: C3
 
 ## Previous Claims
-C1: Momentum persistence identifies likely near-term leaders but position size must be scaled to realized volatility and drawdown risk. Stocks showing strong medium-term returns and RS (momentum) are more likely to continue outperformance (price signal) — e.g., AMD shows strong 60-day returns and RS — however AMD's elevated realized volatility and large 1y drawdown increase tail risk, so technical sizing should be volatility-adjusted ([AMD-RET60], [AMD-RS60], [AMD-VOL60], [AMD-MDD1Y]). SLB retains durable 12-month momentum and trend consistency but also shows elevated downside vol that makes large concentrated sizing fragile ([SLB-MOM12_1], [SLB-TREND], [SLB-VOL60], [SLB-DVOL60]).
-  Pearl Level: L2
-  Claim Type: firm
-  Evidence: [AMD-RET60], [AMD-RS60], [AMD-VOL60], [AMD-MDD1Y], [SLB-MOM12_1], [SLB-TREND], [SLB-VOL60], [SLB-DVOL60]
-  Variables: momentum, realized_volatility, max_drawdown, position_size
-  Assumptions: Momentum persistence holds at the security level absent immediate volume-confirmed distribution., Realized volatility and historical drawdowns are meaningful proxies for tail risk and should cap position sizes.
-  Falsifiers: Sustained compression in realized volatility for a leader (observable reduction in [AMD-VOL60] and [SLB-VOL60] over 60 trading days) combined with continued positive medium-term returns ([AMD-RET60], [SLB-MOM12_1]) would invalidate the need for reduced sizing., Clear, volume-confirmed break below short- and medium-term SMAs for a leader (e.g., AMD closing below [AMD-SMA50] on high volume) would falsify the safety of a large allocation.
-  Confidence: 0.78
-
-C2: Moving-average regime (price relative to SMA20/50/200 and trend consistency) is a reliable filter for trend continuation: names trading above key SMAs with confirmed trend consistency are higher probability continuation candidates (e.g., PG above SMA20/50/200; AMD above SMA50/200; SLB above SMA200 and positive long-term momentum). Use SMA regime to prefer trend-confirmed securities while avoiding large weights in names that remain below their long-term SMA (e.g., AMZN remains below its 200-day SMA) ([PG-SMA20], [PG-SMA50], [PG-SMA200], [AMD-SMA50], [AMD-SMA200], [SLB-SMA200], [AMZN-SMA200], [AMD-TREND], [SLB-TREND]).
-  Pearl Level: L2
-  Claim Type: firm
-  Evidence: [PG-SMA20], [PG-SMA50], [PG-SMA200], [AMD-SMA50], [AMD-SMA200], [SLB-SMA200], [AMZN-SMA200], [AMD-TREND], [SLB-TREND]
-  Variables: price_vs_SMA20, price_vs_SMA50, price_vs_SMA200, trend_consistency
-  Assumptions: Being above multi-horizon SMAs with trend consistency increases probability of near-term continuation., Short-term pullbacks that remain above SMA200 are normal within a broader uptrend.
-  Falsifiers: Sustained closes below SMA200 on confirming volume for a security (e.g., AMZN reclaiming/closing above [AMZN-SMA200] or falling further below) that contradicts the SMA regime signal., Rapid collapse in trend consistency metric concurrent with SMA breaches (e.g., [AMD-TREND] or [SLB-TREND] dropping materially).
-  Confidence: 0.72
-
-C3: Short-term momentum breakdowns and negative idiosyncratic momentum indicate elevated near-term downside probability and justify defensive capital (cash/low-beta exposure). BAC shows clear negative short/medium returns and negative idiosyncratic momentum, implying avoid/zero tactical weight; AMZN remains below its 200-day SMA despite short-run gains, so keep small tactical exposure until price reclaims the long-term SMA with volume-confirmation ([BAC-RET20], [BAC-IDMOM], [AMZN-SMA200], [AMZN-RET60], [L1-VIX]). Current VIX (moderate) warrants a cash buffer to limit drawdowns in the event of a volatility spike ([L1-VIX]).
-  Pearl Level: L2
-  Claim Type: sector
-  Evidence: [BAC-RET20], [BAC-IDMOM], [AMZN-SMA200], [AMZN-RET60], [L1-VIX]
-  Variables: short_return, idiosyncratic_momentum, price_vs_SMA200, cash_allocation, volatility_regime
-  Assumptions: Negative short-term returns and negative idiosyncratic momentum degrade the probability of near-term recovery absent clear price-based reversal., A measured cash buffer reduces portfolio drawdown risk if momentum leadership reverses or volatility spikes.
-  Falsifiers: AMZN decisively reclaims and sustains a close above [AMZN-SMA200] with volume confirmation and improving multi-month momentum ([AMZN-RET120])., BAC posts several consecutive positive medium-term returns and improved idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising).
+C1: Rate-driven bank NII is a near-term risk/reward driver but is likely partially transitory and brings integration/credit fragility; size banks to capture NII tailwind while limiting concentration and reserving capital for defensive buffers. Evidence shows policy rates are elevated [L1-FF] [L1-2Y], JPM reported materially higher NII in 2023 but expects normalization and flags integration risk from First Republic [JPM-EC2] [JPM-EC4] [JPM-F12], and GS filings highlight increased interest-rate sensitivity [GS-F12].
+  Reasoning Type: causal
+  Claim Type: macro
+  Evidence: [L1-FF], [L1-2Y], [JPM-EC2], [JPM-EC4], [JPM-F12], [GS-F12]
+  Assumptions: Elevated short-term rates persist long enough to lift NII materially in the near term., Bank integration/credit risks can materialize and erode earnings; therefore prudent sizing reduces drawdown risk.
+  Falsifiers: JPM and GS report sustainable NII at or above current elevated levels with stable credit/integration metrics in subsequent filings (e.g., sustained $87bn NII guidance and clean integration updates) which would support larger bank sizing [JPM-EC2] [JPM-EC4].
   Confidence: 0.7
 
+C2: Low current implied volatility masks tail-risk: volatility spikes and correlation clustering will disproportionately hurt high-volatility, high-beta growth names. Limit and size high-vol/long-duration positions to control drawdown contribution and ensure liquidity in stress. Historical large drawdowns and realized vol of leaders (NVDA, AMZN, MSFT) demonstrate tail vulnerability [L1-VIX] [NVDA-MDD1Y] [AMZN-MDD1Y] [NVDA-VOL60] [AMZN-VOL60] [MSFT-BETA].
+  Reasoning Type: risk_assessment
+  Claim Type: risk
+  Evidence: [L1-VIX], [NVDA-MDD1Y], [AMZN-MDD1Y], [NVDA-VOL60], [AMZN-VOL60], [MSFT-BETA]
+  Assumptions: Volatility can re-price quickly from current low levels and correlations can converge upwards in stress., Past realized large drawdowns are informative of future tail vulnerability absent new structural hedges.
+  Falsifiers: Sustained low realized volatility across growth leaders with no correlation clustering in stress (e.g., NVDA/Microsoft/AMZN all showing sustained low vol and small drawdowns) would weaken this sizing discipline.
+  Confidence: 0.85
+
+C3: Defensive ballast should be diversified across low-vol staples, low-vol retail, and selective cash-flow-rich cyclicals (energy/industrial) to reduce single-name concentration risk and improve resilience. PG and WMT provide lower realized vol and stable cash-flows [PG-VOL60] [WMT-VOL60] [WMT-EC1]; but PG's margin improvement was driven by pricing and productivity and is therefore vulnerable—avoid single-name concentration [PG-F4] [PG-F1]. Select smaller allocations to industrials and energy provide alternative cash-flow drivers and reduce correlation concentration (CAT backlog and XOM buybacks/repurchases evidence) [CAT-EC1] [XOM-F7] [CVX-F8].
+  Reasoning Type: causal
+  Claim Type: sector
+  Evidence: [PG-VOL60], [WMT-VOL60], [WMT-EC1], [PG-F4], [PG-F1], [CAT-EC1], [XOM-F7], [CVX-F8]
+  Assumptions: Staples and large discount retail will retain relatively lower downside volatility in stress compared with high-beta tech., Industrial backlog and energy cash returns offer diversification benefits versus purely defensive staples.
+  Falsifiers: PG (or WMT) reports sharp demand or margin deterioration that drives large idiosyncratic drawdowns, removing their ballast role [PG-F4] [WMT-EC1].
+  Confidence: 0.75
+
 ## Previous Risks / Falsifiers
-- Market-wide momentum reversal: VIX spikes materially above current level (current [L1-VIX]) accompanied by broad negative returns across momentum leaders — would invalidate short-term momentum bets.
-- AMD loses trend confirmation: sustained close(s) below [AMD-SMA50] and/or [AMD-SMA200] with increasing downside returns (collapse in [AMD-RET60]) — would require cutting AMD exposure.
-- SLB momentum reverses: multi-day negative 12-month momentum signal (observable decline in [SLB-MOM12_1] and breach of [SLB-SMA200]) or material increase in downside vol ([SLB-DVOL60]) — would require de-risking SLB.
-- AMZN reclaims 200-day SMA on confirming volume (sustained closes above [AMZN-SMA200]) and improving multi-month momentum ([AMZN-RET120]) — would prompt increasing AMZN weight.
-- BAC shows technical recovery: consecutive positive medium-term returns and improvement in idiosyncratic momentum ([BAC-RET60] positive and [BAC-IDMOM] rising) — would prompt reconsideration of a tactical BAC allocation.
+- Policy rates and short-term yields decline materially (Fed Funds and 2y fall), removing the NII tailwind and making bank allocations a liability rather than a ballast [L1-FF] [L1-2Y].
+- Volatility remains suppressed and momentum leadership persists without correlation clustering (e.g., NVDA/AMZN/MSFT deliver sustained positive returns and low realized vol), making the defensive tilt costly [L1-VIX] [NVDA-RET60] [AMZN-RET60].
+- PG or WMT report sharp demand deterioration or margin contraction that causes large idiosyncratic drawdowns, invalidating their ballast role [PG-F4] [WMT-EC1].
+- Material negative surprises from JPM or GS related to integration, credit losses, or reserve builds that cause substantial drawdowns beyond current sizing protections [JPM-F12] [GS-F11].
 
 ## Previous Confidence
 0.72
+
+### TECHNICAL agent proposed:
+## Previous Portfolio Allocation
+AAPL: 0.08
+AMZN: 0.12
+CAT: 0.13
+CVX: 0.03
+GS: 0.03
+JPM: 0.12
+MSFT: 0.08
+NVDA: 0.12
+PG: 0.05
+RTX: 0.02
+WMT: 0.08
+XOM: 0.14
+
+## Previous Thesis
+The revised portfolio preserves a momentum‑first framework: overweight names with intact multi‑month momentum and SMA confirmation (C1/C2) while enforcing volatility‑aware sizing (C3) to limit single‑name and high‑vol tech tail risk. Tech exposure is capped at the sector maximum (40%) to limit correlation concentration; defensive positions (WMT, PG) provide lower‑vol ballast and industrials/energy/financials hold trend-confirmed exposures sized to balance momentum capture with tail risk control. Each position is driven by observable price behavior (momentum, SMAs, RS) and sized to reflect realized volatility and historical drawdowns.
+
+## Previous Position Rationale
+AAPL (0.08): AAPL displays positive medium momentum and trades above major SMAs ([AAPL-MOM200], [AAPL-SMA50], [AAPL-SMA200]). Price action and trend confirmation justify overweight exposure, but weight is tempered by realized vol-based sizing per C3 ([AAPL-VOL60]).
+  Supported by claims: C1, C2, C3
+
+MSFT (0.08): MSFT shows multi‑month momentum and trades above SMA50/200 ([MSFT-MOM200], [MSFT-SMA50], [MSFT-SMA200]); technical leadership supports a meaningful allocation while C3 caps size given elevated beta ([MSFT-BETA]).
+  Supported by claims: C1, C2, C3
+
+NVDA (0.12): NVDA is the strongest pure momentum leader ([NVDA-MOM200], [NVDA-RS60], [NVDA-ADVOL]) and trades well above SMAs ([NVDA-SMA20], [NVDA-SMA50], [NVDA-SMA200]). Because realized vol and historical drawdown are large ([NVDA-VOL60], [NVDA-MDD1Y]), C3 mandates a reduced absolute weight versus a pure momentum bet.
+  Supported by claims: C1, C2, C3
+
+JPM (0.12): JPM trades above its key SMAs and shows consistent trend metrics ([JPM-SMA20], [JPM-SMA50], [JPM-SMA200]) supporting trend‑following allocation to financials under C2.
+  Supported by claims: C2
+
+GS (0.03): GS exhibits weaker RS and negative idiosyncratic momentum ([GS-RS60], [GS-IDMOM]); maintain a small tactical exposure with size constrained by C3 risk sizing.
+  Supported by claims: C3
+
+XOM (0.14): XOM has positive longer‑term returns ([XOM-RET252]) and neutral 200D momentum ([XOM-MOM200]); given energy's current price dynamics show mixed short‑term weakness but longer‑term momentum, C3 allows a larger tactical exposure sized to limit concentration risk while meeting energy allocation needs.
+  Supported by claims: C3
+
+CVX (0.03): CVX shows weak 60D returns and RS but remains tradable; hold a small technical exposure while awaiting clearer trend confirmation.
+  Supported by claims: C3
+
+CAT (0.13): CAT trades above short/medium SMAs and has strong short‑term returns ([CAT-SMA20], [CAT-SMA50], [CAT-SMA200], [CAT-RET20]); technical trend confirmation and momentum justify meaningful cyclical exposure.
+  Supported by claims: C2, C1
+
+RTX (0.02): RTX sits marginally above short SMAs ([RTX-SMA20]) and benefits from steady backlog; maintain a small position as tactical industrial exposure under C2.
+  Supported by claims: C2
+
+WMT (0.08): WMT is a defensive trend name trading above SMAs ([WMT-SMA20], [WMT-SMA50], [WMT-SMA200]) with low realized vol, providing ballast to the momentum book; size increased versus prior to reduce portfolio tail sensitivity per C3.
+  Supported by claims: C2, C3
+
+PG (0.05): PG shows trend consistency around longer SMAs ([PG-SMA200]) and low vol profile; included as defensive ballast and sized per volatility-aware rule.
+  Supported by claims: C2, C3
+
+AMZN (0.12): AMZN displays strong momentum and RS ([AMZN-MOM200], [AMZN-RS60]) and trades above SMAs ([AMZN-SMA20], [AMZN-SMA50], [AMZN-SMA200]) supporting a material allocation. Elevated vol metrics and large historical drawdown ([AMZN-VOL60], [AMZN-MDD1Y]) prevented a larger weight per C3.
+  Supported by claims: C1, C2, C3
+
+## Previous Claims
+C1: Momentum leadership (strong multi‑month absolute momentum and 60D relative strength) signals higher near‑term continuation probability; leaders in this universe are likely to maintain directional bias while their momentum metrics remain intact.
+  Reasoning Type: causal
+  Claim Type: technical
+  Evidence: [NVDA-MOM200], [NVDA-RS60], [AMZN-MOM200], [AMZN-RS60], [AAPL-MOM200], [MSFT-MOM200]
+  Assumptions: Momentum persistence holds absent an abrupt market regime shift., Price reflects the aggregate of positioning and flow; continued positive momentum indicates ongoing demand concentration.
+  Falsifiers: Sustained deterioration of momentum metrics (e.g., NVDA-MOM200 materially falls or NVDA-RS60 turns negative)., Simultaneous breakdowns below key trend levels (many leaders closing below their SMA50/SMA200).
+  Confidence: 0.8
+
+C2: Trend confirmation requires price above short/medium SMAs plus relative strength; price above SMA50/SMA200 combined with positive RS60 and trend consistency increases the odds of continuation versus mean reversion in the near term.
+  Reasoning Type: pattern
+  Claim Type: technical
+  Evidence: [AAPL-SMA50], [AAPL-SMA200], [MSFT-SMA50], [MSFT-SMA200], [AMZN-SMA20], [AMZN-SMA50], [AMZN-SMA200], [CAT-SMA20], [CAT-SMA50], [CAT-SMA200]
+  Assumptions: Moving averages capture prevailing trend structure for the near-to-medium horizon used for allocation decisions., RS60 provides a cross‑asset confirmation that funds are rotating into the candidate security.
+  Falsifiers: Sustained closes below SMA50/SMA200 for names currently above those bands (e.g., AAPL or AMZN closing and staying below SMA50)., RS60 for a previously-confirmed name turning negative while price remains above SMAs.
+  Confidence: 0.75
+
+C3: Position sizing must be volatility‑aware: scale down absolute weights for high realized‑volatility / large historical drawdown names to limit tail exposure even when momentum is strong. That preserves exposure to momentum while reducing single‑name tail risk.
+  Reasoning Type: risk_assessment
+  Claim Type: risk
+  Evidence: [NVDA-VOL60], [NVDA-MDD1Y], [AMZN-VOL60], [AMZN-MDD1Y], [MSFT-BETA], [AAPL-VOL60]
+  Assumptions: Higher realized volatility and larger historical drawdowns increase the probability of large, rapid price reversals that can overwhelm momentum persistence., Volatility‑scaled sizing reduces portfolio sensitivity to single‑name tail events while retaining directional exposure to leaders.
+  Falsifiers: Persistent low realized vol regime (VIX stays low and high‑vol names compress realized vol) combined with uninterrupted momentum (e.g., NVDA/AMZN vol metrics falling materially)., Idiosyncratic risk event(s) for high‑vol names failing to materialize over the sizing window so the volatility penalty is excessive.
+  Confidence: 0.85
+
+## Previous Risks / Falsifiers
+- Broad momentum collapse where leaders simultaneously close and remain below SMA50/SMA200 (e.g., NVDA, AMZN, AAPL breaks their SMA50/SMA200) would invalidate C1/C2.
+- Large volatility spike or regime shift (VIX surge) causing correlation convergence and rapid reversals [L1-VIX].
+- Material, rapid deterioration in momentum metrics for high‑vol names (e.g., NVDA-MOM200 falls sharply or NVDA-RS60 turns negative) would falsify continued weighting in those names [NVDA-MOM200] [NVDA-RS60].
+- Sustained compression of realized vol for previously high‑vol names (invalidating the volatility penalty) would weaken C3's sizing justification (observable via [NVDA-VOL60], [AMZN-VOL60]).
+
+## Previous Confidence
+0.77
 
 ---
 
@@ -1380,33 +1723,18 @@ listed in the Financial Context.
 
 Do NOT suggest adding tickers outside the universe.
 
+MANDATORY SECTOR CONSTRAINT: As the VALUE agent, you may ONLY allocate to these sectors: consumer, energy, financials, industrials.
+You MUST assign 0.0 weight to all tickers outside your allowed sectors.
 
+MANDATORY SECTOR LIMITS (applied to final portfolio):
+  - consumer: max 25%
+  - defensive: min 5%, max 25%
+  - energy: min 5%, max 30%
+  - financials: min 5%, max 30%
+  - industrials: min 5%, max 30%
+  - tech: min 5%, max 40%
 
----
-
-CRITICAL — Evidence citation rules
-
-When presenting counter-arguments, you MUST cite the **exact bracketed evidence IDs**
-from the memo.
-
-Valid examples:
-
-[TSLA-MOM200]
-[TSLA-RET60]
-[TSLA-DVOL60]
-[L1-VIX]
-
-Rules:
-
-• NEVER invent evidence labels
-• NEVER use free-text slugs like "tslavolatility"
-• ONLY use IDs that appear verbatim in the memo
-
-Example critique:
-
-"Agent’s claim C2 argues TSLA momentum justifies a large allocation [TSLA-MOM200], but ignores valuation risk if earnings growth fails to meet expectations."
-
-Any critique **without valid evidence IDs will be rejected**.
+MANDATORY MAX SECTOR WEIGHT: No single sector may exceed 40% of the portfolio.
 
 ---
 

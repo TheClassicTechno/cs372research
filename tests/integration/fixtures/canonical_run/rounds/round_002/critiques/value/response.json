@@ -3,47 +3,74 @@
     {
       "target_role": "RISK agent",
       "target_claim": "C1",
-      "objection": "C1 treats the inverted yield curve as a dominant sizing rule that caps cyclical exposure, but it underweights firm-level evidence that CAT/RTX/SLB already show backlog, margin and cash-flow resilience. This macro-first sizing rule ignores observable earnings and cash-flow signals that argue for a higher fundamental allocation to specific cyclicals where earnings power appears stronger today.",
+      "objection": "C1 leans on elevated short-term rates to justify sizable bank exposure but understates that recent reported earnings include one-time/structural items and that management explicitly expects NII to normalize. JPM's Q2 report included a $2.7bn bargain purchase gain boosting net income ([JPM-EC1]) and management projects 2023 NII of ~ $87bn while warning that a normalization to a mid-$70bn run\u2011rate is expected later ([JPM-EC4], [JPM-EC5]). The claim also downplays integration and credit execution risk from the First Republic asset acquisition ([JPM-F12]). Relying on a transitory, rate-driven NII uplift without stronger evidence of sustainable net interest margins or low provisioning risks ignores earnings composition and creates valuation fragility if NII reverts or provisions rise.",
       "counter_evidence": [
-        "[CAT-F2]",
-        "[CAT-EC2]",
-        "[CAT-F15]",
-        "[RTX-F14]",
-        "[RTX-EC1]",
-        "[RTX-EC3]",
-        "[SLB-F4]",
-        "[SLB-F16]",
-        "[BAC-EC1]",
-        "[BAC-EC2]"
+        "[JPM-EC1]",
+        "[JPM-EC4]",
+        "[JPM-EC5]",
+        "[JPM-F12]",
+        "[L1-FF]",
+        "[L1-2Y]"
       ],
-      "portfolio_implication": "By enforcing an aggregate cap on cyclical exposure regardless of company fundamentals, the portfolio risks underallocating to firms where valuation likely understates near-term earnings/cash-flow durability (CAT backlog & improved margins [CAT-F2][CAT-EC2][CAT-F15]; RTX record backlog and organic growth [RTX-F14][RTX-EC1]; SLB margin expansion and 2023 guidance [SLB-F4][SLB-F16]). This creates an opportunity cost and misalignment between weights and fundamental convexity to earnings reversion.",
-      "suggested_adjustment": "Apply valuation/earnings-sensitive sizing: modestly lift CAT and RTX weights (e.g., CAT +0.03, RTX +0.03) and increase SLB slightly (+0.02) funded by a reduction in cash (e.g., cash -0.08). Changes would better align weight with demonstrated operating cash flow and backlog conversion potential [CAT-F15][RTX-EC3][SLB-F4] while preserving macro risk controls.",
-      "falsifier": "If macro activity and demand materially deteriorate such that industrial production collapses and backlog conversion fails (e.g., sustained weakness in [L1-INDPRO]) or subsequent company disclosures show backlog cancellations, guidance cuts, or margin reversals for CAT/RTX/SLB (contradicting [CAT-F2], [RTX-F14], [SLB-F16]), then the objection is invalid and the original macro-cap rule would be vindicated.",
+      "portfolio_implication": "If NII proves transitory or integration/credit costs materialize, bank earnings will be lower than the market is pricing. That would cause rapid downside for a portfolio with outsized bank weights (RISK holds material JPM/GS exposure), producing valuation risk as multiples reprice to lower sustainable EPS.",
+      "suggested_adjustment": "Trim bank weights (meaningfully reduce JPM and GS allocations), reinvest proceeds into cash-flow-rich, less rate\u2011sensitive sectors in the universe (energy XOM/CVX or consumer staples PG/WMT) where fundamentals (buybacks/dividends, pricing power) support intrinsic value [XOM-F7] [CVX-F8] [PG-F4] [WMT-EC1].",
+      "falsifier": "Subsequent filings showing JPM delivering sustained, materially elevated NII with low provisions and clear integration cost transparency (e.g., sustained NII near or above the $87bn guide with no rising provisions) and GS showing durable fee recovery would falsify this objection [JPM-EC4] [JPM-EC5] [GS-F1].",
+      "objection_confidence": 0.8
+    },
+    {
+      "target_role": "RISK agent",
+      "target_claim": "C3",
+      "objection": "C3 justifies a large AMZN sleeve based on AWS' cash-flow visibility, but ignores signs of margin and growth headwinds. AWS growth has slowed (AWS revenue/POs visibility exists but growth is moderating) and management warns enterprise cost-optimization may affect AWS growth ([AMZN-F15], [AMZN-F13]). Amazon's operating expenses and stock-based comp increased materially ([AMZN-F5]) even as operating cash flow only recently turned positive ([AMZN-F11]), implying margins are still under pressure. Relying on AWS to justify a sizable allocation without accounting for decelerating growth and rising expense pressures risks paying multiples that assume faster margin recovery than fundamentals support.",
+      "counter_evidence": [
+        "[AMZN-F15]",
+        "[AMZN-F13]",
+        "[AMZN-F5]",
+        "[AMZN-F11]",
+        "[AMZN-EC3]"
+      ],
+      "portfolio_implication": "Overweighting AMZN on the AWS narrative exposes the portfolio to valuation risk if AWS growth decelerates further or operating leverage fails to emerge; AMZN's price already reflects optimism about margin inflection and cloud strength, so disappointment would compress multiples and drive losses.",
+      "suggested_adjustment": "Cut AMZN sizing materially (e.g., reduce to a tactical, much smaller sleeve) until fundamentals show durable AWS acceleration and operating margin improvement. Reallocate to energy (XOM/CVX) or defensive staples (PG/WMT) where cash returns, margin expansion, or pricing power provide clearer intrinsic value support [XOM-F7] [CVX-F8] [PG-F4] [WMT-EC1].",
+      "falsifier": "If AMZN reports materially faster AWS revenue acceleration and clear margin expansion (sustained AWS growth >20% with operating income and operating cash flow consistently improving), that would invalidate this objection ([AMZN-EC3]).",
       "objection_confidence": 0.75
     },
     {
       "target_role": "TECHNICAL agent",
       "target_claim": "C1",
-      "objection": "C1 leans on momentum persistence to justify a material AMD allocation, but it downplays or ignores AMD's near-term earnings risk: Q1 and Q2 guidance and segment trends show revenue declines and client-segment inventory digestion that undermine the case that price momentum reflects stronger earnings power. Relying on SMA/momentum alone risks paying for price-based rerating rather than durable earnings growth.",
+      "objection": "C1 predicates allocation on momentum persistence (e.g., NVDA, AMZN) but ignores company-level fundamental risks that can abruptly reverse price trends. NVIDIA's strong momentum masks concentration risks, supply-chain/geopolitical constraints, inventory and guidance misses: revenue is increasingly concentrated among a few hyperscalers, Data Center growth is lumpy, U.S. export controls create material exposure to China, and management flagged inventory/supply commitments that could require provisions ([NVDA-F1], [NVDA-F3], [NVDA-F10], [NVDA-F14], [NVDA-EC1]). NVDA's realized volatility and large historical drawdowns further amplify valuation risk ([NVDA-VOL60], [NVDA-MDD1Y]). Relying on price momentum without verifying that earnings power supports the multiple is inconsistent with valuation discipline.",
       "counter_evidence": [
-        "[AMD-EC1]",
-        "[AMD-EC2]",
-        "[AMD-EC4]",
-        "[AMD-F2]",
-        "[AMD-F6]",
-        "[AMD-F10]",
-        "[AMD-VOL60]",
-        "[AMD-RET252]",
-        "[AMD-MDD1Y]"
+        "[NVDA-F1]",
+        "[NVDA-F3]",
+        "[NVDA-F10]",
+        "[NVDA-F14]",
+        "[NVDA-EC1]",
+        "[NVDA-VOL60]",
+        "[NVDA-MDD1Y]"
       ],
-      "portfolio_implication": "Overweighting AMD based primarily on price momentum can create valuation risk if near-term revenue contraction and client-segment inventory reductions persist (AMD Q1 revenue down and Q2 guide down ~19% YoY [AMD-EC1][AMD-EC4]; client revenue fell 65% [AMD-EC2]; PC weakness & inventory correction [AMD-F2]). High realized volatility and large historical drawdowns amplify downside if earnings disappoint [AMD-VOL60][AMD-MDD1Y].",
-      "suggested_adjustment": "Reduce AMD tactical weight materially (example: from 0.14 to ~0.04) until firm-level evidence shows durable revenue/cash-flow improvement (sequential revenue stabilization and persistent data-center beats). Reallocate freed capital to names with clearer near-term cash generation (e.g., increase PG or CVX modestly supported by [PG-EC1][CVX-EC1]).",
-      "falsifier": "If AMD reports sequential revenue and EPS beats with data-center/deliverable customer demand materially above current guidance \u2014 i.e., management demonstrates that the expected Q2 decline in revenue (~[AMD-EC4]) is overcome and data-center growth is realized (consistent with the guidance aspiration in [AMD-EC6]) \u2014 then the momentum-based sizing would be more defensible and this objection would be falsified.",
+      "portfolio_implication": "Heavy momentum-driven exposure (NVDA 0.12 in TECHNICAL) risks steep losses if fundamentals disappoint or export/supply shocks materialize. A momentum breakout can be undone quickly when earnings/guidance diverge from pricing assumptions, causing multiple contraction and downside volatility.",
+      "suggested_adjustment": "Require fundamental confirmation before sizeable momentum weights: cap NVDA to a small tactical allocation (token exposure) unless NVDA demonstrates durable, diversified revenue growth and resolved export/inventory risks. Reallocate excess weight toward industrials or consumer staples with clearer earnings support (CAT, PG, WMT) [CAT-EC1] [PG-F4] [WMT-EC1].",
+      "falsifier": "If NVDA demonstrates sustained, broad-based Data Center revenue growth with manageable export-control impact and normalized inventories (i.e., consistent sequential Data Center growth, transparent mitigation of export constraints, and no material inventory provisions), the objection would be falsified ([NVDA-EC3], [NVDA-F13]).",
       "objection_confidence": 0.85
+    },
+    {
+      "target_role": "TECHNICAL agent",
+      "target_claim": "C2",
+      "objection": "C2 equates price above moving averages with trend validity and uses that to justify allocations to names like AAPL and MSFT. That technical confirmation can mislead when earnings trends are weak or margin guidance is uncertain. Apple is trading above SMAs but reported revenue decline and product-line softness (Mac revenue down 31%) alongside FX headwinds and management warning that gross margins remain volatile ([AAPL-F1], [AAPL-F11], [AAPL-F13], [AAPL-EC3]). Microsoft faces consumer hardware weakness and a looming Azure deceleration risk flagged by management ([MSFT-F3], [MSFT-EC4]). Using SMA/RS without validating margin sustainability and earnings trajectory risks paying up for momentum unsupported by fundamentals.",
+      "counter_evidence": [
+        "[AAPL-F1]",
+        "[AAPL-F11]",
+        "[AAPL-F13]",
+        "[AAPL-EC3]",
+        "[MSFT-F3]",
+        "[MSFT-EC4]"
+      ],
+      "portfolio_implication": "Momentum-based weights in AAPL/MSFT may be exposed to multiple compression if product weakness, FX headwinds, or slowing cloud growth produce earnings misses. Technical breakout can therefore convert to losses when earnings power does not confirm price levels.",
+      "suggested_adjustment": "Complement technical filters with fundamental screens: require margin guidance and recurring-earnings evidence before material sizing. Reduce AAPL/MSFT sizing until margin guidance and revenue drivers show durability; shift weight to consumer staples or energy where earnings and cash returns are clearer (PG, WMT, XOM, CVX) [PG-F4] [WMT-EC1] [XOM-F7] [CVX-F8].",
+      "falsifier": "If Apple and Microsoft report durable margin expansion and accelerating, sustainable end\u2011market demand (e.g., Apple reports stable-to-rising gross margins with product-line recovery; Microsoft delivers continued Azure acceleration per management guidance), the objection would be falsified ([AAPL-F4], [MSFT-EC2], [MSFT-EC5]).",
+      "objection_confidence": 0.8
     }
   ],
   "self_critique": {
-    "weakest_claim": "C3 (PG overweight / defensive anchor)",
-    "explanation": "The single biggest valuation risk in my portfolio is the relatively large PG overweight (0.25) that rests on the assumption pricing and productivity will continue to offset input-cost inflation and sustain core EPS/cash returns. But filings and the earnings call show gross margin compression and core EPS weakness (gross margin compressed 160 bps [PG-F4]; core EPS down 2% and core EPS $1.57 [PG-EC3]), and management warns of continued cost volatility and a potential $3.9bn after\u2011tax headwind [PG-EC5][PG-F16]. If pricing fail-to-pass-through accelerates or volumes deteriorate meaningfully, PG's earnings and cash-return profile could weaken materially, making the current overweight expose the portfolio to valuation downside. I will revise/abandon the overweight if management lowers organic sales/core EPS guidance below current ranges (revisit [PG-EC5]) or if reported core EPS falls materially (e.g., >5% YoY) in upcoming quarters."
+    "weakest_claim": "C2 (Banks: JPM/GS overweighting based on NII tailwind)",
+    "explanation": "The single biggest valuation risk in my prior portfolio is reliance on elevated net interest income to justify large bank weights (JPM 0.23, GS 0.13). JPM's Q2 results include a substantial bargain purchase gain and management explicitly warns that current NII levels are elevated and may normalize to a mid\u2011$70bn run rate over time ([JPM-EC1], [JPM-EC4], [JPM-EC5]). That makes earnings upside contingent on a temporary rate environment and execution on integration; if NII reverts or credit provisions rise, the valuation support for these bank positions would weaken materially. I should reduce bank concentration or hedge this exposure and require evidence of sustainable NII (e.g., multiple quarters of elevated NII with stable provisions) before maintaining current sizing."
   }
 }

@@ -298,6 +298,7 @@ class DebateLogger:
         self._round_dir: Path | None = None
         self._current_beta: float = 0.5
         self._round_num: int = 0
+        self._prompt_retry: int | None = None  # set during intervention retries
 
     @staticmethod
     def _claim_run_dir(base: Path, run_id: str) -> Path:
@@ -476,13 +477,24 @@ class DebateLogger:
             }
             _write_json(agent_dir / "response.json", data)
 
-    def write_revisions(self, revisions: list[dict]) -> None:
-        """Write revisions/<agent>/response.txt + portfolio.json for each agent."""
+    def write_revisions(
+        self, revisions: list[dict], *, retry: int | None = None,
+    ) -> None:
+        """Write revisions/<agent>/response.txt + portfolio.json for each agent.
+
+        When *retry* is set (1-indexed), files are written under a
+        ``revisions_retry_NNN/`` subdirectory so original and retry
+        outputs are clearly separated in the logging directory.
+        """
         if self._mode == "off" or self._round_dir is None:
             return
+        if retry is not None:
+            base_dir = self._round_dir / f"revisions_retry_{retry:03d}"
+        else:
+            base_dir = self._round_dir / "revisions"
         for r in revisions:
             role = r.get("role", "unknown")
-            agent_dir = self._round_dir / "revisions" / role
+            agent_dir = base_dir / role
             agent_dir.mkdir(parents=True, exist_ok=True)
 
             # response.txt — full revised reasoning text
@@ -495,6 +507,20 @@ class DebateLogger:
             action = r.get("action_dict", {})
             allocation = action.get("allocation", {}) if isinstance(action, dict) else {}
             _write_json(agent_dir / "portfolio.json", allocation)
+
+    def write_intervention(self, entry: dict) -> None:
+        """Write intervention event to the current round directory.
+
+        Files are named ``intervention_NNN.json`` (0-indexed) and stored
+        under ``rounds/round_NNN/interventions/``.  The retry number is
+        prominently included in each entry for easy identification.
+        """
+        if self._mode == "off" or self._round_dir is None:
+            return
+        interventions_dir = self._round_dir / "interventions"
+        interventions_dir.mkdir(exist_ok=True)
+        idx = len(list(interventions_dir.glob("*.json")))
+        _write_json(interventions_dir / f"intervention_{idx:03d}.json", entry)
 
     def write_crit_prompts(self, captures: dict[str, dict]) -> None:
         """Write CRIT/<agent>/prompt.txt + response.txt for each agent."""
@@ -684,12 +710,21 @@ class DebateLogger:
         system_prompt: str,
         user_prompt: str,
     ) -> None:
-        """Write <phase>/<agent>/prompt.txt (debug mode only)."""
+        """Write <phase>/<agent>/prompt.txt (debug mode only).
+
+        During intervention retries (_prompt_retry is set), revision prompts
+        are written to ``revisions_retry_NNN/<agent>/prompt.txt`` so they
+        sit alongside the retry's response.txt and portfolio.json.
+        """
         if self._mode != "debug" or self._round_dir is None:
             return
         # phase is "proposals", "critiques", "revisions", or "final"
         if phase == "final":
             prompt_path = self._run_dir / "final" / f"{role}_prompt.txt"
+        elif phase == "revisions" and self._prompt_retry is not None:
+            agent_dir = self._round_dir / f"revisions_retry_{self._prompt_retry:03d}" / role
+            agent_dir.mkdir(parents=True, exist_ok=True)
+            prompt_path = agent_dir / "prompt.txt"
         else:
             agent_dir = self._round_dir / phase / role
             agent_dir.mkdir(parents=True, exist_ok=True)
@@ -714,6 +749,7 @@ class DebateLogger:
         terminated_early: bool,
         enriched_context: str,
         crit_captures: dict[str, dict] | None = None,
+        intervention_history: list[dict] | None = None,
     ) -> None:
         """Write final/ artifacts and update manifest.json."""
         if self._mode == "off":
@@ -744,6 +780,10 @@ class DebateLogger:
         # pid_crit_all_rounds.json — consolidated PID/CRIT data for all rounds
         if pid_phase_data:
             _write_json(final_dir / "pid_crit_all_rounds.json", pid_phase_data)
+
+        # interventions_all_rounds.json — all intervention events across rounds
+        if intervention_history:
+            _write_json(final_dir / "interventions_all_rounds.json", intervention_history)
 
         # debate_diagnostic.txt — plaintext casefile for LLM diagnosis
         casefile = self._build_diagnostic_casefile(
