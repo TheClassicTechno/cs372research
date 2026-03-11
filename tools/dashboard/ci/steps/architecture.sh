@@ -6,4 +6,4 @@ set -euo pipefail
 DASHBOARD_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 echo "=== Architecture Checker ==="
-python "$DASHBOARD_DIR/rules/check_dashboard_architecture.py"
+python3 "$DASHBOARD_DIR/rules/check_dashboard_architecture.py"

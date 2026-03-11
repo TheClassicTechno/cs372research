@@ -1052,24 +1052,35 @@ def get_portfolio_trajectory(
         if not proposals and result:
             proposals = result[-1].get("revisions", {})
 
-        # Compute consensus (mean across revised agents)
+        # Intervention retry phases (revisions_retry_001, revisions_retry_002, …)
+        retries: list[dict[str, dict]] = []
+        for retry_dir in sorted(rd.glob("revisions_retry_*")):
+            retry_allocs = _read_phase_portfolios(retry_dir)
+            if retry_allocs:
+                retries.append(retry_allocs)
+
+        # Compute consensus (mean across final revised agents)
+        final_revisions = retries[-1] if retries else revisions
         consensus: dict[str, float] = {}
-        if revisions:
+        if final_revisions:
             all_tickers: set[str] = set()
-            for alloc in revisions.values():
+            for alloc in final_revisions.values():
                 all_tickers.update(alloc.keys())
-            n = len(revisions)
+            n = len(final_revisions)
             for ticker in sorted(all_tickers):
-                total = sum(alloc.get(ticker, 0.0) for alloc in revisions.values())
+                total = sum(alloc.get(ticker, 0.0) for alloc in final_revisions.values())
                 consensus[ticker] = round(total / n, 4)
 
-        result.append({
+        entry: dict[str, Any] = {
             "round": round_num,
             "proposals": proposals,
             "revisions": revisions,
-            "allocations": revisions,
+            "allocations": final_revisions,
             "consensus": consensus,
-        })
+        }
+        if retries:
+            entry["retries"] = retries
+        result.append(entry)
     return result
 
 
@@ -1108,6 +1119,18 @@ def compute_round_performance(
                     portfolio, prices_base, year, quarter,
                 )
             round_entry[phase] = phase_perf
+        # Intervention retry phases
+        retries = entry.get("retries") or []
+        if retries:
+            retry_perfs = []
+            for retry_allocs in retries:
+                retry_perf: dict[str, dict] = {}
+                for role, portfolio in retry_allocs.items():
+                    retry_perf[role] = _portfolio_value(
+                        portfolio, prices_base, year, quarter,
+                    )
+                retry_perfs.append(retry_perf)
+            round_entry["retries"] = retry_perfs
         result.append(round_entry)
     return result
 
@@ -1553,7 +1576,7 @@ def compute_ablation_debate_impact(
         # Collect (config_key, impact) pairs
         config_impacts: dict[str, list[dict]] = {}
         for run in runs:
-            if run.get("status") == "incomplete":
+            if run.get("status") != "complete":
                 continue
             impact = compute_debate_impact(
                 base_path, experiment, run["run_id"], prices_base,
@@ -1851,4 +1874,444 @@ def diff_run_configs(
         "only_right": only_right,
         "different": different,
         "shared": shared,
+    }
+
+
+# ------------------------------------------------------------------
+# Paired statistical tests (paired t-test)
+# ------------------------------------------------------------------
+# Reproduces the statistical approach from scripts/compare_per_scenario.py:
+#   scipy.stats.ttest_rel  — paired two-tailed t-test
+#   scipy.stats.sem        — standard error of the mean
+#   scipy.stats.t.interval — 95% confidence interval on the difference
+#   numpy mean / std(ddof=1)
+
+def _extract_collapse_ratio(run_dir: Path) -> float | None:
+    """Compute collapse ratio for a single run.
+
+    Baseline (no retry): JS_revision / JS_propose
+    Intervention (retry exists): JS_retry / JS_propose
+
+    Returns None if required metrics are missing.
+    """
+    r1 = run_dir / "rounds" / "round_001"
+    propose = _safe_json(r1 / "metrics_propose.json")
+    if not isinstance(propose, dict):
+        return None
+    js_propose = propose.get("js_divergence")
+    if js_propose is None or js_propose == 0:
+        return None
+
+    # Prefer retry metrics if they exist (intervention condition)
+    retry = _safe_json(r1 / "metrics_retry_001.json")
+    if isinstance(retry, dict) and retry.get("js_divergence") is not None:
+        return retry["js_divergence"] / js_propose
+
+    revision = _safe_json(r1 / "metrics_revision.json")
+    if not isinstance(revision, dict):
+        return None
+    js_revision = revision.get("js_divergence")
+    if js_revision is None:
+        return None
+    return js_revision / js_propose
+
+
+def compute_paired_tests(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Paired t-test comparing collapse ratios across two debate configs.
+
+    Reproduces the statistical methodology from
+    ``scripts/compare_per_scenario.py``: paired ``ttest_rel``, SEM,
+    and 95 % CI on the mean difference.
+
+    Groups runs by (debate_config_stem, scenario_stem), pairs by
+    scenario across the two debate configs.
+
+    Returns dict with config names, paired data, test statistics,
+    and summary measures.
+    """
+    import numpy as np
+    from scipy import stats
+
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # Scan all runs and group by (debate_config, scenario)
+    groups: dict[tuple[str, str], float] = {}
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        ratio = _extract_collapse_ratio(run_dir)
+        if ratio is None:
+            continue
+        groups[(debate_stem, scenario_stem)] = ratio
+
+    # Identify the two debate configs
+    debate_configs = sorted({k[0] for k in groups})
+    if len(debate_configs) != 2:
+        return {
+            "error": f"Expected 2 debate configs, found {len(debate_configs)}",
+            "configs_found": debate_configs,
+        }
+
+    config_a, config_b = debate_configs  # alphabetical
+
+    # Build paired arrays matched by scenario
+    scenarios_a = {k[1]: v for k, v in groups.items() if k[0] == config_a}
+    scenarios_b = {k[1]: v for k, v in groups.items() if k[0] == config_b}
+    common = sorted(set(scenarios_a) & set(scenarios_b))
+
+    if len(common) < 2:
+        return {
+            "error": f"Too few paired scenarios ({len(common)}), need >= 2",
+            "config_a": config_a,
+            "config_b": config_b,
+        }
+
+    pairs = []
+    a_ratios = []
+    b_ratios = []
+    for s in common:
+        a_val = round(scenarios_a[s], 6)
+        b_val = round(scenarios_b[s], 6)
+        pairs.append({"scenario": s, "a": a_val, "b": b_val})
+        a_ratios.append(a_val)
+        b_ratios.append(b_val)
+
+    # --- Statistical tests (mirrors compare_per_scenario.py) ----------
+    v_a = np.array(a_ratios)
+    v_b = np.array(b_ratios)
+    diffs = v_b - v_a
+
+    t_stat, p_val = stats.ttest_rel(v_b, v_a)
+    mean_diff = float(np.mean(diffs))
+    se_diff = float(stats.sem(diffs))
+
+    mean_a = float(np.mean(v_a))
+    sem_a = float(stats.sem(v_a))
+    mean_b = float(np.mean(v_b))
+    sem_b = float(stats.sem(v_b))
+
+    ci_low, ci_high = stats.t.interval(
+        0.95, len(diffs) - 1, loc=mean_diff, scale=se_diff,
+    )
+
+    n = len(common)
+    n_b_greater = int(np.sum(v_b > v_a))
+    n_a_greater = int(np.sum(v_a > v_b))
+
+    return {
+        "config_a": config_a,
+        "config_b": config_b,
+        "n_paired": n,
+        "pairs": pairs,
+        "ttest": {
+            "t_statistic": round(float(t_stat), 4),
+            "p_value": round(float(p_val), 6),
+            "mean_diff": round(mean_diff, 6),
+            "se_diff": round(se_diff, 6),
+            "ci_95": [round(float(ci_low), 6), round(float(ci_high), 6)],
+        },
+        "summary": {
+            "a_mean": round(mean_a, 4),
+            "a_sem": round(sem_a, 4),
+            "a_std": round(float(np.std(v_a, ddof=1)), 4),
+            "b_mean": round(mean_b, 4),
+            "b_sem": round(sem_b, 4),
+            "b_std": round(float(np.std(v_b, ddof=1)), 4),
+            "n_b_greater": n_b_greater,
+            "n_a_greater": n_a_greater,
+        },
+    }
+
+
+# ------------------------------------------------------------------
+# Financial metrics paired tests
+# ------------------------------------------------------------------
+# Reproduces the statistical approach and metric selection from
+# scripts/compare_multiple_configs.py: paired ttest_rel per metric,
+# mean ± SEM, 95% CI on mean difference.  Reads summary.json from
+# simulation results directories, matched via invest_quarter.
+
+# Metrics in display priority order (from compare_multiple_configs.py)
+_FINANCIAL_METRIC_PRIORITIES = [
+    "daily_metrics_excess_return_pct",
+    "daily_metrics_annualized_sharpe",
+    "daily_metrics_annualized_volatility",
+    "daily_metrics_max_drawdown_pct",
+    "daily_metrics_total_return_pct",
+    "daily_metrics_annualized_sortino",
+    "daily_metrics_calmar_ratio",
+    "total_trades",
+    "final_cash",
+]
+
+# Fields excluded when flattening episode_summaries
+# (matches compare_per_scenario.py)
+_FLATTEN_EXCLUDED = {
+    "episode_id", "initial_cash", "final_positions",
+    "final_prices", "position_values", "mean_revisions_metrics",
+}
+
+# Metrics excluded from the comparison table
+# (matches compare_multiple_configs.py)
+_METRIC_EXCLUSIONS = {
+    "book_value", "calmar_ratio", "duration_seconds", "max_drawdown",
+    "return_pct", "return_pct_with_cash_interest",
+    "daily_metrics_trading_days", "daily_metrics_spy_return_pct",
+    "max_drawdown_pct",
+}
+
+
+def _flatten_dict(
+    d: dict,
+    prefix: str = "",
+    excluded_fields: set | None = None,
+) -> dict[str, float]:
+    """Recursively flatten a nested dict with underscore-joined keys.
+
+    Reproduces ``flatten_dict`` from ``scripts/compare_per_scenario.py``.
+    Only numeric values (int / float / bool) are included.
+    """
+    if excluded_fields is None:
+        excluded_fields = set()
+    flat: dict[str, float] = {}
+    if not isinstance(d, dict):
+        return flat
+    for k, v in d.items():
+        if k in excluded_fields:
+            continue
+        key = f"{prefix}{k}" if prefix else k
+        if isinstance(v, dict):
+            flat.update(_flatten_dict(v, prefix=f"{key}_", excluded_fields=excluded_fields))
+        elif isinstance(v, (int, float, bool)) and v is not None:
+            flat[key] = float(v)
+    return flat
+
+
+def _find_results_by_quarter(
+    output_dir_str: str,
+    debate_stem: str,
+    invest_quarter: str,
+) -> Path | None:
+    """Locate a results directory matching (output_dir, debate_stem, invest_quarter).
+
+    Scans ``{output_dir}/{debate_stem}[_NNN]/`` directories in reverse
+    order (highest suffix first) and returns the first whose
+    ``simulation_log.json`` records a matching ``invest_quarter``.
+    """
+    base = Path(output_dir_str)
+    if not base.is_dir():
+        return None
+
+    candidates: list[Path] = []
+    exact = base / debate_stem
+    if exact.is_dir():
+        candidates.append(exact)
+    for i in range(1, 50):
+        suffixed = base / f"{debate_stem}_{i:03d}"
+        if suffixed.is_dir():
+            candidates.append(suffixed)
+        else:
+            break
+
+    # Most-recently-created (highest suffix) first
+    for cand in reversed(candidates):
+        sim_log = _safe_json(cand / "simulation_log.json")
+        if not isinstance(sim_log, dict):
+            continue
+        cfg = sim_log.get("config")
+        if isinstance(cfg, dict) and cfg.get("invest_quarter") == invest_quarter:
+            return cand
+
+    return None
+
+
+def compute_financial_paired_tests(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Paired t-tests on financial metrics across two debate configs.
+
+    For each completed run in *experiment*, maps to the simulation
+    results directory via ``invest_quarter`` matching, reads
+    ``summary.json``, and flattens ``episode_summaries[0]`` using
+    the same logic as ``scripts/compare_per_scenario.py``.
+
+    Pairs metrics by scenario across the two debate configs and runs
+    ``scipy.stats.ttest_rel`` per metric (matching
+    ``scripts/compare_multiple_configs.py``).
+
+    Returns dict with config names, per-metric statistics, and
+    per-scenario raw values.
+    """
+    import numpy as np
+    from scipy import stats
+
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # config_stem → {scenario_stem → flat_metrics}
+    config_metrics: dict[str, dict[str, dict[str, float]]] = {}
+    # Cache scenario YAML reads (same scenario used by both configs)
+    scenario_cache: dict[str, tuple[str, str]] = {}  # path → (iq, output_dir)
+
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_path_str = config_paths[1]
+        scenario_stem = Path(scenario_path_str).stem
+
+        # Read scenario YAML (cached)
+        if scenario_path_str not in scenario_cache:
+            scenario_path = Path(scenario_path_str)
+            try:
+                sdata = yaml.safe_load(
+                    scenario_path.read_text(encoding="utf-8"),
+                )
+            except Exception:
+                continue
+            if not isinstance(sdata, dict):
+                continue
+            iq = sdata.get("invest_quarter")
+            od = sdata.get("output_dir", "results")
+            if not iq:
+                continue
+            scenario_cache[scenario_path_str] = (iq, od)
+
+        if scenario_path_str not in scenario_cache:
+            continue
+        invest_quarter, output_dir_str = scenario_cache[scenario_path_str]
+
+        # Find matching results directory
+        results_dir = _find_results_by_quarter(
+            output_dir_str, debate_stem, invest_quarter,
+        )
+        if results_dir is None:
+            continue
+
+        # Read and flatten summary.json
+        summary = _safe_json(results_dir / "summary.json")
+        if not isinstance(summary, dict):
+            continue
+        ep_list = summary.get("episode_summaries")
+        if not isinstance(ep_list, list) or not ep_list:
+            continue
+        metrics = _flatten_dict(ep_list[0], excluded_fields=_FLATTEN_EXCLUDED)
+        if not metrics:
+            continue
+
+        config_metrics.setdefault(debate_stem, {})[scenario_stem] = metrics
+
+    # Identify the two debate configs
+    configs = sorted(config_metrics.keys())
+    if len(configs) != 2:
+        return {
+            "error": f"Expected 2 debate configs, found {len(configs)}",
+            "configs_found": configs,
+        }
+
+    config_a, config_b = configs
+    a_data = config_metrics[config_a]
+    b_data = config_metrics[config_b]
+    common = sorted(set(a_data) & set(b_data))
+
+    if len(common) < 2:
+        return {
+            "error": f"Too few paired scenarios ({len(common)}), need >= 2",
+            "config_a": config_a,
+            "config_b": config_b,
+        }
+
+    # Determine metric list: prioritised metrics first, then any remaining
+    all_keys: set[str] = set()
+    for sc in common:
+        all_keys.update(a_data[sc].keys())
+        all_keys.update(b_data[sc].keys())
+    all_keys -= _METRIC_EXCLUSIONS
+
+    ordered_metrics = [m for m in _FINANCIAL_METRIC_PRIORITIES if m in all_keys]
+    extras = sorted(all_keys - set(ordered_metrics))
+    ordered_metrics.extend(extras)
+
+    # Compute per-metric paired t-tests
+    results_list: list[dict] = []
+    for metric in ordered_metrics:
+        vals_a: list[float] = []
+        vals_b: list[float] = []
+        per_scenario: list[dict] = []
+
+        for sc in common:
+            va = a_data[sc].get(metric)
+            vb = b_data[sc].get(metric)
+            if va is not None and vb is not None:
+                vals_a.append(va)
+                vals_b.append(vb)
+                per_scenario.append({"scenario": sc, "a": va, "b": vb})
+
+        if len(vals_a) < 2:
+            continue
+
+        v_a = np.array(vals_a)
+        v_b = np.array(vals_b)
+        diffs = v_b - v_a
+
+        t_stat, p_val = stats.ttest_rel(v_b, v_a)
+        mean_diff = float(np.mean(diffs))
+        se_diff = float(stats.sem(diffs))
+        ci_low, ci_high = stats.t.interval(
+            0.95, len(diffs) - 1, loc=mean_diff, scale=se_diff,
+        )
+
+        # Handle NaN from ttest_rel (e.g. identical arrays)
+        if math.isnan(p_val):
+            p_val = 1.0
+        if math.isnan(t_stat):
+            t_stat = 0.0
+
+        results_list.append({
+            "metric": metric,
+            "n": len(vals_a),
+            "a_mean": round(float(np.mean(v_a)), 4),
+            "a_sem": round(float(stats.sem(v_a)), 4),
+            "b_mean": round(float(np.mean(v_b)), 4),
+            "b_sem": round(float(stats.sem(v_b)), 4),
+            "mean_diff": round(mean_diff, 4),
+            "t_statistic": round(float(t_stat), 4),
+            "p_value": round(float(p_val), 6),
+            "ci_95": [
+                round(float(ci_low), 4),
+                round(float(ci_high), 4),
+            ],
+            "per_scenario": per_scenario,
+        })
+
+    return {
+        "config_a": config_a,
+        "config_b": config_b,
+        "n_paired": len(common),
+        "metrics": results_list,
     }

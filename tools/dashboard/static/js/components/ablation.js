@@ -6,7 +6,7 @@
  */
 
 import { esc } from '../utils/dom.js';
-import { fmt, scoreClass } from '../utils/format.js';
+import { fmt, fmtPvalue, pvalueClass, scoreClass } from '../utils/format.js';
 import { T } from '../utils/labels.js';
 
 /**
@@ -14,8 +14,8 @@ import { T } from '../utils/labels.js';
  * Returns an HTML <td> string.
  */
 function statCell(value, decimals) {
-  var cls = scoreClass(value);
-  var extra = cls ? ' ' + cls : '';
+  const cls = scoreClass(value);
+  const extra = cls ? ' ' + cls : '';
   return '<td class="num-cell' + extra + '">' + fmt(value, decimals) + '</td>';
 }
 
@@ -34,21 +34,21 @@ function meanStdev(obj, decimals) {
  * Returns an HTML table string.
  */
 function buildRhoTable(rho) {
-  var cfg = T('ablation_rho');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_rho');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr>';
-  for (var c = 0; c < cfg.columns.length; c++) {
+  for (let c = 0; c < cfg.columns.length; c++) {
     h += '<th>' + esc(cfg.columns[c]) + '</th>';
   }
   h += '</tr>';
-  var fr = rho.final_round;
+  const fr = rho.final_round;
   if (fr !== undefined && fr !== null) {
     h += '<tr><td>' + esc(cfg.rows.final_round) + '</td>';
     h += statCell(fr.mean, 4) + statCell(fr.stdev, 4) + statCell(fr.min, 4) + statCell(fr.max, 4);
     h += '</tr>';
   }
-  var ar = rho.all_rounds;
+  const ar = rho.all_rounds;
   if (ar !== undefined && ar !== null) {
     h += '<tr><td>' + esc(cfg.rows.all_rounds) + '</td>';
     h += statCell(ar.mean, 4) + statCell(ar.stdev, 4);
@@ -64,18 +64,18 @@ function buildRhoTable(rho) {
  * Returns an HTML table string.
  */
 function buildPillarsTable(pillars) {
-  var cfg = T('ablation_pillars');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_pillars');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr>';
-  for (var c = 0; c < cfg.columns.length; c++) {
+  for (let c = 0; c < cfg.columns.length; c++) {
     h += '<th>' + esc(cfg.columns[c]) + '</th>';
   }
   h += '</tr>';
-  var names = Object.keys(pillars);
-  for (var i = 0; i < names.length; i++) {
-    var p = pillars[names[i]];
-    var fr = p.final_round;
+  const names = Object.keys(pillars);
+  for (let i = 0; i < names.length; i++) {
+    const p = pillars[names[i]];
+    const fr = p.final_round;
     if (fr === undefined || fr === null) continue;
     h += '<tr><td>' + esc(names[i]) + '</td>';
     h += statCell(fr.mean, 4) + statCell(fr.stdev, 4);
@@ -91,15 +91,15 @@ function buildPillarsTable(pillars) {
  * Returns an HTML string.
  */
 function buildJsSection(js) {
-  var cfg = T('ablation_js');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_js');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
-  var fr = js.final_round;
+  const fr = js.final_round;
   if (fr !== undefined && fr !== null) {
     h += '<tr><td>' + esc(cfg.rows.final_round) + '</td><td>' + meanStdev(fr, 4) + '</td></tr>';
   }
-  var traj = js.trajectory;
+  const traj = js.trajectory;
   if (traj !== undefined && traj !== null) {
     h += '<tr><td>' + esc(cfg.rows.mean_delta) + '</td><td>' + fmt(traj.mean_delta, 4) + '</td></tr>';
     h += '<tr><td>' + esc(cfg.rows.pct_decreased) + '</td><td>' + fmt(traj.pct_decreased, 1) + '%</td></tr>';
@@ -114,11 +114,11 @@ function buildJsSection(js) {
  * Returns an HTML string.
  */
 function buildEoSection(eo) {
-  var cfg = T('ablation_eo');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_eo');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
-  var fr = eo.final_round;
+  const fr = eo.final_round;
   if (fr !== undefined && fr !== null) {
     h += '<tr><td>' + esc(cfg.rows.final_round) + '</td><td>' + meanStdev(fr, 4) + '</td></tr>';
   }
@@ -136,25 +136,25 @@ function buildEoSection(eo) {
  * Returns an HTML string with labels.
  */
 function fmtDistribution(dist) {
-  var keys = Object.keys(dist);
-  var parts = [];
-  for (var i = 0; i < keys.length; i++) {
+  const keys = Object.keys(dist);
+  const parts = [];
+  for (let i = 0; i < keys.length; i++) {
     parts.push(esc(keys[i]) + ':&nbsp;' + fmt(dist[keys[i]] * 100, 1) + '%');
   }
   return parts.join(' &nbsp;\u2022&nbsp; ');
 }
 
 function buildPidSection(pid) {
-  var cfg = T('ablation_pid');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_pid');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
   h += '<tr><td>' + esc(cfg.rows.beta_final) + '</td><td>' + meanStdev(pid.beta_final, 4) + '</td></tr>';
-  var qd = pid.quadrant_distribution;
+  const qd = pid.quadrant_distribution;
   if (qd !== undefined && qd !== null) {
     h += '<tr><td>' + esc(cfg.rows.quadrant_distribution) + '</td><td>' + fmtDistribution(qd) + '</td></tr>';
   }
-  var td = pid.tone_distribution;
+  const td = pid.tone_distribution;
   if (td !== undefined && td !== null) {
     h += '<tr><td>' + esc(cfg.rows.tone_distribution) + '</td><td>' + fmtDistribution(td) + '</td></tr>';
   }
@@ -168,8 +168,8 @@ function buildPidSection(pid) {
  * Returns an HTML string.
  */
 function buildCollapseSection(collapse) {
-  var cfg = T('ablation_collapse');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_collapse');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
   h += '<tr><td>' + esc(cfg.rows.js_lt_005) + '</td><td>' + esc(String(collapse.js_lt_005)) + '</td></tr>';
@@ -188,21 +188,21 @@ function buildCollapseSection(collapse) {
  */
 function buildBreakdownTable(label, breakdowns) {
   if (breakdowns === undefined || breakdowns === null) return '';
-  var keys = Object.keys(breakdowns);
+  const keys = Object.keys(breakdowns);
   if (keys.length === 0) return '';
 
   keys.sort(function (a, b) { return rhoSortKey(breakdowns[b]) - rhoSortKey(breakdowns[a]); });
 
-  var cfg = T('ablation_breakdown');
-  var h = '<div class="section-label">' + esc(label) + '</div>';
+  const cfg = T('ablation_breakdown');
+  let h = '<div class="section-label">' + esc(label) + '</div>';
   h += '<table class="data-table">';
-  var rhoHeader = label === 'Per Agent Config' ? 'Final \u03c1' : 'Final \u03c1 Mean';
-  var jsHeader = label === 'Per Agent Config' ? 'Final JS' : 'Final JS Mean';
+  const rhoHeader = label === 'Per Agent Config' ? 'Final \u03c1' : 'Final \u03c1 Mean';
+  const jsHeader = label === 'Per Agent Config' ? 'Final JS' : 'Final JS Mean';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th><th>' + rhoHeader + '</th><th>' + jsHeader + '</th></tr>';
-  for (var i = 0; i < keys.length; i++) {
-    var b = breakdowns[keys[i]];
-    var rhoMean = (b.rho && b.rho.final_round) ? fmt(b.rho.final_round.mean, 4) : '\u2014';
-    var jsMean = (b.js_divergence && b.js_divergence.final_round) ? fmt(b.js_divergence.final_round.mean, 4) : '\u2014';
+  for (let i = 0; i < keys.length; i++) {
+    const b = breakdowns[keys[i]];
+    const rhoMean = (b.rho && b.rho.final_round) ? fmt(b.rho.final_round.mean, 4) : '\u2014';
+    const jsMean = (b.js_divergence && b.js_divergence.final_round) ? fmt(b.js_divergence.final_round.mean, 4) : '\u2014';
     h += '<tr><td>' + esc(keys[i]) + '</td>';
     h += '<td>' + esc(String(b.run_count)) + '</td>';
     h += '<td>' + rhoMean + '</td>';
@@ -229,18 +229,18 @@ function col(html) {
  * @returns {string} HTML string for the config subsection
  */
 function buildDebateImpactConfig(configKey, cfg) {
-  var h = '<div class="config-card">';
+  let h = '<div class="config-card">';
   h += '<div class="section-label"><strong>' + esc(configKey) + '</strong>';
   h += ' <span style="font-weight:400;color:#888;">(' + esc(String(cfg.run_count)) + ' runs)</span>';
   h += '</div>';
-  var row = '';
+  let row = '';
   if (cfg.agent_deltas !== undefined && cfg.agent_deltas !== null) {
     row += col(buildAgentDeltasTable(cfg.agent_deltas));
   }
   if (cfg.mean_portfolios !== undefined && cfg.mean_portfolios !== null) {
-    var rounds = Object.keys(cfg.mean_portfolios).sort();
-    for (var r = 0; r < rounds.length; r++) {
-      var rd = cfg.mean_portfolios[rounds[r]];
+    const rounds = Object.keys(cfg.mean_portfolios).sort();
+    for (let r = 0; r < rounds.length; r++) {
+      const rd = cfg.mean_portfolios[rounds[r]];
       if (rd !== null && typeof rd === 'object' && rd.proposals_return !== undefined) {
         row += col(buildMeanPortfolioSummary(rd, rounds[r].toUpperCase()));
       }
@@ -265,14 +265,14 @@ function buildDebateImpactConfig(configKey, cfg) {
  */
 function buildDebateImpactSection(impact) {
   if (impact === undefined || impact === null) return '';
-  var configs = impact.configs;
+  const configs = impact.configs;
   if (configs === undefined || configs === null) return '';
-  var keys = Object.keys(configs);
+  const keys = Object.keys(configs);
   if (keys.length === 0) return '';
   keys.sort();
 
-  var h = '';
-  for (var i = 0; i < keys.length; i++) {
+  let h = '';
+  for (let i = 0; i < keys.length; i++) {
     h += buildDebateImpactConfig(keys[i], configs[keys[i]]);
   }
   return '<div data-testid="debate-impact-section">' + h + '</div>';
@@ -286,23 +286,23 @@ function buildDebateImpactSection(impact) {
  * @returns {string} HTML table string
  */
 function buildAgentDeltasTable(agentDeltas) {
-  var roles = Object.keys(agentDeltas);
+  const roles = Object.keys(agentDeltas);
   if (roles.length === 0) return '';
-  var cfg = T('ablation_agent_deltas');
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_agent_deltas');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
   h += '<tr>';
-  for (var c = 0; c < cfg.columns.length; c++) {
+  for (let c = 0; c < cfg.columns.length; c++) {
     h += '<th>' + esc(cfg.columns[c]) + '</th>';
   }
   h += '</tr>';
-  var sumInit = 0;
-  var sumFinal = 0;
-  var sumDelta = 0;
-  for (var i = 0; i < roles.length; i++) {
-    var d = agentDeltas[roles[i]];
-    var cls = d.mean_delta_pct >= 0 ? 'perf-profit' : 'perf-loss';
-    var sign = d.mean_delta_pct >= 0 ? '+' : '';
+  let sumInit = 0;
+  let sumFinal = 0;
+  let sumDelta = 0;
+  for (let i = 0; i < roles.length; i++) {
+    const d = agentDeltas[roles[i]];
+    const cls = d.mean_delta_pct >= 0 ? 'perf-profit' : 'perf-loss';
+    const sign = d.mean_delta_pct >= 0 ? '+' : '';
     h += '<tr><td>' + esc(roles[i]) + '</td>';
     h += '<td>' + fmt(d.mean_initial_return, 2) + '%</td>';
     h += '<td>' + fmt(d.mean_final_return, 2) + '%</td>';
@@ -321,11 +321,11 @@ function buildAgentDeltasTable(agentDeltas) {
  * Returns an HTML <tr> string with a top border separator.
  */
 function buildDeltaMeanRow(sumInit, sumFinal, sumDelta, n) {
-  var avg = sumDelta / n;
-  var cls = avg >= 0 ? 'perf-profit' : 'perf-loss';
-  var sign = avg >= 0 ? '+' : '';
-  var sep = 'border-top:2px solid #999;font-weight:600;';
-  var h = '<tr><td style="' + sep + '">' + esc(T('ablation_agent_deltas').rows.mean) + '</td>';
+  const avg = sumDelta / n;
+  const cls = avg >= 0 ? 'perf-profit' : 'perf-loss';
+  const sign = avg >= 0 ? '+' : '';
+  const sep = 'border-top:2px solid #999;font-weight:600;';
+  let h = '<tr><td style="' + sep + '">' + esc(T('ablation_agent_deltas').rows.mean) + '</td>';
   h += '<td style="' + sep + '">' + fmt(sumInit / n, 2) + '%</td>';
   h += '<td style="' + sep + '">' + fmt(sumFinal / n, 2) + '%</td>';
   h += '<td class="' + cls + '" style="' + sep + '">' + sign + fmt(avg, 2) + '%</td></tr>';
@@ -341,10 +341,10 @@ function buildDeltaMeanRow(sumInit, sumFinal, sumDelta, n) {
  * @returns {string} HTML table string
  */
 function buildMeanPortfolioSummary(mp, roundLabel) {
-  var cls = mp.critique_impact >= 0 ? 'perf-profit' : 'perf-loss';
-  var sign = mp.critique_impact >= 0 ? '+' : '';
-  var cfg = T('ablation_mean_portfolio');
-  var h = '<div class="section-label">' + esc(roundLabel) + ' Mean Portfolio</div>';
+  const cls = mp.critique_impact >= 0 ? 'perf-profit' : 'perf-loss';
+  const sign = mp.critique_impact >= 0 ? '+' : '';
+  const cfg = T('ablation_mean_portfolio');
+  let h = '<div class="section-label">' + esc(roundLabel) + ' Mean Portfolio</div>';
   h += '<table class="data-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
   h += '<tr><td>' + esc(cfg.rows.proposals) + '</td><td>' + fmt(mp.proposals_return, 2) + '%</td></tr>';
@@ -363,13 +363,13 @@ function buildMeanPortfolioSummary(mp, roundLabel) {
  * @returns {string} HTML table string
  */
 function buildAblationSharpeTable(sharpe) {
-  var cfg = T('ablation_sharpe');
-  var phaseKeys = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
-  var h = '<div class="section-label">' + esc(cfg.title) + '</div>';
+  const cfg = T('ablation_sharpe');
+  const phaseKeys = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table" data-testid="ablation-sharpe">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
-  for (var i = 0; i < phaseKeys.length; i++) {
-    var val = sharpe[phaseKeys[i]];
+  for (let i = 0; i < phaseKeys.length; i++) {
+    const val = sharpe[phaseKeys[i]];
     h += '<tr><td>' + esc(cfg.rows[phaseKeys[i]]) + '</td>';
     h += '<td style="text-align:right;">';
     h += (val !== null && val !== undefined) ? fmt(val, 4) : '\u2014';
@@ -390,8 +390,8 @@ function buildAblationSharpeTable(sharpe) {
  * Row 3: Per Scenario, Per Agent Config (side-by-side)
  */
 function buildExperimentBody(data, impact) {
-  var meta = T('ablation_experiment_meta');
-  var body = '<div class="experiment-meta">';
+  const meta = T('ablation_experiment_meta');
+  let body = '<div class="experiment-meta">';
   body += '<table class="ov-htable"><tr>';
   body += '<th>' + esc(meta.columns[0]) + '</th><td>' + esc(String(data.run_count)) + '</td>';
   body += '<th>' + esc(meta.columns[1]) + '</th><td>' + esc(data.model) + '</td>';
@@ -400,8 +400,14 @@ function buildExperimentBody(data, impact) {
   // Row 0: Debate Impact (per agent config)
   body += buildDebateImpactSection(impact);
 
+  // Paired t-test placeholder (populated async by ablationView)
+  body += '<div data-testid="paired-tests-slot"></div>';
+
+  // Financial metrics placeholder (populated async by ablationView)
+  body += '<div data-testid="financial-tests-slot"></div>';
+
   // Row 1: Rho, Pillars, JS Divergence, Evidence Overlap
-  var row1 = '';
+  let row1 = '';
   if (data.rho !== undefined && data.rho !== null) { row1 += col(buildRhoTable(data.rho)); }
   if (data.pillars !== undefined && data.pillars !== null) { row1 += col(buildPillarsTable(data.pillars)); }
   if (data.js_divergence !== undefined && data.js_divergence !== null) { row1 += col(buildJsSection(data.js_divergence)); }
@@ -409,7 +415,7 @@ function buildExperimentBody(data, impact) {
   if (row1 !== '') { body += '<div class="metrics-row" data-testid="metrics-row-quality">' + row1 + '</div>'; }
 
   // Row 2: PID, Collapse Metrics
-  var row2 = '';
+  let row2 = '';
   if (data.pid !== undefined && data.pid !== null) { row2 += col(buildPidSection(data.pid)); }
   if (data.collapse !== undefined && data.collapse !== null) { row2 += col(buildCollapseSection(data.collapse)); }
   if (row2 !== '') { body += '<div class="metrics-row metrics-row-spread" data-testid="metrics-row-pid">' + row2 + '</div>'; }
@@ -425,9 +431,9 @@ function buildExperimentBody(data, impact) {
  * Returns an HTML string or empty string if no data.
  */
 function buildBreakdownRow(perScenario, perAgentConfig) {
-  var row = '';
-  var scenarioHtml = buildBreakdownTable('Per Scenario', perScenario);
-  var agentHtml = buildBreakdownTable('Per Agent Config', perAgentConfig);
+  let row = '';
+  const scenarioHtml = buildBreakdownTable('Per Scenario', perScenario);
+  const agentHtml = buildBreakdownTable('Per Agent Config', perAgentConfig);
   if (scenarioHtml !== '') { row += col(scenarioHtml); }
   if (agentHtml !== '') { row += col(agentHtml); }
   if (row !== '') { return '<div class="metrics-row" data-testid="metrics-row-breakdowns">' + row + '</div>'; }
@@ -440,8 +446,8 @@ function buildBreakdownRow(perScenario, perAgentConfig) {
  * Returns an HTML string.
  */
 export function buildExperimentCard(name, data, impact) {
-  var body = buildExperimentBody(data, impact);
-  var h = '<div class="card ablation-experiment" data-testid="ablation-experiment">';
+  const body = buildExperimentBody(data, impact);
+  let h = '<div class="card ablation-experiment" data-testid="ablation-experiment">';
   h += '<div class="card-header"><span>' + esc(name) + '</span><span class="arrow">&#9654;</span></div>';
   h += '<div class="card-body">' + body + '</div></div>';
   return h;
@@ -463,25 +469,106 @@ function rhoSortKey(d) {
   return -Infinity;
 }
 
+/**
+ * Build the paired t-test results section for an experiment.
+ * Renders summary stats, t-test results, and per-scenario table.
+ * Accepts the paired test result object from the API.
+ * Returns an HTML string.
+ */
+export function buildPairedTestsSection(data) {
+  if (data === undefined || data === null) return '';
+  if (data.error !== undefined) {
+    return '<div class="section-label">Paired Statistical Test</div>'
+      + '<p>' + esc(data.error) + '</p>';
+  }
+
+  const t = data.ttest;
+  const s = data.summary;
+  let h = '<div class="section-label">Paired t-Test (Collapse Ratio)</div>';
+
+  // Summary row
+  h += '<table class="data-table" data-testid="paired-test-summary">';
+  h += '<tr><th>N pairs</th><th>t-statistic</th><th>p-value</th>';
+  h += '<th>Mean Diff (B\u2212A)</th><th>95% CI</th></tr>';
+
+  const pClass = pvalueClass(t.p_value);
+  h += '<tr>';
+  h += '<td>' + esc(String(data.n_paired)) + '</td>';
+  h += '<td>' + fmt(t.t_statistic, 4) + '</td>';
+  h += '<td class="' + pClass + '">' + fmtPvalue(t.p_value) + '</td>';
+  h += '<td>' + fmt(t.mean_diff, 4) + '</td>';
+  h += '<td>[' + fmt(t.ci_95[0], 4) + ', ' + fmt(t.ci_95[1], 4) + ']</td>';
+  h += '</tr></table>';
+
+  // Condition means
+  h += '<table class="data-table" data-testid="paired-test-conditions">';
+  h += '<tr><th>Condition</th><th>Mean \u00b1 SEM</th>';
+  h += '<th>Std Dev</th></tr>';
+  h += '<tr><td>(A) ' + esc(data.config_a) + '</td>';
+  h += '<td>' + fmt(s.a_mean, 4) + ' \u00b1 ' + fmt(s.a_sem, 4) + '</td>';
+  h += '<td>' + fmt(s.a_std, 4) + '</td></tr>';
+  h += '<tr><td>(B) ' + esc(data.config_b) + '</td>';
+  h += '<td>' + fmt(s.b_mean, 4) + ' \u00b1 ' + fmt(s.b_sem, 4) + '</td>';
+  h += '<td>' + fmt(s.b_std, 4) + '</td></tr>';
+  h += '</table>';
+
+  // Direction summary
+  h += '<p>Intervention preserved divergence in <strong>'
+    + esc(String(s.n_b_greater)) + '/' + esc(String(data.n_paired))
+    + '</strong> scenarios</p>';
+
+  // Per-scenario table
+  h += buildPairedScenarioTable(data.pairs);
+
+  return h;
+}
+
+/**
+ * Build the per-scenario paired comparison table.
+ * Accepts the pairs array [{scenario, a, b}, ...].
+ * Returns an HTML table string.
+ */
+function buildPairedScenarioTable(pairs) {
+  if (!Array.isArray(pairs) || pairs.length === 0) return '';
+
+  let h = '<div class="section-label">Per-Scenario Collapse Ratios</div>';
+  h += '<table class="data-table" data-testid="paired-test-scenarios">';
+  h += '<tr><th>Scenario</th><th>Baseline CR</th>';
+  h += '<th>Intervention CR</th><th>\u0394 (B\u2212A)</th></tr>';
+
+  for (let i = 0; i < pairs.length; i++) {
+    const p = pairs[i];
+    const delta = p.b - p.a;
+    const cls = delta >= 0 ? 'perf-profit' : 'perf-loss';
+    const sign = delta >= 0 ? '+' : '';
+    h += '<tr><td>' + esc(p.scenario) + '</td>';
+    h += '<td>' + fmt(p.a, 4) + '</td>';
+    h += '<td>' + fmt(p.b, 4) + '</td>';
+    h += '<td class="' + cls + '">' + sign + fmt(delta, 4) + '</td></tr>';
+  }
+  h += '</table>';
+  return h;
+}
+
 export function buildAblationOverview(experiments) {
-  var names = Object.keys(experiments);
+  const names = Object.keys(experiments);
   if (names.length === 0) return '<p>No experiments found.</p>';
 
   names.sort(function (a, b) { return rhoSortKey(experiments[b]) - rhoSortKey(experiments[a]); });
 
-  var cfg = T('ablation_overview');
-  var h = '<table class="data-table" data-testid="ablation-overview">';
+  const cfg = T('ablation_overview');
+  let h = '<table class="data-table" data-testid="ablation-overview">';
   h += '<tr>';
-  for (var c = 0; c < cfg.columns.length; c++) {
+  for (let c = 0; c < cfg.columns.length; c++) {
     h += '<th>' + esc(cfg.columns[c]) + '</th>';
   }
   h += '</tr>';
 
-  for (var i = 0; i < names.length; i++) {
-    var d = experiments[names[i]];
-    var rhoMean = (d.rho && d.rho.final_round) ? fmt(d.rho.final_round.mean, 4) : '\u2014';
-    var jsMean = (d.js_divergence && d.js_divergence.final_round) ? fmt(d.js_divergence.final_round.mean, 4) : '\u2014';
-    var collapsePct = (d.collapse !== undefined && d.collapse !== null) ? fmt(d.collapse.pct_high_rho_low_js, 1) + '%' : '\u2014';
+  for (let i = 0; i < names.length; i++) {
+    const d = experiments[names[i]];
+    const rhoMean = (d.rho && d.rho.final_round) ? fmt(d.rho.final_round.mean, 4) : '\u2014';
+    const jsMean = (d.js_divergence && d.js_divergence.final_round) ? fmt(d.js_divergence.final_round.mean, 4) : '\u2014';
+    const collapsePct = (d.collapse !== undefined && d.collapse !== null) ? fmt(d.collapse.pct_high_rho_low_js, 1) + '%' : '\u2014';
     h += '<tr><td>' + esc(names[i]) + '</td>';
     h += '<td>' + esc(String(d.run_count)) + '</td>';
     h += '<td>' + esc(d.model) + '</td>';
