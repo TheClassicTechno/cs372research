@@ -426,6 +426,12 @@ def _build_yaml(cond: dict) -> str:
     parts.append("  # --- Intervention engine (intra-round retry on acute failures) ---")
     parts.append("  intervention_config:")
     parts.append("    enabled: true")
+    parts.append("")
+    parts.append("    # Portfolio revision limits applied to all intervention retries.")
+    parts.append("    revision_limits:")
+    parts.append("      max_changed_tickers: 2")
+    parts.append("      max_change_pct: 5")
+    parts.append("")
     parts.append("    rules:")
 
     if cond["js_collapse"]:

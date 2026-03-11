@@ -598,10 +598,29 @@ class MultiAgentRunner:
                 self.config.pid_config, self.config.initial_beta
             )
 
+    @staticmethod
+    def _latest_per_role(decisions: list[dict]) -> list[dict]:
+        """Deduplicate decisions to the latest entry per role.
+
+        LangGraph reducers append to lists, so after retries
+        ``state["revisions"]`` contains entries from the original revise
+        AND every retry.  This helper keeps only the last entry per role
+        so JS / evidence metrics reflect the current state.
+        """
+        by_role: dict[str, dict] = {}
+        for d in decisions:
+            role = d.get("role")
+            if role is None:
+                raise ValueError(f"Decision dict missing 'role' key: {list(d.keys())}")
+            by_role[role] = d
+        return list(by_role.values())
+
     def _get_js_divergence(self, state: dict) -> float | None:
         """Compute JS divergence between the latest agent allocations."""
         from eval.divergence import generalized_js_divergence
-        decisions = state.get("revisions") or state.get("proposals", [])
+        decisions = self._latest_per_role(
+            state.get("revisions") or state.get("proposals", [])
+        )
         if not decisions:
             return None
         allocs = [
@@ -900,7 +919,9 @@ class MultiAgentRunner:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            prop_decisions = state.get("revisions") or state.get("proposals", [])
+            prop_decisions = self._latest_per_role(
+                state.get("proposals", [])
+            )
             prop_allocs = [
                 d.get("action_dict", {}).get("allocation", {})
                 for d in prop_decisions
@@ -908,10 +929,12 @@ class MultiAgentRunner:
             if len(prop_allocs) >= 2:
                 prop_js = generalized_js_divergence(prop_allocs)
                 prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
-                prop_ov = compute_mean_overlap(prop_ev) or 0.0
+                prop_ov = compute_mean_overlap(prop_ev)
+                if prop_ov is None:
+                    prop_ov = 0.0
 
                 prop_confidences = {
-                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
                     for d in prop_decisions
                 }
                 prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
@@ -956,6 +979,35 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_revisions(state.get("revisions", []))
 
+        # --- Revise-phase JS divergence + evidence overlap ---
+        # Written here (not inside _crit_and_pid_step) so it's logged
+        # even if CRIT scoring fails or is disabled.
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            rev_decisions = self._latest_per_role(state.get("revisions", []))
+            rev_allocs = [
+                d.get("action_dict", {}).get("allocation", {})
+                for d in rev_decisions
+            ]
+            if len(rev_allocs) >= 2:
+                rev_js = generalized_js_divergence(rev_allocs)
+                rev_ev = extract_agent_evidence_spans(rev_decisions, allocation_mode=True)
+                rev_ov = compute_mean_overlap(rev_ev)
+                if rev_ov is None:
+                    rev_ov = 0.0
+
+                rev_confidences = {
+                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in rev_decisions
+                }
+                rev_evidence = {role: sorted(spans) for role, spans in rev_ev.items()}
+
+                self._debate_logger.write_divergence_metrics(
+                    rev_js, rev_ov, rev_confidences, rev_evidence, round_num,
+                )
+
         # --- Post-revision intervention checkpoint ---
         if self._intervention_engine:
             state = self._intervention_checkpoint(
@@ -983,6 +1035,70 @@ class MultiAgentRunner:
             )
 
         return state
+
+    @staticmethod
+    def _enrich_nudge_with_proposal(
+        nudge_text: str | dict[str, str],
+        state: dict,
+        revision_limits: dict | None = None,
+    ) -> str | dict[str, str]:
+        """Append each agent's original proposal allocation to their nudge.
+
+        Extracts proposal allocations from state["proposals"] and appends a
+        PORTFOLIO REVISION LIMITS block that shows the agent's original
+        allocation and constrains how far the retry can deviate from it.
+
+        Constraint parameters come from ``revision_limits`` (read from
+        ``intervention_config.revision_limits`` in the YAML config).
+        """
+        proposals = state.get("proposals", [])
+        proposal_by_role: dict[str, dict] = {}
+        for p in proposals:
+            role = p.get("role", "unknown")
+            alloc = p.get("action_dict", {}).get("allocation", {})
+            if alloc:
+                proposal_by_role[role] = alloc
+
+        if not proposal_by_role:
+            return nudge_text
+
+        rl = revision_limits or {}
+        max_tickers = rl.get("max_changed_tickers", 2)
+        max_pct = rl.get("max_change_pct", 5)
+
+        def _format_allocation(alloc: dict) -> str:
+            lines = []
+            for ticker, weight in sorted(alloc.items(), key=lambda x: -x[1]):
+                lines.append(f"  {ticker}: {weight:.0%}")
+            return "\n".join(lines)
+
+        def _build_limits_block() -> str:
+            return (
+                "\n\nPORTFOLIO REVISION LIMITS:\n"
+                "Your revision must stay close to YOUR ORIGINAL PROPOSAL below.\n"
+                f"• You may change AT MOST {max_tickers} tickers.\n"
+                f"• Each changed ticker may move by no more than {max_pct}% of total allocation.\n"
+                "• All other positions must remain exactly as they were."
+            )
+
+        def _append_proposal_block(text: str, role: str) -> str:
+            alloc = proposal_by_role.get(role)
+            if not alloc:
+                return text
+            return text + _build_limits_block() + (
+                f"\n\nYOUR ORIGINAL PROPOSAL:\n{_format_allocation(alloc)}"
+            )
+
+        if isinstance(nudge_text, dict):
+            return {
+                role: _append_proposal_block(text, role)
+                for role, text in nudge_text.items()
+            }
+        else:
+            blocks = []
+            for role, alloc in sorted(proposal_by_role.items()):
+                blocks.append(f"\n{role.upper()} ORIGINAL PROPOSAL:\n{_format_allocation(alloc)}")
+            return nudge_text + _build_limits_block() + "".join(blocks)
 
     def _intervention_checkpoint(
         self,
@@ -1055,15 +1171,26 @@ class MultiAgentRunner:
                 "action": action.action,
                 "metrics": action.metrics,
                 "severity": action.severity,
+                "nudge_text": action.nudge_text,
             }
             self._intervention_history.append(history_entry)
 
             # Log the intervention
             self._log_intervention(action, round_num, retry_count)
 
+            # Enrich nudge with each agent's original proposal allocation
+            # so the model knows the anchor point for portfolio revision limits.
+            revision_limits = (self.config.intervention_config or {}).get(
+                "revision_limits",
+            )
+            enriched_nudge = self._enrich_nudge_with_proposal(
+                action.nudge_text, state,
+                revision_limits=revision_limits,
+            )
+
             # Inject nudge and target roles into state config.
             # nudge_text may be a str (broadcast) or dict (per-agent).
-            nudge = action.nudge_text
+            nudge = enriched_nudge
             if action.target_roles:
                 # Per-agent targeting: only targeted roles see the nudge
                 # and only targeted roles re-run the LLM call
@@ -1100,7 +1227,11 @@ class MultiAgentRunner:
 
             # Re-run revise (only targeted agents call the LLM)
             state["config"]["_current_beta"] = beta
+            if self._debate_logger:
+                self._debate_logger._prompt_retry = retry_count + 1
             state = self._revise_graph.invoke(state)
+            if self._debate_logger:
+                self._debate_logger._prompt_retry = None
             # Clear nudges and target roles after retry
             state["config"]["_intervention_nudge"] = None
             state["config"]["_intervention_target_roles"] = None
@@ -1119,6 +1250,33 @@ class MultiAgentRunner:
                     state.get("revisions", []),
                     retry=retry_count + 1,
                 )
+
+            # Log retry JS divergence + evidence overlap
+            retry_js = self._get_js_divergence(state)
+            if retry_js is not None:
+                from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+                retry_decisions = self._latest_per_role(state.get("revisions", []))
+                retry_evidence = extract_agent_evidence_spans(
+                    retry_decisions, allocation_mode=True,
+                )
+                retry_ov = compute_mean_overlap(retry_evidence)
+                if retry_ov is None:
+                    retry_ov = 0.0
+                retry_confidences = {
+                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
+                    for d in retry_decisions
+                }
+                retry_evidence_ids = {
+                    role: sorted(spans) for role, spans in retry_evidence.items()
+                }
+                if use_display:
+                    from .terminal_display import render_divergence_metrics
+                    render_divergence_metrics(retry_js, retry_ov)
+                if self._debate_logger:
+                    self._debate_logger.write_divergence_metrics(
+                        retry_js, retry_ov, retry_confidences, retry_evidence_ids,
+                        round_num, phase=f"retry_{retry_count + 1:03d}",
+                    )
 
             # Post-crit retries are expensive: re-run CRIT after revise retry
             if stage == "post_crit" and self._crit_scorer:
@@ -1150,6 +1308,7 @@ class MultiAgentRunner:
             "severity": result.severity,
             "retry": retry_count + 1,
             "metrics": result.metrics,
+            "nudge_text": result.nudge_text,
         }
         logger.info("INTERVENTION TRIGGERED: %s", json.dumps(entry, indent=2))
         if self._debate_logger:
@@ -1167,10 +1326,13 @@ class MultiAgentRunner:
         from eval.divergence import generalized_js_divergence
         from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-        decisions = state.get("revisions", state.get("proposals", []))
+        decisions = self._latest_per_role(
+            state.get("revisions", state.get("proposals", []))
+        )
         if not decisions:
-            logger.debug("Skipping CRIT — no decisions (mock mode?)")
-            return
+            raise RuntimeError(
+                f"_crit_and_pid_step called with no decisions in round {round_num}"
+            )
 
         # --- Build reasoning bundles for each agent ---
         bundles = {}
@@ -1182,8 +1344,10 @@ class MultiAgentRunner:
                 bundles[role] = bundle
 
         if not bundles:
-            logger.debug("Skipping CRIT — no reasoning bundles assembled")
-            return
+            raise RuntimeError(
+                f"No reasoning bundles assembled for CRIT in round {round_num} "
+                f"(roles: {self.config.roles})"
+            )
 
         # --- CRIT audit (per-agent parallel scoring → RoundCritResult) ---
         self._crit_current_captures = {}
@@ -1270,11 +1434,9 @@ class MultiAgentRunner:
             role: sorted(spans) for role, spans in evidence_sets.items()
         }
 
-        # --- Structured debate logger: divergence metrics ---
-        if self._debate_logger:
-            self._debate_logger.write_divergence_metrics(
-                js, ov, agent_confidences, agent_evidence, round_num,
-            )
+        # NOTE: Revise-phase divergence metrics are now written in
+        # _run_round_with_pid (after write_revisions), decoupled from CRIT.
+        # This ensures they're logged even if CRIT fails.
 
         # --- Structured JSON logging ---
         if self._log_metrics or self._debate_logger:
@@ -1354,6 +1516,11 @@ class MultiAgentRunner:
                 }
 
             phase_data = _round_floats(phase_data)
+            # Replace any existing entry for this round (post-crit retry
+            # re-runs CRIT, so only keep the final scoring per round).
+            self._pid_phase_data = [
+                d for d in self._pid_phase_data if d.get("round") != round_num
+            ]
             self._pid_phase_data.append(phase_data)
 
             # Structured debate logger: metrics + round state

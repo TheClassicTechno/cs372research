@@ -298,6 +298,7 @@ class DebateLogger:
         self._round_dir: Path | None = None
         self._current_beta: float = 0.5
         self._round_num: int = 0
+        self._prompt_retry: int | None = None  # set during intervention retries
 
     @staticmethod
     def _claim_run_dir(base: Path, run_id: str) -> Path:
@@ -696,12 +697,21 @@ class DebateLogger:
         system_prompt: str,
         user_prompt: str,
     ) -> None:
-        """Write <phase>/<agent>/prompt.txt (debug mode only)."""
+        """Write <phase>/<agent>/prompt.txt (debug mode only).
+
+        During intervention retries (_prompt_retry is set), revision prompts
+        are written to ``revisions_retry_NNN/<agent>/prompt.txt`` so they
+        sit alongside the retry's response.txt and portfolio.json.
+        """
         if self._mode != "debug" or self._round_dir is None:
             return
         # phase is "proposals", "critiques", "revisions", or "final"
         if phase == "final":
             prompt_path = self._run_dir / "final" / f"{role}_prompt.txt"
+        elif phase == "revisions" and self._prompt_retry is not None:
+            agent_dir = self._round_dir / f"revisions_retry_{self._prompt_retry:03d}" / role
+            agent_dir.mkdir(parents=True, exist_ok=True)
+            prompt_path = agent_dir / "prompt.txt"
         else:
             agent_dir = self._round_dir / phase / role
             agent_dir.mkdir(parents=True, exist_ok=True)

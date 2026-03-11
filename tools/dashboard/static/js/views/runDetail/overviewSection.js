@@ -46,10 +46,13 @@ export function buildOverviewPanel(detail, experiment, runId) {
   html += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
   html += '</tr></table>';
 
-  // Table 2 — config and agents (own rows to avoid wrapping)
+  // Table 2 — config, agents, run directory (own rows to avoid wrapping)
   html += '<table class="ov-htable" style="table-layout:auto;">';
   html += '<tr><th style="width:1%;white-space:nowrap">Config</th><td>' + esc(configName) + '</td></tr>';
   html += '<tr><th style="width:1%;white-space:nowrap">Agents</th><td>' + esc(agentsStr) + '</td></tr>';
+  if (typeof detail.run_dir === 'string') {
+    html += '<tr><th style="width:1%;white-space:nowrap">Run Dir</th><td style="font-family:monospace">' + esc(detail.run_dir) + '</td></tr>';
+  }
   html += '</table>';
 
   // Table 3 — metrics

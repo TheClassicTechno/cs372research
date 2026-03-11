@@ -658,6 +658,7 @@ def get_run_detail(
         "run_id": run_id,
         "experiment": experiment,
         "status": _get_run_status(run_dir),
+        "run_dir": str(run_dir.resolve()),
     }
 
     manifest = _safe_json(run_dir / "manifest.json")
@@ -781,9 +782,10 @@ def get_divergence_trajectory(
     run_dir = base_path / experiment / run_id
     traj = _load_trajectories(run_dir)
 
-    # Build a lookup of propose-phase metrics from per-round files,
-    # since the aggregated file never includes them.
+    # Build a lookup of propose-phase and retry-phase metrics from per-round
+    # files, since the aggregated file never includes them.
     propose_by_round: dict[int, dict] = {}
+    retry_by_round: dict[int, list[dict]] = {}
     rounds_dir = run_dir / "rounds"
     if rounds_dir.is_dir():
         for rd in sorted(rounds_dir.glob("round_*")):
@@ -799,6 +801,19 @@ def get_divergence_trajectory(
             if div_p or ev_p:
                 propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
 
+            # Retry-phase divergence + evidence overlap files
+            retries = []
+            for retry_file in sorted(metrics_dir.glob("js_divergence_retry_*.json")):
+                div_retry = _safe_json(retry_file)
+                if div_retry is None:
+                    continue
+                # Extract retry suffix (e.g. "retry_001") to find matching evidence file
+                suffix = retry_file.stem.replace("js_divergence_", "")
+                ev_retry = _safe_json(metrics_dir / f"evidence_overlap_{suffix}.json")
+                retries.append({"div": div_retry, "ev": ev_retry or {}})
+            if retries:
+                retry_by_round[rn] = retries
+
     result = []
     for entry in traj:
         round_num = entry.get("round")
@@ -813,16 +828,16 @@ def get_divergence_trajectory(
             result.append({
                 "round": round_num,
                 "phase": "propose",
-                "js_divergence": div_p.get("js_divergence") or div_p.get("js"),
-                "mean_overlap": ev_p.get("mean_overlap") or div_p.get("mean_overlap") or div_p.get("ov"),
+                "js_divergence": div_p.get("js_divergence") if div_p.get("js_divergence") is not None else div_p.get("js"),
+                "mean_overlap": ev_p.get("mean_overlap") if ev_p.get("mean_overlap") is not None else (div_p.get("mean_overlap") if div_p.get("mean_overlap") is not None else div_p.get("ov")),
                 "agent_confidences": div_p.get("agent_confidences"),
             })
 
         # --- Revise phase ---
         div_r = entry.get("divergence") or {}
         ev_r = entry.get("evidence") or {}
-        js_r = div_r.get("js_divergence") or div_r.get("js")
-        ov_r = ev_r.get("mean_overlap") or div_r.get("ov")
+        js_r = div_r.get("js_divergence") if div_r.get("js_divergence") is not None else div_r.get("js")
+        ov_r = ev_r.get("mean_overlap") if ev_r.get("mean_overlap") is not None else div_r.get("ov")
         if js_r is not None or ov_r is not None:
             result.append({
                 "round": round_num,
@@ -831,6 +846,22 @@ def get_divergence_trajectory(
                 "mean_overlap": ov_r,
                 "agent_confidences": div_r.get("agent_confidences"),
             })
+
+        # --- Retry phases (retry_001, retry_002, ...) ---
+        if round_num in retry_by_round:
+            for idx, retry_entry in enumerate(retry_by_round[round_num], start=1):
+                div_rt = retry_entry["div"]
+                ev_rt = retry_entry["ev"]
+                js_rt = div_rt.get("js_divergence") if div_rt.get("js_divergence") is not None else div_rt.get("js")
+                ov_rt = ev_rt.get("mean_overlap") if ev_rt.get("mean_overlap") is not None else div_rt.get("ov")
+                if js_rt is not None or ov_rt is not None:
+                    result.append({
+                        "round": round_num,
+                        "phase": f"retry_{idx:03d}",
+                        "js_divergence": js_rt,
+                        "mean_overlap": ov_rt,
+                        "agent_confidences": div_rt.get("agent_confidences"),
+                    })
     return result
 
 

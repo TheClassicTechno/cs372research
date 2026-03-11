@@ -20,8 +20,6 @@ num_episodes: 1                     # single episode — this is a smoke test
 agents:
   macro: macro_enriched_intense
   technical: technical_enriched_intense
-  value: value_enriched_intense
-  risk: risk_enriched_intense
 
 judge_profile: judge_standard
 
@@ -55,6 +53,13 @@ debate_setup:
   # --- Intervention engine (STRESS TEST — thresholds set to force retries) ---
   intervention_config:
     enabled: true
+
+    # Portfolio revision limits applied to all intervention retries.
+    # Constrains how far a retry allocation can deviate from the original proposal.
+    revision_limits:
+      max_changed_tickers: 2          # at most N tickers can change
+      max_change_pct: 5               # each changed ticker moves at most N%
+
     rules:
 
       # JS Collapse Detection (post_revision)
@@ -165,102 +170,6 @@ debate_setup:
             4. Identify one vulnerability in the emerging consensus view.
             5. Explain which agent you disagree with most and why.
             6. List ONE reason why another agent's argument is still flawed.
-          value: |
-            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
-
-            ⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
-
-            Rapid consensus formation has been detected in the debate.
-
-            In complex financial analysis, early consensus often indicates
-            premature convergence or sycophancy rather than strong evidence.
-
-            To maintain analytical rigor:
-
-            • Defensible dissent is valuable and encouraged.
-            • You should not abandon a well-supported thesis solely because
-              other agents appear to agree.
-            • Rapid agreement requires explicit justification.
-
-            Agreement without independent reasoning is considered a debate failure.
-
-            Your objective is rigorous reasoning, not agreement.
-
-            VALUE INTERVENTION REMINDER
-
-            Your responsibility is valuation discipline.
-
-            You should NOT abandon valuation arguments simply because other
-            agents prefer momentum or macro narratives.
-
-            Re-evaluate:
-
-            • earnings quality
-            • valuation multiples
-            • margin sustainability
-            • balance sheet strength
-
-            If consensus is forming around expensive growth stocks, your job
-            is to ask whether the valuation assumptions are justified.
-
-            Consensus does not make an asset undervalued.
-
-            Before finalizing your revision:
-
-            1. Re-examine your original thesis.
-            2. Identify whether critiques genuinely invalidate it.
-            3. Defend at least one element of your original reasoning unless
-               it has been clearly disproven.
-            4. Identify one vulnerability in the emerging consensus view.
-            5. Explain which agent you disagree with most and why.
-            6. List ONE reason why another agent's argument is still flawed.
-          risk: |
-            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
-
-            ⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
-
-            Rapid consensus formation has been detected in the debate.
-
-            In complex financial analysis, early consensus often indicates
-            premature convergence or sycophancy rather than strong evidence.
-
-            To maintain analytical rigor:
-
-            • Defensible dissent is valuable and encouraged.
-            • You should not abandon a well-supported thesis solely because
-              other agents appear to agree.
-            • Rapid agreement requires explicit justification.
-
-            Agreement without independent reasoning is considered a debate failure.
-
-            Your objective is rigorous reasoning, not agreement.
-
-            RISK INTERVENTION REMINDER
-
-            Your role is to protect the portfolio from tail risk and
-            concentration risk.
-
-            Do NOT converge toward high-return narratives without analyzing:
-
-            • volatility regimes
-            • correlation structure
-            • drawdown risk
-            • diversification
-
-            If multiple agents are converging on the same assets, evaluate
-            whether the portfolio is becoming fragile.
-
-            Consensus allocations often increase systemic risk.
-
-            Before finalizing your revision:
-
-            1. Re-examine your original thesis.
-            2. Identify whether critiques genuinely invalidate it.
-            3. Defend at least one element of your original reasoning unless
-               it has been clearly disproven.
-            4. Identify one vulnerability in the emerging consensus view.
-            5. Explain which agent you disagree with most and why.
-            6. List ONE reason why another agent's argument is still flawed.
 
       # Reasoning Quality (post_crit, per-agent, pillar-aware)
       # Each agent has one pillar set to 0.95 — virtually guaranteed to fire.
@@ -270,11 +179,9 @@ debate_setup:
         rho_threshold: 0.95         # STRESS: almost any rho triggers retry
         max_retries: 1
 
-        # STRESS TEST thresholds — all set high to guarantee intervention fires.
+        # STRESS TEST thresholds — set high to guarantee intervention fires.
         # macro:  causal_alignment=0.95  (macro rarely scores this high)
-        # technical: logical_validity=0.95  (technical rarely scores this high)
-        # value:  evidential_support=0.95  (value rarely scores this high)
-        # risk:   alternative_consideration=0.95  (risk rarely scores this high)
+        # technical: logical_validity=0.50  (baseline)
         agent_pillar_thresholds:
           macro:
             logical_validity: 0.50
@@ -285,16 +192,6 @@ debate_setup:
             logical_validity: 0.50  # STRESS: technical's logical pillar
             evidential_support: 0.50
             alternative_consideration: 0.50
-            causal_alignment: 0.50
-          value:
-            logical_validity: 0.50
-            evidential_support: 0.50  # STRESS: value's evidential pillar
-            alternative_consideration: 0.50
-            causal_alignment: 0.50
-          risk:
-            logical_validity: 0.50
-            evidential_support: 0.50
-            alternative_consideration: 0.50  # STRESS: risk's alternative pillar
             causal_alignment: 0.50
 
 
