@@ -83,8 +83,10 @@ export function buildFinancialTestsSection(data) {
   const metrics = data.metrics;
   if (!Array.isArray(metrics) || metrics.length === 0) return '';
 
-  let h = '<div class="section-label">Financial Metrics Comparison (Paired t-Test, N='
-    + esc(String(data.n_paired)) + ')</div>';
+  const sourceLabel = data.source === 'mean_revisions'
+    ? 'Mean Agent Revisions' : 'Judge Portfolio';
+  let h = '<div class="section-label">Financial Metrics \u2014 ' + esc(sourceLabel)
+    + ' (Paired t-Test, N=' + esc(String(data.n_paired)) + ')</div>';
 
   h += '<table class="data-table" data-testid="financial-tests-table">';
   h += '<tr><th>Metric</th>';
