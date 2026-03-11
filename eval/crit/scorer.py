@@ -35,6 +35,32 @@ from eval.crit.schema import (
     validate_raw_response,
 )
 
+# Default low-quality CritResult used when CRIT scoring fails after retries.
+# rho_bar = 0.25 signals poor quality to the PID controller without crashing.
+_FALLBACK_CRIT = CritResult(
+    pillar_scores=PillarScores(
+        logical_validity=0.25,
+        evidential_support=0.25,
+        alternative_consideration=0.25,
+        causal_alignment=0.25,
+    ),
+    diagnostics=Diagnostics(
+        contradictions_detected=False,
+        unsupported_claims_detected=True,
+        ignored_critiques_detected=False,
+        premature_certainty_detected=False,
+        causal_overreach_detected=False,
+        conclusion_drift_detected=False,
+    ),
+    explanations=Explanations(
+        logical_validity="CRIT scoring failed — fallback score assigned.",
+        evidential_support="CRIT scoring failed — fallback score assigned.",
+        alternative_consideration="CRIT scoring failed — fallback score assigned.",
+        causal_alignment="CRIT scoring failed — fallback score assigned.",
+    ),
+    rho_bar=0.25,
+)
+
 _CRIT_MAX_RETRIES = 2
 
 
@@ -126,11 +152,15 @@ class CritScorer:
                         attempt + 1, _CRIT_MAX_RETRIES + 1, role, e,
                     )
 
-        # All retries exhausted — crash the debate
-        raise RuntimeError(
-            f"CRIT scoring failed for '{role}' after {_CRIT_MAX_RETRIES + 1} attempts: {last_error}\n"
-            f"  raw LLM response ({len(raw_text)} chars): {raw_text[:500]}"
-        ) from last_error
+        # All retries exhausted — return fallback instead of crashing
+        logger.error(
+            "CRIT scoring failed for %s after %d attempts: %s\n"
+            "  Using fallback CritResult (rho_bar=0.25).\n"
+            "  raw LLM response (%d chars): %.500s",
+            role, _CRIT_MAX_RETRIES + 1, last_error,
+            len(raw_text), raw_text,
+        )
+        return role, _FALLBACK_CRIT
 
     def score(self, reasoning_bundles: dict[str, dict]) -> RoundCritResult:
         """Run CRIT audit on one debate round, scoring each agent in parallel.
@@ -161,7 +191,14 @@ class CritScorer:
             }
             for future in futures:
                 role = futures[future]
-                scored_role, result = future.result()
-                agent_scores[scored_role] = result
+                try:
+                    scored_role, result = future.result()
+                    agent_scores[scored_role] = result
+                except Exception as e:
+                    logger.error(
+                        "CRIT scoring failed for agent '%s': %s — using fallback",
+                        role, e,
+                    )
+                    agent_scores[role] = _FALLBACK_CRIT
 
         return aggregate_agent_scores(agent_scores)

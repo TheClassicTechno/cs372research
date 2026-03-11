@@ -435,7 +435,8 @@ class DebateLogger:
         self._current_beta = beta
         self._round_dir = self._run_dir / "rounds" / f"round_{round_num:03d}"
         self._round_dir.mkdir(parents=True, exist_ok=True)
-        (self._round_dir / "proposals").mkdir(exist_ok=True)
+        if round_num == 1:
+            (self._round_dir / "proposals").mkdir(exist_ok=True)
         (self._round_dir / "critiques").mkdir(exist_ok=True)
         (self._round_dir / "revisions").mkdir(exist_ok=True)
         (self._round_dir / "CRIT").mkdir(exist_ok=True)
@@ -656,13 +657,25 @@ class DebateLogger:
         metrics: dict | None = None,
         crit_data: dict | None = None,
         pid_data: dict | None = None,
+        prior_revisions: list[dict] | None = None,
     ) -> None:
-        """Write round_state.json — compact round snapshot."""
+        """Write round_state.json — compact round snapshot.
+
+        For round 2+, propose is skipped so ``state["proposals"]`` contains
+        stale R1 data.  Pass ``prior_revisions`` (the previous round's
+        revisions) to record the effective input for this round instead.
+        """
         if self._mode == "off" or self._round_dir is None:
             return
 
         proposals_summary = {}
-        for p in state.get("proposals", []):
+        # Round 1: real proposals from state.
+        # Round 2+: use prior_revisions (the actual input to this round).
+        proposal_source = (
+            state.get("proposals", []) if round_num == 1
+            else (prior_revisions or [])
+        )
+        for p in proposal_source:
             role = p.get("role", "unknown")
             action = p.get("action_dict", {}) if isinstance(p.get("action_dict"), dict) else {}
             proposals_summary[role] = {
