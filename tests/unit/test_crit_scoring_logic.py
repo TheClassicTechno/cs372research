@@ -186,8 +186,8 @@ class TestCritScorerErrors:
         """Invalid JSON exhausts retries and returns low-quality fallback."""
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: "not valid json at all")
         result = scorer.score(BUNDLES_1)
-        assert result.rho_bar == pytest.approx(0.25), (
-            "Fallback rho_bar should be 0.25 after exhausting retries"
+        assert result.rho_bar == 0.25, (
+            f"Expected fallback rho_bar=0.25, got {result.rho_bar}"
         )
 
     def test_partial_response_missing_pillar_returns_fallback(self):
@@ -214,8 +214,8 @@ class TestCritScorerErrors:
         })
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: incomplete)
         result = scorer.score(BUNDLES_1)
-        assert result.rho_bar == pytest.approx(0.25), (
-            "Fallback rho_bar should be 0.25 after exhausting retries"
+        assert result.rho_bar == 0.25, (
+            f"Expected fallback rho_bar=0.25, got {result.rho_bar}"
         )
 
     def test_empty_bundles_raises(self):

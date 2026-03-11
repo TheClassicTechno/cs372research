@@ -1057,6 +1057,9 @@ class MultiAgentRunner:
         Constraint parameters come from ``revision_limits`` (read from
         ``intervention_config.revision_limits`` in the YAML config).
         """
+        if revision_limits is None:
+            return nudge_text  # soft mode — nudge text only, no constraints
+
         proposals = state.get("proposals", [])
         proposal_by_role: dict[str, dict] = {}
         for p in proposals:

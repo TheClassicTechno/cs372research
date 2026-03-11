@@ -104,21 +104,20 @@ def _make_enriched_critique(role: str, roles: list[str]) -> str:
         "critiques": [
             {
                 "target_role": t,
-                "target_claim": f"C1",
+                "target_claim": "C1",
                 "objection": f"{role} challenges {t} position.",
-                "critique_text": f"{role} challenges {t} position.",
-                "critique_type": "logical",
-                "severity": "moderate",
-                "affected_positions": TICKERS[:1],
-                "suggested_action": "Revise allocation",
-                "suggested_adjustment": "Revise allocation weights",
-                "portfolio_implication": f"Reduces {t} concentration risk",
-                "falsifier": "Sector momentum reversal",
-                "objection_confidence": 0.65,
                 "counter_evidence": [f"[{TICKERS[0]}-RET60]"],
+                "objection_confidence": 0.7,
+                "portfolio_implication": f"Reduce {t} allocation.",
+                "suggested_adjustment": "Rebalance toward diversified weights.",
+                "falsifier": "Strong momentum reversal.",
             }
             for t in targets
         ],
+        "self_critique": {
+            "weakest_claim": "C1",
+            "explanation": f"{role} acknowledges uncertainty in thesis.",
+        },
     })
 
 
@@ -126,8 +125,8 @@ def _make_judge_response(tickers: list[str]) -> str:
     alloc = _equal_allocation(tickers)
     return json.dumps({
         "allocation": alloc,
-        "audited_memo": "Balanced allocation across all tickers based on debate.",
-        "portfolio_rationale": "Balanced allocation.",
+        "audited_memo": "Balanced synthesis of all agent positions.",
+        "strongest_objection": "Concentration risk in tech names.",
         "confidence": 0.7,
         "claims": [{
             "claim_id": "C1",
@@ -283,6 +282,15 @@ def _find_run_dir(base: Path) -> Path:
     runs = sorted(experiment_dir.glob("run_*"))
     assert len(runs) == 1, f"Expected 1 run dir, found {len(runs)}: {runs}"
     return runs[0]
+
+
+def _scanner_args(run_dir: Path) -> dict:
+    """Decompose run_dir into (base_path, experiment, run_id) for scanner API."""
+    return {
+        "base_path": run_dir.parent.parent,
+        "experiment": run_dir.parent.name,
+        "run_id": run_dir.name,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -459,17 +467,9 @@ class TestScannerDivergenceHandoff:
         runner.run_returning_state(_make_observation())
         return _find_run_dir(tmp_path)
 
-    def _get_trajectory(self, run_dir):
-        """Call get_divergence_trajectory with correctly decomposed path args."""
-        from tools.dashboard.run_scanner import get_divergence_trajectory
-        # run_dir = .../logging/runs/<experiment>/<run_id>
-        # get_divergence_trajectory expects (base_path, experiment, run_id)
-        return get_divergence_trajectory(
-            run_dir.parents[1], run_dir.parent.name, run_dir.name,
-        )
-
     def test_scanner_returns_all_phases(self, run_dir):
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         phases = [entry["phase"] for entry in result]
         assert "propose" in phases, f"Missing propose phase: {phases}"
         assert "revise" in phases, f"Missing revise phase: {phases}"
@@ -478,20 +478,23 @@ class TestScannerDivergenceHandoff:
         assert len(retry_phases) >= 1, f"No retry phases found: {phases}"
 
     def test_scanner_propose_has_js(self, run_dir):
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         propose = next(e for e in result if e["phase"] == "propose")
         assert propose["js_divergence"] is not None
         assert isinstance(propose["js_divergence"], float)
         assert propose["js_divergence"] > 0
 
     def test_scanner_revise_has_js(self, run_dir):
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         revise = next(e for e in result if e["phase"] == "revise")
         assert revise["js_divergence"] is not None
         assert isinstance(revise["js_divergence"], float)
 
     def test_scanner_retry_has_js(self, run_dir):
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         retries = [e for e in result if e["phase"].startswith("retry_")]
         assert len(retries) >= 1
         for r in retries:
@@ -502,7 +505,8 @@ class TestScannerDivergenceHandoff:
 
     def test_scanner_zero_overlap_not_treated_as_none(self, run_dir):
         """Overlap of 0.0 must appear as 0.0 in scanner output, not None."""
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         for entry in result:
             # mean_overlap should be a number, never None
             assert entry.get("mean_overlap") is not None or entry["mean_overlap"] == 0.0, (
@@ -512,7 +516,8 @@ class TestScannerDivergenceHandoff:
 
     def test_scanner_retry_evidence_not_empty(self, run_dir):
         """Scanner should report non-empty evidence for retries."""
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         retries = [e for e in result if e["phase"].startswith("retry_")]
         assert len(retries) >= 1
         # At least the first retry should have evidence data
@@ -526,7 +531,8 @@ class TestScannerDivergenceHandoff:
 
     def test_scanner_phase_ordering(self, run_dir):
         """Phases within a round must be ordered: propose, revise, retry_001, retry_002..."""
-        result = self._get_trajectory(run_dir)
+        from tools.dashboard.run_scanner import get_divergence_trajectory
+        result = get_divergence_trajectory(**_scanner_args(run_dir))
         # Group by round
         by_round: dict[int, list[str]] = {}
         for entry in result:
