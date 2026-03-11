@@ -233,6 +233,7 @@ class DailyFinancialMetrics(BaseModel):
     max_drawdown_pct: float = 0.0
     calmar_ratio: float | None = None
     trading_days: int = 0
+    cagr: float | None = None  # compound annual growth rate
     # SPY benchmark (if available)
     spy_return_pct: float | None = None
     excess_return_pct: float | None = None
@@ -374,6 +375,11 @@ def compute_daily_financial_metrics(
             spy_return_pct = ((spy_end - spy_start) / spy_start) * 100.0
             excess_return_pct = total_return_pct - spy_return_pct
 
+    # CAGR: annualize the quarterly return
+    cagr_val = None
+    if total_return_pct is not None:
+        cagr_val = ((1 + total_return_pct / 100.0) ** 4 - 1) * 100.0  # as pct
+
     return DailyFinancialMetrics(
         equity_curve=curve,
         returns=rets,
@@ -384,6 +390,7 @@ def compute_daily_financial_metrics(
         max_drawdown_pct=dd_pct * 100.0,
         calmar_ratio=calmar,
         trading_days=trading_days,
+        cagr=cagr_val,
         spy_return_pct=spy_return_pct,
         excess_return_pct=excess_return_pct,
     )
