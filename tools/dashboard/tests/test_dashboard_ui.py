@@ -992,3 +992,142 @@ class TestTableLabelsLoaded:
         assert "Divergence Overview" in text, (
             "Card title 'Divergence Overview' not found — labels may not be loading"
         )
+
+
+# ---------------------------------------------------------------------------
+# Financial Tests — Redesigned three-part layout
+# ---------------------------------------------------------------------------
+
+
+def _open_ablation_experiment(page: Page, url: str) -> None:
+    """Navigate to ablation tab and open the first experiment card."""
+    page.goto(f"{url}/#ablation")
+    page.wait_for_selector(
+        "[data-testid='ablation-experiment']", timeout=5000,
+    )
+    header = page.query_selector(
+        "[data-testid='ablation-experiment'] .card-header",
+    )
+    header.click()
+    page.wait_for_selector(
+        "[data-testid='ablation-experiment'].open .card-body",
+        timeout=3000,
+    )
+
+
+class TestFinancialTestsSection:
+    def test_financial_tests_section_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Financial tests section appears inside the experiment card."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        assert section is not None, "Financial tests section did not render"
+
+    def test_financial_section_has_title(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Section title includes 'Financial Performance Impact'."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        text = section.text_content()
+        assert "Financial Performance Impact" in text, (
+            f"Expected 'Financial Performance Impact' in section, got: {text[:200]}"
+        )
+
+    def test_financial_section_has_subtitle(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Subtitle mentions effect of intervention vs baseline."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        subtitle = section.query_selector(".fin-subtitle")
+        assert subtitle is not None, "Subtitle element not found"
+        text = subtitle.text_content()
+        assert "intervention" in text.lower() or "baseline" in text.lower(), (
+            f"Subtitle should mention intervention/baseline: {text}"
+        )
+
+    def test_financial_table_has_correct_columns(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Table header has Metric, Baseline, Intervention, Delta, p-value."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        headers = table.query_selector_all("thead th")
+        header_texts = [h.text_content().strip() for h in headers]
+        assert "Metric" in header_texts, f"Missing 'Metric' header: {header_texts}"
+        assert "Baseline" in header_texts, f"Missing 'Baseline' header: {header_texts}"
+        assert "Intervention" in header_texts, (
+            f"Missing 'Intervention' header: {header_texts}"
+        )
+        assert "p-value" in header_texts, f"Missing 'p-value' header: {header_texts}"
+
+    def test_financial_table_has_group_headers(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Table contains group subheader rows (Performance, Risk, etc.)."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        groups = table.query_selector_all("tr.fin-group-header")
+        group_texts = [g.text_content().strip() for g in groups]
+        assert len(group_texts) >= 2, (
+            f"Expected at least 2 group headers, got {len(group_texts)}: {group_texts}"
+        )
+        assert "Performance" in group_texts, (
+            f"Missing 'Performance' group header: {group_texts}"
+        )
+
+    def test_financial_table_numeric_cells_right_aligned(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Numeric cells (num-cell) are right-aligned."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        cells = table.query_selector_all("td.num-cell")
+        assert len(cells) > 0, "No numeric cells found"
+        alignment = page.evaluate(
+            "(el) => window.getComputedStyle(el).textAlign", cells[0],
+        )
+        assert alignment == "right", (
+            f"Expected numeric cells right-aligned, got '{alignment}'"
+        )
+
+    def test_ci_hint_present(
+        self, page: Page, dashboard_url: str,
+    ):
+        """CI hint text appears below the table."""
+        _open_ablation_experiment(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        hint = page.query_selector(".fin-ci-hint")
+        assert hint is not None, "CI hint not found"
+        assert "confidence interval" in hint.text_content().lower(), (
+            "CI hint should mention confidence intervals"
+        )
+
+    def test_delta_cells_have_ci_tooltip(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Delta cells have a title attribute with CI info."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        delta_cells = table.query_selector_all("td.num-cell[title]")
+        assert len(delta_cells) > 0, "No delta cells with title tooltip found"
+        title = delta_cells[0].get_attribute("title")
+        assert "95% CI" in title, f"Expected '95% CI' in tooltip, got: {title}"
