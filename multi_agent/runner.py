@@ -140,6 +140,11 @@ from .models import (
     PIDEvent,
     RoundMetrics,
 )
+from telemetry.round_metrics_writer import (
+    write_allocation_metrics,
+    write_crit_results,
+    write_round_state,
+)
 
 
 def _extract_thesis(action_dict: dict, role: str = "", phase: str = "") -> str:
@@ -178,7 +183,7 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             continue
         if not claim.get("claim_text"):
             continue
-        raw_evidence = claim.get("evidence", [])
+        raw_evidence = claim["evidence"]
         normalized.append({
             "claim_id": claim.get("claim_id", ""),
             "claim_text": claim.get("claim_text", ""),
@@ -188,9 +193,9 @@ def _normalize_claims(claims: list[dict], normalize_evidence_id) -> list[dict]:
             "evidence_ids": sorted(set(
                 normalize_evidence_id(e) for e in raw_evidence if isinstance(e, str)
             )),
-            "assumptions": claim.get("assumptions", []),
-            "falsifiers": claim.get("falsifiers", []),
-            "impacts_positions": claim.get("impacts_positions", []),
+            "assumptions": claim["assumptions"],
+            "falsifiers": claim["falsifiers"],
+            "impacts_positions": claim["impacts_positions"],
             "confidence": claim.get("confidence", 0.5),
         })
     return normalized
@@ -205,7 +210,7 @@ def _normalize_position_rationale(entries: list[dict]) -> list[dict]:
         normalized.append({
             "ticker": entry.get("ticker", ""),
             "weight": entry.get("weight", 0.0),
-            "supporting_claims": entry.get("supporting_claims") or entry.get("supported_by_claims", []),
+            "supporting_claims": entry.get("supporting_claims") or entry["supported_by_claims"],
             "explanation": entry.get("explanation") or entry.get("rationale") or "",
         })
     return normalized
@@ -262,12 +267,12 @@ def _extract_citations(
     tag = f"[{role}/{phase}] " if role else ""
 
     # 1. Top-level structured citations (base format)
-    top_level = action_dict.get("evidence_citations", [])
+    top_level = action_dict.get("evidence_citations")
     if top_level:
         return copy.deepcopy(top_level)
 
     # 2. Extract from claims[].evidence (enriched format)
-    claims = action_dict.get("claims", [])
+    claims = action_dict.get("claims")
     if claims:
         seen = set()
         citations = []
@@ -329,7 +334,7 @@ def build_reasoning_bundle(
 
     # Find this agent's LATEST revision (fall back to proposal if none)
     revision = None
-    for r in reversed(state.get("revisions") or []):
+    for r in reversed(state["revisions"]):
         if r["role"] == role:
             revision = r
             break
@@ -343,7 +348,7 @@ def build_reasoning_bundle(
     critiques_received = []
     self_critique = None
     role_lower = role.lower()
-    for critic in state.get("critiques") or []:
+    for critic in state["critiques"]:
         from_role = critic["role"]
         # Capture this agent's self_critique
         if from_role == role:
@@ -619,12 +624,12 @@ class MultiAgentRunner:
         """Compute JS divergence between the latest agent allocations."""
         from eval.divergence import generalized_js_divergence
         decisions = self._latest_per_role(
-            state.get("revisions") or state.get("proposals", [])
+            state["revisions"] if state["revisions"] else state["proposals"]
         )
         if not decisions:
             return None
         allocs = [
-            d.get("action_dict", {}).get("allocation", {})
+            d["action_dict"]["allocation"]
             for d in decisions
         ]
         if len(allocs) < 2:
@@ -657,7 +662,7 @@ class MultiAgentRunner:
         ]
 
         # Walk the block order and emit each file in rendered order
-        order = manifest.get("block_order", [])
+        order = manifest["block_order"]
         role_files = manifest.get("role_files", {})
 
         for block in order:
@@ -697,11 +702,11 @@ class MultiAgentRunner:
         state = self._run_pipeline(observation)
 
         # Parse final action
-        final_dict = state.get("final_action", {})
+        final_dict = state["final_action"]
         action = self._parse_action(final_dict)
 
         # Parse trace
-        trace_dict = state.get("trace", {})
+        trace_dict = state["trace"]
         trace = self._parse_trace(trace_dict, observation, action)
 
         # Save to disk
@@ -776,11 +781,11 @@ class MultiAgentRunner:
             else:
                 state = self.run_single_round(state)
                 if self.config.console_display:
-                    render_portfolio_table(state.get("proposals", []), "Allocations")
-                    render_portfolio_table(state.get("revisions", []), "Revisions")
+                    render_portfolio_table(state["proposals"], "Allocations")
+                    render_portfolio_table(state["revisions"], "Revisions")
                 else:
-                    _print_comparison_table(state.get("proposals", []), "Allocations")
-                    _print_comparison_table(state.get("revisions", []), "Revisions")
+                    _print_comparison_table(state["proposals"], "Allocations")
+                    _print_comparison_table(state["revisions"], "Revisions")
 
                 js = self._get_js_divergence(state)
                 if js is not None:
@@ -791,9 +796,9 @@ class MultiAgentRunner:
                         print(f"\n  Round {t+1} Disagreement (JS Divergence): {js:.4f} bits")
 
                 if self._debate_logger:
-                    self._debate_logger.write_proposals(state.get("proposals", []))
-                    self._debate_logger.write_critiques(state.get("critiques", []))
-                    self._debate_logger.write_revisions(state.get("revisions", []))
+                    self._debate_logger.write_proposals(state["proposals"])
+                    self._debate_logger.write_critiques(state["critiques"])
+                    self._debate_logger.write_revisions(state["revisions"])
                     metrics = {"js_divergence": js} if js is not None else None
                     self._debate_logger.write_round_state(state, t + 1, metrics=metrics)
 
@@ -803,7 +808,7 @@ class MultiAgentRunner:
                 # entry per role so the next round and judge see clean state.
                 seen = set()
                 deduped = []
-                for rev in reversed(state.get("revisions", [])):
+                for rev in reversed(state["revisions"]):
                     if rev["role"] not in seen:
                         seen.add(rev["role"])
                         deduped.append(rev)
@@ -812,8 +817,8 @@ class MultiAgentRunner:
                 # Sort proposals and critiques by role for deterministic
                 # ordering — parallel fan-out merges via operator.add in
                 # thread-completion order, which is non-deterministic.
-                state["proposals"] = sorted(state.get("proposals", []), key=lambda p: p["role"])
-                state["critiques"] = sorted(state.get("critiques", []), key=lambda c: c["role"])
+                state["proposals"] = sorted(state["proposals"], key=lambda p: p["role"])
+                state["critiques"] = sorted(state["critiques"], key=lambda c: c["role"])
 
             terminated_early = self.should_terminate(state)
             if terminated_early:
@@ -834,7 +839,7 @@ class MultiAgentRunner:
 
         # Rich console display: judge result + debate end
         if self.config.console_display:
-            final_action = state.get("final_action", {})
+            final_action = state["final_action"]
             if final_action:
                 render_judge_result(final_action)
 
@@ -883,7 +888,7 @@ class MultiAgentRunner:
         # --- Round header (terminal display) ---
         if use_display:
             universe = list(self.config.roles)
-            obs_universe = state.get("observation", {}).get("universe", [])
+            obs_universe = state["observation"]["universe"]
             tone = beta_to_bucket(beta)
             render_round_header(
                 round_num, self.config.max_rounds, beta, tone,
@@ -894,7 +899,7 @@ class MultiAgentRunner:
         #     operate on the prior round's revisions via _resolve_source) ---
         # Capture prior revisions before they're overwritten — these are the
         # effective "proposals" (input) for round 2+.
-        prior_revisions = list(state.get("revisions", [])) if round_num > 1 else None
+        prior_revisions = list(state["revisions"]) if round_num > 1 else None
         n_agents = len(self.config.roles)
         role_names = ", ".join(r.upper() for r in self.config.roles)
         if round_num == 1:
@@ -906,27 +911,28 @@ class MultiAgentRunner:
             state["config"]["_current_beta"] = None
             state = self._propose_graph.invoke(state)
 
-        display_source = state.get("revisions") or state.get("proposals", [])
-        display_label = "Revised Allocations" if state.get("revisions") else "Allocations"
+        display_source = state["revisions"] if state["revisions"] else state["proposals"]
+        display_label = "Revised Allocations" if state["revisions"] else "Allocations"
         if use_display:
             render_portfolio_table(display_source, display_label)
         else:
             _print_comparison_table(display_source, display_label)
 
         if round_num == 1 and self._debate_logger:
-            self._debate_logger.write_proposals(state.get("proposals", []))
+            self._debate_logger.write_proposals(state["proposals"])
 
         # --- Propose-phase JS divergence + evidence overlap ---
+        # In round 1, proposals are the source. In round 2+, the previous
+        # round's final revisions serve as the effective "propose" input.
         self._proposed_divergence = None
         if self._debate_logger or self._intervention_engine:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            prop_decisions = self._latest_per_role(
-                state.get("proposals", [])
-            )
+            prop_source = state["proposals"] if round_num == 1 else prior_revisions
+            prop_decisions = self._latest_per_role(prop_source)
             prop_allocs = [
-                d.get("action_dict", {}).get("allocation", {})
+                d["action_dict"]["allocation"]
                 for d in prop_decisions
             ]
             if len(prop_allocs) >= 2:
@@ -937,7 +943,7 @@ class MultiAgentRunner:
                     prop_ov = 0.0
 
                 prop_confidences = {
-                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
+                    d["role"]: d["action_dict"]["confidence"]
                     for d in prop_decisions
                 }
                 prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
@@ -946,6 +952,10 @@ class MultiAgentRunner:
                     self._debate_logger.write_divergence_metrics(
                         prop_js, prop_ov, prop_confidences, prop_evidence,
                         round_num, phase="propose",
+                    )
+                    write_allocation_metrics(
+                        self._debate_logger.run_dir, round_num, "propose",
+                        prop_decisions, prop_js, prop_ov,
                     )
                 self._proposed_divergence = {
                     "js": prop_js,
@@ -964,7 +974,7 @@ class MultiAgentRunner:
         state = self._critique_graph.invoke(state)
 
         if self._debate_logger:
-            self._debate_logger.write_critiques(state.get("critiques", []))
+            self._debate_logger.write_critiques(state["critiques"])
 
         # --- Revise phase (uses PID beta for tone) ---
         if use_display:
@@ -975,12 +985,12 @@ class MultiAgentRunner:
         state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
         if use_display:
-            render_portfolio_table(state.get("revisions", []), "Revisions")
+            render_portfolio_table(state["revisions"], "Revisions")
         else:
-            _print_comparison_table(state.get("revisions", []), "Revisions")
+            _print_comparison_table(state["revisions"], "Revisions")
 
         if self._debate_logger:
-            self._debate_logger.write_revisions(state.get("revisions", []))
+            self._debate_logger.write_revisions(state["revisions"])
 
         # --- Revise-phase JS divergence + evidence overlap ---
         # Written here (not inside _crit_and_pid_step) so it's logged
@@ -989,9 +999,9 @@ class MultiAgentRunner:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            rev_decisions = self._latest_per_role(state.get("revisions", []))
+            rev_decisions = self._latest_per_role(state["revisions"])
             rev_allocs = [
-                d.get("action_dict", {}).get("allocation", {})
+                d["action_dict"]["allocation"]
                 for d in rev_decisions
             ]
             if len(rev_allocs) >= 2:
@@ -1002,13 +1012,18 @@ class MultiAgentRunner:
                     rev_ov = 0.0
 
                 rev_confidences = {
-                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
+                    d["role"]: d["action_dict"]["confidence"]
                     for d in rev_decisions
                 }
                 rev_evidence = {role: sorted(spans) for role, spans in rev_ev.items()}
 
                 self._debate_logger.write_divergence_metrics(
                     rev_js, rev_ov, rev_confidences, rev_evidence, round_num,
+                )
+                # Telemetry: full allocation vectors
+                write_allocation_metrics(
+                    self._debate_logger.run_dir, round_num, "revision",
+                    rev_decisions, rev_js, rev_ov,
                 )
 
         # --- Post-revision intervention checkpoint ---
@@ -1040,6 +1055,46 @@ class MultiAgentRunner:
                 n_agents=n_agents, role_names=role_names,
             )
 
+        # --- Telemetry: round_state.json (end-of-round snapshot) ---
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            prop_source = state["proposals"] if round_num == 1 else prior_revisions
+            telem_propose = self._latest_per_role(prop_source)
+            telem_revisions = self._latest_per_role(state["revisions"])
+            telem_allocs = [d["action_dict"]["allocation"] for d in telem_revisions]
+            telem_js = generalized_js_divergence(telem_allocs) if len(telem_allocs) >= 2 else 0.0
+            telem_ev = extract_agent_evidence_spans(telem_revisions, allocation_mode=True)
+            telem_ov = compute_mean_overlap(telem_ev)
+            if telem_ov is None:
+                telem_ov = 0.0
+
+            # Collect CRIT data if available this round
+            telem_crit = None
+            if self._last_round_crit:
+                rc = self._last_round_crit
+                telem_crit = {"rho_bar": rc.rho_bar}
+                telem_crit.update({
+                    role: {
+                        "rho_i": cr.rho_bar,
+                        "pillars": {
+                            "LV": cr.pillar_scores.logical_validity,
+                            "ES": cr.pillar_scores.evidential_support,
+                            "AC": cr.pillar_scores.alternative_consideration,
+                            "CA": cr.pillar_scores.causal_alignment,
+                        },
+                    }
+                    for role, cr in rc.agent_scores.items()
+                })
+
+            write_round_state(
+                self._debate_logger.run_dir, round_num, beta,
+                telem_propose, telem_revisions,
+                telem_js, telem_ov,
+                crit_data=telem_crit,
+            )
+
         return state
 
     @staticmethod
@@ -1060,11 +1115,11 @@ class MultiAgentRunner:
         if revision_limits is None:
             return nudge_text  # soft mode — nudge text only, no constraints
 
-        proposals = state.get("proposals", [])
+        proposals = state["proposals"]
         proposal_by_role: dict[str, dict] = {}
         for p in proposals:
             role = p.get("role", "unknown")
-            alloc = p.get("action_dict", {}).get("allocation", {})
+            alloc = p["action_dict"]["allocation"]
             if alloc:
                 proposal_by_role[role] = alloc
 
@@ -1249,14 +1304,14 @@ class MultiAgentRunner:
                     state["config"].pop(f"_intervention_nudge_{role}", None)
 
             if use_display:
-                render_portfolio_table(state.get("revisions", []), "Revisions (retry)")
+                render_portfolio_table(state["revisions"], "Revisions (retry)")
             else:
-                _print_comparison_table(state.get("revisions", []), "Revisions (retry)")
+                _print_comparison_table(state["revisions"], "Revisions (retry)")
 
             # Log the retry revisions
             if self._debate_logger:
                 self._debate_logger.write_revisions(
-                    state.get("revisions", []),
+                    state["revisions"],
                     retry=retry_count + 1,
                 )
 
@@ -1264,7 +1319,7 @@ class MultiAgentRunner:
             retry_js = self._get_js_divergence(state)
             if retry_js is not None:
                 from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
-                retry_decisions = self._latest_per_role(state.get("revisions", []))
+                retry_decisions = self._latest_per_role(state["revisions"])
                 retry_evidence = extract_agent_evidence_spans(
                     retry_decisions, allocation_mode=True,
                 )
@@ -1272,7 +1327,7 @@ class MultiAgentRunner:
                 if retry_ov is None:
                     retry_ov = 0.0
                 retry_confidences = {
-                    d["role"]: d.get("action_dict", {}).get("confidence", 0.5)
+                    d["role"]: d["action_dict"]["confidence"]
                     for d in retry_decisions
                 }
                 retry_evidence_ids = {
@@ -1285,6 +1340,12 @@ class MultiAgentRunner:
                     self._debate_logger.write_divergence_metrics(
                         retry_js, retry_ov, retry_confidences, retry_evidence_ids,
                         round_num, phase=f"retry_{retry_count + 1:03d}",
+                    )
+                    # Telemetry: full allocation vectors
+                    write_allocation_metrics(
+                        self._debate_logger.run_dir, round_num,
+                        f"retry_{retry_count + 1:03d}",
+                        retry_decisions, retry_js, retry_ov,
                     )
 
             # Post-crit retries are expensive: re-run CRIT after revise retry
@@ -1337,7 +1398,7 @@ class MultiAgentRunner:
         from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
         decisions = self._latest_per_role(
-            state.get("revisions", state.get("proposals", []))
+            state["revisions"] if state["revisions"] else state["proposals"]
         )
         if not decisions:
             raise RuntimeError(
@@ -1367,7 +1428,7 @@ class MultiAgentRunner:
 
         # --- JS divergence from portfolio allocation vectors ---
         allocations = [
-            d.get("action_dict", {}).get("allocation", {})
+            d["action_dict"]["allocation"]
             for d in decisions
         ]
         js = generalized_js_divergence(allocations) if len(allocations) >= 2 else 0.0
@@ -1433,12 +1494,30 @@ class MultiAgentRunner:
             self._debate_logger.write_crit_metrics(round_crit, round_num)
             if self._crit_current_captures:
                 self._debate_logger.write_crit_prompts(self._crit_current_captures)
+            # Telemetry: per-agent CRIT results
+            for role, cr in round_crit.agent_scores.items():
+                write_crit_results(
+                    self._debate_logger.run_dir, round_num, role,
+                    {
+                        "logical_validity": cr.pillar_scores.logical_validity,
+                        "evidential_support": cr.pillar_scores.evidential_support,
+                        "alternative_consideration": cr.pillar_scores.alternative_consideration,
+                        "causal_alignment": cr.pillar_scores.causal_alignment,
+                    },
+                    cr.rho_bar,
+                    {
+                        "logical_validity": cr.explanations.logical_validity,
+                        "evidential_support": cr.explanations.evidential_support,
+                        "alternative_consideration": cr.explanations.alternative_consideration,
+                        "causal_alignment": cr.explanations.causal_alignment,
+                    },
+                )
 
         # --- Compute agent confidences + evidence (used by both loggers) ---
         agent_confidences = {}
         for d in decisions:
             role = d.get("role", "unknown")
-            agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
+            agent_confidences[role] = d["action_dict"]["confidence"]
 
         agent_evidence = {
             role: sorted(spans) for role, spans in evidence_sets.items()
@@ -1750,7 +1829,7 @@ class MultiAgentRunner:
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
-        for o in d.get("orders", []):
+        for o in d["orders"]:
             orders.append(
                 Order(
                     ticker=o.get("ticker", ""),
@@ -1763,7 +1842,7 @@ class MultiAgentRunner:
         _VALID_REASONING_TYPES = {"causal", "observational", "risk_assessment", "pattern"}
 
         claims = []
-        for c in d.get("claims", []):
+        for c in d["claims"]:
             raw_rtype = c.get("reasoning_type", "observational")
             # LLMs sometimes return pipe-separated combos like
             # "causal | risk_assessment" — extract the first valid value.
@@ -1831,8 +1910,8 @@ class MultiAgentRunner:
 
         output = {
             "trace": trace.model_dump(),
-            "debate_turns": full_state.get("debate_turns", []),
-            "config": full_state.get("config", {}),
+            "debate_turns": full_state["debate_turns"],
+            "config": full_state["config"],
         }
 
         filepath.write_text(json.dumps(output, indent=2, default=str))

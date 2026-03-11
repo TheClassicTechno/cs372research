@@ -75,7 +75,8 @@ export function buildPIDChart(data) {
   return svg;
 }
 
-export function buildCRITChart(data) {
+export function buildCRITChart(data, agentLabel) {
+  if (!agentLabel) agentLabel = function(r) { return r; };
   var W = 700, H = 300, pad = { top: 20, right: 60, bottom: 60, left: 60 };
   var plotW = W - pad.left - pad.right;
   var plotH = H - pad.top - pad.bottom;
@@ -148,7 +149,7 @@ export function buildCRITChart(data) {
     for (var i = 0; i < data.length; i++) {
       var v = data[i].rho_i ? data[i].rho_i[role] : null;
       if (v != null) {
-        svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(v) + '" r="2" fill="none" stroke="#000"><title>' + role + ' rho_i: ' + fmt(v) + '</title></circle>';
+        svg += '<circle cx="' + xPos(rounds[i]) + '" cy="' + yPos(v) + '" r="2" fill="none" stroke="#000"><title>' + agentLabel(role) + ' rho_i: ' + fmt(v) + '</title></circle>';
       }
     }
   });
@@ -161,7 +162,7 @@ export function buildCRITChart(data) {
   roleList.forEach(function (role, ri) {
     var dash = dashPatterns[ri % dashPatterns.length];
     svg += '<line x1="' + lx + '" y1="' + legendY + '" x2="' + (lx + 20) + '" y2="' + legendY + '" stroke="#000" stroke-width="1.5" stroke-dasharray="' + dash + '" />';
-    svg += '<text x="' + (lx + 23) + '" y="' + (legendY + 4) + '" fill="#000" font-size="10">' + role + '</text>';
+    svg += '<text x="' + (lx + 23) + '" y="' + (legendY + 4) + '" fill="#000" font-size="10">' + agentLabel(role) + '</text>';
     lx += 80;
   });
 

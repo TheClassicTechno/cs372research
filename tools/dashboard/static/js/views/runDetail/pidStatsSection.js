@@ -2,6 +2,7 @@ import { fetchCRIT } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { esc } from '../../utils/dom.js';
 import { fmt, scoreClass } from '../../utils/format.js';
+import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
 
 export function loadPIDStatsSection(experiment, runId, token) {
@@ -10,6 +11,7 @@ export function loadPIDStatsSection(experiment, runId, token) {
     .then(function (data) {
       if (appState.viewToken !== token) return;
       if (!data || data.length === 0) { div.innerHTML = ''; return; }
+      var agentLabel = makeAgentLabel(appState.manifest);
 
       var roles = {};
       data.forEach(function (d) {
@@ -42,7 +44,7 @@ export function loadPIDStatsSection(experiment, runId, token) {
           var role = roleList[r];
           var rho_i = d.rho_i ? d.rho_i[role] : null;
           var agentPillars = (d.pillars && d.pillars[role]) ? d.pillars[role] : {};
-          h += '<tr><td>' + esc(role) + '</td>';
+          h += '<tr><td>' + esc(agentLabel(role)) + '</td>';
           h += '<td class="num-cell rho-col ' + scoreClass(rho_i) + '">' + fmt(rho_i, 3) + '</td>';
           for (var p = 0; p < pillars.length; p++) {
             var pv = agentPillars[pillars[p]];
