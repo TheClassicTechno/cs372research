@@ -304,11 +304,11 @@ if __name__ == "__main__":
     import socket
     import uvicorn
 
-    port = 8000
-    try:
+    def _port_in_use(port: int) -> bool:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("0.0.0.0", port))
-    except OSError:
-        port = 8001
+            s.settimeout(0.5)
+            return s.connect_ex(("127.0.0.1", port)) == 0
+
+    port = 8000 if not _port_in_use(8000) else 8001
     print(f"Starting dashboard on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
