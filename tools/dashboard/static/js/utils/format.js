@@ -32,6 +32,19 @@ export function fmtDuration(s) {
   return m + 'm ' + rem + 's';
 }
 
+/** Return a CSS class for a p-value: green < 0.05, yellow < 0.10, red otherwise. */
+export function pvalueClass(p) {
+  if (p < 0.05) return 'perf-profit';
+  if (p < 0.10) return 'score-mid';
+  return 'perf-loss';
+}
+
+/** Format a p-value for display: "< 0.001" or 4-decimal. */
+export function fmtPvalue(p) {
+  if (p < 0.001) return '< 0.001';
+  return fmt(p, 4);
+}
+
 /** Return a CSS class encoding score magnitude as grayscale shading. */
 export function scoreClass(v) {
   if (v == null) return '';

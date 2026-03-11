@@ -72,6 +72,11 @@ export function fetchPairedTests(experiment) {
   return fetchJSON('/api/ablation/paired-tests/' + encodeURIComponent(experiment));
 }
 
+/** Fetch paired t-tests on financial metrics for an experiment. */
+export function fetchFinancialTests(experiment) {
+  return fetchJSON('/api/ablation/financial-tests/' + encodeURIComponent(experiment));
+}
+
 /** Fetch aggregate debate impact across experiments. */
 export function fetchAblationDebateImpact() {
   return fetchJSON('/api/ablation/debate-impact');

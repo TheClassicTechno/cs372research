@@ -5,8 +5,9 @@
  * cards and overview table, handles the Regenerate action.
  */
 
-import { fetchAblation, regenerateAblation, fetchAblationDebateImpact, fetchPairedTests } from '../api/runs.js';
+import { fetchAblation, regenerateAblation, fetchAblationDebateImpact, fetchPairedTests, fetchFinancialTests } from '../api/runs.js';
 import { buildAblationOverview, buildExperimentCard, buildPairedTestsSection } from '../components/ablation.js';
+import { buildFinancialTestsSection } from '../components/financialTests.js';
 import { ablationState, appState } from '../state.js';
 
 /**
@@ -39,6 +40,7 @@ function renderContent(token, data, impactMap) {
   container.innerHTML = html;
 
   loadPairedTests(token, names);
+  loadFinancialTests(token, names);
 }
 
 /**
@@ -54,6 +56,27 @@ function loadPairedTests(token, names) {
         .then(function (result) {
           if (appState.viewToken !== token) return;
           slot.innerHTML = buildPairedTestsSection(result);
+        })
+        .catch(function () {
+          // Non-critical — leave slot empty if endpoint unavailable
+        });
+    })(names[i], slots[i]);
+  }
+}
+
+/**
+ * Fetch and inject financial metrics paired tests for each experiment.
+ * Finds the placeholder slot inside each experiment card and fills it.
+ * Accepts the view token and the list of experiment names.
+ */
+function loadFinancialTests(token, names) {
+  const slots = document.querySelectorAll('[data-testid="financial-tests-slot"]');
+  for (let i = 0; i < names.length; i++) {
+    (function (expName, slot) {
+      fetchFinancialTests(expName)
+        .then(function (result) {
+          if (appState.viewToken !== token) return;
+          slot.innerHTML = buildFinancialTestsSection(result);
         })
         .catch(function () {
           // Non-critical — leave slot empty if endpoint unavailable

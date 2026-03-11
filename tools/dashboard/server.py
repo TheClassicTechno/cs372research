@@ -275,27 +275,40 @@ def read_file(
 
 @app.get("/api/ablation/paired-tests/{experiment}")
 def paired_tests(experiment: str):
-    """Wilcoxon signed-rank test comparing collapse ratios across conditions."""
-    return JSONResponse(
-        run_scanner.compute_paired_tests(RUNS_BASE, experiment)
-    )
-
-
-@app.get("/api/ablation/paired-tests/{experiment}")
-def paired_tests(experiment: str):
     """Paired t-test comparing collapse ratios across debate configs."""
     return JSONResponse(
         run_scanner.compute_paired_tests(RUNS_BASE, experiment)
     )
 
 
+@app.get("/api/ablation/financial-tests/{experiment}")
+def financial_tests(experiment: str):
+    """Paired t-tests on financial metrics across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_financial_paired_tests(RUNS_BASE, experiment)
+    )
+
+
 @app.get("/api/ablation")
 def ablation_summary():
-    """Return the ablation summary JSON, or a not_generated marker."""
+    """Return the ablation summary JSON with live-computed run counts.
+
+    The on-disk summary may have stale run_count values.  We overlay
+    the live count of *complete* runs so every section of the dashboard
+    shows consistent numbers.
+    """
     path = RUNS_BASE / "ablation_summary.json"
     if not path.exists():
         return JSONResponse({"error": "not_generated", "experiments": {}})
-    return JSONResponse(json.loads(path.read_text()))
+    data = json.loads(path.read_text())
+    # Overlay live complete-run counts
+    for exp_name, exp_data in data.items():
+        if not isinstance(exp_data, dict):
+            continue
+        runs = run_scanner.list_runs(RUNS_BASE, exp_name)
+        complete = [r for r in runs if r.get("status") == "complete"]
+        exp_data["run_count"] = len(complete)
+    return JSONResponse(data)
 
 
 @app.post("/api/ablation/regenerate")

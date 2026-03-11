@@ -6,7 +6,7 @@
  */
 
 import { esc } from '../utils/dom.js';
-import { fmt, scoreClass } from '../utils/format.js';
+import { fmt, fmtPvalue, pvalueClass, scoreClass } from '../utils/format.js';
 
 /**
  * Build a stat cell with optional score shading.
@@ -385,6 +385,9 @@ function buildExperimentBody(data, impact) {
   // Paired t-test placeholder (populated async by ablationView)
   body += '<div data-testid="paired-tests-slot"></div>';
 
+  // Financial metrics placeholder (populated async by ablationView)
+  body += '<div data-testid="financial-tests-slot"></div>';
+
   // Row 1: Rho, Pillars, JS Divergence, Evidence Overlap
   let row1 = '';
   if (data.rho !== undefined && data.rho !== null) { row1 += col(buildRhoTable(data.rho)); }
@@ -500,25 +503,6 @@ export function buildPairedTestsSection(data) {
   h += buildPairedScenarioTable(data.pairs);
 
   return h;
-}
-
-/**
- * Return a CSS class for a p-value: green < 0.05, yellow < 0.10, red otherwise.
- * Returns a class name string.
- */
-function pvalueClass(p) {
-  if (p < 0.05) return 'perf-profit';
-  if (p < 0.10) return 'score-mid';
-  return 'perf-loss';
-}
-
-/**
- * Format a p-value for display: "< 0.001" or 4-decimal.
- * Returns a string.
- */
-function fmtPvalue(p) {
-  if (p < 0.001) return '< 0.001';
-  return fmt(p, 4);
 }
 
 /**
