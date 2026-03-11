@@ -1,0 +1,168 @@
+# ===========================================================================
+# Ablation 6 — JS Collapse Intervention: 2agent / soft nudge / threshold 0.65
+# Config: 2agent_soft_th065
+# Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> judge
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 2
+
+
+# --- Agent profiles (intense enriched) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini            # debate agent model
+  crit_llm_model: gpt-5            # CRIT auditor model (higher capability)
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 2
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_6
+
+
+  # --- PID controller ---
+  pid_enabled: false                # no inter-round beta adjustment
+
+
+  # --- Intervention engine (intra-round retry on acute failures) ---
+  intervention_config:
+    enabled: true
+
+    rules:
+      # JS Collapse Detection (post_revision)
+      # Fires when JS_revision / JS_proposal < threshold, indicating agents
+      # converged toward identical allocations during the revision phase.
+      js_collapse:
+        enabled: true
+        threshold: 0.65              # collapse_ratio below this triggers retry
+        min_js_proposal: 0.10       # skip when proposals already near-consensus
+        max_retries: 1              # max retry attempts for this rule
+        nudge_prompts:
+          macro: |
+            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
+
+            ⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+            Rapid consensus formation has been detected in the debate.
+
+            In complex financial analysis, early consensus often indicates
+            premature convergence or sycophancy rather than strong evidence.
+
+            To maintain analytical rigor:
+
+            • Defensible dissent is valuable and encouraged.
+            • You should not abandon a well-supported thesis solely because
+              other agents appear to agree.
+            • Rapid agreement requires explicit justification.
+
+            Agreement without independent reasoning is considered a debate failure.
+
+            Your objective is rigorous reasoning, not agreement.
+
+            MACRO INTERVENTION REMINDER
+
+            Your responsibility is to analyze macro regime dynamics.
+
+            Do NOT anchor on individual stock narratives if they conflict with macro conditions.
+
+            Re-check:
+
+            • interest rate regime
+            • inflation trajectory
+            • liquidity conditions
+            • credit spreads
+            • global growth signals
+
+            If other agents ignored macro constraints, you should challenge them.
+
+            A portfolio that ignores the macro regime is structurally fragile.
+
+            Before finalizing your revision:
+
+            1. Re-examine your original thesis.
+            2. Identify whether critiques genuinely invalidate it.
+            3. Defend at least one element of your original reasoning unless
+               it has been clearly disproven.
+            4. Identify one vulnerability in the emerging consensus view.
+            5. Explain which agent you disagree with most and why.
+            6. List ONE reason why another agent's argument is still flawed.
+          technical: |
+            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
+
+            ⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+            Rapid consensus formation has been detected in the debate.
+
+            In complex financial analysis, early consensus often indicates
+            premature convergence or sycophancy rather than strong evidence.
+
+            To maintain analytical rigor:
+
+            • Defensible dissent is valuable and encouraged.
+            • You should not abandon a well-supported thesis solely because
+              other agents appear to agree.
+            • Rapid agreement requires explicit justification.
+
+            Agreement without independent reasoning is considered a debate failure.
+
+            Your objective is rigorous reasoning, not agreement.
+
+            TECHNICAL INTERVENTION REMINDER
+
+            Your role is to analyze price structure and market behavior.
+
+            You should NOT abandon a technical signal simply because fundamental narratives sound persuasive.
+
+            Re-check:
+
+            • trend structure
+            • momentum persistence
+            • support/resistance levels
+            • volatility regimes
+            • market breadth
+
+            If fundamentals contradict price action, you must explain why.
+
+            Price often reflects information before narratives catch up.
+
+            Before finalizing your revision:
+
+            1. Re-examine your original thesis.
+            2. Identify whether critiques genuinely invalidate it.
+            3. Defend at least one element of your original reasoning unless
+               it has been clearly disproven.
+            4. Identify one vulnerability in the emerging consensus view.
+            5. Explain which agent you disagree with most and why.
+            6. List ONE reason why another agent's argument is still flawed.
+
+      # Reasoning Quality (post_crit) — disabled for this ablation
+      reasoning_quality:
+        enabled: false
+        rho_threshold: 0.5
+        max_retries: 1
+
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0

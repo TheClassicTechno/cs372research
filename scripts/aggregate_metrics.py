@@ -11,7 +11,7 @@ import json
 import statistics
 from pathlib import Path
 
-RUNS_DIR = Path(__file__).resolve().parent / "runs"
+RUNS_DIR = Path(__file__).resolve().parent.parent / "logging" / "runs"
 OUTPUT_PATH = RUNS_DIR / "ablation_summary.json"
 
 # Pillar abbreviation -> canonical name
@@ -35,6 +35,7 @@ CANONICAL_PILLARS = [
 
 def _stats(values: list[float], full: bool = False) -> dict:
     """Return mean/stdev (and optionally min/max) for a list of floats."""
+    values = [v for v in values if v is not None]
     if not values:
         return {}
     out: dict = {
