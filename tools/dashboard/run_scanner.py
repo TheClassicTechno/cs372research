@@ -1052,24 +1052,35 @@ def get_portfolio_trajectory(
         if not proposals and result:
             proposals = result[-1].get("revisions", {})
 
-        # Compute consensus (mean across revised agents)
+        # Intervention retry phases (revisions_retry_001, revisions_retry_002, …)
+        retries: list[dict[str, dict]] = []
+        for retry_dir in sorted(rd.glob("revisions_retry_*")):
+            retry_allocs = _read_phase_portfolios(retry_dir)
+            if retry_allocs:
+                retries.append(retry_allocs)
+
+        # Compute consensus (mean across final revised agents)
+        final_revisions = retries[-1] if retries else revisions
         consensus: dict[str, float] = {}
-        if revisions:
+        if final_revisions:
             all_tickers: set[str] = set()
-            for alloc in revisions.values():
+            for alloc in final_revisions.values():
                 all_tickers.update(alloc.keys())
-            n = len(revisions)
+            n = len(final_revisions)
             for ticker in sorted(all_tickers):
-                total = sum(alloc.get(ticker, 0.0) for alloc in revisions.values())
+                total = sum(alloc.get(ticker, 0.0) for alloc in final_revisions.values())
                 consensus[ticker] = round(total / n, 4)
 
-        result.append({
+        entry: dict[str, Any] = {
             "round": round_num,
             "proposals": proposals,
             "revisions": revisions,
-            "allocations": revisions,
+            "allocations": final_revisions,
             "consensus": consensus,
-        })
+        }
+        if retries:
+            entry["retries"] = retries
+        result.append(entry)
     return result
 
 
@@ -1108,6 +1119,18 @@ def compute_round_performance(
                     portfolio, prices_base, year, quarter,
                 )
             round_entry[phase] = phase_perf
+        # Intervention retry phases
+        retries = entry.get("retries") or []
+        if retries:
+            retry_perfs = []
+            for retry_allocs in retries:
+                retry_perf: dict[str, dict] = {}
+                for role, portfolio in retry_allocs.items():
+                    retry_perf[role] = _portfolio_value(
+                        portfolio, prices_base, year, quarter,
+                    )
+                retry_perfs.append(retry_perf)
+            round_entry["retries"] = retry_perfs
         result.append(round_entry)
     return result
 
@@ -1851,4 +1874,165 @@ def diff_run_configs(
         "only_right": only_right,
         "different": different,
         "shared": shared,
+    }
+
+
+# ------------------------------------------------------------------
+# Paired statistical tests (paired t-test)
+# ------------------------------------------------------------------
+# Reproduces the statistical approach from scripts/compare_per_scenario.py:
+#   scipy.stats.ttest_rel  — paired two-tailed t-test
+#   scipy.stats.sem        — standard error of the mean
+#   scipy.stats.t.interval — 95% confidence interval on the difference
+#   numpy mean / std(ddof=1)
+
+def _extract_collapse_ratio(run_dir: Path) -> float | None:
+    """Compute collapse ratio for a single run.
+
+    Baseline (no retry): JS_revision / JS_propose
+    Intervention (retry exists): JS_retry / JS_propose
+
+    Returns None if required metrics are missing.
+    """
+    r1 = run_dir / "rounds" / "round_001"
+    propose = _safe_json(r1 / "metrics_propose.json")
+    if not isinstance(propose, dict):
+        return None
+    js_propose = propose.get("js_divergence")
+    if js_propose is None or js_propose == 0:
+        return None
+
+    # Prefer retry metrics if they exist (intervention condition)
+    retry = _safe_json(r1 / "metrics_retry_001.json")
+    if isinstance(retry, dict) and retry.get("js_divergence") is not None:
+        return retry["js_divergence"] / js_propose
+
+    revision = _safe_json(r1 / "metrics_revision.json")
+    if not isinstance(revision, dict):
+        return None
+    js_revision = revision.get("js_divergence")
+    if js_revision is None:
+        return None
+    return js_revision / js_propose
+
+
+def compute_paired_tests(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Paired t-test comparing collapse ratios across two debate configs.
+
+    Reproduces the statistical methodology from
+    ``scripts/compare_per_scenario.py``: paired ``ttest_rel``, SEM,
+    and 95 % CI on the mean difference.
+
+    Groups runs by (debate_config_stem, scenario_stem), pairs by
+    scenario across the two debate configs.
+
+    Returns dict with config names, paired data, test statistics,
+    and summary measures.
+    """
+    import numpy as np
+    from scipy import stats
+
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # Scan all runs and group by (debate_config, scenario)
+    groups: dict[tuple[str, str], float] = {}
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        ratio = _extract_collapse_ratio(run_dir)
+        if ratio is None:
+            continue
+        groups[(debate_stem, scenario_stem)] = ratio
+
+    # Identify the two debate configs
+    debate_configs = sorted({k[0] for k in groups})
+    if len(debate_configs) != 2:
+        return {
+            "error": f"Expected 2 debate configs, found {len(debate_configs)}",
+            "configs_found": debate_configs,
+        }
+
+    config_a, config_b = debate_configs  # alphabetical
+
+    # Build paired arrays matched by scenario
+    scenarios_a = {k[1]: v for k, v in groups.items() if k[0] == config_a}
+    scenarios_b = {k[1]: v for k, v in groups.items() if k[0] == config_b}
+    common = sorted(set(scenarios_a) & set(scenarios_b))
+
+    if len(common) < 2:
+        return {
+            "error": f"Too few paired scenarios ({len(common)}), need >= 2",
+            "config_a": config_a,
+            "config_b": config_b,
+        }
+
+    pairs = []
+    a_ratios = []
+    b_ratios = []
+    for s in common:
+        a_val = round(scenarios_a[s], 6)
+        b_val = round(scenarios_b[s], 6)
+        pairs.append({"scenario": s, "a": a_val, "b": b_val})
+        a_ratios.append(a_val)
+        b_ratios.append(b_val)
+
+    # --- Statistical tests (mirrors compare_per_scenario.py) ----------
+    v_a = np.array(a_ratios)
+    v_b = np.array(b_ratios)
+    diffs = v_b - v_a
+
+    t_stat, p_val = stats.ttest_rel(v_b, v_a)
+    mean_diff = float(np.mean(diffs))
+    se_diff = float(stats.sem(diffs))
+
+    mean_a = float(np.mean(v_a))
+    sem_a = float(stats.sem(v_a))
+    mean_b = float(np.mean(v_b))
+    sem_b = float(stats.sem(v_b))
+
+    ci_low, ci_high = stats.t.interval(
+        0.95, len(diffs) - 1, loc=mean_diff, scale=se_diff,
+    )
+
+    n = len(common)
+    n_b_greater = int(np.sum(v_b > v_a))
+    n_a_greater = int(np.sum(v_a > v_b))
+
+    return {
+        "config_a": config_a,
+        "config_b": config_b,
+        "n_paired": n,
+        "pairs": pairs,
+        "ttest": {
+            "t_statistic": round(float(t_stat), 4),
+            "p_value": round(float(p_val), 6),
+            "mean_diff": round(mean_diff, 6),
+            "se_diff": round(se_diff, 6),
+            "ci_95": [round(float(ci_low), 6), round(float(ci_high), 6)],
+        },
+        "summary": {
+            "a_mean": round(mean_a, 4),
+            "a_sem": round(sem_a, 4),
+            "a_std": round(float(np.std(v_a, ddof=1)), 4),
+            "b_mean": round(mean_b, 4),
+            "b_sem": round(sem_b, 4),
+            "b_std": round(float(np.std(v_b, ddof=1)), 4),
+            "n_b_greater": n_b_greater,
+            "n_a_greater": n_a_greater,
+        },
     }

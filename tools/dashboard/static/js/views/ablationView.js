@@ -5,8 +5,8 @@
  * cards and overview table, handles the Regenerate action.
  */
 
-import { fetchAblation, regenerateAblation, fetchAblationDebateImpact } from '../api/runs.js';
-import { buildAblationOverview, buildExperimentCard } from '../components/ablation.js';
+import { fetchAblation, regenerateAblation, fetchAblationDebateImpact, fetchPairedTests } from '../api/runs.js';
+import { buildAblationOverview, buildExperimentCard, buildPairedTestsSection } from '../components/ablation.js';
 import { ablationState, appState } from '../state.js';
 
 /**
@@ -15,7 +15,7 @@ import { ablationState, appState } from '../state.js';
  */
 function renderContent(token, data, impactMap) {
   if (appState.viewToken !== token) return;
-  var container = document.getElementById('ablation-content');
+  const container = document.getElementById('ablation-content');
   if (container === null) {
     throw new Error('ablation-content container not found');
   }
@@ -25,18 +25,41 @@ function renderContent(token, data, impactMap) {
     return;
   }
 
-  var names = Object.keys(data);
+  const names = Object.keys(data);
   if (names.length === 0) {
     container.innerHTML = '<p>Ablation summary is empty.</p>';
     return;
   }
 
-  var impacts = impactMap !== undefined && impactMap !== null ? impactMap : {};
-  var html = buildAblationOverview(data);
-  for (var i = 0; i < names.length; i++) {
+  const impacts = impactMap !== undefined && impactMap !== null ? impactMap : {};
+  let html = buildAblationOverview(data);
+  for (let i = 0; i < names.length; i++) {
     html += buildExperimentCard(names[i], data[names[i]], impacts[names[i]]);
   }
   container.innerHTML = html;
+
+  loadPairedTests(token, names);
+}
+
+/**
+ * Fetch and inject paired t-test results for each experiment.
+ * Finds the placeholder slot inside each experiment card and fills it.
+ * Accepts the view token and the list of experiment names.
+ */
+function loadPairedTests(token, names) {
+  const slots = document.querySelectorAll('[data-testid="paired-tests-slot"]');
+  for (let i = 0; i < names.length; i++) {
+    (function (expName, slot) {
+      fetchPairedTests(expName)
+        .then(function (result) {
+          if (appState.viewToken !== token) return;
+          slot.innerHTML = buildPairedTestsSection(result);
+        })
+        .catch(function () {
+          // Non-critical — leave slot empty if endpoint unavailable
+        });
+    })(names[i], slots[i]);
+  }
 }
 
 /**
@@ -44,8 +67,8 @@ function renderContent(token, data, impactMap) {
  * Accepts the view token for stale-fetch prevention.
  */
 export function renderAblationView(token) {
-  var appDiv = document.getElementById('app');
-  var html = '<div class="controls">';
+  const appDiv = document.getElementById('app');
+  let html = '<div class="controls">';
   html += '<button data-action="regenerate-ablation" data-testid="regenerate-ablation" type="button">Regenerate</button>';
   html += '<span class="status-text" id="ablation-status"></span>';
   html += '</div>';
@@ -60,7 +83,7 @@ export function renderAblationView(token) {
     })
     .catch(function (err) {
       if (appState.viewToken !== token) return;
-      var container = document.getElementById('ablation-content');
+      const container = document.getElementById('ablation-content');
       if (container !== null) {
         container.innerHTML = '<p>Error loading ablation data: ' + String(err) + '</p>';
       }
@@ -72,9 +95,9 @@ export function renderAblationView(token) {
  * Uses the current viewToken for stale-fetch guards.
  */
 function doRegenerate() {
-  var status = document.getElementById('ablation-status');
+  const status = document.getElementById('ablation-status');
   if (status !== null) { status.textContent = 'Regenerating\u2026'; }
-  var token = appState.viewToken;
+  const token = appState.viewToken;
   regenerateAblation()
     .then(function (result) {
       if (appState.viewToken !== token) return;
@@ -91,6 +114,7 @@ function doRegenerate() {
       ablationState.data = results[0];
       renderContent(token, results[0], results[1]);
       if (status !== null) { status.textContent = ''; }
+      // Note: renderContent already calls loadPairedTests
     })
     .catch(function (err) {
       if (appState.viewToken !== token) return;

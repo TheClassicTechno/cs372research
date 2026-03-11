@@ -194,6 +194,34 @@ function buildRoundSection(entry, perf, roundNum, agentLabel) {
     h += buildRoundPerfTables(perf, phase.key, agentNames, agentLabel);
     h += '</div>';
   }
+
+  // Intervention retry phases
+  var retries = entry.retries || [];
+  var retryPerfs = (perf && perf.retries) || [];
+  for (var r = 0; r < retries.length; r++) {
+    var retryAgents = retries[r] || {};
+    var retryNames = Object.keys(retryAgents).sort();
+    if (retryNames.length === 0) continue;
+
+    var retryNum = r + 1;
+    var retryTestId = 'round-' + roundNum + '-retry-' + retryNum;
+    h += '<div class="ov-title" style="margin-top:16px;" data-testid="' + esc(retryTestId) + '-title">';
+    h += 'ROUND ' + roundNum + ' \u2014 RETRY ' + retryNum + ' (INTERVENTION)</div>';
+    h += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+    h += buildRoundAllocTable(retryAgents, retryNames, agentLabel, retryTestId + '-alloc');
+    var retryPerf = retryPerfs[r];
+    if (retryPerf) {
+      for (var a = 0; a < retryNames.length; a++) {
+        var role = retryNames[a];
+        var agentPerf = retryPerf[role];
+        if (agentPerf) {
+          var label = agentLabel(role).toUpperCase();
+          h += '<div>' + buildAgentPerfTable(agentPerf, label) + '</div>';
+        }
+      }
+    }
+    h += '</div>';
+  }
   return h;
 }
 

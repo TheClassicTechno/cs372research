@@ -273,6 +273,22 @@ def read_file(
 # Ablation summary endpoints
 # ------------------------------------------------------------------
 
+@app.get("/api/ablation/paired-tests/{experiment}")
+def paired_tests(experiment: str):
+    """Wilcoxon signed-rank test comparing collapse ratios across conditions."""
+    return JSONResponse(
+        run_scanner.compute_paired_tests(RUNS_BASE, experiment)
+    )
+
+
+@app.get("/api/ablation/paired-tests/{experiment}")
+def paired_tests(experiment: str):
+    """Paired t-test comparing collapse ratios across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_paired_tests(RUNS_BASE, experiment)
+    )
+
+
 @app.get("/api/ablation")
 def ablation_summary():
     """Return the ablation summary JSON, or a not_generated marker."""
