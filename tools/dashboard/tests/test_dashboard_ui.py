@@ -685,13 +685,12 @@ class TestRunOverviewConfigPanel:
         text = grid.text_content()
         assert "invest_quarter" in text, "Missing invest_quarter in scenario config grid"
 
-    def test_run_dir_shown(self, page: Page, dashboard_url: str):
-        """Run directory is displayed and contains the run ID."""
+    def test_run_id_shown(self, page: Page, dashboard_url: str):
+        """Run ID is displayed in the overview."""
         _goto_run_detail(page, dashboard_url)
         overview_text = page.text_content(".run-overview")
-        assert "Run Dir" in overview_text, "Run Dir label not found"
         assert "run_2026-03-07_19-50-06" in overview_text, (
-            "Run dir should contain run ID"
+            "Run ID should be visible in overview"
         )
 
     def test_config_grid_has_monospace_values(self, page: Page, dashboard_url: str):
@@ -705,10 +704,12 @@ class TestRunOverviewConfigPanel:
         )
 
     def test_temperature_displayed(self, page: Page, dashboard_url: str):
-        """Temperature is visible in the overview."""
+        """Temperature is visible in the debate config card."""
         _goto_run_detail(page, dashboard_url)
-        overview_text = page.text_content(".run-overview")
-        assert "Temperature" in overview_text, "Temperature label not found"
+        grid = page.query_selector("[data-testid='debate-config-grid']")
+        assert grid is not None, "Debate config grid not found"
+        text = grid.text_content()
+        assert "temperature" in text.lower(), "Temperature not found in debate config"
 
 
 # ---------------------------------------------------------------------------
