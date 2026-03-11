@@ -890,10 +890,13 @@ def get_divergence_trajectory(
             metrics_dir = rd / "metrics"
             if not metrics_dir.is_dir():
                 continue
-            div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
-            ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
-            if div_p or ev_p:
-                propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
+            proposals_dir = rd / "proposals"
+            if proposals_dir.is_dir():
+                div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
+                ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
+                if div_p or ev_p:
+                    propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
+            # else: skip — will be filled from previous round's final phase below
 
             # Retry-phase divergence + evidence overlap files
             retries = []
@@ -956,6 +959,32 @@ def get_divergence_trajectory(
                         "mean_overlap": ov_rt,
                         "agent_confidences": div_rt.get("agent_confidences"),
                     })
+
+    # Backfill propose entries for rounds without real proposals.
+    # Their starting state is the previous round's final revision/retry.
+    prev_final = None
+    patched = []
+    for row in result:
+        if row["phase"] == "propose" and row["round"] in propose_by_round:
+            # Real propose — keep as-is, update prev tracking
+            patched.append(row)
+        elif row["phase"] == "propose":
+            # No real proposals — use previous round's final phase
+            if prev_final is not None:
+                patched.append({
+                    "round": row["round"],
+                    "phase": "propose",
+                    "js_divergence": prev_final["js_divergence"],
+                    "mean_overlap": prev_final["mean_overlap"],
+                    "agent_confidences": prev_final.get("agent_confidences"),
+                })
+            # else: skip — no prior data to carry forward
+        else:
+            patched.append(row)
+        # Track the last non-propose phase per round as the "final" for carry-forward
+        if row["phase"] != "propose":
+            prev_final = row
+    result = patched
     return result
 
 

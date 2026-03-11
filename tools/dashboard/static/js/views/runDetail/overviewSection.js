@@ -15,13 +15,13 @@ import { flattenConfig } from '../../utils/config.js';
 export function buildOverviewPanel(detail, experiment, runId) {
   var html = '<div class="run-overview">';
   html += '<div class="ov-title">RUN OVERVIEW</div>';
-  html += buildIdentityTable(detail, experiment, runId);
-  html += buildMetricsTable(detail);
-  html += buildRunDirRow(detail);
-  html += buildConfigGrid(detail.debate_config, 'DEBATE CONFIG', 'debate-config-grid', DEBATE_EXCLUDE);
-  html += buildConfigGrid(detail.scenario_config, 'SCENARIO CONFIG', 'scenario-config-grid', SCENARIO_EXCLUDE);
+  html += buildRunSummary(detail, experiment, runId);
+  html += buildKeyMetrics(detail);
+  html += buildExperimentConfig(detail);
+  html += buildDebateConfigGroups(detail.debate_config);
+  html += buildScenarioConfigGroups(detail.scenario_config);
   html += buildTickerPerfTable(detail.ticker_performance);
-  html += buildMacroPreview(detail.scenario_config);
+  html += buildMacroCollapsible(detail.scenario_config);
 
   var q = detail.quality || {};
   if (q.reasoning_collapse) {
@@ -33,7 +33,7 @@ export function buildOverviewPanel(detail, experiment, runId) {
   return html;
 }
 
-/** Keys excluded from debate config grid (shown in identity/metrics tables). */
+/** Keys excluded from debate config grid (shown in summary/metrics). */
 var DEBATE_EXCLUDE = [
   'agents',
   'debate_setup.llm_model',
@@ -49,25 +49,52 @@ var SCENARIO_EXCLUDE = [
   'output_dir',
 ];
 
+/** Semantic group definitions for debate config parameters. */
+var DEBATE_GROUP_DEFS = [
+  { name: 'Agent Setup', prefixes: ['agent'] },
+  { name: 'Broker', prefixes: ['broker'] },
+  { name: 'Dataset', prefixes: ['dataset'] },
+  { name: 'Judge', prefixes: ['judge'] },
+  { name: 'PID Settings', prefixes: ['pid'] },
+  { name: 'Runtime', prefixes: ['runtime', 'debate_setup'] },
+];
+
+/** Semantic group definitions for scenario config parameters. */
+var SCENARIO_GROUP_DEFS = [
+  { name: 'Allocation Constraints', prefixes: ['allocation', 'constraint'] },
+];
+
 /**
- * Build Section 1 — Core Run Info table.
+ * Build Section 1 — Run Summary table with two header/data row pairs.
  *
  * @param {object} detail - Run detail object
  * @param {string} experiment - Experiment name
  * @param {string} runId - Run ID
  * @returns {string} HTML table string
  */
-function buildIdentityTable(detail, experiment, runId) {
+function buildRunSummary(detail, experiment, runId) {
   var m = detail.manifest || {};
-  var statusCls = (detail.status === 'complete' || detail.status === 'partial') ? ' class="status-ok"' : '';
+  var statusCls = '';
+  if (detail.status === 'complete' || detail.status === 'partial') {
+    statusCls = ' class="status-ok"';
+  } else if (detail.status === 'running') {
+    statusCls = ' class="status-running"';
+  } else if (detail.status === 'failed') {
+    statusCls = ' class="status-failed"';
+  }
+
   var h = '<table class="ov-htable">';
-  h += '<tr><th>Run ID</th><th>Experiment</th><th>Model</th><th>CRIT Model</th><th>Status</th></tr>';
+  h += '<tr><th>Run ID</th><th>Experiment</th><th>Status</th></tr>';
   h += '<tr>';
   h += '<td>' + esc(runId) + '</td>';
   h += '<td>' + esc(experiment) + '</td>';
+  h += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
+  h += '</tr>';
+  h += '<tr><th>Model</th><th>CRIT Model</th><th>Run Dir</th></tr>';
+  h += '<tr>';
   h += '<td>' + esc(m.model_name || '\u2014') + '</td>';
   h += '<td>' + esc(m.crit_model_name || '\u2014') + '</td>';
-  h += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
+  h += '<td style="font-family:monospace">' + esc(typeof detail.run_dir === 'string' ? detail.run_dir : '\u2014') + '</td>';
   h += '</tr></table>';
   return h;
 }
@@ -97,62 +124,128 @@ function extractConfigFields(m) {
 }
 
 /**
- * Build Section 2 — Execution Metadata table.
+ * Build Section 2 — Key Metrics row with 5 metric cards.
+ *
+ * @param {object} detail - Run detail object
+ * @returns {string} HTML string
+ */
+function buildKeyMetrics(detail) {
+  var m = detail.manifest || {};
+  var q = detail.quality || {};
+  var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
+    + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
+
+  var metrics = [
+    { label: 'Initial \u03B2', value: fmt(m.initial_beta) },
+    { label: 'Final \u03B2', value: fmt(m.final_beta) },
+    { label: 'Final \u03c1\u0304', value: fmt(q.final_rho_bar) },
+    { label: 'JS Drop', value: fmt(q.js_drop) },
+    { label: 'Rounds', value: esc(roundsStr) },
+  ];
+
+  var h = '<div class="ov-metrics-row">';
+  for (var i = 0; i < metrics.length; i++) {
+    h += '<div class="ov-metric-card">';
+    h += '<div class="ov-metric-value">' + metrics[i].value + '</div>';
+    h += '<div class="ov-metric-label">' + metrics[i].label + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/**
+ * Build Section 3 — Experiment Config table (3 rows x 2 key-value pairs).
  *
  * @param {object} detail - Run detail object
  * @returns {string} HTML table string
  */
-function buildMetricsTable(detail) {
+function buildExperimentConfig(detail) {
   var m = detail.manifest || {};
-  var q = detail.quality || {};
   var fields = extractConfigFields(m);
-  var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014') + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
+  var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
+    + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
   var tempStr = '\u2014';
   var dc = detail.debate_config;
   if (dc && dc.debate_setup && dc.debate_setup.temperature != null) {
     tempStr = String(dc.debate_setup.temperature);
   }
-  var h = '<table class="ov-htable">';
-  h += '<tr><th>Config</th><th>Agents</th><th>Rounds</th><th>Termination</th>';
-  h += '<th>Temperature</th><th>Initial \u03B2</th>';
-  h += '<th>Final \u03B2</th><th>Final <span style="text-decoration:overline">\u03c1</span></th><th>JS Drop</th></tr>';
-  h += '<tr>';
-  h += '<td>' + esc(fields.configName) + '</td>';
-  h += '<td>' + esc(fields.agentsStr) + '</td>';
-  h += '<td>' + esc(roundsStr) + '</td>';
-  h += '<td>' + esc(m.termination_reason || '\u2014') + '</td>';
-  h += '<td>' + esc(tempStr) + '</td>';
-  h += '<td>' + fmt(m.initial_beta) + '</td>';
-  h += '<td>' + fmt(m.final_beta) + '</td>';
-  h += '<td>' + fmt(q.final_rho_bar) + '</td>';
-  h += '<td>' + fmt(q.js_drop) + '</td>';
-  h += '</tr></table>';
-  return h;
-}
 
-/**
- * Build Section 3 — Run Directory row.
- *
- * @param {object} detail - Run detail object
- * @returns {string} HTML table string
- */
-function buildRunDirRow(detail) {
-  if (typeof detail.run_dir !== 'string') return '';
-  var h = '<table class="ov-htable" style="table-layout:auto;">';
-  h += '<tr><th style="width:1%;white-space:nowrap">Run Dir</th>';
-  h += '<td style="font-family:monospace">' + esc(detail.run_dir) + '</td></tr>';
+  var h = '<div class="ov-subtitle">EXPERIMENT CONFIG</div>';
+  h += '<table class="ov-htable">';
+  h += '<tr><th>Config</th><td>' + esc(fields.configName) + '</td>';
+  h += '<th>Agents</th><td>' + esc(fields.agentsStr) + '</td></tr>';
+  h += '<tr><th>Rounds</th><td>' + esc(roundsStr) + '</td>';
+  h += '<th>Termination</th><td>' + esc(m.termination_reason || '\u2014') + '</td></tr>';
+  h += '<tr><th>Temperature</th><td>' + esc(tempStr) + '</td>';
+  h += '<th>Initial \u03B2</th><td>' + fmt(m.initial_beta) + '</td></tr>';
   h += '</table>';
   return h;
 }
 
 /**
- * Filter and cap config items, then render as grid cells.
+ * Group flat config items into named groups by key prefix.
+ * Unmatched items are placed in an "Other" group.
  *
- * @param {Array} flat - Flattened config items
- * @param {Array} excludeKeys - Keys to exclude
- * @returns {Array} Filtered items (max 100)
+ * @param {Array} flatItems - Array of {key, value} objects
+ * @param {Array} groupDefs - Array of {name, prefixes} definitions
+ * @returns {Array} Array of {name, items} groups (non-empty only)
  */
-function filterConfigItems(flat, excludeKeys) {
+function groupConfigItems(flatItems, groupDefs) {
+  var groups = {};
+  var groupOrder = [];
+  for (var i = 0; i < groupDefs.length; i++) {
+    groups[groupDefs[i].name] = [];
+    groupOrder.push(groupDefs[i].name);
+  }
+  groups['Other'] = [];
+
+  for (var j = 0; j < flatItems.length; j++) {
+    var item = flatItems[j];
+    var matched = false;
+    for (var k = 0; k < groupDefs.length; k++) {
+      var prefixes = groupDefs[k].prefixes;
+      for (var p = 0; p < prefixes.length; p++) {
+        if (item.key === prefixes[p] || item.key.indexOf(prefixes[p] + '.') === 0) {
+          groups[groupDefs[k].name].push(item);
+          matched = true;
+          break;
+        }
+      }
+      if (matched) break;
+    }
+    if (!matched) {
+      groups['Other'].push(item);
+    }
+  }
+
+  var result = [];
+  for (var g = 0; g < groupOrder.length; g++) {
+    if (groups[groupOrder[g]].length > 0) {
+      result.push({ name: groupOrder[g], items: groups[groupOrder[g]] });
+    }
+  }
+  if (groups['Other'].length > 0) {
+    result.push({ name: 'Other', items: groups['Other'] });
+  }
+  return result;
+}
+
+/**
+ * Build a config section with subgroup cards from a flat config.
+ *
+ * @param {object} config - Raw config object
+ * @param {string} title - Section title
+ * @param {string} testId - data-testid attribute value
+ * @param {Array} excludeKeys - Keys to exclude
+ * @param {Array} groupDefs - Group definitions for groupConfigItems
+ * @returns {string} HTML string
+ */
+function buildConfigGroupSection(config, title, testId, excludeKeys, groupDefs) {
+  if (!config || typeof config !== 'object') return '';
+  var flat = flattenConfig(config);
+  if (flat.length === 0) return '';
+
   var excludeSet = {};
   for (var e = 0; e < excludeKeys.length; e++) {
     excludeSet[excludeKeys[e]] = true;
@@ -163,115 +256,66 @@ function filterConfigItems(flat, excludeKeys) {
       filtered.push(flat[i]);
     }
   }
-  if (filtered.length > 100) {
-    filtered = filtered.slice(0, 100);
-  }
-  return filtered;
-}
+  if (filtered.length === 0) return '';
 
-/**
- * Render grouped config items as HTML grid cells.
- *
- * @param {Array} grouped - Items from collapseNamespaces()
- * @returns {string} HTML string of grid cells
- */
-function renderConfigCells(grouped) {
-  var h = '';
-  for (var g = 0; g < grouped.length; g++) {
-    var item = grouped[g];
-    if (item.children) {
-      h += '<div class="ov-config-cell">';
-      h += '<span class="ov-config-key">' + esc(item.key) + '</span>';
-      for (var c = 0; c < item.children.length; c++) {
-        var child = item.children[c];
-        var val = child.value.length > 120 ? child.value.slice(0, 120) + '\u2026' : child.value;
-        h += '<span class="ov-config-val">' + esc(child.key) + ': ' + esc(val) + '</span>';
-      }
-      h += '</div>';
-    } else {
-      var val = item.value.length > 120 ? item.value.slice(0, 120) + '\u2026' : item.value;
-      h += '<div class="ov-config-cell">';
-      h += '<span class="ov-config-key">' + esc(item.key) + '</span>';
-      h += '<span class="ov-config-val">' + esc(val) + '</span>';
-      h += '</div>';
-    }
-  }
-  return h;
-}
-
-/**
- * Build Section 4 — Config Parameter Grid.
- *
- * @param {object} config - Raw config object
- * @param {string} title - Section title
- * @param {string} testId - data-testid attribute
- * @param {Array} excludeKeys - Keys to exclude
- * @returns {string} HTML string
- */
-function buildConfigGrid(config, title, testId, excludeKeys) {
-  if (!config || typeof config !== 'object') return '';
-  var flat = flattenConfig(config);
-  if (!flat.length) return '';
-  var filtered = filterConfigItems(flat, excludeKeys);
-  if (!filtered.length) return '';
-  var grouped = collapseNamespaces(filtered);
+  var grouped = groupConfigItems(filtered, groupDefs);
   var h = '<div class="ov-subtitle">' + esc(title) + '</div>';
-  h += '<div class="ov-config-grid" data-testid="' + esc(testId) + '">';
-  h += renderConfigCells(grouped);
+  h += '<div class="ov-config-groups" data-testid="' + esc(testId) + '">';
+  for (var g = 0; g < grouped.length; g++) {
+    h += renderGroupCard(grouped[g]);
+  }
   h += '</div>';
   return h;
 }
 
 /**
- * Collapse shared prefixes: when >=3 sibling keys share a common prefix,
- * group them into a single cell with indented sub-keys.
+ * Render a single config group card with key-value rows.
  *
- * @param {Array} items - Flattened config items
- * @returns {Array} Grouped items
+ * @param {object} group - {name, items} group object
+ * @returns {string} HTML string for one group card
  */
-function collapseNamespaces(items) {
-  var groups = {};
-  var order = [];
-  for (var i = 0; i < items.length; i++) {
-    var dotIdx = items[i].key.lastIndexOf('.');
-    var parent = dotIdx >= 0 ? items[i].key.slice(0, dotIdx) : '';
-    var child = dotIdx >= 0 ? items[i].key.slice(dotIdx + 1) : items[i].key;
-    if (!groups[parent]) {
-      groups[parent] = [];
-      order.push(parent);
-    }
-    groups[parent].push({ key: child, value: items[i].value, fullKey: items[i].key });
+function renderGroupCard(group) {
+  var h = '<div class="ov-config-group">';
+  h += '<div class="ov-config-group-title">' + esc(group.name) + '</div>';
+  h += '<div class="ov-config-group-body">';
+  for (var i = 0; i < group.items.length; i++) {
+    var item = group.items[i];
+    var val = item.value;
+    var truncated = val.length > 60 ? val.slice(0, 60) + '\u2026' : val;
+    var titleAttr = val.length > 60 ? ' title="' + esc(val) + '"' : '';
+    h += '<div class="ov-kv-row">';
+    h += '<span class="ov-config-key">' + esc(item.key) + '</span>';
+    h += '<span class="ov-config-val"' + titleAttr + '>' + esc(truncated) + '</span>';
+    h += '</div>';
   }
-  var result = [];
-  for (var o = 0; o < order.length; o++) {
-    var prefix = order[o];
-    var members = groups[prefix];
-    if (prefix && members.length >= 3) {
-      result.push({ key: prefix, children: members });
-    } else {
-      for (var m = 0; m < members.length; m++) {
-        result.push({ key: members[m].fullKey, value: members[m].value });
-      }
-    }
-  }
-  return result;
+  h += '</div></div>';
+  return h;
 }
 
 /**
- * Build Section 5 — Macro Environment Preview.
+ * Build Section 4 — Debate Config with semantic subgroup cards.
+ *
+ * @param {object} debateConfig - Debate config object
+ * @returns {string} HTML string
+ */
+function buildDebateConfigGroups(debateConfig) {
+  return buildConfigGroupSection(
+    debateConfig, 'DEBATE CONFIG', 'debate-config-grid',
+    DEBATE_EXCLUDE, DEBATE_GROUP_DEFS
+  );
+}
+
+/**
+ * Build Section 4b — Scenario Config with semantic subgroup cards.
  *
  * @param {object} scenarioConfig - Scenario config object
  * @returns {string} HTML string
  */
-function buildMacroPreview(scenarioConfig) {
-  if (!scenarioConfig || !scenarioConfig.macro_context) return '';
-  var text = String(scenarioConfig.macro_context);
-  if (text.length > 500) {
-    text = text.slice(0, 500) + '\u2026';
-  }
-  var h = '<div class="ov-subtitle">MACRO ENVIRONMENT</div>';
-  h += '<div class="ov-macro-box">' + esc(text) + '</div>';
-  return h;
+function buildScenarioConfigGroups(scenarioConfig) {
+  return buildConfigGroupSection(
+    scenarioConfig, 'SCENARIO CONFIG', 'scenario-config-grid',
+    SCENARIO_EXCLUDE, SCENARIO_GROUP_DEFS
+  );
 }
 
 /**
@@ -283,6 +327,7 @@ function buildMacroPreview(scenarioConfig) {
 function buildTickerPerfTable(tickerPerf) {
   if (!tickerPerf || tickerPerf.length === 0) return '';
   var h = '<div class="ov-subtitle">TICKER PERFORMANCE</div>';
+  h += '<div class="ov-capped-table">';
   h += '<table class="data-table" data-testid="ticker-perf-table">';
   h += '<tr><th>Ticker</th><th>Open</th><th>Close</th><th>\u0394%</th></tr>';
   for (var i = 0; i < tickerPerf.length; i++) {
@@ -295,6 +340,23 @@ function buildTickerPerfTable(tickerPerf) {
     h += '<td class="' + cls + '" style="text-align:right;">';
     h += sign + t.pct_change.toFixed(2) + '%</td></tr>';
   }
-  h += '</table>';
+  h += '</table></div>';
+  return h;
+}
+
+/**
+ * Build collapsible Macro Environment card with full text.
+ *
+ * @param {object} scenarioConfig - Scenario config object
+ * @returns {string} HTML string
+ */
+function buildMacroCollapsible(scenarioConfig) {
+  if (!scenarioConfig || !scenarioConfig.macro_context) return '';
+  var text = String(scenarioConfig.macro_context);
+  var h = '<div class="card">';
+  h += '<div class="card-header">MACRO ENVIRONMENT <span class="arrow">\u25B6</span></div>';
+  h += '<div class="card-body">';
+  h += '<pre class="content ov-scroll-box">' + esc(text) + '</pre>';
+  h += '</div></div>';
   return h;
 }

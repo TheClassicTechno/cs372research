@@ -38,17 +38,20 @@ function renderRunDetail(detail, experiment, runId, token) {
   var appDiv = document.getElementById('app');
 
   var html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';
+
+  // Divergence + PID stats at the very top
+  html += '<div id="divergence-section"></div>';
+  html += '<div id="pid-stats-section"></div>';
+
   html += buildOverviewPanel(detail, experiment, runId);
 
-  // Container for async sections
+  // Container for remaining async sections
   html += '<div id="detail-sections"></div>';
   appDiv.innerHTML = html;
 
   var sectionsDiv = document.getElementById('detail-sections');
   var sectionsHtml = '';
 
-  sectionsHtml += '<div id="divergence-section"></div>';
-  sectionsHtml += '<div id="pid-stats-section"></div>';
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';
   sectionsHtml += '<div id="portfolio-section"></div>';
