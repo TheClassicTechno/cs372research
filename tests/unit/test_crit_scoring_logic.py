@@ -182,14 +182,16 @@ class TestRhoBarComputation:
 # ---------------------------------------------------------------------------
 
 class TestCritScorerErrors:
-    def test_invalid_json_crashes(self):
-        """Invalid JSON exhausts retries and crashes the debate."""
+    def test_invalid_json_returns_fallback(self):
+        """Invalid JSON exhausts retries and returns low-quality fallback."""
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: "not valid json at all")
-        with pytest.raises(RuntimeError, match="CRIT scoring failed"):
-            scorer.score(BUNDLES_1)
+        result = scorer.score(BUNDLES_1)
+        assert result.rho_bar == 0.25, (
+            f"Expected fallback rho_bar=0.25, got {result.rho_bar}"
+        )
 
-    def test_partial_response_missing_pillar_crashes(self):
-        """Missing pillar fields exhaust retries and crash the debate."""
+    def test_partial_response_missing_pillar_returns_fallback(self):
+        """Missing pillar fields exhaust retries and return low-quality fallback."""
         incomplete = json.dumps({
             "pillar_scores": {
                 "logical_validity": 0.8,
@@ -211,8 +213,10 @@ class TestCritScorerErrors:
             },
         })
         scorer = CritScorer(llm_fn=lambda sys, usr, **kw: incomplete)
-        with pytest.raises(RuntimeError, match="CRIT scoring failed"):
-            scorer.score(BUNDLES_1)
+        result = scorer.score(BUNDLES_1)
+        assert result.rho_bar == 0.25, (
+            f"Expected fallback rho_bar=0.25, got {result.rho_bar}"
+        )
 
     def test_empty_bundles_raises(self):
         scorer = _make_scorer_uniform()
