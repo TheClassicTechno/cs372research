@@ -109,7 +109,7 @@ export function renderRunsView(token) {
     var h = '<table class="data-table">';
     h += '<tr><th>run_id</th><th>status</th><th>agents</th><th>config</th><th style="width:1%">rounds</th>';
     h += '<th style="width:1%">final <span style="text-decoration:overline">\u03c1</span></th><th style="width:1%">js_drop</th>';
-    h += '<th>model</th><th style="width:1%">final_beta</th><th>portfolio</th><th style="width:1%">duration</th><th style="width:1%">flags</th></tr>';
+    h += '<th>model</th><th>portfolio</th><th style="width:1%">duration</th></tr>';
     for (var i = 0; i < filtered.length; i++) {
       var r = filtered[i];
       var isBest = (i === bestIdx) ? ' best-run' : '';
@@ -143,12 +143,8 @@ export function renderRunsView(token) {
       h += '<td>' + fmt(r.final_rho_bar) + '</td>';
       h += '<td>' + fmt(r.js_drop) + '</td>';
       h += '<td>' + esc(r.model_name || '\u2014') + '</td>';
-      h += '<td>' + fmt(r.final_beta) + '</td>';
       h += '<td>' + perfCell + '</td>';
       h += '<td>' + fmtDuration(r.elapsed_s) + '</td>';
-      h += '<td>';
-      if (r.reasoning_collapse) h += '<span class="flag-collapse">COLLAPSE</span>';
-      h += '</td>';
       h += '</tr>';
     }
     h += '</table>';

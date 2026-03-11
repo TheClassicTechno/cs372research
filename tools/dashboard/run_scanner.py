@@ -870,205 +870,138 @@ def get_divergence_trajectory(
 ) -> list[dict]:
     """Extract JS divergence + evidence overlap per phase per round.
 
-    The aggregated ``pid_crit_all_rounds.json`` never contains propose-phase
-    data, so we always read propose metrics directly from per-round files.
+    Reads exclusively from per-round metric files. Does NOT use the
+    aggregated ``pid_crit_all_rounds.json`` which has duplicate entries
+    per round and unreliable divergence values.
+
+    Data sources (in priority order):
+      1. New telemetry: ``rounds/round_NNN/metrics_propose.json`` etc.
+      2. Legacy metrics: ``rounds/round_NNN/metrics/js_divergence.json`` etc.
     """
     run_dir = base_path / experiment / run_id
-    traj = _load_trajectories(run_dir)
-
-    # Build a lookup of propose-phase, revision-phase, and retry-phase metrics
-    # from per-round files, since the aggregated file never includes them all.
-    # Prefer new telemetry files (metrics_*.json in round dir) over legacy
-    # metrics/ subdirectory files.
-    propose_by_round: dict[int, dict] = {}
-    revision_by_round: dict[int, dict] = {}
-    retry_by_round: dict[int, list[dict]] = {}
     rounds_dir = run_dir / "rounds"
-    if rounds_dir.is_dir():
-        for rd in sorted(rounds_dir.glob("round_*")):
-            try:
-                rn = int(rd.name.split("_")[1])
-            except (IndexError, ValueError):
-                continue
+    if not rounds_dir.is_dir():
+        return []
 
-            # --- New telemetry files (metrics_propose.json etc.) ---
-            telem_propose = _safe_json(rd / "metrics_propose.json")
-            telem_revision = _safe_json(rd / "metrics_revision.json")
-            telem_retries = []
-            for tf in sorted(rd.glob("metrics_retry_*.json")):
-                tr = _safe_json(tf)
-                if tr is not None:
-                    telem_retries.append(tr)
+    # Collect per-phase data from per-round files.
+    # Each dict maps round_num → {js, ov, confidences}.
+    propose_data: dict[int, dict] = {}
+    revision_data: dict[int, dict] = {}
+    retry_data: dict[int, list[dict]] = {}
 
-            if telem_propose:
-                propose_by_round[rn] = {
-                    "div": {"js_divergence": telem_propose.get("js_divergence")},
-                    "ev": {"mean_overlap": telem_propose.get("evidence_overlap")},
-                }
-            if telem_revision:
-                revision_by_round[rn] = {
-                    "div": {"js_divergence": telem_revision.get("js_divergence")},
-                    "ev": {"mean_overlap": telem_revision.get("evidence_overlap")},
-                }
-            if telem_retries:
-                retry_by_round[rn] = [
-                    {
-                        "div": {"js_divergence": tr.get("js_divergence")},
-                        "ev": {"mean_overlap": tr.get("evidence_overlap")},
-                    }
-                    for tr in telem_retries
-                ]
-
-            # --- Legacy metrics/ subdirectory (fallback) ---
-            metrics_dir = rd / "metrics"
-            if not metrics_dir.is_dir():
-                continue
-            if rn not in propose_by_round:
-                proposals_dir = rd / "proposals"
-                if proposals_dir.is_dir():
-                    div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
-                    ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
-                    if div_p or ev_p:
-                        propose_by_round[rn] = {"div": div_p or {}, "ev": ev_p or {}}
-            # else: skip — will be filled from previous round's final phase below
-
-            # Retry-phase divergence + evidence overlap files (legacy fallback)
-            if rn not in retry_by_round:
-                retries = []
-                for retry_file in sorted(metrics_dir.glob("js_divergence_retry_*.json")):
-                    div_retry = _safe_json(retry_file)
-                    if div_retry is None:
-                        continue
-                    # Extract retry suffix (e.g. "retry_001") to find matching evidence file
-                    suffix = retry_file.stem.replace("js_divergence_", "")
-                    ev_retry = _safe_json(metrics_dir / f"evidence_overlap_{suffix}.json")
-                    retries.append({"div": div_retry, "ev": ev_retry or {}})
-                if retries:
-                    retry_by_round[rn] = retries
-
-    result = []
-    for entry in traj:
-        round_num = entry.get("round")
-
-        # --- Propose phase (prefer trajectory entry, fall back to per-round files) ---
-        div_p = entry.get("divergence_propose") or {}
-        ev_p = entry.get("evidence_propose") or {}
-        if not div_p and not ev_p and round_num in propose_by_round:
-            div_p = propose_by_round[round_num]["div"]
-            ev_p = propose_by_round[round_num]["ev"]
-        if div_p or ev_p:
-            result.append({
-                "round": round_num,
-                "phase": "propose",
-                "js_divergence": div_p.get("js_divergence") if div_p.get("js_divergence") is not None else div_p.get("js"),
-                "mean_overlap": ev_p.get("mean_overlap") if ev_p.get("mean_overlap") is not None else (div_p.get("mean_overlap") if div_p.get("mean_overlap") is not None else div_p.get("ov")),
-                "agent_confidences": div_p.get("agent_confidences"),
-            })
-
-        # --- Revise phase (prefer trajectory entry, fall back to telemetry) ---
-        div_r = entry.get("divergence") or {}
-        ev_r = entry.get("evidence") or {}
-        js_r = div_r.get("js_divergence") if div_r.get("js_divergence") is not None else div_r.get("js")
-        ov_r = ev_r.get("mean_overlap") if ev_r.get("mean_overlap") is not None else div_r.get("ov")
-        if js_r is None and ov_r is None and round_num in revision_by_round:
-            div_r = revision_by_round[round_num]["div"]
-            ev_r = revision_by_round[round_num]["ev"]
-            js_r = div_r.get("js_divergence")
-            ov_r = ev_r.get("mean_overlap")
-        if js_r is not None or ov_r is not None:
-            result.append({
-                "round": round_num,
-                "phase": "revise",
-                "js_divergence": js_r,
-                "mean_overlap": ov_r,
-                "agent_confidences": div_r.get("agent_confidences"),
-            })
-
-        # --- Retry phases (retry_001, retry_002, ...) ---
-        if round_num in retry_by_round:
-            for idx, retry_entry in enumerate(retry_by_round[round_num], start=1):
-                div_rt = retry_entry["div"]
-                ev_rt = retry_entry["ev"]
-                js_rt = div_rt.get("js_divergence") if div_rt.get("js_divergence") is not None else div_rt.get("js")
-                ov_rt = ev_rt.get("mean_overlap") if ev_rt.get("mean_overlap") is not None else div_rt.get("ov")
-                if js_rt is not None or ov_rt is not None:
-                    result.append({
-                        "round": round_num,
-                        "phase": f"retry_{idx:03d}",
-                        "js_divergence": js_rt,
-                        "mean_overlap": ov_rt,
-                        "agent_confidences": div_rt.get("agent_confidences"),
-                    })
-
-    # Pick up rounds that exist only in telemetry (no aggregated trajectory entry).
-    traj_rounds = {entry.get("round") for entry in traj}
-    all_telem_rounds = sorted(
-        set(propose_by_round) | set(revision_by_round) | set(retry_by_round)
-    )
-    for rn in all_telem_rounds:
-        if rn in traj_rounds:
+    for rd in sorted(rounds_dir.glob("round_*")):
+        try:
+            rn = int(rd.name.split("_")[1])
+        except (IndexError, ValueError):
             continue
-        # Propose
-        if rn in propose_by_round:
-            div_p = propose_by_round[rn]["div"]
-            ev_p = propose_by_round[rn]["ev"]
+        metrics_dir = rd / "metrics"
+
+        # --- Propose ---
+        src = _safe_json(rd / "metrics_propose.json")
+        if src:
+            propose_data[rn] = {
+                "js": src.get("js_divergence"),
+                "ov": src.get("evidence_overlap"),
+                "confidences": None,
+            }
+        elif metrics_dir.is_dir():
+            div_p = _safe_json(metrics_dir / "js_divergence_propose.json")
+            ev_p = _safe_json(metrics_dir / "evidence_overlap_propose.json")
+            if div_p or ev_p:
+                propose_data[rn] = {
+                    "js": (div_p or {}).get("js_divergence"),
+                    "ov": (ev_p or {}).get("mean_overlap"),
+                    "confidences": (div_p or {}).get("agent_confidences"),
+                }
+
+        # --- Revision ---
+        src = _safe_json(rd / "metrics_revision.json")
+        if src:
+            revision_data[rn] = {
+                "js": src.get("js_divergence"),
+                "ov": src.get("evidence_overlap"),
+                "confidences": None,
+            }
+        elif metrics_dir.is_dir():
+            div_r = _safe_json(metrics_dir / "js_divergence.json")
+            ev_r = _safe_json(metrics_dir / "evidence_overlap.json")
+            if div_r or ev_r:
+                revision_data[rn] = {
+                    "js": (div_r or {}).get("js_divergence"),
+                    "ov": (ev_r or {}).get("mean_overlap"),
+                    "confidences": (div_r or {}).get("agent_confidences"),
+                }
+
+        # --- Retries ---
+        retries: list[dict] = []
+        for tf in sorted(rd.glob("metrics_retry_*.json")):
+            tr = _safe_json(tf)
+            if tr:
+                retries.append({
+                    "js": tr.get("js_divergence"),
+                    "ov": tr.get("evidence_overlap"),
+                    "confidences": None,
+                })
+        if not retries and metrics_dir.is_dir():
+            for rf in sorted(metrics_dir.glob("js_divergence_retry_*.json")):
+                div_rt = _safe_json(rf)
+                if div_rt is None:
+                    continue
+                suffix = rf.stem.replace("js_divergence_", "")
+                ev_rt = _safe_json(metrics_dir / f"evidence_overlap_{suffix}.json")
+                retries.append({
+                    "js": div_rt.get("js_divergence"),
+                    "ov": (ev_rt or {}).get("mean_overlap"),
+                    "confidences": div_rt.get("agent_confidences"),
+                })
+        if retries:
+            retry_data[rn] = retries
+
+    # Build result rows in round order.
+    all_rounds = sorted(set(propose_data) | set(revision_data) | set(retry_data))
+    result: list[dict] = []
+    prev_final: dict | None = None
+
+    for rn in all_rounds:
+        # Propose: use file data if available, else carry forward previous
+        # round's last phase (round 2+ reuses prior revision as propose).
+        if rn in propose_data:
+            row = _div_row(rn, "propose", propose_data[rn])
+            result.append(row)
+        elif prev_final is not None:
             result.append({
                 "round": rn,
                 "phase": "propose",
-                "js_divergence": div_p.get("js_divergence"),
-                "mean_overlap": ev_p.get("mean_overlap"),
-                "agent_confidences": None,
+                "js_divergence": prev_final["js_divergence"],
+                "mean_overlap": prev_final["mean_overlap"],
+                "agent_confidences": prev_final.get("agent_confidences"),
             })
-        # Revision
-        if rn in revision_by_round:
-            div_r = revision_by_round[rn]["div"]
-            ev_r = revision_by_round[rn]["ev"]
-            result.append({
-                "round": rn,
-                "phase": "revise",
-                "js_divergence": div_r.get("js_divergence"),
-                "mean_overlap": ev_r.get("mean_overlap"),
-                "agent_confidences": None,
-            })
-        # Retries
-        if rn in retry_by_round:
-            for idx, retry_entry in enumerate(retry_by_round[rn], start=1):
-                div_rt = retry_entry["div"]
-                ev_rt = retry_entry["ev"]
-                result.append({
-                    "round": rn,
-                    "phase": f"retry_{idx:03d}",
-                    "js_divergence": div_rt.get("js_divergence"),
-                    "mean_overlap": ev_rt.get("mean_overlap"),
-                    "agent_confidences": None,
-                })
 
-    # Backfill propose entries for rounds without real proposals.
-    # Their starting state is the previous round's final revision/retry.
-    prev_final = None
-    patched = []
-    for row in result:
-        if row["phase"] == "propose" and row["round"] in propose_by_round:
-            # Real propose — keep as-is, update prev tracking
-            patched.append(row)
-        elif row["phase"] == "propose":
-            # No real proposals — use previous round's final phase
-            if prev_final is not None:
-                patched.append({
-                    "round": row["round"],
-                    "phase": "propose",
-                    "js_divergence": prev_final["js_divergence"],
-                    "mean_overlap": prev_final["mean_overlap"],
-                    "agent_confidences": prev_final.get("agent_confidences"),
-                })
-            # else: skip — no prior data to carry forward
-        else:
-            patched.append(row)
-        # Track the last non-propose phase per round as the "final" for carry-forward
-        if row["phase"] != "propose":
+        # Revision
+        if rn in revision_data:
+            row = _div_row(rn, "revise", revision_data[rn])
+            result.append(row)
             prev_final = row
-    result = patched
+
+        # Retries
+        if rn in retry_data:
+            for idx, rt in enumerate(retry_data[rn], start=1):
+                row = _div_row(rn, f"retry_{idx:03d}", rt)
+                result.append(row)
+                prev_final = row
+
     return result
+
+
+def _div_row(round_num: int, phase: str, data: dict) -> dict:
+    """Build a single divergence result row."""
+    return {
+        "round": round_num,
+        "phase": phase,
+        "js_divergence": data.get("js"),
+        "mean_overlap": data.get("ov"),
+        "agent_confidences": data.get("confidences"),
+    }
 
 
 def _read_phase_portfolios(phase_dir: Path) -> dict[str, dict]:
