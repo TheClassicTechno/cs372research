@@ -10,6 +10,7 @@ import { esc } from '../../utils/dom.js';
 import { fmtPct, numFmt } from '../../utils/format.js';
 import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 /**
  * Load and render the combined allocation table into #judge-alloc-wrap.
@@ -38,7 +39,7 @@ function loadAllocTable(experiment, runId, finalPortfolio, agentLabel, token) {
       for (var a = 0; a < agentNames.length; a++) {
         th += '<th>' + esc(agentLabel(agentNames[a]).toUpperCase()) + '</th>';
       }
-      th += '<th>JUDGE</th></tr>';
+      th += '<th>' + esc(T('simple_alloc').columns[1]) + '</th></tr>';
 
       for (var t = 0; t < tickers.length; t++) {
         var ticker = tickers[t];
@@ -79,12 +80,13 @@ function loadConsensusPerf(experiment, runId, token) {
       var profitSign = perf.profit >= 0 ? '+' : '';
       var returnPct = perf.return_pct;
 
+      var jpCfg = T('judge_perf');
       var ph = '<table class="data-table" id="perf-table">';
-      ph += '<tr><th>JUDGE</th><th>Value</th></tr>';
-      ph += '<tr><td>Initial Capital</td><td>$' + numFmt(perf.initial_capital) + '</td></tr>';
-      ph += '<tr><td>Final Value</td><td class="' + profitCls + '">$' + numFmt(perf.final_value) + '</td></tr>';
-      ph += '<tr><td>Profit/Loss</td><td class="' + profitCls + '">' + profitSign + '$' + numFmt(Math.abs(perf.profit)) + '</td></tr>';
-      ph += '<tr><td>Return</td><td class="' + profitCls + '">' + profitSign + returnPct.toFixed(2) + '%</td></tr>';
+      ph += '<tr><th>' + esc(jpCfg.columns[0]) + '</th><th>' + esc(jpCfg.columns[1]) + '</th></tr>';
+      ph += '<tr><td>' + esc(jpCfg.rows.initial_capital) + '</td><td>$' + numFmt(perf.initial_capital) + '</td></tr>';
+      ph += '<tr><td>' + esc(jpCfg.rows.final_value) + '</td><td class="' + profitCls + '">$' + numFmt(perf.final_value) + '</td></tr>';
+      ph += '<tr><td>' + esc(jpCfg.rows.profit_loss) + '</td><td class="' + profitCls + '">' + profitSign + '$' + numFmt(Math.abs(perf.profit)) + '</td></tr>';
+      ph += '<tr><td>' + esc(jpCfg.rows.return) + '</td><td class="' + profitCls + '">' + profitSign + returnPct.toFixed(2) + '%</td></tr>';
       ph += '</table>';
       perfDiv.innerHTML = ph;
     })
@@ -279,15 +281,18 @@ function renderCollapseDiagnostics(collapse, agentLabel) {
   if (!collapse || !Array.isArray(collapse) || collapse.length === 0) return;
   var collapseWrap = document.getElementById('collapse-section');
   if (!collapseWrap) return;
-  var ch = '<div class="ov-title">COLLAPSE DIAGNOSTICS</div>';
-  ch += '<div style="font-size:0.95em;line-height:1.6;margin-bottom:12px;max-width:720px;">';
-  ch += '<strong>Movement</strong> &mdash; L\u2081 distance between proposal and revision vectors. How much the agent changed its portfolio.';
-  ch += '<br><strong>Toward Consensus</strong> &mdash; ';
-  ch += 'dist(proposal, consensus) \u2212 dist(revision, consensus), where consensus is the equal-weight mean of all proposals and dist is L\u2081. ';
-  ch += 'Positive = agent moved toward the group mean; negative = moved away. Measures sycophantic drift vs. independent conviction.';
-  ch += '<br><strong>Collapse Share</strong> &mdash; This agent\u2019s share of total consensus-seeking movement across all agents. ';
-  ch += 'Identifies who is capitulating the most. Only agents with positive Toward Consensus contribute.';
-  ch += '<br><strong>Dissent</strong> &mdash; L\u2081 distance between the agent\u2019s final revision and consensus. How differentiated the agent remains after revision.';
+  var ch = '<div class="ov-title">' + esc(T('sections').collapse_diagnostics) + '</div>';
+  ch += '<div class="collapse-definitions">';
+  ch += '<div class="collapse-def-term">Movement</div>';
+  ch += '<div class="collapse-def-desc">L\u2081 distance between proposal and revision vectors. How much the agent changed its portfolio.</div>';
+  ch += '<div class="collapse-def-term">Toward Consensus</div>';
+  ch += '<div class="collapse-def-desc">dist(proposal, consensus) \u2212 dist(revision, consensus), where consensus is the equal-weight mean of all proposals and dist is L\u2081. ';
+  ch += 'Positive = agent moved toward the group mean; negative = moved away. Measures sycophantic drift vs. independent conviction.</div>';
+  ch += '<div class="collapse-def-term">Collapse Share</div>';
+  ch += '<div class="collapse-def-desc">This agent\u2019s share of total consensus-seeking movement across all agents. ';
+  ch += 'Identifies who is capitulating the most. Only agents with positive Toward Consensus contribute.</div>';
+  ch += '<div class="collapse-def-term">Dissent</div>';
+  ch += '<div class="collapse-def-desc">L\u2081 distance between the agent\u2019s final revision and consensus. How differentiated the agent remains after revision.</div>';
   ch += '</div>';
   for (var i = 0; i < collapse.length; i++) {
     ch += buildCollapseTable(collapse[i], agentLabel);
@@ -328,11 +333,12 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
     return;
   }
 
-  var h = '<div class="ov-title" style="margin-top:16px;">DEBATE IMPACT</div>';
+  var sec = T('sections');
+  var h = '<div class="ov-title" style="margin-top:16px;">' + esc(sec.debate_impact) + '</div>';
   h += '<div id="debate-impact-section"></div>';
   h += '<div id="collapse-section"></div>';
   h += '<div id="per-round-sections"></div>';
-  h += '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
+  h += '<div class="ov-title" style="margin-top:16px;">' + esc(sec.final_allocations) + '</div>';
   h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';
   h += '<div id="judge-alloc-wrap"><span style="color:#666;font-size:0.85em;">Loading allocations...</span></div>';
   h += '<div id="perf-wrap" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';

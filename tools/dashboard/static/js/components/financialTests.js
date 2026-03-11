@@ -1,75 +1,217 @@
 /**
  * components/financialTests.js
  *
- * Pure HTML builder for the financial metrics paired t-test comparison
- * table.  Renders per-metric mean +/- SEM, 95% CI, and p-values
- * matching the output format of scripts/compare_multiple_configs.py.
+ * Pure HTML builder for the financial metrics paired t-test comparison.
+ * Renders a three-part layout: key improvements summary, grouped metrics
+ * table, and CI tooltips for statistical detail.
  */
 
 import { esc } from '../utils/dom.js';
-import { fmt, fmtPvalue, pvalueClass } from '../utils/format.js';
+import { fmtPvalue, pvalueClass } from '../utils/format.js';
 
 /**
- * Map a flattened metric key to a display label.
- * Matches the formatting from scripts/compare_multiple_configs.py.
- * Returns a human-readable string.
+ * Metric display configuration: label, group, and formatting type.
+ * Returns {label, group, type} for a given metric key.
  */
-function financialMetricLabel(metric) {
-  const labels = {
-    'daily_metrics_excess_return_pct': 'Excess Return % (v SP500)',
-    'daily_metrics_annualized_sharpe': 'Sharpe',
-    'daily_metrics_annualized_volatility': 'Volatility',
-    'daily_metrics_max_drawdown_pct': 'Max Drawdown %',
-    'daily_metrics_total_return_pct': 'Return %',
-    'daily_metrics_annualized_sortino': 'Sortino',
-    'daily_metrics_calmar_ratio': 'Calmar Ratio',
-    'total_trades': 'Num Positions',
-    'final_cash': 'Uninvested Cash',
+var METRIC_CONFIG = {
+  'daily_metrics_excess_return_pct': { label: 'Excess Return vs S&P500', group: 'performance', type: 'pct' },
+  'daily_metrics_total_return_pct':  { label: 'Return %',               group: 'performance', type: 'pct' },
+  'daily_metrics_annualized_sharpe': { label: 'Sharpe',                 group: 'performance', type: 'ratio' },
+  'daily_metrics_annualized_sortino':{ label: 'Sortino',                group: 'performance', type: 'ratio' },
+  'daily_metrics_calmar_ratio':      { label: 'Calmar Ratio',           group: 'performance', type: 'ratio' },
+  'daily_metrics_annualized_volatility': { label: 'Volatility',         group: 'risk',        type: 'pct' },
+  'daily_metrics_max_drawdown_pct':  { label: 'Max Drawdown',           group: 'risk',        type: 'pct' },
+  'total_trades':                    { label: 'Num Positions',           group: 'portfolio',   type: 'int' },
+  'final_cash':                      { label: 'Uninvested Cash',         group: 'portfolio',   type: 'cash' },
+};
+
+/** Ordered metric keys for the table display. */
+var METRIC_ORDER = [
+  'daily_metrics_excess_return_pct',
+  'daily_metrics_total_return_pct',
+  'daily_metrics_annualized_sharpe',
+  'daily_metrics_annualized_sortino',
+  'daily_metrics_calmar_ratio',
+  'daily_metrics_annualized_volatility',
+  'daily_metrics_max_drawdown_pct',
+  'total_trades',
+  'final_cash',
+];
+
+/** Group labels for subheader rows. */
+var GROUP_LABELS = {
+  'performance': 'Performance',
+  'risk': 'Risk',
+  'portfolio': 'Portfolio Behavior',
+};
+
+/**
+ * Look up config for a metric key.
+ * Returns the config object or a generated fallback.
+ */
+function getMetricConfig(metric) {
+  if (METRIC_CONFIG[metric] !== undefined) return METRIC_CONFIG[metric];
+  return {
+    label: metric.replace('daily_metrics_', '').replace(/_/g, ' '),
+    group: 'other',
+    type: 'ratio',
   };
-  if (labels[metric] !== undefined) return labels[metric];
-  return metric.replace('daily_metrics_', '').replace(/_/g, ' ');
 }
 
 /**
- * Format a metric value for display based on the metric key.
- * Returns a formatted string.
+ * Format a single numeric value for display (no SEM).
+ * Returns a formatted string based on metric type.
  */
-function fmtMetricVal(metric, mean, sem) {
-  if (metric === 'final_cash') {
-    return fmt(mean / 1000, 2) + 'k \u00b1 ' + fmt(sem / 1000, 2) + 'k';
-  }
-  if (metric.indexOf('pct') !== -1 || metric.indexOf('return') !== -1) {
-    return fmt(mean, 2) + '% \u00b1 ' + fmt(sem, 2) + '%';
-  }
-  if (metric === 'total_trades') {
-    return fmt(mean, 1) + ' \u00b1 ' + fmt(sem, 1);
-  }
-  return fmt(mean, 4) + ' \u00b1 ' + fmt(sem, 4);
+function fmtValue(val, type) {
+  if (val == null) return '\u2014';
+  if (type === 'pct') return Number(val).toFixed(2) + '%';
+  if (type === 'ratio') return Number(val).toFixed(3);
+  if (type === 'int') return Math.round(val).toLocaleString();
+  if (type === 'cash') return '$' + Math.round(val).toLocaleString();
+  return Number(val).toFixed(3);
 }
 
 /**
- * Format a CI range for display based on the metric key.
- * Returns a formatted string like "[+1.23%, +4.56%]".
+ * Format a delta value with sign prefix.
+ * Returns a string like "+0.91%" or "\u22120.133".
  */
-function fmtCiRange(metric, ci) {
-  const lo = ci[0];
-  const hi = ci[1];
-  const sign = function (v) { return v >= 0 ? '+' : ''; };
-  if (metric === 'final_cash') {
-    return '[' + sign(lo) + fmt(lo / 1000, 2) + 'k, ' + sign(hi) + fmt(hi / 1000, 2) + 'k]';
+function fmtFinDelta(val, type) {
+  if (val == null) return '\u2014';
+  var sign = val >= 0 ? '+' : '\u2212';
+  var abs = Math.abs(val);
+  if (type === 'pct') return sign + abs.toFixed(2) + '%';
+  if (type === 'ratio') return sign + abs.toFixed(3);
+  if (type === 'int') return sign + Math.round(abs).toLocaleString();
+  if (type === 'cash') return sign + '$' + Math.round(abs).toLocaleString();
+  return sign + abs.toFixed(3);
+}
+
+/**
+ * Determine if a positive delta is "good" for this metric.
+ * For drawdown and volatility, lower is better.
+ */
+function isPositiveGood(metric) {
+  if (metric === 'daily_metrics_annualized_volatility') return false;
+  if (metric === 'daily_metrics_max_drawdown_pct') return false;
+  return true;
+}
+
+/**
+ * Return a CSS class for the delta value based on improvement direction.
+ * Returns 'perf-profit' for improvement, '' otherwise.
+ */
+function deltaClass(metric, diff) {
+  if (diff === 0 || diff == null) return '';
+  var positive = diff > 0;
+  if (!isPositiveGood(metric)) positive = !positive;
+  return positive ? 'perf-profit' : '';
+}
+
+/**
+ * Format a CI range as a tooltip string.
+ * Returns e.g. "95% CI: [+0.12%, +1.70%]".
+ */
+function fmtCiTooltip(type, ci) {
+  var lo = ci[0];
+  var hi = ci[1];
+  return '95% CI: [' + fmtFinDelta(lo, type) + ', ' + fmtFinDelta(hi, type) + ']';
+}
+
+/** Key metrics to highlight in the summary box. */
+var SUMMARY_METRICS = [
+  'daily_metrics_excess_return_pct',
+  'daily_metrics_annualized_sharpe',
+  'daily_metrics_annualized_sortino',
+  'daily_metrics_calmar_ratio',
+];
+
+/**
+ * Build the key improvements summary box.
+ * Shows only metrics with positive improvement.
+ * Returns an HTML string.
+ */
+function buildSummaryBox(metricsMap) {
+  var items = [];
+  for (var i = 0; i < SUMMARY_METRICS.length; i++) {
+    var key = SUMMARY_METRICS[i];
+    var m = metricsMap[key];
+    if (m === undefined) continue;
+    var cfg = getMetricConfig(key);
+    var diff = m.mean_diff;
+    if (diff == null) continue;
+    var improved = isPositiveGood(key) ? diff > 0 : diff < 0;
+    if (!improved) continue;
+    items.push({ label: cfg.label, value: fmtFinDelta(diff, cfg.type) });
   }
-  if (metric.indexOf('pct') !== -1 || metric.indexOf('return') !== -1) {
-    return '[' + sign(lo) + fmt(lo, 2) + '%, ' + sign(hi) + fmt(hi, 2) + '%]';
+
+  if (items.length === 0) return '';
+
+  var h = '<div class="fin-summary-box" data-testid="financial-summary-box">';
+  h += '<div class="fin-summary-title">Key Improvements from Intervention</div>';
+  h += '<div class="fin-summary-items">';
+  for (var j = 0; j < items.length; j++) {
+    h += '<div class="fin-summary-item">';
+    h += '<div class="fin-summary-label">' + esc(items[j].label) + '</div>';
+    h += '<div class="fin-summary-value perf-profit">' + esc(items[j].value) + '</div>';
+    h += '</div>';
   }
-  if (metric === 'total_trades') {
-    return '[' + sign(lo) + fmt(lo, 1) + ', ' + sign(hi) + fmt(hi, 1) + ']';
+  h += '</div></div>';
+  return h;
+}
+
+/**
+ * Build the grouped metrics table.
+ * Returns an HTML string with subheader rows for each metric group.
+ */
+function buildMetricsTable(data, metricsMap) {
+  var h = '<table class="data-table fin-table" data-testid="financial-tests-table">';
+  h += '<thead><tr>';
+  h += '<th>Metric</th>';
+  h += '<th class="num-col">Baseline</th>';
+  h += '<th class="num-col">Intervention</th>';
+  h += '<th class="num-col">\u0394 Difference</th>';
+  h += '<th class="num-col">p-value</th>';
+  h += '</tr></thead>';
+  h += '<tbody>';
+
+  var currentGroup = '';
+
+  for (var i = 0; i < METRIC_ORDER.length; i++) {
+    var key = METRIC_ORDER[i];
+    var m = metricsMap[key];
+    if (m === undefined) continue;
+
+    var cfg = getMetricConfig(key);
+
+    if (cfg.group !== currentGroup) {
+      currentGroup = cfg.group;
+      var groupLabel = GROUP_LABELS[currentGroup];
+      if (groupLabel === undefined) groupLabel = currentGroup;
+      h += '<tr class="fin-group-header"><td colspan="5">' + esc(groupLabel) + '</td></tr>';
+    }
+
+    var pClass = pvalueClass(m.p_value);
+    var dClass = deltaClass(key, m.mean_diff);
+    var ciTip = fmtCiTooltip(cfg.type, m.ci_95);
+
+    h += '<tr>';
+    h += '<td class="fin-metric-name">' + esc(cfg.label) + '</td>';
+    h += '<td class="num-cell">' + fmtValue(m.a_mean, cfg.type) + '</td>';
+    h += '<td class="num-cell">' + fmtValue(m.b_mean, cfg.type) + '</td>';
+    h += '<td class="num-cell ' + dClass + '" title="' + esc(ciTip) + '">'
+      + fmtFinDelta(m.mean_diff, cfg.type) + '</td>';
+    h += '<td class="num-cell ' + pClass + '">' + fmtPvalue(m.p_value) + '</td>';
+    h += '</tr>';
   }
-  return '[' + sign(lo) + fmt(lo, 4) + ', ' + sign(hi) + fmt(hi, 4) + ']';
+
+  h += '</tbody></table>';
+  h += '<div class="fin-ci-hint">Hover over \u0394 values to see 95% confidence intervals</div>';
+  return h;
 }
 
 /**
  * Build the financial metrics paired t-test section for an experiment.
- * Renders a comparison table matching compare_multiple_configs.py format.
+ * Renders a three-part layout: title, summary box, and grouped table.
  * Accepts the financial test result object from the API.
  * Returns an HTML string.
  */
@@ -80,32 +222,28 @@ export function buildFinancialTestsSection(data) {
       + '<p>' + esc(data.error) + '</p>';
   }
 
-  const metrics = data.metrics;
+  var metrics = data.metrics;
   if (!Array.isArray(metrics) || metrics.length === 0) return '';
 
-  const sourceLabel = data.source === 'mean_revisions'
-    ? 'Mean Agent Revisions' : 'Judge Portfolio';
-  let h = '<div class="section-label">Financial Metrics \u2014 ' + esc(sourceLabel)
-    + ' (Paired t-Test, N=' + esc(String(data.n_paired)) + ')</div>';
-
-  h += '<table class="data-table" data-testid="financial-tests-table">';
-  h += '<tr><th>Metric</th>';
-  h += '<th>(A) ' + esc(data.config_a) + '</th>';
-  h += '<th>(B) ' + esc(data.config_b) + '</th>';
-  h += '<th>95% CI (Diff B\u2212A)</th>';
-  h += '<th>p-value</th></tr>';
-
-  for (let i = 0; i < metrics.length; i++) {
-    const m = metrics[i];
-    const pClass = pvalueClass(m.p_value);
-    h += '<tr>';
-    h += '<td>' + esc(financialMetricLabel(m.metric)) + '</td>';
-    h += '<td style="text-align:right;">' + fmtMetricVal(m.metric, m.a_mean, m.a_sem) + '</td>';
-    h += '<td style="text-align:right;">' + fmtMetricVal(m.metric, m.b_mean, m.b_sem) + '</td>';
-    h += '<td style="text-align:right;">' + fmtCiRange(m.metric, m.ci_95) + '</td>';
-    h += '<td class="' + pClass + '" style="text-align:right;">' + fmtPvalue(m.p_value) + '</td>';
-    h += '</tr>';
+  var metricsMap = {};
+  for (var i = 0; i < metrics.length; i++) {
+    metricsMap[metrics[i].metric] = metrics[i];
   }
-  h += '</table>';
+
+  var sourceLabel = data.source === 'mean_revisions'
+    ? 'Mean Agent Revisions' : 'Judge Portfolio';
+
+  var h = '<div class="fin-section" data-testid="financial-tests-section">';
+
+  h += '<div class="section-label">Financial Performance Impact \u2014 '
+    + esc(sourceLabel) + ' (Paired t-test, N\u2009=\u2009'
+    + esc(String(data.n_paired)) + ')</div>';
+  h += '<div class="fin-subtitle">Effect of intervention ('
+    + esc(data.config_b) + ') vs baseline (' + esc(data.config_a) + ')</div>';
+
+  h += buildSummaryBox(metricsMap);
+  h += buildMetricsTable(data, metricsMap);
+
+  h += '</div>';
   return h;
 }

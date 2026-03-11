@@ -1,0 +1,200 @@
+{
+  "overview_identity": {
+    "columns": ["Run ID", "Experiment", "Model", "CRIT Model", "Status"]
+  },
+  "overview_config": {
+    "rows": {
+      "config": "Config",
+      "agents": "Agents"
+    }
+  },
+  "overview_metrics": {
+    "columns": ["Tickers", "Rounds", "Termination", "Initial \u03b2", "Final \u03b2", "Final \u03c1\u0304", "JS Drop"]
+  },
+  "ticker_perf": {
+    "columns": ["Ticker", "Open", "Close", "\u0394%"]
+  },
+  "debate_summary": {
+    "cells": {
+      "mean_proposal_return": "Mean Proposal Return",
+      "final_debate_return": "Final Debate Return",
+      "debate_alpha": "Debate Alpha",
+      "judge_return": "Judge Return",
+      "agent_vs_judge": "Agent vs Judge",
+      "final_sharpe": "Final Sharpe"
+    }
+  },
+  "debate_impact_agents": {
+    "groups": ["R1 Proposal", "R1 Revision", "R1 JS", "R2 Revision", "R2 JS", "Judge"],
+    "sub_columns": ["PV", "\u0394%"]
+  },
+  "mean_portfolio": {
+    "columns": ["Mean Portfolio", "Return"],
+    "rows": {
+      "proposals": "Proposals (avg)",
+      "revisions": "Revisions (avg)",
+      "js_intervention": "JS Intervention (avg)",
+      "critique_impact": "Critique Impact"
+    }
+  },
+  "sharpe": {
+    "columns": ["Phase", "Sharpe (ann.)"],
+    "rows": {
+      "r1_proposal": "R1 Proposal",
+      "r1_revision": "R1 Revision",
+      "r1_js": "R1 JS Intervention",
+      "r2_revision": "R2 Revision",
+      "r2_js": "R2 JS Intervention"
+    }
+  },
+  "collapse": {
+    "columns": ["Agent", "Movement", "Toward Consensus", "Collapse Share", "Dissent"],
+    "collapse_leader": "Collapse Leader",
+    "collapse_index": "Collapse Index"
+  },
+  "agent_perf": {
+    "columns": ["Value"],
+    "rows": {
+      "initial_capital": "Initial Capital",
+      "final_value": "Final Value",
+      "profit_loss": "Profit/Loss",
+      "return": "Return"
+    }
+  },
+  "simple_alloc": {
+    "columns": ["Ticker", "JUDGE"]
+  },
+  "judge_perf": {
+    "columns": ["JUDGE", "Value"],
+    "rows": {
+      "initial_capital": "Initial Capital",
+      "final_value": "Final Value",
+      "profit_loss": "Profit/Loss",
+      "return": "Return"
+    }
+  },
+  "divergence": {
+    "columns": ["Phase", "JS Divergence", "Evidence Overlap"],
+    "rows": {
+      "proposed": "Proposed",
+      "revised": "Revised"
+    }
+  },
+  "pid_dynamics": {
+    "title": "ROUND DYNAMICS",
+    "columns": ["Round", "Quadrant", "Tone Bucket", "Beta In", "Beta Out", "\u03c1\u0304"]
+  },
+  "pid_stats": {
+    "columns": ["Agent", "\u03c1\u1d62", "Logical Validity", "Evidential Support", "Alternative Consideration", "Causal Alignment"]
+  },
+  "portfolio_trajectory": {
+    "title": "PORTFOLIO TRAJECTORY (Consensus)",
+    "columns": ["Ticker"]
+  },
+  "final_portfolio": {
+    "columns": ["Ticker", "Weight"]
+  },
+  "ablation_overview": {
+    "columns": ["Experiment", "Runs", "Model", "Final \u03c1 Mean", "Final JS Mean", "Collapse %"]
+  },
+  "ablation_rho": {
+    "title": "Rho (\u03c1)",
+    "columns": ["Metric", "Mean", "StDev", "Min", "Max"],
+    "rows": {
+      "final_round": "Final Round",
+      "all_rounds": "All Rounds"
+    }
+  },
+  "ablation_pillars": {
+    "title": "CRIT Pillars (Final Round)",
+    "columns": ["Pillar", "Mean", "StDev"]
+  },
+  "ablation_js": {
+    "title": "JS Divergence",
+    "columns": ["Metric", "Value"],
+    "rows": {
+      "final_round": "Final Round Mean \u00b1 StDev",
+      "mean_delta": "Mean Delta (first\u2192last)",
+      "pct_decreased": "% Decreased"
+    }
+  },
+  "ablation_eo": {
+    "title": "Evidence Overlap",
+    "columns": ["Metric", "Value"],
+    "rows": {
+      "final_round": "Final Round Mean \u00b1 StDev"
+    }
+  },
+  "ablation_pid": {
+    "title": "PID",
+    "columns": ["Metric", "Value"],
+    "rows": {
+      "beta_final": "Beta Final Mean \u00b1 StDev",
+      "quadrant_distribution": "Quadrant Distribution",
+      "tone_distribution": "Tone Distribution"
+    }
+  },
+  "ablation_collapse": {
+    "title": "Collapse Metrics",
+    "columns": ["Threshold", "Count"],
+    "rows": {
+      "js_lt_005": "JS < 0.05",
+      "js_lt_007": "JS < 0.07",
+      "js_lt_010": "JS < 0.10",
+      "high_rho_low_js": "High \u03c1 + Low JS"
+    }
+  },
+  "ablation_breakdown": {
+    "columns": ["Name", "Runs"]
+  },
+  "ablation_agent_deltas": {
+    "title": "Debate Impact",
+    "columns": ["Agent", "R1 Proposal", "Final Rev.", "\u0394 %"],
+    "rows": {
+      "mean": "Mean"
+    }
+  },
+  "ablation_mean_portfolio": {
+    "columns": ["Phase", "Avg Return"],
+    "rows": {
+      "proposals": "Proposals",
+      "revisions": "Revisions",
+      "critique_delta": "Critique \u0394"
+    }
+  },
+  "ablation_sharpe": {
+    "title": "Sharpe (ann.)",
+    "columns": ["Phase", "Mean"],
+    "rows": {
+      "r1_proposal": "R1 Proposal",
+      "r1_revision": "R1 Revision",
+      "r1_js": "R1 JS",
+      "r2_revision": "R2 Revision",
+      "r2_js": "R2 JS"
+    }
+  },
+  "ablation_experiment_meta": {
+    "columns": ["Runs", "Model"]
+  },
+  "cards": {
+    "debate_config": "Debate Config",
+    "scenario_config": "Scenario Config",
+    "ticker_performance": "Ticker Performance",
+    "macro_environment": "Macro Environment",
+    "config_raw": "Config (Raw)",
+    "rounds_replay": "Rounds (Debate Replay)",
+    "pid_dynamics": "PID Dynamics",
+    "pid_stats_overview": "PID Stats Overview",
+    "portfolio_trajectory": "Portfolio Trajectory",
+    "divergence_overview": "Divergence Overview",
+    "final_portfolio": "Final Portfolio"
+  },
+  "sections": {
+    "run_overview": "RUN OVERVIEW",
+    "debate_impact": "DEBATE IMPACT",
+    "final_allocations": "FINAL ALLOCATIONS",
+    "collapse_diagnostics": "COLLAPSE DIAGNOSTICS",
+    "pid_trajectory": "PID TRAJECTORY",
+    "round_dynamics": "ROUND DYNAMICS"
+  }
+}

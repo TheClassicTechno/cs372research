@@ -7,6 +7,7 @@
 
 import { esc } from '../utils/dom.js';
 import { fmt, fmtPvalue, pvalueClass, scoreClass } from '../utils/format.js';
+import { T } from '../utils/labels.js';
 
 /**
  * Build a stat cell with optional score shading.
@@ -33,18 +34,23 @@ function meanStdev(obj, decimals) {
  * Returns an HTML table string.
  */
 function buildRhoTable(rho) {
-  let h = '<div class="section-label">Rho (\u03c1)</div>';
+  const cfg = T('ablation_rho');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Metric</th><th>Mean</th><th>StDev</th><th>Min</th><th>Max</th></tr>';
+  h += '<tr>';
+  for (let c = 0; c < cfg.columns.length; c++) {
+    h += '<th>' + esc(cfg.columns[c]) + '</th>';
+  }
+  h += '</tr>';
   const fr = rho.final_round;
   if (fr !== undefined && fr !== null) {
-    h += '<tr><td>Final Round</td>';
+    h += '<tr><td>' + esc(cfg.rows.final_round) + '</td>';
     h += statCell(fr.mean, 4) + statCell(fr.stdev, 4) + statCell(fr.min, 4) + statCell(fr.max, 4);
     h += '</tr>';
   }
   const ar = rho.all_rounds;
   if (ar !== undefined && ar !== null) {
-    h += '<tr><td>All Rounds</td>';
+    h += '<tr><td>' + esc(cfg.rows.all_rounds) + '</td>';
     h += statCell(ar.mean, 4) + statCell(ar.stdev, 4);
     h += '<td>\u2014</td><td>\u2014</td></tr>';
   }
@@ -58,9 +64,14 @@ function buildRhoTable(rho) {
  * Returns an HTML table string.
  */
 function buildPillarsTable(pillars) {
-  let h = '<div class="section-label">CRIT Pillars (Final Round)</div>';
+  const cfg = T('ablation_pillars');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Pillar</th><th>Mean</th><th>StDev</th></tr>';
+  h += '<tr>';
+  for (let c = 0; c < cfg.columns.length; c++) {
+    h += '<th>' + esc(cfg.columns[c]) + '</th>';
+  }
+  h += '</tr>';
   const names = Object.keys(pillars);
   for (let i = 0; i < names.length; i++) {
     const p = pillars[names[i]];
@@ -80,17 +91,18 @@ function buildPillarsTable(pillars) {
  * Returns an HTML string.
  */
 function buildJsSection(js) {
-  let h = '<div class="section-label">JS Divergence</div>';
+  const cfg = T('ablation_js');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Metric</th><th>Value</th></tr>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
   const fr = js.final_round;
   if (fr !== undefined && fr !== null) {
-    h += '<tr><td>Final Round Mean \u00b1 StDev</td><td>' + meanStdev(fr, 4) + '</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.final_round) + '</td><td>' + meanStdev(fr, 4) + '</td></tr>';
   }
   const traj = js.trajectory;
   if (traj !== undefined && traj !== null) {
-    h += '<tr><td>Mean Delta (first\u2192last)</td><td>' + fmt(traj.mean_delta, 4) + '</td></tr>';
-    h += '<tr><td>% Decreased</td><td>' + fmt(traj.pct_decreased, 1) + '%</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.mean_delta) + '</td><td>' + fmt(traj.mean_delta, 4) + '</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.pct_decreased) + '</td><td>' + fmt(traj.pct_decreased, 1) + '%</td></tr>';
   }
   h += '</table>';
   return h;
@@ -102,12 +114,13 @@ function buildJsSection(js) {
  * Returns an HTML string.
  */
 function buildEoSection(eo) {
-  let h = '<div class="section-label">Evidence Overlap</div>';
+  const cfg = T('ablation_eo');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Metric</th><th>Value</th></tr>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
   const fr = eo.final_round;
   if (fr !== undefined && fr !== null) {
-    h += '<tr><td>Final Round Mean \u00b1 StDev</td><td>' + meanStdev(fr, 4) + '</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.final_round) + '</td><td>' + meanStdev(fr, 4) + '</td></tr>';
   }
   h += '</table>';
   return h;
@@ -132,17 +145,18 @@ function fmtDistribution(dist) {
 }
 
 function buildPidSection(pid) {
-  let h = '<div class="section-label">PID</div>';
+  const cfg = T('ablation_pid');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Metric</th><th>Value</th></tr>';
-  h += '<tr><td>Beta Final Mean \u00b1 StDev</td><td>' + meanStdev(pid.beta_final, 4) + '</td></tr>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
+  h += '<tr><td>' + esc(cfg.rows.beta_final) + '</td><td>' + meanStdev(pid.beta_final, 4) + '</td></tr>';
   const qd = pid.quadrant_distribution;
   if (qd !== undefined && qd !== null) {
-    h += '<tr><td>Quadrant Distribution</td><td>' + fmtDistribution(qd) + '</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.quadrant_distribution) + '</td><td>' + fmtDistribution(qd) + '</td></tr>';
   }
   const td = pid.tone_distribution;
   if (td !== undefined && td !== null) {
-    h += '<tr><td>Tone Distribution</td><td>' + fmtDistribution(td) + '</td></tr>';
+    h += '<tr><td>' + esc(cfg.rows.tone_distribution) + '</td><td>' + fmtDistribution(td) + '</td></tr>';
   }
   h += '</table>';
   return h;
@@ -154,13 +168,14 @@ function buildPidSection(pid) {
  * Returns an HTML string.
  */
 function buildCollapseSection(collapse) {
-  let h = '<div class="section-label">Collapse Metrics</div>';
+  const cfg = T('ablation_collapse');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Threshold</th><th>Count</th></tr>';
-  h += '<tr><td>JS &lt; 0.05</td><td>' + esc(String(collapse.js_lt_005)) + '</td></tr>';
-  h += '<tr><td>JS &lt; 0.07</td><td>' + esc(String(collapse.js_lt_007)) + '</td></tr>';
-  h += '<tr><td>JS &lt; 0.10</td><td>' + esc(String(collapse.js_lt_010)) + '</td></tr>';
-  h += '<tr><td>High \u03c1 + Low JS</td><td>' + esc(String(collapse.high_rho_low_js));
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
+  h += '<tr><td>' + esc(cfg.rows.js_lt_005) + '</td><td>' + esc(String(collapse.js_lt_005)) + '</td></tr>';
+  h += '<tr><td>' + esc(cfg.rows.js_lt_007) + '</td><td>' + esc(String(collapse.js_lt_007)) + '</td></tr>';
+  h += '<tr><td>' + esc(cfg.rows.js_lt_010) + '</td><td>' + esc(String(collapse.js_lt_010)) + '</td></tr>';
+  h += '<tr><td>' + esc(cfg.rows.high_rho_low_js) + '</td><td>' + esc(String(collapse.high_rho_low_js));
   h += ' (' + fmt(collapse.pct_high_rho_low_js, 1) + '%)</td></tr>';
   h += '</table>';
   return h;
@@ -178,11 +193,12 @@ function buildBreakdownTable(label, breakdowns) {
 
   keys.sort(function (a, b) { return rhoSortKey(breakdowns[b]) - rhoSortKey(breakdowns[a]); });
 
+  const cfg = T('ablation_breakdown');
   let h = '<div class="section-label">' + esc(label) + '</div>';
   h += '<table class="data-table">';
   const rhoHeader = label === 'Per Agent Config' ? 'Final \u03c1' : 'Final \u03c1 Mean';
   const jsHeader = label === 'Per Agent Config' ? 'Final JS' : 'Final JS Mean';
-  h += '<tr><th>Name</th><th>Runs</th><th>' + rhoHeader + '</th><th>' + jsHeader + '</th></tr>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th><th>' + rhoHeader + '</th><th>' + jsHeader + '</th></tr>';
   for (let i = 0; i < keys.length; i++) {
     const b = breakdowns[keys[i]];
     const rhoMean = (b.rho && b.rho.final_round) ? fmt(b.rho.final_round.mean, 4) : '\u2014';
@@ -272,9 +288,14 @@ function buildDebateImpactSection(impact) {
 function buildAgentDeltasTable(agentDeltas) {
   const roles = Object.keys(agentDeltas);
   if (roles.length === 0) return '';
-  let h = '<div class="section-label">Debate Impact</div>';
+  const cfg = T('ablation_agent_deltas');
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Agent</th><th>R1 Proposal</th><th>Final Rev.</th><th>\u0394 %</th></tr>';
+  h += '<tr>';
+  for (let c = 0; c < cfg.columns.length; c++) {
+    h += '<th>' + esc(cfg.columns[c]) + '</th>';
+  }
+  h += '</tr>';
   let sumInit = 0;
   let sumFinal = 0;
   let sumDelta = 0;
@@ -304,7 +325,7 @@ function buildDeltaMeanRow(sumInit, sumFinal, sumDelta, n) {
   const cls = avg >= 0 ? 'perf-profit' : 'perf-loss';
   const sign = avg >= 0 ? '+' : '';
   const sep = 'border-top:2px solid #999;font-weight:600;';
-  let h = '<tr><td style="' + sep + '">Mean</td>';
+  let h = '<tr><td style="' + sep + '">' + esc(T('ablation_agent_deltas').rows.mean) + '</td>';
   h += '<td style="' + sep + '">' + fmt(sumInit / n, 2) + '%</td>';
   h += '<td style="' + sep + '">' + fmt(sumFinal / n, 2) + '%</td>';
   h += '<td class="' + cls + '" style="' + sep + '">' + sign + fmt(avg, 2) + '%</td></tr>';
@@ -322,12 +343,13 @@ function buildDeltaMeanRow(sumInit, sumFinal, sumDelta, n) {
 function buildMeanPortfolioSummary(mp, roundLabel) {
   const cls = mp.critique_impact >= 0 ? 'perf-profit' : 'perf-loss';
   const sign = mp.critique_impact >= 0 ? '+' : '';
+  const cfg = T('ablation_mean_portfolio');
   let h = '<div class="section-label">' + esc(roundLabel) + ' Mean Portfolio</div>';
   h += '<table class="data-table">';
-  h += '<tr><th>Phase</th><th>Avg Return</th></tr>';
-  h += '<tr><td>Proposals</td><td>' + fmt(mp.proposals_return, 2) + '%</td></tr>';
-  h += '<tr><td>Revisions</td><td>' + fmt(mp.revisions_return, 2) + '%</td></tr>';
-  h += '<tr><td style="font-weight:600;">Critique \u0394</td>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
+  h += '<tr><td>' + esc(cfg.rows.proposals) + '</td><td>' + fmt(mp.proposals_return, 2) + '%</td></tr>';
+  h += '<tr><td>' + esc(cfg.rows.revisions) + '</td><td>' + fmt(mp.revisions_return, 2) + '%</td></tr>';
+  h += '<tr><td style="font-weight:600;">' + esc(cfg.rows.critique_delta) + '</td>';
   h += '<td class="' + cls + '" style="font-weight:600;">' + sign + fmt(mp.critique_impact, 2) + '%</td></tr>';
   h += '</table>';
   return h;
@@ -341,19 +363,14 @@ function buildMeanPortfolioSummary(mp, roundLabel) {
  * @returns {string} HTML table string
  */
 function buildAblationSharpeTable(sharpe) {
-  const phases = [
-    { key: 'r1_proposal', label: 'R1 Proposal' },
-    { key: 'r1_revision', label: 'R1 Revision' },
-    { key: 'r1_js', label: 'R1 JS' },
-    { key: 'r2_revision', label: 'R2 Revision' },
-    { key: 'r2_js', label: 'R2 JS' },
-  ];
-  let h = '<div class="section-label">Sharpe (ann.)</div>';
+  const cfg = T('ablation_sharpe');
+  const phaseKeys = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
+  let h = '<div class="section-label">' + esc(cfg.title) + '</div>';
   h += '<table class="data-table" data-testid="ablation-sharpe">';
-  h += '<tr><th>Phase</th><th>Mean</th></tr>';
-  for (let i = 0; i < phases.length; i++) {
-    const val = sharpe[phases[i].key];
-    h += '<tr><td>' + esc(phases[i].label) + '</td>';
+  h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
+  for (let i = 0; i < phaseKeys.length; i++) {
+    const val = sharpe[phaseKeys[i]];
+    h += '<tr><td>' + esc(cfg.rows[phaseKeys[i]]) + '</td>';
     h += '<td style="text-align:right;">';
     h += (val !== null && val !== undefined) ? fmt(val, 4) : '\u2014';
     h += '</td></tr>';
@@ -373,10 +390,11 @@ function buildAblationSharpeTable(sharpe) {
  * Row 3: Per Scenario, Per Agent Config (side-by-side)
  */
 function buildExperimentBody(data, impact) {
+  const meta = T('ablation_experiment_meta');
   let body = '<div class="experiment-meta">';
   body += '<table class="ov-htable"><tr>';
-  body += '<th>Runs</th><td>' + esc(String(data.run_count)) + '</td>';
-  body += '<th>Model</th><td>' + esc(data.model) + '</td>';
+  body += '<th>' + esc(meta.columns[0]) + '</th><td>' + esc(String(data.run_count)) + '</td>';
+  body += '<th>' + esc(meta.columns[1]) + '</th><td>' + esc(data.model) + '</td>';
   body += '</tr></table></div>';
 
   // Row 0: Debate Impact (per agent config)
@@ -539,9 +557,13 @@ export function buildAblationOverview(experiments) {
 
   names.sort(function (a, b) { return rhoSortKey(experiments[b]) - rhoSortKey(experiments[a]); });
 
+  const cfg = T('ablation_overview');
   let h = '<table class="data-table" data-testid="ablation-overview">';
-  h += '<tr><th>Experiment</th><th>Runs</th><th>Model</th>';
-  h += '<th>Final \u03c1 Mean</th><th>Final JS Mean</th><th>Collapse %</th></tr>';
+  h += '<tr>';
+  for (let c = 0; c < cfg.columns.length; c++) {
+    h += '<th>' + esc(cfg.columns[c]) + '</th>';
+  }
+  h += '</tr>';
 
   for (let i = 0; i < names.length; i++) {
     const d = experiments[names[i]];
