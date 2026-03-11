@@ -4,40 +4,17 @@
   "as_of_date": "2025-06-30",
   "tickers": [
     "AAPL",
-    "AMD",
-    "AMT",
-    "AMZN",
-    "AVGO",
-    "BAC",
     "BLK",
-    "CAT",
-    "COP",
     "COST",
-    "CVX",
     "DAL",
-    "DE",
     "DIS",
-    "GOOG",
-    "GS",
-    "HD",
-    "JNJ",
     "JPM",
     "LLY",
     "META",
-    "MS",
-    "MSFT",
-    "NFLX",
-    "NKE",
     "NVDA",
-    "OXY",
-    "PFE",
-    "PG",
-    "PLD",
     "RTX",
-    "TSLA",
     "UNH",
-    "WMT",
-    "XOM"
+    "WMT"
   ],
   "macro_regime": {
     "macro_metrics": {
@@ -126,7 +103,7 @@
         "mean_sentiment": 0.10592,
         "sentiment_volatility": 0.571129,
         "surprise_sentiment": -0.12301,
-        "cross_sectional_z": 0.836348
+        "cross_sectional_z": 0.803304
       },
       "asset_features": {
         "close": 204.55,
@@ -157,300 +134,9 @@
         "free_cash_flow_yield": 0.008,
         "debt_to_equity": 1.5449,
         "earnings_surprise_pct": 0.0185,
-        "relative_strength_60d": -0.1833
+        "relative_strength_60d": -0.1819
       },
       "fiscal_year_end": "09-30"
-    },
-    "AMD": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "AMD",
-          "form": "10-Q",
-          "filing_date": "2025-05-07",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "AMD completed acquisition of ZT Group Int'l for $3.375 billion in cash plus 8.3 million shares on March 31, 2025, with potential additional consideration contingent on performance metrics. The company experienced significant demand for AI accelerators in its Data Center segment during 2024, while Embedded segment revenue decreased as customers normalized inventory levels.",
-          "cost_structure": "Manufacturing costs are subject to volatility from third-party foundry pricing, with TSMC providing all wafers for advanced nodes while GLOBALFOUNDRIES handles larger nodes. The company maintains long-term purchase commitments and prepayment arrangements with suppliers that could result in excess inventory costs if demand estimates prove inaccurate. Price protection agreements with AIB partners create margin exposure during product price declines.",
-          "material_events": "AMD issued $1.5 billion in senior notes plus $950 million in commercial paper to fund the ZT acquisition. The company expects approximately $800 million in inventory and related reserve charges for AMD Instinct MI308 product due to new U.S. export license requirements. AMD is actively seeking a strategic partner to acquire ZT Systems' manufacturing business following the acquisition close.",
-          "macro_exposures": "New U.S. export licensing requirements for semiconductor products to China and D5 countries create revenue uncertainty, with the AI Diffusion Rule effective May 15, 2025 expanding licensing requirements worldwide for AI-related semiconductor transactions. Economic uncertainty including inflation, higher interest rates, and potential recession could reduce customer demand and delay purchases.",
-          "forward_outlook": "AMD is building AI capabilities across all product lines including Ryzen AI PC processors, though adoption rates remain uncertain. Management is pursuing divestiture of ZT Systems' manufacturing operations to a strategic partner, though timing and terms remain uncertain. The company expects to apply for export licenses for China-restricted products but cannot assure approval timing or conditions.",
-          "uncertainty_profile": "Export license applications face uncertain approval timelines under evolving U.S. semiconductor regulations, with no assurance licenses will be granted timely or at all. ZT Systems divestiture completion depends on finding suitable buyers and obtaining regulatory approvals, while contingent consideration tied to performance conditions could result in additional payments. Manufacturing dependency on limited suppliers, particularly TSMC for advanced nodes, creates supply chain concentration risk.",
-          "word_count": 340
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 240,
-        "mean_sentiment": -0.156834,
-        "sentiment_volatility": 0.647209,
-        "surprise_sentiment": -0.235977,
-        "cross_sectional_z": -1.987795
-      },
-      "asset_features": {
-        "close": 141.9,
-        "ret_20d": 0.2815,
-        "ret_60d": 0.3782,
-        "ret_120d": 0.1318,
-        "ret_252d": -0.0993,
-        "vol_20d": 0.462,
-        "vol_60d": 0.7121,
-        "vol_120d": 0.592,
-        "downside_vol_60d": 0.4534,
-        "drawdown_60d": -0.2404,
-        "max_drawdown_1y": -0.5749,
-        "sma_20d": 126.62,
-        "sma_50d": 112.91,
-        "sma_200d": 124.1,
-        "momentum_200d": 1.1434,
-        "momentum_12_1": -0.2825,
-        "idiosyncratic_momentum": 0.1415,
-        "trend_consistency": 0.5667,
-        "sharpe_60d": 1.892,
-        "beta_1y": 1.9383,
-        "size_log_mcap": 26.162,
-        "value_book_to_market": 0.2592,
-        "avg_dollar_volume_20d": 6921635389.9,
-        "gross_margin": 0.398,
-        "roe": 0.0146,
-        "free_cash_flow_yield": 0.0075,
-        "debt_to_equity": 0.0651,
-        "earnings_surprise_pct": 0.0323,
-        "relative_strength_60d": 0.2773
-      }
-    },
-    "AMT": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "AMT",
-          "form": "10-Q",
-          "filing_date": "2025-04-29",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total operating revenues increased 2% to $2.56 billion driven by services revenue growth and data centers expansion, while property revenue remained stable. Operating income expanded to $1.25 billion from $1.14 billion as operating expenses declined, benefiting from reduced depreciation and administrative costs. International markets showed broad growth with positive results in Africa, APAC and Europe, offset by Latin America declining from foreign currency headwinds and U.S. & Canada declining from reduced straight-line accounting benefits and elevated T-Mobile churn.",
-          "cost_structure": "Property costs decreased while services costs increased reflecting expanded offerings. Depreciation, amortization and accretion declined driven by operational efficiencies. Administrative expenses decreased from reduced stock-based compensation following executive departure. Interest expense decreased to $325.3 million from $363.8 million reflecting debt refinancing activities.",
-          "material_events": "Completed sale of South Africa Fiber assets for $137.7 million generating a $53.6 million gain in March. Executed $1.4 billion debt refinancing by repaying existing senior notes and issuing new notes due 2030 and 2035. Amended credit facilities extending maturity dates to 2028-2030. Eugene Noel was promoted to Chief Operating Officer and Rajesh Kalathur was elected to the board.",
-          "macro_exposures": "Foreign currency translation generated $593.6 million in other comprehensive income while foreign currency losses of $345.7 million in other expense compared to prior year gains from intercompany notes. Translation effects reduced revenues across international segments with significant negative impacts from Nigerian Naira, Brazilian Real, and Mexican Peso. The company maintains 31% of revenues and 37% of operating expenses denominated in foreign currencies with EUR-denominated debt creating substantial exchange rate sensitivity.",
-          "forward_outlook": "Management expects 2025 total capital expenditures of $1.6-1.7 billion for communications sites construction and data center investments. Elevated churn rates in U.S. & Canada are expected to continue through 2025 from contractual T-Mobile lease cancellations. The company maintains over $55 billion in non-cancellable customer lease revenue based on existing contracts.",
-          "uncertainty_profile": "Unrecognized tax benefits totaled $105.4 million with potential changes from ongoing tax matters and contingent liability for tax indemnification. Current portion long-term obligations of $2.82 billion include EUR-denominated notes due April 2025 and various notes maturing through 2026. Revenue concentration with limited customers creates potential adverse effects from significant defaults, while foreclosure risk exists on communications sites securing notes.",
-          "word_count": 358
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 173,
-        "mean_sentiment": 0.200534,
-        "sentiment_volatility": 0.663923,
-        "surprise_sentiment": 0.054654,
-        "cross_sectional_z": 1.853281
-      },
-      "asset_features": {
-        "close": 216.98,
-        "ret_20d": 0.0378,
-        "ret_60d": 0.0307,
-        "ret_120d": 0.2302,
-        "ret_252d": 0.1846,
-        "vol_20d": 0.1579,
-        "vol_60d": 0.2982,
-        "vol_120d": 0.2839,
-        "downside_vol_60d": 0.2401,
-        "drawdown_60d": -0.1031,
-        "max_drawdown_1y": -0.2741,
-        "sma_20d": 211.8,
-        "sma_50d": 210.74,
-        "sma_200d": 201.23,
-        "momentum_200d": 1.0783,
-        "momentum_12_1": 0.1365,
-        "idiosyncratic_momentum": 0.025,
-        "trend_consistency": 0.5833,
-        "sharpe_60d": 0.426,
-        "beta_1y": -0.0322,
-        "size_log_mcap": 25.3443,
-        "value_book_to_market": 0.0365,
-        "avg_dollar_volume_20d": 450565939.29,
-        "gross_margin": 0.7378,
-        "roe": 0.0988,
-        "free_cash_flow_yield": 0.0096,
-        "debt_to_equity": 12.1777,
-        "earnings_surprise_pct": -0.3376,
-        "relative_strength_60d": -0.0702
-      }
-    },
-    "AMZN": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "AMZN",
-          "form": "10-Q",
-          "filing_date": "2025-05-02",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total net sales increased 8.6% to $155.7 billion driven by AWS growth of 16.9% and North America growth of 7.6%, while International growth of 4.9% faced foreign exchange headwinds. Consolidated operating income rose 20.2% to $18.4 billion with operating margin expanding to 11.8%, reflecting improved operational leverage across all segments.",
-          "cost_structure": "Operating expenses increased 7% with cost of sales rising 6% and fulfillment costs growing 10% from increased sales and network investments. Technology and infrastructure expenses increased 13% primarily from AWS infrastructure investments, including depreciation increases from shortened server and networking equipment useful lives from six to five years effective January 2025. Stock-based compensation decreased to $3.7 billion from $5.0 billion.",
-          "material_events": "Converted portion of Anthropic convertible notes to nonvoting preferred stock, recognizing $3.3 billion gain in other income during Q1 2025. Increased commercial paper program capacity to $30.0 billion in April 2025 and committed to invest additional $2.7 billion in Anthropic convertible notes by Q4 2025. Cash capital expenditures increased significantly to $24.3 billion from $13.9 billion primarily for technology infrastructure supporting AWS growth.",
-          "macro_exposures": "Foreign exchange volatility intensified with $1.4 billion unfavorable revenue impact and potential losses of $930 million to $3.7 billion on foreign currency holdings under adverse scenarios. Regulatory proceedings increased across antitrust, privacy, and consumer protection matters with active Federal Trade Commission litigation. Tax exposure expanded through ongoing disputes across multiple jurisdictions including Luxembourg and Indian assessments.",
-          "forward_outlook": "AWS performance obligations for contracts exceeding one year totaled approximately $189 billion with weighted-average remaining contract life of 4.1 years as of March 31, 2025. Management expects continued increases in cash capital expenditures during 2025 primarily driven by technology infrastructure investments and artificial intelligence capabilities development including commercial arrangement with Anthropic.",
-          "uncertainty_profile": "Income tax contingencies of $6.3 billion reflect ongoing IRS examinations for 2016 and thereafter plus disputes across multiple jurisdictions with resolution timing highly uncertain. Luxembourg Administrative Court dismissed appeal of \u20ac746 million GDPR fine in March 2025 with appeal to higher court filed in April 2025. Legal proceedings outcomes remain unpredictable with potential for substantial future payments or operational restrictions.",
-          "word_count": 340
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 237,
-        "mean_sentiment": 0.029193,
-        "sentiment_volatility": 0.649771,
-        "surprise_sentiment": -0.161925,
-        "cross_sectional_z": 0.011668
-      },
-      "asset_features": {
-        "close": 219.39,
-        "ret_20d": 0.0701,
-        "ret_60d": 0.1193,
-        "ret_120d": -0.0214,
-        "ret_252d": 0.1332,
-        "vol_20d": 0.235,
-        "vol_60d": 0.4581,
-        "vol_120d": 0.3827,
-        "downside_vol_60d": 0.2965,
-        "drawdown_60d": -0.1464,
-        "max_drawdown_1y": -0.3088,
-        "sma_20d": 213.02,
-        "sma_50d": 201.85,
-        "sma_200d": 205.13,
-        "momentum_200d": 1.0695,
-        "momentum_12_1": 0.0624,
-        "idiosyncratic_momentum": -0.0023,
-        "trend_consistency": 0.4833,
-        "sharpe_60d": 1.033,
-        "beta_1y": 1.3474,
-        "size_log_mcap": 28.4806,
-        "value_book_to_market": 0.1427,
-        "avg_dollar_volume_20d": 9319669327.09,
-        "gross_margin": 0.5181,
-        "roe": 0.0544,
-        "free_cash_flow_yield": 0.0001,
-        "debt_to_equity": 0.4013,
-        "earnings_surprise_pct": 0.1691,
-        "relative_strength_60d": 0.0184
-      }
-    },
-    "AVGO": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "AVGO",
-          "form": "10-Q",
-          "filing_date": "2025-06-11",
-          "fiscal_period": "2025-Q2",
-          "period_type": "quarterly",
-          "operating_state": "Total revenue increased 20% to $15.0 billion driven by AI networking demand in semiconductor solutions and VMware Cloud Foundation growth in infrastructure software. Semiconductor solutions rose 17% from AI networking products offset by lower broadband demand, while infrastructure software increased 25% from VCF demand and subscription transition. Top five customers represent 40% of revenue with distributors accounting for 47%, creating concentrated dependencies.",
-          "cost_structure": "Gross margin expanded to 68% from 62% driven by higher software revenue mix and lower acquisition-related intangible amortization. Manufacturing operations primarily outsourced with TSMC fabricating 95% of wafers and three-quarters of materials sourced from five suppliers. Operating expenses decreased as percentage of revenue from lower amortization and reduced VMware integration costs, offset by higher stock-based compensation from new equity awards.",
-          "material_events": "Board authorized $10 billion stock repurchase program through December 2025 with $2.5 billion executed in Q2 and paid $2.8 billion quarterly dividends. Granted two-year equity awards creating $27 billion unrecognized compensation cost over 3.8 year service period. Issued $3.9 billion commercial paper and reclassified $900 million senior notes to short-term debt.",
-          "macro_exposures": "Ongoing Korean Fair Trade Commission investigation and continued U.S. export restrictions limiting customer relationships. Escalating U.S.-China trade tensions create supply chain disruption risks and potential retaliatory measures. Geographic concentration in seismically active Pacific Rim regions increases natural disaster exposure. Expanding global privacy laws and minimum tax implementations may materially increase compliance costs and effective tax rates.",
-          "forward_outlook": "Management focused on VMware core private cloud business with simplified product portfolio and subscription licensing transition while continuing divestiture of non-core assets. Significant R&D investments expected for AI-related products including custom accelerators. Maintaining capital return strategy through dividends and opportunistic share repurchases while managing resource strain from simultaneous major design win implementations.",
-          "uncertainty_profile": "VMware customer acceptance of subscription model transition remains uncertain with potential tax liabilities from former Dell ownership structure unresolved. $69.4 billion outstanding debt with $5.6 billion due within twelve months requiring refinancing. Cybersecurity threats escalating with AI-enabled attack sophistication while open source software integration creates licensing compliance exposures and semiconductor cyclicality threatens AI demand sustainability.",
-          "word_count": 336
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 233,
-        "mean_sentiment": -0.089395,
-        "sentiment_volatility": 0.650133,
-        "surprise_sentiment": -0.192042,
-        "cross_sectional_z": -1.262944
-      },
-      "asset_features": {
-        "close": 274.65,
-        "ret_20d": 0.1414,
-        "ret_60d": 0.6055,
-        "ret_120d": 0.1917,
-        "ret_252d": 0.7512,
-        "vol_20d": 0.3477,
-        "vol_60d": 0.5878,
-        "vol_120d": 0.609,
-        "downside_vol_60d": 0.4339,
-        "drawdown_60d": -0.1499,
-        "max_drawdown_1y": -0.4115,
-        "sma_20d": 254.7,
-        "sma_50d": 227.54,
-        "sma_200d": 200.07,
-        "momentum_200d": 1.3728,
-        "momentum_12_1": 0.5336,
-        "idiosyncratic_momentum": 0.3302,
-        "trend_consistency": 0.65,
-        "sharpe_60d": 3.3832,
-        "beta_1y": 1.9532,
-        "size_log_mcap": 27.887,
-        "value_book_to_market": 0.0539,
-        "avg_dollar_volume_20d": 6890727102.96,
-        "gross_margin": 0.6796,
-        "roe": 0.0714,
-        "free_cash_flow_yield": 0.005,
-        "debt_to_equity": 0.9669,
-        "earnings_surprise_pct": 0.0064,
-        "relative_strength_60d": 0.5046
-      },
-      "fiscal_year_end": "10-31"
-    },
-    "BAC": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "BAC",
-          "form": "10-Q",
-          "filing_date": "2025-04-30",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenue increased $1.5 billion to $27.4 billion driven by higher noninterest income and net interest income growth. Investment and brokerage services revenue rose on elevated equity market valuations and positive AUM flows, while market making revenue declined from lower FICC credit trading. Commercial loans increased from Global Markets and Global Banking growth, expanding total assets to $3.35 trillion with CET1 ratio maintained at 11.8%.",
-          "cost_structure": "Noninterest expense increased to $17.8 billion from investments in people, technology, and operations, with revenue-related incentive compensation rising alongside higher fee income. Efficiency ratio improved to 64.93% from 66.77% as revenue growth outpaced expense increases. Commercial net charge-offs decreased year-over-year from lower commercial real estate office losses, while consumer charge-offs increased to 4.05% from credit card portfolio normalization.",
-          "material_events": "Rudolf Bless stepped down as Chief Accounting Officer effective March 1, 2025, replaced by Johnbull Okpara. Corporation executed $4.5 billion in share repurchases and paid $1.9 billion in dividends, while issuing TLAC-compliant long-term debt. Board declared quarterly dividend of $0.26 per share payable June 27, 2025, with 2025 CCAR results expected by June 30.",
-          "macro_exposures": "Provision for credit losses increased to $1.5 billion primarily from credit card portfolios and commercial real estate office exposure. Commercial reservable criticized exposure increased from sustained high interest rate environment, with office loans maturing by end of 2025 amid stagnant office space demand. International trade policy negotiations, inflationary pressures, elevated interest rates, and geopolitical tensions continue affecting credit quality metrics.",
-          "forward_outlook": "Federal Reserve proposed NPR in April 2025 to reduce stress capital buffer volatility, with G-SIB surcharge expected to increase to 3.5% from 3.0% on January 1, 2027. Management continues strategic investments in technology and operations supporting client growth and digital capabilities. Capital allocation priorities focus on organic growth, maintaining strong ratios, and returning capital through dividends and repurchases.",
-          "uncertainty_profile": "CECL transition provisions fully phased-in as of January 1, 2025, eliminating prior transitional capital benefits, with pending regulatory developments around capital requirements and stress testing methodologies. Climate risk encompasses physical risks from extreme weather events and transition risks from low-carbon economy changes affecting operations and credit portfolios.",
-          "word_count": 342
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 224,
-        "mean_sentiment": 0.090708,
-        "sentiment_volatility": 0.642799,
-        "surprise_sentiment": -0.179382,
-        "cross_sectional_z": 0.672846
-      },
-      "asset_features": {
-        "close": 46.55,
-        "ret_20d": 0.0786,
-        "ret_60d": 0.1374,
-        "ret_120d": 0.0689,
-        "ret_252d": 0.2431,
-        "vol_20d": 0.1482,
-        "vol_60d": 0.3948,
-        "vol_120d": 0.3347,
-        "downside_vol_60d": 0.4502,
-        "drawdown_60d": -0.1783,
-        "max_drawdown_1y": -0.2751,
-        "sma_20d": 44.55,
-        "sma_50d": 42.37,
-        "sma_200d": 42.09,
-        "momentum_200d": 1.106,
-        "momentum_12_1": 0.1554,
-        "idiosyncratic_momentum": 0.0356,
-        "trend_consistency": 0.6333,
-        "sharpe_60d": 1.3692,
-        "beta_1y": 0.9684,
-        "size_log_mcap": 26.5703,
-        "value_book_to_market": 0.8654,
-        "avg_dollar_volume_20d": 1733944651.88,
-        "gross_margin": null,
-        "roe": 0.0238,
-        "free_cash_flow_yield": -0.0264,
-        "debt_to_equity": 1.206,
-        "earnings_surprise_pct": 0.0976,
-        "relative_strength_60d": 0.0365
-      }
     },
     "BLK": {
       "filing_summary": {
@@ -476,7 +162,7 @@
         "mean_sentiment": 0.120598,
         "sentiment_volatility": 0.637013,
         "surprise_sentiment": -0.09098,
-        "cross_sectional_z": 0.99411
+        "cross_sectional_z": 0.962322
       },
       "asset_features": {
         "close": 1033.51,
@@ -507,123 +193,7 @@
         "free_cash_flow_yield": 0.008,
         "debt_to_equity": 0.2993,
         "earnings_surprise_pct": 0.1155,
-        "relative_strength_60d": -0.0042
-      }
-    },
-    "CAT": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "CAT",
-          "form": "10-Q",
-          "filing_date": "2025-05-07",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total sales and revenues decreased 10 percent to $14.249 billion in Q1 2025, driven by lower sales volume of $1.1 billion and unfavorable price realization of $250 million. Sales declined across all three primary segments, with Construction Industries experiencing the steepest decline while Energy & Transportation showed relative resilience. Lower sales volume was primarily driven by changes in dealer inventories, which increased only $100 million compared to $1.4 billion in the prior year quarter.",
-          "cost_structure": "Operating profit margin compressed to 18.1 percent from 22.3 percent, reflecting the profit impact of lower sales volume and unfavorable price realization. Cost of goods sold improved benefiting from lower sales volumes, while SG&A and R&D expenses declined. Manufacturing costs increased unfavorably in Energy & Transportation, with the company expecting unfavorable manufacturing costs and higher expenses in Q2 2025, including estimated tariff-related costs of $250-350 million.",
-          "material_events": "The company repurchased $3.660 billion of common stock in Q1 2025, with $16.468 billion remaining under authorization. Dividends paid totaled $674 million, with the Board maintaining the quarterly dividend at $1.41 per share. Order backlog increased approximately $5.0 billion to $35.0 billion at quarter-end, with the largest increase in Energy & Transportation. Cash position decreased to $3.6 billion from $6.9 billion reflecting substantial capital allocation activities.",
-          "macro_exposures": "The company is closely monitoring evolving economic conditions and has evaluated various scenarios to estimate potential tariff impacts for the remainder of 2025. Due to tariff announcements and increasing economic uncertainty, management assessed potential cost impacts from current tariffs but noted uncertainty regarding future tariff rates and timing of mitigation actions makes accurate full-year impact estimates difficult.",
-          "forward_outlook": "For full-year 2025, management expects sales and revenues to be about flat compared to 2024 in a pre-tariff scenario, or down slightly assuming negative economic growth in the second half. The company expects restructuring costs of approximately $150-200 million and capital expenditures of about $2.5 billion. For Q2 2025, sales and revenues are expected to be similar to Q2 2024, with growth in Energy & Transportation offset by declines in other segments.",
-          "uncertainty_profile": "The company faces uncertainty regarding the magnitude and timing of tariff impacts, with estimated Q2 2025 tariff-related costs of $250-350 million before mitigation actions. Management continues to monitor supply chain disruptions, inflationary costs, labor pressures, and trade policy impacts. The effective tax rate excluding discrete items is anticipated to be 23.0 percent in 2025, compared to 22.5 percent in the prior year.",
-          "word_count": 397
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 228,
-        "mean_sentiment": 0.026723,
-        "sentiment_volatility": 0.653558,
-        "surprise_sentiment": -0.039132,
-        "cross_sectional_z": -0.01488
-      },
-      "asset_features": {
-        "close": 384.78,
-        "ret_20d": 0.1154,
-        "ret_60d": 0.1656,
-        "ret_120d": 0.0762,
-        "ret_252d": 0.2075,
-        "vol_20d": 0.173,
-        "vol_60d": 0.3932,
-        "vol_120d": 0.3392,
-        "downside_vol_60d": 0.3238,
-        "drawdown_60d": -0.1814,
-        "max_drawdown_1y": -0.3405,
-        "sma_20d": 359.28,
-        "sma_50d": 338.69,
-        "sma_200d": 354.64,
-        "momentum_200d": 1.085,
-        "momentum_12_1": 0.0942,
-        "idiosyncratic_momentum": 0.0497,
-        "trend_consistency": 0.5667,
-        "sharpe_60d": 1.6369,
-        "beta_1y": 1.1145,
-        "size_log_mcap": 25.9177,
-        "value_book_to_market": 0.1035,
-        "avg_dollar_volume_20d": 896849297.04,
-        "gross_margin": 0.3275,
-        "roe": 0.1168,
-        "free_cash_flow_yield": 0.012,
-        "debt_to_equity": 2.1836,
-        "earnings_surprise_pct": -0.0207,
-        "relative_strength_60d": 0.0647
-      }
-    },
-    "COP": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "COP",
-          "form": "10-Q",
-          "filing_date": "2025-05-08",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total production reached 2,389 MBOED in Q1 2025, increasing 26% year-over-year driven by Marathon Oil acquisition completed November 2024 and organic growth from new wells across multiple regions. Average realized price declined to $53.34 per BOE from $56.60 per BOE due to lower crude oil prices, partially offset by higher natural gas prices from cold winter weather demand.",
-          "cost_structure": "Operating cash flow generation of $6.1 billion demonstrates maintained cost discipline despite production increases. Capital expenditures totaled $3.4 billion allocated primarily to flexible short-cycle unconventional plays. Full-year capital expenditure guidance lowered to $12.3-$12.6 billion from $12.9 billion while maintaining production guidance, indicating improved capital efficiency from Marathon Oil integration.",
-          "material_events": "Completed Marathon Oil acquisition integration with expected synergies exceeding $1 billion run rate within first full year. Closed noncore asset dispositions generating $1.3 billion proceeds. Returned $2.5 billion to shareholders through share repurchases and dividends. Declared second-quarter ordinary dividend of $0.78 per share. Became sole operator of Kebabangan Cluster PSC in Malaysia and achieved first oil at Gumusut Phase 4.",
-          "macro_exposures": "Crude oil prices declined in Q2 2025 due to broad-ranging U.S. tariffs and retaliatory measures with significant uncertainty regarding scope and duration. OPEC Plus actions and geopolitical tensions create ongoing supply disruption risks affecting global demand and inventory levels.",
-          "forward_outlook": "Second-quarter 2025 production guidance set at 2.34-2.38 MMBOED with full-year production maintained despite lowered capital expenditure guidance. Management targets $2 billion in disposition proceeds with $1.3 billion secured. Willow project achieved critical winter construction milestones. Marathon Oil integration remains on track to deliver synergies exceeding $1 billion run rate within first full year.",
-          "uncertainty_profile": "Commodity price volatility continues with external factors including global economic health, supply disruptions, military conflicts, environmental regulations, and weather-related disruptions beyond company control. Regional natural gas marker volatility expected throughout 2025 with ongoing third-party pipeline constraints affecting realized prices. Ultimate impact of tariff policies and geopolitical tensions remains uncertain.",
-          "word_count": 308
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 222,
-        "mean_sentiment": -0.003976,
-        "sentiment_volatility": 0.684658,
-        "surprise_sentiment": -0.146078,
-        "cross_sectional_z": -0.344841
-      },
-      "asset_features": {
-        "close": 87.51,
-        "ret_20d": 0.0514,
-        "ret_60d": -0.147,
-        "ret_120d": -0.0975,
-        "ret_252d": -0.1855,
-        "vol_20d": 0.3059,
-        "vol_60d": 0.5061,
-        "vol_120d": 0.4109,
-        "downside_vol_60d": 0.4462,
-        "drawdown_60d": -0.2209,
-        "max_drawdown_1y": -0.2752,
-        "sma_20d": 88.6,
-        "sma_50d": 87.4,
-        "sma_200d": 95.46,
-        "momentum_200d": 0.9167,
-        "momentum_12_1": -0.223,
-        "idiosyncratic_momentum": -0.2767,
-        "trend_consistency": 0.5,
-        "sharpe_60d": -1.3194,
-        "beta_1y": 0.8668,
-        "size_log_mcap": 25.4173,
-        "value_book_to_market": 0.6,
-        "avg_dollar_volume_20d": 789892801.8,
-        "gross_margin": 0.2506,
-        "roe": 0.0301,
-        "free_cash_flow_yield": 0.0018,
-        "debt_to_equity": 0.3588,
-        "earnings_surprise_pct": 0.0195,
-        "relative_strength_60d": -0.2479
+        "relative_strength_60d": -0.0028
       }
     },
     "COST": {
@@ -659,7 +229,7 @@
         "mean_sentiment": 0.040704,
         "sentiment_volatility": 0.653219,
         "surprise_sentiment": -0.214176,
-        "cross_sectional_z": 0.135391
+        "cross_sectional_z": 0.096769
       },
       "asset_features": {
         "close": 987.17,
@@ -690,67 +260,9 @@
         "free_cash_flow_yield": 0.0053,
         "debt_to_equity": 0.3016,
         "earnings_surprise_pct": 0.0118,
-        "relative_strength_60d": -0.0738
+        "relative_strength_60d": -0.0723
       },
       "fiscal_year_end": "08-31"
-    },
-    "CVX": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "CVX",
-          "form": "10-Q",
-          "filing_date": "2025-05-08",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "No specific revenue or operational performance data disclosed in the filing materials provided. The company reported fourth quarter 2024 earnings of $3.2 billion in January 2025, but no Q1 2025 operating metrics were available in these documents.",
-          "cost_structure": "Restructuring costs remained elevated with $989 million in accrued severance liability as of March 31, 2025, down marginally from $990 million at year-end 2024. The company expects substantial settlement of these obligations by end of 2026, indicating ongoing workforce optimization efforts.",
-          "material_events": "Chevron issued $5.5 billion in debt securities through subsidiary CUSA in February 2025, comprising fixed and floating rate notes with maturities from 2027 to 2035. The company purchased 15.4 million Hess shares representing 4.99% of outstanding stock between January and March 2025 at prices below the merger exchange ratio, demonstrating confidence in the pending acquisition.",
-          "macro_exposures": "The company faces heightened geopolitical risks from ongoing military conflicts in Ukraine and the Middle East, with potential impacts on global energy markets and operations. Regulatory approval uncertainties persist around the Hess acquisition, including unresolved arbitration proceedings regarding preemptive rights in the Stabroek Block joint operating agreement.",
-          "forward_outlook": "Management continues executing the Hess acquisition strategy while maintaining share repurchase programs alongside the strategic Hess stock purchases. The debt issuance provides additional financial flexibility for capital allocation priorities and transaction completion.",
-          "uncertainty_profile": "The Hess transaction faces regulatory approval risks and ongoing arbitration that could delay or prevent consummation. Broader operational uncertainties include potential production curtailments from market conditions, supply chain disruptions, and the evolving regulatory environment for greenhouse gas emissions and climate change measures.",
-          "word_count": 254
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 231,
-        "mean_sentiment": -0.067431,
-        "sentiment_volatility": 0.630083,
-        "surprise_sentiment": -0.245218,
-        "cross_sectional_z": -1.02687
-      },
-      "asset_features": {
-        "close": 138.69,
-        "ret_20d": 0.0475,
-        "ret_60d": -0.1294,
-        "ret_120d": -0.0088,
-        "ret_252d": -0.0401,
-        "vol_20d": 0.195,
-        "vol_60d": 0.3646,
-        "vol_120d": 0.2996,
-        "downside_vol_60d": 0.3502,
-        "drawdown_60d": -0.1967,
-        "max_drawdown_1y": -0.2064,
-        "sma_20d": 138.96,
-        "sma_50d": 135.06,
-        "sma_200d": 142.3,
-        "momentum_200d": 0.9747,
-        "momentum_12_1": -0.0755,
-        "idiosyncratic_momentum": -0.2227,
-        "trend_consistency": 0.5167,
-        "sharpe_60d": -1.5959,
-        "beta_1y": 0.6773,
-        "size_log_mcap": 26.1943,
-        "value_book_to_market": 0.616,
-        "avg_dollar_volume_20d": 1358355118.64,
-        "gross_margin": 0.2969,
-        "roe": 0.017,
-        "free_cash_flow_yield": 0.0205,
-        "debt_to_equity": 0.2013,
-        "earnings_surprise_pct": 0.014,
-        "relative_strength_60d": -0.2303
-      }
     },
     "DAL": {
       "filing_summary": {
@@ -776,7 +288,7 @@
         "mean_sentiment": -0.056758,
         "sentiment_volatility": 0.632128,
         "surprise_sentiment": -0.156021,
-        "cross_sectional_z": -0.912154
+        "cross_sectional_z": -0.959111
       },
       "asset_features": {
         "close": 48.73,
@@ -807,76 +319,8 @@
         "free_cash_flow_yield": 0.0204,
         "debt_to_equity": 1.2202,
         "earnings_surprise_pct": 0.1795,
-        "relative_strength_60d": 0.0364
+        "relative_strength_60d": 0.0379
       }
-    },
-    "DE": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "DE",
-          "form": "10-Q",
-          "filing_date": "2025-05-29",
-          "fiscal_period": "2025-Q2",
-          "period_type": "quarterly",
-          "operating_state": "Net sales declined 16% to $12.8 billion in Q2 driven by elevated interest rates, economic uncertainties, and high used inventory levels across equipment segments. Production and precision agriculture sales fell 21% from reduced U.S. demand while construction and forestry dropped 23% due to lower volumes in U.S. and Brazil. Small agriculture and turf declined 6% with U.S. and Europe weakness partially offset by India growth. Financial services generated $391 million net income versus $370 million prior year.",
-          "cost_structure": "Cost of sales ratio increased to 68.1% from production inefficiencies at lower volumes and incremental tariff costs of approximately $95 million, partially offset by reduced material costs and lower employee profit-sharing incentives. Operating margins compressed across equipment segments with production and precision agriculture declining to 22.0% from 25.1% and construction and forestry falling to 12.9% from 17.4%. Research and development expenses remained stable while selling and administrative expenses declined.",
-          "material_events": "Completed Banco John Deere S.A. joint venture in Brazil through sale of 50% ownership to Banco Bradesco in February 2025, resulting in deconsolidation and $362 million equity method investment. Executed $838 million in share repurchases year-to-date under $18 billion authorization program with $8.2 billion remaining available. Increased quarterly dividend to $1.62 per share from $1.47 prior year.",
-          "macro_exposures": "New tariffs imposed in Q2 2025 resulted in approximately $95 million direct incremental costs with ongoing uncertainty from evolving trade policies potentially affecting supply chains and export competitiveness. Federal Trade Commission filed antitrust lawsuit in January 2025 alleging monopolization in repair markets, seeking permanent injunction for equipment access by owners and independent repair providers. High interest rates continue pressuring customer demand and financing spreads while foreign exchange translation provided $300 million positive impact year-to-date.",
-          "forward_outlook": "Management expects agriculture and turf equipment sales volumes to remain lower than prior year for remainder of 2025 due to reduced demand from high interest rates and elevated used inventory levels. Construction equipment industry sales forecasted down in U.S. and Canada from moderating housing starts and softening rental markets. Financial services net income expected up with favorable selling expenses offsetting unfavorable financing spreads.",
-          "uncertainty_profile": "FTC antitrust litigation represents primary near-term uncertainty with potential for permanent injunctive relief requiring expanded access to repair tools and resources for independent providers, materially impacting service business model and competitive positioning. Variable interest entity structure for Brazilian joint venture creates ongoing funding and guarantee obligations with maximum exposure. Elevated credit losses in agriculture and turf financing portfolio due to deteriorating market conditions require intensified monitoring.",
-          "word_count": 406
-        },
-        "event_filings": []
-      },
-      "earnings_call": {
-        "summary": "Deere reported Q2 2025 results with net sales down 16% to $12.8B and equipment operations margin of 18.8%, exceeding expectations despite challenging market conditions. Production and Precision Ag sales fell 21% while Small Ag and Turf declined 6%. The company faced approximately $100M in tariff headwinds during the quarter but delivered strong operational performance through factory efficiency gains and cost management. Full-year guidance was maintained at the high end but ranges were widened due to tariff uncertainty, with net income projected between $4.75-5.5B.",
-        "management_outlook": "Management expects continued market volatility through the remainder of fiscal 2025, with large Ag equipment industry sales in the U.S. and Canada projected down approximately 30%. The company anticipates pre-tax tariff impacts of just over $500M for the full year if current levels persist. Despite near-term headwinds, management remains committed to its smart industrial strategy and announced plans to invest $20B in U.S. operations over the next decade. Early signs of sentiment improvement are emerging in South America and Europe, though North American markets remain challenged by trade uncertainty and elevated used equipment inventory.",
-        "risks": "Primary risks include ongoing trade policy volatility with tariffs creating $500M+ annual cost pressure, elevated late-model used equipment inventory in North America weighing on new equipment demand, and high interest rates pressuring customer purchase decisions. The company faces significant tariff exposure through component sourcing from Mexico, Europe, and China, with Construction & Forestry bearing disproportionate impact due to supply agreements and overseas production. Market uncertainty continues to dampen customer sentiment across all segments, while pricing power remains constrained given recent years of significant price increases.",
-        "key_drivers": "Technology adoption continues accelerating with Precision Essentials orders reaching nearly 10,000 globally in the first half, exceeding all of fiscal 2024. See & Spray utilization is expanding with over 1,000 new orders and existing customers showing increased usage and additional unit purchases. The company is progressing toward autonomous tillage commercialization in model year 2026 and expanding its technology platform across business units. Operational excellence initiatives are delivering material cost savings and factory efficiency gains, while the company maintains strong dealer relationships and customer loyalty during the downturn.",
-        "chunk_count": 23,
-        "mean_sentiment": 0.139188,
-        "sentiment_volatility": 0.574864,
-        "transcript_char_count": 56387
-      },
-      "news_sentiment": {
-        "article_count": 215,
-        "mean_sentiment": 0.120261,
-        "sentiment_volatility": 0.643203,
-        "surprise_sentiment": -0.167753,
-        "cross_sectional_z": 0.990488
-      },
-      "asset_features": {
-        "close": 504.97,
-        "ret_20d": 0.0076,
-        "ret_60d": 0.0832,
-        "ret_120d": 0.2124,
-        "ret_252d": 0.3759,
-        "vol_20d": 0.1825,
-        "vol_60d": 0.3332,
-        "vol_120d": 0.3128,
-        "downside_vol_60d": 0.1795,
-        "drawdown_60d": -0.123,
-        "max_drawdown_1y": -0.1862,
-        "sma_20d": 510.08,
-        "sma_50d": 494.08,
-        "sma_200d": 448.87,
-        "momentum_200d": 1.125,
-        "momentum_12_1": 0.3579,
-        "idiosyncratic_momentum": 0.0026,
-        "trend_consistency": 0.5,
-        "sharpe_60d": 1.0079,
-        "beta_1y": 0.7437,
-        "size_log_mcap": 25.6415,
-        "value_book_to_market": 0.1776,
-        "avg_dollar_volume_20d": 595434515.88,
-        "gross_margin": 0.3925,
-        "roe": 0.0743,
-        "free_cash_flow_yield": 0.005,
-        "debt_to_equity": 2.7422,
-        "earnings_surprise_pct": 0.1815,
-        "relative_strength_60d": -0.0177
-      },
-      "fiscal_year_end": "10-31"
     },
     "DIS": {
       "filing_summary": {
@@ -911,7 +355,7 @@
         "mean_sentiment": 0.085864,
         "sentiment_volatility": 0.637626,
         "surprise_sentiment": -0.187212,
-        "cross_sectional_z": 0.620781
+        "cross_sectional_z": 0.586022
       },
       "asset_features": {
         "close": 123.18,
@@ -942,242 +386,9 @@
         "free_cash_flow_yield": 0.0085,
         "debt_to_equity": 0.3872,
         "earnings_surprise_pct": 0.1983,
-        "relative_strength_60d": 0.1715
+        "relative_strength_60d": 0.1729
       },
       "fiscal_year_end": "09-30"
-    },
-    "GOOG": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "GOOG",
-          "form": "10-Q",
-          "filing_date": "2025-04-25",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenues increased 12% to $90.2 billion driven by Google Search growing 10% and Google Cloud accelerating 28%. YouTube ads expanded while Google Network declined due to foreign currency headwinds and decreased Ad Manager performance. Operating cash flows increased to $36.2 billion from $28.8 billion driven by higher customer receipts across segments.",
-          "cost_structure": "Cost of revenues increased 8% to $36.4 billion with traffic acquisition costs rising and other costs increasing from higher content acquisition and depreciation. TAC rate decreased from 21.0% to 20.6% due to revenue mix shift toward Search properties. Research and development expenses rose driven by AI product development and increased headcount. Capital expenditures surged to $17.2 billion from $12.0 billion primarily for AI-supporting servers, network equipment, and data center construction.",
-          "material_events": "Board authorized additional $70 billion share repurchase program following $15.3 billion in Q1 repurchases. Quarterly dividend increased 5% to $0.21 per share. Entered definitive agreement to acquire Wiz cloud security platform for $32.0 billion in all-cash transaction expected to close in 2026. Converted $3.0 billion of convertible notes into equity securities generating $416 million in gains.",
-          "macro_exposures": "International revenues representing 51% of total revenues faced unfavorable foreign currency impacts of $1.6 billion from U.S. dollar strengthening against major currencies. European Commission fines increased to $6.5 billion including foreign exchange effects. Purchase commitments may experience cost increases from ongoing international trade developments affecting manufacturing and supply chain operations.",
-          "forward_outlook": "Management expects continued investment increases in technical infrastructure relative to 2024 to support AI products and long-term growth. Revenue backlog of $92.4 billion provides visibility with 55% expected to be recognized over next 24 months. Wiz acquisition expected to enhance Google Cloud security capabilities upon 2026 closing.",
-          "uncertainty_profile": "Multiple ongoing antitrust proceedings including U.S. District Court ruling against Google Search practices with remedies hearing scheduled April 2025 and decision expected second half 2025. European Commission issued preliminary non-compliance findings under Digital Markets Act. Wiz acquisition subject to regulatory approvals with potential for delays or modifications.",
-          "word_count": 322
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 230,
-        "mean_sentiment": 0.164574,
-        "sentiment_volatility": 0.611833,
-        "surprise_sentiment": -0.059434,
-        "cross_sectional_z": 1.466775
-      },
-      "asset_features": {
-        "close": 177.12,
-        "ret_20d": 0.0275,
-        "ret_60d": 0.118,
-        "ret_120d": -0.0793,
-        "ret_252d": -0.0385,
-        "vol_20d": 0.2668,
-        "vol_60d": 0.3849,
-        "vol_120d": 0.3591,
-        "downside_vol_60d": 0.251,
-        "drawdown_60d": -0.0798,
-        "max_drawdown_1y": -0.2935,
-        "sma_20d": 173.37,
-        "sma_50d": 167.21,
-        "sma_200d": 173.3,
-        "momentum_200d": 1.022,
-        "momentum_12_1": -0.0636,
-        "idiosyncratic_momentum": 0.0327,
-        "trend_consistency": 0.5,
-        "sharpe_60d": 1.217,
-        "beta_1y": 1.0205,
-        "size_log_mcap": 28.3936,
-        "value_book_to_market": 0.1693,
-        "avg_dollar_volume_20d": 5031675943.48,
-        "gross_margin": 0.5951,
-        "roe": 0.0777,
-        "free_cash_flow_yield": 0.0025,
-        "debt_to_equity": 0.098,
-        "earnings_surprise_pct": 0.398,
-        "relative_strength_60d": 0.0171
-      }
-    },
-    "GS": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "GS",
-          "form": "10-Q",
-          "filing_date": "2025-05-02",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Net revenues increased 6% to $15.06 billion driven by significantly higher net interest income and investment management revenues, partially offset by lower principal transactions and market making revenues. Equities revenues rose 27% from derivatives and portfolio financing strength while FICC revenues increased modestly. Investment banking fees declined 8% due to significantly lower Advisory revenues despite higher Debt underwriting activity.",
-          "cost_structure": "Operating expenses increased 5% primarily from significantly higher transaction-based expenses and compensation reflecting improved performance, partially offset by lower consolidated investment entity expenses and absence of prior year FDIC special assessment fees. Efficiency ratio improved to 60.6% from 60.9% with headcount essentially unchanged. Consumer-related activities generated negative pre-tax earnings improving from prior year losses.",
-          "material_events": "Returned $5.34 billion to shareholders through share repurchases and dividends under new $40 billion share repurchase program with no expiration date. Maintained strong capital position with CET1 ratios of 14.8% under Standardized and 15.5% under Advanced Capital Rules despite Federal Reserve increasing stress capital buffer to 6.2%. Assets under supervision increased to $3.17 trillion with net inflows and market appreciation.",
-          "macro_exposures": "Escalating concerns over international trade policies including potential new tariffs created market volatility during the quarter, with developments intensifying global macroeconomic concerns and heightening U.S. recession prospects. Operating environment characterized by continued inflation uncertainty, geopolitical risks, and global central bank policy uncertainty contributing to 5% decline in S&P 500 Index. Ukrainian market exposure remained at $110 million primarily in sovereign debt.",
-          "forward_outlook": "Management expects 2025 annual effective tax rate of approximately 21% with target through-the-cycle ROE of 14-16% and ROTE target of 15-17%, achieving Q1 ROE of 16.9% and ROTE of 18.0%. Asset & Wealth Management targets mid-teens ROE and mid-twenties pre-tax margins within medium-term horizon. Credit alternative assets targeted to grow to $300 billion by end-2028 with historical principal investments selldown continuing through end-2026.",
-          "uncertainty_profile": "OECD Pillar II minimum tax legislation enacted in multiple jurisdictions could materially impact future effective tax rates pending additional guidance. Provision for credit losses methodology incorporates multiple economic scenarios with adverse scenario modeling indicating potential $0.8 billion increase under 100% adverse weighting. Cybersecurity risks heightened from AI-enabled fraud and ransomware attacks requiring increased employee training and business continuity resource allocation.",
-          "word_count": 357
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 222,
-        "mean_sentiment": -0.08164,
-        "sentiment_volatility": 0.635818,
-        "surprise_sentiment": -0.068737,
-        "cross_sectional_z": -1.179592
-      },
-      "asset_features": {
-        "close": 696.84,
-        "ret_20d": 0.1787,
-        "ret_60d": 0.2631,
-        "ret_120d": 0.2321,
-        "ret_252d": 0.5851,
-        "vol_20d": 0.1863,
-        "vol_60d": 0.437,
-        "vol_120d": 0.3845,
-        "downside_vol_60d": 0.4054,
-        "drawdown_60d": -0.1792,
-        "max_drawdown_1y": -0.309,
-        "sma_20d": 625.51,
-        "sma_50d": 587.02,
-        "sma_200d": 559.3,
-        "momentum_200d": 1.2459,
-        "momentum_12_1": 0.348,
-        "idiosyncratic_momentum": 0.1163,
-        "trend_consistency": 0.6333,
-        "sharpe_60d": 2.2453,
-        "beta_1y": 1.3296,
-        "size_log_mcap": 26.0753,
-        "value_book_to_market": 0.588,
-        "avg_dollar_volume_20d": 1352358472.15,
-        "gross_margin": null,
-        "roe": 0.03,
-        "free_cash_flow_yield": 0.0246,
-        "debt_to_equity": 3.0056,
-        "earnings_surprise_pct": 0.1489,
-        "relative_strength_60d": 0.1622
-      }
-    },
-    "HD": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "HD",
-          "form": "10-Q",
-          "filing_date": "2025-05-28",
-          "fiscal_period": "2025-Q2",
-          "period_type": "quarterly",
-          "operating_state": "Net sales increased 9.4% to $39.9 billion driven by SRS acquisition contributing $2.6 billion and favorable seasonal timing from fiscal calendar shift. Comparable sales declined 0.3% reflecting decreased customer transactions offset by flat average ticket, pressured by macroeconomic uncertainties and high interest rates. Online sales represented 15.5% of total sales, increasing 10.9% including seasonal benefit.",
-          "cost_structure": "Gross margin compressed to 33.8% from 34.1% primarily due to SRS inclusion, partially offset by lower shrink and supply chain productivity improvements. SG&A increased to 18.9% of sales from 18.3% due to absence of prior year legal benefit and higher payroll costs. Depreciation and amortization increased 15.9% driven by SRS intangible asset amortization.",
-          "material_events": "Company opened three new U.S. stores bringing total count to 2,350. Quarterly dividend increased 2.2% to $2.30 per share with $2.3 billion paid to shareholders. Company repaid $1.1 billion of long-term debt and established new $7.0 billion backup credit facilities supporting commercial paper program.",
-          "macro_exposures": "Foreign exchange headwinds negatively impacted net sales by $275 million due to stronger U.S. dollar. Company estimates over 50% of product purchases are domestically sourced with ongoing supply chain diversification efforts. Tariff and trade policy developments have not had meaningful financial impact but remain subject to ongoing policy discussions.",
-          "forward_outlook": "Management expects approximately $4 billion in capital expenditures for fiscal 2025, representing 2.5% of anticipated net sales, focused on customer experience improvements and technology. Share repurchases remain paused through fiscal 2025 following SRS acquisition with $11.7 billion authorization remaining available.",
-          "uncertainty_profile": "Macroeconomic uncertainties and persistently high interest rates continue pressuring home improvement demand with unpredictable impact on comparable sales performance. Trade policy discussions remain ongoing with uncertain ultimate impact despite supply chain diversification efforts. ROIC declined to 31.3% from 37.1% primarily due to SRS acquisition financing.",
-          "word_count": 286
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 230,
-        "mean_sentiment": -0.021142,
-        "sentiment_volatility": 0.620986,
-        "surprise_sentiment": -0.089587,
-        "cross_sectional_z": -0.529345
-      },
-      "asset_features": {
-        "close": 362.23,
-        "ret_20d": 0.0017,
-        "ret_60d": -0.0053,
-        "ret_120d": -0.046,
-        "ret_252d": 0.0985,
-        "vol_20d": 0.1794,
-        "vol_60d": 0.2546,
-        "vol_120d": 0.2472,
-        "downside_vol_60d": 0.1553,
-        "drawdown_60d": -0.0961,
-        "max_drawdown_1y": -0.2179,
-        "sma_20d": 357.23,
-        "sma_50d": 358.01,
-        "sma_200d": 378.1,
-        "momentum_200d": 0.958,
-        "momentum_12_1": 0.0966,
-        "idiosyncratic_momentum": -0.0597,
-        "trend_consistency": 0.4333,
-        "sharpe_60d": -0.0879,
-        "beta_1y": 0.6291,
-        "size_log_mcap": 26.6105,
-        "value_book_to_market": 0.0221,
-        "avg_dollar_volume_20d": 1326104958.56,
-        "gross_margin": 0.3377,
-        "roe": 0.4316,
-        "free_cash_flow_yield": 0.0098,
-        "debt_to_equity": 7.7047,
-        "earnings_surprise_pct": -0.0084,
-        "relative_strength_60d": -0.1062
-      },
-      "fiscal_year_end": "01-31"
-    },
-    "JNJ": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "JNJ",
-          "form": "10-Q",
-          "filing_date": "2025-04-23",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenue increased 2.4% to $21.9 billion driven by 6.3% U.S. growth offsetting 2.9% international decline and 1.8% currency headwinds. Innovative Medicine grew 2.3% to $13.9 billion with oncology advancing 20.4% operationally led by CARVYKTI (135% growth) and DARZALEX (20% growth), while STELARA declined 34% from biosimilar competition. MedTech increased 2.5% to $8.0 billion with cardiovascular up 16.4% including Shockwave acquisition contribution, offsetting 4.2% orthopaedics decline.",
-          "cost_structure": "Gross margin compressed to 66.4% from 69.6% due to unfavorable product mix, currency impacts, and Shockwave inventory step-up charges. Operating expenses improved with selling and administrative costs declining to 23.3% of sales from 24.6% and research and development falling to 14.7% from 16.6%, reflecting operational leverage and prior restructuring benefits partially offset by acquisition integration costs.",
-          "material_events": "Company reversed approximately $7.0 billion in talc reserves following Texas Bankruptcy Court dismissal of Red River case on March 31, 2025. Completed $14.6 billion Intra-Cellular Therapies acquisition in April funded by $9.2 billion senior unsecured notes issuance and \u20ac4 billion euro-denominated debt offering in February. Board increased quarterly dividend to $1.30 per share from $1.24 while executing $2.1 billion in share repurchases.",
-          "macro_exposures": "STELARA biosimilar launches reduced operational sales by 4.7% with continued European and U.S. rollouts expected throughout 2025. Medicare Part D redesign impacted multiple products including ERLEADA, IMBRUVICA, and TREMFYA. China volume-based procurement pressures affected Surgery and Orthopaedics franchises while currency translation created $575 million negative impact in comprehensive income.",
-          "forward_outlook": "Management expects continued oncology momentum with CARVYKTI and DARZALEX driving growth while STELARA biosimilar pressure persists. Intra-Cellular acquisition expands neuroscience capabilities with CAPLYTA integration. Orthopaedics restructuring program targeting $0.7-0.8 billion total costs through fiscal 2025 completion. Strong liquidity position of $38.8 billion supports strategic investments and remaining talc settlement obligations.",
-          "uncertainty_profile": "Talc litigation exposure remains unresolved with approximately 62,850 plaintiffs following bankruptcy dismissal, requiring alternative resolution pathways. Patent challenges continue across XARELTO, INVEGA SUSTENNA, and CAPLYTA through federal courts and USPTO proceedings. DOJ investigations of Vision intraocular lens practices and Janssen REMICADE contracting create ongoing regulatory uncertainty. IRA Medicare Drug Price Negotiation constitutional challenge remains under appeal with uncertain implementation impact.",
-          "word_count": 343
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 242,
-        "mean_sentiment": -0.004064,
-        "sentiment_volatility": 0.685606,
-        "surprise_sentiment": -0.004533,
-        "cross_sectional_z": -0.345786
-      },
-      "asset_features": {
-        "close": 149.88,
-        "ret_20d": -0.0158,
-        "ret_60d": -0.0084,
-        "ret_120d": 0.077,
-        "ret_252d": 0.0743,
-        "vol_20d": 0.1252,
-        "vol_60d": 0.201,
-        "vol_120d": 0.2246,
-        "downside_vol_60d": 0.1547,
-        "drawdown_60d": -0.0842,
-        "max_drawdown_1y": -0.1445,
-        "sma_20d": 150.79,
-        "sma_50d": 150.34,
-        "sma_200d": 150.61,
-        "momentum_200d": 0.9952,
-        "momentum_12_1": 0.0801,
-        "idiosyncratic_momentum": -0.0225,
-        "trend_consistency": 0.5333,
-        "sharpe_60d": -0.1756,
-        "beta_1y": 0.0152,
-        "size_log_mcap": 26.6114,
-        "value_book_to_market": 0.2175,
-        "avg_dollar_volume_20d": 1194782683.42,
-        "gross_margin": 0.6787,
-        "roe": 0.0706,
-        "free_cash_flow_yield": 0.0069,
-        "debt_to_equity": 0.6469,
-        "earnings_surprise_pct": 0.0736,
-        "relative_strength_60d": -0.1093
-      }
     },
     "JPM": {
       "filing_summary": {
@@ -1203,7 +414,7 @@
         "mean_sentiment": 0.071012,
         "sentiment_volatility": 0.61099,
         "surprise_sentiment": -0.03568,
-        "cross_sectional_z": 0.461148
+        "cross_sectional_z": 0.425119
       },
       "asset_features": {
         "close": 285.83,
@@ -1234,7 +445,7 @@
         "free_cash_flow_yield": 0.0376,
         "debt_to_equity": 1.3591,
         "earnings_surprise_pct": 0.0927,
-        "relative_strength_60d": 0.0857
+        "relative_strength_60d": 0.0871
       }
     },
     "LLY": {
@@ -1261,7 +472,7 @@
         "mean_sentiment": -0.064645,
         "sentiment_volatility": 0.631195,
         "surprise_sentiment": -0.095931,
-        "cross_sectional_z": -0.996925
+        "cross_sectional_z": -1.044557
       },
       "asset_features": {
         "close": 775.39,
@@ -1292,7 +503,7 @@
         "free_cash_flow_yield": 0.0018,
         "debt_to_equity": 2.1838,
         "earnings_surprise_pct": -0.0565,
-        "relative_strength_60d": -0.1462
+        "relative_strength_60d": -0.1447
       }
     },
     "META": {
@@ -1319,7 +530,7 @@
         "mean_sentiment": 0.100509,
         "sentiment_volatility": 0.64493,
         "surprise_sentiment": -0.145293,
-        "cross_sectional_z": 0.778189
+        "cross_sectional_z": 0.744682
       },
       "asset_features": {
         "close": 736.99,
@@ -1350,275 +561,8 @@
         "free_cash_flow_yield": 0.0049,
         "debt_to_equity": 0.2541,
         "earnings_surprise_pct": 0.2318,
-        "relative_strength_60d": 0.1641
+        "relative_strength_60d": 0.1656
       }
-    },
-    "MS": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "MS",
-          "form": "10-Q",
-          "filing_date": "2025-05-05",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Morgan Stanley reported net revenues of $17.7 billion in Q1 2025, increasing 17% from the prior year driven by strong performance across all segments. Institutional Securities delivered 28% growth primarily from higher equity trading revenues and gains on corporate loan sales versus prior year mark-to-market losses. Wealth Management grew 6% on higher asset management fees despite lower transactional revenues, while Investment Management increased 16% from higher performance-based income. Trading assets expanded to $400 billion from $332 billion reflecting increased client activity and market positioning.",
-          "cost_structure": "Total non-interest expenses increased 15% to $12.1 billion primarily from higher compensation costs driven by discretionary incentive compensation on increased revenues and $144 million in severance costs from March workforce reductions affecting approximately 2% of global employees. Non-compensation expenses rose reflecting higher execution-related and distribution expenses. The firm's expense efficiency ratio was 68% for the quarter.",
-          "material_events": "The firm executed workforce reductions in March 2025 impacting approximately 2% of global employees across all segments related to performance management and workforce alignment. The company repurchased $1.0 billion in common stock with $17.5 billion remaining under authorization. Raja Akram resigned as Deputy CFO and Chief Accounting Officer effective March 26, 2025, with Victoria Worster appointed as replacement effective May 15, 2025.",
-          "macro_exposures": "Provision for credit losses increased to $135 million from a $6 million benefit in the prior year, reflecting deterioration in macroeconomic outlook incorporated into ACL models with slower economic growth assumptions and higher interest rates. Credit provisions included specific loans related to California wildfires and certain commercial real estate and corporate loans. The firm maintains exposure to variable interest entities with maximum loss exposure of $204.2 billion in unpaid principal balance.",
-          "forward_outlook": "Management maintains a 20% return on tangible common equity goal based on normal market conditions. The base scenario used in ACL models assumes slower economic growth with forecasted U.S. real GDP growth rates of 1.5% for 4Q 2025 and 1.9% for 4Q 2026. Wealth Management added $94 billion in net new assets with fee-based asset flows indicating continued client acquisition momentum.",
-          "uncertainty_profile": "The Federal Reserve is expected to publish CCAR and supervisory stress test results by June 30, 2025, with the firm required to disclose company-run stress test results within 15 days thereafter. Significant uncertainty remains regarding global trade policy evolution and impacts on borrowers and counterparties. Level 3 fair value assets increased to $7.8 billion with expanded exposure to illiquid positions, while credit risk-related contingent features in derivative contracts totaled $19.9 billion with potential additional collateral requirements under downgrade scenarios.",
-          "word_count": 413
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 222,
-        "mean_sentiment": 0.022108,
-        "sentiment_volatility": 0.609291,
-        "surprise_sentiment": -0.079413,
-        "cross_sectional_z": -0.064484
-      },
-      "asset_features": {
-        "close": 139.04,
-        "ret_20d": 0.1002,
-        "ret_60d": 0.1905,
-        "ret_120d": 0.1349,
-        "ret_252d": 0.5003,
-        "vol_20d": 0.1455,
-        "vol_60d": 0.4246,
-        "vol_120d": 0.3902,
-        "downside_vol_60d": 0.4122,
-        "drawdown_60d": -0.163,
-        "max_drawdown_1y": -0.2924,
-        "sma_20d": 131.27,
-        "sma_50d": 124.57,
-        "sma_200d": 120.34,
-        "momentum_200d": 1.1554,
-        "momentum_12_1": 0.365,
-        "idiosyncratic_momentum": 0.0597,
-        "trend_consistency": 0.6333,
-        "sharpe_60d": 1.7249,
-        "beta_1y": 1.3126,
-        "size_log_mcap": 26.127,
-        "value_book_to_market": 0.4868,
-        "avg_dollar_volume_20d": 719643747.83,
-        "gross_margin": null,
-        "roe": 0.0327,
-        "free_cash_flow_yield": 0.0498,
-        "debt_to_equity": 3.2568,
-        "earnings_surprise_pct": 0.1872,
-        "relative_strength_60d": 0.0896
-      }
-    },
-    "MSFT": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "MSFT",
-          "form": "10-Q",
-          "filing_date": "2024-10-30",
-          "fiscal_period": "2024-Q4",
-          "period_type": "quarterly",
-          "operating_state": "Microsoft Cloud revenue increased 21% to $40.9 billion in Q2 FY2025, driven by Azure growth of 31% and Microsoft 365 Commercial cloud growth of 16%. Server products and cloud services revenue rose 21% while Dynamics 365 revenue expanded 19%, reflecting broad-based enterprise cloud adoption. Search and news advertising revenue increased 21% excluding traffic acquisition costs, and LinkedIn revenue grew 9%.",
-          "cost_structure": "Operating expenses increased primarily due to datacenter operations expansion supporting cloud services growth and employee compensation costs. The company continues investing heavily in AI infrastructure and cloud capacity to support accelerating demand across Azure and Microsoft 365 services. Cost structure reflects ongoing shift toward cloud-first operations with emphasis on datacenter scaling.",
-          "material_events": "The company completed its annual shareholder meeting in December 2024, re-electing all 12 board directors and approving executive compensation on an advisory basis. Microsoft announced an expected $800 million impairment charge in Q2 FY2025 related to its minority investment in Cruise following GM's decision to realign autonomous driving strategy and cease robotaxi development funding.",
-          "macro_exposures": "No material new macro risk exposures were disclosed this period beyond standard forward-looking statement risks related to business operations and market conditions. The company maintains exposure to global economic conditions affecting enterprise IT spending and consumer demand patterns.",
-          "forward_outlook": "Management provided Q2 FY2025 guidance on October 30, 2024, which excluded the subsequently announced Cruise impairment charge estimated to reduce diluted earnings per share by approximately $0.09. The company continues strategic focus on AI integration across cloud services and productivity solutions to drive future growth.",
-          "uncertainty_profile": "Primary uncertainties include standard business risks related to competitive dynamics, regulatory changes, and market conditions as outlined in forward-looking statements. The Cruise investment impairment represents resolution of one investment uncertainty, while broader technology sector regulatory developments remain ongoing considerations.",
-          "word_count": 287
-        },
-        "event_filings": [
-          {
-            "ticker": "MSFT",
-            "form": "8-K",
-            "filing_date": "2025-04-30",
-            "fiscal_period": "2025-Q2",
-            "period_type": "quarterly",
-            "operating_state": "Microsoft reported total revenue of $61.9 billion for Q2 FY2025, representing 17% year-over-year growth driven primarily by cloud services expansion and productivity software adoption. Azure and other cloud services revenue increased 31% with particular strength in AI workloads and enterprise migrations. Productivity and Business Processes segment delivered broad-based growth across Microsoft 365 commercial and consumer offerings, while More Personal Computing showed stabilization in Windows licensing and continued Xbox content services momentum.",
-            "cost_structure": "Gross margin expanded to 69.8% driven by favorable product mix shift toward higher-margin cloud services and productivity software, partially offset by increased datacenter capacity investments. Operating expenses increased primarily due to strategic investments in AI infrastructure, cloud capacity expansion, and talent acquisition in key growth areas. The company maintained disciplined cost management while scaling operations to support accelerating cloud demand.",
-            "material_events": "Microsoft completed $8.4 billion in share repurchases during the quarter and declared a quarterly dividend of $0.83 per share. The company announced the general availability of Copilot for Microsoft 365 across enterprise customers and launched new AI-powered features in Azure OpenAI Service. Leadership appointed new divisional heads for AI platform development and cloud infrastructure operations.",
-            "macro_exposures": "No material new macro exposures were disclosed this period beyond standard foreign exchange sensitivity and geopolitical risks previously identified.",
-            "forward_outlook": "Management raised full-year revenue guidance to $245-248 billion based on accelerating cloud adoption and AI service integration across the product portfolio. The company committed to continued datacenter capacity expansion with $15 billion in planned infrastructure investments over the next 18 months. Strategic focus remains on AI platform development and enterprise cloud migration acceleration.",
-            "uncertainty_profile": "Pending regulatory reviews in multiple jurisdictions regarding AI partnerships and cloud market competition practices remain unresolved. The company faces ongoing compliance requirements related to new data privacy regulations and potential changes to international tax frameworks affecting cloud service delivery models.",
-            "word_count": 298
-          }
-        ]
-      },
-      "earnings_call": {
-        "summary": "Microsoft reported Q2 FY25 revenue of $69.6 billion, up 12% year-over-year, with strong performance driven by cloud and AI offerings. Microsoft Cloud revenue surpassed $40 billion for the first time, growing 21%, while the AI business reached a $13 billion annual revenue run rate, up 175%. Azure grew 31% with 13 points from AI services, though non-AI services faced execution challenges in scale motions. Commercial bookings increased 67% driven significantly by OpenAI's Azure commitments, and Microsoft 365 Copilot showed accelerated adoption with usage intensity up 60% quarter-over-quarter.",
-        "management_outlook": "Management expects continued strong demand for cloud and AI offerings in Q3, with Microsoft Cloud revenue growth driven by Azure's 31-32% expected growth in constant currency. They anticipate being AI capacity constrained through Q3 but expect to be roughly in line with near-term demand by end of FY25 due to significant capital investments. For FY26, capital expenditure growth rates will be lower than FY25 with spending mix shifting toward short-lived assets more correlated to revenue growth. The company maintains confidence in double-digit revenue and operating income growth for the full fiscal year.",
-        "risks": "Microsoft faces ongoing AI capacity constraints limiting near-term revenue potential, with demand continuing to exceed available capacity through Q3. The company is experiencing execution challenges in non-AI Azure services, particularly in scale motions reaching customers through partners, which may impact growth through the second half of the fiscal year. Foreign exchange headwinds are expected to decrease total revenue growth by two points in Q3, representing roughly $1 billion impact compared to October guidance assumptions.",
-        "key_drivers": "AI services growth of 157% year-over-year is the primary revenue driver, supported by expanding data center capacity and infrastructure investments totaling $22.6 billion in capital expenditures. Microsoft 365 Copilot adoption is accelerating across enterprise customers with expanding seat counts and usage intensity, while the broader Microsoft 365 Commercial suite continues showing strength in E5 migrations. The OpenAI partnership remains strategic with new large Azure commitments providing significant bookings growth, and the company's fungible cloud infrastructure investments position it to serve growing customer contracted backlog of nearly $300 billion in remaining performance obligations.",
-        "chunk_count": 22,
-        "mean_sentiment": 0.195874,
-        "sentiment_volatility": 0.613958,
-        "transcript_char_count": 52937
-      },
-      "news_sentiment": {
-        "article_count": 236,
-        "mean_sentiment": -0.049347,
-        "sentiment_volatility": 0.639598,
-        "surprise_sentiment": -0.276369,
-        "cross_sectional_z": -0.832499
-      },
-      "asset_features": {
-        "close": 494.54,
-        "ret_20d": 0.0805,
-        "ret_60d": 0.304,
-        "ret_120d": 0.1795,
-        "ret_252d": 0.1085,
-        "vol_20d": 0.1023,
-        "vol_60d": 0.3214,
-        "vol_120d": 0.295,
-        "downside_vol_60d": 0.1739,
-        "drawdown_60d": -0.0803,
-        "max_drawdown_1y": -0.2373,
-        "sma_20d": 475.79,
-        "sma_50d": 445.32,
-        "sma_200d": 419.66,
-        "momentum_200d": 1.1784,
-        "momentum_12_1": 0.0222,
-        "idiosyncratic_momentum": 0.1875,
-        "trend_consistency": 0.6333,
-        "sharpe_60d": 3.4688,
-        "beta_1y": 0.934,
-        "size_log_mcap": 28.933,
-        "value_book_to_market": 0.0934,
-        "avg_dollar_volume_20d": 9584227398.21,
-        "gross_margin": 0.6858,
-        "roe": 0.0793,
-        "free_cash_flow_yield": 0.007,
-        "debt_to_equity": 0.1764,
-        "earnings_surprise_pct": 0.0745,
-        "relative_strength_60d": 0.2031
-      },
-      "fiscal_year_end": "06-30"
-    },
-    "NFLX": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "NFLX",
-          "form": "10-Q",
-          "filing_date": "2025-04-18",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Netflix generated $10.5 billion in revenue for Q1 2025, representing 13% growth year-over-year driven by broad-based global membership expansion and pricing optimization across all regions with particularly strong performance in APAC and EMEA markets. Operating income reached $3.3 billion with operating margin expanding 360 basis points to 31.7% as revenue growth significantly outpaced expense increases, demonstrating substantial operating leverage.",
-          "cost_structure": "Gross margin improved 300 basis points to 50% despite content amortization increases reflecting expanded content slate investments. Operating expenses grew modestly with technology and development rising primarily from additional personnel costs, sales and marketing increasing driven by advertising sales headcount expansion, and general administrative expenses up from higher third-party costs. The company maintained disciplined expense growth while achieving significant operating leverage.",
-          "material_events": "Netflix repurchased $3.5 billion of common stock during the quarter, retiring 3.7 million shares under its expanded $25 billion authorization program with $13.6 billion remaining available. The company repaid $800 million of maturing Senior Notes in February 2025. Netflix discontinued quarterly reporting of membership metrics, focusing instead on revenue and operating margin as primary performance indicators.",
-          "macro_exposures": "Foreign currency headwinds reduced revenue growth by approximately 300 basis points despite currencies other than USD representing 55% of revenue and 29% of operating expenses. The company experienced foreign exchange losses primarily from euro-denominated debt remeasurement across $15.1 billion of fixed-rate debt. Brazilian tax authorities continue assessments with potential exposure estimated at $500 million, while the company faces approximately $900 million in tax deposit requirements exceeding typical annual obligations.",
-          "forward_outlook": "Management expects continued significant investment in global content requiring upfront cash payments well in advance of amortization, with content obligations totaling $21.8 billion. The company anticipates potential additional debt capital raises for refinancing upcoming maturities. Capital allocation remains focused on content investment, share repurchases, and maintaining financial flexibility through the $3 billion revolving credit facility.",
-          "uncertainty_profile": "Content obligation estimates for unknown future titles carry considerable management judgment with actual amounts potentially differing materially from projections. Ongoing litigation includes various employment and business practice claims with outcomes difficult to predict. Pending accounting standard changes require evaluation for implementation impact.",
-          "word_count": 342
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 225,
-        "mean_sentiment": 0.031854,
-        "sentiment_volatility": 0.685794,
-        "surprise_sentiment": -0.172822,
-        "cross_sectional_z": 0.040269
-      },
-      "asset_features": {
-        "close": 133.91,
-        "ret_20d": 0.1093,
-        "ret_60d": 0.4314,
-        "ret_120d": 0.5199,
-        "ret_252d": 0.976,
-        "vol_20d": 0.1821,
-        "vol_60d": 0.3356,
-        "vol_120d": 0.3697,
-        "downside_vol_60d": 0.2434,
-        "drawdown_60d": -0.0852,
-        "max_drawdown_1y": -0.1915,
-        "sma_20d": 124.6,
-        "sma_50d": 118.14,
-        "sma_200d": 94.84,
-        "momentum_200d": 1.412,
-        "momentum_12_1": 0.7484,
-        "idiosyncratic_momentum": 0.293,
-        "trend_consistency": 0.65,
-        "sharpe_60d": 4.4889,
-        "beta_1y": 0.9242,
-        "size_log_mcap": 27.0672,
-        "value_book_to_market": 0.0438,
-        "avg_dollar_volume_20d": 3433371729.81,
-        "gross_margin": 0.5193,
-        "roe": 0.1253,
-        "free_cash_flow_yield": 0.004,
-        "debt_to_equity": 0.5792,
-        "earnings_surprise_pct": 0.1579,
-        "relative_strength_60d": 0.3305
-      }
-    },
-    "NKE": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "NKE",
-          "form": "10-Q",
-          "filing_date": "2025-04-03",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "NIKE revenues declined 9% to $11.3 billion in Q3 2025, driven by decreased traffic across NIKE Direct channels and deliberate supply reduction of certain footwear products through increased markdowns. NIKE Brand revenues fell 9% with footwear declining 12% and apparel down 3%, while wholesale revenues decreased 7% and NIKE Direct revenues dropped 12%. Performance weakened globally with double-digit declines across Greater China, EMEA, and APLA regions, while North America declined modestly. Operating cash flow deteriorated with $648 million outflow for the first nine months.",
-          "cost_structure": "Gross margin contracted 330 basis points to 41.5% primarily due to lower average selling prices from higher discounts, elevated inventory obsolescence reserves, and higher product costs. Operating overhead expense decreased 13% due to prior year restructuring charges and lower wage-related expenses, while demand creation expense increased 8% reflecting investment in brand marketing. Total selling and administrative expense decreased 8% but increased as percentage of revenues to 34.5%.",
-          "material_events": "The company returned approximately $1.1 billion to shareholders through dividends and share repurchases during the third quarter, with total share repurchases of $2.8 billion at an average price of $80.02 per share. Management implemented strategic actions to reduce supply of certain footwear products while repositioning NIKE Brand Digital as a full-price platform and reinvesting in wholesale distribution. Nike entered into new credit facilities totaling $3 billion and repaid $1 billion in maturing notes.",
-          "macro_exposures": "The company faces uncertainty from geopolitical dynamics, new tariffs, tax regulation changes, and fluctuating foreign exchange rates that could materially impact consumer behavior and profitability. Foreign currency translation negatively affected revenues by approximately $310 million and income before taxes by $67 million for the quarter.",
-          "forward_outlook": "Management expects the strategic actions to reduce supply and rebalance product portfolio will continue negatively impacting revenues and gross margin over the next several quarters, along with higher demand creation expenses. The company believes these actions will reignite brand momentum and reposition the business for long-term shareholder value creation.",
-          "uncertainty_profile": "Inventory management remains challenging as the company balances supply reduction with new product introductions while managing elevated obsolescence reserves. The effectiveness and timeline of strategic repositioning efforts to restore brand momentum represents execution risk for future performance recovery. Endorsement contract obligations increased to $15.1 billion with $1.4 billion payable within 12 months.",
-          "word_count": 370
-        },
-        "event_filings": []
-      },
-      "earnings_call": {
-        "summary": "Nike reported Q2 FY25 revenue down 8% (9% currency-neutral) to meet expectations amid ongoing franchise management headwinds. New CEO Elliott Hill outlined strategic repositioning focused on returning sport to the center of Nike's identity through sport-led 'fields of play' teams, reducing reliance on classic footwear franchises, and rebuilding wholesale partnerships. The company is accelerating inventory liquidation and shifting Nike Direct from promotional to premium full-price positioning, which will pressure near-term results but aims to restore marketplace health.",
-        "management_outlook": "Management expects continued revenue declines through fiscal 2025 as they execute strategic reset actions. Q3 revenue guidance is down low double-digits with gross margins declining 300-350 basis points due to inventory liquidation and marketplace repositioning. Q4 headwinds are expected to be greater than Q3 across revenue, margins, and expenses. The company is investing in demand creation, sports marketing partnerships (NFL, NBA, WNBA), and key city/country teams while reducing performance marketing spend in favor of brand marketing.",
-        "risks": "Near-term financial performance will be pressured by inventory liquidation, wholesale discounts, higher factory store promotions, and reduced promotional activity on Nike Direct causing traffic declines. Greater China faces challenging macro conditions and competitive pressures requiring higher markdown activity. The transition from push to pull marketplace model creates execution risk, and rebuilding wholesale relationships requires earning back shelf space and open-to-buy dollars from partners.",
-        "key_drivers": "Success depends on sport-focused product innovation through new 'fields of play' organizational structure covering running, basketball, training, football, and sportswear. Key growth drivers include reducing classic footwear franchise concentration, launching new seasonal products for fall/holiday 2025, and rebuilding authentic brand marketing around sports moments. Marketplace health restoration through premium Nike Direct positioning and strengthened wholesale partnerships is critical for sustainable growth recovery.",
-        "chunk_count": 23,
-        "mean_sentiment": 0.434166,
-        "sentiment_volatility": 0.370934,
-        "transcript_char_count": 54805
-      },
-      "news_sentiment": {
-        "article_count": 229,
-        "mean_sentiment": -0.016426,
-        "sentiment_volatility": 0.640545,
-        "surprise_sentiment": -0.223613,
-        "cross_sectional_z": -0.478656
-      },
-      "asset_features": {
-        "close": 69.76,
-        "ret_20d": 0.1803,
-        "ret_60d": 0.1009,
-        "ret_120d": -0.0196,
-        "ret_252d": -0.2285,
-        "vol_20d": 0.5764,
-        "vol_60d": 0.6224,
-        "vol_120d": 0.498,
-        "downside_vol_60d": 0.4825,
-        "drawdown_60d": -0.18,
-        "max_drawdown_1y": -0.4261,
-        "sma_20d": 61.58,
-        "sma_50d": 59.44,
-        "sma_200d": 69.65,
-        "momentum_200d": 1.0017,
-        "momentum_12_1": -0.3372,
-        "idiosyncratic_momentum": -0.0191,
-        "trend_consistency": 0.5,
-        "sharpe_60d": 0.6484,
-        "beta_1y": 0.9748,
-        "size_log_mcap": 25.3577,
-        "value_book_to_market": 0.1283,
-        "avg_dollar_volume_20d": 1326034751.9,
-        "gross_margin": 0.4027,
-        "roe": 0.016,
-        "free_cash_flow_yield": 0.0035,
-        "debt_to_equity": 0.8339,
-        "earnings_surprise_pct": 0.1667,
-        "relative_strength_60d": 0.0
-      },
-      "fiscal_year_end": "05-31"
     },
     "NVDA": {
       "filing_summary": {
@@ -1653,7 +597,7 @@
         "mean_sentiment": -0.096042,
         "sentiment_volatility": 0.640059,
         "surprise_sentiment": -0.272992,
-        "cross_sectional_z": -1.334388
+        "cross_sectional_z": -1.384705
       },
       "asset_features": {
         "close": 157.97,
@@ -1684,251 +628,9 @@
         "free_cash_flow_yield": 0.0068,
         "debt_to_equity": 0.1227,
         "earnings_surprise_pct": 0.08,
-        "relative_strength_60d": 0.33
+        "relative_strength_60d": 0.3315
       },
       "fiscal_year_end": "01-31"
-    },
-    "OXY": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "OXY",
-          "form": "10-Q",
-          "filing_date": "2025-05-07",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenue remained flat at $6.8 billion as higher commodity prices offset lower sales volumes. Oil and gas segment earnings increased to $1.7 billion from $1.2 billion driven by higher domestic prices. Average daily sales volumes decreased to 1,391 Mboe from 1,463 Mboe due to ethane rejection and weather-related Permian delays, though year-over-year volumes increased 18% from the CrownRock Acquisition.",
-          "cost_structure": "Depreciation, depletion and amortization increased to $1.9 billion from $1.7 billion primarily from increased Permian Basin sales volumes following the CrownRock Acquisition. Chemical segment earnings declined due to lower caustic soda and polyvinyl chloride prices combined with higher ethylene and natural gas costs. Operating cash flow from continuing operations increased to $2.1 billion from $2.0 billion despite higher working capital usage from timing of federal tax payments.",
-          "material_events": "Occidental redeemed senior notes and repaid term loan debt totaling $515 million during Q1 2025. The company completed $1.3 billion in divestitures of non-core oil and gas assets. In March 2025, Occidental offered to exercise outstanding warrants at $21.30 per share, subsequently issuing 41.9 million shares in April 2025 for proceeds of approximately $890 million used to repay near-term debt maturities.",
-          "macro_exposures": "President Trump announced sweeping tariff policy in April 2025 imposing 10% baseline tariff on most imports with higher reciprocal rates for certain nations, though significant rates are paused for 90 days during trade negotiations. Occidental cannot assess final impact but notes tariffs may increase supplier costs and affect OxyChem's import-export operations. Oil price volatility continues from geopolitical risks and OPEC actions.",
-          "forward_outlook": "Occidental maintains strategic priorities to preserve asset base integrity, deliver sustainable growing dividends, and prioritize excess cash flow for deleveraging until principal debt falls below $15 billion. Capital expenditures were $1.9 billion in Q1 2025 compared to $1.8 billion in Q1 2024. The company expects cash on hand, operating cash flows, and available credit facilities to meet obligations over the next 12 months.",
-          "uncertainty_profile": "Principal debt outstanding totaled $22.1 billion after recent repayments, with no maturities in 2025 and $2.9 billion in 2026. Zero Coupon bonds can be put to Occidental in October 2025 for approximately $381 million if exercised in whole. Environmental compliance costs are expected to rise with ongoing remedial activities under federal laws that may apply retroactively regardless of fault.",
-          "word_count": 371
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 215,
-        "mean_sentiment": 0.119534,
-        "sentiment_volatility": 0.67016,
-        "surprise_sentiment": -0.126891,
-        "cross_sectional_z": 0.982674
-      },
-      "asset_features": {
-        "close": 41.55,
-        "ret_20d": 0.0359,
-        "ret_60d": -0.1436,
-        "ret_120d": -0.1594,
-        "ret_252d": -0.3187,
-        "vol_20d": 0.3356,
-        "vol_60d": 0.5496,
-        "vol_120d": 0.4349,
-        "downside_vol_60d": 0.4607,
-        "drawdown_60d": -0.268,
-        "max_drawdown_1y": -0.4255,
-        "sma_20d": 43.07,
-        "sma_50d": 41.47,
-        "sma_200d": 46.37,
-        "momentum_200d": 0.8959,
-        "momentum_12_1": -0.3314,
-        "idiosyncratic_momentum": -0.2709,
-        "trend_consistency": 0.4667,
-        "sharpe_60d": -1.1849,
-        "beta_1y": 0.9147,
-        "size_log_mcap": 24.4343,
-        "value_book_to_market": 0.8734,
-        "avg_dollar_volume_20d": 622395660.97,
-        "gross_margin": 0.3254,
-        "roe": 0.0128,
-        "free_cash_flow_yield": 0.0235,
-        "debt_to_equity": 0.6767,
-        "earnings_surprise_pct": 0.1447,
-        "relative_strength_60d": -0.2445
-      }
-    },
-    "PFE": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "PFE",
-          "form": "10-Q",
-          "filing_date": "2025-05-05",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "No specific Q1 2025 revenue or operating performance data was provided in the filing text. The 8-K filing references Q4 2024 results announcement but does not contain the actual financial metrics or segment performance details for the current quarter.",
-          "cost_structure": "No Q1 2025 cost structure information including gross margins, operating expenses, or cost dynamics was disclosed in the provided filing excerpts. The material focuses on risk factors and regulatory filing procedures rather than financial performance metrics.",
-          "material_events": "Pfizer issued Q4 2024 financial results via press release on February 4, 2025, though the actual results are not included in this filing. The company continues its voluntary withdrawal of all Oxbryta lots across all approved markets following earlier regulatory concerns.",
-          "macro_exposures": "Pfizer faces heightened exposure to tariff risks and trade restrictions under potential new U.S. administration policies, with uncertainty around effective dates, duration, and scope of trade measures. The company remains exposed to geopolitical conflicts including Russia-Ukraine and Middle East tensions affecting global operations and supply chains.",
-          "forward_outlook": "No specific forward guidance or strategic direction was provided in the available filing text. Management outlook and capital allocation plans were not disclosed in the risk factor sections and regulatory filing excerpts provided.",
-          "uncertainty_profile": "The company faces ongoing regulatory evaluation of its product portfolio for nitrosamine contamination risks requiring continued assessment and potential remediation. Patent application outcomes remain uncertain with potential challenges to intellectual property validity and enforcement, particularly for COVID-19 products facing third-party royalty claims.",
-          "word_count": 237
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 223,
-        "mean_sentiment": 0.083927,
-        "sentiment_volatility": 0.66588,
-        "surprise_sentiment": -0.072227,
-        "cross_sectional_z": 0.599962
-      },
-      "asset_features": {
-        "close": 23.03,
-        "ret_20d": 0.0319,
-        "ret_60d": 0.0001,
-        "ret_120d": -0.0556,
-        "ret_252d": -0.0569,
-        "vol_20d": 0.1628,
-        "vol_60d": 0.2991,
-        "vol_120d": 0.2542,
-        "downside_vol_60d": 0.2303,
-        "drawdown_60d": -0.1259,
-        "max_drawdown_1y": -0.29,
-        "sma_20d": 22.82,
-        "sma_50d": 22.15,
-        "sma_200d": 23.87,
-        "momentum_200d": 0.9649,
-        "momentum_12_1": -0.0876,
-        "idiosyncratic_momentum": -0.0549,
-        "trend_consistency": 0.5333,
-        "sharpe_60d": 0.0014,
-        "beta_1y": 0.419,
-        "size_log_mcap": 25.598,
-        "value_book_to_market": 0.6774,
-        "avg_dollar_volume_20d": 857485697.89,
-        "gross_margin": 0.7422,
-        "roe": 0.0328,
-        "free_cash_flow_yield": -0.0092,
-        "debt_to_equity": 0.6869,
-        "earnings_surprise_pct": 0.3731,
-        "relative_strength_60d": -0.1008
-      }
-    },
-    "PG": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "PG",
-          "form": "10-Q",
-          "filing_date": "2025-04-24",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Net sales declined 2% to $19.8 billion with organic sales increasing 1% despite unit volume decline offset by higher pricing. Beauty segment declined driven by competitive pressures in hair care and skin care, Health Care grew supported by personal health care expansion, while Fabric & Home Care decreased reflecting volume pressures in developed markets. Foreign exchange provided unfavorable 2% impact on reported sales.",
-          "cost_structure": "Gross margin improved to 51.0% from 48.8% prior year as manufacturing productivity savings of 160 basis points offset unfavorable product mix and higher commodity costs. Operating expenses declined as percentage of sales reflecting reduced marketing spending and overhead cost management. Operating income increased 2% despite lower sales volumes driven by operational efficiency programs.",
-          "material_events": "Company completed substantial liquidation of Argentina operations recording $791 million in other non-operating charges primarily from accumulated foreign currency translation losses. Executed $1.35 billion in share repurchases during Q1 with $7.3 billion returned to shareholders through dividends and repurchases during nine months. Ongoing restructuring program incurred charges across separation costs, asset write-downs, and operational restructuring.",
-          "macro_exposures": "Foreign currency translation provided $623 million positive impact to comprehensive income as dollar weakened against major currencies, with negative quarterly earnings impact from transaction exposures. Company maintains exposure to approximately 70 countries with ongoing tax audits across multiple jurisdictions. Commodity price volatility in oil-derived and paper-based materials directly affects costs, while geopolitical tensions create ongoing uncertainty.",
-          "forward_outlook": "Management reaffirmed expectations to repurchase $6-7 billion in shares during fiscal 2025 financed through operating cash flows and debt issuance. Company continues focus on productivity improvements and cost savings while investing in innovation through ongoing manufacturing and workforce optimization. Capital allocation strategy maintains commitment to dividend payments with quarterly dividend declared.",
-          "uncertainty_profile": "Gillette indefinite-lived intangible asset carrying value of $12.8 billion remains sensitive to discount rate and growth rate assumptions with fair value exceeding carrying value by greater than 10%. Uncertain tax positions across multiple jurisdictions could result in audit settlements over next 12 months, with pending international digital economy taxation developments creating additional policy uncertainty. Government controls on currency exchanges, pricing authorizations, and environmental regulations may affect financial performance.",
-          "word_count": 346
-        },
-        "event_filings": []
-      },
-      "earnings_call": {
-        "summary": "P&G delivered Q2 results largely in-line with expectations despite volatility, with 3% organic sales growth driven by 2 points of volume and 1 point of mix. Nine of 10 product categories grew organic sales, with Family Care up double-digits and strong performance in North America (4% growth) and Europe (4% growth). Core EPS grew 2% to $1.88, with the quarter including $0.02 per share of costs from transportation system disruption. The company returned $4.9 billion to shareholders through dividends and share repurchases.",
-        "management_outlook": "Management maintains full-year guidance ranges of 3-5% organic sales growth and 5-7% core EPS growth, though expects to trend toward the lower end due to FX headwinds and softer market conditions. They anticipate stronger second-half performance with continued innovation rollouts across major brands including Tide, Crest, and others. China showed improvement with only -3% decline versus -15% last quarter, and management expects continued recovery though remains cautious about volatility.",
-        "risks": "Foreign exchange headwinds have increased to $300 million after-tax impact ($0.12 per share) for fiscal 2025, significantly higher than previous expectations. Commodity costs remain a $200 million headwind, and consumer environments remain challenging particularly in China and Middle East markets. Geopolitical tensions, supply chain disruptions, and currency volatility continue to present ongoing risks to performance.",
-        "key_drivers": "Strong innovation pipeline across categories is driving market share gains and premium mix, with successful launches like Charmin Smooth Tear, Dawn Powerwash, and whole body deodorant products. Volume growth of 2 points and positive mix of 1 point demonstrate healthy underlying demand, while productivity improvements of 260 basis points help offset cost pressures. North America's consistent 4% growth and Europe's recovery momentum provide stable foundation for continued performance.",
-        "chunk_count": 25,
-        "mean_sentiment": 0.036447,
-        "sentiment_volatility": 0.504403,
-        "transcript_char_count": 61856
-      },
-      "news_sentiment": {
-        "article_count": 223,
-        "mean_sentiment": 0.149325,
-        "sentiment_volatility": 0.565929,
-        "surprise_sentiment": -0.003256,
-        "cross_sectional_z": 1.302875
-      },
-      "asset_features": {
-        "close": 156.03,
-        "ret_20d": -0.0622,
-        "ret_60d": -0.0542,
-        "ret_120d": -0.0233,
-        "ret_252d": -0.0253,
-        "vol_20d": 0.1413,
-        "vol_60d": 0.2255,
-        "vol_120d": 0.2182,
-        "downside_vol_60d": 0.1756,
-        "drawdown_60d": -0.0812,
-        "max_drawdown_1y": -0.1176,
-        "sma_20d": 158.32,
-        "sma_50d": 159.19,
-        "sma_200d": 162.69,
-        "momentum_200d": 0.9591,
-        "momentum_12_1": 0.0312,
-        "idiosyncratic_momentum": -0.082,
-        "trend_consistency": 0.5,
-        "sharpe_60d": -1.0381,
-        "beta_1y": 0.1377,
-        "size_log_mcap": 26.6243,
-        "value_book_to_market": 0.1423,
-        "avg_dollar_volume_20d": 1287229508.81,
-        "gross_margin": 0.4911,
-        "roe": 0.0695,
-        "free_cash_flow_yield": 0.0109,
-        "debt_to_equity": 0.6818,
-        "earnings_surprise_pct": 0.0065,
-        "relative_strength_60d": -0.1551
-      },
-      "fiscal_year_end": "06-30"
-    },
-    "PLD": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "PLD",
-          "form": "10-Q",
-          "filing_date": "2025-04-29",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenues increased to $2.1 billion driven by rental revenue growth reflecting strong rent change of 53.7% on lease rollovers and same-store NOI growth of 5.9%. Net earnings attributable to common stockholders reached $592 million versus $584 million prior year, with consolidated occupancy declining to 94.8% from 95.4%. Strategic capital revenues grew driven by higher recurring fees and increased operating distributions from unconsolidated entities.",
-          "cost_structure": "Real Estate Segment NOI expanded as rental expense increases were outpaced by revenue growth while Strategic Capital Segment NOI improved as expenses declined. Interest payments net of capitalized amounts increased to $269 million from $211 million reflecting higher borrowing costs, with G&A expenses increasing modestly and depreciation rising to $652 million.",
-          "material_events": "Issued C$750 million of 8-year senior notes at 4.2% weighted average rate in February generating net proceeds for general corporate purposes and debt repayment. CEO Hamid Moghadam announced retirement effective January 1, 2026, with President Daniel Letter appointed as successor CEO and added to the Board. Completed 14 development stabilizations with build-to-suit composition and generated net proceeds from property dispositions. Common stock quarterly dividend increased to $1.01 from $0.96 per share.",
-          "macro_exposures": "Customer decision-making anticipated to slow due to heightened economic uncertainty from tariff policy changes since early April, with supply chain disruption potentially creating repositioning opportunities. Foreign currency exchange impacts generated $55 million in unrealized losses versus $35 million in gains prior year across British pound, Canadian dollar, euro and Japanese yen investments. Interest rate sensitivity persists through variable-rate exposures and refinancing requirements.",
-          "forward_outlook": "Maintaining disciplined capital deployment focused on build-to-suit development for logistics and data centers with development pipeline requiring remaining investment. Land bank and redevelopment sites support potential future development capacity. Lease mark-to-market of approximately 25% provides organic NOI growth runway despite market rent headwinds, with leadership transition to Letter as CEO signaling strategic continuity.",
-          "uncertainty_profile": "Tariff policy volatility creates unpredictable impacts on business operations and customer behavior patterns with development portfolio completion timeline extending through July 2027. Debt maturities require refinancing execution in 2025 and 2026 while unconsolidated co-investment ventures carry third-party debt requiring future refinancing coordination amid foreign currency translation volatility.",
-          "word_count": 348
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 192,
-        "mean_sentiment": 0.109368,
-        "sentiment_volatility": 0.64557,
-        "surprise_sentiment": -0.119978,
-        "cross_sectional_z": 0.873408
-      },
-      "asset_features": {
-        "close": 103.39,
-        "ret_20d": -0.0228,
-        "ret_60d": -0.0553,
-        "ret_120d": 0.0136,
-        "ret_252d": -0.0145,
-        "vol_20d": 0.158,
-        "vol_60d": 0.3896,
-        "vol_120d": 0.3371,
-        "downside_vol_60d": 0.3438,
-        "drawdown_60d": -0.201,
-        "max_drawdown_1y": -0.3049,
-        "sma_20d": 104.84,
-        "sma_50d": 103.61,
-        "sma_200d": 109.07,
-        "momentum_200d": 0.9479,
-        "momentum_12_1": 0.0143,
-        "idiosyncratic_momentum": -0.1475,
-        "trend_consistency": 0.5333,
-        "sharpe_60d": -0.6137,
-        "beta_1y": 0.8563,
-        "size_log_mcap": 25.287,
-        "value_book_to_market": 0.5496,
-        "avg_dollar_volume_20d": 412728466.81,
-        "gross_margin": 0.7468,
-        "roe": 0.0108,
-        "free_cash_flow_yield": 0.0129,
-        "debt_to_equity": 0.6575,
-        "earnings_surprise_pct": 0.0,
-        "relative_strength_60d": -0.1562
-      }
     },
     "RTX": {
       "filing_summary": {
@@ -1954,7 +656,7 @@
         "mean_sentiment": -0.116008,
         "sentiment_volatility": 0.655826,
         "surprise_sentiment": -0.175557,
-        "cross_sectional_z": -1.548987
+        "cross_sectional_z": -1.601012
       },
       "asset_features": {
         "close": 144.33,
@@ -1985,65 +687,7 @@
         "free_cash_flow_yield": -0.001,
         "debt_to_equity": 0.6987,
         "earnings_surprise_pct": 0.073,
-        "relative_strength_60d": 0.0013
-      }
-    },
-    "TSLA": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "TSLA",
-          "form": "10-Q",
-          "filing_date": "2025-04-23",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "Total revenue declined 9% to $19.34 billion driven by automotive sales decreasing 21% from lower Model 3/Y deliveries due to simultaneous factory changeovers to New Model Y production. Energy generation and storage revenue surged 67% from increased Megapack and Powerwall deployments while services revenue grew 15% from higher Supercharging, insurance, and used vehicle sales. Automotive regulatory credits increased 35% as competitors scaled back electric vehicle plans.",
-          "cost_structure": "Total gross margin compressed to 16.3% from 17.4% as automotive gross margin fell to 16.2% from 18.5% due to lower average selling prices from sales mix and customer incentives, partially offset by reduced raw material costs and favorable foreign exchange impacts. Energy storage gross margin expanded to 28.8% from 24.6% driven by higher-margin product mix and lower per-unit costs. Research and development expenses increased 22% primarily from AI program investments while selling expenses decreased 9% from reduced employee costs.",
-          "material_events": "Tesla executed industry-first simultaneous production line changeovers across all factories for New Model Y launch, resulting in several weeks of lost production but demonstrating operational capabilities. The company received proceeds from directors in shareholder settlement arrangements. Bitcoin holdings generated $125 million mark-to-market loss compared to $335 million gain in prior year.",
-          "macro_exposures": "Evolving trade policy creates uncertainty with higher tariffs potentially impacting global supply chain costs and component availability, with relatively larger impact expected on energy business versus automotive. Rising interest rates from central bank responses to inflation continue affecting vehicle financing affordability and customer demand. Foreign currency fluctuations on significant intercompany balances create volatility as the company does not typically hedge foreign exchange risk.",
-          "forward_outlook": "Management expects capital expenditures to exceed $10 billion in 2025 for AI infrastructure, factory expansion, and new product development, though trade policy changes may necessitate project timeline adjustments. The company targets profitable growth through leveraging existing capacity for more affordable products, advancing FSD capabilities including Robotaxi development, and expanding energy storage production.",
-          "uncertainty_profile": "Trade policy scope and application remain uncertain with potential for retaliatory tariffs and export controls affecting production costs and market access. Battery cell supply adequacy for energy storage products faces challenges from potential import tariff increases on battery components. Manufacturing ramp uncertainties persist across concurrent international projects with ambitious technological targets.",
-          "word_count": 362
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 228,
-        "mean_sentiment": 0.070036,
-        "sentiment_volatility": 0.571077,
-        "surprise_sentiment": -0.121891,
-        "cross_sectional_z": 0.450658
-      },
-      "asset_features": {
-        "close": 317.66,
-        "ret_20d": -0.0831,
-        "ret_60d": 0.1234,
-        "ret_120d": -0.2261,
-        "ret_252d": 0.6177,
-        "vol_20d": 0.7527,
-        "vol_60d": 0.8066,
-        "vol_120d": 0.7592,
-        "downside_vol_60d": 0.531,
-        "drawdown_60d": -0.2155,
-        "max_drawdown_1y": -0.5377,
-        "sma_20d": 323.89,
-        "sma_50d": 312.82,
-        "sma_200d": 313.28,
-        "momentum_200d": 1.014,
-        "momentum_12_1": 0.8253,
-        "idiosyncratic_momentum": -0.0631,
-        "trend_consistency": 0.5167,
-        "sharpe_60d": 0.606,
-        "beta_1y": 2.3661,
-        "size_log_mcap": 27.6549,
-        "value_book_to_market": 0.0755,
-        "avg_dollar_volume_20d": 38965854549.67,
-        "gross_margin": 0.1724,
-        "roe": 0.0152,
-        "free_cash_flow_yield": 0.0001,
-        "debt_to_equity": 0.1699,
-        "earnings_surprise_pct": -0.3415,
-        "relative_strength_60d": 0.0225
+        "relative_strength_60d": 0.0028
       }
     },
     "UNH": {
@@ -2070,7 +714,7 @@
         "mean_sentiment": 0.185231,
         "sentiment_volatility": 0.599723,
         "surprise_sentiment": 0.107067,
-        "cross_sectional_z": 1.688801
+        "cross_sectional_z": 1.66254
       },
       "asset_features": {
         "close": 307.94,
@@ -2101,7 +745,7 @@
         "free_cash_flow_yield": 0.0226,
         "debt_to_equity": 0.836,
         "earnings_surprise_pct": -0.0123,
-        "relative_strength_60d": -0.5004
+        "relative_strength_60d": -0.499
       }
     },
     "WMT": {
@@ -2137,7 +781,7 @@
         "mean_sentiment": 0.004877,
         "sentiment_volatility": 0.612866,
         "surprise_sentiment": -0.074732,
-        "cross_sectional_z": -0.249686
+        "cross_sectional_z": -0.291372
       },
       "asset_features": {
         "close": 97.35,
@@ -2168,67 +812,9 @@
         "free_cash_flow_yield": 0.0005,
         "debt_to_equity": 0.802,
         "earnings_surprise_pct": 0.0517,
-        "relative_strength_60d": -0.0089
+        "relative_strength_60d": -0.0074
       },
       "fiscal_year_end": "01-31"
-    },
-    "XOM": {
-      "filing_summary": {
-        "periodic": {
-          "ticker": "XOM",
-          "form": "10-Q",
-          "filing_date": "2025-05-05",
-          "fiscal_period": "2025-Q1",
-          "period_type": "quarterly",
-          "operating_state": "First quarter 2025 earnings of $7.7 billion decreased from $8.2 billion driven by weaker industry refining margins normalizing from historically high levels and lower crude prices. Upstream production increased 767 thousand oil-equivalent barrels daily to 4.6 million barrels from Pioneer acquisition and growing Permian and Guyana volumes. Energy Products earnings declined substantially due to margin compression while Chemical Products earnings fell on higher North American feed costs and reduced opportunistic sales volumes.",
-          "cost_structure": "Structural cost savings contributed $0.6 billion bringing cumulative savings to $12.7 billion versus 2019 levels through operational efficiencies and workforce reductions. Cash operating expenses excluding energy and production taxes increased reflecting higher activity levels and growth investments. Depreciation and depletion expenses rose from increased asset base from acquisitions and new projects.",
-          "material_events": "The company repurchased $4.8 billion of shares representing 43.4 million shares as part of ongoing buyback program. Total debt decreased to $37.6 billion from $41.7 billion at year-end 2024, reducing debt-to-capital ratio to 12.2 percent. The company issued floating rate notes due 2075 in March 2025.",
-          "macro_exposures": "The U.S. announced various trade-related actions including tariffs on imports from several countries with many countries announcing retaliatory tariffs in response. Certain tariffs were paused but not withdrawn creating continued volatility in the global trade environment. The likelihood of resuming tariffs, imposing new reciprocal tariffs, export restrictions, or other trade-related sanctions remains highly uncertain with unclear effects on the Corporation, suppliers, customers, and overall macroeconomic environment.",
-          "forward_outlook": "The Corporation plans capital investments of $27 billion to $29 billion for 2025 with actual spending dependent on project progress and property acquisitions. Management maintains capital allocation priorities of investing in competitively advantaged high-return projects, maintaining strong balance sheet, and consistent shareholder returns through share repurchases and growing dividends. The company continues evaluating asset portfolio optimization through ongoing divestment programs and potential acquisitions based on strategic fit and attractive valuations.",
-          "uncertainty_profile": "Forward-looking statements regarding emission reduction plans including net zero targets by 2050 and Permian Basin goals by 2030-2035 depend on technological progress, stable policy support, and timely permitting. Environmental sustainability statements are based on evolving measurement standards and assumptions subject to future change including regulatory rule-making. Project advancement depends on stable policy frameworks, permitting approvals, technological cost-effectiveness, and stakeholder alignment with investment levels subject to opportunity availability and public policy support.",
-          "word_count": 376
-        },
-        "event_filings": []
-      },
-      "earnings_call": null,
-      "news_sentiment": {
-        "article_count": 231,
-        "mean_sentiment": -0.125391,
-        "sentiment_volatility": 0.641174,
-        "surprise_sentiment": -0.244894,
-        "cross_sectional_z": -1.649838
-      },
-      "asset_features": {
-        "close": 105.18,
-        "ret_20d": 0.0538,
-        "ret_60d": -0.0832,
-        "ret_120d": 0.0177,
-        "ret_252d": -0.0249,
-        "vol_20d": 0.2477,
-        "vol_60d": 0.3318,
-        "vol_120d": 0.2821,
-        "downside_vol_60d": 0.2862,
-        "drawdown_60d": -0.1579,
-        "max_drawdown_1y": -0.1892,
-        "sma_20d": 105.79,
-        "sma_50d": 104.03,
-        "sma_200d": 107.45,
-        "momentum_200d": 0.9788,
-        "momentum_12_1": -0.0711,
-        "idiosyncratic_momentum": -0.1531,
-        "trend_consistency": 0.5333,
-        "sharpe_60d": -1.0998,
-        "beta_1y": 0.4995,
-        "size_log_mcap": 26.829,
-        "value_book_to_market": 0.5856,
-        "avg_dollar_volume_20d": 2182227942.09,
-        "gross_margin": 0.2258,
-        "roe": 0.027,
-        "free_cash_flow_yield": 0.0117,
-        "debt_to_equity": 0.1485,
-        "earnings_surprise_pct": 0.0115,
-        "relative_strength_60d": -0.1841
-      }
     }
   }
 }
