@@ -1,6 +1,6 @@
 # ===========================================================================
-# Ablation 6 — JS Collapse Intervention: 2agent / soft nudge / threshold 0.65
-# Config: 2agent_soft_th065
+# Ablation 6 — JS Collapse Intervention: 2agent / moderate nudge / threshold 0.65
+# Config: 2agent_moderate_th065
 # Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> judge
 # ===========================================================================
 
@@ -48,6 +48,11 @@ debate_setup:
   # --- Intervention engine (intra-round retry on acute failures) ---
   intervention_config:
     enabled: true
+
+    # Portfolio revision limits applied to all intervention retries.
+    revision_limits:
+      max_changed_tickers: 3
+      max_change_pct: 10
 
     rules:
       # JS Collapse Detection (post_revision)

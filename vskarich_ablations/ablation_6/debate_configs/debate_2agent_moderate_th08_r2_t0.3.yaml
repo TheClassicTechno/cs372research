@@ -1,6 +1,6 @@
 # ===========================================================================
-# Ablation 6 — JS Collapse Intervention: 2agent / soft nudge / threshold 0.65
-# Config: 2agent_soft_th065
+# Ablation 6 — JS Collapse Intervention: 2agent / moderate nudge / threshold 0.8
+# Config: 2agent_moderate_th08
 # Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> judge
 # ===========================================================================
 
@@ -49,13 +49,18 @@ debate_setup:
   intervention_config:
     enabled: true
 
+    # Portfolio revision limits applied to all intervention retries.
+    revision_limits:
+      max_changed_tickers: 3
+      max_change_pct: 10
+
     rules:
       # JS Collapse Detection (post_revision)
       # Fires when JS_revision / JS_proposal < threshold, indicating agents
       # converged toward identical allocations during the revision phase.
       js_collapse:
         enabled: true
-        threshold: 0.65              # collapse_ratio below this triggers retry
+        threshold: 0.8              # collapse_ratio below this triggers retry
         min_js_proposal: 0.10       # skip when proposals already near-consensus
         max_retries: 1              # max retry attempts for this rule
         nudge_prompts:

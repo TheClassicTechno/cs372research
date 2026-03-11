@@ -1,6 +1,6 @@
 # ===========================================================================
-# Ablation 6 — JS Collapse Intervention: 2agent / soft nudge / threshold 0.65
-# Config: 2agent_soft_th065
+# Ablation 6 — JS Collapse Intervention: 3agent_value / moderate nudge / threshold 0.8
+# Config: 3agent_value_moderate_th08
 # Pipeline:  propose -> critique -> revise -> [IE post_revision] -> CRIT -> judge
 # ===========================================================================
 
@@ -15,6 +15,7 @@ num_episodes: 1
 agents:
   macro: macro_enriched_intense
   technical: technical_enriched_intense
+  value: value_enriched_intense
 
 judge_profile: judge_standard
 
@@ -49,13 +50,18 @@ debate_setup:
   intervention_config:
     enabled: true
 
+    # Portfolio revision limits applied to all intervention retries.
+    revision_limits:
+      max_changed_tickers: 3
+      max_change_pct: 10
+
     rules:
       # JS Collapse Detection (post_revision)
       # Fires when JS_revision / JS_proposal < threshold, indicating agents
       # converged toward identical allocations during the revision phase.
       js_collapse:
         enabled: true
-        threshold: 0.65              # collapse_ratio below this triggers retry
+        threshold: 0.8              # collapse_ratio below this triggers retry
         min_js_proposal: 0.10       # skip when proposals already near-consensus
         max_retries: 1              # max retry attempts for this rule
         nudge_prompts:
@@ -145,6 +151,53 @@ debate_setup:
             If fundamentals contradict price action, you must explain why.
 
             Price often reflects information before narratives catch up.
+
+            Before finalizing your revision:
+
+            1. Re-examine your original thesis.
+            2. Identify whether critiques genuinely invalidate it.
+            3. Defend at least one element of your original reasoning unless
+               it has been clearly disproven.
+            4. Identify one vulnerability in the emerging consensus view.
+            5. Explain which agent you disagree with most and why.
+            6. List ONE reason why another agent's argument is still flawed.
+          value: |
+            You must maintain independent reasoning. Do not converge with other agents unless critiques logically invalidate your thesis.
+
+            ⚠️ DEBATE DIVERSITY PROTOCOL ACTIVATED
+
+            Rapid consensus formation has been detected in the debate.
+
+            In complex financial analysis, early consensus often indicates
+            premature convergence or sycophancy rather than strong evidence.
+
+            To maintain analytical rigor:
+
+            • Defensible dissent is valuable and encouraged.
+            • You should not abandon a well-supported thesis solely because
+              other agents appear to agree.
+            • Rapid agreement requires explicit justification.
+
+            Agreement without independent reasoning is considered a debate failure.
+
+            Your objective is rigorous reasoning, not agreement.
+
+            VALUE INTERVENTION REMINDER
+
+            Your responsibility is valuation discipline.
+
+            You should NOT abandon valuation arguments simply because other agents prefer momentum or macro narratives.
+
+            Re-evaluate:
+
+            • earnings quality
+            • valuation multiples
+            • margin sustainability
+            • balance sheet strength
+
+            If consensus is forming around expensive growth stocks, your job is to ask whether the valuation assumptions are justified.
+
+            Consensus does not make an asset undervalued.
 
             Before finalizing your revision:
 
