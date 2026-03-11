@@ -283,9 +283,19 @@ def paired_tests(experiment: str):
 
 @app.get("/api/ablation/financial-tests/{experiment}")
 def financial_tests(experiment: str):
-    """Paired t-tests on financial metrics across debate configs."""
+    """Paired t-tests on financial metrics (judge portfolio) across debate configs."""
     return JSONResponse(
         run_scanner.compute_financial_paired_tests(RUNS_BASE, experiment)
+    )
+
+
+@app.get("/api/ablation/financial-tests/{experiment}/mean-revisions")
+def financial_tests_mean_rev(experiment: str):
+    """Paired t-tests on financial metrics (mean agent revisions) across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_financial_paired_tests(
+            RUNS_BASE, experiment, use_mean_revisions=True,
+        )
     )
 
 

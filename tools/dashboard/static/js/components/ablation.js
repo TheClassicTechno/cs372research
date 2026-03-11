@@ -403,8 +403,9 @@ function buildExperimentBody(data, impact) {
   // Paired t-test placeholder (populated async by ablationView)
   body += '<div data-testid="paired-tests-slot"></div>';
 
-  // Financial metrics placeholder (populated async by ablationView)
+  // Financial metrics placeholders (populated async by ablationView)
   body += '<div data-testid="financial-tests-slot"></div>';
+  body += '<div data-testid="financial-tests-mr-slot"></div>';
 
   // Row 1: Rho, Pillars, JS Divergence, Evidence Overlap
   let row1 = '';

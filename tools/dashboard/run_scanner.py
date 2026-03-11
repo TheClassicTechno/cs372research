@@ -2143,6 +2143,7 @@ def _find_results_by_quarter(
 def compute_financial_paired_tests(
     base_path: Path = DEFAULT_BASE,
     experiment: str = "",
+    use_mean_revisions: bool = False,
 ) -> dict:
     """Paired t-tests on financial metrics across two debate configs.
 
@@ -2150,6 +2151,10 @@ def compute_financial_paired_tests(
     results directory via ``invest_quarter`` matching, reads
     ``summary.json``, and flattens ``episode_summaries[0]`` using
     the same logic as ``scripts/compare_per_scenario.py``.
+
+    When *use_mean_revisions* is True, reads the pre-computed
+    ``mean_revisions_metrics`` (mean of agent revision portfolios)
+    instead of the judge's portfolio metrics.
 
     Pairs metrics by scenario across the two debate configs and runs
     ``scipy.stats.ttest_rel`` per metric (matching
@@ -2220,7 +2225,16 @@ def compute_financial_paired_tests(
         ep_list = summary.get("episode_summaries")
         if not isinstance(ep_list, list) or not ep_list:
             continue
-        metrics = _flatten_dict(ep_list[0], excluded_fields=_FLATTEN_EXCLUDED)
+
+        if use_mean_revisions:
+            rev = ep_list[0].get("mean_revisions_metrics")
+            if not isinstance(rev, dict) or not rev:
+                continue
+            metrics = _flatten_dict(
+                {"daily_metrics": rev}, excluded_fields=_FLATTEN_EXCLUDED,
+            )
+        else:
+            metrics = _flatten_dict(ep_list[0], excluded_fields=_FLATTEN_EXCLUDED)
         if not metrics:
             continue
 
@@ -2313,5 +2327,6 @@ def compute_financial_paired_tests(
         "config_a": config_a,
         "config_b": config_b,
         "n_paired": len(common),
+        "source": "mean_revisions" if use_mean_revisions else "judge",
         "metrics": results_list,
     }
