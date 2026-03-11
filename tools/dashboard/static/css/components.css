@@ -300,6 +300,37 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
   min-width: 200px;
 }
 
+/* Collapse diagnostics: definition grid */
+.collapse-definitions {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 6px 16px;
+  max-width: 900px;
+  margin-bottom: 16px;
+  background: #faf8f4;
+  border: 1px solid #d6c4a1;
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+.collapse-def-term {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: #5c4632;
+  padding: 4px 0;
+}
+.collapse-def-desc {
+  font-size: 0.9em;
+  line-height: 1.55;
+  color: #333;
+  padding: 4px 0;
+  border-bottom: 1px solid #e8e0d4;
+}
+.collapse-def-desc:last-child { border-bottom: none; }
+/* Term rows also get bottom border for alignment */
+.collapse-def-term:not(:nth-child(1)) { border-top: none; }
+.collapse-def-term { border-bottom: 1px solid #e8e0d4; }
+.collapse-def-term:nth-last-child(2) { border-bottom: none; }
+
 /* PID Stats: score shading */
 .score-high { color: #a07b2d; font-weight: 600; }
 .score-mid  { color: #333; }

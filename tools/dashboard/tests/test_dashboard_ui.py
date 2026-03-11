@@ -877,6 +877,23 @@ class TestCollapseDiagnostics:
         text = page.text_content("#collapse-section")
         assert "Leader" in text or "leader" in text
 
+    def test_collapse_definitions_grid_layout(self, page: Page, dashboard_url: str):
+        """Collapse definitions use a grid layout with term/description pairs."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("#collapse-section .collapse-definitions", timeout=10000)
+        defs = page.query_selector("#collapse-section .collapse-definitions")
+        display = page.evaluate(
+            "(el) => window.getComputedStyle(el).display", defs,
+        )
+        assert display == "grid", (
+            f"Expected collapse-definitions display:grid, got '{display}'"
+        )
+        terms = page.query_selector_all("#collapse-section .collapse-def-term")
+        assert len(terms) == 4, f"Expected 4 definition terms, got {len(terms)}"
+        term_texts = [t.text_content().strip() for t in terms]
+        assert "Movement" in term_texts
+        assert "Dissent" in term_texts
+
 
 # ---------------------------------------------------------------------------
 # TEST 20 — Ticker performance table
