@@ -31,7 +31,12 @@ def _make_runner(
         pid_rho_star=0.8,
         initial_beta=initial_beta,
     )
-    return MultiAgentRunner(config)
+    runner = MultiAgentRunner(config)
+    # Disable CRIT scoring — these tests only verify beta routing into phases,
+    # not the post-revise CRIT+PID step.  Mock graphs return empty state with
+    # no decisions, which would crash _crit_and_pid_step.
+    runner._crit_scorer = None
+    return runner
 
 
 class TestBetaRouting:
