@@ -1,7 +1,7 @@
 import { fetchRunDetail } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { buildRoundCard } from '../../components/card.js';
-import { buildOverviewPanel } from './overviewSection.js';
+import { buildOverviewPanel, buildConfigCards } from './overviewSection.js';
 import { loadDivergenceSection } from './divergenceSection.js';
 import { loadPIDStatsSection } from './pidStatsSection.js';
 import { loadPIDSection } from './pidSection.js';
@@ -52,8 +52,11 @@ function renderRunDetail(detail, experiment, runId, token) {
   var sectionsDiv = document.getElementById('detail-sections');
   var sectionsHtml = '';
 
-  // Config card (top)
-  sectionsHtml += buildCard('Config', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
+  // Config cards (debate config, scenario config, ticker perf, macro)
+  sectionsHtml += buildConfigCards(detail);
+
+  // Raw manifest JSON
+  sectionsHtml += buildCard('Config (Raw)', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
 
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';

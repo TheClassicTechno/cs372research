@@ -24,6 +24,7 @@ def _make_runner(
         mock=True,
         roles=[AgentRole.MACRO, AgentRole.VALUE],
         max_rounds=2,
+        console_display=False,
         _pid_enabled_flag=True,
         pid_kp=0.15,
         pid_ki=0.0,
@@ -87,7 +88,7 @@ class TestBetaRouting:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = mock_revise_invoke
 
-        state = {"config": {}}
+        state = {"config": {}, "proposals": [], "revisions": []}
         runner._run_round_with_pid(state, round_num=1)
 
         # Propose uses no tone
@@ -120,7 +121,7 @@ class TestBetaRouting:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = capture("revise")
 
-        state = {"config": {}}
+        state = {"config": {}, "proposals": [], "revisions": []}
         runner._run_round_with_pid(state, round_num=1)
 
         # Critique and revise should get the same beta
@@ -155,7 +156,7 @@ class TestBetaValuePropagation:
         runner._revise_graph.invoke = capture("revise")
 
         # Round 2 expects prior revisions to exist
-        state = {"config": {}, "revisions": _mock_decisions()}
+        state = {"config": {}, "proposals": _mock_decisions(), "revisions": _mock_decisions()}
         runner._run_round_with_pid(state, round_num=2)
 
         # Propose is skipped in round 2+ (uses prior revisions), so no
@@ -190,7 +191,7 @@ class TestBetaValuePropagation:
             runner._revise_graph = MagicMock()
             runner._revise_graph.invoke = capture("revise")
 
-            state = {"config": {}}
+            state = {"config": {}, "proposals": [], "revisions": []}
             runner._run_round_with_pid(state, round_num=1)
 
             assert recorded["critique_beta"] == pytest.approx(beta_val)
@@ -222,7 +223,7 @@ class TestToneBucketInteraction:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = mock_revise
 
-        state = {"config": {}}
+        state = {"config": {}, "proposals": [], "revisions": []}
         runner._run_round_with_pid(state, round_num=1)
 
         # Propose NEVER gets tone beta
@@ -251,7 +252,7 @@ class TestToneBucketInteraction:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = capture("revise")
 
-        state = {"config": {}}
+        state = {"config": {}, "proposals": [], "revisions": []}
         runner._run_round_with_pid(state, round_num=1)
 
         assert recorded["critique_beta"] == pytest.approx(0.9)
