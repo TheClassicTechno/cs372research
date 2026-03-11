@@ -331,10 +331,10 @@ class TestDivergenceTableLayout:
 # ---------------------------------------------------------------------------
 
 class TestAblationSideBySideLayout:
-    def test_quality_metrics_row_has_flex_display(
+    def test_quality_metrics_row_has_grid_display(
         self, page: Page, dashboard_url: str,
     ):
-        """Quality metrics row (rho, pillars, JS, evidence) uses flex layout."""
+        """Quality metrics row (rho, pillars, JS, evidence) uses grid layout."""
         page.goto(f"{dashboard_url}/#ablation")
         page.wait_for_selector(
             "[data-testid='ablation-experiment']", timeout=5000,
@@ -350,14 +350,14 @@ class TestAblationSideBySideLayout:
         display = page.evaluate(
             "(el) => window.getComputedStyle(el).display", row,
         )
-        assert display == "flex", (
-            f"Expected metrics-row display:flex, got '{display}'"
+        assert display == "grid", (
+            f"Expected metrics-row display:grid, got '{display}'"
         )
 
     def test_breakdowns_row_side_by_side(
         self, page: Page, dashboard_url: str,
     ):
-        """Per Scenario and Per Agent Config tables are in same flex row."""
+        """Per Scenario and Per Agent Config tables are in same grid row."""
         page.goto(f"{dashboard_url}/#ablation")
         page.wait_for_selector(
             "[data-testid='ablation-experiment']", timeout=5000,
@@ -373,14 +373,69 @@ class TestAblationSideBySideLayout:
         display = page.evaluate(
             "(el) => window.getComputedStyle(el).display", row,
         )
-        assert display == "flex", (
-            f"Expected breakdowns row display:flex, got '{display}'"
+        assert display == "grid", (
+            f"Expected breakdowns row display:grid, got '{display}'"
         )
         text = row.text_content()
         assert "Per Scenario" in text, "Missing 'Per Scenario' in breakdowns row"
         assert "Per Agent Config" in text, (
             "Missing 'Per Agent Config' in breakdowns row"
         )
+
+    def test_metrics_col_has_card_styling(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Quality metrics columns have card-like border and padding."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        col = page.wait_for_selector(
+            "[data-testid='metrics-row-quality'] .metrics-col", timeout=3000,
+        )
+        border = page.evaluate(
+            "(el) => window.getComputedStyle(el).borderStyle", col,
+        )
+        assert border == "solid", (
+            f"Expected metrics-col border-style:solid, got '{border}'"
+        )
+
+    def test_data_tables_full_width(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Data tables inside metrics columns fill their container width."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        page.wait_for_selector(
+            "[data-testid='metrics-row-quality'] .data-table", timeout=3000,
+        )
+        tables = page.query_selector_all(
+            "[data-testid='metrics-row-quality'] .data-table",
+        )
+        assert len(tables) > 0, "No data tables found in quality metrics row"
+        for table in tables:
+            parent_width = page.evaluate(
+                "(el) => el.parentElement.clientWidth", table,
+            )
+            table_width = page.evaluate(
+                "(el) => el.offsetWidth", table,
+            )
+            # Table should fill at least 90% of parent width
+            assert table_width >= parent_width * 0.9, (
+                f"Table width {table_width} too narrow for parent {parent_width}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -896,3 +951,27 @@ class TestNoTruncation:
             assert overflow != "ellipsis", (
                 f"ov-htable cell should not truncate, got text-overflow: {overflow}"
             )
+
+
+# ---------------------------------------------------------------------------
+# TEST — Table labels loaded from JSON config
+# ---------------------------------------------------------------------------
+
+class TestTableLabelsLoaded:
+    def test_table_labels_loaded(self, page: Page, dashboard_url: str):
+        """Dashboard loads and uses table_labels.json for display strings."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(".run-overview", timeout=10000)
+        text = page.text_content(".run-overview")
+        assert "Run ID" in text
+        assert "Experiment" in text
+
+    def test_divergence_labels_from_config(self, page: Page, dashboard_url: str):
+        """Divergence card title comes from table_labels.json."""
+        _goto_run_detail(page, dashboard_url)
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+        text = section.text_content()
+        assert "Divergence Overview" in text, (
+            "Card title 'Divergence Overview' not found — labels may not be loading"
+        )

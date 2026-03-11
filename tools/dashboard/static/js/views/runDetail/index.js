@@ -14,6 +14,7 @@ import { loadRoundAgents } from './roundsSection.js';
 import { esc } from '../../utils/dom.js';
 import { fmt } from '../../utils/format.js';
 import { appState, setManifest } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function renderRunDetailView(experiment, runId, token) {
   var appDiv = document.getElementById('app');
@@ -56,7 +57,8 @@ function renderRunDetail(detail, experiment, runId, token) {
   sectionsHtml += buildConfigCards(detail);
 
   // Raw manifest JSON
-  sectionsHtml += buildCard('Config (Raw)', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
+  var cards = T('cards');
+  sectionsHtml += buildCard(cards.config_raw, '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
 
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';
@@ -69,18 +71,19 @@ function renderRunDetail(detail, experiment, runId, token) {
       var rs = detail.round_summaries[i];
       roundsInner += buildRoundCard(rs, experiment, runId);
     }
-    sectionsHtml += buildCard('Rounds (Debate Replay)', roundsInner, true);
+    sectionsHtml += buildCard(cards.rounds_replay, roundsInner, true);
   }
 
   // Final Portfolio
   if (detail.final_portfolio) {
     var sorted = Object.entries(detail.final_portfolio).sort(function (a, b) { return b[1] - a[1]; });
-    var ptHtml = '<table class="data-table"><tr><th>Ticker</th><th>Weight</th></tr>';
+    var fpCfg = T('final_portfolio');
+    var ptHtml = '<table class="data-table"><tr><th>' + esc(fpCfg.columns[0]) + '</th><th>' + esc(fpCfg.columns[1]) + '</th></tr>';
     for (var i = 0; i < sorted.length; i++) {
       ptHtml += '<tr><td>' + esc(sorted[i][0]) + '</td><td>' + fmt(sorted[i][1]) + '</td></tr>';
     }
     ptHtml += '</table>';
-    sectionsHtml += buildCard('Final Portfolio', ptHtml);
+    sectionsHtml += buildCard(cards.final_portfolio, ptHtml);
   }
 
   // File Explorer

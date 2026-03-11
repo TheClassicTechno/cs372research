@@ -2,6 +2,7 @@ import { esc } from '../../utils/dom.js';
 import { fmt, numFmt } from '../../utils/format.js';
 import { flattenConfig } from '../../utils/config.js';
 import { buildCard } from '../../components/card.js';
+import { T } from '../../utils/labels.js';
 
 /**
  * Build the RUN OVERVIEW metadata panel.
@@ -16,8 +17,9 @@ export function buildOverviewPanel(detail, experiment, runId) {
   var m = detail.manifest || {};
   var q = detail.quality || {};
 
+  var sec = T('sections');
   var html = '<div class="run-overview">';
-  html += '<div class="ov-title">RUN OVERVIEW</div>';
+  html += '<div class="ov-title">' + esc(sec.run_overview) + '</div>';
 
   // --- Table 1: Run identity ---
   var statusCls = '';
@@ -29,8 +31,13 @@ export function buildOverviewPanel(detail, experiment, runId) {
     statusCls = ' class="status-failed"';
   }
 
+  var idCfg = T('overview_identity');
   html += '<table class="ov-htable">';
-  html += '<tr><th>Run ID</th><th>Experiment</th><th>Model</th><th>CRIT Model</th><th>Status</th></tr>';
+  html += '<tr>';
+  for (var ic = 0; ic < idCfg.columns.length; ic++) {
+    html += '<th>' + esc(idCfg.columns[ic]) + '</th>';
+  }
+  html += '</tr>';
   html += '<tr>';
   html += '<td>' + esc(runId) + '</td>';
   html += '<td>' + esc(experiment) + '</td>';
@@ -40,10 +47,11 @@ export function buildOverviewPanel(detail, experiment, runId) {
   html += '</tr></table>';
 
   // --- Table 2: Config and agents ---
+  var cfgLabels = T('overview_config');
   var fields = extractConfigFields(m);
   html += '<table class="ov-htable" style="table-layout:auto;">';
-  html += '<tr><th style="width:1%;white-space:nowrap">Config</th><td>' + esc(fields.configName) + '</td></tr>';
-  html += '<tr><th style="width:1%;white-space:nowrap">Agents</th><td>' + esc(fields.agentsStr) + '</td></tr>';
+  html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.config) + '</th><td>' + esc(fields.configName) + '</td></tr>';
+  html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.agents) + '</th><td>' + esc(fields.agentsStr) + '</td></tr>';
   html += '</table>';
 
   // --- Table 3: Key metrics ---
@@ -54,8 +62,13 @@ export function buildOverviewPanel(detail, experiment, runId) {
   var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
     + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
 
+  var metCfg = T('overview_metrics');
   html += '<table class="ov-htable">';
-  html += '<tr><th>Tickers</th><th>Rounds</th><th>Termination</th><th>Initial \u03B2</th><th>Final \u03B2</th><th>Final <span style="text-decoration:overline">\u03c1</span></th><th>JS Drop</th></tr>';
+  html += '<tr>';
+  for (var mc = 0; mc < metCfg.columns.length; mc++) {
+    html += '<th>' + metCfg.columns[mc] + '</th>';
+  }
+  html += '</tr>';
   html += '<tr>';
   html += '<td>' + esc(tickersStr) + '</td>';
   html += '<td>' + esc(roundsStr) + '</td>';
@@ -86,6 +99,7 @@ export function buildOverviewPanel(detail, experiment, runId) {
  * @returns {string} HTML string of collapsible cards
  */
 export function buildConfigCards(detail) {
+  var cards = T('cards');
   var html = '';
 
   // Debate config groups card
@@ -94,7 +108,7 @@ export function buildConfigCards(detail) {
     DEBATE_EXCLUDE, DEBATE_GROUP_DEFS
   );
   if (debateHtml) {
-    html += buildCard('Debate Config', debateHtml);
+    html += buildCard(cards.debate_config, debateHtml);
   }
 
   // Scenario config groups card
@@ -103,19 +117,19 @@ export function buildConfigCards(detail) {
     SCENARIO_EXCLUDE, SCENARIO_GROUP_DEFS
   );
   if (scenarioHtml) {
-    html += buildCard('Scenario Config', scenarioHtml);
+    html += buildCard(cards.scenario_config, scenarioHtml);
   }
 
   // Ticker performance card
   var tickerHtml = buildTickerPerfHtml(detail.ticker_performance);
   if (tickerHtml) {
-    html += buildCard('Ticker Performance', tickerHtml);
+    html += buildCard(cards.ticker_performance, tickerHtml);
   }
 
   // Macro environment card
   var macroHtml = buildMacroHtml(detail.scenario_config);
   if (macroHtml) {
-    html += buildCard('Macro Environment', macroHtml);
+    html += buildCard(cards.macro_environment, macroHtml);
   }
 
   return html;
@@ -291,8 +305,13 @@ function renderGroupCard(group) {
  */
 function buildTickerPerfHtml(tickerPerf) {
   if (!tickerPerf || tickerPerf.length === 0) return '';
+  var tpCfg = T('ticker_perf');
   var h = '<table class="data-table" data-testid="ticker-perf-table">';
-  h += '<tr><th>Ticker</th><th>Open</th><th>Close</th><th>\u0394%</th></tr>';
+  h += '<tr>';
+  for (var tc = 0; tc < tpCfg.columns.length; tc++) {
+    h += '<th>' + esc(tpCfg.columns[tc]) + '</th>';
+  }
+  h += '</tr>';
   for (var i = 0; i < tickerPerf.length; i++) {
     var t = tickerPerf[i];
     var cls = t.pct_change >= 0 ? 'perf-profit' : 'perf-loss';

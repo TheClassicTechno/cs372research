@@ -3,6 +3,7 @@ import { buildCard } from '../../components/card.js';
 import { esc } from '../../utils/dom.js';
 import { fmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function loadPortfolioSection(experiment, runId, token) {
   var div = document.getElementById('portfolio-section');
@@ -16,8 +17,9 @@ export function loadPortfolioSection(experiment, runId, token) {
         return (lastConsensus[b] || 0) - (lastConsensus[a] || 0);
       });
 
-      var h = '<div class="section-label">PORTFOLIO TRAJECTORY (Consensus)</div>';
-      h += '<table class="data-table"><tr><th>Ticker</th>';
+      var ptCfg = T('portfolio_trajectory');
+      var h = '<div class="section-label">' + esc(ptCfg.title) + '</div>';
+      h += '<table class="data-table"><tr><th>' + esc(ptCfg.columns[0]) + '</th>';
       for (var i = 0; i < data.length; i++) {
         h += '<th>R' + data[i].round + '</th>';
       }
@@ -32,7 +34,7 @@ export function loadPortfolioSection(experiment, runId, token) {
       }
       h += '</table>';
 
-      div.innerHTML = buildCard('Portfolio Trajectory', h, false);
+      div.innerHTML = buildCard(T('cards').portfolio_trajectory, h, false);
     })
     .catch(function () { if (appState.viewToken === token) div.innerHTML = ''; });
 }

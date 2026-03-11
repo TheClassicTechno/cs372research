@@ -2,6 +2,7 @@ import { fetchDivergence } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { fmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function loadDivergenceSection(experiment, runId, token) {
   var div = document.getElementById('divergence-section');
@@ -23,6 +24,7 @@ export function loadDivergenceSection(experiment, runId, token) {
         byRound[rn][d.phase] = d;
       }
 
+      var divCfg = T('divergence');
       var h = '';
       for (var r = 0; r < roundOrder.length; r++) {
         var rn = roundOrder[r];
@@ -32,13 +34,17 @@ export function loadDivergenceSection(experiment, runId, token) {
 
         h += '<div class="section-label">Round ' + rn + '</div>';
         h += '<table class="data-table">';
-        h += '<tr><th>Phase</th><th>JS Divergence</th><th>Evidence Overlap</th></tr>';
+        h += '<tr>';
+        for (var dc = 0; dc < divCfg.columns.length; dc++) {
+          h += '<th>' + divCfg.columns[dc] + '</th>';
+        }
+        h += '</tr>';
 
-        h += '<tr><td>Proposed</td>';
+        h += '<tr><td>' + divCfg.rows.proposed + '</td>';
         h += '<td>' + fmt(propose.js_divergence) + '</td>';
         h += '<td>' + fmt(propose.mean_overlap) + '</td></tr>';
 
-        h += '<tr><td>Revised</td>';
+        h += '<tr><td>' + divCfg.rows.revised + '</td>';
         h += '<td>' + fmt(revise.js_divergence) + '</td>';
         h += '<td>' + fmt(revise.mean_overlap) + '</td></tr>';
 
@@ -57,7 +63,7 @@ export function loadDivergenceSection(experiment, runId, token) {
         h += '</table>';
       }
 
-      div.innerHTML = buildCard('Divergence Overview', h, true);
+      div.innerHTML = buildCard(T('cards').divergence_overview, h, true);
       div.querySelector('.card').classList.add('open');
     })
     .catch(function () { if (appState.viewToken === token) div.innerHTML = ''; });

@@ -4,6 +4,7 @@ import { esc } from '../../utils/dom.js';
 import { fmt, scoreClass } from '../../utils/format.js';
 import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function loadPIDStatsSection(experiment, runId, token) {
   var div = document.getElementById('pid-stats-section');
@@ -18,8 +19,9 @@ export function loadPIDStatsSection(experiment, runId, token) {
         if (d.rho_i) Object.keys(d.rho_i).forEach(function (r) { roles[r] = true; });
       });
       var roleList = Object.keys(roles).sort();
+      var psCfg = T('pid_stats');
       var pillars = ['LV', 'ES', 'AC', 'CA'];
-      var pillarNames = { 'LV': 'Logical Validity', 'ES': 'Evidential Support', 'AC': 'Alternative Consideration', 'CA': 'Causal Alignment' };
+      var pillarNames = { 'LV': psCfg.columns[2], 'ES': psCfg.columns[3], 'AC': psCfg.columns[4], 'CA': psCfg.columns[5] };
 
       var h = '';
       var prevRhoBar = null;
@@ -37,7 +39,7 @@ export function loadPIDStatsSection(experiment, runId, token) {
 
         h += '<div class="section-label">Round ' + d.round + ' \u2014 ' + rhoLabel + '</div>';
         h += '<table class="data-table">';
-        h += '<tr><th>Agent</th><th class="num-col">\u03c1\u1d62</th>';
+        h += '<tr><th>' + esc(psCfg.columns[0]) + '</th><th class="num-col">' + psCfg.columns[1] + '</th>';
         for (var p = 0; p < pillars.length; p++) h += '<th class="num-col">' + pillarNames[pillars[p]] + '</th>';
         h += '</tr>';
         for (var r = 0; r < roleList.length; r++) {
@@ -55,7 +57,7 @@ export function loadPIDStatsSection(experiment, runId, token) {
         h += '</table>';
       }
 
-      div.innerHTML = buildCard('PID Stats Overview', h, true);
+      div.innerHTML = buildCard(T('cards').pid_stats_overview, h, true);
       div.querySelector('.card').classList.add('open');
     })
     .catch(function () { if (appState.viewToken === token) div.innerHTML = ''; });

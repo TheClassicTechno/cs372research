@@ -45,10 +45,11 @@ table.data-table {
   border-collapse: collapse;
   font-size: 0.9em;
   margin-bottom: 16px;
+  width: 100%;
 }
 table.data-table th, table.data-table td {
   border: 1px solid #ccc;
-  padding: 5px 8px;
+  padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -58,6 +59,8 @@ table.data-table th {
   font-weight: bold;
   color: #5c4632;
 }
+table.data-table tbody tr:nth-child(even),
+table.data-table tr:nth-child(even) { background: #faf8f4; }
 table.data-table tr:hover { background: #f9f9f9; }
 table.data-table tr.clickable { cursor: pointer; }
 table.data-table tr.best-run { font-weight: bold; }
@@ -237,21 +240,23 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 
 /* Ablation metrics: side-by-side layout */
 .metrics-row {
-  display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
 .metrics-col {
-  flex: 1;
-  min-width: 200px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #d6c4a1;
+  border-radius: 4px;
+  padding: 10px 12px;
 }
-/* Row 2 (PID + Collapse): push Collapse to the right */
+.metrics-col .section-label:first-child { margin-top: 0; }
+.metrics-col table.data-table:last-child { margin-bottom: 0; }
+/* Row 2 (PID + Collapse): 2-column layout */
 .metrics-row-spread {
-  justify-content: space-between;
-}
-.metrics-row-spread .metrics-col {
-  flex: 0 1 auto;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
 }
 /* Match section titles inside experiment cards to rest of dashboard */
 .ablation-experiment .card-body .section-label {
@@ -282,6 +287,17 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 }
 .config-card .section-label:first-child {
   margin-top: 0;
+}
+/* Debate impact sub-rows use flex (variable column count) */
+.config-card .metrics-row {
+  display: flex;
+  grid-template-columns: none;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.config-card .metrics-col {
+  flex: 1;
+  min-width: 200px;
 }
 
 /* PID Stats: score shading */
