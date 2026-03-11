@@ -117,6 +117,79 @@ table.ov-htable td {
 .perf-loss { color: #c62828; font-weight: 600; }
 .run-overview .ov-warn { color: #900; font-weight: bold; margin-top: 6px; }
 
+/* Config parameter grid — responsive auto-fill */
+.ov-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 12px;
+  margin-bottom: 12px;
+  background: #f5f0e8;
+  padding: 8px 10px;
+  border-radius: 3px;
+}
+.ov-config-cell {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 0;
+}
+.ov-config-key {
+  font-weight: 600;
+  font-size: 0.8em;
+  color: #5c4632;
+}
+.ov-config-val {
+  font-family: "Courier New", monospace;
+  font-size: 0.85em;
+  color: #111;
+}
+
+/* Macro environment preview box */
+.ov-macro-box {
+  background: #f5f0e8;
+  border: 1px solid #d6c4a1;
+  border-radius: 3px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-family: "Courier New", monospace;
+  font-size: 0.8em;
+  white-space: pre-wrap;
+  color: #333;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Alternating row shading for ov-htable */
+table.ov-htable tr:nth-child(even) td {
+  background: #f5f0e8;
+}
+
+/* Debate Summary Grid */
+.debate-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px;
+  background: #f5f0e8;
+  border-radius: 3px;
+  border: 1px solid #d6c4a1;
+}
+.debate-summary-cell {
+  text-align: center;
+  padding: 6px 4px;
+}
+.debate-summary-label {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: #5c4632;
+  text-transform: uppercase;
+}
+.debate-summary-value {
+  font-size: 1.1em;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
 /* SVG chart */
 .chart-container {
   margin: 12px 0;

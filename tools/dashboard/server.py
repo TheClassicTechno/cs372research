@@ -191,6 +191,14 @@ def ablation_debate_impact():
     )
 
 
+@app.get("/runs/{experiment}/{run_id}/collapse")
+def collapse_diagnostics(experiment: str, run_id: str):
+    """Per-round agent collapse diagnostics."""
+    return JSONResponse(
+        run_scanner.compute_collapse_diagnostics(RUNS_BASE, experiment, run_id)
+    )
+
+
 @app.get("/runs/{experiment}/{run_id}/pid")
 def pid_trajectory(experiment: str, run_id: str):
     """PID trajectory array."""

@@ -57,7 +57,6 @@ function collectSortedTickers(agents, agentNames) {
 
 /**
  * Build a multi-agent allocation table for a specific round phase.
- * Returns an HTML string with agent columns and ticker rows.
  *
  * @param {object} agents      - {role: {ticker: weight}}
  * @param {string[]} agentNames - Sorted agent role keys
@@ -88,28 +87,92 @@ export function buildRoundAllocTable(agents, agentNames, agentLabel, testId) {
 }
 
 /**
- * Build a table showing per-agent debate impact (R1 proposal vs final revision).
- * Columns: Agent, Initial Return, Final Return, Delta $, Delta %.
+ * Format portfolio value from server-provided phase data.
  *
- * @param {object} agentDeltas - {role: {initial, final, delta_dollars, delta_pct}}
+ * @param {object|null} phase - {pv, delta_pct} or null
+ * @returns {string} Formatted PV string
+ */
+function fmtPV(phase) {
+  if (!phase) return '\u2014';
+  return '$' + numFmt(phase.pv);
+}
+
+/**
+ * Format delta % from server-provided value. No client-side arithmetic.
+ *
+ * @param {object|null} phase - {pv, delta_pct} or null
+ * @returns {string} HTML span with color class
+ */
+function fmtDelta(phase) {
+  if (!phase) return '\u2014';
+  var d = phase.delta_pct;
+  var cls = d >= 0 ? 'perf-profit' : 'perf-loss';
+  var sign = d >= 0 ? '+' : '';
+  return '<span class="' + cls + '">' + sign + d.toFixed(2) + '%</span>';
+}
+
+/**
+ * Build the header rows for the debate impact table.
+ *
+ * @returns {string} HTML string with two header rows
+ */
+function buildImpactHeader() {
+  var bdr = ' style="border-left:2px solid #d6c4a1"';
+  var h = '<tr><th rowspan="2">Agent</th>';
+  h += '<th colspan="2"' + bdr + '>R1 Proposal</th>';
+  h += '<th colspan="2"' + bdr + '>R1 Revision</th>';
+  h += '<th colspan="2"' + bdr + '>R1 JS</th>';
+  h += '<th colspan="2"' + bdr + '>R2 Revision</th>';
+  h += '<th colspan="2"' + bdr + '>R2 JS</th>';
+  h += '<th' + bdr + '>Judge</th></tr>';
+  h += '<tr>';
+  for (var c = 0; c < 5; c++) {
+    h += '<th>PV</th><th>\u0394%</th>';
+  }
+  h += '<th>\u0394%</th></tr>';
+  return h;
+}
+
+/**
+ * Build one agent row for the debate impact table.
+ *
+ * @param {object} d - Agent delta data
+ * @param {string} label - Agent display label
+ * @returns {string} HTML tr string
+ */
+function buildImpactRow(d, label) {
+  var h = '<tr><td style="font-weight:600;">' + esc(label) + '</td>';
+  var phases = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
+  for (var p = 0; p < phases.length; p++) {
+    var ph = d[phases[p]];
+    h += '<td style="text-align:right;">' + fmtPV(ph) + '</td>';
+    h += '<td style="text-align:right;">' + fmtDelta(ph) + '</td>';
+  }
+  if (d.judge) {
+    var jd = d.judge.vs_agent_delta_pct;
+    var jcls = jd >= 0 ? 'perf-profit' : 'perf-loss';
+    var jsign = jd >= 0 ? '+' : '';
+    h += '<td class="' + jcls + '" style="text-align:right;">' + jsign + jd.toFixed(2) + '%</td>';
+  } else {
+    h += '<td style="text-align:right;">\u2014</td>';
+  }
+  h += '</tr>';
+  return h;
+}
+
+/**
+ * Build extended per-agent debate impact table with PV and delta columns.
+ *
+ * @param {object} agentDeltas - {role: {r1_proposal, r1_revision, r1_js, ...}}
  * @param {function} agentLabel - Maps role to display label
  * @returns {string} HTML table string
  */
 export function buildDebateImpactTable(agentDeltas, agentLabel) {
   var roles = Object.keys(agentDeltas).sort();
   var h = '<table class="data-table" data-testid="debate-impact-agents">';
-  h += '<tr><th>Agent</th><th>R1 Proposal</th><th>Final Revision</th>';
-  h += '<th>\u0394 $</th><th>\u0394 %</th></tr>';
+  h += buildImpactHeader();
   for (var i = 0; i < roles.length; i++) {
-    var d = agentDeltas[roles[i]];
-    if (!d.initial || !d.final) continue;
-    var cls = d.delta_dollars >= 0 ? 'perf-profit' : 'perf-loss';
-    var sign = d.delta_dollars >= 0 ? '+' : '';
-    h += '<tr><td style="font-weight:600;">' + esc(agentLabel(roles[i]).toUpperCase()) + '</td>';
-    h += '<td style="text-align:right;">' + d.initial.return_pct.toFixed(2) + '%</td>';
-    h += '<td style="text-align:right;">' + d.final.return_pct.toFixed(2) + '%</td>';
-    h += '<td class="' + cls + '" style="text-align:right;">' + sign + '$' + numFmt(Math.abs(d.delta_dollars)) + '</td>';
-    h += '<td class="' + cls + '" style="text-align:right;">' + sign + d.delta_pct.toFixed(2) + '%</td></tr>';
+    h += buildImpactRow(agentDeltas[roles[i]], agentLabel(roles[i]).toUpperCase());
   }
   h += '</table>';
   return h;
@@ -117,15 +180,15 @@ export function buildDebateImpactTable(agentDeltas, agentLabel) {
 
 /**
  * Build a comparison table for mean portfolio returns for a single round.
- * Shows the equal-weight mean portfolio performance side by side.
  *
  * @param {object} proposals - perf object with return_pct
  * @param {object} revisions - perf object with return_pct
  * @param {string} label - round label (e.g. "R1", "R2")
  * @param {string} testId - data-testid for the table
+ * @param {object} [jsIntervention] - optional JS intervention perf
  * @returns {string} HTML table string
  */
-export function buildMeanPortfolioTable(proposals, revisions, label, testId) {
+export function buildMeanPortfolioTable(proposals, revisions, label, testId, jsIntervention) {
   if (!proposals || !revisions) return '';
   var delta = round2(revisions.return_pct - proposals.return_pct);
   var cls = delta >= 0 ? 'perf-profit' : 'perf-loss';
@@ -136,6 +199,10 @@ export function buildMeanPortfolioTable(proposals, revisions, label, testId) {
   h += formatReturnCell(proposals.return_pct) + '</td></tr>';
   h += '<tr><td>Revisions (avg)</td><td style="text-align:right;">';
   h += formatReturnCell(revisions.return_pct) + '</td></tr>';
+  if (jsIntervention) {
+    h += '<tr><td>JS Intervention (avg)</td><td style="text-align:right;">';
+    h += formatReturnCell(jsIntervention.return_pct) + '</td></tr>';
+  }
   h += '<tr><td style="font-weight:600;">Critique Impact</td>';
   h += '<td class="' + cls + '" style="text-align:right;font-weight:600;">';
   h += sign + delta.toFixed(2) + '%</td></tr>';
@@ -147,7 +214,7 @@ export function buildMeanPortfolioTable(proposals, revisions, label, testId) {
  * Format a return percentage with sign and color class.
  *
  * @param {number} pct - Return percentage
- * @returns {string} Formatted return string
+ * @returns {string} Formatted HTML span
  */
 function formatReturnCell(pct) {
   var cls = pct >= 0 ? 'perf-profit' : 'perf-loss';
@@ -167,7 +234,6 @@ function round2(n) {
 
 /**
  * Build a simple single-column allocation table (fallback).
- * Returns an HTML string with Ticker/JUDGE columns.
  *
  * @param {object} portfolio - {ticker: weight}
  * @returns {string} HTML table string
@@ -182,5 +248,140 @@ export function buildSimpleAllocTable(portfolio) {
     h += '<td style="font-weight:600;">' + fmtPct(sorted[i][1]) + '</td></tr>';
   }
   h += '</table>';
+  return h;
+}
+
+/**
+ * Format a Sharpe ratio value for display.
+ *
+ * @param {number|null} val - Sharpe value or null
+ * @returns {string} Formatted string
+ */
+function fmtSharpe(val) {
+  if (val === null || val === undefined) return '\u2014';
+  return val.toFixed(2);
+}
+
+/**
+ * Build Sharpe ratio table with one row per debate phase.
+ *
+ * @param {object} sharpe - {r1_proposal, r1_revision, r1_js, r2_revision, r2_js}
+ * @returns {string} HTML table string
+ */
+export function buildSharpeTable(sharpe) {
+  if (!sharpe) return '';
+  var phases = [
+    { key: 'r1_proposal', label: 'R1 Proposal' },
+    { key: 'r1_revision', label: 'R1 Revision' },
+    { key: 'r1_js', label: 'R1 JS Intervention' },
+    { key: 'r2_revision', label: 'R2 Revision' },
+    { key: 'r2_js', label: 'R2 JS Intervention' },
+  ];
+  var h = '<table class="data-table" data-testid="debate-impact-sharpe">';
+  h += '<tr><th>Phase</th><th>Sharpe (ann.)</th></tr>';
+  for (var i = 0; i < phases.length; i++) {
+    var val = sharpe[phases[i].key];
+    h += '<tr><td>' + esc(phases[i].label) + '</td>';
+    h += '<td style="text-align:right;">' + fmtSharpe(val) + '</td></tr>';
+  }
+  h += '</table>';
+  return h;
+}
+
+/**
+ * Build collapse diagnostics agent rows for one round.
+ *
+ * @param {object} agents - {role: {movement, toward_consensus, collapse_share, dissent}}
+ * @param {function} agentLabel - Maps role to display label
+ * @returns {string} HTML table rows
+ */
+function buildCollapseRows(agents, agentLabel) {
+  var roles = Object.keys(agents).sort();
+  var h = '';
+  for (var i = 0; i < roles.length; i++) {
+    var a = agents[roles[i]];
+    h += '<tr><td style="font-weight:600;">' + esc(agentLabel(roles[i]).toUpperCase()) + '</td>';
+    h += '<td style="text-align:right;">' + a.movement.toFixed(4) + '</td>';
+    h += '<td style="text-align:right;">' + a.toward_consensus.toFixed(4) + '</td>';
+    h += '<td style="text-align:right;">';
+    h += a.collapse_share !== null ? a.collapse_share.toFixed(4) : '\u2014';
+    h += '</td>';
+    h += '<td style="text-align:right;">' + a.dissent.toFixed(4) + '</td></tr>';
+  }
+  return h;
+}
+
+/**
+ * Build a collapse diagnostics table for one round.
+ *
+ * @param {object} roundData - {round, agents, collapse_leader, collapse_index}
+ * @param {function} agentLabel - Maps role to display label
+ * @returns {string} HTML string
+ */
+export function buildCollapseTable(roundData, agentLabel) {
+  var h = '<div class="ov-subtitle" style="margin-top:8px;">Round ' + roundData.round + '</div>';
+  h += '<table class="data-table">';
+  h += '<tr><th>Agent</th><th>Movement</th><th>Toward Consensus</th>';
+  h += '<th>Collapse Share</th><th>Dissent</th></tr>';
+  h += buildCollapseRows(roundData.agents, agentLabel);
+  h += '</table>';
+  if (roundData.collapse_leader) {
+    var ci = roundData.collapse_index;
+    var ciCls = '';
+    if (ci < 0.3) ciCls = 'perf-profit';
+    else if (ci > 0.6) ciCls = 'perf-loss';
+    h += '<div style="font-size:0.85em;margin-bottom:8px;">';
+    h += 'Collapse Leader: <strong>' + esc(agentLabel(roundData.collapse_leader).toUpperCase()) + '</strong>';
+    h += ' &mdash; Collapse Index: <span class="' + ciCls + '">' + ci.toFixed(4) + '</span>';
+    h += '</div>';
+  }
+  return h;
+}
+
+/**
+ * Build a single summary metric cell with label and color-coded value.
+ *
+ * @param {object} cell - {label, value, pct}
+ * @returns {string} HTML string
+ */
+function buildSummaryCell(cell) {
+  var h = '<div class="debate-summary-cell">';
+  h += '<div class="debate-summary-label">' + esc(cell.label) + '</div>';
+  h += '<div class="debate-summary-value">';
+  if (cell.value === null || cell.value === undefined) {
+    h += '\u2014';
+  } else if (cell.pct) {
+    var cls = cell.value >= 0 ? 'perf-profit' : 'perf-loss';
+    var sign = cell.value >= 0 ? '+' : '';
+    h += '<span class="' + cls + '">' + sign + cell.value.toFixed(2) + '%</span>';
+  } else {
+    h += cell.value.toFixed(2);
+  }
+  h += '</div></div>';
+  return h;
+}
+
+/**
+ * Build the Debate Performance Summary panel.
+ * Horizontal grid of key outcome metrics with color-coded values.
+ *
+ * @param {object} summary - Server-provided summary metrics
+ * @returns {string} HTML string
+ */
+export function buildDebateSummaryPanel(summary) {
+  if (!summary) return '';
+  var cells = [
+    { label: 'Mean Proposal Return', value: summary.mean_proposal_return, pct: true },
+    { label: 'Final Debate Return', value: summary.final_debate_return, pct: true },
+    { label: 'Debate Alpha', value: summary.debate_alpha, pct: true },
+    { label: 'Judge Return', value: summary.judge_return, pct: true },
+    { label: 'Agent vs Judge', value: summary.agent_vs_judge, pct: true },
+    { label: 'Final Sharpe', value: summary.final_sharpe, pct: false },
+  ];
+  var h = '<div class="debate-summary-grid" data-testid="debate-summary-panel">';
+  for (var i = 0; i < cells.length; i++) {
+    h += buildSummaryCell(cells[i]);
+  }
+  h += '</div>';
   return h;
 }
