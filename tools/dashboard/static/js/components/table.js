@@ -106,8 +106,8 @@ export function buildDebateImpactTable(agentDeltas, agentLabel) {
     var cls = d.delta_dollars >= 0 ? 'perf-profit' : 'perf-loss';
     var sign = d.delta_dollars >= 0 ? '+' : '';
     h += '<tr><td style="font-weight:600;">' + esc(agentLabel(roles[i]).toUpperCase()) + '</td>';
-    h += '<td style="text-align:right;">' + sign + d.initial.return_pct.toFixed(2) + '%</td>';
-    h += '<td style="text-align:right;">' + sign + d.final.return_pct.toFixed(2) + '%</td>';
+    h += '<td style="text-align:right;">' + d.initial.return_pct.toFixed(2) + '%</td>';
+    h += '<td style="text-align:right;">' + d.final.return_pct.toFixed(2) + '%</td>';
     h += '<td class="' + cls + '" style="text-align:right;">' + sign + '$' + numFmt(Math.abs(d.delta_dollars)) + '</td>';
     h += '<td class="' + cls + '" style="text-align:right;">' + sign + d.delta_pct.toFixed(2) + '%</td></tr>';
   }
