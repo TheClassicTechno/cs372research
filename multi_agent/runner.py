@@ -1829,7 +1829,7 @@ class MultiAgentRunner:
     def _parse_action(self, d: dict) -> Action:
         """Convert a raw dict into a validated Action model."""
         orders = []
-        for o in d["orders"]:
+        for o in d.get("orders", []):
             orders.append(
                 Order(
                     ticker=o.get("ticker", ""),
@@ -1842,7 +1842,7 @@ class MultiAgentRunner:
         _VALID_REASONING_TYPES = {"causal", "observational", "risk_assessment", "pattern"}
 
         claims = []
-        for c in d["claims"]:
+        for c in d.get("claims", []):
             raw_rtype = c.get("reasoning_type", "observational")
             # LLMs sometimes return pipe-separated combos like
             # "causal | risk_assessment" — extract the first valid value.
