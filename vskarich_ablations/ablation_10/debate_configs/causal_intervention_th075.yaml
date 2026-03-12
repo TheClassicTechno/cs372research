@@ -1,0 +1,165 @@
+# ===========================================================================
+# Ablation 10 — CRIT Causal Pillar Intervention (threshold 0.75)
+# Config: causal_intervention_th075
+# Pipeline:  propose -> critique -> revise -> CRIT -> [IE post_crit] -> judge
+# Purpose: If CRIT detects causal_alignment < 0.75 for either agent,
+#          force that agent to retry revision with causal reasoning guidance,
+#          then re-score with CRIT. Judge/mean computation uses final retry.
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+# --- Agent profiles (intense enriched) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini
+  crit_llm_model: gpt-5
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 1
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_10
+
+  # --- PID controller ---
+  pid_enabled: false
+
+  # --- Intervention engine ---
+  intervention_config:
+    enabled: true
+
+    revision_limits:
+      max_changed_tickers: 2
+      max_change_pct: 5
+
+    rules:
+      # JS Collapse Detection (post_revision) — disabled for this ablation.
+      # We isolate the causal pillar intervention effect only.
+      js_collapse:
+        enabled: true
+        threshold: 0.0
+        min_js_proposal: 0.10
+        max_retries: 1
+        nudge_prompts:
+          macro: "placeholder"
+          technical: "placeholder"
+
+      # Reasoning Quality (post_crit) — ENABLED
+      # Fires when causal_alignment pillar < 0.75 for either agent.
+      # Only the agent(s) that fail get nudged and retry.
+      reasoning_quality:
+        enabled: true
+        rho_threshold: 0.0
+        max_retries: 1
+        agent_pillar_thresholds:
+          macro:
+            causal_alignment: 0.75
+          technical:
+            causal_alignment: 0.75
+        nudge_prompts:
+          macro: |
+            The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.
+
+            CAUSAL ALIGNMENT REMEDIATION PROTOCOL
+
+            Your causal reasoning score fell below the acceptable threshold.
+            You must correct causal overreach before finalizing your allocation.
+
+            Pearl's Causal Hierarchy applies:
+
+            Level 1 (Association): "X and Y tend to co-occur"
+              → Valid for observational claims only.
+
+            Level 2 (Intervention): "If we change X, Y changes"
+              → Requires an explicit mechanism, not just correlation.
+
+            Level 3 (Counterfactual): "If X had not happened, Y would not have occurred"
+              → Requires strong theoretical grounding.
+
+            Common causal errors to avoid:
+
+            • Do NOT claim that macro indicators "cause" market outcomes
+              unless you articulate the transmission mechanism
+              (e.g., rate hikes → higher discount rates → lower equity valuations).
+
+            • Do NOT treat correlation between macro variables and asset prices
+              as evidence of causation.
+
+            • If you cite a causal relationship, you MUST explain the mechanism:
+              What is the channel? What are the intermediate steps?
+
+            • Label your claims correctly:
+              - "Observational" if based on co-occurrence
+              - "Causal" only if you provide a mechanism
+
+            Before finalizing:
+            1. Review each claim labeled "causal" in your revision.
+            2. For each, verify you have stated an explicit mechanism.
+            3. Downgrade to "observational" if no mechanism exists.
+            4. Ensure your allocation weights follow from correctly-labeled claims.
+          technical: |
+            The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.
+
+            CAUSAL ALIGNMENT REMEDIATION PROTOCOL
+
+            Your causal reasoning score fell below the acceptable threshold.
+            You must correct causal overreach before finalizing your allocation.
+
+            Pearl's Causal Hierarchy applies:
+
+            Level 1 (Association): "X and Y tend to co-occur"
+              → Valid for observational claims only.
+
+            Level 2 (Intervention): "If we change X, Y changes"
+              → Requires an explicit mechanism, not just correlation.
+
+            Level 3 (Counterfactual): "If X had not happened, Y would not have occurred"
+              → Requires strong theoretical grounding.
+
+            Common causal errors to avoid:
+
+            • Do NOT claim that momentum or trend persistence "causes"
+              future price movement unless you articulate why the pattern
+              should persist (e.g., institutional flow dynamics, behavioral
+              anchoring, supply/demand imbalance).
+
+            • Do NOT treat SMA crossovers, relative strength, or price-above-MA
+              as causal drivers. These are associational patterns.
+
+            • If you cite a causal relationship, you MUST explain the mechanism:
+              What is the channel? What are the intermediate steps?
+
+            • Label your claims correctly:
+              - "Observational/Pattern" if based on technical indicators
+              - "Causal" only if you provide a transmission mechanism
+
+            Before finalizing:
+            1. Review each claim labeled "causal" in your revision.
+            2. For each, verify you have stated an explicit mechanism.
+            3. Downgrade to "observational" or "pattern-based" if no mechanism exists.
+            4. Ensure your allocation weights follow from correctly-labeled claims.
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0

@@ -5,8 +5,10 @@
  * cards and overview table, handles the Regenerate action.
  */
 
-import { fetchAblation, regenerateAblation, fetchAblationDebateImpact, fetchPairedTests, fetchFinancialTests, fetchFinancialTestsMeanRev } from '../api/runs.js';
+import { fetchAblation, regenerateAblation, fetchAblationDebateImpact, fetchPairedTests, fetchFinancialTests, fetchFinancialTestsMeanRev, fetchCritDiagnostics, fetchFinancialSignificance } from '../api/runs.js';
 import { buildAblationOverview, buildExperimentCard, buildPairedTestsSection } from '../components/ablation.js';
+import { buildCritDiagnosticsSection } from '../components/critDiagnostics.js';
+import { buildFinancialSignificanceTable } from '../components/financialSignificance.js';
 import { buildFinancialTestsSection } from '../components/financialTests.js';
 import { ablationState, appState } from '../state.js';
 
@@ -34,14 +36,57 @@ function renderContent(token, data, impactMap) {
 
   const impacts = impactMap !== undefined && impactMap !== null ? impactMap : {};
   let html = buildAblationOverview(data);
+  html += '<div data-testid="financial-significance-slot"></div>';
   for (let i = 0; i < names.length; i++) {
     html += buildExperimentCard(names[i], data[names[i]], impacts[names[i]]);
   }
   container.innerHTML = html;
 
+  loadFinancialSignificanceSummary(token);
+  loadCritDiagnostics(token, names);
   loadPairedTests(token, names);
   loadFinancialTests(token, names);
   loadFinancialTestsMeanRev(token, names);
+}
+
+/**
+ * Fetch and inject the cross-ablation financial significance summary table.
+ * Fills the single slot after the overview table.
+ * Accepts the view token.
+ */
+function loadFinancialSignificanceSummary(token) {
+  fetchFinancialSignificance()
+    .then(function (result) {
+      if (appState.viewToken !== token) return;
+      let slot = document.querySelector('[data-testid="financial-significance-slot"]');
+      if (slot !== null) {
+        slot.innerHTML = buildFinancialSignificanceTable(result);
+      }
+    })
+    .catch(function () {
+      // Non-critical — leave slot empty if endpoint unavailable
+    });
+}
+
+/**
+ * Fetch and inject CRIT reasoning diagnostics for each experiment.
+ * Finds the placeholder slot inside each experiment card and fills it.
+ * Accepts the view token and the list of experiment names.
+ */
+function loadCritDiagnostics(token, names) {
+  const slots = document.querySelectorAll('[data-testid="crit-diagnostics-slot"]');
+  for (let i = 0; i < names.length; i++) {
+    (function (expName, slot) {
+      fetchCritDiagnostics(expName)
+        .then(function (result) {
+          if (appState.viewToken !== token) return;
+          slot.innerHTML = buildCritDiagnosticsSection(result);
+        })
+        .catch(function () {
+          // Non-critical — leave slot empty if endpoint unavailable
+        });
+    })(names[i], slots[i]);
+  }
 }
 
 /**
@@ -171,7 +216,7 @@ function doRegenerate() {
  * Handle delegated actions for the ablation view.
  * Accepts the action name and the source element.
  */
-export function handleAction(action, el) {
+export function handleAction(action, _el) {
   if (action === 'regenerate-ablation') {
     doRegenerate();
   }

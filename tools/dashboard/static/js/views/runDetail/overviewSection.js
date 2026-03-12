@@ -14,15 +14,15 @@ import { T } from '../../utils/labels.js';
  * @returns {string} HTML string
  */
 export function buildOverviewPanel(detail, experiment, runId) {
-  var m = detail.manifest || {};
-  var q = detail.quality || {};
+  let m = detail.manifest || {};
+  let q = detail.quality || {};
 
-  var sec = T('sections');
-  var html = '<div class="run-overview">';
+  let sec = T('sections');
+  let html = '<div class="run-overview">';
   html += '<div class="ov-title">' + esc(sec.run_overview) + '</div>';
 
   // --- Table 1: Run identity ---
-  var statusCls = '';
+  let statusCls = '';
   if (detail.status === 'complete' || detail.status === 'partial') {
     statusCls = ' class="status-ok"';
   } else if (detail.status === 'running') {
@@ -31,10 +31,10 @@ export function buildOverviewPanel(detail, experiment, runId) {
     statusCls = ' class="status-failed"';
   }
 
-  var idCfg = T('overview_identity');
+  let idCfg = T('overview_identity');
   html += '<table class="ov-htable">';
   html += '<tr>';
-  for (var ic = 0; ic < idCfg.columns.length; ic++) {
+  for (let ic = 0; ic < idCfg.columns.length; ic++) {
     html += '<th>' + esc(idCfg.columns[ic]) + '</th>';
   }
   html += '</tr>';
@@ -47,25 +47,25 @@ export function buildOverviewPanel(detail, experiment, runId) {
   html += '</tr></table>';
 
   // --- Table 2: Config and agents ---
-  var cfgLabels = T('overview_config');
-  var fields = extractConfigFields(m);
+  let cfgLabels = T('overview_config');
+  let fields = extractConfigFields(m);
   html += '<table class="ov-htable" style="table-layout:auto;">';
   html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.config) + '</th><td>' + esc(fields.configName) + '</td></tr>';
   html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.agents) + '</th><td>' + esc(fields.agentsStr) + '</td></tr>';
   html += '</table>';
 
   // --- Table 3: Key metrics ---
-  var tickersStr = '\u2014';
+  let tickersStr = '\u2014';
   if (m.ticker_universe && m.ticker_universe.length > 0) {
     tickersStr = m.ticker_universe.filter(function (t) { return t !== '_CASH_'; }).join(', ');
   }
-  var roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
+  let roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
     + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
 
-  var metCfg = T('overview_metrics');
+  let metCfg = T('overview_metrics');
   html += '<table class="ov-htable">';
   html += '<tr>';
-  for (var mc = 0; mc < metCfg.columns.length; mc++) {
+  for (let mc = 0; mc < metCfg.columns.length; mc++) {
     html += '<th>' + metCfg.columns[mc] + '</th>';
   }
   html += '</tr>';
@@ -99,11 +99,11 @@ export function buildOverviewPanel(detail, experiment, runId) {
  * @returns {string} HTML string of collapsible cards
  */
 export function buildConfigCards(detail) {
-  var cards = T('cards');
-  var html = '';
+  let cards = T('cards');
+  let html = '';
 
   // Debate config groups card
-  var debateHtml = buildConfigGroupsHtml(
+  let debateHtml = buildConfigGroupsHtml(
     detail.debate_config, 'debate-config-grid',
     DEBATE_EXCLUDE, DEBATE_GROUP_DEFS
   );
@@ -112,7 +112,7 @@ export function buildConfigCards(detail) {
   }
 
   // Scenario config groups card
-  var scenarioHtml = buildConfigGroupsHtml(
+  let scenarioHtml = buildConfigGroupsHtml(
     detail.scenario_config, 'scenario-config-grid',
     SCENARIO_EXCLUDE, SCENARIO_GROUP_DEFS
   );
@@ -121,13 +121,13 @@ export function buildConfigCards(detail) {
   }
 
   // Ticker performance card
-  var tickerHtml = buildTickerPerfHtml(detail.ticker_performance);
+  let tickerHtml = buildTickerPerfHtml(detail.ticker_performance);
   if (tickerHtml) {
     html += buildCard(cards.ticker_performance, tickerHtml);
   }
 
   // Macro environment card
-  var macroHtml = buildMacroHtml(detail.scenario_config);
+  let macroHtml = buildMacroHtml(detail.scenario_config);
   if (macroHtml) {
     html += buildCard(cards.macro_environment, macroHtml);
   }
@@ -138,7 +138,7 @@ export function buildConfigCards(detail) {
 // ---- Private helpers ----
 
 /** Keys excluded from debate config grid (shown in summary/metrics). */
-var DEBATE_EXCLUDE = [
+const DEBATE_EXCLUDE = [
   'agents',
   'debate_setup.llm_model',
   'debate_setup.experiment_name',
@@ -146,14 +146,14 @@ var DEBATE_EXCLUDE = [
 ];
 
 /** Keys excluded from scenario config grid. */
-var SCENARIO_EXCLUDE = [
+const SCENARIO_EXCLUDE = [
   'tickers',
   'macro_context',
   'output_dir',
 ];
 
 /** Semantic group definitions for debate config parameters. */
-var DEBATE_GROUP_DEFS = [
+const DEBATE_GROUP_DEFS = [
   { name: 'Agent Setup', prefixes: ['agent'] },
   { name: 'Broker', prefixes: ['broker'] },
   { name: 'Dataset', prefixes: ['dataset'] },
@@ -163,7 +163,7 @@ var DEBATE_GROUP_DEFS = [
 ];
 
 /** Semantic group definitions for scenario config parameters. */
-var SCENARIO_GROUP_DEFS = [
+const SCENARIO_GROUP_DEFS = [
   { name: 'Allocation Constraints', prefixes: ['allocation', 'constraint'] },
 ];
 
@@ -174,14 +174,14 @@ var SCENARIO_GROUP_DEFS = [
  * @returns {{configName: string, agentsStr: string}} Display strings
  */
 function extractConfigFields(m) {
-  var configName = '\u2014';
+  let configName = '\u2014';
   if (m.config_paths && m.config_paths.length > 0) {
-    var cp = m.config_paths[0].replace(/\\/g, '/').split('/');
+    let cp = m.config_paths[0].replace(/\\/g, '/').split('/');
     configName = cp[cp.length - 1].replace(/\.yaml$/, '').replace(/\.yml$/, '');
   }
-  var agentsStr = '\u2014';
+  let agentsStr = '\u2014';
   if (m.agent_profiles && typeof m.agent_profiles === 'object') {
-    var vals = Object.entries(m.agent_profiles);
+    let vals = Object.entries(m.agent_profiles);
     agentsStr = vals.map(function (entry) {
       return typeof entry[1] === 'string' ? entry[1] : entry[0];
     }).join(', ');
@@ -202,24 +202,24 @@ function extractConfigFields(m) {
  */
 function buildConfigGroupsHtml(config, testId, excludeKeys, groupDefs) {
   if (!config || typeof config !== 'object') return '';
-  var flat = flattenConfig(config);
+  let flat = flattenConfig(config);
   if (flat.length === 0) return '';
 
-  var excludeSet = {};
-  for (var e = 0; e < excludeKeys.length; e++) {
+  let excludeSet = {};
+  for (let e = 0; e < excludeKeys.length; e++) {
     excludeSet[excludeKeys[e]] = true;
   }
-  var filtered = [];
-  for (var i = 0; i < flat.length; i++) {
+  let filtered = [];
+  for (let i = 0; i < flat.length; i++) {
     if (!excludeSet[flat[i].key]) {
       filtered.push(flat[i]);
     }
   }
   if (filtered.length === 0) return '';
 
-  var grouped = groupConfigItems(filtered, groupDefs);
-  var h = '<div class="ov-config-groups" data-testid="' + esc(testId) + '">';
-  for (var g = 0; g < grouped.length; g++) {
+  let grouped = groupConfigItems(filtered, groupDefs);
+  let h = '<div class="ov-config-groups" data-testid="' + esc(testId) + '">';
+  for (let g = 0; g < grouped.length; g++) {
     h += renderGroupCard(grouped[g]);
   }
   h += '</div>';
@@ -234,20 +234,20 @@ function buildConfigGroupsHtml(config, testId, excludeKeys, groupDefs) {
  * @returns {Array} Array of {name, items} groups (non-empty only)
  */
 function groupConfigItems(flatItems, groupDefs) {
-  var groups = {};
-  var groupOrder = [];
-  for (var i = 0; i < groupDefs.length; i++) {
+  let groups = {};
+  let groupOrder = [];
+  for (let i = 0; i < groupDefs.length; i++) {
     groups[groupDefs[i].name] = [];
     groupOrder.push(groupDefs[i].name);
   }
   groups['Other'] = [];
 
-  for (var j = 0; j < flatItems.length; j++) {
-    var item = flatItems[j];
-    var matched = false;
-    for (var k = 0; k < groupDefs.length; k++) {
-      var prefixes = groupDefs[k].prefixes;
-      for (var p = 0; p < prefixes.length; p++) {
+  for (let j = 0; j < flatItems.length; j++) {
+    let item = flatItems[j];
+    let matched = false;
+    for (let k = 0; k < groupDefs.length; k++) {
+      let prefixes = groupDefs[k].prefixes;
+      for (let p = 0; p < prefixes.length; p++) {
         if (item.key === prefixes[p] || item.key.indexOf(prefixes[p] + '.') === 0) {
           groups[groupDefs[k].name].push(item);
           matched = true;
@@ -261,8 +261,8 @@ function groupConfigItems(flatItems, groupDefs) {
     }
   }
 
-  var result = [];
-  for (var g = 0; g < groupOrder.length; g++) {
+  let result = [];
+  for (let g = 0; g < groupOrder.length; g++) {
     if (groups[groupOrder[g]].length > 0) {
       result.push({ name: groupOrder[g], items: groups[groupOrder[g]] });
     }
@@ -280,14 +280,14 @@ function groupConfigItems(flatItems, groupDefs) {
  * @returns {string} HTML string for one group card
  */
 function renderGroupCard(group) {
-  var h = '<div class="ov-config-group">';
+  let h = '<div class="ov-config-group">';
   h += '<div class="ov-config-group-title">' + esc(group.name) + '</div>';
   h += '<div class="ov-config-group-body">';
-  for (var i = 0; i < group.items.length; i++) {
-    var item = group.items[i];
-    var val = item.value;
-    var truncated = val.length > 60 ? val.slice(0, 60) + '\u2026' : val;
-    var titleAttr = val.length > 60 ? ' title="' + esc(val) + '"' : '';
+  for (let i = 0; i < group.items.length; i++) {
+    let item = group.items[i];
+    let val = item.value;
+    let truncated = val.length > 60 ? val.slice(0, 60) + '\u2026' : val;
+    let titleAttr = val.length > 60 ? ' title="' + esc(val) + '"' : '';
     h += '<div class="ov-kv-row">';
     h += '<span class="ov-config-key">' + esc(item.key) + '</span>';
     h += '<span class="ov-config-val"' + titleAttr + '>' + esc(truncated) + '</span>';
@@ -305,17 +305,17 @@ function renderGroupCard(group) {
  */
 function buildTickerPerfHtml(tickerPerf) {
   if (!tickerPerf || tickerPerf.length === 0) return '';
-  var tpCfg = T('ticker_perf');
-  var h = '<table class="data-table" data-testid="ticker-perf-table">';
+  let tpCfg = T('ticker_perf');
+  let h = '<table class="data-table" data-testid="ticker-perf-table">';
   h += '<tr>';
-  for (var tc = 0; tc < tpCfg.columns.length; tc++) {
+  for (let tc = 0; tc < tpCfg.columns.length; tc++) {
     h += '<th>' + esc(tpCfg.columns[tc]) + '</th>';
   }
   h += '</tr>';
-  for (var i = 0; i < tickerPerf.length; i++) {
-    var t = tickerPerf[i];
-    var cls = t.pct_change >= 0 ? 'perf-profit' : 'perf-loss';
-    var sign = t.pct_change >= 0 ? '+' : '';
+  for (let i = 0; i < tickerPerf.length; i++) {
+    let t = tickerPerf[i];
+    let cls = t.pct_change >= 0 ? 'perf-profit' : 'perf-loss';
+    let sign = t.pct_change >= 0 ? '+' : '';
     h += '<tr><td style="font-weight:600;">' + esc(t.ticker) + '</td>';
     h += '<td style="text-align:right;">$' + numFmt(t.open) + '</td>';
     h += '<td style="text-align:right;">$' + numFmt(t.close) + '</td>';

@@ -1,21 +1,21 @@
-export var liveState = {
+export const liveState = {
   renderedIds: {},
   clearedIds: {},
   runId: null,
   _interval: null
 };
 
-export var runsViewState = {
+export const runsViewState = {
   allRuns: [],
   experiment: '',
   lastExperiment: ''
 };
 
-export var ablationState = {
+export const ablationState = {
   data: null
 };
 
-export var appState = {
+export const appState = {
   viewToken: null,
   manifest: null
 };

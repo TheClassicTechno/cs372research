@@ -20,12 +20,12 @@ export function numFmt(n) {
  */
 export function fmtDuration(s) {
   if (s == null) return '\u2014';
-  var sec = Math.round(s);
+  let sec = Math.round(s);
   if (sec < 60) return sec + 's';
-  var m = Math.floor(sec / 60);
-  var rem = sec % 60;
+  let m = Math.floor(sec / 60);
+  let rem = sec % 60;
   if (m >= 60) {
-    var h = Math.floor(m / 60);
+    let h = Math.floor(m / 60);
     m = m % 60;
     return h + 'h ' + m + 'm';
   }

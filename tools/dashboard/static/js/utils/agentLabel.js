@@ -11,11 +11,11 @@
  * profile names (e.g. "value_enriched").
  */
 export function makeAgentLabel(manifest) {
-  var m = manifest !== undefined && manifest !== null ? manifest : {};
-  var profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
+  let m = manifest !== undefined && manifest !== null ? manifest : {};
+  let profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
   return function agentLabel(role) {
     if (profileMap !== null && profileMap[role] !== undefined) {
-      var val = profileMap[role];
+      let val = profileMap[role];
       // agent_profiles may be {role: "profile_name"} (simple) or
       // {role: {system_prompts: ..., user_prompts: ...}} (full config).
       // Only use string values as display names.

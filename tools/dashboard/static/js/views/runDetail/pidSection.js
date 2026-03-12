@@ -7,7 +7,7 @@ import { appState } from '../../state.js';
 import { T } from '../../utils/labels.js';
 
 export function loadPIDSection(experiment, runId, token) {
-  var div = document.getElementById('pid-section');
+  let div = document.getElementById('pid-section');
   fetchPID(experiment, runId)
     .then(function (data) {
       if (appState.viewToken !== token) return;
@@ -16,16 +16,16 @@ export function loadPIDSection(experiment, runId, token) {
         return;
       }
 
-      var pidCfg = T('pid_dynamics');
-      var h = '<div class="section-label">' + esc(pidCfg.title) + '</div>';
+      let pidCfg = T('pid_dynamics');
+      let h = '<div class="section-label">' + esc(pidCfg.title) + '</div>';
       h += '<table class="data-table">';
       h += '<tr>';
-      for (var pc = 0; pc < pidCfg.columns.length; pc++) {
+      for (let pc = 0; pc < pidCfg.columns.length; pc++) {
         h += '<th>' + pidCfg.columns[pc] + '</th>';
       }
       h += '</tr>';
-      for (var i = 0; i < data.length; i++) {
-        var d = data[i];
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i];
         h += '<tr>';
         h += '<td>' + d.round + '</td>';
         h += '<td>' + esc(d.quadrant || '\u2014') + '</td>';

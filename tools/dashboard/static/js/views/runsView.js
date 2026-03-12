@@ -4,7 +4,7 @@ import { esc } from '../utils/dom.js';
 import { fmt, numFmt, fmtDuration } from '../utils/format.js';
 
 export function renderRunsView(token) {
-  var appDiv = document.getElementById('app');
+  let appDiv = document.getElementById('app');
   appDiv.innerHTML = '<div class="controls">' +
     '<label for="exp-select">Experiment:</label>' +
     '<select id="exp-select"></select>' +
@@ -14,20 +14,20 @@ export function renderRunsView(token) {
     '</div>' +
     '<div id="runs-table"></div>';
 
-  var expSelect = document.getElementById('exp-select');
-  var searchInput = document.getElementById('runs-search');
-  var tableDiv = document.getElementById('runs-table');
-  var statusSpan = document.getElementById('runs-status');
+  let expSelect = document.getElementById('exp-select');
+  let searchInput = document.getElementById('runs-search');
+  let tableDiv = document.getElementById('runs-table');
+  let statusSpan = document.getElementById('runs-status');
 
   fetchExperiments()
     .then(function (exps) {
       if (appState.viewToken !== token) return;
       expSelect.innerHTML = '';
-      var targetExp = runsViewState.lastExperiment || '';
-      if (!targetExp) { try { targetExp = sessionStorage.getItem('dashExp') || ''; } catch (e) { } }
-      var foundTarget = false;
+      let targetExp = runsViewState.lastExperiment || '';
+      if (!targetExp) { try { targetExp = sessionStorage.getItem('dashExp') || ''; } catch { /* storage unavailable */ } }
+      let foundTarget = false;
       exps.forEach(function (e) {
-        var opt = document.createElement('option');
+        let opt = document.createElement('option');
         opt.value = e.experiment;
         opt.textContent = e.experiment + ' (' + e.run_count + ' runs)';
         if (e.experiment === targetExp) { opt.selected = true; foundTarget = true; }
@@ -44,7 +44,7 @@ export function renderRunsView(token) {
   expSelect.addEventListener('change', function () {
     searchInput.value = '';
     runsViewState.lastExperiment = expSelect.value;
-    try { sessionStorage.setItem('dashExp', expSelect.value); } catch (e) { }
+    try { sessionStorage.setItem('dashExp', expSelect.value); } catch { /* storage unavailable */ }
     loadRuns(expSelect.value);
   });
 
@@ -69,7 +69,7 @@ export function renderRunsView(token) {
   }
 
   function getRunSearchText(r) {
-    var parts = [r.run_id || '', r.status || '', r.model_name || ''];
+    let parts = [r.run_id || '', r.status || '', r.model_name || ''];
     if (r.agent_profiles && typeof r.agent_profiles === 'object') {
       parts.push(Object.entries(r.agent_profiles).map(function (e) {
         return typeof e[1] === 'string' ? e[1] : e[0];
@@ -84,9 +84,9 @@ export function renderRunsView(token) {
   }
 
   function renderRunsTable(runs, experiment, searchTerm) {
-    var filtered = runs;
+    let filtered = runs;
     if (searchTerm) {
-      var q = searchTerm.toLowerCase();
+      let q = searchTerm.toLowerCase();
       filtered = runs.filter(function (r) {
         return getRunSearchText(r).indexOf(q) !== -1;
       });
@@ -96,32 +96,32 @@ export function renderRunsView(token) {
       tableDiv.innerHTML = '<p style="color:#999;font-size:0.9em;">No runs found.</p>';
       return;
     }
-    var bestIdx = -1;
-    var bestRho = -1;
-    for (var i = 0; i < filtered.length; i++) {
-      var rho = filtered[i].final_rho_bar;
+    let bestIdx = -1;
+    let bestRho = -1;
+    for (let i = 0; i < filtered.length; i++) {
+      let rho = filtered[i].final_rho_bar;
       if (rho != null && rho > bestRho) {
         bestRho = rho;
         bestIdx = i;
       }
     }
 
-    var h = '<table class="data-table">';
+    let h = '<table class="data-table">';
     h += '<tr><th>run_id</th><th>status</th><th>agents</th><th>config</th><th style="width:1%">rounds</th>';
     h += '<th style="width:1%">final <span style="text-decoration:overline">\u03c1</span></th><th style="width:1%">js_drop</th>';
     h += '<th>model</th><th>portfolio</th><th style="width:1%">duration</th></tr>';
-    for (var i = 0; i < filtered.length; i++) {
-      var r = filtered[i];
-      var isBest = (i === bestIdx) ? ' best-run' : '';
-      var statusClass = r.status === 'incomplete' ? ' status-incomplete' : (r.status === 'partial' ? ' status-partial' : '');
-      var configName = '\u2014';
+    for (let i = 0; i < filtered.length; i++) {
+      let r = filtered[i];
+      let isBest = (i === bestIdx) ? ' best-run' : '';
+      let statusClass = r.status === 'incomplete' ? ' status-incomplete' : (r.status === 'partial' ? ' status-partial' : '');
+      let configName = '\u2014';
       if (r.config_paths && r.config_paths.length > 0) {
-        var cp = r.config_paths[0];
-        var parts = cp.replace(/\\/g, '/').split('/');
-        var fname = parts[parts.length - 1];
+        let cp = r.config_paths[0];
+        let parts = cp.replace(/\\/g, '/').split('/');
+        let fname = parts[parts.length - 1];
         configName = fname.replace(/\.yaml$/, '').replace(/\.yml$/, '');
       }
-      var agentsList = '\u2014';
+      let agentsList = '\u2014';
       if (r.agent_profiles && typeof r.agent_profiles === 'object') {
         agentsList = Object.entries(r.agent_profiles).map(function (e) {
           return esc(typeof e[1] === 'string' ? e[1] : e[0]);
@@ -129,9 +129,9 @@ export function renderRunsView(token) {
       } else if (r.roles && r.roles.length > 0) {
         agentsList = r.roles.map(function (a) { return esc(a); }).join('<br>');
       }
-      var perfCell = '\u2014';
+      let perfCell = '\u2014';
       if (r.portfolio_final_value != null) {
-        var perfCls = r.portfolio_final_value >= 100000 ? 'perf-profit' : 'perf-loss';
+        let perfCls = r.portfolio_final_value >= 100000 ? 'perf-profit' : 'perf-loss';
         perfCell = '<span class="' + perfCls + '">$' + numFmt(r.portfolio_final_value) + '</span>';
       }
       h += '<tr class="clickable' + isBest + '" data-action="open-run" data-experiment="' + esc(experiment) + '" data-run-id="' + esc(r.run_id) + '">';
@@ -154,8 +154,8 @@ export function renderRunsView(token) {
 
 export function handleAction(action, el) {
   if (action === 'open-run') {
-    var experiment = el.dataset.experiment;
-    var runId = el.dataset.runId;
+    let experiment = el.dataset.experiment;
+    let runId = el.dataset.runId;
     window.location.hash = '#run/' + experiment + '/' + runId;
   }
 }

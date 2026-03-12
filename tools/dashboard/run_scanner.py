@@ -2108,42 +2108,250 @@ def _flatten_dict(
     return flat
 
 
-def _find_results_by_quarter(
-    output_dir_str: str,
-    debate_stem: str,
-    invest_quarter: str,
-) -> Path | None:
-    """Locate a results directory matching (output_dir, debate_stem, invest_quarter).
+def _compute_run_financial_metrics(
+    run_dir: Path,
+    use_mean_revisions: bool = False,
+) -> dict[str, float] | None:
+    """Compute financial metrics for a single logging run.
 
-    Scans ``{output_dir}/{debate_stem}[_NNN]/`` directories in reverse
-    order (highest suffix first) and returns the first whose
-    ``simulation_log.json`` records a matching ``invest_quarter``.
+    Reads portfolio weights, daily prices, and risk-free rate from the
+    logging run directory and ``data-pipeline/`` data, then calls
+    ``eval.financial.compute_daily_financial_metrics`` — the same
+    function used by ``simulation/runner.py`` at experiment time.
+
+    Results are cached to ``_dashboard/financial_metrics.json`` (or
+    ``_dashboard/mean_revisions_metrics.json``) inside the run dir.
+
+    Returns a flat dict with ``daily_metrics_`` prefixed keys, or None
+    if required data is missing.
     """
-    base = Path(output_dir_str)
-    if not base.is_dir():
+    import re
+
+    from eval.evidence import parse_memo_evidence
+    from eval.financial import compute_daily_financial_metrics
+    from models.case import ClosePricePoint
+
+    # --- Cache check ---
+    cache_name = (
+        "mean_revisions_metrics.json" if use_mean_revisions
+        else "financial_metrics.json"
+    )
+    cache_dir = run_dir / "_dashboard"
+    cache_path = cache_dir / cache_name
+    if cache_path.exists():
+        cached = _safe_json(cache_path)
+        if isinstance(cached, dict) and cached:
+            return cached
+
+    # --- Manifest ---
+    manifest = _safe_json(run_dir / "manifest.json")
+    if not isinstance(manifest, dict):
+        return None
+    ticker_universe = manifest.get("ticker_universe")
+    if not isinstance(ticker_universe, list) or not ticker_universe:
         return None
 
-    candidates: list[Path] = []
-    exact = base / debate_stem
-    if exact.is_dir():
-        candidates.append(exact)
-    for i in range(1, 50):
-        suffixed = base / f"{debate_stem}_{i:03d}"
-        if suffixed.is_dir():
-            candidates.append(suffixed)
-        else:
-            break
+    # --- Find scenario & debate config YAMLs in final/ ---
+    final_dir = run_dir / "final"
+    if not final_dir.is_dir():
+        return None
 
-    # Most-recently-created (highest suffix) first
-    for cand in reversed(candidates):
-        sim_log = _safe_json(cand / "simulation_log.json")
-        if not isinstance(sim_log, dict):
+    scenario_yaml: dict | None = None
+    debate_yaml: dict | None = None
+    for yf in final_dir.glob("*.yaml"):
+        try:
+            content = yaml.safe_load(yf.read_text(encoding="utf-8"))
+        except Exception:
             continue
-        cfg = sim_log.get("config")
-        if isinstance(cfg, dict) and cfg.get("invest_quarter") == invest_quarter:
-            return cand
+        if not isinstance(content, dict):
+            continue
+        if "invest_quarter" in content:
+            scenario_yaml = content
+        elif "broker" in content:
+            debate_yaml = content
 
-    return None
+    if scenario_yaml is None or debate_yaml is None:
+        return None
+
+    invest_quarter_raw = scenario_yaml.get("invest_quarter", "")
+    if not invest_quarter_raw or not isinstance(invest_quarter_raw, str):
+        return None
+
+    # Parse invest quarter: "2022Q4" → year=2022, q="Q4"
+    iq_str = str(invest_quarter_raw)
+    if len(iq_str) >= 6 and iq_str[4] == "Q":
+        year_str = iq_str[:4]
+        q_str = iq_str[4:]
+    else:
+        return None
+    try:
+        year = int(year_str)
+    except ValueError:
+        return None
+
+    # --- Initial cash ---
+    broker_cfg = debate_yaml.get("broker", {})
+    initial_cash = broker_cfg.get("initial_cash", 100_000.0)
+
+    # --- Portfolio weights ---
+    if use_mean_revisions:
+        rev_data = _safe_json(
+            run_dir / "rounds" / "round_001" / "metrics_revision.json",
+        )
+        if not isinstance(rev_data, dict):
+            return None
+        allocations = rev_data.get("allocations")
+        if not isinstance(allocations, dict) or not allocations:
+            return None
+        # Mean across agents
+        all_tickers: set[str] = set()
+        for agent_alloc in allocations.values():
+            if isinstance(agent_alloc, dict):
+                all_tickers.update(agent_alloc.keys())
+        n_agents = len(allocations)
+        if n_agents == 0:
+            return None
+        weights: dict[str, float] = {}
+        for t in all_tickers:
+            total = sum(
+                a.get(t, 0.0) for a in allocations.values()
+                if isinstance(a, dict)
+            )
+            weights[t] = total / n_agents
+    else:
+        portfolio = _safe_json(final_dir / "final_portfolio.json")
+        if not isinstance(portfolio, dict) or not portfolio:
+            return None
+        weights = portfolio
+
+    # --- Load daily prices ---
+    daily_dir = DAILY_PRICES_BASE
+    if not daily_dir.is_dir():
+        return None
+
+    daily_prices: dict[str, list[ClosePricePoint]] = {}
+    for t in ticker_universe:
+        if t == "_CASH_":
+            continue
+        price_path = daily_dir / t / f"{year}_{q_str}.json"
+        if not price_path.exists():
+            continue
+        try:
+            doc = json.loads(price_path.read_text(encoding="utf-8"))
+            bars = [
+                ClosePricePoint(timestamp=d["date"], close=d["close"])
+                for d in doc.get("daily_close", [])
+            ]
+            if bars:
+                daily_prices[t] = bars
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass
+
+    if not daily_prices:
+        return None
+
+    # --- SPY benchmark ---
+    spy_daily: list[ClosePricePoint] | None = None
+    spy_path = daily_dir / "SPY" / f"{year}_{q_str}.json"
+    if spy_path.exists():
+        try:
+            doc = json.loads(spy_path.read_text(encoding="utf-8"))
+            spy_daily = [
+                ClosePricePoint(timestamp=d["date"], close=d["close"])
+                for d in doc.get("daily_close", [])
+            ]
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass
+
+    # --- Risk-free rate from memo ---
+    risk_free_rate = 0.0
+    # invest_quarter "2022Q4" → memo uses PREVIOUS quarter for the data
+    # snapshot: memo_2022_Q3.txt (data available before Q4 starts).
+    prev_q_num = int(q_str[1]) - 1
+    if prev_q_num < 1:
+        memo_year, memo_q = year - 1, "Q4"
+    else:
+        memo_year, memo_q = year, f"Q{prev_q_num}"
+    memo_path = (
+        Path("data-pipeline/final_snapshots/memo_data")
+        / f"memo_{memo_year}_{memo_q}.txt"
+    )
+    if memo_path.exists():
+        try:
+            memo_text = memo_path.read_text(encoding="utf-8")
+            evidence = parse_memo_evidence(memo_text)
+            if "L1-FF" in evidence:
+                match = re.search(r"([\d.]+)", evidence["L1-FF"])
+                if match:
+                    risk_free_rate = float(match.group(1)) / 100.0
+        except Exception:
+            pass
+
+    # --- Convert weights → positions + cash ---
+    # Get day-0 prices for share conversion
+    initial_prices: dict[str, float] = {}
+    for t, bars in daily_prices.items():
+        if bars:
+            initial_prices[t] = bars[0].close
+
+    positions: dict[str, int | float] = {}
+    port_cash = weights.get("_CASH_", 0.0) * initial_cash
+
+    for t, w in weights.items():
+        if t == "_CASH_" or w <= 0:
+            continue
+        price = initial_prices.get(t)
+        if not price or price <= 0:
+            continue
+        dollar_amount = w * initial_cash
+        if use_mean_revisions:
+            # Mean revisions: float shares (matches compute_mean_revisions.py)
+            positions[t] = dollar_amount / price
+        else:
+            # Judge portfolio: int shares (matches multi_agent_debate.py)
+            shares = int(dollar_amount / price)
+            if shares > 0:
+                positions[t] = shares
+
+    if not positions:
+        return None
+
+    # --- Compute metrics ---
+    daily_fin = compute_daily_financial_metrics(
+        positions=positions,
+        cash=port_cash,
+        initial_value=initial_cash,
+        daily_prices=daily_prices,
+        spy_daily=spy_daily,
+        risk_free_rate=risk_free_rate,
+    )
+    if daily_fin is None:
+        return None
+
+    metrics = {
+        "daily_metrics_trading_days": daily_fin.trading_days,
+        "daily_metrics_total_return_pct": daily_fin.total_return_pct,
+        "daily_metrics_annualized_sharpe": daily_fin.annualized_sharpe,
+        "daily_metrics_annualized_sortino": daily_fin.annualized_sortino,
+        "daily_metrics_annualized_volatility": daily_fin.annualized_volatility,
+        "daily_metrics_max_drawdown_pct": daily_fin.max_drawdown_pct,
+        "daily_metrics_calmar_ratio": daily_fin.calmar_ratio,
+        "daily_metrics_spy_return_pct": daily_fin.spy_return_pct,
+        "daily_metrics_excess_return_pct": daily_fin.excess_return_pct,
+    }
+    # Replace None values with 0.0 for downstream t-test compatibility
+    metrics = {k: (v if v is not None else 0.0) for k, v in metrics.items()}
+
+    # --- Write cache ---
+    try:
+        cache_dir.mkdir(exist_ok=True)
+        cache_path.write_text(
+            json.dumps(metrics, indent=2), encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+    return metrics
 
 
 def compute_financial_paired_tests(
@@ -2153,18 +2361,16 @@ def compute_financial_paired_tests(
 ) -> dict:
     """Paired t-tests on financial metrics across two debate configs.
 
-    For each completed run in *experiment*, maps to the simulation
-    results directory via ``invest_quarter`` matching, reads
-    ``summary.json``, and flattens ``episode_summaries[0]`` using
-    the same logic as ``scripts/compare_per_scenario.py``.
+    Computes financial metrics directly from logging run data
+    (portfolio weights + daily prices) via
+    ``eval.financial.compute_daily_financial_metrics`` — the same
+    function used at simulation time.
 
-    When *use_mean_revisions* is True, reads the pre-computed
-    ``mean_revisions_metrics`` (mean of agent revision portfolios)
-    instead of the judge's portfolio metrics.
+    When *use_mean_revisions* is True, averages agent revision
+    allocations instead of using the judge's final portfolio.
 
     Pairs metrics by scenario across the two debate configs and runs
-    ``scipy.stats.ttest_rel`` per metric (matching
-    ``scripts/compare_multiple_configs.py``).
+    ``scipy.stats.ttest_rel`` per metric.
 
     Returns dict with config names, per-metric statistics, and
     per-scenario raw values.
@@ -2178,8 +2384,6 @@ def compute_financial_paired_tests(
 
     # config_stem → {scenario_stem → flat_metrics}
     config_metrics: dict[str, dict[str, dict[str, float]]] = {}
-    # Cache scenario YAML reads (same scenario used by both configs)
-    scenario_cache: dict[str, tuple[str, str]] = {}  # path → (iq, output_dir)
 
     for run_dir in sorted(exp_dir.iterdir()):
         if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
@@ -2193,54 +2397,9 @@ def compute_financial_paired_tests(
             continue
 
         debate_stem = Path(config_paths[0]).stem
-        scenario_path_str = config_paths[1]
-        scenario_stem = Path(scenario_path_str).stem
+        scenario_stem = Path(config_paths[1]).stem
 
-        # Read scenario YAML (cached)
-        if scenario_path_str not in scenario_cache:
-            scenario_path = Path(scenario_path_str)
-            try:
-                sdata = yaml.safe_load(
-                    scenario_path.read_text(encoding="utf-8"),
-                )
-            except Exception:
-                continue
-            if not isinstance(sdata, dict):
-                continue
-            iq = sdata.get("invest_quarter")
-            od = sdata.get("output_dir", "results")
-            if not iq:
-                continue
-            scenario_cache[scenario_path_str] = (iq, od)
-
-        if scenario_path_str not in scenario_cache:
-            continue
-        invest_quarter, output_dir_str = scenario_cache[scenario_path_str]
-
-        # Find matching results directory
-        results_dir = _find_results_by_quarter(
-            output_dir_str, debate_stem, invest_quarter,
-        )
-        if results_dir is None:
-            continue
-
-        # Read and flatten summary.json
-        summary = _safe_json(results_dir / "summary.json")
-        if not isinstance(summary, dict):
-            continue
-        ep_list = summary.get("episode_summaries")
-        if not isinstance(ep_list, list) or not ep_list:
-            continue
-
-        if use_mean_revisions:
-            rev = ep_list[0].get("mean_revisions_metrics")
-            if not isinstance(rev, dict) or not rev:
-                continue
-            metrics = _flatten_dict(
-                {"daily_metrics": rev}, excluded_fields=_FLATTEN_EXCLUDED,
-            )
-        else:
-            metrics = _flatten_dict(ep_list[0], excluded_fields=_FLATTEN_EXCLUDED)
+        metrics = _compute_run_financial_metrics(run_dir, use_mean_revisions)
         if not metrics:
             continue
 
@@ -2342,3 +2501,236 @@ def compute_financial_paired_tests(
         "source": "mean_revisions" if use_mean_revisions else "judge",
         "metrics": results_list,
     }
+
+
+# ------------------------------------------------------------------
+# CRIT Reasoning Diagnostics (ablation-level aggregation)
+# ------------------------------------------------------------------
+
+_PILLAR_KEYS = ["LV", "ES", "AC", "CA"]
+_PILLAR_NAMES = {
+    "LV": "Logical Validity",
+    "ES": "Evidential Support",
+    "AC": "Alternative Consideration",
+    "CA": "Causal Alignment",
+}
+_DIAG_FLAGS = [
+    "contradictions",
+    "unsupported_claims",
+    "ignored_critiques",
+    "premature_certainty",
+    "causal_overreach",
+    "conclusion_drift",
+]
+_DIAG_COUNT_KEYS = [
+    "contradictions_count",
+    "unsupported_claims_count",
+    "ignored_critiques_count",
+    "causal_overreach_count",
+    "orphaned_positions_count",
+]
+
+
+def compute_crit_diagnostics(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Aggregate CRIT reasoning diagnostics across debate configs.
+
+    Extracts pillar scores, diagnostic flags, and diagnostic counts
+    for each agent, grouped by debate config (condition).
+
+    Returns a dict with per-agent, per-condition summary statistics.
+    """
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # Collect per-run CRIT data keyed by (debate_config, agent)
+    # Each entry: {pillar_scores, diag_flags, diag_counts}
+    records: list[dict] = []
+
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        # Read structured CRIT scores
+        r1 = run_dir / "rounds" / "round_001"
+        crit = _safe_json(r1 / "metrics" / "crit_scores.json")
+        if not isinstance(crit, dict):
+            continue
+
+        agent_scores = crit.get("agent_scores", {})
+
+        # Also read raw CRIT responses for counts
+        agents = manifest.get("roles", [])
+        for agent in agents:
+            ascores = agent_scores.get(agent, {})
+            pillars = ascores.get("pillar_scores", {})
+            diags = ascores.get("diagnostics", {})
+
+            # Read raw CRIT response for counts
+            raw_path = r1 / "CRIT" / agent / "response.txt"
+            raw = _safe_json(raw_path)
+            raw_diags = raw.get("diagnostics", {}) if isinstance(raw, dict) else {}
+
+            records.append({
+                "debate_config": debate_stem,
+                "scenario": scenario_stem,
+                "agent": agent,
+                "rho_i": ascores.get("rho_i"),
+                "pillars": {pk: pillars.get(pk) for pk in _PILLAR_KEYS},
+                "flags": {f: diags.get(f, False) for f in _DIAG_FLAGS},
+                "counts": {c: raw_diags.get(c, 0) for c in _DIAG_COUNT_KEYS},
+            })
+
+    if len(records) == 0:
+        return {"pending": True, "message": "No CRIT data found"}
+
+    # Identify debate configs
+    debate_configs = sorted({r["debate_config"] for r in records})
+    agents = sorted({r["agent"] for r in records})
+
+    # Aggregate per (agent, condition)
+    pillar_stats: list[dict] = []
+    flag_stats: list[dict] = []
+    count_stats: list[dict] = []
+
+    for agent in agents:
+        for dc in debate_configs:
+            subset = [r for r in records if r["agent"] == agent and r["debate_config"] == dc]
+            n = len(subset)
+            if n == 0:
+                continue
+
+            # Pillar means/stdevs
+            for pk in _PILLAR_KEYS:
+                vals = [r["pillars"][pk] for r in subset if r["pillars"][pk] is not None]
+                if len(vals) > 0:
+                    pillar_stats.append({
+                        "agent": agent,
+                        "condition": dc,
+                        "pillar": _PILLAR_NAMES[pk],
+                        "pillar_key": pk,
+                        "mean": round(sum(vals) / len(vals), 4),
+                        "stdev": round(
+                            (sum((v - sum(vals)/len(vals))**2 for v in vals) / max(len(vals)-1, 1))**0.5,
+                            4,
+                        ),
+                        "n": len(vals),
+                    })
+
+            # Flag percentages
+            for flag in _DIAG_FLAGS:
+                count = sum(1 for r in subset if r["flags"][flag])
+                flag_stats.append({
+                    "agent": agent,
+                    "condition": dc,
+                    "flag": flag,
+                    "count": count,
+                    "total": n,
+                    "pct": round(100 * count / n, 1),
+                })
+
+            # Count means
+            for ck in _DIAG_COUNT_KEYS:
+                vals = [r["counts"][ck] for r in subset]
+                count_stats.append({
+                    "agent": agent,
+                    "condition": dc,
+                    "count_key": ck,
+                    "mean": round(sum(vals) / len(vals), 3),
+                    "total_instances": sum(vals),
+                    "n": len(vals),
+                })
+
+    return {
+        "agents": agents,
+        "conditions": debate_configs,
+        "pillar_names": _PILLAR_NAMES,
+        "pillar_stats": pillar_stats,
+        "flag_stats": flag_stats,
+        "count_stats": count_stats,
+        "total_records": len(records),
+    }
+
+
+# ------------------------------------------------------------------
+# Cross-Ablation Financial Significance Summary
+# ------------------------------------------------------------------
+
+def compute_financial_significance_summary(
+    base_path: Path = DEFAULT_BASE,
+) -> dict:
+    """Cross-ablation financial significance summary.
+
+    Calls ``compute_financial_paired_tests`` for every experiment that
+    looks like an ablation (``vskarich_ablation_*``), then condenses
+    the per-metric results into a single table-friendly structure.
+
+    Returns::
+
+        {
+          "experiments": ["vskarich_ablation_7", ...],
+          "metrics": [
+            {
+              "metric": "daily_metrics_excess_return_pct",
+              "results": {
+                "vskarich_ablation_7": {"mean_diff": 0.83, "p_value": 0.052, "n": 35},
+                ...
+              }
+            },
+            ...
+          ]
+        }
+    """
+    experiments = [
+        name for name in list_experiments(base_path)
+        if name.startswith("vskarich_ablation_")
+    ]
+
+    # metric_key → {experiment → {mean_diff, p_value, n}}
+    metric_map: dict[str, dict[str, dict | None]] = {}
+
+    for exp in experiments:
+        result = compute_financial_paired_tests(base_path, exp)
+
+        # Skip experiments that are pending, errored, or have no metrics
+        if not isinstance(result, dict):
+            continue
+        metrics_list = result.get("metrics")
+        if not isinstance(metrics_list, list):
+            continue
+
+        for m in metrics_list:
+            key = m["metric"]
+            if key not in metric_map:
+                metric_map[key] = {}
+            metric_map[key][exp] = {
+                "mean_diff": m["mean_diff"],
+                "p_value": m["p_value"],
+                "n": m["n"],
+            }
+
+    # Build ordered metrics list using priority order
+    ordered_keys = [k for k in _FINANCIAL_METRIC_PRIORITIES if k in metric_map]
+    extras = sorted(set(metric_map) - set(ordered_keys))
+    ordered_keys.extend(extras)
+
+    metrics_out: list[dict] = []
+    for key in ordered_keys:
+        row_results: dict[str, dict | None] = {}
+        for exp in experiments:
+            row_results[exp] = metric_map[key].get(exp)
+        metrics_out.append({"metric": key, "results": row_results})
+
+    return {"experiments": experiments, "metrics": metrics_out}

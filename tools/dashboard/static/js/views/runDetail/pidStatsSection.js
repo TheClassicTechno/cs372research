@@ -7,32 +7,32 @@ import { appState } from '../../state.js';
 import { T } from '../../utils/labels.js';
 
 export function loadPIDStatsSection(experiment, runId, token) {
-  var div = document.getElementById('pid-stats-section');
+  let div = document.getElementById('pid-stats-section');
   fetchCRIT(experiment, runId)
     .then(function (data) {
       if (appState.viewToken !== token) return;
       if (!data || data.length === 0) { div.innerHTML = ''; return; }
-      var agentLabel = makeAgentLabel(appState.manifest);
+      let agentLabel = makeAgentLabel(appState.manifest);
 
-      var roles = {};
+      let roles = {};
       data.forEach(function (d) {
         if (d.rho_i) Object.keys(d.rho_i).forEach(function (r) { roles[r] = true; });
       });
-      var roleList = Object.keys(roles).sort();
-      var psCfg = T('pid_stats');
-      var pillars = ['LV', 'ES', 'AC', 'CA'];
-      var pillarNames = { 'LV': psCfg.columns[2], 'ES': psCfg.columns[3], 'AC': psCfg.columns[4], 'CA': psCfg.columns[5] };
+      let roleList = Object.keys(roles).sort();
+      let psCfg = T('pid_stats');
+      let pillars = ['LV', 'ES', 'AC', 'CA'];
+      let pillarNames = { 'LV': psCfg.columns[2], 'ES': psCfg.columns[3], 'AC': psCfg.columns[4], 'CA': psCfg.columns[5] };
 
-      var h = '';
-      var prevRhoBar = null;
-      for (var i = 0; i < data.length; i++) {
-        var d = data[i];
+      let h = '';
+      let prevRhoBar = null;
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i];
 
-        var rhoLabel = '\u03c1\u0304 ' + fmt(d.rho_bar, 3);
+        let rhoLabel = '\u03c1\u0304 ' + fmt(d.rho_bar, 3);
         if (prevRhoBar != null && d.rho_bar != null) {
-          var delta = d.rho_bar - prevRhoBar;
-          var sign = delta >= 0 ? '+' : '';
-          var cls = delta >= 0 ? 'delta-up' : 'delta-down';
+          let delta = d.rho_bar - prevRhoBar;
+          let sign = delta >= 0 ? '+' : '';
+          let cls = delta >= 0 ? 'delta-up' : 'delta-down';
           rhoLabel += '  <span class="' + cls + '">(' + sign + delta.toFixed(3) + ')</span>';
         }
         prevRhoBar = d.rho_bar;
@@ -40,16 +40,16 @@ export function loadPIDStatsSection(experiment, runId, token) {
         h += '<div class="section-label">Round ' + d.round + ' \u2014 ' + rhoLabel + '</div>';
         h += '<table class="data-table">';
         h += '<tr><th>' + esc(psCfg.columns[0]) + '</th><th class="num-col">' + psCfg.columns[1] + '</th>';
-        for (var p = 0; p < pillars.length; p++) h += '<th class="num-col">' + pillarNames[pillars[p]] + '</th>';
+        for (let p = 0; p < pillars.length; p++) h += '<th class="num-col">' + pillarNames[pillars[p]] + '</th>';
         h += '</tr>';
-        for (var r = 0; r < roleList.length; r++) {
-          var role = roleList[r];
-          var rho_i = d.rho_i ? d.rho_i[role] : null;
-          var agentPillars = (d.pillars && d.pillars[role]) ? d.pillars[role] : {};
+        for (let r = 0; r < roleList.length; r++) {
+          let role = roleList[r];
+          let rho_i = d.rho_i ? d.rho_i[role] : null;
+          let agentPillars = (d.pillars && d.pillars[role]) ? d.pillars[role] : {};
           h += '<tr><td>' + esc(agentLabel(role)) + '</td>';
           h += '<td class="num-cell rho-col ' + scoreClass(rho_i) + '">' + fmt(rho_i, 3) + '</td>';
-          for (var p = 0; p < pillars.length; p++) {
-            var pv = agentPillars[pillars[p]];
+          for (let p = 0; p < pillars.length; p++) {
+            let pv = agentPillars[pillars[p]];
             h += '<td class="num-cell ' + scoreClass(pv) + '">' + fmt(pv, 3) + '</td>';
           }
           h += '</tr>';

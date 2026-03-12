@@ -397,6 +397,9 @@ function buildExperimentBody(data, impact) {
   body += '<th>' + esc(meta.columns[1]) + '</th><td>' + esc(data.model) + '</td>';
   body += '</tr></table></div>';
 
+  // CRIT Reasoning Diagnostics placeholder (populated async by ablationView)
+  body += '<div data-testid="crit-diagnostics-slot"></div>';
+
   // Row 0: Debate Impact (per agent config)
   body += buildDebateImpactSection(impact);
 

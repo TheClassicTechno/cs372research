@@ -1,9 +1,9 @@
 import { esc } from '../utils/dom.js';
 
 export function buildTree(items, experiment, runId) {
-  var h = '<ul>';
-  for (var i = 0; i < items.length; i++) {
-    var item = items[i];
+  let h = '<ul>';
+  for (let i = 0; i < items.length; i++) {
+    let item = items[i];
     if (item.type === 'dir') {
       h += '<li><span class="dir-toggle" data-action="toggle-dir">[+] ' + esc(item.name) + '/</span>';
       if (item.children) h += buildTree(item.children, experiment, runId);

@@ -81,7 +81,11 @@ def dashboard_url(tmp_path_factory):
     }
     manifest_path.write_text(json.dumps(manifest, indent=2))
 
-    # --- 2b. Copy ablation_summary.json to RUNS_BASE level ---
+    # --- 2b. Create stub ablation experiment dirs for cross-ablation tests ---
+    for stub_name in ("vskarich_ablation_7", "vskarich_ablation_8"):
+        (tmp_root / stub_name).mkdir()
+
+    # --- 2c. Copy ablation_summary.json to RUNS_BASE level ---
     abl_src = _CANONICAL_RUNS / "ablation_summary.json"
     if abl_src.exists():
         shutil.copy2(abl_src, tmp_root / "ablation_summary.json")
@@ -158,6 +162,27 @@ def dashboard_url(tmp_path_factory):
 
     scanner.compute_financial_paired_tests = _mock_financial_tests
 
+    # --- 2d. Mock cross-ablation financial significance summary ---
+    _original_significance = scanner.compute_financial_significance_summary
+
+    def _mock_financial_significance(*_args, **_kwargs):
+        mock_result = _mock_financial_tests()
+        experiments = ["vskarich_ablation_7", "vskarich_ablation_8"]
+        metrics_out = []
+        for m in mock_result["metrics"]:
+            metrics_out.append({
+                "metric": m["metric"],
+                "results": {
+                    exp: {"mean_diff": m["mean_diff"],
+                          "p_value": m["p_value"],
+                          "n": m["n"]}
+                    for exp in experiments
+                },
+            })
+        return {"experiments": experiments, "metrics": metrics_out}
+
+    scanner.compute_financial_significance_summary = _mock_financial_significance
+
     # --- 3. Point server at our temp copy ---
     original_base = srv.RUNS_BASE
     srv.RUNS_BASE = tmp_root
@@ -179,5 +204,6 @@ def dashboard_url(tmp_path_factory):
     # --- 5. Teardown ---
     srv.RUNS_BASE = original_base
     scanner.compute_financial_paired_tests = _original_compute
+    scanner.compute_financial_significance_summary = _original_significance
     server.should_exit = True
     thread.join(timeout=5)

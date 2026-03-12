@@ -894,6 +894,36 @@ class TestCollapseDiagnostics:
         assert "Movement" in term_texts
         assert "Dissent" in term_texts
 
+    def test_collapse_definitions_typography(self, page: Page, dashboard_url: str):
+        """Collapse definition terms use readable font size (>= 15px)."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-term", timeout=10000,
+        )
+        term = page.query_selector("#collapse-section .collapse-def-term")
+        font_size = page.evaluate(
+            "(el) => window.getComputedStyle(el).fontSize", term,
+        )
+        size_px = float(font_size.replace("px", ""))
+        assert size_px >= 15, (
+            f"Expected term font-size >= 15px, got {font_size}"
+        )
+
+    def test_collapse_definitions_row_spacing(self, page: Page, dashboard_url: str):
+        """Collapse definition rows have visible padding for readability."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-desc", timeout=10000,
+        )
+        desc = page.query_selector("#collapse-section .collapse-def-desc")
+        padding = page.evaluate(
+            "(el) => window.getComputedStyle(el).paddingTop", desc,
+        )
+        pad_px = float(padding.replace("px", ""))
+        assert pad_px >= 8, (
+            f"Expected description padding-top >= 8px, got {padding}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TEST 20 — Ticker performance table
@@ -1131,3 +1161,41 @@ class TestFinancialTestsSection:
         assert len(delta_cells) > 0, "No delta cells with title tooltip found"
         title = delta_cells[0].get_attribute("title")
         assert "95% CI" in title, f"Expected '95% CI' in tooltip, got: {title}"
+
+
+class TestFinancialSignificanceEndpoint:
+    def test_financial_significance_endpoint_returns_data(
+        self, page: Page, dashboard_url: str,
+    ):
+        """The /api/ablation/financial-significance endpoint returns valid data."""
+        import json
+        import urllib.request
+
+        resp = urllib.request.urlopen(
+            f"{dashboard_url}/api/ablation/financial-significance",
+        )
+        data = json.loads(resp.read())
+        assert "experiments" in data, "Missing 'experiments' key"
+        assert "metrics" in data, "Missing 'metrics' key"
+        assert len(data["experiments"]) >= 1, "Expected at least 1 experiment"
+        assert len(data["metrics"]) >= 1, "Expected at least 1 metric"
+
+    def test_financial_significance_metric_has_results(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Each metric entry contains results keyed by experiment."""
+        import json
+        import urllib.request
+
+        resp = urllib.request.urlopen(
+            f"{dashboard_url}/api/ablation/financial-significance",
+        )
+        data = json.loads(resp.read())
+        for m in data["metrics"]:
+            assert "metric" in m, "Missing 'metric' key in entry"
+            assert "results" in m, "Missing 'results' key in entry"
+            for exp in data["experiments"]:
+                r = m["results"].get(exp)
+                if r is not None:
+                    assert "mean_diff" in r, f"Missing mean_diff for {exp}"
+                    assert "p_value" in r, f"Missing p_value for {exp}"

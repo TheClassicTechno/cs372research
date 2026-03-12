@@ -273,6 +273,22 @@ def read_file(
 # Ablation summary endpoints
 # ------------------------------------------------------------------
 
+@app.get("/api/ablation/financial-significance")
+def financial_significance():
+    """Cross-ablation financial significance summary table."""
+    return JSONResponse(
+        run_scanner.compute_financial_significance_summary(RUNS_BASE)
+    )
+
+
+@app.get("/api/ablation/crit-diagnostics/{experiment}")
+def crit_diagnostics(experiment: str):
+    """Aggregate CRIT reasoning diagnostics across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_crit_diagnostics(RUNS_BASE, experiment)
+    )
+
+
 @app.get("/api/ablation/paired-tests/{experiment}")
 def paired_tests(experiment: str):
     """Paired t-test comparing collapse ratios across debate configs."""
