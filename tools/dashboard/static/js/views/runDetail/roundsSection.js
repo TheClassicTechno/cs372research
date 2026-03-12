@@ -14,9 +14,9 @@ import { appState } from '../../state.js';
  * Resolves agent display names via the manifest stored in appState.
  */
 export function loadRoundAgents(experiment, runId, roundNum) {
-  var buttons = document.querySelectorAll('[data-action="load-agents"][data-round="' + roundNum + '"]');
-  var container = null;
-  for (var i = 0; i < buttons.length; i++) {
+  let buttons = document.querySelectorAll('[data-action="load-agents"][data-round="' + roundNum + '"]');
+  let container = null;
+  for (let i = 0; i < buttons.length; i++) {
     if (buttons[i].dataset.experiment === experiment && buttons[i].dataset.runId === runId) {
       container = buttons[i].parentElement;
       break;
@@ -24,7 +24,7 @@ export function loadRoundAgents(experiment, runId, roundNum) {
   }
   if (!container) return;
 
-  var agentLabel = makeAgentLabel(appState.manifest);
+  let agentLabel = makeAgentLabel(appState.manifest);
   container.innerHTML = '<span class="loading">Loading agent details...</span>';
   fetchRound(experiment, runId, roundNum)
     .then(function (detail) {

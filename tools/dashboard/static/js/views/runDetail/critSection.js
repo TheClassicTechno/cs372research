@@ -5,13 +5,13 @@ import { makeAgentLabel } from '../../utils/agentLabel.js';
 import { appState } from '../../state.js';
 
 export function loadCRITSection(experiment, runId, token) {
-  var div = document.getElementById('crit-section');
+  let div = document.getElementById('crit-section');
   fetchCRIT(experiment, runId)
     .then(function (data) {
       if (appState.viewToken !== token) return;
       if (!data || data.length === 0) { div.innerHTML = ''; return; }
-      var agentLabel = makeAgentLabel(appState.manifest);
-      var h = '<div class="section-label">CRIT SCORE TRAJECTORY</div>';
+      let agentLabel = makeAgentLabel(appState.manifest);
+      let h = '<div class="section-label">CRIT SCORE TRAJECTORY</div>';
       h += '<div class="chart-container">' + buildCRITChart(data, agentLabel) + '</div>';
       div.innerHTML = buildCard('CRIT Scores', h, true);
       div.querySelector('.card').classList.add('open');

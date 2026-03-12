@@ -13,7 +13,7 @@ import { fmtPvalue, pvalueClass } from '../utils/format.js';
  * Metric display configuration: label, group, and formatting type.
  * Returns {label, group, type} for a given metric key.
  */
-var METRIC_CONFIG = {
+let METRIC_CONFIG = {
   'daily_metrics_excess_return_pct': { label: 'Excess Return vs S&P500', group: 'performance', type: 'pct' },
   'daily_metrics_total_return_pct':  { label: 'Return %',               group: 'performance', type: 'pct' },
   'daily_metrics_annualized_sharpe': { label: 'Sharpe',                 group: 'performance', type: 'ratio' },
@@ -26,7 +26,7 @@ var METRIC_CONFIG = {
 };
 
 /** Ordered metric keys for the table display. */
-var METRIC_ORDER = [
+let METRIC_ORDER = [
   'daily_metrics_excess_return_pct',
   'daily_metrics_total_return_pct',
   'daily_metrics_annualized_sharpe',
@@ -39,7 +39,7 @@ var METRIC_ORDER = [
 ];
 
 /** Group labels for subheader rows. */
-var GROUP_LABELS = {
+let GROUP_LABELS = {
   'performance': 'Performance',
   'risk': 'Risk',
   'portfolio': 'Portfolio Behavior',
@@ -77,8 +77,8 @@ function fmtValue(val, type) {
  */
 function fmtFinDelta(val, type) {
   if (val == null) return '\u2014';
-  var sign = val >= 0 ? '+' : '\u2212';
-  var abs = Math.abs(val);
+  let sign = val >= 0 ? '+' : '\u2212';
+  let abs = Math.abs(val);
   if (type === 'pct') return sign + abs.toFixed(2) + '%';
   if (type === 'ratio') return sign + abs.toFixed(3);
   if (type === 'int') return sign + Math.round(abs).toLocaleString();
@@ -102,7 +102,7 @@ function isPositiveGood(metric) {
  */
 function deltaClass(metric, diff) {
   if (diff === 0 || diff == null) return '';
-  var positive = diff > 0;
+  let positive = diff > 0;
   if (!isPositiveGood(metric)) positive = !positive;
   return positive ? 'perf-profit' : '';
 }
@@ -112,13 +112,13 @@ function deltaClass(metric, diff) {
  * Returns e.g. "95% CI: [+0.12%, +1.70%]".
  */
 function fmtCiTooltip(type, ci) {
-  var lo = ci[0];
-  var hi = ci[1];
+  let lo = ci[0];
+  let hi = ci[1];
   return '95% CI: [' + fmtFinDelta(lo, type) + ', ' + fmtFinDelta(hi, type) + ']';
 }
 
 /** Key metrics to highlight in the summary box. */
-var SUMMARY_METRICS = [
+let SUMMARY_METRICS = [
   'daily_metrics_excess_return_pct',
   'daily_metrics_annualized_sharpe',
   'daily_metrics_annualized_sortino',
@@ -131,25 +131,25 @@ var SUMMARY_METRICS = [
  * Returns an HTML string.
  */
 function buildSummaryBox(metricsMap) {
-  var items = [];
-  for (var i = 0; i < SUMMARY_METRICS.length; i++) {
-    var key = SUMMARY_METRICS[i];
-    var m = metricsMap[key];
+  let items = [];
+  for (let i = 0; i < SUMMARY_METRICS.length; i++) {
+    let key = SUMMARY_METRICS[i];
+    let m = metricsMap[key];
     if (m === undefined) continue;
-    var cfg = getMetricConfig(key);
-    var diff = m.mean_diff;
+    let cfg = getMetricConfig(key);
+    let diff = m.mean_diff;
     if (diff == null) continue;
-    var improved = isPositiveGood(key) ? diff > 0 : diff < 0;
+    let improved = isPositiveGood(key) ? diff > 0 : diff < 0;
     if (!improved) continue;
     items.push({ label: cfg.label, value: fmtFinDelta(diff, cfg.type) });
   }
 
   if (items.length === 0) return '';
 
-  var h = '<div class="fin-summary-box" data-testid="financial-summary-box">';
+  let h = '<div class="fin-summary-box" data-testid="financial-summary-box">';
   h += '<div class="fin-summary-title">Key Improvements from Intervention</div>';
   h += '<div class="fin-summary-items">';
-  for (var j = 0; j < items.length; j++) {
+  for (let j = 0; j < items.length; j++) {
     h += '<div class="fin-summary-item">';
     h += '<div class="fin-summary-label">' + esc(items[j].label) + '</div>';
     h += '<div class="fin-summary-value perf-profit">' + esc(items[j].value) + '</div>';
@@ -164,7 +164,7 @@ function buildSummaryBox(metricsMap) {
  * Returns an HTML string with subheader rows for each metric group.
  */
 function buildMetricsTable(data, metricsMap) {
-  var h = '<table class="data-table fin-table" data-testid="financial-tests-table">';
+  let h = '<table class="data-table fin-table" data-testid="financial-tests-table">';
   h += '<thead><tr>';
   h += '<th>Metric</th>';
   h += '<th class="num-col">Baseline</th>';
@@ -174,25 +174,25 @@ function buildMetricsTable(data, metricsMap) {
   h += '</tr></thead>';
   h += '<tbody>';
 
-  var currentGroup = '';
+  let currentGroup = '';
 
-  for (var i = 0; i < METRIC_ORDER.length; i++) {
-    var key = METRIC_ORDER[i];
-    var m = metricsMap[key];
+  for (let i = 0; i < METRIC_ORDER.length; i++) {
+    let key = METRIC_ORDER[i];
+    let m = metricsMap[key];
     if (m === undefined) continue;
 
-    var cfg = getMetricConfig(key);
+    let cfg = getMetricConfig(key);
 
     if (cfg.group !== currentGroup) {
       currentGroup = cfg.group;
-      var groupLabel = GROUP_LABELS[currentGroup];
+      let groupLabel = GROUP_LABELS[currentGroup];
       if (groupLabel === undefined) groupLabel = currentGroup;
       h += '<tr class="fin-group-header"><td colspan="5">' + esc(groupLabel) + '</td></tr>';
     }
 
-    var pClass = pvalueClass(m.p_value);
-    var dClass = deltaClass(key, m.mean_diff);
-    var ciTip = fmtCiTooltip(cfg.type, m.ci_95);
+    let pClass = pvalueClass(m.p_value);
+    let dClass = deltaClass(key, m.mean_diff);
+    let ciTip = fmtCiTooltip(cfg.type, m.ci_95);
 
     h += '<tr>';
     h += '<td class="fin-metric-name">' + esc(cfg.label) + '</td>';
@@ -222,18 +222,18 @@ export function buildFinancialTestsSection(data) {
       + '<p>' + esc(data.error) + '</p>';
   }
 
-  var metrics = data.metrics;
+  let metrics = data.metrics;
   if (!Array.isArray(metrics) || metrics.length === 0) return '';
 
-  var metricsMap = {};
-  for (var i = 0; i < metrics.length; i++) {
+  let metricsMap = {};
+  for (let i = 0; i < metrics.length; i++) {
     metricsMap[metrics[i].metric] = metrics[i];
   }
 
-  var sourceLabel = data.source === 'mean_revisions'
+  let sourceLabel = data.source === 'mean_revisions'
     ? 'Mean Agent Revisions' : 'Judge Portfolio';
 
-  var h = '<div class="fin-section" data-testid="financial-tests-section">';
+  let h = '<div class="fin-section" data-testid="financial-tests-section">';
 
   h += '<div class="section-label">Financial Performance Impact \u2014 '
     + esc(sourceLabel) + ' (Paired t-test, N\u2009=\u2009'

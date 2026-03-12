@@ -171,7 +171,7 @@ function doRegenerate() {
  * Handle delegated actions for the ablation view.
  * Accepts the action name and the source element.
  */
-export function handleAction(action, el) {
+export function handleAction(action, _el) {
   if (action === 'regenerate-ablation') {
     doRegenerate();
   }

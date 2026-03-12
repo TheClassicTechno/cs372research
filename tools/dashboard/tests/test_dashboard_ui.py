@@ -894,6 +894,36 @@ class TestCollapseDiagnostics:
         assert "Movement" in term_texts
         assert "Dissent" in term_texts
 
+    def test_collapse_definitions_typography(self, page: Page, dashboard_url: str):
+        """Collapse definition terms use readable font size (>= 15px)."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-term", timeout=10000,
+        )
+        term = page.query_selector("#collapse-section .collapse-def-term")
+        font_size = page.evaluate(
+            "(el) => window.getComputedStyle(el).fontSize", term,
+        )
+        size_px = float(font_size.replace("px", ""))
+        assert size_px >= 15, (
+            f"Expected term font-size >= 15px, got {font_size}"
+        )
+
+    def test_collapse_definitions_row_spacing(self, page: Page, dashboard_url: str):
+        """Collapse definition rows have visible padding for readability."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-desc", timeout=10000,
+        )
+        desc = page.query_selector("#collapse-section .collapse-def-desc")
+        padding = page.evaluate(
+            "(el) => window.getComputedStyle(el).paddingTop", desc,
+        )
+        pad_px = float(padding.replace("px", ""))
+        assert pad_px >= 8, (
+            f"Expected description padding-top >= 8px, got {padding}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TEST 20 — Ticker performance table
