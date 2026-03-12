@@ -1,0 +1,47 @@
+{
+  "run_name": "single_agent_slim",
+  "num_episodes": 1,
+  "episode_summaries": [
+    {
+      "episode_id": "ep_000",
+      "initial_cash": 100000.0,
+      "final_cash": 10079.970000000001,
+      "final_positions": {
+        "JPM": 328,
+        "RTX": 146,
+        "WMT": 673
+      },
+      "final_prices": {
+        "JPM": 161.96,
+        "RTX": 80.44,
+        "WMT": 51.44,
+        "_CASH_": 1.0
+      },
+      "position_values": {
+        "JPM": 53122.880000000005,
+        "RTX": 11744.24,
+        "WMT": 34619.119999999995
+      },
+      "book_value": 109566.21,
+      "return_pct": 9.566210000000007,
+      "return_pct_with_cash_interest": 9.697921495589005,
+      "total_trades": 3,
+      "sharpe_ratio": null,
+      "sortino_ratio": null,
+      "max_drawdown": 0.0,
+      "max_drawdown_pct": 0.0,
+      "calmar_ratio": null,
+      "daily_metrics": {
+        "trading_days": 63,
+        "total_return_pct": 9.693826895588979,
+        "annualized_sharpe": 3.1414832184350563,
+        "annualized_sortino": 4.366195926920128,
+        "annualized_volatility": 0.10303277231570918,
+        "max_drawdown_pct": 3.0157734482905774,
+        "calmar_ratio": 14.850826233231484,
+        "spy_return_pct": 11.684051763783549,
+        "excess_return_pct": -1.99022486819457
+      }
+    }
+  ]
+}
