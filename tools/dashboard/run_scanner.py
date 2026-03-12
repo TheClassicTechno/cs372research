@@ -1961,6 +1961,12 @@ def compute_paired_tests(
 
     # Identify the two debate configs
     debate_configs = sorted({k[0] for k in groups})
+    if len(debate_configs) < 2:
+        return {
+            "pending": True,
+            "message": f"Waiting for data — found {len(debate_configs)} of 2 debate configs",
+            "configs_found": debate_configs,
+        }
     if len(debate_configs) != 2:
         return {
             "error": f"Expected 2 debate configs, found {len(debate_configs)}",
@@ -2242,6 +2248,12 @@ def compute_financial_paired_tests(
 
     # Identify the two debate configs
     configs = sorted(config_metrics.keys())
+    if len(configs) < 2:
+        return {
+            "pending": True,
+            "message": f"Waiting for data — found {len(configs)} of 2 debate configs",
+            "configs_found": configs,
+        }
     if len(configs) != 2:
         return {
             "error": f"Expected 2 debate configs, found {len(configs)}",

@@ -413,7 +413,7 @@ function buildExperimentBody(data, impact) {
   if (data.pillars !== undefined && data.pillars !== null) { row1 += col(buildPillarsTable(data.pillars)); }
   if (data.js_divergence !== undefined && data.js_divergence !== null) { row1 += col(buildJsSection(data.js_divergence)); }
   if (data.evidence_overlap !== undefined && data.evidence_overlap !== null) { row1 += col(buildEoSection(data.evidence_overlap)); }
-  if (row1 !== '') { body += '<div class="metrics-row" data-testid="metrics-row-quality">' + row1 + '</div>'; }
+  if (row1 !== '') { body += '<div class="metrics-row metrics-row-quality" data-testid="metrics-row-quality">' + row1 + '</div>'; }
 
   // Row 2: PID, Collapse Metrics
   let row2 = '';
@@ -478,6 +478,10 @@ function rhoSortKey(d) {
  */
 export function buildPairedTestsSection(data) {
   if (data === undefined || data === null) return '';
+  if (data.pending === true) {
+    return '<div class="section-label">Paired t-Test (Collapse Ratio)</div>'
+      + '<p class="status-incomplete">' + esc(data.message) + '</p>';
+  }
   if (data.error !== undefined) {
     return '<div class="section-label">Paired Statistical Test</div>'
       + '<p>' + esc(data.error) + '</p>';

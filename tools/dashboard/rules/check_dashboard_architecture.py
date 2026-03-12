@@ -810,11 +810,25 @@ def print_report() -> None:
 BASELINE_FILE = pathlib.Path(__file__).resolve().parent / "warning_baseline.json"
 
 
+def _normalize_warning(w: str) -> str:
+    """Strip line numbers from a warning so baseline comparison is stable.
+
+    Warnings like ``file.js:123-456: message`` become ``file.js: message``.
+    Single-line refs like ``file.js:42: message`` also collapse.
+    Warnings without line numbers pass through unchanged.
+    """
+    return re.sub(r"^([^:]+):\d+(?:-\d+)?:", r"\1:", w)
+
+
 def _load_baseline() -> set[str]:
-    """Load the set of known/accepted warnings from the baseline file."""
+    """Load the set of known/accepted warnings from the baseline file.
+
+    Stored warnings are normalized so line-number shifts don't cause
+    spurious new-warning failures.
+    """
     if not BASELINE_FILE.exists():
         return set()
-    return set(json.loads(BASELINE_FILE.read_text(encoding="utf-8")))
+    return {_normalize_warning(w) for w in json.loads(BASELINE_FILE.read_text(encoding="utf-8"))}
 
 
 def _save_baseline(current_warnings: list[str]) -> None:
@@ -863,8 +877,9 @@ def main() -> None:
         sys.exit(1 if failures else 0)
 
     baseline = _load_baseline()
-    new_warnings = [w for w in warnings if w not in baseline]
-    resolved = sorted(baseline - set(warnings))
+    current_normalized = {_normalize_warning(w) for w in warnings}
+    new_warnings = [w for w in warnings if _normalize_warning(w) not in baseline]
+    resolved = sorted(baseline - current_normalized)
 
     if resolved:
         print(f"\nRESOLVED ({len(resolved)} warnings fixed since baseline):")

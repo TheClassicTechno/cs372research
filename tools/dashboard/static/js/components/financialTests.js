@@ -217,6 +217,10 @@ function buildMetricsTable(data, metricsMap) {
  */
 export function buildFinancialTestsSection(data) {
   if (data === undefined || data === null) return '';
+  if (data.pending === true) {
+    return '<div class="section-label">Financial Metrics Comparison</div>'
+      + '<p class="status-incomplete">' + esc(data.message) + '</p>';
+  }
   if (data.error !== undefined) {
     return '<div class="section-label">Financial Metrics Comparison</div>'
       + '<p>' + esc(data.error) + '</p>';

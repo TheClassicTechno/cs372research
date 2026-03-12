@@ -245,18 +245,30 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
   gap: 16px;
   margin-bottom: 16px;
 }
+/* Quality metrics (Rho, Pillars, JS, EO): 2×2 grid */
+.metrics-row-quality {
+  grid-template-columns: repeat(2, 1fr);
+}
 .metrics-col {
   min-width: 0;
   background: #fff;
   border: 1px solid #d6c4a1;
-  border-radius: 4px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 .metrics-col .section-label:first-child { margin-top: 0; }
+.metrics-col .section-label {
+  font-size: 0.85em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e8e0d4;
+}
+.metrics-col table.data-table { width: 100%; }
 .metrics-col table.data-table:last-child { margin-bottom: 0; }
 /* Row 2 (PID + Collapse): 2-column layout */
 .metrics-row-spread {
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
 }
 /* Match section titles inside experiment cards to rest of dashboard */
 .ablation-experiment .card-body .section-label {
