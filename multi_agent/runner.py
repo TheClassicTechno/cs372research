@@ -140,6 +140,11 @@ from .models import (
     PIDEvent,
     RoundMetrics,
 )
+from telemetry.round_metrics_writer import (
+    write_allocation_metrics,
+    write_crit_results,
+    write_round_state,
+)
 
 
 def _extract_thesis(action_dict: dict, role: str = "", phase: str = "") -> str:
@@ -262,12 +267,12 @@ def _extract_citations(
     tag = f"[{role}/{phase}] " if role else ""
 
     # 1. Top-level structured citations (base format)
-    top_level = action_dict.get("evidence_citations", [])
+    top_level = action_dict.get("evidence_citations")
     if top_level:
         return copy.deepcopy(top_level)
 
     # 2. Extract from claims[].evidence (enriched format)
-    claims = action_dict.get("claims", [])
+    claims = action_dict.get("claims")
     if claims:
         seen = set()
         citations = []
@@ -329,7 +334,7 @@ def build_reasoning_bundle(
 
     # Find this agent's LATEST revision (fall back to proposal if none)
     revision = None
-    for r in reversed(state.get("revisions") or []):
+    for r in reversed(state["revisions"]):
         if r["role"] == role:
             revision = r
             break
@@ -343,7 +348,7 @@ def build_reasoning_bundle(
     critiques_received = []
     self_critique = None
     role_lower = role.lower()
-    for critic in state.get("critiques") or []:
+    for critic in state["critiques"]:
         from_role = critic["role"]
         # Capture this agent's self_critique
         if from_role == role:
@@ -479,7 +484,7 @@ class MultiAgentRunner:
         self._critique_graph = None
         self._revise_graph = None
 
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self.config.intervention_config:
             if self.config.parallel_agents:
                 self._propose_graph = compile_parallel_propose_graph(self.config)
                 self._critique_graph = compile_parallel_critique_graph(self.config)
@@ -495,7 +500,7 @@ class MultiAgentRunner:
 
         # --- CRIT scorer (uses dedicated model, default gpt-5-mini) ---
         self._crit_scorer = None
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self.config.intervention_config:
             from eval.crit import CritScorer
 
             crit_config = self.config.to_dict()
@@ -533,6 +538,7 @@ class MultiAgentRunner:
         # --- CRIT prompt/response capture ---
         self._crit_current_captures: dict[str, dict] = {}
         self._crit_round1_captures: dict[str, dict] | None = None
+        self._last_round_crit = None  # latest RoundCritResult for post-crit checkpoint
 
         # --- PID controller ---
         self._pid_controller = None
@@ -550,6 +556,14 @@ class MultiAgentRunner:
             from .debate_logger import DebateLogger
             experiment = self.config.experiment_name or "default"
             self._debate_logger = DebateLogger(self.config, experiment)
+
+        # --- Intervention engine (intra-round retry on acute failures) ---
+        self._intervention_engine = None
+        if self.config.intervention_config:
+            from eval.interventions import build_intervention_engine
+            self._intervention_engine = build_intervention_engine(
+                self.config.intervention_config
+            )
 
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -581,6 +595,7 @@ class MultiAgentRunner:
         self._memo_evidence_lookup = {}
         self._crit_current_captures = {}
         self._crit_round1_captures = None
+        self._intervention_history: list[dict] = []
         reset_registry_cache()
         if self.config.pid_config:
             from eval.PID.controller import PIDController
@@ -588,14 +603,33 @@ class MultiAgentRunner:
                 self.config.pid_config, self.config.initial_beta
             )
 
+    @staticmethod
+    def _latest_per_role(decisions: list[dict]) -> list[dict]:
+        """Deduplicate decisions to the latest entry per role.
+
+        LangGraph reducers append to lists, so after retries
+        ``state["revisions"]`` contains entries from the original revise
+        AND every retry.  This helper keeps only the last entry per role
+        so JS / evidence metrics reflect the current state.
+        """
+        by_role: dict[str, dict] = {}
+        for d in decisions:
+            role = d.get("role")
+            if role is None:
+                raise ValueError(f"Decision dict missing 'role' key: {list(d.keys())}")
+            by_role[role] = d
+        return list(by_role.values())
+
     def _get_js_divergence(self, state: dict) -> float | None:
         """Compute JS divergence between the latest agent allocations."""
         from eval.divergence import generalized_js_divergence
-        decisions = state.get("revisions") or state.get("proposals", [])
+        decisions = self._latest_per_role(
+            state["revisions"] if state["revisions"] else state["proposals"]
+        )
         if not decisions:
             return None
         allocs = [
-            d.get("action_dict", {}).get("allocation", {})
+            d["action_dict"]["allocation"]
             for d in decisions
         ]
         if len(allocs) < 2:
@@ -628,7 +662,7 @@ class MultiAgentRunner:
         ]
 
         # Walk the block order and emit each file in rendered order
-        order = manifest.get("block_order", [])
+        order = manifest["block_order"]
         role_files = manifest.get("role_files", {})
 
         for block in order:
@@ -668,11 +702,11 @@ class MultiAgentRunner:
         state = self._run_pipeline(observation)
 
         # Parse final action
-        final_dict = state.get("final_action", {})
+        final_dict = state["final_action"]
         action = self._parse_action(final_dict)
 
         # Parse trace
-        trace_dict = state.get("trace", {})
+        trace_dict = state["trace"]
         trace = self._parse_trace(trace_dict, observation, action)
 
         # Save to disk
@@ -692,7 +726,7 @@ class MultiAgentRunner:
         state = self.pipeline_graph.invoke(state)
 
         # Parse memo evidence once for CRIT citation enrichment
-        if self.config.pid_enabled:
+        if self.config.pid_enabled or self._intervention_engine:
             from eval.evidence import parse_memo_evidence
             self._memo_evidence_lookup = parse_memo_evidence(
                 state.get("enriched_context", "")
@@ -742,16 +776,16 @@ class MultiAgentRunner:
             if t > 0:
                 state["critiques"] = []
 
-            if self.config.pid_enabled:
+            if self.config.pid_enabled or self._intervention_engine:
                 state = self._run_round_with_pid(state, t + 1)
             else:
                 state = self.run_single_round(state)
                 if self.config.console_display:
-                    render_portfolio_table(state.get("proposals", []), "Allocations")
-                    render_portfolio_table(state.get("revisions", []), "Revisions")
+                    render_portfolio_table(state["proposals"], "Allocations")
+                    render_portfolio_table(state["revisions"], "Revisions")
                 else:
-                    _print_comparison_table(state.get("proposals", []), "Allocations")
-                    _print_comparison_table(state.get("revisions", []), "Revisions")
+                    _print_comparison_table(state["proposals"], "Allocations")
+                    _print_comparison_table(state["revisions"], "Revisions")
 
                 js = self._get_js_divergence(state)
                 if js is not None:
@@ -762,9 +796,9 @@ class MultiAgentRunner:
                         print(f"\n  Round {t+1} Disagreement (JS Divergence): {js:.4f} bits")
 
                 if self._debate_logger:
-                    self._debate_logger.write_proposals(state.get("proposals", []))
-                    self._debate_logger.write_critiques(state.get("critiques", []))
-                    self._debate_logger.write_revisions(state.get("revisions", []))
+                    self._debate_logger.write_proposals(state["proposals"])
+                    self._debate_logger.write_critiques(state["critiques"])
+                    self._debate_logger.write_revisions(state["revisions"])
                     metrics = {"js_divergence": js} if js is not None else None
                     self._debate_logger.write_round_state(state, t + 1, metrics=metrics)
 
@@ -774,7 +808,7 @@ class MultiAgentRunner:
                 # entry per role so the next round and judge see clean state.
                 seen = set()
                 deduped = []
-                for rev in reversed(state.get("revisions", [])):
+                for rev in reversed(state["revisions"]):
                     if rev["role"] not in seen:
                         seen.add(rev["role"])
                         deduped.append(rev)
@@ -783,8 +817,8 @@ class MultiAgentRunner:
                 # Sort proposals and critiques by role for deterministic
                 # ordering — parallel fan-out merges via operator.add in
                 # thread-completion order, which is non-deterministic.
-                state["proposals"] = sorted(state.get("proposals", []), key=lambda p: p["role"])
-                state["critiques"] = sorted(state.get("critiques", []), key=lambda c: c["role"])
+                state["proposals"] = sorted(state["proposals"], key=lambda p: p["role"])
+                state["critiques"] = sorted(state["critiques"], key=lambda c: c["role"])
 
             terminated_early = self.should_terminate(state)
             if terminated_early:
@@ -805,7 +839,7 @@ class MultiAgentRunner:
 
         # Rich console display: judge result + debate end
         if self.config.console_display:
-            final_action = state.get("final_action", {})
+            final_action = state["final_action"]
             if final_action:
                 render_judge_result(final_action)
 
@@ -823,9 +857,14 @@ class MultiAgentRunner:
                 state, self._pid_phase_data, terminated_early,
                 state.get("enriched_context", ""),
                 crit_captures=self._crit_round1_captures,
+                intervention_history=self._intervention_history,
             )
             if not self.config.console_display:
                 print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
+
+        # Stamp intervention history onto state for downstream / test access
+        if self._intervention_history:
+            state["intervention_history"] = list(self._intervention_history)
 
         return state
 
@@ -849,7 +888,7 @@ class MultiAgentRunner:
         # --- Round header (terminal display) ---
         if use_display:
             universe = list(self.config.roles)
-            obs_universe = state.get("observation", {}).get("universe", [])
+            obs_universe = state["observation"]["universe"]
             tone = beta_to_bucket(beta)
             render_round_header(
                 round_num, self.config.max_rounds, beta, tone,
@@ -860,7 +899,7 @@ class MultiAgentRunner:
         #     operate on the prior round's revisions via _resolve_source) ---
         # Capture prior revisions before they're overwritten — these are the
         # effective "proposals" (input) for round 2+.
-        prior_revisions = list(state.get("revisions", [])) if round_num > 1 else None
+        prior_revisions = list(state["revisions"]) if round_num > 1 else None
         n_agents = len(self.config.roles)
         role_names = ", ".join(r.upper() for r in self.config.roles)
         if round_num == 1:
@@ -872,42 +911,52 @@ class MultiAgentRunner:
             state["config"]["_current_beta"] = None
             state = self._propose_graph.invoke(state)
 
-        display_source = state.get("revisions") or state.get("proposals", [])
-        display_label = "Revised Allocations" if state.get("revisions") else "Allocations"
+        display_source = state["revisions"] if state["revisions"] else state["proposals"]
+        display_label = "Revised Allocations" if state["revisions"] else "Allocations"
         if use_display:
             render_portfolio_table(display_source, display_label)
         else:
             _print_comparison_table(display_source, display_label)
 
         if round_num == 1 and self._debate_logger:
-            self._debate_logger.write_proposals(state.get("proposals", []))
+            self._debate_logger.write_proposals(state["proposals"])
 
         # --- Propose-phase JS divergence + evidence overlap ---
+        # In round 1, proposals are the source. In round 2+, the previous
+        # round's final revisions serve as the effective "propose" input.
         self._proposed_divergence = None
-        if self._debate_logger:
+        if self._debate_logger or self._intervention_engine:
             from eval.divergence import generalized_js_divergence
             from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-            prop_decisions = state.get("revisions") or state.get("proposals", [])
+            prop_source = state["proposals"] if round_num == 1 else prior_revisions
+            prop_decisions = self._latest_per_role(prop_source)
             prop_allocs = [
-                d.get("action_dict", {}).get("allocation", {})
+                d["action_dict"]["allocation"]
                 for d in prop_decisions
             ]
             if len(prop_allocs) >= 2:
                 prop_js = generalized_js_divergence(prop_allocs)
                 prop_ev = extract_agent_evidence_spans(prop_decisions, allocation_mode=True)
-                prop_ov = compute_mean_overlap(prop_ev) or 0.0
+                prop_ov = compute_mean_overlap(prop_ev)
+                if prop_ov is None:
+                    prop_ov = 0.0
 
                 prop_confidences = {
-                    d.get("role", "unknown"): d.get("action_dict", {}).get("confidence", 0.5)
+                    d["role"]: d["action_dict"]["confidence"]
                     for d in prop_decisions
                 }
                 prop_evidence = {role: sorted(spans) for role, spans in prop_ev.items()}
 
-                self._debate_logger.write_divergence_metrics(
-                    prop_js, prop_ov, prop_confidences, prop_evidence,
-                    round_num, phase="propose",
-                )
+                if self._debate_logger:
+                    self._debate_logger.write_divergence_metrics(
+                        prop_js, prop_ov, prop_confidences, prop_evidence,
+                        round_num, phase="propose",
+                    )
+                    write_allocation_metrics(
+                        self._debate_logger.run_dir, round_num, "propose",
+                        prop_decisions, prop_js, prop_ov,
+                    )
                 self._proposed_divergence = {
                     "js": prop_js,
                     "ov": prop_ov,
@@ -925,7 +974,7 @@ class MultiAgentRunner:
         state = self._critique_graph.invoke(state)
 
         if self._debate_logger:
-            self._debate_logger.write_critiques(state.get("critiques", []))
+            self._debate_logger.write_critiques(state["critiques"])
 
         # --- Revise phase (uses PID beta for tone) ---
         if use_display:
@@ -936,15 +985,57 @@ class MultiAgentRunner:
         state["config"]["_current_beta"] = beta
         state = self._revise_graph.invoke(state)
         if use_display:
-            render_portfolio_table(state.get("revisions", []), "Revisions")
+            render_portfolio_table(state["revisions"], "Revisions")
         else:
-            _print_comparison_table(state.get("revisions", []), "Revisions")
+            _print_comparison_table(state["revisions"], "Revisions")
 
         if self._debate_logger:
-            self._debate_logger.write_revisions(state.get("revisions", []))
+            self._debate_logger.write_revisions(state["revisions"])
+
+        # --- Revise-phase JS divergence + evidence overlap ---
+        # Written here (not inside _crit_and_pid_step) so it's logged
+        # even if CRIT scoring fails or is disabled.
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            rev_decisions = self._latest_per_role(state["revisions"])
+            rev_allocs = [
+                d["action_dict"]["allocation"]
+                for d in rev_decisions
+            ]
+            if len(rev_allocs) >= 2:
+                rev_js = generalized_js_divergence(rev_allocs)
+                rev_ev = extract_agent_evidence_spans(rev_decisions, allocation_mode=True)
+                rev_ov = compute_mean_overlap(rev_ev)
+                if rev_ov is None:
+                    rev_ov = 0.0
+
+                rev_confidences = {
+                    d["role"]: d["action_dict"]["confidence"]
+                    for d in rev_decisions
+                }
+                rev_evidence = {role: sorted(spans) for role, spans in rev_ev.items()}
+
+                self._debate_logger.write_divergence_metrics(
+                    rev_js, rev_ov, rev_confidences, rev_evidence, round_num,
+                )
+                # Telemetry: full allocation vectors
+                write_allocation_metrics(
+                    self._debate_logger.run_dir, round_num, "revision",
+                    rev_decisions, rev_js, rev_ov,
+                )
+
+        # --- Post-revision intervention checkpoint ---
+        if self._intervention_engine:
+            state = self._intervention_checkpoint(
+                state, round_num, stage="post_revision",
+                beta=beta, use_display=use_display,
+                n_agents=n_agents, role_names=role_names,
+            )
 
         # --- CRIT + PID (once per round, after revise) ---
-        if self._pid_controller and self._crit_scorer:
+        if self._crit_scorer:
             if use_display:
                 n_agents = len(self.config.roles)
                 render_phase_label("CRIT Scoring")
@@ -956,7 +1047,342 @@ class MultiAgentRunner:
                 prior_revisions=prior_revisions,
             )
 
+        # --- Post-CRIT intervention checkpoint ---
+        if self._intervention_engine and self._last_round_crit:
+            state = self._intervention_checkpoint(
+                state, round_num, stage="post_crit",
+                beta=beta, use_display=use_display,
+                n_agents=n_agents, role_names=role_names,
+            )
+
+        # --- Telemetry: round_state.json (end-of-round snapshot) ---
+        if self._debate_logger:
+            from eval.divergence import generalized_js_divergence
+            from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+
+            prop_source = state["proposals"] if round_num == 1 else prior_revisions
+            telem_propose = self._latest_per_role(prop_source)
+            telem_revisions = self._latest_per_role(state["revisions"])
+            telem_allocs = [d["action_dict"]["allocation"] for d in telem_revisions]
+            telem_js = generalized_js_divergence(telem_allocs) if len(telem_allocs) >= 2 else 0.0
+            telem_ev = extract_agent_evidence_spans(telem_revisions, allocation_mode=True)
+            telem_ov = compute_mean_overlap(telem_ev)
+            if telem_ov is None:
+                telem_ov = 0.0
+
+            # Collect CRIT data if available this round
+            telem_crit = None
+            if self._last_round_crit:
+                rc = self._last_round_crit
+                telem_crit = {"rho_bar": rc.rho_bar}
+                telem_crit.update({
+                    role: {
+                        "rho_i": cr.rho_bar,
+                        "pillars": {
+                            "LV": cr.pillar_scores.logical_validity,
+                            "ES": cr.pillar_scores.evidential_support,
+                            "AC": cr.pillar_scores.alternative_consideration,
+                            "CA": cr.pillar_scores.causal_alignment,
+                        },
+                    }
+                    for role, cr in rc.agent_scores.items()
+                })
+
+            write_round_state(
+                self._debate_logger.run_dir, round_num, beta,
+                telem_propose, telem_revisions,
+                telem_js, telem_ov,
+                crit_data=telem_crit,
+            )
+
         return state
+
+    @staticmethod
+    def _enrich_nudge_with_proposal(
+        nudge_text: str | dict[str, str],
+        state: dict,
+        revision_limits: dict | None = None,
+    ) -> str | dict[str, str]:
+        """Append each agent's original proposal allocation to their nudge.
+
+        Extracts proposal allocations from state["proposals"] and appends a
+        PORTFOLIO REVISION LIMITS block that shows the agent's original
+        allocation and constrains how far the retry can deviate from it.
+
+        Constraint parameters come from ``revision_limits`` (read from
+        ``intervention_config.revision_limits`` in the YAML config).
+        """
+        if revision_limits is None:
+            return nudge_text  # soft mode — nudge text only, no constraints
+
+        proposals = state["proposals"]
+        proposal_by_role: dict[str, dict] = {}
+        for p in proposals:
+            role = p.get("role", "unknown")
+            alloc = p["action_dict"]["allocation"]
+            if alloc:
+                proposal_by_role[role] = alloc
+
+        if not proposal_by_role:
+            return nudge_text
+
+        rl = revision_limits or {}
+        max_tickers = rl.get("max_changed_tickers", 2)
+        max_pct = rl.get("max_change_pct", 5)
+
+        def _format_allocation(alloc: dict) -> str:
+            lines = []
+            for ticker, weight in sorted(alloc.items(), key=lambda x: -x[1]):
+                lines.append(f"  {ticker}: {weight:.0%}")
+            return "\n".join(lines)
+
+        def _build_limits_block() -> str:
+            return (
+                "\n\nPORTFOLIO REVISION LIMITS:\n"
+                "Your revision must stay close to YOUR ORIGINAL PROPOSAL below.\n"
+                f"• You may change AT MOST {max_tickers} tickers.\n"
+                f"• Each changed ticker may move by no more than {max_pct}% of total allocation.\n"
+                "• All other positions must remain exactly as they were."
+            )
+
+        def _append_proposal_block(text: str, role: str) -> str:
+            alloc = proposal_by_role.get(role)
+            if not alloc:
+                return text
+            return text + _build_limits_block() + (
+                f"\n\nYOUR ORIGINAL PROPOSAL:\n{_format_allocation(alloc)}"
+            )
+
+        if isinstance(nudge_text, dict):
+            return {
+                role: _append_proposal_block(text, role)
+                for role, text in nudge_text.items()
+            }
+        else:
+            blocks = []
+            for role, alloc in sorted(proposal_by_role.items()):
+                blocks.append(f"\n{role.upper()} ORIGINAL PROPOSAL:\n{_format_allocation(alloc)}")
+            return nudge_text + _build_limits_block() + "".join(blocks)
+
+    def _intervention_checkpoint(
+        self,
+        state: dict,
+        round_num: int,
+        *,
+        stage: str,
+        beta: float,
+        use_display: bool,
+        n_agents: int,
+        role_names: str,
+    ) -> dict:
+        """Run the intervention retry loop for a given stage.
+
+        Evaluates all registered rules, and if any fire with a retry
+        action, re-runs the revise phase with a nudge injected into
+        the prompt.  Repeats until no rules fire or max_retries exhausted.
+
+        Intervention history is tracked on self._intervention_history
+        (not in the LangGraph state dict, which would be stripped by
+        graph.invoke()).  The history is written to state at the end
+        for downstream access.
+        """
+        from eval.interventions import InterventionContext
+
+        retry_count = 0
+        while True:
+            js_rev = self._get_js_divergence(state)
+
+            # Populate crit-specific fields when stage is post_crit
+            _rho_bar = None
+            _agent_crit_scores = None
+            if stage == "post_crit" and self._last_round_crit:
+                _rho_bar = self._last_round_crit.rho_bar
+                _agent_crit_scores = self._last_round_crit.agent_scores
+
+            ctx = InterventionContext(
+                round_num=round_num,
+                stage=stage,
+                retry_count=retry_count,
+                state=state,
+                js_proposal=(
+                    self._proposed_divergence.get("js")
+                    if self._proposed_divergence else None
+                ),
+                js_revision=js_rev,
+                ov_revision=None,
+                rho_bar=_rho_bar,
+                agent_crit_scores=_agent_crit_scores,
+                pid_result=None,
+                intervention_history=list(self._intervention_history),
+            )
+            results = self._intervention_engine.evaluate(ctx)
+            retry_actions = [r for r in results if r.action.startswith("retry")]
+            if not retry_actions:
+                break
+
+            # Pick highest-severity action (critical > warning)
+            action = max(
+                retry_actions,
+                key=lambda r: (r.severity == "critical", r.rule_name),
+            )
+
+            # Record in intervention history (runner-owned, survives invoke)
+            history_entry = {
+                "round": round_num,
+                "stage": stage,
+                "rule": action.rule_name,
+                "retry": retry_count + 1,
+                "action": action.action,
+                "metrics": action.metrics,
+                "severity": action.severity,
+                "nudge_text": action.nudge_text,
+            }
+            self._intervention_history.append(history_entry)
+
+            # Log the intervention
+            self._log_intervention(action, round_num, retry_count)
+
+            # Enrich nudge with each agent's original proposal allocation
+            # so the model knows the anchor point for portfolio revision limits.
+            revision_limits = (self.config.intervention_config or {}).get(
+                "revision_limits",
+            )
+            enriched_nudge = self._enrich_nudge_with_proposal(
+                action.nudge_text, state,
+                revision_limits=revision_limits,
+            )
+
+            # Inject nudge and target roles into state config.
+            # nudge_text may be a str (broadcast) or dict (per-agent).
+            nudge = enriched_nudge
+            if action.target_roles:
+                # Per-agent targeting: only targeted roles see the nudge
+                # and only targeted roles re-run the LLM call
+                state["config"]["_intervention_nudge"] = None
+                state["config"]["_intervention_target_roles"] = action.target_roles
+                for role in action.target_roles:
+                    if isinstance(nudge, dict):
+                        state["config"][f"_intervention_nudge_{role}"] = nudge.get(role, "")
+                    else:
+                        state["config"][f"_intervention_nudge_{role}"] = nudge
+            else:
+                # Broadcast: all agents see the same nudge and re-run
+                state["config"]["_intervention_nudge"] = nudge if isinstance(nudge, str) else ""
+                state["config"]["_intervention_target_roles"] = None
+
+            # Console display
+            if use_display:
+                if action.target_roles:
+                    retry_agents = ', '.join(r.upper() for r in action.target_roles)
+                    retry_count_display = len(action.target_roles)
+                else:
+                    retry_agents = role_names
+                    retry_count_display = n_agents
+                render_phase_label(
+                    f"Revise (RETRY {retry_count + 1} — {action.rule_name} → {retry_agents})"
+                )
+                from .terminal_display import _reset_llm_tracker
+                _reset_llm_tracker(retry_count_display)
+                print(
+                    f"  Retrying {retry_count_display} agent(s): {retry_agents} "
+                    f"[{action.rule_name}: {action.severity}]",
+                    flush=True,
+                )
+
+            # Re-run revise (only targeted agents call the LLM)
+            state["config"]["_current_beta"] = beta
+            if self._debate_logger:
+                self._debate_logger._prompt_retry = retry_count + 1
+            state = self._revise_graph.invoke(state)
+            if self._debate_logger:
+                self._debate_logger._prompt_retry = None
+            # Clear nudges and target roles after retry
+            state["config"]["_intervention_nudge"] = None
+            state["config"]["_intervention_target_roles"] = None
+            if action.target_roles:
+                for role in action.target_roles:
+                    state["config"].pop(f"_intervention_nudge_{role}", None)
+
+            if use_display:
+                render_portfolio_table(state["revisions"], "Revisions (retry)")
+            else:
+                _print_comparison_table(state["revisions"], "Revisions (retry)")
+
+            # Log the retry revisions
+            if self._debate_logger:
+                self._debate_logger.write_revisions(
+                    state["revisions"],
+                    retry=retry_count + 1,
+                )
+
+            # Log retry JS divergence + evidence overlap
+            retry_js = self._get_js_divergence(state)
+            if retry_js is not None:
+                from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
+                retry_decisions = self._latest_per_role(state["revisions"])
+                retry_evidence = extract_agent_evidence_spans(
+                    retry_decisions, allocation_mode=True,
+                )
+                retry_ov = compute_mean_overlap(retry_evidence)
+                if retry_ov is None:
+                    retry_ov = 0.0
+                retry_confidences = {
+                    d["role"]: d["action_dict"]["confidence"]
+                    for d in retry_decisions
+                }
+                retry_evidence_ids = {
+                    role: sorted(spans) for role, spans in retry_evidence.items()
+                }
+                if use_display:
+                    from .terminal_display import render_divergence_metrics
+                    render_divergence_metrics(retry_js, retry_ov)
+                if self._debate_logger:
+                    self._debate_logger.write_divergence_metrics(
+                        retry_js, retry_ov, retry_confidences, retry_evidence_ids,
+                        round_num, phase=f"retry_{retry_count + 1:03d}",
+                    )
+                    # Telemetry: full allocation vectors
+                    write_allocation_metrics(
+                        self._debate_logger.run_dir, round_num,
+                        f"retry_{retry_count + 1:03d}",
+                        retry_decisions, retry_js, retry_ov,
+                    )
+
+            # Post-crit retries are expensive: re-run CRIT after revise retry
+            if stage == "post_crit" and self._crit_scorer:
+                if use_display:
+                    render_phase_label(f"CRIT Scoring (retry {retry_count + 1})")
+                    from .terminal_display import _reset_llm_tracker
+                    _reset_llm_tracker(n_agents)
+                    print(f"  Re-scoring {n_agents} agents with CRIT", flush=True)
+                self._crit_and_pid_step(state, round_num, beta_in=beta)
+
+            retry_count += 1
+
+        # Write history to state for downstream access (post-hoc analysis)
+        if self._intervention_history:
+            state["intervention_history"] = list(self._intervention_history)
+
+        return state
+
+    def _log_intervention(
+        self, result, round_num: int, retry_count: int,
+    ) -> None:
+        """Log an intervention event to both the Python logger and DebateLogger."""
+        entry = {
+            "type": "intervention",
+            "round": round_num,
+            "stage": result.action.replace("retry_", "post_"),
+            "rule": result.rule_name,
+            "action": result.action,
+            "severity": result.severity,
+            "retry": retry_count + 1,
+            "metrics": result.metrics,
+            "nudge_text": result.nudge_text,
+        }
+        logger.info("INTERVENTION TRIGGERED: %s", json.dumps(entry, indent=2))
+        if self._debate_logger:
+            self._debate_logger.write_intervention(entry)
 
     def _crit_and_pid_step(
         self, state: dict, round_num: int, *, beta_in: float,
@@ -971,10 +1397,13 @@ class MultiAgentRunner:
         from eval.divergence import generalized_js_divergence
         from eval.evidence import extract_agent_evidence_spans, compute_mean_overlap
 
-        decisions = state.get("revisions", state.get("proposals", []))
+        decisions = self._latest_per_role(
+            state["revisions"] if state["revisions"] else state["proposals"]
+        )
         if not decisions:
-            logger.debug("Skipping CRIT — no decisions (mock mode?)")
-            return
+            raise RuntimeError(
+                f"_crit_and_pid_step called with no decisions in round {round_num}"
+            )
 
         # --- Build reasoning bundles for each agent ---
         bundles = {}
@@ -986,8 +1415,10 @@ class MultiAgentRunner:
                 bundles[role] = bundle
 
         if not bundles:
-            logger.debug("Skipping CRIT — no reasoning bundles assembled")
-            return
+            raise RuntimeError(
+                f"No reasoning bundles assembled for CRIT in round {round_num} "
+                f"(roles: {self.config.roles})"
+            )
 
         # --- CRIT audit (per-agent parallel scoring → RoundCritResult) ---
         self._crit_current_captures = {}
@@ -997,7 +1428,7 @@ class MultiAgentRunner:
 
         # --- JS divergence from portfolio allocation vectors ---
         allocations = [
-            d.get("action_dict", {}).get("allocation", {})
+            d["action_dict"]["allocation"]
             for d in decisions
         ]
         js = generalized_js_divergence(allocations) if len(allocations) >= 2 else 0.0
@@ -1021,68 +1452,90 @@ class MultiAgentRunner:
                            rho_bar, round_num)
             rho_bar = 0.0
 
-        # --- PID controller step ---
-        old_beta = self._pid_controller.beta
-        pid_result = self._pid_controller.step(rho_bar, js, ov)
+        # --- Store latest CRIT result for post-crit intervention checkpoint ---
+        self._last_round_crit = round_crit
 
-        # Record PIDEvent
-        ctrl_output = ControllerOutput(new_beta=pid_result.beta_new)
-        event = PIDEvent(
-            round_index=round_num,
-            metrics=RoundMetrics(
+        # --- PID controller step (only when PID is active) ---
+        old_beta = None
+        pid_result = None
+        if self._pid_controller:
+            old_beta = self._pid_controller.beta
+            pid_result = self._pid_controller.step(rho_bar, js, ov)
+
+            # Record PIDEvent
+            ctrl_output = ControllerOutput(new_beta=pid_result.beta_new)
+            event = PIDEvent(
                 round_index=round_num,
-                rho_bar=rho_bar,
-                js_divergence=js,
-                ov_overlap=ov,
-            ),
-            crit_result=round_crit.model_dump(),
-            pid_step={
-                "e_t": pid_result.e_t,
-                "u_t": pid_result.u_t,
-                "beta_new": pid_result.beta_new,
-                "p_term": pid_result.p_term,
-                "i_term": pid_result.i_term,
-                "d_term": pid_result.d_term,
-                "s_t": pid_result.s_t,
-                "quadrant": pid_result.quadrant,
-                "div_signal": pid_result.div_signal,
-                "qual_signal": pid_result.qual_signal,
-            },
-            controller_output=ctrl_output,
-        )
-        self._pid_events.append(event)
+                metrics=RoundMetrics(
+                    round_index=round_num,
+                    rho_bar=rho_bar,
+                    js_divergence=js,
+                    ov_overlap=ov,
+                ),
+                crit_result=round_crit.model_dump(),
+                pid_step={
+                    "e_t": pid_result.e_t,
+                    "u_t": pid_result.u_t,
+                    "beta_new": pid_result.beta_new,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "s_t": pid_result.s_t,
+                    "quadrant": pid_result.quadrant,
+                    "div_signal": pid_result.div_signal,
+                    "qual_signal": pid_result.qual_signal,
+                },
+                controller_output=ctrl_output,
+            )
+            self._pid_events.append(event)
 
         # --- Structured debate logger: CRIT metrics + prompts ---
         if self._debate_logger:
             self._debate_logger.write_crit_metrics(round_crit, round_num)
             if self._crit_current_captures:
                 self._debate_logger.write_crit_prompts(self._crit_current_captures)
+            # Telemetry: per-agent CRIT results
+            for role, cr in round_crit.agent_scores.items():
+                write_crit_results(
+                    self._debate_logger.run_dir, round_num, role,
+                    {
+                        "logical_validity": cr.pillar_scores.logical_validity,
+                        "evidential_support": cr.pillar_scores.evidential_support,
+                        "alternative_consideration": cr.pillar_scores.alternative_consideration,
+                        "causal_alignment": cr.pillar_scores.causal_alignment,
+                    },
+                    cr.rho_bar,
+                    {
+                        "logical_validity": cr.explanations.logical_validity,
+                        "evidential_support": cr.explanations.evidential_support,
+                        "alternative_consideration": cr.explanations.alternative_consideration,
+                        "causal_alignment": cr.explanations.causal_alignment,
+                    },
+                )
 
         # --- Compute agent confidences + evidence (used by both loggers) ---
         agent_confidences = {}
         for d in decisions:
             role = d.get("role", "unknown")
-            agent_confidences[role] = d.get("action_dict", {}).get("confidence", 0.5)
+            agent_confidences[role] = d["action_dict"]["confidence"]
 
         agent_evidence = {
             role: sorted(spans) for role, spans in evidence_sets.items()
         }
 
-        # --- Structured debate logger: divergence metrics ---
-        if self._debate_logger:
-            self._debate_logger.write_divergence_metrics(
-                js, ov, agent_confidences, agent_evidence, round_num,
-            )
+        # NOTE: Revise-phase divergence metrics are now written in
+        # _run_round_with_pid (after write_revisions), decoupled from CRIT.
+        # This ensures they're logged even if CRIT fails.
 
         # --- Structured JSON logging ---
         if self._log_metrics or self._debate_logger:
             phase_data = {
-                "type": "pid_round",
+                "type": "pid_round" if pid_result else "crit_round",
                 "debate_id": self._debate_id,
                 "phase_id": str(uuid.uuid4()),
                 "round": round_num,
                 "beta_in": beta_in,
-                "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                "tone_bucket": beta_to_bucket(pid_result.beta_new) if pid_result else beta_to_bucket(beta_in),
                 "crit": {
                     "rho_bar": round_crit.rho_bar,
                     "rho_i": {
@@ -1116,21 +1569,6 @@ class MultiAgentRunner:
                         for role, cr in round_crit.agent_scores.items()
                     },
                 },
-                "pid": {
-                    "e_t": pid_result.e_t,
-                    "integral": self._pid_controller.state.integral,
-                    "e_prev": self._pid_controller.state.e_prev,
-                    "p_term": pid_result.p_term,
-                    "i_term": pid_result.i_term,
-                    "d_term": pid_result.d_term,
-                    "u_t": pid_result.u_t,
-                    "beta_old": old_beta,
-                    "beta_new": pid_result.beta_new,
-                    "quadrant": pid_result.quadrant,
-                    "div_signal": pid_result.div_signal,
-                    "qual_signal": pid_result.qual_signal,
-                    "sycophancy": pid_result.s_t,
-                },
                 "divergence": {
                     "js": js,
                     "ov": ov,
@@ -1148,10 +1586,33 @@ class MultiAgentRunner:
                 },
             }
 
+            # Add PID data only when PID controller is active
+            if pid_result:
+                phase_data["pid"] = {
+                    "e_t": pid_result.e_t,
+                    "integral": self._pid_controller.state.integral,
+                    "e_prev": self._pid_controller.state.e_prev,
+                    "p_term": pid_result.p_term,
+                    "i_term": pid_result.i_term,
+                    "d_term": pid_result.d_term,
+                    "u_t": pid_result.u_t,
+                    "beta_old": old_beta,
+                    "beta_new": pid_result.beta_new,
+                    "quadrant": pid_result.quadrant,
+                    "div_signal": pid_result.div_signal,
+                    "qual_signal": pid_result.qual_signal,
+                    "sycophancy": pid_result.s_t,
+                }
+
             phase_data = _round_floats(phase_data)
+            # Replace any existing entry for this round (post-crit retry
+            # re-runs CRIT, so only keep the final scoring per round).
+            self._pid_phase_data = [
+                d for d in self._pid_phase_data if d.get("round") != round_num
+            ]
             self._pid_phase_data.append(phase_data)
 
-            # Structured debate logger: PID metrics + round state
+            # Structured debate logger: metrics + round state
             if self._debate_logger:
                 self._debate_logger.write_pid_metrics(phase_data)
                 metrics_summary = {
@@ -1162,9 +1623,11 @@ class MultiAgentRunner:
                     },
                     "js_divergence": js,
                     "evidence_overlap": ov,
-                    "beta_new": pid_result.beta_new,
-                    "quadrant": pid_result.quadrant,
                 }
+                if pid_result:
+                    metrics_summary["beta_new"] = pid_result.beta_new
+                    metrics_summary["quadrant"] = pid_result.quadrant
+
                 crit_data = {
                     "rho_bar": round_crit.rho_bar,
                 }
@@ -1180,30 +1643,33 @@ class MultiAgentRunner:
                     }
                     for role, cr in round_crit.agent_scores.items()
                 })
-                pid_data = {
-                    "beta_in": beta_in,
-                    "beta_new": pid_result.beta_new,
-                    "tone_bucket": beta_to_bucket(pid_result.beta_new),
-                    "e_t": pid_result.e_t,
-                    "p_term": pid_result.p_term,
-                    "i_term": pid_result.i_term,
-                    "d_term": pid_result.d_term,
-                    "u_t": pid_result.u_t,
-                    "quadrant": pid_result.quadrant,
-                    "sycophancy": pid_result.s_t,
-                    "convergence": {
-                        "stable_rounds": self._stable_rounds,
-                        "delta_rho_actual": (
-                            abs(rho_bar - self._prev_rho_bar)
-                            if self._prev_rho_bar is not None else None
-                        ),
-                        "delta_rho_threshold": self.config.delta_rho,
-                    },
-                }
+
+                pid_data = None
+                if pid_result:
+                    pid_data = {
+                        "beta_in": beta_in,
+                        "beta_new": pid_result.beta_new,
+                        "tone_bucket": beta_to_bucket(pid_result.beta_new),
+                        "e_t": pid_result.e_t,
+                        "p_term": pid_result.p_term,
+                        "i_term": pid_result.i_term,
+                        "d_term": pid_result.d_term,
+                        "u_t": pid_result.u_t,
+                        "quadrant": pid_result.quadrant,
+                        "sycophancy": pid_result.s_t,
+                        "convergence": {
+                            "stable_rounds": self._stable_rounds,
+                            "delta_rho_actual": (
+                                abs(rho_bar - self._prev_rho_bar)
+                                if self._prev_rho_bar is not None else None
+                            ),
+                            "delta_rho_threshold": self.config.delta_rho,
+                        },
+                    }
                 self._debate_logger.write_round_state(
                     state, round_num, _round_floats(metrics_summary),
                     crit_data=_round_floats(crit_data),
-                    pid_data=_round_floats(pid_data),
+                    pid_data=_round_floats(pid_data) if pid_data else None,
                     prior_revisions=prior_revisions,
                 )
 
@@ -1444,8 +1910,8 @@ class MultiAgentRunner:
 
         output = {
             "trace": trace.model_dump(),
-            "debate_turns": full_state.get("debate_turns", []),
-            "config": full_state.get("config", {}),
+            "debate_turns": full_state["debate_turns"],
+            "config": full_state["config"],
         }
 
         filepath.write_text(json.dumps(output, indent=2, default=str))

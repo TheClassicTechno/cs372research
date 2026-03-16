@@ -5,7 +5,7 @@
  * combined allocation table, consensus performance, and per-agent performance.
  */
 import { fetchPortfolio, fetchPerformance, fetchAgentPerformance, fetchRoundPerformance, fetchDebateImpact } from '../../api/runs.js';
-import { buildSimpleAllocTable, buildAgentPerfTable, buildRoundAllocTable, buildDebateImpactTable, buildMeanPortfolioTable } from '../../components/table.js';
+import { buildSimpleAllocTable, buildAgentPerfTable, buildRoundAllocTable, buildDebateImpactTable, buildMeanPortfolioTable, buildSharpeTable, buildCollapseTable, buildDebateSummaryPanel } from '../../components/table.js';
 import { esc } from '../../utils/dom.js';
 import { fmtPct, numFmt } from '../../utils/format.js';
 import { makeAgentLabel } from '../../utils/agentLabel.js';
@@ -188,7 +188,7 @@ function buildRoundSection(entry, perf, roundNum, agentLabel) {
 
     var testId = 'round-' + roundNum + '-' + phase.key;
     h += '<div class="ov-title" style="margin-top:16px;" data-testid="' + esc(testId) + '-title">';
-    h += 'ROUND ' + roundNum + ' — ' + phase.label + '</div>';
+    h += 'ROUND ' + roundNum + ' \u2014 ' + phase.label + '</div>';
     h += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
     h += buildRoundAllocTable(agents, agentNames, agentLabel, testId + '-alloc');
     h += buildRoundPerfTables(perf, phase.key, agentNames, agentLabel);
@@ -216,8 +216,51 @@ function buildRoundPerfTables(perf, phaseKey, agentNames, agentLabel) {
 }
 
 /**
+ * Build HTML for all debate impact tables from API data.
+ *
+ * @param {object} data - Debate impact API response
+ * @param {function} agentLabel - Maps role to display label
+ * @returns {string} HTML string
+ */
+function buildDebateImpactHtml(data, agentLabel) {
+  var mp = data.mean_portfolios;
+  var html = buildDebateSummaryPanel(data.summary);
+  html += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+  html += buildDebateImpactTable(data.agent_deltas, agentLabel);
+  html += buildMeanPortfolioTable(mp.r1_proposals, mp.r1_revisions, 'R1', 'debate-impact-mean', mp.r1_js);
+  if (mp.r2_proposals && mp.r2_revisions) {
+    html += buildMeanPortfolioTable(mp.r2_proposals, mp.r2_revisions, 'R2', 'debate-impact-mean-r2');
+  }
+  if (mp.r2_js) {
+    html += buildMeanPortfolioTable(mp.r2_revisions, mp.r2_js, 'R2 JS', 'debate-impact-mean-js');
+  }
+  if (data.sharpe) {
+    html += buildSharpeTable(data.sharpe);
+  }
+  html += '</div>';
+  return html;
+}
+
+/**
+ * Render collapse diagnostics into #collapse-section from debate impact data.
+ *
+ * @param {Array} collapse - Collapse diagnostics array
+ * @param {function} agentLabel - Maps role to display label
+ */
+function renderCollapseDiagnostics(collapse, agentLabel) {
+  if (!collapse || !Array.isArray(collapse) || collapse.length === 0) return;
+  var collapseWrap = document.getElementById('collapse-section');
+  if (!collapseWrap) return;
+  var ch = '<div class="ov-title">COLLAPSE DIAGNOSTICS</div>';
+  for (var i = 0; i < collapse.length; i++) {
+    ch += buildCollapseTable(collapse[i], agentLabel);
+  }
+  collapseWrap.innerHTML = ch;
+}
+
+/**
  * Load and render the debate impact section into #debate-impact-section.
- * Shows per-agent R1→final deltas and mean portfolio comparison.
+ * Shows summary panel, per-agent deltas, mean portfolios, Sharpe, and collapse.
  */
 function loadDebateImpact(experiment, runId, agentLabel, token) {
   fetchDebateImpact(experiment, runId)
@@ -226,13 +269,8 @@ function loadDebateImpact(experiment, runId, agentLabel, token) {
       var wrap = document.getElementById('debate-impact-section');
       if (!wrap) return;
       if (data.error) { wrap.innerHTML = ''; return; }
-      var mp = data.mean_portfolios;
-      var html = '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
-      html += buildDebateImpactTable(data.agent_deltas, agentLabel);
-      html += buildMeanPortfolioTable(mp.r1_proposals, mp.r1_revisions, 'R1', 'debate-impact-mean');
-      html += buildMeanPortfolioTable(mp.r2_proposals, mp.r2_revisions, 'R2', 'debate-impact-mean-r2');
-      html += '</div>';
-      wrap.innerHTML = html;
+      wrap.innerHTML = buildDebateImpactHtml(data, agentLabel);
+      renderCollapseDiagnostics(data.collapse, agentLabel);
     })
     .catch(function () {
       if (appState.viewToken !== token) return;
@@ -255,6 +293,7 @@ export function loadJudgePortfolio(experiment, runId, finalPortfolio, manifest, 
 
   var h = '<div class="ov-title" style="margin-top:16px;">DEBATE IMPACT</div>';
   h += '<div id="debate-impact-section"></div>';
+  h += '<div id="collapse-section"></div>';
   h += '<div id="per-round-sections"></div>';
   h += '<div class="ov-title" style="margin-top:16px;">FINAL ALLOCATIONS</div>';
   h += '<div id="judge-portfolio-layout" style="display:flex;gap:24px;align-items:flex-start;">';

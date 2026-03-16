@@ -191,6 +191,14 @@ def ablation_debate_impact():
     )
 
 
+@app.get("/runs/{experiment}/{run_id}/collapse")
+def collapse_diagnostics(experiment: str, run_id: str):
+    """Per-round agent collapse diagnostics."""
+    return JSONResponse(
+        run_scanner.compute_collapse_diagnostics(RUNS_BASE, experiment, run_id)
+    )
+
+
 @app.get("/runs/{experiment}/{run_id}/pid")
 def pid_trajectory(experiment: str, run_id: str):
     """PID trajectory array."""
@@ -278,7 +286,7 @@ def ablation_summary():
 def ablation_regenerate():
     """Re-run aggregate_metrics.py and return the result."""
     result = subprocess.run(
-        [sys.executable, "logging/aggregate_metrics.py"],
+        [sys.executable, "scripts/aggregate_metrics.py"],
         capture_output=True,
         text=True,
     )

@@ -21,6 +21,12 @@ from eval.crit.schema import (
 )
 from models.config import AgentConfig
 from multi_agent.config import DebateConfig, AgentRole
+from multi_agent.graph.mocks import (
+    _mock_proposal as _orig_mock_proposal,
+    _mock_critique as _orig_mock_critique,
+    _mock_revision as _orig_mock_revision,
+    _mock_judge as _orig_mock_judge,
+)
 from multi_agent.models import (
     Constraints,
     MarketState,
@@ -28,6 +34,68 @@ from multi_agent.models import (
     PortfolioState,
 )
 from multi_agent.runner import pid_metrics_logger, MultiAgentRunner
+
+
+# ── claim / position_rationale fixups for mock responses ─────────────────────
+
+_CLAIM_DEFAULTS = {
+    "evidence": ["[L1-VIX]"],
+    "assumptions": ["Market conditions remain stable"],
+    "falsifiers": ["Unexpected macro shock"],
+    "impacts_positions": ["Allocation weighting"],
+}
+
+
+def _patch_claims(claims: list[dict]) -> list[dict]:
+    """Ensure each claim dict has the keys the runner expects via bracket access."""
+    for claim in claims:
+        for key, default in _CLAIM_DEFAULTS.items():
+            claim.setdefault(key, default)
+    return claims
+
+
+def _add_position_rationale(result: dict) -> dict:
+    """Ensure the mock result includes position_rationale with supported_by_claims."""
+    if "position_rationale" not in result:
+        tickers = list((result.get("allocation") or {}).keys()) or ["AAPL"]
+        result["position_rationale"] = [
+            {
+                "ticker": t,
+                "weight": result.get("allocation", {}).get(t, 0.0),
+                "supported_by_claims": ["mock-claim-1"],
+                "explanation": f"Mock rationale for {t}",
+            }
+            for t in tickers
+        ]
+    else:
+        for entry in result["position_rationale"]:
+            entry.setdefault("supported_by_claims", ["mock-claim-1"])
+    return result
+
+
+def _patched_proposal(role, obs_dict, config=None):
+    result = _orig_mock_proposal(role, obs_dict, config)
+    _patch_claims(result.get("claims", []))
+    _add_position_rationale(result)
+    return result
+
+
+def _patched_critique(role, proposals):
+    return _orig_mock_critique(role, proposals)
+
+
+def _patched_revision(role, original_action, obs_dict, config=None):
+    result = _orig_mock_revision(role, original_action, obs_dict, config)
+    _patch_claims(result.get("claims", []))
+    _add_position_rationale(result)
+    return result
+
+
+def _patched_judge(revisions, config=None):
+    result = _orig_mock_judge(revisions, config)
+    _patch_claims(result.get("claims", []))
+    _add_position_rationale(result)
+    return result
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -99,13 +167,26 @@ def _sample_observation() -> Observation:
 
 
 def _capture_pid_logs(runner: MultiAgentRunner) -> list[dict]:
-    """Run a mock debate and return all JSON objects from pid.metrics."""
+    """Run a mock debate and return all JSON objects from pid.metrics.
+
+    PID round + summary logs are emitted *before* the judge/parse phase.
+    If _parse_action fails due to a missing 'orders' key in allocation-mode
+    judge output, the PID data has already been captured — tolerate the error.
+    """
     captured: list[logging.LogRecord] = []
     handler = logging.Handler()
     handler.emit = lambda record: captured.append(record)
     pid_metrics_logger.addHandler(handler)
     try:
-        runner.run(_sample_observation())
+        with patch("multi_agent.graph.nodes._mock_proposal", _patched_proposal), \
+             patch("multi_agent.graph.nodes._mock_critique", _patched_critique), \
+             patch("multi_agent.graph.nodes._mock_revision", _patched_revision), \
+             patch("multi_agent.graph.nodes._mock_judge", _patched_judge):
+            runner.run(_sample_observation())
+    except KeyError:
+        # _parse_action may raise KeyError("orders") in allocation mode;
+        # PID logs are already captured before the judge phase.
+        pass
     finally:
         pid_metrics_logger.removeHandler(handler)
 

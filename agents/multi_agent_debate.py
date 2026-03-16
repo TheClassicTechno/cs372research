@@ -159,6 +159,7 @@ class DebateAgentSystem(AgentSystem):
             crit_model_name=config.crit_llm_model,
             crit_system_template=config.crit_system_template,
             crit_user_template=config.crit_user_template,
+            intervention_config=config.intervention_config,
             run_command=config.run_command,
             config_paths=config.config_paths,
             sector_config=config.sector_config,
