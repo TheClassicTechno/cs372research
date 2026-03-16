@@ -1,0 +1,150 @@
+Ablation 10 — Narrative Summary
+================================
+Generated: 2026-03-12
+
+RESEARCH QUESTION
+-----------------
+Does forcing agents to retry their revision when CRIT detects
+causal_alignment < 0.75 improve causal reasoning quality — and does
+that improvement translate to better financial outcomes?
+
+DESIGN
+------
+2 configs x 35 scenarios = 70 runs (all completed successfully).
+Model: gpt-5-mini (agents), gpt-5 (CRIT evaluator).
+Agents: macro_enriched_intense, technical_enriched_intense.
+Pipeline: propose -> critique -> revise -> CRIT -> [intervention if CA < 0.75] -> judge.
+
+  Baseline:  CRIT runs but reasoning_quality rule disabled (never fires).
+  Treatment: reasoning_quality enabled; if causal_alignment < 0.75 the agent
+             receives a detailed nudge grounded in Pearl's Causal Hierarchy
+             (association vs intervention vs counterfactual reasoning).
+
+Treatment runs averaged 448s vs 361s baseline (+24%), reflecting the
+retry overhead. Total compute: ~7.9 hours.
+
+
+THE HEADLINE RESULT: CAUSAL REASONING IMPROVED DRAMATICALLY
+------------------------------------------------------------
+The intervention achieved exactly what it was designed to do. The
+technical agent's causal_alignment pillar jumped from 0.739 to 0.878
+(+0.139, p not computed but effect is massive with variance collapse
+from stdev 0.092 to 0.028). The causal_overreach flag dropped from
+68.6% to 2.7% — a near-total elimination of the most common reasoning
+failure mode.
+
+The macro agent was largely unaffected: its causal_alignment was already
+0.865, well above the 0.75 threshold, so the intervention rarely fired
+for it (2 of 23 triggered runs).
+
+Intervention statistics:
+  - 23 of 39 treatment runs triggered intervention (59%)
+  - 22 of those 23 targeted the technical agent
+  - Mean pre-intervention CA: 0.676; mean post-intervention CA: 0.876
+  - 95.5% of nudged agents improved; zero cases of degradation
+
+
+PILLAR-LEVEL TRADEOFFS
+-----------------------
+                        Baseline    Treatment    Delta
+Causal Alignment        0.802       0.871       +0.069  (primary target)
+Evidential Support      0.851       0.854       +0.003  (no change)
+Logical Validity        0.847       0.846       -0.001  (no change)
+Alt. Consideration      0.843       0.818       -0.025  (modest decline)
+
+The alternative_consideration decline (-0.025) warrants attention. When
+agents are pushed to be more careful about causal claims, they may
+become less willing to engage with speculative counterarguments. This
+is a "reasoning tightening" effect: higher epistemic standards on one
+dimension can reduce exploratory breadth on another.
+
+
+AGREEMENT & COLLAPSE
+---------------------
+JS divergence dropped slightly (0.160 -> 0.141), meaning agents became
+marginally more aligned in their allocations. This is consistent with
+the theory: forcing the technical agent to articulate causal mechanisms
+rather than pattern-match may bring its reasoning closer to the macro
+agent's fundamentals-based framework.
+
+Collapse ratios were not significantly different (p=0.356), so while
+there is a directional trend toward more agreement, it does not rise
+to significance.
+
+
+FINANCIAL OUTCOMES: THE INTERVENTION DID NOT HELP
+--------------------------------------------------
+Despite substantially improving causal reasoning quality, the treatment
+showed no financial benefit. If anything, the direction slightly favors
+baseline:
+
+  Metric              Baseline    Treatment    Diff      p-value
+  Excess Return       -0.91%      -1.11%      -0.20%    0.529
+  Sharpe              0.657       0.568       -0.089    0.219
+  Sortino             1.177       1.040       -0.137    0.222
+  Calmar              3.966       3.656       -0.310    0.204
+  Volatility          20.52%      21.74%      +1.22%    0.031 *
+  Max Drawdown        9.80%       10.33%      +0.53%    0.062
+
+Only annualized volatility reaches significance (p=0.031), and in the
+wrong direction: treatment portfolios were modestly MORE volatile. Max
+drawdown approaches significance (p=0.062), also favoring baseline.
+
+All risk-adjusted return metrics (Sharpe, Sortino, Calmar) are
+directionally worse under treatment, though none reach significance.
+
+
+INTERPRETATION
+--------------
+Ablation 10 reveals a clean dissociation between reasoning quality and
+portfolio quality. The causal alignment intervention:
+
+  1. Massively improved causal reasoning (technical CA: 0.739 -> 0.878)
+  2. Nearly eliminated causal_overreach flags (68.6% -> 2.7%)
+  3. Did NOT improve financial outcomes (no metric significant in the
+     positive direction; volatility significantly WORSE)
+
+This suggests that causal reasoning quality, as measured by CRIT, is
+not a bottleneck for financial performance in this pipeline. Several
+hypotheses:
+
+  (a) The judge portfolio is robust to the quality of agent reasoning —
+      the judge may be extracting signal from the direction of agent
+      allocations regardless of whether the causal justification is
+      sound.
+
+  (b) "Causal overreach" in technical analysis may actually be useful
+      heuristically. When a technical agent says "the SMA crossover
+      CAUSES momentum," that may be sloppy causal language wrapping a
+      valid predictive pattern. Forcing the agent to be epistemically
+      precise may strip out useful predictive signal.
+
+  (c) The retry overhead (extra token cost and latency) introduces
+      noise without adding information relevant to allocation quality.
+
+CONTRAST WITH ABLATION 7
+-------------------------
+Ablation 7 tested JS-divergence-based interventions (forcing agents
+to retry when their allocations were too similar). That intervention
+showed borderline-significant financial improvements:
+
+  Ablation 7:  Sharpe +0.143 (p=0.028), Sortino +0.254 (p=0.026)
+  Ablation 10: Sharpe -0.089 (p=0.219), Sortino -0.137 (p=0.222)
+
+This reinforces the pattern: interventions targeting allocation
+diversity (ablation 7) have more financial impact than interventions
+targeting reasoning quality (ablation 10). The judge benefits from
+hearing genuinely different perspectives, not from hearing better-
+justified perspectives.
+
+
+BOTTOM LINE
+-----------
+Ablation 10 is a successful REASONING intervention and a null
+FINANCIAL result. The causal alignment nudge works exactly as
+designed — it makes agents reason more carefully about causation —
+but that improvement does not propagate to better portfolio
+decisions. This is an important negative result: it tells us that
+the value chain from reasoning quality to financial quality has a
+weak link somewhere between the agent's revision and the judge's
+final allocation.

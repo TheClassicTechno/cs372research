@@ -67,6 +67,31 @@ export function fetchFile(experiment, runId, path) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/file?path=' + encodeURIComponent(path));
 }
 
+/** Fetch aggregate CRIT reasoning diagnostics for an experiment. */
+export function fetchCritDiagnostics(experiment) {
+  return fetchJSON('/api/ablation/crit-diagnostics/' + encodeURIComponent(experiment));
+}
+
+/** Fetch paired t-test results for an experiment's collapse ratios. */
+export function fetchPairedTests(experiment) {
+  return fetchJSON('/api/ablation/paired-tests/' + encodeURIComponent(experiment));
+}
+
+/** Fetch paired t-tests on financial metrics (judge portfolio) for an experiment. */
+export function fetchFinancialTests(experiment) {
+  return fetchJSON('/api/ablation/financial-tests/' + encodeURIComponent(experiment));
+}
+
+/** Fetch paired t-tests on financial metrics (mean agent revisions) for an experiment. */
+export function fetchFinancialTestsMeanRev(experiment) {
+  return fetchJSON('/api/ablation/financial-tests/' + encodeURIComponent(experiment) + '/mean-revisions');
+}
+
+/** Fetch cross-ablation financial significance summary. */
+export function fetchFinancialSignificance() {
+  return fetchJSON('/api/ablation/financial-significance');
+}
+
 /** Fetch aggregate debate impact across experiments. */
 export function fetchAblationDebateImpact() {
   return fetchJSON('/api/ablation/debate-impact');

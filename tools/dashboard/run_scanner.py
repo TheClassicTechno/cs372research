@@ -1052,24 +1052,35 @@ def get_portfolio_trajectory(
         if not proposals and result:
             proposals = result[-1].get("revisions", {})
 
-        # Compute consensus (mean across revised agents)
+        # Intervention retry phases (revisions_retry_001, revisions_retry_002, …)
+        retries: list[dict[str, dict]] = []
+        for retry_dir in sorted(rd.glob("revisions_retry_*")):
+            retry_allocs = _read_phase_portfolios(retry_dir)
+            if retry_allocs:
+                retries.append(retry_allocs)
+
+        # Compute consensus (mean across final revised agents)
+        final_revisions = retries[-1] if retries else revisions
         consensus: dict[str, float] = {}
-        if revisions:
+        if final_revisions:
             all_tickers: set[str] = set()
-            for alloc in revisions.values():
+            for alloc in final_revisions.values():
                 all_tickers.update(alloc.keys())
-            n = len(revisions)
+            n = len(final_revisions)
             for ticker in sorted(all_tickers):
-                total = sum(alloc.get(ticker, 0.0) for alloc in revisions.values())
+                total = sum(alloc.get(ticker, 0.0) for alloc in final_revisions.values())
                 consensus[ticker] = round(total / n, 4)
 
-        result.append({
+        entry: dict[str, Any] = {
             "round": round_num,
             "proposals": proposals,
             "revisions": revisions,
-            "allocations": revisions,
+            "allocations": final_revisions,
             "consensus": consensus,
-        })
+        }
+        if retries:
+            entry["retries"] = retries
+        result.append(entry)
     return result
 
 
@@ -1108,6 +1119,18 @@ def compute_round_performance(
                     portfolio, prices_base, year, quarter,
                 )
             round_entry[phase] = phase_perf
+        # Intervention retry phases
+        retries = entry.get("retries") or []
+        if retries:
+            retry_perfs = []
+            for retry_allocs in retries:
+                retry_perf: dict[str, dict] = {}
+                for role, portfolio in retry_allocs.items():
+                    retry_perf[role] = _portfolio_value(
+                        portfolio, prices_base, year, quarter,
+                    )
+                retry_perfs.append(retry_perf)
+            round_entry["retries"] = retry_perfs
         result.append(round_entry)
     return result
 
@@ -1553,7 +1576,7 @@ def compute_ablation_debate_impact(
         # Collect (config_key, impact) pairs
         config_impacts: dict[str, list[dict]] = {}
         for run in runs:
-            if run.get("status") == "incomplete":
+            if run.get("status") != "complete":
                 continue
             impact = compute_debate_impact(
                 base_path, experiment, run["run_id"], prices_base,
@@ -1612,10 +1635,14 @@ def _aggregate_impacts(impacts: list[dict]) -> dict:
         if rnd_means:
             mean_portfolios[rnd] = rnd_means
 
+    # Aggregate Sharpe ratios across runs
+    sharpe_agg = _aggregate_sharpe(impacts)
+
     return {
         "run_count": n,
         "agent_deltas": agent_agg,
         "mean_portfolios": mean_portfolios,
+        "sharpe": sharpe_agg,
     }
 
 
@@ -1646,6 +1673,24 @@ def _aggregate_round_means(
         "revisions_return": r_avg,
         "critique_impact": round(r_avg - p_avg, 2),
     }
+
+
+def _aggregate_sharpe(impacts: list[dict]) -> dict[str, float | None]:
+    """Aggregate Sharpe ratios across runs by phase.
+
+    Returns ``{r1_proposal: mean, r1_revision: mean, ...}`` with None
+    for phases that have no data.
+    """
+    phases = ("r1_proposal", "r1_revision", "r1_js", "r2_revision", "r2_js")
+    result: dict[str, float | None] = {}
+    for phase in phases:
+        values = []
+        for imp in impacts:
+            s = imp.get("sharpe", {})
+            if s and s.get(phase) is not None:
+                values.append(s[phase])
+        result[phase] = round(sum(values) / len(values), 4) if values else None
+    return result
 
 
 def get_round_detail(
@@ -1830,3 +1875,862 @@ def diff_run_configs(
         "different": different,
         "shared": shared,
     }
+
+
+# ------------------------------------------------------------------
+# Paired statistical tests (paired t-test)
+# ------------------------------------------------------------------
+# Reproduces the statistical approach from scripts/compare_per_scenario.py:
+#   scipy.stats.ttest_rel  — paired two-tailed t-test
+#   scipy.stats.sem        — standard error of the mean
+#   scipy.stats.t.interval — 95% confidence interval on the difference
+#   numpy mean / std(ddof=1)
+
+def _extract_collapse_ratio(run_dir: Path) -> float | None:
+    """Compute collapse ratio for a single run.
+
+    Baseline (no retry): JS_revision / JS_propose
+    Intervention (retry exists): JS_retry / JS_propose
+
+    Returns None if required metrics are missing.
+    """
+    r1 = run_dir / "rounds" / "round_001"
+    propose = _safe_json(r1 / "metrics_propose.json")
+    if not isinstance(propose, dict):
+        return None
+    js_propose = propose.get("js_divergence")
+    if js_propose is None or js_propose == 0:
+        return None
+
+    # Prefer retry metrics if they exist (intervention condition)
+    retry = _safe_json(r1 / "metrics_retry_001.json")
+    if isinstance(retry, dict) and retry.get("js_divergence") is not None:
+        return retry["js_divergence"] / js_propose
+
+    revision = _safe_json(r1 / "metrics_revision.json")
+    if not isinstance(revision, dict):
+        return None
+    js_revision = revision.get("js_divergence")
+    if js_revision is None:
+        return None
+    return js_revision / js_propose
+
+
+def compute_paired_tests(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Paired t-test comparing collapse ratios across two debate configs.
+
+    Reproduces the statistical methodology from
+    ``scripts/compare_per_scenario.py``: paired ``ttest_rel``, SEM,
+    and 95 % CI on the mean difference.
+
+    Groups runs by (debate_config_stem, scenario_stem), pairs by
+    scenario across the two debate configs.
+
+    Returns dict with config names, paired data, test statistics,
+    and summary measures.
+    """
+    import numpy as np
+    from scipy import stats
+
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # Scan all runs and group by (debate_config, scenario)
+    groups: dict[tuple[str, str], float] = {}
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        ratio = _extract_collapse_ratio(run_dir)
+        if ratio is None:
+            continue
+        groups[(debate_stem, scenario_stem)] = ratio
+
+    # Identify the two debate configs
+    debate_configs = sorted({k[0] for k in groups})
+    if len(debate_configs) < 2:
+        return {
+            "pending": True,
+            "message": f"Waiting for data — found {len(debate_configs)} of 2 debate configs",
+            "configs_found": debate_configs,
+        }
+    if len(debate_configs) != 2:
+        return {
+            "error": f"Expected 2 debate configs, found {len(debate_configs)}",
+            "configs_found": debate_configs,
+        }
+
+    config_a, config_b = debate_configs  # alphabetical
+
+    # Build paired arrays matched by scenario
+    scenarios_a = {k[1]: v for k, v in groups.items() if k[0] == config_a}
+    scenarios_b = {k[1]: v for k, v in groups.items() if k[0] == config_b}
+    common = sorted(set(scenarios_a) & set(scenarios_b))
+
+    if len(common) < 2:
+        return {
+            "error": f"Too few paired scenarios ({len(common)}), need >= 2",
+            "config_a": config_a,
+            "config_b": config_b,
+        }
+
+    pairs = []
+    a_ratios = []
+    b_ratios = []
+    for s in common:
+        a_val = round(scenarios_a[s], 6)
+        b_val = round(scenarios_b[s], 6)
+        pairs.append({"scenario": s, "a": a_val, "b": b_val})
+        a_ratios.append(a_val)
+        b_ratios.append(b_val)
+
+    # --- Statistical tests (mirrors compare_per_scenario.py) ----------
+    v_a = np.array(a_ratios)
+    v_b = np.array(b_ratios)
+    diffs = v_b - v_a
+
+    t_stat, p_val = stats.ttest_rel(v_b, v_a)
+    mean_diff = float(np.mean(diffs))
+    se_diff = float(stats.sem(diffs))
+
+    mean_a = float(np.mean(v_a))
+    sem_a = float(stats.sem(v_a))
+    mean_b = float(np.mean(v_b))
+    sem_b = float(stats.sem(v_b))
+
+    ci_low, ci_high = stats.t.interval(
+        0.95, len(diffs) - 1, loc=mean_diff, scale=se_diff,
+    )
+
+    n = len(common)
+    n_b_greater = int(np.sum(v_b > v_a))
+    n_a_greater = int(np.sum(v_a > v_b))
+
+    return {
+        "config_a": config_a,
+        "config_b": config_b,
+        "n_paired": n,
+        "pairs": pairs,
+        "ttest": {
+            "t_statistic": round(float(t_stat), 4),
+            "p_value": round(float(p_val), 6),
+            "mean_diff": round(mean_diff, 6),
+            "se_diff": round(se_diff, 6),
+            "ci_95": [round(float(ci_low), 6), round(float(ci_high), 6)],
+        },
+        "summary": {
+            "a_mean": round(mean_a, 4),
+            "a_sem": round(sem_a, 4),
+            "a_std": round(float(np.std(v_a, ddof=1)), 4),
+            "b_mean": round(mean_b, 4),
+            "b_sem": round(sem_b, 4),
+            "b_std": round(float(np.std(v_b, ddof=1)), 4),
+            "n_b_greater": n_b_greater,
+            "n_a_greater": n_a_greater,
+        },
+    }
+
+
+# ------------------------------------------------------------------
+# Financial metrics paired tests
+# ------------------------------------------------------------------
+# Reproduces the statistical approach and metric selection from
+# scripts/compare_multiple_configs.py: paired ttest_rel per metric,
+# mean ± SEM, 95% CI on mean difference.  Reads summary.json from
+# simulation results directories, matched via invest_quarter.
+
+# Metrics in display priority order (from compare_multiple_configs.py)
+_FINANCIAL_METRIC_PRIORITIES = [
+    "daily_metrics_excess_return_pct",
+    "daily_metrics_annualized_sharpe",
+    "daily_metrics_annualized_volatility",
+    "daily_metrics_max_drawdown_pct",
+    "daily_metrics_total_return_pct",
+    "daily_metrics_annualized_sortino",
+    "daily_metrics_calmar_ratio",
+    "total_trades",
+    "final_cash",
+]
+
+# Fields excluded when flattening episode_summaries
+# (matches compare_per_scenario.py)
+_FLATTEN_EXCLUDED = {
+    "episode_id", "initial_cash", "final_positions",
+    "final_prices", "position_values", "mean_revisions_metrics",
+}
+
+# Metrics excluded from the comparison table
+# (matches compare_multiple_configs.py)
+_METRIC_EXCLUSIONS = {
+    "book_value", "calmar_ratio", "duration_seconds", "max_drawdown",
+    "return_pct", "return_pct_with_cash_interest",
+    "daily_metrics_trading_days", "daily_metrics_spy_return_pct",
+    "max_drawdown_pct",
+}
+
+
+def _flatten_dict(
+    d: dict,
+    prefix: str = "",
+    excluded_fields: set | None = None,
+) -> dict[str, float]:
+    """Recursively flatten a nested dict with underscore-joined keys.
+
+    Reproduces ``flatten_dict`` from ``scripts/compare_per_scenario.py``.
+    Only numeric values (int / float / bool) are included.
+    """
+    if excluded_fields is None:
+        excluded_fields = set()
+    flat: dict[str, float] = {}
+    if not isinstance(d, dict):
+        return flat
+    for k, v in d.items():
+        if k in excluded_fields:
+            continue
+        key = f"{prefix}{k}" if prefix else k
+        if isinstance(v, dict):
+            flat.update(_flatten_dict(v, prefix=f"{key}_", excluded_fields=excluded_fields))
+        elif isinstance(v, (int, float, bool)) and v is not None:
+            flat[key] = float(v)
+    return flat
+
+
+def _compute_run_financial_metrics(
+    run_dir: Path,
+    use_mean_revisions: bool = False,
+) -> dict[str, float] | None:
+    """Compute financial metrics for a single logging run.
+
+    Reads portfolio weights, daily prices, and risk-free rate from the
+    logging run directory and ``data-pipeline/`` data, then calls
+    ``eval.financial.compute_daily_financial_metrics`` — the same
+    function used by ``simulation/runner.py`` at experiment time.
+
+    Results are cached to ``_dashboard/financial_metrics.json`` (or
+    ``_dashboard/mean_revisions_metrics.json``) inside the run dir.
+
+    Returns a flat dict with ``daily_metrics_`` prefixed keys, or None
+    if required data is missing.
+    """
+    import re
+
+    from eval.evidence import parse_memo_evidence
+    from eval.financial import compute_daily_financial_metrics
+    from models.case import ClosePricePoint
+
+    # --- Cache check ---
+    cache_name = (
+        "mean_revisions_metrics.json" if use_mean_revisions
+        else "financial_metrics.json"
+    )
+    cache_dir = run_dir / "_dashboard"
+    cache_path = cache_dir / cache_name
+    if cache_path.exists():
+        cached = _safe_json(cache_path)
+        if isinstance(cached, dict) and cached:
+            return cached
+
+    # --- Manifest ---
+    manifest = _safe_json(run_dir / "manifest.json")
+    if not isinstance(manifest, dict):
+        return None
+    ticker_universe = manifest.get("ticker_universe")
+    if not isinstance(ticker_universe, list) or not ticker_universe:
+        return None
+
+    # --- Find scenario & debate config YAMLs in final/ ---
+    final_dir = run_dir / "final"
+    if not final_dir.is_dir():
+        return None
+
+    scenario_yaml: dict | None = None
+    debate_yaml: dict | None = None
+    for yf in final_dir.glob("*.yaml"):
+        try:
+            content = yaml.safe_load(yf.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if not isinstance(content, dict):
+            continue
+        if "invest_quarter" in content:
+            scenario_yaml = content
+        elif "broker" in content:
+            debate_yaml = content
+
+    if scenario_yaml is None or debate_yaml is None:
+        return None
+
+    invest_quarter_raw = scenario_yaml.get("invest_quarter", "")
+    if not invest_quarter_raw or not isinstance(invest_quarter_raw, str):
+        return None
+
+    # Parse invest quarter: "2022Q4" → year=2022, q="Q4"
+    iq_str = str(invest_quarter_raw)
+    if len(iq_str) >= 6 and iq_str[4] == "Q":
+        year_str = iq_str[:4]
+        q_str = iq_str[4:]
+    else:
+        return None
+    try:
+        year = int(year_str)
+    except ValueError:
+        return None
+
+    # --- Initial cash ---
+    broker_cfg = debate_yaml.get("broker", {})
+    initial_cash = broker_cfg.get("initial_cash", 100_000.0)
+
+    # --- Portfolio weights ---
+    if use_mean_revisions:
+        rev_data = _safe_json(
+            run_dir / "rounds" / "round_001" / "metrics_revision.json",
+        )
+        if not isinstance(rev_data, dict):
+            return None
+        allocations = rev_data.get("allocations")
+        if not isinstance(allocations, dict) or not allocations:
+            return None
+        # Mean across agents
+        all_tickers: set[str] = set()
+        for agent_alloc in allocations.values():
+            if isinstance(agent_alloc, dict):
+                all_tickers.update(agent_alloc.keys())
+        n_agents = len(allocations)
+        if n_agents == 0:
+            return None
+        weights: dict[str, float] = {}
+        for t in all_tickers:
+            total = sum(
+                a.get(t, 0.0) for a in allocations.values()
+                if isinstance(a, dict)
+            )
+            weights[t] = total / n_agents
+    else:
+        portfolio = _safe_json(final_dir / "final_portfolio.json")
+        if not isinstance(portfolio, dict) or not portfolio:
+            return None
+        weights = portfolio
+
+    # --- Load daily prices ---
+    daily_dir = DAILY_PRICES_BASE
+    if not daily_dir.is_dir():
+        return None
+
+    daily_prices: dict[str, list[ClosePricePoint]] = {}
+    for t in ticker_universe:
+        if t == "_CASH_":
+            continue
+        price_path = daily_dir / t / f"{year}_{q_str}.json"
+        if not price_path.exists():
+            continue
+        try:
+            doc = json.loads(price_path.read_text(encoding="utf-8"))
+            bars = [
+                ClosePricePoint(timestamp=d["date"], close=d["close"])
+                for d in doc.get("daily_close", [])
+            ]
+            if bars:
+                daily_prices[t] = bars
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass
+
+    if not daily_prices:
+        return None
+
+    # --- SPY benchmark ---
+    spy_daily: list[ClosePricePoint] | None = None
+    spy_path = daily_dir / "SPY" / f"{year}_{q_str}.json"
+    if spy_path.exists():
+        try:
+            doc = json.loads(spy_path.read_text(encoding="utf-8"))
+            spy_daily = [
+                ClosePricePoint(timestamp=d["date"], close=d["close"])
+                for d in doc.get("daily_close", [])
+            ]
+        except (json.JSONDecodeError, KeyError, OSError):
+            pass
+
+    # --- Risk-free rate from memo ---
+    risk_free_rate = 0.0
+    # invest_quarter "2022Q4" → memo uses PREVIOUS quarter for the data
+    # snapshot: memo_2022_Q3.txt (data available before Q4 starts).
+    prev_q_num = int(q_str[1]) - 1
+    if prev_q_num < 1:
+        memo_year, memo_q = year - 1, "Q4"
+    else:
+        memo_year, memo_q = year, f"Q{prev_q_num}"
+    memo_path = (
+        Path("data-pipeline/final_snapshots/memo_data")
+        / f"memo_{memo_year}_{memo_q}.txt"
+    )
+    if memo_path.exists():
+        try:
+            memo_text = memo_path.read_text(encoding="utf-8")
+            evidence = parse_memo_evidence(memo_text)
+            if "L1-FF" in evidence:
+                match = re.search(r"([\d.]+)", evidence["L1-FF"])
+                if match:
+                    risk_free_rate = float(match.group(1)) / 100.0
+        except Exception:
+            pass
+
+    # --- Convert weights → positions + cash ---
+    # Get day-0 prices for share conversion
+    initial_prices: dict[str, float] = {}
+    for t, bars in daily_prices.items():
+        if bars:
+            initial_prices[t] = bars[0].close
+
+    positions: dict[str, int | float] = {}
+    port_cash = weights.get("_CASH_", 0.0) * initial_cash
+
+    for t, w in weights.items():
+        if t == "_CASH_" or w <= 0:
+            continue
+        price = initial_prices.get(t)
+        if not price or price <= 0:
+            continue
+        dollar_amount = w * initial_cash
+        if use_mean_revisions:
+            # Mean revisions: float shares (matches compute_mean_revisions.py)
+            positions[t] = dollar_amount / price
+        else:
+            # Judge portfolio: int shares (matches multi_agent_debate.py)
+            shares = int(dollar_amount / price)
+            if shares > 0:
+                positions[t] = shares
+
+    if not positions:
+        return None
+
+    # --- Compute metrics ---
+    daily_fin = compute_daily_financial_metrics(
+        positions=positions,
+        cash=port_cash,
+        initial_value=initial_cash,
+        daily_prices=daily_prices,
+        spy_daily=spy_daily,
+        risk_free_rate=risk_free_rate,
+    )
+    if daily_fin is None:
+        return None
+
+    metrics = {
+        "daily_metrics_trading_days": daily_fin.trading_days,
+        "daily_metrics_total_return_pct": daily_fin.total_return_pct,
+        "daily_metrics_annualized_sharpe": daily_fin.annualized_sharpe,
+        "daily_metrics_annualized_sortino": daily_fin.annualized_sortino,
+        "daily_metrics_annualized_volatility": daily_fin.annualized_volatility,
+        "daily_metrics_max_drawdown_pct": daily_fin.max_drawdown_pct,
+        "daily_metrics_calmar_ratio": daily_fin.calmar_ratio,
+        "daily_metrics_spy_return_pct": daily_fin.spy_return_pct,
+        "daily_metrics_excess_return_pct": daily_fin.excess_return_pct,
+    }
+    # Replace None values with 0.0 for downstream t-test compatibility
+    metrics = {k: (v if v is not None else 0.0) for k, v in metrics.items()}
+
+    # --- Write cache ---
+    try:
+        cache_dir.mkdir(exist_ok=True)
+        cache_path.write_text(
+            json.dumps(metrics, indent=2), encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+    return metrics
+
+
+def compute_financial_paired_tests(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+    use_mean_revisions: bool = False,
+) -> dict:
+    """Paired t-tests on financial metrics across two debate configs.
+
+    Computes financial metrics directly from logging run data
+    (portfolio weights + daily prices) via
+    ``eval.financial.compute_daily_financial_metrics`` — the same
+    function used at simulation time.
+
+    When *use_mean_revisions* is True, averages agent revision
+    allocations instead of using the judge's final portfolio.
+
+    Pairs metrics by scenario across the two debate configs and runs
+    ``scipy.stats.ttest_rel`` per metric.
+
+    Returns dict with config names, per-metric statistics, and
+    per-scenario raw values.
+    """
+    import numpy as np
+    from scipy import stats
+
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # config_stem → {scenario_stem → flat_metrics}
+    config_metrics: dict[str, dict[str, dict[str, float]]] = {}
+
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        metrics = _compute_run_financial_metrics(run_dir, use_mean_revisions)
+        if not metrics:
+            continue
+
+        config_metrics.setdefault(debate_stem, {})[scenario_stem] = metrics
+
+    # Identify the two debate configs
+    configs = sorted(config_metrics.keys())
+    if len(configs) < 2:
+        return {
+            "pending": True,
+            "message": f"Waiting for data — found {len(configs)} of 2 debate configs",
+            "configs_found": configs,
+        }
+    if len(configs) != 2:
+        return {
+            "error": f"Expected 2 debate configs, found {len(configs)}",
+            "configs_found": configs,
+        }
+
+    config_a, config_b = configs
+    a_data = config_metrics[config_a]
+    b_data = config_metrics[config_b]
+    common = sorted(set(a_data) & set(b_data))
+
+    if len(common) < 2:
+        return {
+            "error": f"Too few paired scenarios ({len(common)}), need >= 2",
+            "config_a": config_a,
+            "config_b": config_b,
+        }
+
+    # Determine metric list: prioritised metrics first, then any remaining
+    all_keys: set[str] = set()
+    for sc in common:
+        all_keys.update(a_data[sc].keys())
+        all_keys.update(b_data[sc].keys())
+    all_keys -= _METRIC_EXCLUSIONS
+
+    ordered_metrics = [m for m in _FINANCIAL_METRIC_PRIORITIES if m in all_keys]
+    extras = sorted(all_keys - set(ordered_metrics))
+    ordered_metrics.extend(extras)
+
+    # Compute per-metric paired t-tests
+    results_list: list[dict] = []
+    for metric in ordered_metrics:
+        vals_a: list[float] = []
+        vals_b: list[float] = []
+        per_scenario: list[dict] = []
+
+        for sc in common:
+            va = a_data[sc].get(metric)
+            vb = b_data[sc].get(metric)
+            if va is not None and vb is not None:
+                vals_a.append(va)
+                vals_b.append(vb)
+                per_scenario.append({"scenario": sc, "a": va, "b": vb})
+
+        if len(vals_a) < 2:
+            continue
+
+        v_a = np.array(vals_a)
+        v_b = np.array(vals_b)
+        diffs = v_b - v_a
+
+        t_stat, p_val = stats.ttest_rel(v_b, v_a)
+        mean_diff = float(np.mean(diffs))
+        se_diff = float(stats.sem(diffs))
+        ci_low, ci_high = stats.t.interval(
+            0.95, len(diffs) - 1, loc=mean_diff, scale=se_diff,
+        )
+
+        # Handle NaN from ttest_rel (e.g. identical arrays)
+        if math.isnan(p_val):
+            p_val = 1.0
+        if math.isnan(t_stat):
+            t_stat = 0.0
+
+        results_list.append({
+            "metric": metric,
+            "n": len(vals_a),
+            "a_mean": round(float(np.mean(v_a)), 4),
+            "a_sem": round(float(stats.sem(v_a)), 4),
+            "b_mean": round(float(np.mean(v_b)), 4),
+            "b_sem": round(float(stats.sem(v_b)), 4),
+            "mean_diff": round(mean_diff, 4),
+            "t_statistic": round(float(t_stat), 4),
+            "p_value": round(float(p_val), 6),
+            "ci_95": [
+                round(float(ci_low), 4),
+                round(float(ci_high), 4),
+            ],
+            "per_scenario": per_scenario,
+        })
+
+    return {
+        "config_a": config_a,
+        "config_b": config_b,
+        "n_paired": len(common),
+        "source": "mean_revisions" if use_mean_revisions else "judge",
+        "metrics": results_list,
+    }
+
+
+# ------------------------------------------------------------------
+# CRIT Reasoning Diagnostics (ablation-level aggregation)
+# ------------------------------------------------------------------
+
+_PILLAR_KEYS = ["LV", "ES", "AC", "CA"]
+_PILLAR_NAMES = {
+    "LV": "Logical Validity",
+    "ES": "Evidential Support",
+    "AC": "Alternative Consideration",
+    "CA": "Causal Alignment",
+}
+_DIAG_FLAGS = [
+    "contradictions",
+    "unsupported_claims",
+    "ignored_critiques",
+    "premature_certainty",
+    "causal_overreach",
+    "conclusion_drift",
+]
+_DIAG_COUNT_KEYS = [
+    "contradictions_count",
+    "unsupported_claims_count",
+    "ignored_critiques_count",
+    "causal_overreach_count",
+    "orphaned_positions_count",
+]
+
+
+def compute_crit_diagnostics(
+    base_path: Path = DEFAULT_BASE,
+    experiment: str = "",
+) -> dict:
+    """Aggregate CRIT reasoning diagnostics across debate configs.
+
+    Extracts pillar scores, diagnostic flags, and diagnostic counts
+    for each agent, grouped by debate config (condition).
+
+    Returns a dict with per-agent, per-condition summary statistics.
+    """
+    exp_dir = base_path / experiment
+    if not exp_dir.is_dir():
+        return {"error": f"Experiment directory not found: {experiment}"}
+
+    # Collect per-run CRIT data keyed by (debate_config, agent)
+    # Each entry: {pillar_scores, diag_flags, diag_counts}
+    records: list[dict] = []
+
+    for run_dir in sorted(exp_dir.iterdir()):
+        if not run_dir.is_dir() or not run_dir.name.startswith("run_"):
+            continue
+        manifest = _safe_json(run_dir / "manifest.json")
+        if not isinstance(manifest, dict):
+            continue
+        config_paths = manifest.get("config_paths")
+        if not isinstance(config_paths, list) or len(config_paths) < 2:
+            continue
+
+        debate_stem = Path(config_paths[0]).stem
+        scenario_stem = Path(config_paths[1]).stem
+
+        # Read structured CRIT scores
+        r1 = run_dir / "rounds" / "round_001"
+        crit = _safe_json(r1 / "metrics" / "crit_scores.json")
+        if not isinstance(crit, dict):
+            continue
+
+        agent_scores = crit.get("agent_scores", {})
+
+        # Also read raw CRIT responses for counts
+        agents = manifest.get("roles", [])
+        for agent in agents:
+            ascores = agent_scores.get(agent, {})
+            pillars = ascores.get("pillar_scores", {})
+            diags = ascores.get("diagnostics", {})
+
+            # Read raw CRIT response for counts
+            raw_path = r1 / "CRIT" / agent / "response.txt"
+            raw = _safe_json(raw_path)
+            raw_diags = raw.get("diagnostics", {}) if isinstance(raw, dict) else {}
+
+            records.append({
+                "debate_config": debate_stem,
+                "scenario": scenario_stem,
+                "agent": agent,
+                "rho_i": ascores.get("rho_i"),
+                "pillars": {pk: pillars.get(pk) for pk in _PILLAR_KEYS},
+                "flags": {f: diags.get(f, False) for f in _DIAG_FLAGS},
+                "counts": {c: raw_diags.get(c, 0) for c in _DIAG_COUNT_KEYS},
+            })
+
+    if len(records) == 0:
+        return {"pending": True, "message": "No CRIT data found"}
+
+    # Identify debate configs
+    debate_configs = sorted({r["debate_config"] for r in records})
+    agents = sorted({r["agent"] for r in records})
+
+    # Aggregate per (agent, condition)
+    pillar_stats: list[dict] = []
+    flag_stats: list[dict] = []
+    count_stats: list[dict] = []
+
+    for agent in agents:
+        for dc in debate_configs:
+            subset = [r for r in records if r["agent"] == agent and r["debate_config"] == dc]
+            n = len(subset)
+            if n == 0:
+                continue
+
+            # Pillar means/stdevs
+            for pk in _PILLAR_KEYS:
+                vals = [r["pillars"][pk] for r in subset if r["pillars"][pk] is not None]
+                if len(vals) > 0:
+                    pillar_stats.append({
+                        "agent": agent,
+                        "condition": dc,
+                        "pillar": _PILLAR_NAMES[pk],
+                        "pillar_key": pk,
+                        "mean": round(sum(vals) / len(vals), 4),
+                        "stdev": round(
+                            (sum((v - sum(vals)/len(vals))**2 for v in vals) / max(len(vals)-1, 1))**0.5,
+                            4,
+                        ),
+                        "n": len(vals),
+                    })
+
+            # Flag percentages
+            for flag in _DIAG_FLAGS:
+                count = sum(1 for r in subset if r["flags"][flag])
+                flag_stats.append({
+                    "agent": agent,
+                    "condition": dc,
+                    "flag": flag,
+                    "count": count,
+                    "total": n,
+                    "pct": round(100 * count / n, 1),
+                })
+
+            # Count means
+            for ck in _DIAG_COUNT_KEYS:
+                vals = [r["counts"][ck] for r in subset]
+                count_stats.append({
+                    "agent": agent,
+                    "condition": dc,
+                    "count_key": ck,
+                    "mean": round(sum(vals) / len(vals), 3),
+                    "total_instances": sum(vals),
+                    "n": len(vals),
+                })
+
+    return {
+        "agents": agents,
+        "conditions": debate_configs,
+        "pillar_names": _PILLAR_NAMES,
+        "pillar_stats": pillar_stats,
+        "flag_stats": flag_stats,
+        "count_stats": count_stats,
+        "total_records": len(records),
+    }
+
+
+# ------------------------------------------------------------------
+# Cross-Ablation Financial Significance Summary
+# ------------------------------------------------------------------
+
+def compute_financial_significance_summary(
+    base_path: Path = DEFAULT_BASE,
+) -> dict:
+    """Cross-ablation financial significance summary.
+
+    Calls ``compute_financial_paired_tests`` for every experiment that
+    looks like an ablation (``vskarich_ablation_*``), then condenses
+    the per-metric results into a single table-friendly structure.
+
+    Returns::
+
+        {
+          "experiments": ["vskarich_ablation_7", ...],
+          "metrics": [
+            {
+              "metric": "daily_metrics_excess_return_pct",
+              "results": {
+                "vskarich_ablation_7": {"mean_diff": 0.83, "p_value": 0.052, "n": 35},
+                ...
+              }
+            },
+            ...
+          ]
+        }
+    """
+    experiments = [
+        name for name in list_experiments(base_path)
+        if name.startswith("vskarich_ablation_")
+    ]
+
+    # metric_key → {experiment → {mean_diff, p_value, n}}
+    metric_map: dict[str, dict[str, dict | None]] = {}
+
+    for exp in experiments:
+        result = compute_financial_paired_tests(base_path, exp)
+
+        # Skip experiments that are pending, errored, or have no metrics
+        if not isinstance(result, dict):
+            continue
+        metrics_list = result.get("metrics")
+        if not isinstance(metrics_list, list):
+            continue
+
+        for m in metrics_list:
+            key = m["metric"]
+            if key not in metric_map:
+                metric_map[key] = {}
+            metric_map[key][exp] = {
+                "mean_diff": m["mean_diff"],
+                "p_value": m["p_value"],
+                "n": m["n"],
+            }
+
+    # Build ordered metrics list using priority order
+    ordered_keys = [k for k in _FINANCIAL_METRIC_PRIORITIES if k in metric_map]
+    extras = sorted(set(metric_map) - set(ordered_keys))
+    ordered_keys.extend(extras)
+
+    metrics_out: list[dict] = []
+    for key in ordered_keys:
+        row_results: dict[str, dict | None] = {}
+        for exp in experiments:
+            row_results[exp] = metric_map[key].get(exp)
+        metrics_out.append({"metric": key, "results": row_results})
+
+    return {"experiments": experiments, "metrics": metrics_out}

@@ -1,0 +1,356 @@
+==============================================================================
+SCENARIO DIVERSITY ANALYSIS — 35 Ablation Scenarios
+==============================================================================
+
+1. SCENARIO OVERVIEW
+------------------------------------------------------------------------------
+  #  Quarter  Type     Tickers  Ticker List
+                                
+------------------------------------------------------------------------------
+  1  2022Q4   tech           4  AAPL, AMD, MSFT, NVDA
+  2  2022Q1   full          21  AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, DE, GS, J...
+  3  2023Q2   rand8          8  AMD, AMZN, BAC, CAT, CVX, PG, RTX, SLB
+  4  2022Q4   rand7          7  AAPL, AMD, CAT, COP, GS, JPM, MS
+  5  2025Q1   tech           5  AAPL, AMD, AVGO, MSFT, NVDA
+  6  2023Q1   rand9          9  AAPL, AMD, CVX, GS, JPM, NKE, SLB, TSLA, WMT
+  7  2023Q2   full          22  AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, GS, JNJ, ...
+  8  2022Q3   rand3          3  AAPL, BAC, XOM
+  9  2023Q2   rand3          3  AMZN, COP, CVX
+ 10  2025Q2   full          35  AAPL, AMD, AMT, AMZN, AVGO, BAC, BLK, CAT, COP, COST...
+ 11  2021Q4   full          22  AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, DE, GS, J...
+ 12  2023Q4   rand7          7  BAC, CAT, GS, JPM, NKE, TSLA, WMT
+ 13  2023Q1   full          22  AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, GS, JNJ, ...
+ 14  2022Q3   rand7          7  BAC, COP, GS, JNJ, MSFT, NVDA, WMT
+ 15  2023Q1   rand7          7  COST, CVX, NKE, PG, TSLA, UNH, XOM
+ 16  2022Q2   rand8          8  AMZN, BAC, CAT, COST, DAL, GS, JPM, RTX
+ 17  2022Q3   rand7          7  AAPL, BAC, COP, DAL, GS, RTX, UNH
+ 18  2025Q2   rand12        12  AAPL, BLK, COST, DAL, DIS, JPM, LLY, META, NVDA, RTX...
+ 19  2023Q2   rand7          7  AMD, COP, COST, MSFT, NKE, PG, WMT
+ 20  2022Q1   rand4          4  CAT, NVDA, TSLA, WMT
+ 21  2022Q1   rand3          3  AMZN, BAC, MS
+ 22  2022Q4   full          21  AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, GS, JNJ, ...
+ 23  2023Q1   rand3          3  CAT, COST, SLB
+ 24  2025Q1   rand9          9  AVGO, BLK, COST, DE, GS, MS, MSFT, NKE, PFE
+ 25  2022Q3   rand12        12  AAPL, CAT, COP, COST, DAL, GS, JPM, MS, NVDA, RTX, U...
+ 26  2022Q4   rand12        12  AAPL, AMD, AMZN, BAC, COP, CVX, GS, PG, TSLA, UNH, W...
+ 27  2025Q3   full          35  AAPL, AMD, AMT, AMZN, AVGO, BAC, BLK, CAT, COP, COST...
+ 28  2025Q3   rand12        12  AAPL, AMZN, AVGO, CAT, DE, META, MSFT, NKE, NVDA, TS...
+ 29  2022Q1   tech           4  AAPL, AMD, MSFT, NVDA
+ 30  2023Q4   rand3          3  JPM, RTX, WMT
+ 31  2025Q1   full          35  AAPL, AMD, AMT, AMZN, AVGO, BAC, BLK, CAT, COP, COST...
+ 32  2024Q1   rand12        12  AAPL, AMZN, BAC, CAT, COP, COST, NKE, NVDA, PG, RTX,...
+ 33  2021Q4   rand12        12  AAPL, AMZN, BAC, CVX, DE, JPM, MS, NVDA, PG, SLB, UN...
+ 34  2021Q4   rand7          7  AAPL, AMD, AMZN, BAC, MSFT, SLB, TSLA
+ 35  2024Q1   rand3          3  AMD, LLY, UNH
+
+2. TEMPORAL DISTRIBUTION
+------------------------------------------------------------------------------
+By Year:
+  2021:   3  ###
+  2022:  13  #############
+  2023:  10  ##########
+  2024:   2  ##
+  2025:   7  #######
+
+By Calendar Quarter:
+  Q1:   0  
+  Q2:   0  
+  Q3:   0  
+  Q4:   0  
+
+By Year-Quarter:
+  2021Q4:   3  ###
+  2022Q1:   4  ####
+  2022Q2:   1  #
+  2022Q3:   4  ####
+  2022Q4:   4  ####
+  2023Q1:   4  ####
+  2023Q2:   4  ####
+  2023Q4:   2  ##
+  2024Q1:   2  ##
+  2025Q1:   3  ###
+  2025Q2:   2  ##
+  2025Q3:   2  ##
+
+Unique year-quarters: 12
+Span: 2021Q4 to 2025Q3
+
+3. PORTFOLIO SIZE DISTRIBUTION
+------------------------------------------------------------------------------
+  Min tickers:    3
+  Max tickers:    35
+  Mean tickers:   11.5
+  Median tickers: 8
+
+  Size distribution:
+     3 tickers:   6  ######
+     4 tickers:   3  ###
+     5 tickers:   1  #
+     7 tickers:   7  #######
+     8 tickers:   2  ##
+     9 tickers:   2  ##
+    12 tickers:   6  ######
+    21 tickers:   2  ##
+    22 tickers:   3  ###
+    35 tickers:   3  ###
+
+  By scenario type:
+    full-universe   : n= 8, sizes=[21, 22, 35]
+    random-subset   : n=24, sizes=[3, 4, 7, 8, 9, 12]
+    tech            : n= 3, sizes=[4, 5]
+
+4. TICKER FREQUENCY ACROSS SCENARIOS
+------------------------------------------------------------------------------
+  Unique tickers in universe: 36
+
+  Ticker Count    Pct  Sector         Bar
+  ------ -----    ---  ------         ---
+  AAPL      22  62.9%  Tech           ######################
+  BAC       19  54.3%  Financials     ###################
+  WMT       19  54.3%  Consumer       ###################
+  AMD       18  51.4%  Tech           ##################
+  NVDA      18  51.4%  Tech           ##################
+  AMZN      17  48.6%  Tech           #################
+  CAT       17  48.6%  Industrials    #################
+  GS        17  48.6%  Financials     #################
+  MSFT      16  45.7%  Tech           ################
+  COP       16  45.7%  Energy         ################
+  COST      16  45.7%  Consumer       ################
+  JPM       16  45.7%  Financials     ################
+  TSLA      16  45.7%  Consumer       ################
+  UNH       16  45.7%  Healthcare     ################
+  CVX       14  40.0%  Energy         ##############
+  NKE       14  40.0%  Consumer       ##############
+  PG        14  40.0%  Consumer       ##############
+  MS        13  37.1%  Financials     #############
+  RTX       13  37.1%  Industrials    #############
+  XOM       12  34.3%  Energy         ############
+  JNJ        9  25.7%  Healthcare     #########
+  SLB        9  25.7%  Energy         #########
+  DE         8  22.9%  Industrials    ########
+  DAL        7  20.0%  Industrials    #######
+  AVGO       6  17.1%  Tech           ######
+  BLK        5  14.3%  Financials     #####
+  LLY        5  14.3%  Healthcare     #####
+  META       5  14.3%  Tech           #####
+  DIS        4  11.4%  Consumer       ####
+  PFE        4  11.4%  Healthcare     ####
+  AMT        3   8.6%  REITs          ###
+  GOOG       3   8.6%  Tech           ###
+  HD         3   8.6%  Consumer       ###
+  NFLX       3   8.6%  Tech           ###
+  OXY        3   8.6%  Energy         ###
+  PLD        3   8.6%  REITs          ###
+
+  In ALL 35 scenarios:   none
+  In >=80% (>=28):       none
+  In <=3 scenarios:      ['AMT', 'GOOG', 'HD', 'NFLX', 'OXY', 'PLD']
+
+5. SECTOR COMPOSITION
+------------------------------------------------------------------------------
+  Total ticker-slots across all scenarios: 403
+
+  Tech            108 ( 26.8%)  ######################################################
+  Consumer         86 ( 21.3%)  ###########################################
+  Financials       70 ( 17.4%)  ###################################
+  Energy           54 ( 13.4%)  ###########################
+  Industrials      45 ( 11.2%)  ######################
+  Healthcare       34 (  8.4%)  #################
+  REITs             6 (  1.5%)  ###
+
+  Per-scenario sector diversity:
+    Min sectors in a scenario:  1
+    Max sectors in a scenario:  7
+    Mean sectors per scenario:  4.2
+
+6. PAIRWISE TICKER OVERLAP (JACCARD SIMILARITY)
+------------------------------------------------------------------------------
+  Pairs compared:   595
+  Mean Jaccard:     0.216
+  Median Jaccard:   0.174
+  Min Jaccard:      0.000
+  Max Jaccard:      1.000
+
+  Jaccard distribution:
+      [0.0, 0.1):  133  #############################################
+      [0.1, 0.2):  199  ###################################################################
+      [0.2, 0.3):  119  ########################################
+      [0.3, 0.4):   78  ##########################
+      [0.4, 0.5):   21  #######
+      [0.5, 0.6):   26  #########
+      [0.6, 0.7):    3  #
+      [0.7, 0.8):    0  
+      [0.8, 0.9):    6  ##
+      [0.9, 1.0]:   10  ####
+
+  5 most DIFFERENT pairs (lowest Jaccard):
+    J=0.000  scenario_2022Q4_tech
+           vs scenario_2023Q2_rand3_2
+    J=0.000  scenario_2022Q4_tech
+           vs scenario_2023Q4_rand7_2
+    J=0.000  scenario_2022Q4_tech
+           vs scenario_2023Q1_rand7_1
+    J=0.000  scenario_2022Q4_tech
+           vs scenario_2022Q2_rand8_5195513f
+    J=0.000  scenario_2022Q4_tech
+           vs scenario_2022Q1_rand3_1
+
+  5 most SIMILAR pairs (highest Jaccard):
+    J=1.000  scenario_2022Q4_tech
+           vs scenario_2022Q1_tech
+    J=1.000  scenario_2023Q2
+           vs scenario_2023Q1
+    J=1.000  scenario_2025Q2
+           vs scenario_2025Q3
+    J=1.000  scenario_2025Q2
+           vs scenario_2025Q1
+    J=1.000  scenario_2025Q3
+           vs scenario_2025Q1
+
+7. SAME-QUARTER SCENARIO VARIATIONS
+------------------------------------------------------------------------------
+  How many distinct ticker-sets per quarter:
+
+  2021Q4: 3 scenario(s), sizes=[22, 12, 7]
+    J(scenario_2021Q4, scenario_2021Q4_rand12_2) = 0.545
+    J(scenario_2021Q4, scenario_2021Q4_rand7_1) = 0.318
+    J(scenario_2021Q4_rand12_2, scenario_2021Q4_rand7_1) = 0.267
+  2022Q1: 4 scenario(s), sizes=[21, 4, 3, 4]
+    J(scenario_2022Q1, scenario_2022Q1_rand4_d6d) = 0.190
+    J(scenario_2022Q1, scenario_2022Q1_rand3_1) = 0.143
+    J(scenario_2022Q1, scenario_2022Q1_tech) = 0.190
+    J(scenario_2022Q1_rand4_d6d, scenario_2022Q1_rand3_1) = 0.000
+    J(scenario_2022Q1_rand4_d6d, scenario_2022Q1_tech) = 0.143
+    J(scenario_2022Q1_rand3_1, scenario_2022Q1_tech) = 0.000
+  2022Q2: 1 scenario(s), sizes=[8]
+  2022Q3: 4 scenario(s), sizes=[3, 7, 7, 12]
+    J(scenario_2022Q3_rand3_1, scenario_2022Q3_rand7_1) = 0.111
+    J(scenario_2022Q3_rand3_1, scenario_2022Q3_rand7_2) = 0.250
+    J(scenario_2022Q3_rand3_1, scenario_2022Q3_rand12_1) = 0.071
+    J(scenario_2022Q3_rand7_1, scenario_2022Q3_rand7_2) = 0.273
+    J(scenario_2022Q3_rand7_1, scenario_2022Q3_rand12_1) = 0.267
+    J(scenario_2022Q3_rand7_2, scenario_2022Q3_rand12_1) = 0.462
+  2022Q4: 4 scenario(s), sizes=[4, 7, 21, 12]
+    J(scenario_2022Q4_tech, scenario_2022Q4_rand7_5ec) = 0.222
+    J(scenario_2022Q4_tech, scenario_2022Q4) = 0.190
+    J(scenario_2022Q4_tech, scenario_2022Q4_rand12_2) = 0.143
+    J(scenario_2022Q4_rand7_5ec, scenario_2022Q4) = 0.333
+    J(scenario_2022Q4_rand7_5ec, scenario_2022Q4_rand12_2) = 0.267
+    J(scenario_2022Q4, scenario_2022Q4_rand12_2) = 0.571
+  2023Q1: 4 scenario(s), sizes=[9, 22, 7, 3]
+    J(scenario_2023Q1_rand9_2ab, scenario_2023Q1) = 0.409
+    J(scenario_2023Q1_rand9_2ab, scenario_2023Q1_rand7_1) = 0.231
+    J(scenario_2023Q1_rand9_2ab, scenario_2023Q1_rand3_2) = 0.091
+    J(scenario_2023Q1, scenario_2023Q1_rand7_1) = 0.318
+    J(scenario_2023Q1, scenario_2023Q1_rand3_2) = 0.136
+    J(scenario_2023Q1_rand7_1, scenario_2023Q1_rand3_2) = 0.111
+  2023Q2: 4 scenario(s), sizes=[8, 22, 3, 7]
+    J(scenario_2023Q2_rand8_1c8, scenario_2023Q2) = 0.364
+    J(scenario_2023Q2_rand8_1c8, scenario_2023Q2_rand3_2) = 0.222
+    J(scenario_2023Q2_rand8_1c8, scenario_2023Q2_rand7_1) = 0.154
+    J(scenario_2023Q2, scenario_2023Q2_rand3_2) = 0.136
+    J(scenario_2023Q2, scenario_2023Q2_rand7_1) = 0.318
+    J(scenario_2023Q2_rand3_2, scenario_2023Q2_rand7_1) = 0.111
+  2023Q4: 2 scenario(s), sizes=[7, 3]
+    J(scenario_2023Q4_rand7_2, scenario_2023Q4_rand3_1) = 0.250
+  2024Q1: 2 scenario(s), sizes=[12, 3]
+    J(scenario_2024Q1_rand12_1, scenario_2024Q1_rand3_2) = 0.000
+  2025Q1: 3 scenario(s), sizes=[5, 9, 35]
+    J(scenario_2025Q1_tech, scenario_2025Q1_rand9_b32) = 0.167
+    J(scenario_2025Q1_tech, scenario_2025Q1) = 0.143
+    J(scenario_2025Q1_rand9_b32, scenario_2025Q1) = 0.257
+  2025Q2: 2 scenario(s), sizes=[35, 12]
+    J(scenario_2025Q2, scenario_2025Q2_rand12_1) = 0.343
+  2025Q3: 2 scenario(s), sizes=[35, 12]
+    J(scenario_2025Q3, scenario_2025Q3_rand12_1) = 0.343
+
+8. MARKET REGIME CONTEXT
+------------------------------------------------------------------------------
+  Approximate market regimes by quarter:
+
+  2021Q4 (3 scenarios):
+        Late bull run, pre-tightening. Fed still accommodative, meme-stock
+    era winding down, supply chain disruptions.
+
+  2022Q1 (4 scenarios):
+        Rate-hike onset. Fed signals aggressive tightening, growth-to-value
+    rotation begins, Russia-Ukraine war starts.
+
+  2022Q2 (1 scenario):
+        Bear market entry. Aggressive rate hikes, tech selloff, crypto crash
+    (Luna/3AC), inflation at 40yr high.
+
+  2022Q3 (4 scenarios):
+        Bear market rally + reversal. Summer rally fades, Jackson Hole
+    hawkish, energy volatility, strong USD.
+
+  2022Q4 (4 scenarios):
+        Bottoming process. Inflation shows signs of peaking, China reopening
+    speculation, FTX collapse.
+
+  2023Q1 (4 scenarios):
+        Banking crisis. SVB/Signature collapse, AI boom starts (ChatGPT),
+    recession fears, flight to quality.
+
+  2023Q2 (4 scenarios):
+        AI rally, narrow breadth. Magnificent 7 divergence, debt ceiling
+    drama, resilient labor market.
+
+  2023Q4 (2 scenarios):
+        Year-end rally. Soft landing consensus builds, rate-cut expectations
+    surge, broad market recovery.
+
+  2024Q1 (2 scenarios):
+        Momentum continuation. AI capex boom, Mag7 earnings beats, rate-cut
+    timeline pushed out, Bitcoin ETF launch.
+
+  2025Q1 (3 scenarios):
+        Late-cycle uncertainty. Tariff policy shifts, DeepSeek disruption,
+    Fed on hold, mixed economic signals.
+
+  2025Q2 (2 scenarios):
+        Trade war escalation. Tariff regime uncertainty, global supply chain
+    re-routing, sector rotation.
+
+  2025Q3 (2 scenarios):
+        Policy recalibration. Tariff de-escalation attempts, Fed
+    data-dependent, earnings resilience test.
+
+9. DIVERSITY ASSESSMENT SUMMARY
+------------------------------------------------------------------------------
+
+  TEMPORAL COVERAGE
+    Quarters spanned:      2021Q4 – 2025Q3 (12 unique)
+    Years represented:      5 (2021, 2022, 2023, 2024, 2025)
+    Market regimes:         Bull, bear, crisis, recovery, uncertainty
+    Assessment:             GOOD — covers full cycle from late-2021 to mid-2025
+
+  PORTFOLIO SIZE VARIATION
+    Range:                  12–35 tickers
+    Includes:               concentrated (3-4), mid-size (7-12), full-universe (21-35)
+    Assessment:             GOOD — tests reasoning at multiple complexity levels
+
+  TICKER DIVERSITY
+    Universe size:          36 unique tickers
+    Sectors covered:        7
+    Most frequent ticker:   AAPL (22/35 = 63%)
+    Assessment:             GOOD — broad coverage, no single ticker dominates all scenarios
+
+  PAIRWISE OVERLAP
+    Mean Jaccard:           0.216
+    Low-overlap pairs (<0.3): 76% of all pairs
+    Assessment:             GOOD — scenarios are diverse, low average overlap
+
+  OVERALL VERDICT
+    The 35 scenarios provide a reasonably diverse testbed for ablation
+    experiments. They span 4+ years of market history including bull,
+    bear, crisis, and recovery regimes. Portfolio sizes range from
+    concentrated (12 tickers) to broad (35 tickers), and the
+    36-ticker universe covers 7 sectors. Pairwise Jaccard overlap
+    (mean=0.216) indicates meaningful differentiation between scenarios.
+
+  CAVEATS / LIMITATIONS
+    - Temporal coverage skews toward 2022 (11 scenarios) vs 2024 (2 scenarios)
+    - Full-universe scenarios share the same ticker set, inflating some Jaccard pairs
+    - No emerging-market, small-cap, or fixed-income exposure
+    - All scenarios use the same constraint structure (fully_invested + cash virtual ticker)

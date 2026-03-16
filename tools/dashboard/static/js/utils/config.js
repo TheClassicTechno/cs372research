@@ -15,19 +15,19 @@
  */
 export function flattenConfig(obj, prefix) {
   if (obj === null || obj === undefined || typeof obj !== 'object') return [];
-  var result = [];
-  var keys = Object.keys(obj).sort();
-  for (var i = 0; i < keys.length; i++) {
-    var k = keys[i];
-    var fullKey = prefix !== undefined ? prefix + '.' + k : k;
-    var v = obj[k];
+  let result = [];
+  let keys = Object.keys(obj).sort();
+  for (let i = 0; i < keys.length; i++) {
+    let k = keys[i];
+    let fullKey = prefix !== undefined ? prefix + '.' + k : k;
+    let v = obj[k];
     if (v === null || v === undefined) {
       result.push({ key: fullKey, value: '\u2014' });
     } else if (Array.isArray(v)) {
       result.push({ key: fullKey, value: v.join(', ') });
     } else if (typeof v === 'object') {
-      var nested = flattenConfig(v, fullKey);
-      for (var j = 0; j < nested.length; j++) {
+      let nested = flattenConfig(v, fullKey);
+      for (let j = 0; j < nested.length; j++) {
         result.push(nested[j]);
       }
     } else {

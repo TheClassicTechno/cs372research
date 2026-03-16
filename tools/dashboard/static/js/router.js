@@ -3,14 +3,14 @@ import * as ablationView from './views/ablationView.js';
 import * as runsView from './views/runsView.js';
 import * as runDetailView from './views/runDetail/index.js';
 
-var activeView = null;
+let activeView = null;
 
 export function getActiveView() { return activeView; }
 
 function getRoute() {
-  var h = window.location.hash || '#runs';
+  let h = window.location.hash || '#runs';
   if (h.indexOf('#run/') === 0) {
-    var parts = h.substring(5).split('/');
+    let parts = h.substring(5).split('/');
     return { view: 'run-detail', experiment: parts[0], runId: parts.slice(1).join('/') };
   }
   if (h === '#runs') return { view: 'runs' };
@@ -19,10 +19,10 @@ function getRoute() {
 }
 
 function updateNav() {
-  var r = getRoute();
-  var links = document.querySelectorAll('#nav a');
-  for (var i = 0; i < links.length; i++) {
-    var v = links[i].getAttribute('data-view');
+  let r = getRoute();
+  let links = document.querySelectorAll('#nav a');
+  for (let i = 0; i < links.length; i++) {
+    let v = links[i].getAttribute('data-view');
     links[i].className = (v === r.view || (r.view === 'run-detail' && v === 'runs')) ? 'active' : '';
   }
 }
@@ -33,9 +33,9 @@ export function route() {
     activeView.teardown();
   }
 
-  var token = newViewToken();
+  let token = newViewToken();
   updateNav();
-  var r = getRoute();
+  let r = getRoute();
 
   if (r.view === 'runs') {
     activeView = runsView;
@@ -45,7 +45,7 @@ export function route() {
     ablationView.renderAblationView(token);
   } else if (r.view === 'run-detail') {
     runsViewState.lastExperiment = r.experiment;
-    try { sessionStorage.setItem('dashExp', r.experiment); } catch (e) { }
+    try { sessionStorage.setItem('dashExp', r.experiment); } catch { /* storage unavailable */ }
     activeView = runDetailView;
     runDetailView.renderRunDetailView(r.experiment, r.runId, token);
   }
