@@ -1,0 +1,311 @@
+Ablation 8 — Null Financial Result Analysis
+=============================================
+Generated: 2026-03-12
+
+
+EXECUTIVE SUMMARY
+-----------------
+Ablation 8 tested whether adding a third agent (risk) to the JS-collapse
+intervention would amplify the financial benefits seen in ablation 7.
+It did not. Despite the intervention firing at a much HIGHER rate (97% vs
+60%) and producing a STRONGER collapse-ratio improvement (t=7.36, p<0.001),
+zero financial metrics reached significance. This analysis explains why.
+
+
+================================================================================
+1. EXPERIMENTAL DESIGN COMPARISON
+================================================================================
+
+                            ABLATION 7              ABLATION 8
+Agents:                     2 (macro, technical)     3 (macro, technical, risk)
+Scenarios:                  35                       35  (same set)
+Debate configs:             2 (baseline, th08)       2  (baseline, th08)
+Total runs:                 70                       70
+Model (agents):             gpt-5-mini               gpt-5-mini
+Model (CRIT):               gpt-5                    gpt-5
+Temperature:                0.3                      0.3
+Intervention:               JS collapse th=0.8       JS collapse th=0.8
+max_retries:                1                        1
+Nudge prompts:              macro + technical        macro + technical + risk
+                            (identical text)         (risk prompt is new)
+Baseline threshold:         0.0 (never fires)        0.0 (never fires)
+PID:                        disabled                 disabled
+Run date:                   2026-03-11               2026-03-11
+
+KEY DIFFERENCE: Ablation 8 adds a third agent: risk_enriched_intense.
+The nudge prompts for macro and technical are textually identical (minus
+emoji formatting differences). The risk agent gets a new role-specific
+nudge about volatility regimes, correlation clustering, and tail risk.
+
+
+================================================================================
+2. FINANCIAL PAIRED TESTS (treatment - baseline)
+================================================================================
+
+Ablation 7 (2 agents):
+Metric                                          Diff       t        p
+daily_metrics_excess_return_pct                +0.8285    2.011    0.0523
+daily_metrics_annualized_sharpe                +0.1432    2.300    0.0277 *
+daily_metrics_annualized_volatility            +0.0113    2.173    0.0369 *
+daily_metrics_max_drawdown_pct                 +0.1776    0.822    0.4169
+daily_metrics_total_return_pct                 +0.8285    2.011    0.0523
+daily_metrics_annualized_sortino               +0.2541    2.328    0.0260 *
+daily_metrics_calmar_ratio                     +0.7666    1.972    0.0568
+
+Ablation 8 (3 agents):
+Metric                                          Diff       t        p
+daily_metrics_excess_return_pct                +0.1557    0.488    0.6290
+daily_metrics_annualized_sharpe                +0.0439    0.635    0.5296
+daily_metrics_annualized_volatility            +0.0062    1.256    0.2177
+daily_metrics_max_drawdown_pct                 +0.1975    0.955    0.3465
+daily_metrics_total_return_pct                 +0.1557    0.488    0.6290
+daily_metrics_annualized_sortino               +0.0464    0.388    0.7002
+daily_metrics_calmar_ratio                     +0.4163    1.090    0.2832
+
+VERDICT: Ablation 7 has 3 significant metrics (Sharpe p=0.028, volatility
+p=0.037, Sortino p=0.026), plus 3 borderline (excess return p=0.052,
+total return p=0.052, Calmar p=0.057). Ablation 8 has ZERO significant
+metrics. The largest t-statistic is 1.256 (volatility), far from
+significance. Effect sizes collapsed: Sharpe went from +0.143 to +0.044,
+Sortino from +0.254 to +0.046.
+
+
+================================================================================
+3. COLLAPSE RATIO (JS DIVERGENCE PRESERVATION)
+================================================================================
+
+The intervention's PROXIMAL target (maintaining debate diversity) was
+achieved even MORE strongly in ablation 8:
+
+Ablation 7:
+  Baseline collapse ratio:  mean=0.7024, std=0.3949
+  Treatment collapse ratio: mean=0.9283, std=0.6464
+  Paired t-test: t=3.170, p=0.003, diff=+0.226
+  b > a in 26/35 scenarios
+
+Ablation 8:
+  Baseline collapse ratio:  mean=0.5008, std=0.1923
+  Treatment collapse ratio: mean=0.7816, std=0.1151
+  Paired t-test: t=7.361, p<0.001, diff=+0.281
+  b > a in 32/35 scenarios
+
+PARADOX: The intervention "worked better" mechanically in ablation 8
+(larger effect, higher significance, more consistent) but failed to
+translate that into financial improvement. The proximal mechanism
+(diversity preservation) succeeded; the distal outcome (returns) did not.
+
+
+================================================================================
+4. JS DIVERGENCE RAW STATISTICS
+================================================================================
+
+                     Ablation 7                   Ablation 8
+                     Baseline    Treatment        Baseline    Treatment
+JS_proposal (mean):  0.1950      0.1975           0.2906      0.3014
+JS_proposal (std):   0.1221      0.1074           0.1394      0.1365
+JS_revision (mean):  0.1189      0.1330           0.1450      0.1463
+JS_revision (std):   0.0775      0.0955           0.0893      0.0746
+final_js (mean):     0.1189      0.1704           0.1450      0.2382
+
+CRITICAL OBSERVATION: Ablation 8's 3-agent baseline already has HIGHER
+JS divergence at proposal time (0.2906 vs 0.1950). Adding a third agent
+naturally creates more diverse proposals. But the revision phase
+collapses this diversity dramatically: collapse ratio is 0.50 (mean)
+for 3 agents vs 0.70 for 2 agents. The 3-agent system collapses MORE.
+
+Collapse rate (baseline, ratio < 0.8):
+  Ablation 7: 28/35 (80.0%)
+  Ablation 8: 33/35 (94.3%)
+
+This means: with 3 agents, almost every run experiences severe
+diversity collapse. The intervention fires in 34/35 treatment runs
+(97.1%), compared to 21/35 (60%) in ablation 7.
+
+
+================================================================================
+5. INTERVENTION FIRING RATES
+================================================================================
+
+Ablation 7:
+  Intervention would fire (cr<0.8 & js_p>=0.10): 21/35 (60.0%)
+  Skipped due to low js_proposal: 5/35
+  Mean fired collapse ratio: 0.5482 (range 0.3024-0.7895)
+
+Ablation 8:
+  Intervention would fire (cr<0.8 & js_p>=0.10): 34/35 (97.1%)
+  Skipped due to low js_proposal: 0/35
+  Mean fired collapse ratio: 0.4875 (range 0.1906-0.7942)
+
+
+================================================================================
+6. CRIT DIAGNOSTICS
+================================================================================
+
+PILLAR SCORES (ablation 8, treatment vs baseline):
+
+MACRO AGENT:
+  Logical Validity:          0.853 -> 0.816  (-0.037)
+  Evidential Support:        0.859 -> 0.857  (-0.003)
+  Alternative Consideration: 0.893 -> 0.866  (-0.027)
+  Causal Alignment:          0.872 -> 0.869  (-0.003)
+
+TECHNICAL AGENT:
+  Logical Validity:          0.845 -> 0.825  (-0.020)
+  Evidential Support:        0.843 -> 0.857  (+0.014)
+  Alternative Consideration: 0.898 -> 0.850  (-0.049)
+  Causal Alignment:          0.738 -> 0.734  (-0.004)
+
+RISK AGENT:
+  Logical Validity:          0.833 -> 0.821  (-0.012)
+  Evidential Support:        0.861 -> 0.857  (-0.004)
+  Alternative Consideration: 0.782 -> 0.760  (-0.022)
+  Causal Alignment:          0.848 -> 0.847  (-0.001)
+
+CONCERNING PATTERN: In ablation 8, the intervention HURT reasoning quality
+across the board. Logical Validity dropped for all 3 agents. Alternative
+Consideration dropped for all 3 agents (most severely for technical:
+-0.049). In ablation 7, the pattern was mixed/neutral (macro LV went up
++0.005, technical LV went down -0.014).
+
+FLAGS (non-zero entries):
+                                 Baseline    Treatment
+Macro contradictions:            3/35 (8.6%)  3/35 (8.6%)
+Macro conclusion_drift:          1/35 (2.9%)  4/35 (11.4%)  <-- WORSE
+Risk contradictions:             3/35 (8.6%)  5/35 (14.3%)  <-- WORSE
+Risk causal_overreach:           2/35 (5.7%)  3/35 (8.6%)
+Risk conclusion_drift:           2/35 (5.7%)  3/35 (8.6%)
+Technical causal_overreach:      25/35 (71.4%) 23/35 (65.7%)
+Technical conclusion_drift:      0/35 (0.0%)  2/35 (5.7%)   <-- WORSE
+
+The intervention INCREASED conclusion_drift flags for macro and technical,
+and increased contradiction flags for risk. This is consistent with the
+nudge prompts causing agents to introduce contradictions when forced to
+maintain disagreement.
+
+
+================================================================================
+7. WHY ABLATION 8 WAS NULL — SYNTHESIS
+================================================================================
+
+HYPOTHESIS 1: THE THIRD AGENT DILUTES THE JUDGE'S SIGNAL (PRIMARY)
+
+With 2 agents (ablation 7), preserving diversity means the judge hears
+TWO genuinely different allocation philosophies. The judge can triangulate
+between a macro view and a technical view, and the diversity itself is
+informative.
+
+With 3 agents (ablation 8), preserving diversity means the judge hears
+THREE views. But the risk agent's perspective is inherently DEFENSIVE
+— it biases toward lower exposure, higher cash, tail-risk hedging. When
+the intervention forces ALL THREE agents to maintain independent views,
+the risk agent's persistent caution may cancel out any alpha signal from
+preserved macro-technical disagreement.
+
+Evidence: Ablation 8's baseline already has lower absolute returns
+(a_mean excess return: -2.06% vs -1.73% in ablation 7), suggesting the
+risk agent's presence systematically pulls the judge toward more
+conservative portfolios with lower alpha potential.
+
+HYPOTHESIS 2: NEAR-UNIVERSAL FIRING WASHES OUT THE SIGNAL
+
+In ablation 7, the intervention fires in 60% of treatment runs. This
+means 40% of treatment runs are IDENTICAL to baseline (no intervention
+needed). The signal comes from the 60% where the nudge matters. With
+14 "free" pairs (where treatment = baseline) and 21 "treated" pairs,
+the paired test has a clean contrast.
+
+In ablation 8, the intervention fires in 97% of treatment runs (34/35).
+This means every pair is "treated." But the effect is uniform and small
+per-scenario — the nudge bumps the collapse ratio from ~0.50 to ~0.78
+everywhere, creating a floor effect. The financial impact of this uniform
+nudge may be noise-dominated because every scenario gets the same
+generic "maintain disagreement" push, regardless of whether disagreement
+was informative for that particular scenario.
+
+HYPOTHESIS 3: 3-AGENT COLLAPSE IS STRUCTURALLY DIFFERENT
+
+With 2 agents, collapse means they converged to a single view. The
+intervention recovers genuine diversity.
+
+With 3 agents, the baseline collapse ratio is 0.50 (much lower than
+0.70 in ablation 7). This SEVERE collapse means the 3-agent revision
+process systematically homogenizes views. The intervention bumps this
+to 0.78, but the resulting diversity may be ARTIFICIAL — agents forced
+to maintain positions they've already been "convinced" to abandon. This
+creates shallow disagreement (different numbers) without deep
+disagreement (different investment theses).
+
+Evidence: The CRIT scores show that treatment in ablation 8 DEGRADES
+reasoning quality across all agents and pillars. The nudge forces agents
+to disagree, but the disagreement is low-quality (more contradictions,
+more conclusion drift, less alternative consideration).
+
+HYPOTHESIS 4: REASONING DEGRADATION OFFSETS DIVERSITY BENEFIT
+
+The intervention in ablation 8 causes reasoning quality to decline
+(Alternative Consideration drops for all agents, conclusion_drift
+increases). In ablation 7, this degradation was minimal. The net effect
+in ablation 8 may be: the judge receives more diverse BUT lower quality
+inputs, and the quality degradation cancels the diversity benefit.
+
+HYPOTHESIS 5: VOLATILITY AND VARIANCE SWAMPING
+
+Ablation 8 has LOWER baseline volatility (16.56% vs 20.44% in ablation 7)
+and lower max drawdown (8.07% vs 10.03%). The 3-agent system with the
+risk agent produces inherently calmer portfolios. With less financial
+variance, the signal-to-noise ratio for detecting treatment effects is
+worse, and modest alpha improvements drown in noise.
+
+Evidence: The SEM for excess return is 0.87/0.94 in ablation 8 vs
+1.03/1.08 in ablation 7. Despite lower variance, the effect size
+collapsed more dramatically (0.83 -> 0.16), suggesting the real issue
+is effect size, not statistical power.
+
+
+================================================================================
+8. COMPARATIVE SUMMARY TABLE
+================================================================================
+
+                                    Ablation 7      Ablation 8
+                                    (2 agents)      (3 agents)
+Agents:                             macro, tech     macro, tech, risk
+Intervention firing rate:           60%             97%
+Collapse ratio improvement:         +0.226 **       +0.281 ***
+Excess return improvement:          +0.83% (.)      +0.16%
+Sharpe improvement:                 +0.143 *        +0.044
+Sortino improvement:                +0.254 *        +0.046
+Calmar improvement:                 +0.767 (.)      +0.416
+LV change (macro):                  +0.005          -0.037
+AC change (technical):              +0.004          -0.049
+conclusion_drift (macro):           unchanged       2.9% -> 11.4%
+Baseline excess return:             -1.73%          -2.06%
+Baseline volatility:                20.44%          16.56%
+
+Significance: *** p<0.001, ** p<0.01, * p<0.05, (.) p<0.10
+
+
+================================================================================
+9. BOTTOM LINE
+================================================================================
+
+Ablation 8 demonstrates that the JS-collapse intervention scales
+MECHANICALLY (higher firing rate, larger collapse-ratio recovery) but
+NOT FINANCIALLY when a third agent is added. The most likely explanation
+is a combination of:
+
+  (a) The risk agent's inherent conservatism dilutes the alpha signal
+      that diversity preservation generates in a 2-agent system.
+
+  (b) Near-universal intervention firing (97%) creates a uniform
+      treatment that lacks the selective targeting of ablation 7's 60%
+      firing rate.
+
+  (c) The nudge prompts degrade reasoning quality in the 3-agent setup
+      (more contradictions, conclusion drift, lower alternative
+      consideration), offsetting any diversity benefit.
+
+This result, combined with ablation 10's null financial result from
+improving causal reasoning, suggests that the financial value of the
+intervention system is SPECIFIC to the 2-agent macro-technical
+configuration and the moderate intervention rate. More agents and more
+frequent intervention do not improve outcomes.

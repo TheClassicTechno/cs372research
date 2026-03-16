@@ -1,0 +1,514 @@
+
+========================================================================
+CRIT-FINANCIAL CORRELATION ANALYSIS -- ABLATION 1
+========================================================================
+Date: 2026-03-12 12:43
+Total runs loaded: 245
+
+Ablation 1 design (no baseline/treatment pairing):
+  Agent pairs:       ['m_r', 'm_t', 'm_v', 'no_macro', 'no_risk', 'no_technical', 'no_value', 'r_t']
+  Enrichment styles: ['intense', 'intense_light', 'light', 'standard']
+  PID types:         ['aggressive', 'conservative']
+  Quarters:          ['2022Q2', '2023Q2']
+  Constraint flag:   [np.False_, np.True_]
+
+Runs per agent pair:
+              m_r:   34
+              m_t:   30
+              m_v:   32
+         no_macro:   31
+          no_risk:   31
+     no_technical:   32
+         no_value:   31
+              r_t:   24
+
+Runs per enrichment:
+          intense:   60
+    intense_light:   67
+            light:   62
+         standard:   56
+
+Runs per PID type:
+       aggressive:  123
+     conservative:  122
+
+Runs per scenario:
+    62  2022Q2_recession_fears_WITH_constraints
+    60  2022Q2_recession_fears_no_constraints
+    63  2023Q2_higher_for_longer_insanity_WITH_constraints
+    60  2023Q2_higher_for_longer_insanity_no_constraints
+
+Descriptive statistics:
+          rho_bar: mean=0.8274  std=0.0529  min=0.5413  max=0.9213
+           sharpe: mean=-0.9558  std=0.3079  min=-1.7843  max=-0.0497
+     total_return: mean=-3.6408  std=2.4969  min=-7.5593  max=0.8749
+
+========================================================================
+1. POOLED CORRELATIONS (all 245 runs)
+========================================================================
+  rho_bar vs Sharpe  (n=245)
+    Pearson  r=+0.0053  p=0.9344
+    Spearman r=+0.0274  p=0.6690
+
+  rho_bar vs TotalReturn  (n=245)
+    Pearson  r=+0.1114  p=0.0817
+    Spearman r=+0.0888  p=0.1658
+
+
+========================================================================
+2. PER-AGENT-PAIR CORRELATIONS
+========================================================================
+
+--- Agent pair: m_r ---
+  (n=34 runs)
+  rho_bar vs Sharpe  (n=34)
+    Pearson  r=+0.1226  p=0.4897
+    Spearman r=+0.1045  p=0.5563
+
+  rho_bar vs TotalReturn  (n=34)
+    Pearson  r=+0.1446  p=0.4145
+    Spearman r=+0.2425  p=0.1670
+
+
+--- Agent pair: m_t ---
+  (n=30 runs)
+  rho_bar vs Sharpe  (n=30)
+    Pearson  r=-0.0455  p=0.8115
+    Spearman r=-0.1446  p=0.4457
+
+  rho_bar vs TotalReturn  (n=30)
+    Pearson  r=+0.1125  p=0.5540
+    Spearman r=-0.0683  p=0.7198
+
+
+--- Agent pair: m_v ---
+  (n=32 runs)
+  rho_bar vs Sharpe  (n=32)
+    Pearson  r=-0.2857  p=0.1129
+    Spearman r=-0.3314  p=0.0639
+
+  rho_bar vs TotalReturn  (n=32)
+    Pearson  r=-0.2246  p=0.2165
+    Spearman r=-0.2984  p=0.0972
+
+
+--- Agent pair: no_macro ---
+  (n=31 runs)
+  rho_bar vs Sharpe  (n=31)
+    Pearson  r=-0.2738  p=0.1361
+    Spearman r=-0.1135  p=0.5432
+
+  rho_bar vs TotalReturn  (n=31)
+    Pearson  r=-0.0907  p=0.6276
+    Spearman r=+0.0073  p=0.9691
+
+
+--- Agent pair: no_risk ---
+  (n=31 runs)
+  rho_bar vs Sharpe  (n=31)
+    Pearson  r=-0.1306  p=0.4837
+    Spearman r=-0.0742  p=0.6916
+
+  rho_bar vs TotalReturn  (n=31)
+    Pearson  r=+0.2814  p=0.1252
+    Spearman r=+0.1049  p=0.5745
+
+
+--- Agent pair: no_technical ---
+  (n=32 runs)
+  rho_bar vs Sharpe  (n=32)
+    Pearson  r=-0.0179  p=0.9226
+    Spearman r=-0.0057  p=0.9754
+
+  rho_bar vs TotalReturn  (n=32)
+    Pearson  r=+0.0384  p=0.8347
+    Spearman r=-0.0424  p=0.8180
+
+
+--- Agent pair: no_value ---
+  (n=31 runs)
+  rho_bar vs Sharpe  (n=31)
+    Pearson  r=+0.0941  p=0.6148
+    Spearman r=+0.0666  p=0.7221
+
+  rho_bar vs TotalReturn  (n=31)
+    Pearson  r=+0.2177  p=0.2393
+    Spearman r=+0.2160  p=0.2432
+
+
+--- Agent pair: r_t ---
+  (n=24 runs)
+  rho_bar vs Sharpe  (n=24)
+    Pearson  r=+0.2368  p=0.2652
+    Spearman r=+0.3846  p=0.0635
+
+  rho_bar vs TotalReturn  (n=24)
+    Pearson  r=+0.4008  p=0.0523
+    Spearman r=+0.4494  p=0.0276  *
+
+
+========================================================================
+3. PER-ENRICHMENT-STYLE CORRELATIONS
+========================================================================
+
+--- Enrichment: intense ---
+  (n=60 runs)
+  rho_bar vs Sharpe  (n=60)
+    Pearson  r=+0.1090  p=0.4073
+    Spearman r=+0.1982  p=0.1290
+
+  rho_bar vs TotalReturn  (n=60)
+    Pearson  r=+0.2225  p=0.0876
+    Spearman r=+0.2641  p=0.0415  *
+
+
+--- Enrichment: intense_light ---
+  (n=67 runs)
+  rho_bar vs Sharpe  (n=67)
+    Pearson  r=-0.0872  p=0.4826
+    Spearman r=-0.1099  p=0.3759
+
+  rho_bar vs TotalReturn  (n=67)
+    Pearson  r=-0.0373  p=0.7647
+    Spearman r=-0.0432  p=0.7285
+
+
+--- Enrichment: light ---
+  (n=62 runs)
+  rho_bar vs Sharpe  (n=62)
+    Pearson  r=+0.0409  p=0.7524
+    Spearman r=+0.0417  p=0.7476
+
+  rho_bar vs TotalReturn  (n=62)
+    Pearson  r=+0.1718  p=0.1819
+    Spearman r=+0.1330  p=0.3029
+
+
+--- Enrichment: standard ---
+  (n=56 runs)
+  rho_bar vs Sharpe  (n=56)
+    Pearson  r=-0.0450  p=0.7417
+    Spearman r=-0.0332  p=0.8081
+
+  rho_bar vs TotalReturn  (n=56)
+    Pearson  r=+0.1376  p=0.3120
+    Spearman r=+0.0130  p=0.9243
+
+
+========================================================================
+4. PER-PID-TYPE CORRELATIONS
+========================================================================
+
+--- PID type: aggressive ---
+  (n=123 runs)
+  rho_bar vs Sharpe  (n=123)
+    Pearson  r=+0.0503  p=0.5804
+    Spearman r=+0.0328  p=0.7190
+
+  rho_bar vs TotalReturn  (n=123)
+    Pearson  r=+0.1498  p=0.0982
+    Spearman r=+0.1092  p=0.2291
+
+
+--- PID type: conservative ---
+  (n=122 runs)
+  rho_bar vs Sharpe  (n=122)
+    Pearson  r=-0.0493  p=0.5897
+    Spearman r=+0.0165  p=0.8573
+
+  rho_bar vs TotalReturn  (n=122)
+    Pearson  r=+0.0662  p=0.4690
+    Spearman r=+0.0571  p=0.5319
+
+
+========================================================================
+5. PER-QUARTER CORRELATIONS
+========================================================================
+
+--- Quarter: 2022Q2 ---
+  (n=122 runs)
+  rho_bar vs Sharpe  (n=122)
+    Pearson  r=-0.1208  p=0.1850
+    Spearman r=-0.1475  p=0.1050
+
+  rho_bar vs TotalReturn  (n=122)
+    Pearson  r=-0.0683  p=0.4545
+    Spearman r=-0.0953  p=0.2962
+
+
+--- Quarter: 2023Q2 ---
+  (n=123 runs)
+  rho_bar vs Sharpe  (n=123)
+    Pearson  r=-0.0740  p=0.4160
+    Spearman r=-0.0882  p=0.3319
+
+  rho_bar vs TotalReturn  (n=123)
+    Pearson  r=-0.1288  p=0.1556
+    Spearman r=-0.1307  p=0.1496
+
+
+--- With constraints vs without ---
+  WITH constraints (n=125):
+  rho_bar vs Sharpe  (n=125)
+    Pearson  r=+0.0913  p=0.3111
+    Spearman r=+0.0788  p=0.3824
+
+  rho_bar vs TotalReturn  (n=125)
+    Pearson  r=+0.1002  p=0.2660
+    Spearman r=+0.0831  p=0.3571
+
+  NO constraints (n=120):
+  rho_bar vs Sharpe  (n=120)
+    Pearson  r=+0.1397  p=0.1282
+    Spearman r=+0.1420  p=0.1218
+
+  rho_bar vs TotalReturn  (n=120)
+    Pearson  r=+0.2043  p=0.0252  *
+    Spearman r=+0.1911  p=0.0365  *
+
+
+========================================================================
+6. PER-AGENT RHO CORRELATIONS
+========================================================================
+Agents found across dataset: macro, risk, technical, value
+
+
+--- Agent: macro ---
+  n=190 runs with rho_macro
+  rho_macro vs Sharpe  (n=190)
+    Pearson  r=+0.0604  p=0.4077
+    Spearman r=+0.0432  p=0.5543
+
+  rho_macro vs TotalReturn  (n=190)
+    Pearson  r=+0.0729  p=0.3174
+    Spearman r=+0.0379  p=0.6032
+
+
+--- Agent: risk ---
+  n=152 runs with rho_risk
+  rho_risk vs Sharpe  (n=152)
+    Pearson  r=+0.0499  p=0.5418
+    Spearman r=+0.0529  p=0.5175
+
+  rho_risk vs TotalReturn  (n=152)
+    Pearson  r=+0.2224  p=0.0059  *
+    Spearman r=+0.1977  p=0.0146  *
+
+
+--- Agent: technical ---
+  n=147 runs with rho_technical
+  rho_technical vs Sharpe  (n=147)
+    Pearson  r=+0.0439  p=0.5978
+    Spearman r=+0.0623  p=0.4535
+
+  rho_technical vs TotalReturn  (n=147)
+    Pearson  r=+0.0658  p=0.4282
+    Spearman r=+0.1479  p=0.0739
+
+
+--- Agent: value ---
+  n=126 runs with rho_value
+  rho_value vs Sharpe  (n=126)
+    Pearson  r=-0.2903  p=0.0010  *
+    Spearman r=-0.2520  p=0.0044  *
+
+  rho_value vs TotalReturn  (n=126)
+    Pearson  r=-0.1252  p=0.1626
+    Spearman r=-0.1813  p=0.0422  *
+
+
+--- Agent rho comparison table (Pearson r with Sharpe) ---
+  Agent                  r        p     n
+  --------------------------------------
+  macro            +0.0604   0.4077   190
+  risk             +0.0499   0.5418   152
+  technical        +0.0439   0.5978   147
+  value            -0.2903   0.0010   126
+
+
+--- Agent rho comparison table (Pearson r with TotalReturn) ---
+  Agent                  r        p     n
+  --------------------------------------
+  macro            +0.0729   0.3174   190
+  risk             +0.2224   0.0059   152
+  technical        +0.0658   0.4282   147
+  value            -0.1252   0.1626   126
+
+========================================================================
+7. OLS REGRESSION: Sharpe ~ rho_bar + factor dummies
+========================================================================
+Controls for agent-pair, enrichment, PID type, and quarter effects.
+
+
+--- Model A: Sharpe ~ rho_bar + agent_pair dummies ---
+  Reference agent pair: m_r
+  n=245, R²=0.1055, Adj-R²=0.0751
+  F(8,236)=3.478, p=0.0008
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -0.8441     0.3038   -2.778   0.0059 *
+  rho_bar                      -0.2264     0.3791   -0.597   0.5509
+  ap_m_t                        0.2398     0.0767    3.127   0.0020 *
+  ap_m_v                        0.1583     0.0759    2.087   0.0379 *
+  ap_no_macro                  -0.0129     0.0744   -0.173   0.8628
+  ap_no_risk                    0.1756     0.0748    2.347   0.0198 *
+  ap_no_technical               0.0937     0.0740    1.265   0.2070
+  ap_no_value                  -0.0049     0.0761   -0.065   0.9483
+  ap_r_t                       -0.0682     0.0806   -0.847   0.3981
+
+
+--- Model A': TotalReturn ~ rho_bar + agent_pair dummies ---
+  Reference agent pair: m_r
+  n=245, R²=0.0227, Adj-R²=-0.0104
+  F(8,236)=0.686, p=0.7040
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -8.2187     2.5759   -3.191   0.0016 *
+  rho_bar                       5.8371     3.2135    1.816   0.0706
+  ap_m_t                       -0.1832     0.6502   -0.282   0.7784
+  ap_m_v                       -0.1012     0.6431   -0.157   0.8751
+  ap_no_macro                  -0.4768     0.6307   -0.756   0.4504
+  ap_no_risk                   -0.0087     0.6345   -0.014   0.9890
+  ap_no_technical              -0.0785     0.6275   -0.125   0.9006
+  ap_no_value                  -0.6123     0.6454   -0.949   0.3437
+  ap_r_t                       -0.6837     0.6829   -1.001   0.3178
+
+
+--- Model B: Sharpe ~ rho_bar + enrichment + pid_type + quarter dummies ---
+  Reference: enrichment=intense, pid=aggressive, quarter=2022Q2, constraints=False
+  n=245, R²=0.3926, Adj-R²=0.3747
+  F(7,237)=21.885, p=0.0000
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -1.3144     0.2674   -4.916   0.0000 *
+  rho_bar                       0.1252     0.3151    0.397   0.6915
+  enr_intense_light            -0.0304     0.0436   -0.697   0.4867
+  enr_light                     0.0209     0.0442    0.473   0.6370
+  enr_standard                  0.0428     0.0452    0.946   0.3454
+  pid_conservative             -0.0334     0.0312   -1.070   0.2857
+  qtr_2023Q2                    0.3179     0.0315   10.081   0.0000 *
+  has_constraints               0.2063     0.0326    6.335   0.0000 *
+
+
+--- Model B': TotalReturn ~ rho_bar + enrichment + pid_type + quarter dummies ---
+  Reference: enrichment=intense, pid=aggressive, quarter=2022Q2, constraints=False
+  n=245, R²=0.9114, Adj-R²=0.9087
+  F(7,237)=348.101, p=0.0000
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -5.9490     0.8285   -7.181   0.0000 *
+  rho_bar                      -0.3056     0.9763   -0.313   0.7546
+  enr_intense_light            -0.0379     0.1350   -0.281   0.7793
+  enr_light                     0.0107     0.1370    0.078   0.9377
+  enr_standard                  0.1023     0.1402    0.730   0.4660
+  pid_conservative             -0.1043     0.0968   -1.078   0.2823
+  qtr_2023Q2                    4.7380     0.0977   48.494   0.0000 *
+  has_constraints               0.4284     0.1009    4.246   0.0000 *
+
+
+--- Model C: Sharpe ~ rho_bar + agent_pair + enrichment + pid + quarter + constraints ---
+  Reference: ap=m_r, enr=intense, pid=aggressive, qtr=2022Q2, constraints=False
+  n=245, R²=0.4942, Adj-R²=0.4634
+  F(14,230)=16.053, p=0.0000
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -1.1625     0.2549   -4.560   0.0000 *
+  rho_bar                      -0.1526     0.3112   -0.490   0.6244
+  ap_m_t                        0.2423     0.0589    4.114   0.0001 *
+  ap_m_v                        0.1654     0.0582    2.842   0.0049 *
+  ap_no_macro                   0.0048     0.0569    0.085   0.9324
+  ap_no_risk                    0.1805     0.0573    3.151   0.0018 *
+  ap_no_technical               0.1023     0.0566    1.807   0.0721
+  ap_no_value                   0.0027     0.0585    0.047   0.9627
+  ap_r_t                       -0.0616     0.0622   -0.990   0.3232
+  enr_intense_light            -0.0262     0.0404   -0.649   0.5171
+  enr_light                     0.0176     0.0410    0.429   0.6681
+  enr_standard                  0.0298     0.0422    0.707   0.4802
+  pid_conservative             -0.0341     0.0289   -1.177   0.2403
+  qtr_2023Q2                    0.3216     0.0293   10.972   0.0000 *
+  has_constraints               0.1998     0.0304    6.581   0.0000 *
+
+
+--- Model C': TotalReturn ~ rho_bar + all factor dummies ---
+  Reference: ap=m_r, enr=intense, pid=aggressive, qtr=2022Q2, constraints=False
+  n=245, R²=0.9187, Adj-R²=0.9138
+  F(14,230)=185.671, p=0.0000
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -5.7373     0.8289   -6.922   0.0000 *
+  rho_bar                      -0.7102     1.0119   -0.702   0.4835
+  ap_m_t                        0.2951     0.1915    1.541   0.1247
+  ap_m_v                        0.4097     0.1892    2.165   0.0314 *
+  ap_no_macro                  -0.0458     0.1850   -0.247   0.8048
+  ap_no_risk                    0.3100     0.1863    1.664   0.0974
+  ap_no_technical               0.2907     0.1841    1.579   0.1158
+  ap_no_value                  -0.0550     0.1902   -0.289   0.7725
+  ap_r_t                       -0.2589     0.2023   -1.280   0.2018
+  enr_intense_light            -0.0270     0.1315   -0.205   0.8375
+  enr_light                     0.0108     0.1334    0.081   0.9356
+  enr_standard                  0.0658     0.1372    0.480   0.6317
+  pid_conservative             -0.1039     0.0941   -1.104   0.2708
+  qtr_2023Q2                    4.7420     0.0953   49.756   0.0000 *
+  has_constraints               0.4237     0.0987    4.291   0.0000 *
+
+
+========================================================================
+8. CROSS-TABULATION: Mean rho_bar and Sharpe by factors
+========================================================================
+
+--- Mean rho_bar and Sharpe by agent pair ---
+  Agent Pair             n    rho_bar     Sharpe     Return
+  -------------------------------------------------------
+  m_r                   34     0.7903    -1.0230    -3.6057
+  m_t                   30     0.8419    -0.7949    -3.4876
+  m_v                   32     0.8455    -0.8772    -3.3848
+  no_macro              31     0.8204    -1.0427    -3.9070
+  no_risk               31     0.8272    -0.8557    -3.3989
+  no_technical          32     0.8238    -0.9369    -3.4884
+  no_value              31     0.8424    -1.0397    -3.9141
+  r_t                   24     0.8327    -1.1008    -4.0418
+
+--- Mean rho_bar and Sharpe by enrichment ---
+  Enrichment             n    rho_bar     Sharpe     Return
+  -------------------------------------------------------
+  intense               60     0.8343    -0.9670    -3.7464
+  intense_light         67     0.8191    -0.9917    -3.6637
+  light                 62     0.8246    -0.9403    -3.5844
+  standard              56     0.8331    -0.9183    -3.5625
+
+--- Mean rho_bar and Sharpe by PID type ---
+  PID Type               n    rho_bar     Sharpe     Return
+  -------------------------------------------------------
+  aggressive           123     0.8233    -0.9395    -3.5781
+  conservative         122     0.8315    -0.9723    -3.7040
+
+--- Mean rho_bar and Sharpe by quarter ---
+  Quarter                n    rho_bar     Sharpe     Return
+  -------------------------------------------------------
+  2022Q2               122     0.8195    -1.1169    -6.0179
+  2023Q2               123     0.8353    -0.7961    -1.2829
+
+--- Mean rho_bar and Sharpe by constraints ---
+  Constraints            n    rho_bar     Sharpe     Return
+  -------------------------------------------------------
+  YES                  125     0.8126    -0.8559    -3.4166
+  NO                   120     0.8429    -1.0600    -3.8743
+
+========================================================================
+9. SUMMARY AND INTERPRETATION
+========================================================================
+Total observations: 245
+Pooled rho_bar-Sharpe:      Pearson r=+0.0053 (p=0.9344), Spearman r=+0.0274 (p=0.6690)
+Pooled rho_bar-TotalReturn: Pearson r=+0.1114 (p=0.0817), Spearman r=+0.0888 (p=0.1658)
+
+=> No statistically significant pooled correlation between CRIT scores and Sharpe.
+=> Marginally significant pooled correlation between CRIT scores and TotalReturn (p < 0.10).
+
+Design note: Ablation 1 has no baseline/treatment pairing, so delta
+analysis is not applicable. Instead, we rely on pooled correlations,
+per-condition correlations, and OLS with factor dummies to control for
+the factorial design (agent pair, enrichment, PID type, quarter,
+constraints).
+
+Note: Correlations marked with * are significant at p < 0.05.
+All p-values are two-tailed.

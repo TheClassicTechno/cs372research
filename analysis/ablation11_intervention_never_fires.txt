@@ -1,0 +1,176 @@
+ABLATION 11 — JS COLLAPSE INTERVENTION: WHY IT (ALMOST) NEVER FIRES
+=====================================================================
+Generated: 2026-03-12
+
+QUESTION: The js_collapse intervention (threshold=0.6) fires in only 1 of 9
+completed intervention runs. Why?
+
+SHORT ANSWER: The collapse_ratio values are empirically almost always >= 0.6.
+Agents simply do not converge that aggressively during revision in these
+1-round debates. The threshold is too low to trigger.
+
+IMPORTANT CLARIFICATION: The pid_crit_all_rounds.json file shows POST-
+intervention values (after any retry), NOT the pre-intervention values that
+the rule evaluates. To see the actual values the intervention engine sees,
+you must look at the per-round metrics_propose.json and metrics_revision.json
+files in rounds/round_001/.
+
+
+=====================================================================
+INTERVENTION RULE LOGIC (from eval/interventions/rules.py)
+=====================================================================
+
+  make_js_collapse_rule:
+    1. Read js_proposal and js_revision from InterventionContext
+    2. If js_proposal is None or js_revision is None -> return None (skip)
+    3. If js_proposal < min_js_proposal (0.10) -> return None (skip)
+    4. collapse_ratio = js_revision / js_proposal
+    5. If collapse_ratio >= threshold (0.6) -> return None (no collapse)
+    6. Otherwise -> FIRE (return retry_revision action)
+
+  So the rule fires when: js_revision / js_proposal < 0.6
+  i.e., revision JS dropped to less than 60% of proposal JS.
+
+
+=====================================================================
+PRE-INTERVENTION COLLAPSE RATIOS: ALL COMPLETED INTERVENTION RUNS
+=====================================================================
+
+Run                              Scenario                       js_proposal  js_revision  ratio   FIRED?
+----                             --------                       -----------  -----------  -----   ------
+run_2026-03-12_03-08-20          scenario_2022Q4_tech            0.1053       0.0916      0.8699  NO
+run_2026-03-12_03-08-20_003      scenario_2022Q1                 0.2463       0.2114      0.8583  NO
+run_2026-03-12_03-14-22          scenario_2023Q2_rand8_1c8e1d3e  0.2589       0.2003      0.7737  NO
+run_2026-03-12_03-16-47          scenario_2022Q4_rand7_5ec96480  0.3875       0.2882      0.7437  NO
+run_2026-03-12_03-21-18          scenario_2025Q1_tech            0.2594       0.1599      0.6164  NO
+run_2026-03-12_03-22-50          scenario_2023Q1_rand9_2aba5c03  0.1262       0.0958      0.7591  NO
+run_2026-03-12_03-26-53          scenario_2023Q2                 0.7568       0.6276      0.8293  NO
+run_2026-03-12_03-29-33          scenario_2022Q3_rand3_1         0.4126       0.2258      0.5473  YES
+run_2026-03-12_03-36-06          scenario_2023Q2_rand3_2         0.2558       0.1971      0.7705  NO
+
+SUMMARY:
+  Fired: 1/9 (11%)
+  Min  collapse_ratio: 0.5473 (the one that fired)
+  Max  collapse_ratio: 0.8699
+  Mean collapse_ratio: 0.7631 (excluding the one that fired: 0.7901)
+  Median collapse_ratio: 0.7705
+
+  Only run_2026-03-12_03-29-33 (scenario_2022Q3_rand3_1) fell below 0.6.
+
+
+=====================================================================
+BASELINE RUNS (for comparison — no intervention engine active)
+=====================================================================
+
+Run                              Scenario                       js_proposal  js_revision  ratio   WOULD_FIRE?
+----                             --------                       -----------  -----------  -----   -----------
+run_2026-03-12_03-08-20_001      scenario_2022Q4_tech            0.1154       0.0794      0.6880  NO
+run_2026-03-12_03-08-20_002      scenario_2022Q1                 0.2239       0.1514      0.6762  NO
+run_2026-03-12_03-14-15          scenario_2023Q2_rand8_1c8e1d3e  0.2163       0.1190      0.5502  YES
+run_2026-03-12_03-16-43          scenario_2022Q4_rand7_5ec96480  0.2730       0.2034      0.7451  NO
+run_2026-03-12_03-20-46          scenario_2025Q1_tech            0.3237       0.2204      0.6809  NO
+run_2026-03-12_03-22-38          scenario_2023Q1_rand9_2aba5c03  0.2142       0.1348      0.6293  NO
+run_2026-03-12_03-26-19          scenario_2023Q2                 0.5713       0.4230      0.7404  NO
+run_2026-03-12_03-29-28          scenario_2022Q3_rand3_1         0.1695       0.1398      0.8248  NO
+run_2026-03-12_03-35-32          scenario_2023Q2_rand3_2         0.2325       0.2196      0.9445  NO
+
+SUMMARY:
+  Would have fired: 1/9 (11%)
+  Min  collapse_ratio: 0.5502
+  Max  collapse_ratio: 0.9445
+  Mean collapse_ratio: 0.7199
+  Median collapse_ratio: 0.6880
+
+
+=====================================================================
+THE ONE RUN THAT FIRED: run_2026-03-12_03-29-33
+=====================================================================
+
+Scenario: scenario_2022Q3_rand3_1 (3 tickers: AAPL, BAC, XOM)
+
+Pre-intervention:
+  js_proposal = 0.4126  (high proposal diversity)
+  js_revision = 0.2258  (dropped 45%)
+  collapse_ratio = 0.5473 < 0.6 -> FIRED
+
+Post-retry:
+  js_revision_retry = 0.2988  (rebounded from 0.2258)
+  post_retry_ratio = 0.7242   (now well above threshold)
+
+The intervention successfully restored diversity in this one case.
+The interventions_all_rounds.json confirms the firing with correct metrics.
+
+
+=====================================================================
+ROOT CAUSE ANALYSIS
+=====================================================================
+
+The intervention almost never fires because the threshold of 0.6 is too
+aggressive for this debate configuration. The empirical distribution of
+collapse_ratio across all 18 completed runs:
+
+  Range:  0.5473 - 0.9445
+  Mean:   0.7415
+  Median: 0.7437
+
+Only 2 of 18 runs (11%) have collapse_ratio < 0.6. The 0.6 threshold was
+designed to catch "premature convergence" but the agents in this setup
+(gpt-5-mini, 3 agents, enriched_intense profiles) retain most of their
+proposal diversity through revision. The typical revision preserves ~70-80%
+of the proposal JS divergence.
+
+Contributing factors:
+  1. STRONG ROLE DIFFERENTIATION: The enriched_intense agent profiles
+     (macro, technical, value) have strongly differentiated system prompts
+     that anchor each agent to its analytical perspective.
+
+  2. SINGLE ROUND: With max_rounds=1, there is only one revision pass.
+     Multi-round debates would have more opportunities for gradual
+     convergence where cumulative collapse could be detected.
+
+  3. CRITIQUE QUALITY: The critiques appear to be substantive enough that
+     agents make targeted adjustments rather than wholesale convergence.
+
+  4. THRESHOLD TOO LOW: At 0.6, the threshold catches only extreme collapse
+     (40%+ JS reduction). A threshold of 0.75 or 0.80 would catch the
+     moderate convergence that is actually happening.
+
+
+=====================================================================
+RECOMMENDATIONS
+=====================================================================
+
+  Option A: RAISE THE THRESHOLD to 0.75 or 0.80
+    - At 0.75: would fire in 5/9 intervention runs (56%)
+    - At 0.80: would fire in 7/9 intervention runs (78%)
+    This is the simplest fix and directly addresses the calibration gap.
+
+  Option B: USE ABSOLUTE JS DROP instead of ratio
+    - Fire when (js_proposal - js_revision) > delta, e.g. delta = 0.05
+    - This avoids the ratio being inflated when js_proposal is small.
+
+  Option C: MULTI-ROUND with inter-round cumulative tracking
+    - With max_rounds=1, the intervention only gets one chance.
+    - Multi-round would allow detecting gradual convergence across rounds.
+
+  Option D: LOWER min_js_proposal guard
+    - Currently 0.10 — no runs were blocked by this guard.
+    - Not the issue here.
+
+
+=====================================================================
+pid_crit_all_rounds.json CAVEAT
+=====================================================================
+
+The pid_crit_all_rounds.json values are MISLEADING for intervention analysis.
+This file records divergence AFTER the entire intervention cycle completes:
+
+  divergence_propose.js = js at proposal time (correct)
+  divergence.js         = js at FINAL revision (post-retry if intervention fired)
+
+For run_2026-03-12_03-29-33:
+  pid_crit_all_rounds.json shows: ratio = 0.2988/0.4126 = 0.7242
+  But the ACTUAL pre-intervention ratio was: 0.2258/0.4126 = 0.5473
+
+To get pre-intervention values, use: rounds/round_NNN/metrics_revision.json
+To get proposal values, use: rounds/round_NNN/metrics_propose.json
