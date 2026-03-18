@@ -1,0 +1,103 @@
+{
+  "round": 1,
+  "beta": 0.5,
+  "proposals": {
+    "macro": {
+      "allocation": {
+        "AAPL": 0.4,
+        "AMD": 0.15,
+        "MSFT": 0.0,
+        "NVDA": 0.0,
+        "_CASH_": 0.45
+      },
+      "confidence": 0.72
+    },
+    "risk": {
+      "allocation": {
+        "AAPL": 0.3,
+        "AMD": 0.05,
+        "MSFT": 0.1,
+        "NVDA": 0.05,
+        "_CASH_": 0.5
+      },
+      "confidence": 0.8
+    },
+    "technical": {
+      "allocation": {
+        "AAPL": 0.4,
+        "AMD": 0.05,
+        "MSFT": 0.0,
+        "NVDA": 0.0,
+        "_CASH_": 0.55
+      },
+      "confidence": 0.78
+    }
+  },
+  "revisions": {
+    "macro": {
+      "allocation": {
+        "AAPL": 0.25,
+        "AMD": 0.1,
+        "MSFT": 0.0,
+        "NVDA": 0.0,
+        "_CASH_": 0.65
+      },
+      "confidence": 0.68
+    },
+    "risk": {
+      "allocation": {
+        "AAPL": 0.25,
+        "AMD": 0.02,
+        "MSFT": 0.06,
+        "NVDA": 0.02,
+        "_CASH_": 0.65
+      },
+      "confidence": 0.8
+    },
+    "technical": {
+      "allocation": {
+        "AAPL": 0.25,
+        "AMD": 0.05,
+        "MSFT": 0.0,
+        "NVDA": 0.0,
+        "_CASH_": 0.7
+      },
+      "confidence": 0.75
+    }
+  },
+  "metrics": {
+    "js_divergence": 0.0572,
+    "evidence_overlap": 0.4252
+  },
+  "crit": {
+    "rho_bar": 0.8617,
+    "macro": {
+      "rho_i": 0.885,
+      "pillars": {
+        "LV": 0.88,
+        "ES": 0.9,
+        "AC": 0.86,
+        "CA": 0.9
+      }
+    },
+    "technical": {
+      "rho_i": 0.815,
+      "pillars": {
+        "LV": 0.86,
+        "ES": 0.82,
+        "AC": 0.9,
+        "CA": 0.68
+      }
+    },
+    "risk": {
+      "rho_i": 0.885,
+      "pillars": {
+        "LV": 0.88,
+        "ES": 0.86,
+        "AC": 0.92,
+        "CA": 0.88
+      }
+    }
+  },
+  "pid": {}
+}

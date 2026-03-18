@@ -1,0 +1,1562 @@
+=== SYSTEM PROMPT ===
+You are a **CRIT reasoning auditor**.
+
+Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+
+You evaluate **reasoning quality only** — not prediction accuracy, profitability, or agreement with other agents.
+
+Your evaluation must be **strict, calibrated, and consistent**.
+
+CRIT is a **blind auditor**:
+you do NOT know the correct investment decision.
+
+Your task is only to evaluate whether the **reasoning process is sound**.
+
+---
+
+AGENT ROLE
+
+Agent specialization: risk
+
+This agent specializes in **risk reasoning**.
+
+Evaluate reasoning **within this domain specialization**.
+
+Do NOT penalize arguments for focusing on their specialty.
+
+---
+
+EVALUATION TARGET
+
+Evaluate the **REVISED ARGUMENT**.
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the agent's revised argument
+
+Use the proposal and critiques ONLY to determine whether:
+
+• weaknesses were addressed
+• critiques were handled correctly
+• alternative hypotheses were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+STRUCTURED REASONING FORMAT
+
+The revised argument contains structured reasoning with the following fields:
+
+• reasoning.claims — numbered causal claims, each with:
+  - claim_id, claim_text, claim_type (macro/sector/firm/risk/technical)
+  - reasoning_type (causal/observational/risk_assessment/pattern)
+  - evidence (legacy citation list) + evidence_ids (normalized IDs)
+  - assumptions, falsifiers
+  - impacts_positions (tickers affected by this claim)
+  - confidence (per-claim)
+• reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
+• reasoning.thesis — the agent's overall portfolio thesis
+• reasoning.confidence — the agent's self-assessed confidence
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — (revised argument only) how the agent responded to critiques:
+  which critiques were accepted, rejected, and why
+• portfolio_allocation — the allocation weights
+• evidence_citations — full evidence text for cited IDs
+
+Use these structured fields for cross-referencing.
+If evidence_ids exists on claims, use it as the canonical evidence reference.
+If only the legacy evidence field exists, interpret entries as citation references.
+Use revision_notes to evaluate critique handling (alternative_consideration pillar).
+Use assumptions and falsifiers to assess logical completeness.
+
+Cross-reference fields have distinct roles:
+• claims[*].impacts_positions — which assets the claim theoretically affects.
+  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
+• position_rationale[*].supporting_claims — which claims actually justify the allocation.
+  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
+
+---
+
+CLAIMS AND CRITIQUES STRUCTURE
+
+Arguments in the debate are organized using **numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Agents are expected to:
+
+• construct arguments using **explicit numbered claims**
+• critique specific claims using critique IDs
+• explicitly **accept or reject critiques during revision**
+
+You should use this structure to evaluate reasoning quality.
+
+Examples:
+
+A critique such as:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+represents **high-quality debate targeting**.
+
+A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
+
+---
+
+CLAIM REVISION EVALUATION
+
+Check whether the agent's revised argument properly engages with critiques.
+
+Specifically evaluate whether:
+
+• critiques targeting specific claims were addressed
+• accepted critiques resulted in meaningful reasoning updates
+• rejected critiques were justified with evidence or logic
+• claims were modified, strengthened, or abandoned appropriately
+
+If critiques_received is empty:
+• Do NOT penalize alternative_consideration for lack of critique handling
+• Evaluate whether the agent proactively considers alternative explanations
+• Absence of critiques does NOT imply strong reasoning — the agent must still demonstrate consideration of alternatives
+
+Potential failures include:
+
+• ignoring critiques entirely
+• rejecting critiques without justification
+• leaving challenged claims unchanged despite valid critiques
+• modifying the portfolio without explaining the reasoning change
+
+---
+
+CRIT PILLARS
+
+You score FOUR pillars of reasoning integrity.
+
+---
+
+PILLAR 1 — LOGICAL VALIDITY
+
+Does the reasoning logically support the conclusion?
+
+Detect:
+
+• contradictions within the argument
+• circular reasoning
+• non-sequitur conclusions
+• claims that invalidate earlier claims
+• reasoning steps missing between evidence and conclusion
+
+Also consider:
+
+• whether the portfolio allocation logically follows from the thesis
+• whether accepted critiques produce coherent reasoning updates
+
+---
+
+PILLAR 2 — EVIDENTIAL SUPPORT
+
+Are factual claims supported by evidence?
+
+Detect:
+
+• unsupported claims
+• missing citations for key assertions
+• citations that do not actually support the claim
+• cherry-picked evidence
+• claims stronger than the evidence allows
+
+Check whether:
+
+• claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
+• critiques identify evidence gaps
+• revisions introduce new supporting evidence where needed
+• count claims with zero valid citations — report as unsupported_claims_count
+
+---
+
+PILLAR 3 — ALTERNATIVE CONSIDERATION
+
+Does the agent consider competing explanations?
+
+Detect:
+
+• premature certainty
+• ignoring critiques
+• failure to address opposing arguments
+• failure to consider alternative interpretations of evidence
+• thesis changes without explanation
+
+Strong reasoning should:
+
+• engage with critiques directly
+• explain why critiques are accepted or rejected
+• consider competing causal explanations
+
+Use revision_notes to evaluate how critiques were handled.
+
+---
+
+PILLAR 4 — CAUSAL ALIGNMENT
+
+Are causal claims justified by the evidence?
+
+PRIMARY EVALUATION — Pearl's Causal Hierarchy
+
+You must independently classify each claim's reasoning depth using Pearl's ladder:
+
+L1 — Association / correlation: the claim cites data patterns or statistical relationships.
+L2 — Intervention / mechanism: the claim describes a plausible causal pathway or transmission mechanism (e.g., "Fed raises rates → higher discount rates → lower equity valuations"). Evidence must be consistent with the described mechanism (not literal experimental evidence).
+L3 — Counterfactual reasoning: the claim explicitly reasons about an alternative state or counterfactual scenario (e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** — higher-level conclusions supported only by lower-level evidence:
+
+• L2 claim with only associational evidence and no mechanism described
+• L3 claim without explicit counterfactual structure
+• causal conclusions drawn from purely correlational evidence
+• macro claims directly mapped to asset outcomes without transmission mechanism
+• missing causal pathway between variables
+
+SECONDARY DIAGNOSTIC — Reasoning Type Consistency
+
+Claims include an agent-declared reasoning_type field (causal / observational / risk_assessment / pattern).
+
+As a secondary check, compare the agent's self-declared reasoning_type against the actual reasoning structure in the claim text. Note mismatches such as:
+
+• "observational" label but the claim asserts causal effects
+• "causal" label but the reasoning is purely correlational
+• "pattern" label used to justify causal conclusions
+
+These mismatches should be recorded in the causal_overreach diagnostic but must NOT determine the pillar score directly. The causal_alignment score must reflect Pearl ladder evaluation, not label consistency.
+
+Also check whether critiques successfully expose **causal weaknesses in specific claims**.
+
+---
+
+INTERNAL REASONING TRACE
+
+Before scoring, you must internally perform these checks (do NOT include this trace in your output):
+
+1. List all claims and verify each has at least one evidence citation (use evidence_ids)
+2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
+3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
+4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
+5. Check for contradictions between claim pairs
+6. For each claim, independently assess its causal level (L1/L2/L3) and detect rung collapse; also note reasoning_type label mismatches
+7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
+
+---
+
+PATHOLOGY DETECTION
+
+Before assigning scores, detect the following reasoning failures:
+
+• contradictions
+• unsupported claims
+• ignored critiques
+• premature certainty
+• causal overreach
+• conclusion drift
+
+Definitions:
+
+contradictions
+: reasoning statements that conflict internally
+
+unsupported claims
+: claims made without evidence citations
+
+ignored critiques
+: critiques (K#) that target claims but receive no meaningful response
+
+premature certainty
+: strong conclusions despite weak evidence
+
+causal overreach
+: causal claims unsupported by the evidence type
+
+conclusion drift
+: portfolio allocation that does not logically follow from the argument.
+  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
+  Count orphaned positions and report as orphaned_positions_count.
+
+Where possible, report counts for each pathology type in the diagnostics output.
+
+---
+
+SCORING PROCEDURE
+
+Follow this order:
+
+1. Identify reasoning failures.
+2. Determine which pillar each failure affects.
+3. Assign pillar scores based on severity.
+
+Multiple failures should **reduce scores proportionally**.
+
+---
+
+SCORING SCALE
+
+Scores must use the **continuous range [0.0 – 1.0]**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor gaps
+0.70 — acceptable but noticeable weaknesses
+0.55 — mixed reasoning with clear issues
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+CALIBRATION WARNING:
+• Scores above 0.90 should be RARE
+• Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Do NOT default to 0.5.
+
+Use the full scale.
+
+---
+
+WHAT YOU DO NOT EVALUATE
+
+Do NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• agreement with other agents
+• market outcomes
+
+You are evaluating **reasoning quality only**.
+
+UNCERTAINTY IS GOOD:
+• Hedging and qualification represent good reasoning — do NOT penalize
+• Penalize: certainty without evidence, confidence exceeding evidence support
+• Penalize: absence of qualification when evidence is ambiguous
+
+---
+
+OUTPUT FORMAT
+
+Return a single JSON object.
+
+No markdown.
+
+No text outside JSON.
+
+{
+"pillar_scores": {
+"logical_validity": <float>,
+"evidential_support": <float>,
+"alternative_consideration": <float>,
+"causal_alignment": <float>
+},
+"diagnostics": {
+"contradictions_detected": <bool>,
+"unsupported_claims_detected": <bool>,
+"ignored_critiques_detected": <bool>,
+"premature_certainty_detected": <bool>,
+"causal_overreach_detected": <bool>,
+"conclusion_drift_detected": <bool>,
+"contradictions_count": <int or null>,
+"unsupported_claims_count": <int or null>,
+"ignored_critiques_count": <int or null>,
+"causal_overreach_count": <int or null>,
+"orphaned_positions_count": <int or null>
+},
+"explanations": {
+"logical_validity": "<1-2 sentences explaining key reasoning issues>",
+"evidential_support": "<1-2 sentences explaining evidence usage>",
+"alternative_consideration": "<1-2 sentences explaining critique handling>",
+"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
+}
+}
+
+
+=== USER PROMPT ===
+## Round 1
+
+## Agent Under Evaluation
+
+RISK
+
+Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
+
+CRIT evaluates **reasoning quality only**.
+
+You must NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• market outcomes
+• agreement with other agents
+
+You do **not know the correct investment decision**.
+
+Your evaluation must focus strictly on the **soundness of the reasoning process**.
+
+---
+
+# Evaluation Target
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the revised argument
+
+Use the proposal and critiques **only to determine**:
+
+• whether critiques exposed reasoning weaknesses
+• whether the revision addressed those weaknesses
+• whether competing explanations were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+# Agent Specialization
+
+Agent specialization: **risk**
+
+This agent focuses on **risk reasoning**.
+
+Evaluate reasoning **within this specialization**.
+
+Do NOT penalize arguments for focusing on their domain expertise.
+
+---
+
+# Structured Reasoning Format
+
+The revised argument contains structured reasoning fields.
+
+**reasoning.claims**
+
+Each claim includes:
+
+• claim_id
+• claim_text
+• claim_type (macro / sector / firm / risk / technical)
+• reasoning_type (causal / observational / risk_assessment / pattern)
+• evidence_ids (normalized evidence references)
+• assumptions
+• falsifiers
+• impacts_positions (tickers affected by this claim)
+• confidence
+
+**reasoning.position_rationale**
+
+Per-position explanations containing:
+
+• ticker
+• weight
+• supporting_claims (claim IDs that justify the position)
+• explanation
+
+**reasoning.risks_or_falsifiers**
+
+Portfolio-level invalidation conditions.
+
+**reasoning.revision_notes**
+
+Explanation of how critiques were handled.
+
+**reasoning.critique_responses**
+
+Per-critique structured responses. Each entry contains:
+
+• from_agent (which agent sent the critique)
+• target_claim (which claim was critiqued)
+• disposition ("accept" or "rebut")
+• justification (why the agent accepted or rebutted)
+
+Use this to determine whether each critique was explicitly addressed.
+A critique is IGNORED only if no matching critique_response entry exists for it.
+
+**portfolio_allocation**
+
+Final asset allocation.
+
+**evidence_citations**
+
+Full text for evidence references.
+
+Important distinctions:
+
+• **claims[*].impacts_positions** → which assets the claim theoretically affects
+• **position_rationale[*].supporting_claims** → which claims justify the allocation
+
+These serve different purposes:
+
+• impacts_positions → **causal completeness**
+• supporting_claims → **conclusion consistency**
+
+Important note about impacts_positions:
+
+The impacts_positions field may legitimately be empty.
+
+Some claims describe macro or market-wide relationships that affect the portfolio indirectly
+(e.g., interest rates affecting equity valuations broadly).
+
+Absence of impacts_positions is NOT automatically a reasoning failure.
+
+Only penalize causal completeness when a specific portfolio position is clearly implied
+by a claim but the reasoning fails to connect that claim to the position.
+
+---
+
+# Debate Structure
+
+Arguments are structured using explicit claims.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques may target specific claims or the portfolio allocation.
+
+During revision agents may:
+
+• **ACCEPT** critiques
+• **REJECT** critiques with justification
+
+Your task is to evaluate **whether the revised reasoning properly engages with critiques**.
+
+---
+
+# Original Proposal
+
+Use the proposal only to determine whether critiques revealed weaknesses.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-VIX",
+      "evidence_text": "VIX: 31.62"
+    },
+    {
+      "evidence_id": "L1-10Y",
+      "evidence_text": "10Y Treasury: 3.83% (+85bps QoQ)"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: -0.39% (inverted)"
+    },
+    {
+      "evidence_id": "AMD-BETA",
+      "evidence_text": "1Y Beta: 2.08"
+    },
+    {
+      "evidence_id": "AAPL-BETA",
+      "evidence_text": "1Y Beta: 1.24"
+    },
+    {
+      "evidence_id": "AMD-VOL60",
+      "evidence_text": "60D Vol (ann): 50.2%"
+    },
+    {
+      "evidence_id": "AMD-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -60.9%"
+    },
+    {
+      "evidence_id": "AAPL-DVOL60",
+      "evidence_text": "60D Downside Vol: 21.7%"
+    },
+    {
+      "evidence_id": "AAPL-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -28.3%"
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.3,
+    "AMD": 0.05,
+    "MSFT": 0.1,
+    "NVDA": 0.05,
+    "_CASH_": 0.5
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "High VIX implies higher near-term tail risk for equities.",
+          "Cash (risk-free) provides capital preservation during volatility spikes."
+        ],
+        "claim_id": "C1",
+        "claim_text": "Elevated realized/implied volatility (VIX = 31.62) increases the probability of large, simultaneous equity drawdowns, so overall equity exposure should be cut in favor of cash to preserve capital [L1-VIX].",
+        "claim_type": "macro",
+        "confidence": 0.8,
+        "evidence": [
+          "[L1-VIX]"
+        ],
+        "evidence_ids": [
+          "L1-VIX"
+        ],
+        "falsifiers": [
+          "VIX compresses materially (e.g., below 15) and stays low over weeks, indicating calm markets [L1-VIX].",
+          "Evidence of sustained equity risk-on where equities rally while volatility falls."
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "AMD",
+          "MSFT",
+          "NVDA",
+          "CASH"
+        ],
+        "reasoning_type": "risk_assessment"
+      },
+      {
+        "assumptions": [
+          "Higher discount rates reduce present value of long-duration expected cash flows and amplify downside for high-beta equities.",
+          "Inverted curve increases recession risk which worsens earnings downside for cyclical/growth firms."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Rising long-term yields (10Y = 3.83%) and an inverted 10Y-2Y curve increase financing and discount-rate risk for growth and high-beta equities; high-beta names (AMD beta 2.08, AAPL beta 1.24) should be sized down relative to cash/lower-beta holdings [L1-10Y] [L1-CURVE] [AMD-BETA] [AAPL-BETA].",
+        "claim_type": "macro",
+        "confidence": 0.75,
+        "evidence": [
+          "[L1-10Y]",
+          "[L1-CURVE]",
+          "[AMD-BETA]",
+          "[AAPL-BETA]"
+        ],
+        "evidence_ids": [
+          "AAPL-BETA",
+          "AMD-BETA",
+          "L1-10Y",
+          "L1-CURVE"
+        ],
+        "falsifiers": [
+          "10Y yields materially decline and curve steepens (reducing rate/discountrate pressure) [L1-10Y] [L1-CURVE].",
+          "Firm-specific evidence shows earnings surprisingly resilient to higher rates and recession risk."
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "AMD",
+          "MSFT",
+          "NVDA"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Past realized downside volatility and large historical drawdowns are informative about future tail sensitivity absent structural changes.",
+          "Sizing positions inversely to downside volatility reduces portfolio tail-risk contribution."
+        ],
+        "claim_id": "C3",
+        "claim_text": "Security-level realized downside volatility and prior extreme drawdowns identify asymmetric tail risk: AMD exhibits very high realized vol and a 1y max drawdown (-60.9%), while AAPL shows meaningful downside vol and drawdown; positions should be sized inversely to realized downside risk to limit portfolio drawdown contribution [AMD-VOL60] [AMD-MDD1Y] [AAPL-DVOL60] [AAPL-MDD1Y].",
+        "claim_type": "firm",
+        "confidence": 0.85,
+        "evidence": [
+          "[AMD-VOL60]",
+          "[AMD-MDD1Y]",
+          "[AAPL-DVOL60]",
+          "[AAPL-MDD1Y]"
+        ],
+        "evidence_ids": [
+          "AAPL-DVOL60",
+          "AAPL-MDD1Y",
+          "AMD-MDD1Y",
+          "AMD-VOL60"
+        ],
+        "falsifiers": [
+          "AMD and/or AAPL exhibit materially lower realized downside volatility over an extended period (e.g., 60d vol halves) [AMD-VOL60] [AAPL-DVOL60].",
+          "New firm-specific liquidity or balance-sheet changes materially reduce downside fragility."
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "AMD",
+          "NVDA"
+        ],
+        "reasoning_type": "risk_assessment"
+      }
+    ],
+    "confidence": 0.8,
+    "position_rationale": [
+      {
+        "explanation": "AAPL is given a moderate allocation because, while it has nontrivial downside vol and past drawdowns ([AAPL-DVOL60], [AAPL-MDD1Y]) and a beta \u003e1 [AAPL-BETA] (C2,C3), its volatility is lower than AMD and it has liquidity and cash-return actions (buybacks) noted in filings which support survivability in stress (justifying a reduced-but-meaningful position). The allocation is capped to limit drawdown contribution per C1 and C3.",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.3
+      },
+      {
+        "explanation": "AMD receives a very small allocation because it has extremely high realized volatility and large historical drawdowns ([AMD-VOL60], [AMD-MDD1Y]) and a high beta [AMD-BETA], making it a disproportionate tail-risk contributor (C2,C3). Size is minimal to retain optional upside while limiting catastrophic loss to portfolio capital (C1).",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "AMD",
+        "weight": 0.05
+      },
+      {
+        "explanation": "MSFT is sized conservatively (small weight) because elevated market volatility increases downside risk (C1) and rising yields/inversion raise discount-rate risk for large growth names (C2). Without firm-specific snapshot evidence in the memo, treat MSFT as a general large-cap growth exposure and size accordingly.",
+        "supporting_claims": [
+          "C1",
+          "C2"
+        ],
+        "ticker": "MSFT",
+        "weight": 0.1
+      },
+      {
+        "explanation": "NVDA is assigned a small allocation as a higher-volatility growth exposure likely to suffer in a volatility spike and rising-rate environment (C1,C2); C3 advises small sizing for securities that can contribute outsized drawdowns even if firm-specific evidence is not provided in the memo.",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "NVDA",
+        "weight": 0.05
+      },
+      {
+        "explanation": "Cash is the largest allocation to preserve capital through elevated volatility and rate-driven risk (C1,C2). With Fed funds at 3.08% providing a positive risk-free yield [L1-FF], holding cash reduces forced liquidations and gives optionality to redeploy after volatility normalizes.",
+        "supporting_claims": [
+          "C1",
+          "C2"
+        ],
+        "ticker": "CASH",
+        "weight": 0.5
+      }
+    ],
+    "risks_or_falsifiers": [
+      "Volatility collapses and remains low (VIX falls below ~15) and yields materially decline (10Y \u003c 2.5%), which would justify redeploying cash into equities [L1-VIX] [L1-10Y].",
+      "Macro data show rapid disinflation and easing of rate-hike expectations (CPI falls sharply from 8.19%), invalidating the high-rate/high-volatility premise [L1-CPI].",
+      "Firm-specific evidence (not in memo) shows AMD materially reduces leverage/volatility or AAPL/MSFT/NVDA show large, persistent downside volatility improvements; this would require resizing per C3 [AMD-VOL60] [AAPL-DVOL60]."
+    ],
+    "thesis": "Given elevated market volatility (VIX 31.62) and rising yields with curve inversion, the portfolio prioritizes capital preservation by keeping 50% in cash (C1,C2). Equity exposure is deliberately limited (50%) and allocated with volatility- and beta-aware sizing: moderate allocation to AAPL (liquid, lower-vol relative to AMD) and small allocations to MSFT, NVDA, and a minimal stake in AMD to avoid concentration of tail risk (C2,C3). This structure reduces concentration and limits the portfolio\u0027s vulnerability to volatility spikes, correlation convergence, and rate-driven re-pricing while retaining measured exposure to potential upside. Position sizes are driven by downside-volatility and beta evidence so that no single equity can generate a catastrophic drawdown under stress scenarios described in claims."
+  }
+}
+
+---
+
+# Critiques Received
+
+Each critique contains:
+
+• from_role — which agent sent the critique
+• target_claim — which specific claim (C1, C2, …) is targeted
+• critique_text — the objection
+• evidence_citations — counter-evidence IDs with full text
+• portfolio_implication — how the flaw affects the portfolio
+• suggested_adjustment — what the critic recommends
+• falsifier — what would disprove the objection
+• objection_confidence — how confident the critic is
+
+Use `target_claim` to match critiques against `critique_responses` in the revised argument.
+
+
+Evaluate whether critiques were meaningfully addressed in the revision.
+
+
+[
+  {
+    "critique_text": "C1 correctly flags elevated VIX ([L1-VIX: VIX: 31.62]) but treats a 50% cash allocation as sufficient. That understates the economic downside signaled by the inverted yield curve ([L1-CURVE: 10Y-2Y Spread: -0.39% (inverted)]) and wide credit-risk premium ([L1-HY: HY OAS Spread: 5.43%]) together with elevated policy rates ([L1-FF: Fed Funds: 3.08%]). These macro signals point to heightened recession and financing stress risk that argue for a larger defensive tilt than 50% cash. Maintaining half the portfolio in equities exposes the portfolio to earnings and valuation downside in a regime that penalizes rate-sensitive and cyclical names.",
+    "evidence_citations": [
+      {
+        "evidence_id": "L1-VIX",
+        "evidence_text": "VIX: 31.62"
+      },
+      {
+        "evidence_id": "L1-CURVE",
+        "evidence_text": "10Y-2Y Spread: -0.39% (inverted)"
+      },
+      {
+        "evidence_id": "L1-HY",
+        "evidence_text": "HY OAS Spread: 5.43%"
+      },
+      {
+        "evidence_id": "L1-FF",
+        "evidence_text": "Fed Funds: 3.08%"
+      }
+    ],
+    "falsifier": "Evidence that would disprove this objection: steep decline in market volatility ([L1-VIX] materially lower), a marked fall in long yields (10Y down, [L1-10Y] lower) and tightening HY spreads ([L1-HY] compresses), indicating easing financial conditions and lower recession risk.",
+    "from_role": "macro",
+    "objection_confidence": 0.75,
+    "portfolio_implication": "With substantial equity exposure (AAPL 30%, MSFT/NVDA small positions) the portfolio remains vulnerable to simultaneous earnings downgrades and multiple compression driven by tightening financial conditions and curve inversion ([L1-CURVE], [L1-FF]). High-beta cyclicals in the allocation (e.g., AMD-like exposures) would compound drawdowns given documented high betas ([AMD-BETA], [AAPL-BETA]).",
+    "suggested_adjustment": "Increase CASH to 60\u201370% (from 50%) and trim equity exposures\u2014e.g., cut AAPL to ~20%, reduce AMD to ~3\u20135%, and cap MSFT/NVDA to very small tactical stakes\u2014so the portfolio better reflects recession/financing stress signaled by [L1-CURVE], [L1-HY], [L1-FF] and tail-risk signaled by [L1-VIX].",
+    "target_claim": "C1"
+  },
+  {
+    "critique_text": "RISK\u0027s C1 cites elevated VIX to cut equities to 50%, but then maintains a 50% equity allocation. Technical price evidence shows both available equities (AAPL and AMD) are in broken short-to-medium trends (price below SMA20/50/200 with negative short-term returns), implying the technical regime is risk-off and warrants an even lower equity exposure than 50%. Keeping half the portfolio in equities under these price conditions increases the chance of meaningful interim drawdown and is inconsistent with a strictly trend-respecting posture.",
+    "evidence_citations": [
+      {
+        "evidence_id": "L1-VIX",
+        "evidence_text": "VIX: 31.62"
+      },
+      {
+        "evidence_id": "AAPL-SMA20",
+        "evidence_text": "SMA 20D: $150.10"
+      },
+      {
+        "evidence_id": "AAPL-SMA50",
+        "evidence_text": "SMA 50D: $156.91"
+      },
+      {
+        "evidence_id": "AAPL-SMA200",
+        "evidence_text": "SMA 200D: $156.75"
+      },
+      {
+        "evidence_id": "AAPL-RET20",
+        "evidence_text": "20D Return: -12.5%"
+      },
+      {
+        "evidence_id": "AMD-SMA20",
+        "evidence_text": "SMA 20D: $74.62"
+      },
+      {
+        "evidence_id": "AMD-SMA50",
+        "evidence_text": "SMA 50D: $86.56"
+      },
+      {
+        "evidence_id": "AMD-SMA200",
+        "evidence_text": "SMA 200D: $101.96"
+      },
+      {
+        "evidence_id": "AMD-RET20",
+        "evidence_text": "20D Return: -23.0%"
+      },
+      {
+        "evidence_id": "AMD-RET60",
+        "evidence_text": "60D Return: -20.1%"
+      },
+      {
+        "evidence_id": "AMD-VOL60",
+        "evidence_text": "60D Vol (ann): 50.2%"
+      },
+      {
+        "evidence_id": "AMD-MDD1Y",
+        "evidence_text": "1Y Max Drawdown: -60.9%"
+      }
+    ],
+    "falsifier": "Both AAPL and AMD reclaim their SMA50 (and ideally SMA200) and sustain positive medium-term returns (AAPL-RET60 and AMD-RET60 turning materially less negative or positive) with volatility normalizing \u2014 that would justify a 50% equity allocation [AAPL-SMA50] [AMD-SMA50] [AAPL-RET60] [AMD-RET60] [L1-VIX].",
+    "from_role": "technical",
+    "objection_confidence": 0.75,
+    "portfolio_implication": "Maintaining 50% equities despite clear downtrends in both tradable names risks larger-than-expected drawdowns and reduces the value of the supposed \u0027capital preservation\u0027 objective. The sizing decision does not align with the dominant technical regime (broken trends, high idiosyncratic and market volatility).",
+    "suggested_adjustment": "Lower total equity exposure to 30\u201340% and move the difference to CASH given both names are below key SMAs. Within the reduced equity sleeve, allocate more to the relatively stronger name (AAPL) and keep AMD minimal (e.g., AAPL ~30%, AMD ~5%, CASH ~65% total), until price confirms trend repair (SMA reclaim + positive momentum).",
+    "target_claim": "C1"
+  }
+]
+
+---
+
+
+# Agent Self-Critique
+
+The agent identified the following weakness in its own reasoning during the critique phase:
+
+{
+  "explanation": "The single greatest vulnerability is concentration in AAPL (30%) combined with only 50% cash. While sizing was based on AAPL\u0027s lower volatility relative to AMD, AAPL still has beta \u003e1 [AAPL-BETA], elevated downside volatility and a meaningful 1y max drawdown [AAPL-DVOL60][AAPL-MDD1Y]. If market volatility spikes further (VIX already 31.62 [L1-VIX]) and correlations converge during a recessionary shock signalled by the inverted curve [L1-CURVE] and wider credit stress [L1-HY], AAPL could suffer a large decline that meaningfully damages portfolio capital. The position sizing may underweight the tail correlation risk (i.e., that AAPL, AMD and other growth names fall together), so a single-name shock would translate into a large portfolio drawdown. Mitigation would require lowering the single-name cap on equities (reduce AAPL toward 20-25%) or increasing cash beyond 50% until macro/volatility indicators normalize.",
+  "weakest_claim": "C3 / portfolio construction (AAPL 30% concentration)"
+}
+
+Evaluate whether the revision addresses the agent's own identified weakness.
+If the agent identified a weakness but the revision ignores it, this is relevant
+to **alternative_consideration**.
+
+Do not reward agents merely for writing a self-critique.
+Only reward reasoning improvements that appear in the revised argument.
+
+---
+
+
+# Revised Argument
+
+Focus primarily on the reasoning quality in this revision.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-VIX",
+      "evidence_text": "VIX: 31.62"
+    },
+    {
+      "evidence_id": "L1-HY",
+      "evidence_text": "HY OAS Spread: 5.43%"
+    },
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 3.08%"
+    },
+    {
+      "evidence_id": "L1-10Y",
+      "evidence_text": "10Y Treasury: 3.83% (+85bps QoQ)"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: -0.39% (inverted)"
+    },
+    {
+      "evidence_id": "AMD-BETA",
+      "evidence_text": "1Y Beta: 2.08"
+    },
+    {
+      "evidence_id": "AAPL-BETA",
+      "evidence_text": "1Y Beta: 1.24"
+    },
+    {
+      "evidence_id": "AMD-VOL60",
+      "evidence_text": "60D Vol (ann): 50.2%"
+    },
+    {
+      "evidence_id": "AMD-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -60.9%"
+    },
+    {
+      "evidence_id": "AAPL-DVOL60",
+      "evidence_text": "60D Downside Vol: 21.7%"
+    },
+    {
+      "evidence_id": "AAPL-MDD1Y",
+      "evidence_text": "1Y Max Drawdown: -28.3%"
+    },
+    {
+      "evidence_id": "AAPL-SMA20",
+      "evidence_text": "SMA 20D: $150.10"
+    },
+    {
+      "evidence_id": "AAPL-SMA50",
+      "evidence_text": "SMA 50D: $156.91"
+    },
+    {
+      "evidence_id": "AAPL-SMA200",
+      "evidence_text": "SMA 200D: $156.75"
+    },
+    {
+      "evidence_id": "AAPL-RET20",
+      "evidence_text": "20D Return: -12.5%"
+    },
+    {
+      "evidence_id": "AMD-SMA20",
+      "evidence_text": "SMA 20D: $74.62"
+    },
+    {
+      "evidence_id": "AMD-SMA50",
+      "evidence_text": "SMA 50D: $86.56"
+    },
+    {
+      "evidence_id": "AMD-SMA200",
+      "evidence_text": "SMA 200D: $101.96"
+    },
+    {
+      "evidence_id": "AMD-RET20",
+      "evidence_text": "20D Return: -23.0%"
+    },
+    {
+      "evidence_id": "AMD-RET60",
+      "evidence_text": "60D Return: -20.1%"
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.25,
+    "AMD": 0.02,
+    "MSFT": 0.06,
+    "NVDA": 0.02,
+    "_CASH_": 0.65
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "High VIX reflects elevated near-term equity tail risk and a greater chance of rapid de-risking.",
+          "Wide high-yield spreads ([L1-HY]) indicate credit-market stress that can amplify equity drawdowns via liquidity and financing channels.",
+          "Positive Fed Funds rate ([L1-FF]) increases carrying cost of equities and raises the value of holding risk-free cash during stress."
+        ],
+        "claim_id": "C1",
+        "claim_text": "Elevated implied/realized market volatility and stressed credit/rates signal higher probability of large cross-asset drawdowns; therefore a substantial cash buffer is required to limit forced liquidation risk and reduce portfolio tail exposure.",
+        "claim_type": "macro",
+        "confidence": 0.85,
+        "evidence": [
+          "[L1-VIX]",
+          "[L1-HY]",
+          "[L1-FF]"
+        ],
+        "evidence_ids": [
+          "L1-FF",
+          "L1-HY",
+          "L1-VIX"
+        ],
+        "falsifiers": [
+          "Sustained fall in VIX below ~15 accompanied by HY spread compression (lower [L1-VIX] and [L1-HY]) and lower Fed Funds expectations would reduce the need for large cash buffer.",
+          "Evidence of strong, broad-based positive earnings revisions that materially reduce downside tail risk."
+        ],
+        "impacts_positions": [
+          "CASH",
+          "AAPL",
+          "MSFT",
+          "NVDA",
+          "AMD"
+        ],
+        "reasoning_type": "risk_assessment"
+      },
+      {
+        "assumptions": [
+          "Higher term yields (10Y) increase discounting of future cash flows and pressure growth multiples.",
+          "An inverted 10Y-2Y curve signals elevated near-term recession probability, increasing downside to cyclical/growth revenues.",
+          "Beta is a reasonable proxy for sensitivity to market and rate-driven shocks in absence of contradictory firm-level evidence."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Rising long-term yields and an inverted curve elevate discount-rate and recession risk that disproportionately penalizes high-beta and long-duration equities; size high-beta exposures conservatively.",
+        "claim_type": "macro",
+        "confidence": 0.8,
+        "evidence": [
+          "[L1-10Y]",
+          "[L1-CURVE]",
+          "[AMD-BETA]",
+          "[AAPL-BETA]"
+        ],
+        "evidence_ids": [
+          "AAPL-BETA",
+          "AMD-BETA",
+          "L1-10Y",
+          "L1-CURVE"
+        ],
+        "falsifiers": [
+          "10Y yields materially decline and the curve steepens ([L1-10Y] falls, [L1-CURVE] normalizes), reducing discount-rate pressure.",
+          "Firm-level cash flows prove resilient to recession and financial conditions despite macro signals."
+        ],
+        "impacts_positions": [
+          "AMD",
+          "AAPL",
+          "MSFT",
+          "NVDA"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Past realized downside volatility and deep past drawdowns are informative about a stock\u0027s potential to contribute to future extreme portfolio drawdowns absent structural changes.",
+          "Sizing positions inversely to downside volatility reduces probability that a single equity causes catastrophic portfolio loss."
+        ],
+        "claim_id": "C3",
+        "claim_text": "Security-level realized downside volatility and historical max drawdowns identify asymmetric tail contributors; allocate inversely to downside-vol to cap single-name drawdown contribution.",
+        "claim_type": "firm",
+        "confidence": 0.9,
+        "evidence": [
+          "[AMD-VOL60]",
+          "[AMD-MDD1Y]",
+          "[AAPL-DVOL60]",
+          "[AAPL-MDD1Y]"
+        ],
+        "evidence_ids": [
+          "AAPL-DVOL60",
+          "AAPL-MDD1Y",
+          "AMD-MDD1Y",
+          "AMD-VOL60"
+        ],
+        "falsifiers": [
+          "Sustained and material reduction in realized downside vol for AMD or AAPL (e.g., 60d downside vol halves) and evidence of structural balance-sheet or liquidity improvements.",
+          "Company-specific deleveraging, buybacks, or material changes that demonstrably lower downside fragility."
+        ],
+        "impacts_positions": [
+          "AMD",
+          "AAPL"
+        ],
+        "reasoning_type": "risk_assessment"
+      },
+      {
+        "assumptions": [
+          "Price below SMAs and negative short-term returns increase the risk of further downside during market stress.",
+          "Technical regime is a valid short-to-medium-term risk filter when paired with macro stress indicators."
+        ],
+        "claim_id": "C4",
+        "claim_text": "Broken short- and medium-term price trends for available equities amplify near-term downside risk; absent trend repair, further de-risking via cash is prudent to avoid buying into momentum-driven drawdowns.",
+        "claim_type": "technical",
+        "confidence": 0.75,
+        "evidence": [
+          "[AAPL-SMA20]",
+          "[AAPL-SMA50]",
+          "[AAPL-SMA200]",
+          "[AAPL-RET20]",
+          "[AMD-SMA20]",
+          "[AMD-SMA50]",
+          "[AMD-SMA200]",
+          "[AMD-RET20]",
+          "[AMD-RET60]"
+        ],
+        "evidence_ids": [
+          "AAPL-RET20",
+          "AAPL-SMA20",
+          "AAPL-SMA200",
+          "AAPL-SMA50",
+          "AMD-RET20",
+          "AMD-RET60",
+          "AMD-SMA20",
+          "AMD-SMA200",
+          "AMD-SMA50"
+        ],
+        "falsifiers": [
+          "AAPL and AMD reclaim SMA50 (and preferably SMA200) with sustained positive medium-term returns (improving [AAPL-RET60], [AMD-RET60]) and volatility normalizes ([L1-VIX] falls)."
+        ],
+        "impacts_positions": [
+          "CASH",
+          "AAPL",
+          "AMD"
+        ],
+        "reasoning_type": "observational"
+      }
+    ],
+    "confidence": 0.8,
+    "critique_responses": [
+      {
+        "disposition": "accept",
+        "from_agent": "MACRO",
+        "justification": "I accept that the MACRO critique correctly identifies additional macro stress signals beyond VIX\u2014specifically the inverted curve ([L1-CURVE]) and wide HY spreads ([L1-HY])\u2014which increase recession and financing-stress risk and therefore justify a larger cash buffer than my original 50% allocation. I revise C1 and the allocation to increase CASH to 65% to better reflect the combined signals of elevated volatility ([L1-VIX]), inverted curve ([L1-CURVE]), wide HY spreads ([L1-HY]), and positive policy rates ([L1-FF]). This change narrows my downside exposure to simultaneous earnings/financing shocks as stressed in your critique.",
+        "target_claim": "C1"
+      },
+      {
+        "disposition": "accept",
+        "from_agent": "TECHNICAL",
+        "justification": "I accept the TECHNICAL critique in part: broken short- and medium-term trends for the available equities (AAPL and AMD) materially increase near-term downside risk and reduce the cost-effectiveness of holding a large equity sleeve during trend repair ([AAPL-SMA20], [AAPL-SMA50], [AAPL-SMA200], [AAPL-RET20], [AMD-SMA20], [AMD-SMA50], [AMD-SMA200], [AMD-RET20], [AMD-RET60]). I therefore incorporated a new claim (C4) that uses technicals as a risk filter and reduced total equity exposure (from 50% to 35%) by increasing CASH to 65%. I do not accept trading based purely on momentum as a return-maximization framework, but I accept technical regime as relevant to short-to-medium-term risk control.",
+        "target_claim": "C1"
+      }
+    ],
+    "position_rationale": [
+      {
+        "explanation": "AAPL receives the largest equity slice but is capped at 25% because (1) elevated market volatility and credit stress justify a cash-first posture (C1 [L1-VIX], [L1-HY]), (2) rate/curve risk requires restraint on beta-sensitive equities despite AAPL\u0027s relative liquidity ([L1-10Y], [L1-CURVE], [AAPL-BETA]), (3) downside-vol and past drawdowns limit position size to control single-name tail contribution ([AAPL-DVOL60], [AAPL-MDD1Y]), and (4) technicals are weak so exposure remains cautious until trend repair ([AAPL-SMA20], [AAPL-SMA50]).",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3",
+          "C4"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.25
+      },
+      {
+        "explanation": "AMD is sized minimally (2%) because it has very high realized volatility and a deep 1y drawdown that makes it a disproportionate tail-risk contributor ([AMD-VOL60], [AMD-MDD1Y]); rising yields and inversion increase its sensitivity ([AMD-BETA], [L1-10Y], [L1-CURVE]); technical downtrend further argues to limit exposure ([AMD-SMA20], [AMD-SMA50]). Small weight preserves optionality while capping portfolio damage if AMD suffers another large drawdown.",
+        "supporting_claims": [
+          "C2",
+          "C3",
+          "C4"
+        ],
+        "ticker": "AMD",
+        "weight": 0.02
+      },
+      {
+        "explanation": "MSFT is given a small defensive exposure (6%) to capture large-cap liquidity and potential defensive characteristics, but constrained because macro volatility (C1) and rate/curve pressures (C2) raise the cost of holding growth-oriented large caps. No firm snapshot exists in the memo, so sizing errs on the side of capital preservation.",
+        "supporting_claims": [
+          "C1",
+          "C2"
+        ],
+        "ticker": "MSFT",
+        "weight": 0.06
+      },
+      {
+        "explanation": "NVDA is allocated minimally (2%) as a high-volatility, long-duration growth exposure that would be vulnerable if volatility spikes and rates remain elevated (C1, C2). Small position preserves upside optionality but limits tail contribution to portfolio drawdown.",
+        "supporting_claims": [
+          "C1",
+          "C2"
+        ],
+        "ticker": "NVDA",
+        "weight": 0.02
+      },
+      {
+        "explanation": "Cash is the dominant allocation (65%) to preserve capital through the current elevated-volatility, stressed-credit, and inverted-curve regime (C1: [L1-VIX], [L1-HY], [L1-FF]) and because technicals on available equities are broken (C4), increasing the probability of further downside before a sustainable trend repair.",
+        "supporting_claims": [
+          "C1",
+          "C4"
+        ],
+        "ticker": "CASH",
+        "weight": 0.65
+      }
+    ],
+    "revision_notes": "Changes made vs prior proposal: increased CASH from 50% to 65% (material acceptance of MACRO and TECHNICAL critiques); reduced AAPL from 30% to 25%; reduced MSFT from 10% to 6%; reduced NVDA from 5% to 2%; reduced AMD from 5% to 2%. Kept original risk claims C1\u2013C3 but revised C1 to emphasize combined macro stress (VIX, HY, Fed funds) and added C4 (technical regime) to formally incorporate broken SMAs as a risk signal. Each claim now maps to impacted positions and justifies sizing. The allocation change is proportional to the accepted critiques and focused on capital preservation rather than return-seeking.",
+    "risks_or_falsifiers": [
+      "VIX falls and stays materially lower (e.g., \u003c15) and HY spreads compress, indicating sustained normalization of volatility and credit stress ([L1-VIX], [L1-HY]).",
+      "10Y yield materially declines and curve steepens ([L1-10Y], [L1-CURVE]), reducing discount-rate/recession risk.",
+      "AAPL and/or AMD reclaim SMA50/SMA200 and show sustained positive medium-term returns (improving [AAPL-RET60], [AMD-RET60]) and realized downside vol declines materially ([AAPL-DVOL60], [AMD-VOL60]).",
+      "Firm-level evidence that materially lowers downside fragility (e.g., balance-sheet improvements, durable revenue resilience) for AMD/AAPL that is inconsistent with their historical downside vol ([AMD-F14], [AAPL-F4])."
+    ],
+    "thesis": "The portfolio prioritizes survival and drawdown control. A large cash buffer (65%) addresses elevated implied volatility and credit/rates stress ([L1-VIX: VIX: 31.62], [L1-HY: HY OAS Spread: 5.43%], [L1-FF: Fed Funds: 3.08%]), reducing forced liquidation risk and providing optionality to redeploy after volatility/credit normalization. Equity allocations are small and sized against firm-level downside vol and beta: AAPL is the primary equity exposure but capped at 25% due to downside vol and technical weakness ([AAPL-DVOL60: 60D Downside Vol: 21.7%], [AAPL-MDD1Y: 1Y Max Drawdown: -28.3%], [AAPL-SMA50: SMA 50D: $156.91]); AMD and NVDA are minimal (2% each) because of extreme realized vol and high beta ([AMD-VOL60: 60D Vol (ann): 50.2%], [AMD-MDD1Y: 1Y Max Drawdown: -60.9%], [AMD-BETA: 1Y Beta: 2.08]). MSFT is a small defensive exposure (6%) given lack of firm snapshot evidence in the memo and the need for liquidity. This structure materially reduces concentration and ensures no single equity can generate a catastrophic portfolio drawdown under the current stressed macro/technical regime."
+  }
+}
+
+---
+
+# Evaluation Method
+
+Your evaluation must follow **two phases**.
+
+**PHASE 1 — Detection**
+Identify objective reasoning failures.
+
+**PHASE 2 — Judgment**
+Assign pillar scores based on detected failures.
+
+Detection should be **conservative and objective**.
+Scores must reflect the **number and severity of detected failures**.
+
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
+
+---
+
+# PHASE 1 — Detect Reasoning Failures
+
+Before assigning scores, detect the following reasoning failures.
+
+Record counts where possible.
+
+---
+
+## Logical Failures
+
+Detect:
+
+• contradictions within the argument
+• mutually incompatible claims
+• circular reasoning
+• missing reasoning steps between evidence and conclusions
+• conclusions that do not logically follow from earlier reasoning
+
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
+
+Example:
+
+• one claim implies recession
+• another implies strong cyclical expansion
+
+Also evaluate whether the **portfolio allocation logically follows from the thesis**.
+
+If contradictions exist, count them.
+
+---
+
+## Evidence Failures
+
+Evaluate how evidence supports claims.
+
+Cross-reference:
+
+`reasoning.claims[*].evidence_ids` with `evidence_citations`.
+
+If `evidence_ids` is present and non-empty on a claim, use it as the canonical evidence reference.
+
+If `evidence_ids` is empty or absent, check whether the claim's `claim_text` contains
+inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references exist
+but `evidence_ids` is empty, treat the claim as having evidence — the references were
+not captured in the structured field but are present in the text.
+
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
+
+Let:
+
+total_claims = number of claims in reasoning.claims
+unsupported_claims = number of claims failing the evidence rule
+
+unsupported_claim_rate = unsupported_claims / total_claims
+
+Detect:
+
+• claims with no evidence citations
+• citations that do not support the claim
+• misinterpretation of evidence
+• claims stronger than the cited evidence justifies
+
+Count unsupported claims.
+
+---
+
+## Alternative Reasoning Failures
+
+Evaluate how the agent handles competing explanations and critiques.
+
+Detect:
+
+• ignored critiques
+• critiques rejected without justification
+• accepted critiques that produce no meaningful reasoning change
+• failure to consider alternative explanations
+• premature certainty
+
+A critique is considered ADDRESSED only if the revision provides
+explicit reasoning responding to the critique.
+
+**Primary source**: `reasoning.critique_responses` — each entry explicitly maps a critique
+to a disposition (accept/rebut) with justification. Cross-reference these against
+`critiques_received` to identify ignored critiques.
+
+**Secondary evidence** of addressing may include:
+
+• revision_notes that explain why the critique is accepted or rejected
+• claim structure changes motivated by the critique
+• portfolio allocation changes motivated by the critique
+• new evidence introduced to evaluate the critique
+
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
+
+If a critique has no matching entry in `critique_responses` AND no secondary evidence
+of engagement, treat the critique as **ignored**.
+
+Strong reasoning should:
+
+• directly address critiques
+• justify accepting or rejecting them
+• acknowledge competing interpretations of evidence
+
+Count ignored critiques when applicable.
+
+---
+
+## Causal Reasoning Failures
+
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
+
+For each claim, independently determine its causal level:
+
+L1 — correlation / association: citing data patterns or statistical relationships.
+
+L2 — intervention / mechanism: the claim describes a plausible causal pathway
+(e.g., "Fed raises rates → higher discount rates → lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
+
+L3 — counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** (causal overreach), including:
+
+• L2 claims where no mechanism is described in the claim text
+• L3 claims without explicit counterfactual reasoning
+• claims whose conclusions require L2/L3 reasoning but evidence is purely L1
+• macro claims mapped to asset outcomes without transmission mechanisms
+
+Count causal overreach cases.
+
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
+
+---
+
+## Assumption Failures
+
+Detect:
+
+• critical assumptions that are not acknowledged
+• assumptions contradicted by evidence
+• assumptions doing most of the explanatory work
+
+These typically reduce evidential_support.
+
+## Conclusion Consistency Failures
+
+Determine whether the **portfolio allocation follows logically from the reasoning**.
+
+Use:
+
+• `position_rationale[*].supporting_claims`
+• `claims[*].impacts_positions`
+
+Detect:
+
+• positions >10% with no `supporting_claims` entries
+• `supporting_claims` entries that reference claim IDs not present in the claims array
+• claims that do not logically imply the allocation
+• portfolio changes without reasoning explanation
+
+Count orphaned positions (positions >10% that have no valid supporting claim).
+
+---
+
+# Failure → Pillar Mapping
+
+When failures are detected, penalties MUST map to pillars as follows:
+
+logical_validity penalties may only result from:
+
+• contradictions
+• missing reasoning steps
+• portfolio reasoning mismatch
+
+evidential_support penalties may only result from:
+
+• unsupported claims
+• evidence misuse
+
+alternative_consideration penalties may only result from:
+
+• ignored critiques
+• unjustified rejection of critiques
+• premature certainty
+
+causal_alignment penalties may only result from:
+
+• causal overreach
+• missing causal mechanisms
+
+premature certainty is detected when:
+
+• strong conclusions are asserted
+• while evidence is weak or ambiguous
+• or competing explanations are ignored
+---
+
+# PHASE 2 — Assign Pillar Scores
+
+After detecting failures in Phase 1, assign scores for the four CRIT pillars.
+
+Scores MUST be **consistent with the detected counts**.
+
+---
+
+# CRIT Pillar Definitions
+
+Each pillar measures a different dimension of reasoning quality.
+
+**logical_validity**
+
+Internal logical consistency of the argument.
+
+Penalize for:
+
+• contradictions
+• circular reasoning
+• missing reasoning steps
+• conclusions that do not follow from premises
+
+---
+
+**evidential_support**
+
+Whether factual claims are supported by evidence.
+
+Penalize for:
+
+• unsupported claims
+• weak or irrelevant citations
+• evidence misinterpretation
+• claims stronger than evidence allows
+
+---
+
+**alternative_consideration**
+
+Whether competing explanations are considered.
+
+Definition of premature certainty:
+
+strong conclusions expressed despite weak or limited evidence.
+
+Penalize for:
+
+• ignored critiques
+• rejecting critiques without justification
+• premature certainty
+• failure to consider alternative interpretations
+
+---
+
+**causal_alignment**
+
+Whether causal claims are justified by the evidence and reasoning.
+
+Penalize for:
+
+• causal overreach
+• missing causal mechanisms
+• counterfactual claims without counterfactual reasoning
+• mapping macro relationships to asset outcomes without causal explanation
+
+---
+
+# Score Interpretation
+
+Scores must be within **0.0 – 1.0**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor weaknesses
+0.70 — acceptable reasoning with noticeable gaps
+0.55 — mixed reasoning with clear problems
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+---
+
+# Score Constraints
+
+Apply these rules when failures are detected:
+
+• contradictions → logical_validity ≤ 0.70
+• unsupported claims → evidential_support ≤ 0.70
+• ignored critiques → alternative_consideration ≤ 0.70
+• causal overreach → causal_alignment ≤ 0.70
+
+Severity guidance:
+
+• **1 failure** → small penalty
+• **2–3 failures** → moderate penalty (typically ≤ 0.55)
+• **4+ failures** → severe penalty (typically ≤ 0.40)
+
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
+
+Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
+
+---
+
+# Diagnostic Boolean Rules
+
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
+
+---
+
+# Output
+
+Return **only the JSON object below**.
+
+No markdown.
+No text outside JSON.
+
+```json
+{
+  "pillar_scores": {
+    "logical_validity": <float>,
+    "evidential_support": <float>,
+    "alternative_consideration": <float>,
+    "causal_alignment": <float>
+  },
+  "diagnostics": {
+    "contradictions_detected": <bool>,
+    "unsupported_claims_detected": <bool>,
+    "ignored_critiques_detected": <bool>,
+    "premature_certainty_detected": <bool>,
+    "causal_overreach_detected": <bool>,
+    "conclusion_drift_detected": <bool>,
+    "contradictions_count": <int or null>,
+    "unsupported_claims_count": <int or null>,
+    "ignored_critiques_count": <int or null>,
+    "causal_overreach_count": <int or null>,
+    "orphaned_positions_count": <int or null>
+  },
+  "explanations": {
+    "logical_validity": "<1–2 sentences explaining key reasoning issues>",
+    "evidential_support": "<1–2 sentences explaining evidence usage>",
+    "alternative_consideration": "<1–2 sentences explaining critique handling>",
+    "causal_alignment": "<1–2 sentences explaining causal reasoning quality>"
+  }
+}

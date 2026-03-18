@@ -200,7 +200,7 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
             },
         })
 
-    import time
+    import time  # noqa: E402 — deferred import to avoid circular deps
 
     provider, model_name = _resolve_provider_model(config, role, phase)
     temperature = config.get("temperature", 0.3)
@@ -227,6 +227,7 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
     sem = _get_semaphore(config.get("max_concurrent_llm", 0))
     for attempt in range(max_retries):
         try:
+            _t0 = time.monotonic()
             if stagger_ms > 0:
                 _stagger_wait(stagger_ms)
             if sem is not None:
@@ -263,6 +264,7 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
             finally:
                 if sem is not None:
                     sem.release()
+            _latency_ms = (time.monotonic() - _t0) * 1000.0
             # Log token usage if enabled
             if config.get("log_tokens"):
                 if provider == "anthropic":
@@ -301,6 +303,27 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
                 result = response.output_text
             log_prompt(system=system_prompt, user=user_prompt, model=model_name, response=result,
                        role=role or "", phase=phase or "", round_num=round_num)
+            # --- logging_v2: event logger hook ---
+            _event_logger = config.get("_event_logger")
+            if _event_logger is not None:
+                try:
+                    _event_logger.log_llm_call(
+                        phase=phase or "",
+                        role=role or "",
+                        call_index=config.get("_call_index", 0),
+                        call_context=config.get("_call_context", "initial"),
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        response=result,
+                        raw_response=result,
+                        model_name=model_name,
+                        provider=provider,
+                        temperature=temperature,
+                        latency_ms=_latency_ms,
+                        round_num=round_num,
+                    )
+                except Exception as _evt_err:
+                    logger.warning("logging_v2 event log failed: %s", _evt_err)
             return result
         except Exception as e:
             wait = _retry_wait(e, attempt)
@@ -320,6 +343,22 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
                 except Exception:
                     pass
             _extra = "\n".join(_details)
+            # --- logging_v2: log error event ---
+            _event_logger = config.get("_event_logger")
+            if _event_logger is not None:
+                try:
+                    _event_logger.log_error(
+                        error_type="llm_error",
+                        message=f"{type(e).__name__}: {e}",
+                        round_num=round_num,
+                        phase=phase,
+                        role=role,
+                        retryable=attempt < max_retries - 1,
+                        details={"attempt": attempt + 1, "max_retries": max_retries,
+                                 "model": model_name, "provider": provider},
+                    )
+                except Exception:
+                    pass
             if attempt < max_retries - 1:
                 print(
                     f"  [LLM RETRY] {type(e).__name__} — retrying in {wait:.1f}s "

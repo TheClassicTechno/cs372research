@@ -160,6 +160,8 @@ class DebateAgentSystem(AgentSystem):
             crit_system_template=config.crit_system_template,
             crit_user_template=config.crit_user_template,
             intervention_config=config.intervention_config,
+            event_logging=config.event_logging,
+            event_logging_store_full_text=config.event_logging_store_full_text,
             run_command=config.run_command,
             config_paths=config.config_paths,
             sector_config=config.sector_config,

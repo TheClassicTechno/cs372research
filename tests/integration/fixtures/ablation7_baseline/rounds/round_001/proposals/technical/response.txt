@@ -1,0 +1,153 @@
+{
+  "allocation": {
+    "AAPL": 0.0,
+    "AMD": 0.0,
+    "CAT": 0.0,
+    "COP": 0.40,
+    "GS": 0.10,
+    "JPM": 0.05,
+    "MS": 0.25,
+    "CASH": 0.20
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Momentum leadership: Securities showing strong recent cross-sectional momentum and idiosyncratic momentum are more likely to continue outperforming in the near term; ConocoPhillips exhibits reinforcing momentum signals including high 60-day relative strength (+26.2% [COP-RS60]), very strong 12‑1M momentum (+67.0% [COP-MOM12_1]) and elevated idiosyncratic momentum (0.2488 [COP-IDMOM]), implying continued upside probability vs. the universe.",
+      "reasoning_type": "causal",
+      "claim_type": "technical",
+      "evidence": [
+        "[COP-RS60]",
+        "[COP-MOM12_1]",
+        "[COP-IDMOM]",
+        "[COP-RET60]"
+      ],
+      "assumptions": [
+        "Cross-sectional momentum persistence continues over the next 1–3 months within this universe",
+        "No immediate idiosyncratic shock to ConocoPhillips that removes its earnings/cashflow support"
+      ],
+      "falsifiers": [
+        "COP 60d return turns negative with sustained underperformance vs. peers (COP-RET60 flips materially negative) [COP-RET60]",
+        "COP idiosyncratic momentum and RS60 erode (COP-IDMOM and COP-RS60 decline toward zero)"
+      ],
+      "impacts_positions": [
+        "COP",
+        "MS",
+        "GS"
+      ],
+      "confidence": 0.78
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Long-horizon momentum plus positive relative strength despite short-term weakness signals higher probability of trend recovery: Financial names with positive 200d momentum and positive idiosyncratic momentum (Morgan Stanley: MOM200 0.91 [MS-MOM200], IDMOM 0.1210 [MS-IDMOM]; Goldman Sachs: MOM200 0.89 [GS-MOM200], IDMOM 0.0755 [GS-IDMOM]) are technically positioned to recover relative performance even if short-term SMAs sit above price.",
+      "reasoning_type": "observational",
+      "claim_type": "technical",
+      "evidence": [
+        "[MS-MOM200]",
+        "[MS-IDMOM]",
+        "[MS-RS60]",
+        "[GS-MOM200]",
+        "[GS-IDMOM]",
+        "[GS-RS60]"
+      ],
+      "assumptions": [
+        "Longer-term momentum (200d) is a useful lead indicator for subsequent intermediate-term outperformance",
+        "Relative-strength leadership within sector/universe translates into capital flows that support catch-up"
+      ],
+      "falsifiers": [
+        "MS and GS 200d momentum turns negative (MS-MOM200 or GS-MOM200 declines below zero)",
+        "RS60 for these names collapses (MS-RS60, GS-RS60 turn negative) and prices fail to sustain recoveries"
+      ],
+      "impacts_positions": [
+        "MS",
+        "GS",
+        "JPM"
+      ],
+      "confidence": 0.62
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Broken-trend avoidance: Names trading materially below their longer-term trend (price < 200d SMA) with weak medium-term returns and negative relative strength are more likely to continue underperforming absent price-based reversal; examples in the universe include AAPL (SMA200 156.75 > price 135.79 [AAPL-SMA200], negative 120d and 20d returns [AAPL-RET120], [AAPL-RET20]), AMD (SMA200 101.96 > price 63.36 [AMD-SMA200], severe 120d and 1y losses [AMD-RET120], [AMD-RET252]) and CAT (SMA200 187.77 > price 154.50 [CAT-SMA200]), therefore capital should be avoided for these broken trends and partly held in CASH as optionality.",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "technical",
+      "evidence": [
+        "[AAPL-SMA200]",
+        "[AAPL-RET120]",
+        "[AAPL-RET20]",
+        "[AMD-SMA200]",
+        "[AMD-RET120]",
+        "[AMD-RET252]",
+        "[CAT-SMA200]"
+      ],
+      "assumptions": [
+        "Price below 200d SMA indicates a broken/neutral-to-downtrend unless clear breakout occurs",
+        "No timely, price-confirmed reversal (e.g., sustained move above medium-term SMAs) will occur in the near term"
+      ],
+      "falsifiers": [
+        "AAPL, AMD, or CAT price closes and sustains above their 50d and 200d SMAs with improving RS60 (e.g., AAPL > AAPL-SMA200) [AAPL-SMA200], [AMD-SMA200], [CAT-SMA200]",
+        "Broad momentum regime shifts where most universe MOM200 readings flip positive and RS60 dispersion compresses"
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD",
+        "CAT",
+        "JPM",
+        "CASH"
+      ],
+      "confidence": 0.85
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "COP",
+      "weight": 0.40,
+      "supported_by_claims": [
+        "C1",
+        "C3"
+      ],
+      "explanation": "Primary momentum overweight. C1 identifies COP as the clear momentum leader (high RS60 [COP-RS60], strong 12‑1M momentum [COP-MOM12_1], high IDMOM [COP-IDMOM]) justifying a concentrated position to capture trend persistence; downside mitigated by C3's rule to avoid broken trends (we require COP maintain its momentum signals and will cut if COP-RET60 or RS60 deteriorate). Key risks: sharp commodity-price reversal or idiosyncratic negative news that flips COP-RET60 and COP-IDMOM."
+    },
+    {
+      "ticker": "MS",
+      "weight": 0.25,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "Selective financial exposure. C2 shows MS retains positive long-horizon momentum (MS-MOM200) and positive idiosyncratic momentum (MS-IDMOM) with above-universe RS60 [MS-RS60], implying a higher probability of trend recovery relative to peers. C1 (momentum) also supports owning names with positive IDMOM. Position size reflects technical recovery potential but acknowledges short-term SMA resistance (price < short-term SMAs). Key downside: MS-MOM200 or MS-RS60 failing to hold."
+    },
+    {
+      "ticker": "GS",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C2",
+        "C1"
+      ],
+      "explanation": "Tactical satellite in financials. GS shows positive 200d momentum and idiosyncratic momentum (GS-MOM200, GS-IDMOM) and modest RS60 [GS-RS60], suggesting potential upside if long-horizon momentum continues. Small weight reflects that price is below short-term SMAs and broader macro/volatility risk; C2 justifies participation but in limited size."
+    },
+    {
+      "ticker": "JPM",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C2",
+        "C3"
+      ],
+      "explanation": "Minimal exposure to a large-cap bank: JPM shows some long-term momentum (JPM-MOM200) but is structurally weak vs. its 200d SMA (JPM-SMA200 > price) and negative medium-term returns; C2 supports a small tactical position for potential rate/NII tailwinds, while C3 enforces a low weight because its trend is impaired."
+    },
+    {
+      "ticker": "CASH",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Risk-managed capital: C3 prescribes avoiding capital in broken trends (AAPL, AMD, CAT and impaired banks) and holding cash to preserve optionality and limit exposure to a volatile regime. Cash earns the Fed Funds proxy [L1-FF] while we wait for price-confirmed trend recoveries."
+    }
+  ],
+  "portfolio_rationale": "Constructed to capture momentum persistence and relative-strength leadership while avoiding broken longer-term trends. COP is the primary overweight because it displays the strongest cross-sectional momentum signals (C1). Financials with intact long-horizon momentum (MS, GS) receive tactical exposure under C2 as potential recovery plays, sized down to reflect short-term SMA resistance. Names with broken price structure (AAPL, AMD, CAT) are zero-weight per C3 and cash is elevated to 20% to manage regime risk and maintain optionality. Overall, the portfolio concentrates where price action shows continuity of trend and sidesteps securities where price has clearly broken down.",
+  "confidence": 0.68,
+  "risks_or_falsifiers": [
+    "COP price falls and sustains below its 50d SMA or COP-RET60 turns materially negative (invalidates C1) [COP-SMA50], [COP-RET60]",
+    "MS or GS 200d momentum turns negative or RS60 collapses, removing C2 support (e.g., MS-MOM200 < 0 or GS-MOM200 < 0) [MS-MOM200], [GS-MOM200]",
+    "Market regime shifts to risk-off with volatility spike (VIX north of current 31.62) that reverses momentum leadership and forces broad de-risking [L1-VIX]",
+    "Any of AAPL, AMD, CAT closes and sustains above their 200d SMAs with improving RS60, which would invalidate the 'avoid broken trends' allocation and prompt reallocation (e.g., AAPL > AAPL-SMA200) [AAPL-SMA200], [AMD-SMA200], [CAT-SMA200]"
+  ]
+}

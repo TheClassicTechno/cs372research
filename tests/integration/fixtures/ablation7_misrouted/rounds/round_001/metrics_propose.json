@@ -1,0 +1,80 @@
+{
+  "round": 1,
+  "phase": "propose",
+  "phase_iteration": "propose",
+  "timestamp": "2026-03-11T20:13:27.247487+00:00",
+  "agents": [
+    "macro",
+    "technical"
+  ],
+  "agent_count": 2,
+  "tickers": [
+    "AAPL",
+    "AMD",
+    "CAT",
+    "COP",
+    "GS",
+    "JPM",
+    "MS",
+    "_CASH_"
+  ],
+  "ticker_count": 8,
+  "allocations": {
+    "macro": {
+      "AAPL": 0.1,
+      "AMD": 0.04,
+      "CAT": 0.16,
+      "COP": 0.3,
+      "GS": 0.1,
+      "JPM": 0.18,
+      "MS": 0.07,
+      "_CASH_": 0.05
+    },
+    "technical": {
+      "AAPL": 0.0,
+      "AMD": 0.0,
+      "CAT": 0.0,
+      "COP": 0.4,
+      "GS": 0.1,
+      "JPM": 0.05,
+      "MS": 0.25,
+      "_CASH_": 0.2
+    }
+  },
+  "vectors": {
+    "macro": [
+      0.1,
+      0.04,
+      0.16,
+      0.3,
+      0.1,
+      0.18,
+      0.07,
+      0.05
+    ],
+    "technical": [
+      0.0,
+      0.0,
+      0.0,
+      0.4,
+      0.1,
+      0.05,
+      0.25,
+      0.2
+    ]
+  },
+  "allocation_sums": {
+    "macro": 1.0,
+    "technical": 1.0
+  },
+  "nonzero_positions": {
+    "macro": 8,
+    "technical": 5
+  },
+  "vector_norms": {
+    "macro": 1.0,
+    "technical": 1.0
+  },
+  "js_divergence": 0.2568,
+  "evidence_overlap": 0.0811
+}

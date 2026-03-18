@@ -1,0 +1,148 @@
+{
+  "allocation": {
+    "AAPL": 0.10,
+    "AMD": 0.30,
+    "MSFT": 0.15,
+    "NVDA": 0.40,
+    "_CASH_": 0.05
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Momentum persistence: securities with the strongest multi‑quarter momentum are most likely to continue outperforming in the near term; NVDA and AMD show the highest 200-day momentum and 12-month momentum [NVDA-MOM200] [NVDA-MOM12_1] [AMD-MOM200] [AMD-MOM12_1], implying continued directional bias to the upside for NVDA and AMD absent structural breaks.",
+      "reasoning_type": "causal",
+      "claim_type": "technical",
+      "evidence": [
+        "[NVDA-MOM200]",
+        "[NVDA-MOM12_1]",
+        "[AMD-MOM200]",
+        "[AMD-MOM12_1]"
+      ],
+      "assumptions": [
+        "Momentum persistence remains a dominant cross-sectional force over the next 1-3 months",
+        "No idiosyncratic negative catalysts abruptly reverse trend momentum for NVDA/AMD"
+      ],
+      "falsifiers": [
+        "NVDA or AMD 200-day momentum falls materially (MOM200 moves toward 1.0 or below) or 60d returns collapse",
+        "Price closes and stays below key trend support (e.g., SMA50/SMA200) for either stock"
+      ],
+      "impacts_positions": [
+        "NVDA",
+        "AMD"
+      ],
+      "confidence": 0.85
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Relative strength leadership: NVDA and AMD exhibit positive 60-day relative strength versus peers while AAPL and MSFT show negative 60-day relative strength [NVDA-RS60] [AMD-RS60] [AAPL-RS60] [MSFT-RS60]; this cross-sectional RS indicates NVDA/AMD should be overweight as momentum leaders and AAPL/MSFT underweighted relative to those leaders.",
+      "reasoning_type": "observational",
+      "claim_type": "technical",
+      "evidence": [
+        "[NVDA-RS60]",
+        "[AMD-RS60]",
+        "[AAPL-RS60]",
+        "[MSFT-RS60]"
+      ],
+      "assumptions": [
+        "60-day RS is a meaningful short-to-medium term predictor of leadership within this small tech universe",
+        "Sector/regime does not flip abruptly to favor previously lagging names"
+      ],
+      "falsifiers": [
+        "RS60 for NVDA/AMD turns negative or materially deteriorates",
+        "AAPL/MSFT RS60 improves to materially positive readings"
+      ],
+      "impacts_positions": [
+        "NVDA",
+        "AMD",
+        "AAPL",
+        "MSFT"
+      ],
+      "confidence": 0.80
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Short-term pullback vulnerability and volatility management: NVDA and AMD have elevated short-term volatility and recent 20-day pullbacks [NVDA-VOL20] [NVDA-RET20] [NVDA-DD60] [AMD-VOL20] [AMD-RET20] [AMD-DD60], so a modest cash sleeve reduces portfolio drawdown risk and allows reloading on confirmed resumption of trend.",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "risk",
+      "evidence": [
+        "[NVDA-VOL20]",
+        "[NVDA-RET20]",
+        "[NVDA-DD60]",
+        "[AMD-VOL20]",
+        "[AMD-RET20]",
+        "[AMD-DD60]",
+        "[L1-FF]"
+      ],
+      "assumptions": [
+        "High realized short-term volatility increases probability of near-term mean reversion/pullback",
+        "Holding a small cash buffer improves risk-adjusted entry into volatile leaders"
+      ],
+      "falsifiers": [
+        "NVDA and AMD short-term volatility falls materially and 20-day returns turn strongly positive, reducing need for cash buffer",
+        "A clear breakout with strong follow-through and volume negates pullback risk"
+      ],
+      "impacts_positions": [
+        "NVDA",
+        "AMD",
+        "_CASH_"
+      ],
+      "confidence": 0.75
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "NVDA",
+      "weight": 0.40,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "NVDA is top technical leader: highest momentum (NVDA-MOM200, NVDA-MOM12_1) and positive RS60 [NVDA-MOM200] [NVDA-MOM12_1] [NVDA-RS60]. Allocate largest weight to capture continued trend persistence (C1) and RS leadership (C2). C3 tempers position sizing because NVDA exhibits elevated short-term vol and recent 20-day pullback [NVDA-VOL20] [NVDA-RET20]; 40% reflects high conviction tempered by volatility risk."
+    },
+    {
+      "ticker": "AMD",
+      "weight": 0.30,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "AMD shows very strong multi-horizon momentum (AMD-MOM200, AMD-MOM12_1) and positive RS60 [AMD-MOM200] [AMD-MOM12_1] [AMD-RS60], justifying a sizable overweight to capture continuation (C1,C2). Size is moderated by high realized vol and recent drawdown risk [AMD-VOL20] [AMD-DD60], addressed by the cash sleeve (C3)."
+    },
+    {
+      "ticker": "MSFT",
+      "weight": 0.15,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "MSFT has intact trend alignment above SMAs and positive longer-term momentum [MSFT-SMA20] [MSFT-SMA50] [MSFT-SMA200] [MSFT-MOM200], supporting a modest allocation (C1). However its negative RS60 [MSFT-RS60] reduces conviction vs NVDA/AMD (C2), so weight is moderate to capture steady trend with lower volatility than leaders."
+    },
+    {
+      "ticker": "AAPL",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "AAPL remains in a clear uptrend above key moving averages with positive longer-term momentum [AAPL-SMA20] [AAPL-SMA50] [AAPL-SMA200] [AAPL-MOM200], but shows negative 60d RS [AAPL-RS60], so AAPL is a tactical, smaller exposure to preserve participation in a smoother-trending large-cap name (C1,C2)."
+    },
+    {
+      "ticker": "_CASH_",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C3"
+      ],
+      "explanation": "Small cash sleeve (5%) to manage elevated short-term volatility and provide dry powder given NVDA/AMD pullback risk [NVDA-VOL20] [AMD-VOL20]; cash earns Fed Funds [L1-FF] while preserving optionality (C3)."
+    }
+  ],
+  "portfolio_rationale": "The portfolio prioritizes momentum leaders (NVDA, AMD) identified by strongest 200-day and 12-month momentum (C1) and confirmed by positive 60-day relative strength (C2). MSFT and AAPL retain modest allocations because their longer-term trends remain intact (supporting continuation per C1) but negative RS60 readings materially lower their leadership status versus NVDA/AMD (C2). A 5% cash sleeve addresses elevated short-term volatility and recent pullbacks in the leaders (C3). Overall structure: concentrated exposure to highest-conviction technical leaders, moderated by cash to control drawdown risk.",
+  "confidence": 0.78,
+  "risks_or_falsifiers": [
+    "Major falsifier: NVDA or AMD price closes and remains below their 50-day SMA (e.g., NVDA closing below [NVDA-SMA50]) with MOM200 materially rolling over — would prompt rapid de-risking.",
+    "Relative strength reversal: NVDA/AMD RS60 turning negative while AAPL/MSFT RS60 turns strongly positive would invalidate the overweight case (observable via [NVDA-RS60] / [AMD-RS60] / [AAPL-RS60] / [MSFT-RS60]).",
+    "Volatility shock: a sharp market-wide volatility spike and equity selloff (VIX surge from baseline [L1-VIX]) that causes leaders to suffer >15% additional drawdown would force reassessment.",
+    "Sustained momentum failure: 60-day returns for NVDA/AMD turning deeply negative (e.g., new 60d drawdowns exceeding prior DD60 levels [NVDA-DD60] [AMD-DD60]) would invalidate C1 and trigger cuts."
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "round": 1,
+  "phase": "revision",
+  "phase_iteration": "revision",
+  "timestamp": "2026-03-11T23:40:22.621285+00:00",
+  "agents": [
+    "macro",
+    "risk",
+    "technical"
+  ],
+  "agent_count": 3,
+  "tickers": [
+    "AAPL",
+    "AMD",
+    "MSFT",
+    "NVDA",
+    "_CASH_"
+  ],
+  "ticker_count": 5,
+  "allocations": {
+    "macro": {
+      "AAPL": 0.25,
+      "AMD": 0.1,
+      "MSFT": 0.0,
+      "NVDA": 0.0,
+      "_CASH_": 0.65
+    },
+    "risk": {
+      "AAPL": 0.25,
+      "AMD": 0.02,
+      "MSFT": 0.06,
+      "NVDA": 0.02,
+      "_CASH_": 0.65
+    },
+    "technical": {
+      "AAPL": 0.25,
+      "AMD": 0.05,
+      "MSFT": 0.0,
+      "NVDA": 0.0,
+      "_CASH_": 0.7
+    }
+  },
+  "vectors": {
+    "macro": [
+      0.25,
+      0.1,
+      0.0,
+      0.0,
+      0.65
+    ],
+    "risk": [
+      0.25,
+      0.02,
+      0.06,
+      0.02,
+      0.65
+    ],
+    "technical": [
+      0.25,
+      0.05,
+      0.0,
+      0.0,
+      0.7
+    ]
+  },
+  "allocation_sums": {
+    "macro": 1.0,
+    "risk": 1.0,
+    "technical": 1.0
+  },
+  "nonzero_positions": {
+    "macro": 3,
+    "risk": 5,
+    "technical": 3
+  },
+  "vector_norms": {
+    "macro": 1.0,
+    "risk": 1.0,
+    "technical": 1.0
+  },
+  "js_divergence": 0.0572,
+  "evidence_overlap": 0.4252
+}

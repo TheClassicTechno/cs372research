@@ -1,0 +1,270 @@
+{
+  "roles": [
+    "macro",
+    "technical",
+    "risk"
+  ],
+  "max_rounds": 1,
+  "propose_only": false,
+  "judge_type": "llm",
+  "enable_adversarial": false,
+  "model_name": "gpt-5-mini",
+  "llm_provider": "openai",
+  "role_llms": {},
+  "phase_llms": {},
+  "temperature": 0.3,
+  "parallel_agents": true,
+  "mock": false,
+  "no_rate_limit": false,
+  "llm_stagger_ms": 500,
+  "max_concurrent_llm": 3,
+  "verbose": false,
+  "log_tokens": false,
+  "log_rendered_prompts": false,
+  "log_prompt_manifest": false,
+  "trace_dir": "./traces",
+  "pid_enabled": false,
+  "prompt_logging": {},
+  "convergence_window": 2,
+  "delta_rho": 0.02,
+  "allocation_mode": true,
+  "skip_pipeline": true,
+  "logging_mode": "debug",
+  "console_display": true,
+  "prompt_file_overrides": {},
+  "prompt_profile": "default",
+  "role_overrides": {},
+  "agent_profiles": {
+    "macro": {
+      "system_prompts": {
+        "propose": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt"
+        ],
+        "critique": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt",
+          "tone"
+        ],
+        "revise": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt",
+          "tone"
+        ]
+      },
+      "user_prompts": {
+        "propose": {
+          "template": "phases/proposal_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "context",
+            "task",
+            "reasoning_structure",
+            "portfolio_construction",
+            "output_format"
+          ]
+        },
+        "critique": {
+          "template": "phases/critique_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "output_format"
+          ]
+        },
+        "revise": {
+          "template": "phases/revision_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "macro_revision_guidelines",
+            "output_format"
+          ]
+        }
+      }
+    },
+    "technical": {
+      "system_prompts": {
+        "propose": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt"
+        ],
+        "critique": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt",
+          "tone"
+        ],
+        "revise": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt",
+          "tone"
+        ]
+      },
+      "user_prompts": {
+        "propose": {
+          "template": "phases/proposal_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "context",
+            "task",
+            "reasoning_structure",
+            "portfolio_construction",
+            "output_format"
+          ]
+        },
+        "critique": {
+          "template": "phases/critique_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "output_format"
+          ]
+        },
+        "revise": {
+          "template": "phases/revision_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "technical_revision_guidelines",
+            "output_format"
+          ]
+        }
+      }
+    },
+    "risk": {
+      "system_prompts": {
+        "propose": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/risk_enriched_intense.txt"
+        ],
+        "critique": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/risk_enriched_intense.txt",
+          "tone"
+        ],
+        "revise": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/risk_enriched_intense.txt",
+          "tone"
+        ]
+      },
+      "user_prompts": {
+        "propose": {
+          "template": "phases/proposal_allocation_with_enumeration_risk_enriched.txt",
+          "sections": [
+            "context",
+            "task",
+            "reasoning_structure",
+            "portfolio_construction",
+            "output_format"
+          ]
+        },
+        "critique": {
+          "template": "phases/critique_allocation_with_enumeration_risk_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "output_format"
+          ]
+        },
+        "revise": {
+          "template": "phases/revision_allocation_with_enumeration_risk_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "risk_revision_guidelines",
+            "output_format"
+          ]
+        }
+      }
+    }
+  },
+  "agent_profile_names": {
+    "macro": "macro_enriched_intense",
+    "technical": "technical_enriched_intense",
+    "risk": "risk_enriched_intense"
+  },
+  "judge_profile": {
+    "system_prompts": {
+      "judge": [
+        "system_contract/system_causal_contract.txt",
+        "roles/judge.txt"
+      ]
+    },
+    "user_prompts": {
+      "judge": {
+        "template": "phases/judge_allocation.txt",
+        "sections": [
+          "preamble",
+          "context",
+          "agent_data",
+          "task",
+          "output_format"
+        ]
+      }
+    }
+  },
+  "crit_system_template": "crit_system_enumerated.jinja",
+  "crit_user_template": "crit_user_master.jinja",
+  "sector_config": null,
+  "allocation_constraints": null,
+  "intervention_config": {
+    "enabled": true,
+    "revision_limits": {
+      "max_changed_tickers": 2,
+      "max_change_pct": 5
+    },
+    "rules": {
+      "js_collapse": {
+        "enabled": true,
+        "threshold": 0.0,
+        "min_js_proposal": 0.1,
+        "max_retries": 1,
+        "nudge_prompts": {
+          "macro": "placeholder",
+          "technical": "placeholder",
+          "risk": "placeholder"
+        }
+      },
+      "reasoning_quality": {
+        "enabled": false,
+        "rho_threshold": 0.5,
+        "max_retries": 1
+      }
+    }
+  },
+  "experiment_name": "vskarich_ablation_8",
+  "run_id": "run_2026-03-11_19-38-25",
+  "debate_id": "087f0ac6-be8c-4ef5-9d42-b868ece80e81",
+  "started_at": "2026-03-11T23:38:25.569824+00:00",
+  "completed_at": "2026-03-11T23:42:08.506136+00:00",
+  "config_paths": [
+    "baseline_no_intervention.yaml",
+    "scenario_2022Q4_tech.yaml"
+  ],
+  "crit_model_name": "gpt-5",
+  "actual_rounds": 1,
+  "terminated_early": false,
+  "termination_reason": "max_rounds",
+  "initial_beta": 0.5,
+  "final_beta": null,
+  "ticker_universe": [
+    "AAPL",
+    "AMD",
+    "MSFT",
+    "NVDA",
+    "_CASH_"
+  ],
+  "invest_quarter": "2022-09-30",
+  "final_js": 0.0572
+}

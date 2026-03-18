@@ -1,0 +1,1496 @@
+=== SYSTEM PROMPT ===
+You are a **CRIT reasoning auditor**.
+
+Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+
+You evaluate **reasoning quality only** — not prediction accuracy, profitability, or agreement with other agents.
+
+Your evaluation must be **strict, calibrated, and consistent**.
+
+CRIT is a **blind auditor**:
+you do NOT know the correct investment decision.
+
+Your task is only to evaluate whether the **reasoning process is sound**.
+
+---
+
+AGENT ROLE
+
+Agent specialization: macro
+
+This agent specializes in **macro reasoning**.
+
+Evaluate reasoning **within this domain specialization**.
+
+Do NOT penalize arguments for focusing on their specialty.
+
+---
+
+EVALUATION TARGET
+
+Evaluate the **REVISED ARGUMENT**.
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the agent's revised argument
+
+Use the proposal and critiques ONLY to determine whether:
+
+• weaknesses were addressed
+• critiques were handled correctly
+• alternative hypotheses were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+STRUCTURED REASONING FORMAT
+
+The revised argument contains structured reasoning with the following fields:
+
+• reasoning.claims — numbered causal claims, each with:
+  - claim_id, claim_text, claim_type (macro/sector/firm/risk/technical)
+  - reasoning_type (causal/observational/risk_assessment/pattern)
+  - evidence (legacy citation list) + evidence_ids (normalized IDs)
+  - assumptions, falsifiers
+  - impacts_positions (tickers affected by this claim)
+  - confidence (per-claim)
+• reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
+• reasoning.thesis — the agent's overall portfolio thesis
+• reasoning.confidence — the agent's self-assessed confidence
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — (revised argument only) how the agent responded to critiques:
+  which critiques were accepted, rejected, and why
+• portfolio_allocation — the allocation weights
+• evidence_citations — full evidence text for cited IDs
+
+Use these structured fields for cross-referencing.
+If evidence_ids exists on claims, use it as the canonical evidence reference.
+If only the legacy evidence field exists, interpret entries as citation references.
+Use revision_notes to evaluate critique handling (alternative_consideration pillar).
+Use assumptions and falsifiers to assess logical completeness.
+
+Cross-reference fields have distinct roles:
+• claims[*].impacts_positions — which assets the claim theoretically affects.
+  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
+• position_rationale[*].supporting_claims — which claims actually justify the allocation.
+  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
+
+---
+
+CLAIMS AND CRITIQUES STRUCTURE
+
+Arguments in the debate are organized using **numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Agents are expected to:
+
+• construct arguments using **explicit numbered claims**
+• critique specific claims using critique IDs
+• explicitly **accept or reject critiques during revision**
+
+You should use this structure to evaluate reasoning quality.
+
+Examples:
+
+A critique such as:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+represents **high-quality debate targeting**.
+
+A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
+
+---
+
+CLAIM REVISION EVALUATION
+
+Check whether the agent's revised argument properly engages with critiques.
+
+Specifically evaluate whether:
+
+• critiques targeting specific claims were addressed
+• accepted critiques resulted in meaningful reasoning updates
+• rejected critiques were justified with evidence or logic
+• claims were modified, strengthened, or abandoned appropriately
+
+If critiques_received is empty:
+• Do NOT penalize alternative_consideration for lack of critique handling
+• Evaluate whether the agent proactively considers alternative explanations
+• Absence of critiques does NOT imply strong reasoning — the agent must still demonstrate consideration of alternatives
+
+Potential failures include:
+
+• ignoring critiques entirely
+• rejecting critiques without justification
+• leaving challenged claims unchanged despite valid critiques
+• modifying the portfolio without explaining the reasoning change
+
+---
+
+CRIT PILLARS
+
+You score FOUR pillars of reasoning integrity.
+
+---
+
+PILLAR 1 — LOGICAL VALIDITY
+
+Does the reasoning logically support the conclusion?
+
+Detect:
+
+• contradictions within the argument
+• circular reasoning
+• non-sequitur conclusions
+• claims that invalidate earlier claims
+• reasoning steps missing between evidence and conclusion
+
+Also consider:
+
+• whether the portfolio allocation logically follows from the thesis
+• whether accepted critiques produce coherent reasoning updates
+
+---
+
+PILLAR 2 — EVIDENTIAL SUPPORT
+
+Are factual claims supported by evidence?
+
+Detect:
+
+• unsupported claims
+• missing citations for key assertions
+• citations that do not actually support the claim
+• cherry-picked evidence
+• claims stronger than the evidence allows
+
+Check whether:
+
+• claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
+• critiques identify evidence gaps
+• revisions introduce new supporting evidence where needed
+• count claims with zero valid citations — report as unsupported_claims_count
+
+---
+
+PILLAR 3 — ALTERNATIVE CONSIDERATION
+
+Does the agent consider competing explanations?
+
+Detect:
+
+• premature certainty
+• ignoring critiques
+• failure to address opposing arguments
+• failure to consider alternative interpretations of evidence
+• thesis changes without explanation
+
+Strong reasoning should:
+
+• engage with critiques directly
+• explain why critiques are accepted or rejected
+• consider competing causal explanations
+
+Use revision_notes to evaluate how critiques were handled.
+
+---
+
+PILLAR 4 — CAUSAL ALIGNMENT
+
+Are causal claims justified by the evidence?
+
+PRIMARY EVALUATION — Pearl's Causal Hierarchy
+
+You must independently classify each claim's reasoning depth using Pearl's ladder:
+
+L1 — Association / correlation: the claim cites data patterns or statistical relationships.
+L2 — Intervention / mechanism: the claim describes a plausible causal pathway or transmission mechanism (e.g., "Fed raises rates → higher discount rates → lower equity valuations"). Evidence must be consistent with the described mechanism (not literal experimental evidence).
+L3 — Counterfactual reasoning: the claim explicitly reasons about an alternative state or counterfactual scenario (e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** — higher-level conclusions supported only by lower-level evidence:
+
+• L2 claim with only associational evidence and no mechanism described
+• L3 claim without explicit counterfactual structure
+• causal conclusions drawn from purely correlational evidence
+• macro claims directly mapped to asset outcomes without transmission mechanism
+• missing causal pathway between variables
+
+SECONDARY DIAGNOSTIC — Reasoning Type Consistency
+
+Claims include an agent-declared reasoning_type field (causal / observational / risk_assessment / pattern).
+
+As a secondary check, compare the agent's self-declared reasoning_type against the actual reasoning structure in the claim text. Note mismatches such as:
+
+• "observational" label but the claim asserts causal effects
+• "causal" label but the reasoning is purely correlational
+• "pattern" label used to justify causal conclusions
+
+These mismatches should be recorded in the causal_overreach diagnostic but must NOT determine the pillar score directly. The causal_alignment score must reflect Pearl ladder evaluation, not label consistency.
+
+Also check whether critiques successfully expose **causal weaknesses in specific claims**.
+
+---
+
+INTERNAL REASONING TRACE
+
+Before scoring, you must internally perform these checks (do NOT include this trace in your output):
+
+1. List all claims and verify each has at least one evidence citation (use evidence_ids)
+2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
+3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
+4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
+5. Check for contradictions between claim pairs
+6. For each claim, independently assess its causal level (L1/L2/L3) and detect rung collapse; also note reasoning_type label mismatches
+7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
+
+---
+
+PATHOLOGY DETECTION
+
+Before assigning scores, detect the following reasoning failures:
+
+• contradictions
+• unsupported claims
+• ignored critiques
+• premature certainty
+• causal overreach
+• conclusion drift
+
+Definitions:
+
+contradictions
+: reasoning statements that conflict internally
+
+unsupported claims
+: claims made without evidence citations
+
+ignored critiques
+: critiques (K#) that target claims but receive no meaningful response
+
+premature certainty
+: strong conclusions despite weak evidence
+
+causal overreach
+: causal claims unsupported by the evidence type
+
+conclusion drift
+: portfolio allocation that does not logically follow from the argument.
+  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
+  Count orphaned positions and report as orphaned_positions_count.
+
+Where possible, report counts for each pathology type in the diagnostics output.
+
+---
+
+SCORING PROCEDURE
+
+Follow this order:
+
+1. Identify reasoning failures.
+2. Determine which pillar each failure affects.
+3. Assign pillar scores based on severity.
+
+Multiple failures should **reduce scores proportionally**.
+
+---
+
+SCORING SCALE
+
+Scores must use the **continuous range [0.0 – 1.0]**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor gaps
+0.70 — acceptable but noticeable weaknesses
+0.55 — mixed reasoning with clear issues
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+CALIBRATION WARNING:
+• Scores above 0.90 should be RARE
+• Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Do NOT default to 0.5.
+
+Use the full scale.
+
+---
+
+WHAT YOU DO NOT EVALUATE
+
+Do NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• agreement with other agents
+• market outcomes
+
+You are evaluating **reasoning quality only**.
+
+UNCERTAINTY IS GOOD:
+• Hedging and qualification represent good reasoning — do NOT penalize
+• Penalize: certainty without evidence, confidence exceeding evidence support
+• Penalize: absence of qualification when evidence is ambiguous
+
+---
+
+OUTPUT FORMAT
+
+Return a single JSON object.
+
+No markdown.
+
+No text outside JSON.
+
+{
+"pillar_scores": {
+"logical_validity": <float>,
+"evidential_support": <float>,
+"alternative_consideration": <float>,
+"causal_alignment": <float>
+},
+"diagnostics": {
+"contradictions_detected": <bool>,
+"unsupported_claims_detected": <bool>,
+"ignored_critiques_detected": <bool>,
+"premature_certainty_detected": <bool>,
+"causal_overreach_detected": <bool>,
+"conclusion_drift_detected": <bool>,
+"contradictions_count": <int or null>,
+"unsupported_claims_count": <int or null>,
+"ignored_critiques_count": <int or null>,
+"causal_overreach_count": <int or null>,
+"orphaned_positions_count": <int or null>
+},
+"explanations": {
+"logical_validity": "<1-2 sentences explaining key reasoning issues>",
+"evidential_support": "<1-2 sentences explaining evidence usage>",
+"alternative_consideration": "<1-2 sentences explaining critique handling>",
+"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
+}
+}
+
+
+=== USER PROMPT ===
+## Round 1
+
+## Agent Under Evaluation
+
+MACRO
+
+Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
+
+CRIT evaluates **reasoning quality only**.
+
+You must NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• market outcomes
+• agreement with other agents
+
+You do **not know the correct investment decision**.
+
+Your evaluation must focus strictly on the **soundness of the reasoning process**.
+
+---
+
+# Evaluation Target
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the revised argument
+
+Use the proposal and critiques **only to determine**:
+
+• whether critiques exposed reasoning weaknesses
+• whether the revision addressed those weaknesses
+• whether competing explanations were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+# Agent Specialization
+
+Agent specialization: **macro**
+
+This agent focuses on **macro reasoning**.
+
+Evaluate reasoning **within this specialization**.
+
+Do NOT penalize arguments for focusing on their domain expertise.
+
+---
+
+# Structured Reasoning Format
+
+The revised argument contains structured reasoning fields.
+
+**reasoning.claims**
+
+Each claim includes:
+
+• claim_id
+• claim_text
+• claim_type (macro / sector / firm / risk / technical)
+• reasoning_type (causal / observational / risk_assessment / pattern)
+• evidence_ids (normalized evidence references)
+• assumptions
+• falsifiers
+• impacts_positions (tickers affected by this claim)
+• confidence
+
+**reasoning.position_rationale**
+
+Per-position explanations containing:
+
+• ticker
+• weight
+• supporting_claims (claim IDs that justify the position)
+• explanation
+
+**reasoning.risks_or_falsifiers**
+
+Portfolio-level invalidation conditions.
+
+**reasoning.revision_notes**
+
+Explanation of how critiques were handled.
+
+**reasoning.critique_responses**
+
+Per-critique structured responses. Each entry contains:
+
+• from_agent (which agent sent the critique)
+• target_claim (which claim was critiqued)
+• disposition ("accept" or "rebut")
+• justification (why the agent accepted or rebutted)
+
+Use this to determine whether each critique was explicitly addressed.
+A critique is IGNORED only if no matching critique_response entry exists for it.
+
+**portfolio_allocation**
+
+Final asset allocation.
+
+**evidence_citations**
+
+Full text for evidence references.
+
+Important distinctions:
+
+• **claims[*].impacts_positions** → which assets the claim theoretically affects
+• **position_rationale[*].supporting_claims** → which claims justify the allocation
+
+These serve different purposes:
+
+• impacts_positions → **causal completeness**
+• supporting_claims → **conclusion consistency**
+
+Important note about impacts_positions:
+
+The impacts_positions field may legitimately be empty.
+
+Some claims describe macro or market-wide relationships that affect the portfolio indirectly
+(e.g., interest rates affecting equity valuations broadly).
+
+Absence of impacts_positions is NOT automatically a reasoning failure.
+
+Only penalize causal completeness when a specific portfolio position is clearly implied
+by a claim but the reasoning fails to connect that claim to the position.
+
+---
+
+# Debate Structure
+
+Arguments are structured using explicit claims.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques may target specific claims or the portfolio allocation.
+
+During revision agents may:
+
+• **ACCEPT** critiques
+• **REJECT** critiques with justification
+
+Your task is to evaluate **whether the revised reasoning properly engages with critiques**.
+
+---
+
+# Original Proposal
+
+Use the proposal only to determine whether critiques revealed weaknesses.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-CPI",
+      "evidence_text": "CPI YoY: 7.17%"
+    },
+    {
+      "evidence_id": "L1-REAL",
+      "evidence_text": "10Y Real Yield: -1.04%"
+    },
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 0.07%"
+    },
+    {
+      "evidence_id": "L1-2Y",
+      "evidence_text": "2Y Treasury: 0.73% (+45bps QoQ)"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: 0.79% (positive)"
+    },
+    {
+      "evidence_id": "NVDA-BETA",
+      "evidence_text": "1Y Beta: 2.01"
+    },
+    {
+      "evidence_id": "AMD-BETA",
+      "evidence_text": "1Y Beta: 1.67"
+    },
+    {
+      "evidence_id": "AAPL-BETA",
+      "evidence_text": "1Y Beta: 1.32"
+    },
+    {
+      "evidence_id": "MSFT-BETA",
+      "evidence_text": "1Y Beta: 1.16"
+    },
+    {
+      "evidence_id": "AMD-F1",
+      "evidence_text": "Net revenue reached $4.3 billion for Q3 2021, representing 54% growth driven by Computing and Graphics segment growth of 44% and Enterprise segment growth of 69%."
+    },
+    {
+      "evidence_id": "NVDA-F2",
+      "evidence_text": "Gaming revenue increased 42% on higher GeForce GPU sales, while Data Center revenue surged 55% from hyperscale customer adoption for cloud computing and AI workloads."
+    },
+    {
+      "evidence_id": "MSFT-F1",
+      "evidence_text": "Microsoft Cloud revenue increased 36% to $20.7 billion driven by Azure growth of 50% and Office 365 Commercial growth of 23%."
+    },
+    {
+      "evidence_id": "AAPL-F1",
+      "evidence_text": "Total net sales increased 33% to $365.8 billion driven by iPhone revenue growth of 39% from new model launches and Services revenue increasing 27% led by advertising, App Store and cloud services."
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.2,
+    "AMD": 0.07,
+    "MSFT": 0.38,
+    "NVDA": 0.3,
+    "_CASH_": 0.05
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Real yields remain negative or only rise slowly",
+          "Inflation stays elevated in the near term (no rapid disinflation)",
+          "Equity risk appetite persists while policy remains accommodative"
+        ],
+        "claim_id": "C1",
+        "claim_text": "Persistently elevated inflation combined with deeply negative real yields and an accommodative Fed funds rate creates a nominal pro-risk backdrop that supports equities broadly and favors firms with pricing power and resilient cash flows [L1-CPI] [L1-REAL] [L1-FF].",
+        "claim_type": "macro",
+        "confidence": 0.8,
+        "evidence": [
+          "[L1-CPI]",
+          "[L1-REAL]",
+          "[L1-FF]"
+        ],
+        "evidence_ids": [
+          "L1-CPI",
+          "L1-FF",
+          "L1-REAL"
+        ],
+        "falsifiers": [
+          "Real 10y yields rise from -1.04% to materially positive levels (e.g., \u003e0.5%)",
+          "Fed funds rate is raised quickly and materially above market expectations",
+          "YoY CPI falls materially toward low single digits"
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "MSFT",
+          "NVDA",
+          "AMD",
+          "_CASH_"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Short-end yields continue to lead rate-normalization signaling",
+          "Market discounts higher probability of Fed tightening over next 12 months",
+          "High-beta semiconductors exhibit greater sensitivity to discount-rate moves"
+        ],
+        "claim_id": "C2",
+        "claim_text": "Short-term yields and front-end rates have repriced higher (2Y up 45bps QoQ), signaling the start of policy normalization \u2014 this path raises discount rates for long-duration, highly cyclical and high-beta semiconductor/AI names, increasing their downside volatility relative to larger, cash-generative platform firms [L1-2Y] [L1-CURVE] [NVDA-BETA] [AMD-BETA] [AAPL-BETA] [MSFT-BETA].",
+        "claim_type": "risk",
+        "confidence": 0.7,
+        "evidence": [
+          "[L1-2Y]",
+          "[L1-CURVE]",
+          "[NVDA-BETA]",
+          "[AMD-BETA]",
+          "[AAPL-BETA]",
+          "[MSFT-BETA]"
+        ],
+        "evidence_ids": [
+          "AAPL-BETA",
+          "AMD-BETA",
+          "L1-2Y",
+          "L1-CURVE",
+          "MSFT-BETA",
+          "NVDA-BETA"
+        ],
+        "falsifiers": [
+          "Short rates fall back (2Y reverses the +45bps move) or forward guidance indicates prolonged accommodation",
+          "Long-term real yields fall deeper negative reducing discount-rate pressure",
+          "Semiconductor earnings growth outpaces valuation contraction enough to offset rate effects"
+        ],
+        "impacts_positions": [
+          "NVDA",
+          "AMD",
+          "AAPL",
+          "MSFT"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "End-demand (cloud, gaming, enterprise) remains robust",
+          "Supply constraints persist near-term sustaining favorable pricing/mix",
+          "Companies convert demand into realized revenue without large inventory write-downs"
+        ],
+        "claim_id": "C3",
+        "claim_text": "Demand-driven supply constraints across semiconductors and strong cloud/AI adoption create an earnings tilt favoring semiconductor and cloud-exposed firms: AMD and NVIDIA show outsized revenue/gross-margin expansion from product cycle and data-center adoption while Microsoft and Apple benefit from recurring services and cloud exposure that smooth earnings [AMD-F1] [NVDA-F2] [MSFT-F1] [AAPL-F1].",
+        "claim_type": "sector",
+        "confidence": 0.75,
+        "evidence": [
+          "[AMD-F1]",
+          "[NVDA-F2]",
+          "[MSFT-F1]",
+          "[AAPL-F1]"
+        ],
+        "evidence_ids": [
+          "AAPL-F1",
+          "AMD-F1",
+          "MSFT-F1",
+          "NVDA-F2"
+        ],
+        "falsifiers": [
+          "Supply constraints abate quickly leading to sharp ASP declines",
+          "Cloud/data-center demand weakens materially or cyclical end-markets deteriorate",
+          "Regulatory or trade actions materially constrain market access for any firm"
+        ],
+        "impacts_positions": [
+          "NVDA",
+          "AMD",
+          "MSFT",
+          "AAPL"
+        ],
+        "reasoning_type": "observational"
+      }
+    ],
+    "confidence": 0.78,
+    "position_rationale": [
+      {
+        "explanation": "Microsoft is overweighted because C1 favors firms with pricing power and resilient cash flows in an inflationary, negative-real-rate environment, and C3 highlights durable cloud revenue (Azure/Office/Commercial Cloud) as a stabilizer during early policy normalization [L1-CPI] [L1-REAL] [MSFT-F1] [MSFT-EC2]. MSFT\u0027s lower beta relative to pure semiconductors reduces sensitivity to front-end rate moves cited in C2 while capturing secular cloud/AI demand.",
+        "supporting_claims": [
+          "C1",
+          "C3"
+        ],
+        "ticker": "MSFT",
+        "weight": 0.38
+      },
+      {
+        "explanation": "NVIDIA is a high-conviction cyclic/AI exposure: C3 documents strong data-center and gaming revenue growth which should drive earnings upside [NVDA-F2] [NVDA-EC5], while C2 recognizes elevated beta and sensitivity to rate-driven multiple contraction; weight reflects high upside balanced against higher downside volatility [NVDA-BETA].",
+        "supporting_claims": [
+          "C2",
+          "C3"
+        ],
+        "ticker": "NVDA",
+        "weight": 0.3
+      },
+      {
+        "explanation": "Apple benefits from C1\u0027s inflation/pro-cash-flow backdrop via strong services and iPhone pricing/mix [AAPL-F1] and high installed-base monetization [AAPL-EC11], but supply-chain and regulatory risks (AAPL-F3, AAPL-F16) limit overweight size relative to MSFT and NVDA; AAPL offers a combination of secular services growth and some defensive qualities against rate volatility.",
+        "supporting_claims": [
+          "C1",
+          "C3"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.2
+      },
+      {
+        "explanation": "AMD provides additional semiconductor upside from server and Ryzen momentum (AMD-F1) but carries higher volatility and execution/integration risks (Xilinx integration, supply agreements), so it\u0027s a smaller tactical exposure aligned with C3\u0027s earnings upside but constrained by C2 rate/volatility risk [AMD-F1] [AMD-F6].",
+        "supporting_claims": [
+          "C2",
+          "C3"
+        ],
+        "ticker": "AMD",
+        "weight": 0.07
+      },
+      {
+        "explanation": "Maintain a modest cash buffer because C2 signals a shift to policy normalization and potential front-end rate volatility (2Y repricing); cash provides optionality to rebalance into rate-driven drawdowns and earns the risk-free rate [L1-2Y] [L1-FF].",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "_CASH_",
+        "weight": 0.05
+      }
+    ],
+    "risks_or_falsifiers": [
+      "Sharp and sustained rise in real yields (10y real yield moving from -1.04% to \u003e0.5%) that materially re-rates long-duration equities and semiconductors [L1-REAL]",
+      "Rapid fall in CPI toward low single digits indicating disinflation and reducing the premium for nominal asset allocation (CPI YoY dropping from 7.17% to \u003c3%) [L1-CPI]",
+      "Front-end yields reversing to lower levels (2Y retraces the +45bps move) or the Fed signaling prolonged accommodation, which would favor more aggressive long-duration growth positioning [L1-2Y] [L1-FF]",
+      "Unexpected demand shock in cloud/data-center or gaming (e.g., enterprise capex cutbacks) that undermines NVDA/AMD revenue growth projections [NVDA-F2] [AMD-F1]"
+    ],
+    "thesis": "The dominant regime is inflationary growth with negative real yields and the start of policy normalization. C1 motivates overweight to high-quality, cash-generative platform names that preserve earnings power under inflation (MSFT, AAPL). C3 supports exposure to semiconductors/cloud secular demand (NVDA, AMD) to capture earnings leverage from supply-constrained markets. C2 constrains sizes on high-beta semiconductors due to rising short-term rates and valuation sensitivity, so NVDA receives a sizable but not majority weight, AMD a small tactical stake, and a small cash buffer is held for policy-driven volatility. The portfolio balances secular growth/AI exposure with durable cash-flow franchises to manage rate and inflation risks."
+  }
+}
+
+---
+
+# Critiques Received
+
+Each critique contains:
+
+• from_role — which agent sent the critique
+• target_claim — which specific claim (C1, C2, …) is targeted
+• critique_text — the objection
+• evidence_citations — counter-evidence IDs with full text
+• portfolio_implication — how the flaw affects the portfolio
+• suggested_adjustment — what the critic recommends
+• falsifier — what would disprove the objection
+• objection_confidence — how confident the critic is
+
+Use `target_claim` to match critiques against `critique_responses` in the revised argument.
+
+
+Evaluate whether critiques were meaningfully addressed in the revision.
+
+
+[
+  {
+    "critique_text": "C2 argues that front-end yield repricing (2Y +45bps) raises discount\u2011rate sensitivity for high\u2011beta semiconductor names and therefore justifies constraining NVDA/AMD weights. That macro/discount-rate argument directly conflicts with observable price action: NVDA and AMD are the clear momentum and relative\u2011strength leaders across multi\u2011horizons (200d and 12\u2011month momentum, positive 60d RS, strong 60d returns). The market is currently rewarding semiconductors with persistent trend strength, so reducing exposure to them because of a narrative on short rates is fighting prevailing price signals rather than respecting what price is actually doing.",
+    "evidence_citations": [
+      {
+        "evidence_id": "NVDA-MOM200",
+        "evidence_text": "200D Momentum: 1.40"
+      },
+      {
+        "evidence_id": "NVDA-MOM12_1",
+        "evidence_text": "12-1M Momentum: +141.0%"
+      },
+      {
+        "evidence_id": "NVDA-RS60",
+        "evidence_text": "Relative Strength 60D: +10.1%"
+      },
+      {
+        "evidence_id": "NVDA-RET60",
+        "evidence_text": "60D Return: +42.1%"
+      },
+      {
+        "evidence_id": "AMD-MOM200",
+        "evidence_text": "200D Momentum: 1.37"
+      },
+      {
+        "evidence_id": "AMD-MOM12_1",
+        "evidence_text": "12-1M Momentum: +62.6%"
+      },
+      {
+        "evidence_id": "AMD-RS60",
+        "evidence_text": "Relative Strength 60D: +6.8%"
+      },
+      {
+        "evidence_id": "AMD-RET60",
+        "evidence_text": "60D Return: +38.9%"
+      },
+      {
+        "evidence_id": "MSFT-RS60",
+        "evidence_text": "Relative Strength 60D: -17.1%"
+      },
+      {
+        "evidence_id": "AAPL-RS60",
+        "evidence_text": "Relative Strength 60D: -6.8%"
+      }
+    ],
+    "falsifier": "My objection is falsified if price confirms the MACRO narrative: MSFT and/or AAPL produce sustained momentum and RS improvement while NVDA and AMD lose leadership. Concretely, evidence that would reverse my view includes [MSFT-RS60] and/or [AAPL-RS60] flipping materially positive while [NVDA-RS60] and [AMD-RS60] flip materially negative; and NVDA/AMD 200d momentum meaningfully rolls over (NVDA-MOM200 and AMD-MOM200 decline toward 1.0 or below) or 60d returns for NVDA/AMD turn strongly negative (e.g., [NVDA-RET60] and [AMD-RET60] move negative).",
+    "from_role": "technical",
+    "objection_confidence": 0.85,
+    "portfolio_implication": "By underweighting NVDA and AMD (NVDA 0.30, AMD 0.07) despite their leading momentum/RS, the MACRO portfolio risks materially under\u2011participating in the dominant cross\u2011sectional trend. That creates active risk versus a momentum\u2011driven regime: if the semiconductors keep trending, the MACRO book will lag. Conversely, overweighting MSFT/AAPL (which show negative 60d RS) increases exposure to laggards that price is currently not rewarding.",
+    "suggested_adjustment": "Respect technical leadership: increase semiconductors and reduce platform weights. Example adjustment consistent with price signals: NVDA 0.40, AMD 0.30, MSFT 0.15, AAPL 0.10, CASH 0.05 \u2014 i.e., shift ~0.25 weight from MSFT/AAPL into NVDA/AMD to align allocation with observed momentum and RS.",
+    "target_claim": "C2"
+  }
+]
+
+---
+
+
+# Agent Self-Critique
+
+The agent identified the following weakness in its own reasoning during the critique phase:
+
+{
+  "explanation": "The largest macro-driven vulnerability in my portfolio is the assumption that real yields will remain deeply negative or rise only slowly, which underpins overweight positions in semiconductors (NVDA 0.30, AMD 0.07) and the allocation balance between growth cyclicals and cash-flow franchises. If real yields rise materially (10y real yield [L1-REAL] moves from -1.04% toward materially positive territory) or the front-end rate repricing accelerates (2Y [L1-2Y] moves significantly higher from the current 0.73%), valuation compression will hit high-beta, high-duration names (NVDA-BETA, AMD-BETA) and my semiconductor exposure would be disproportionately harmed. In short, my thesis hinges on a fragile path for real and short-term yields; a faster/riskier policy normalization would force rapid de-risking of semiconductors and a larger shift into cash-generative platforms (MSFT, AAPL).",
+  "weakest_claim": "C1 (persistently negative real yields / inflationary pro-risk backdrop) and portfolio construction"
+}
+
+Evaluate whether the revision addresses the agent's own identified weakness.
+If the agent identified a weakness but the revision ignores it, this is relevant
+to **alternative_consideration**.
+
+Do not reward agents merely for writing a self-critique.
+Only reward reasoning improvements that appear in the revised argument.
+
+---
+
+
+# Revised Argument
+
+Focus primarily on the reasoning quality in this revision.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-CPI",
+      "evidence_text": "CPI YoY: 7.17%"
+    },
+    {
+      "evidence_id": "L1-REAL",
+      "evidence_text": "10Y Real Yield: -1.04%"
+    },
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 0.07%"
+    },
+    {
+      "evidence_id": "MSFT-F1",
+      "evidence_text": "Microsoft Cloud revenue increased 36% to $20.7 billion driven by Azure growth of 50% and Office 365 Commercial growth of 23%."
+    },
+    {
+      "evidence_id": "AAPL-F1",
+      "evidence_text": "Total net sales increased 33% to $365.8 billion driven by iPhone revenue growth of 39% from new model launches and Services revenue increasing 27% led by advertising, App Store and cloud services."
+    },
+    {
+      "evidence_id": "L1-2Y",
+      "evidence_text": "2Y Treasury: 0.73% (+45bps QoQ)"
+    },
+    {
+      "evidence_id": "L1-CURVE",
+      "evidence_text": "10Y-2Y Spread: 0.79% (positive)"
+    },
+    {
+      "evidence_id": "NVDA-BETA",
+      "evidence_text": "1Y Beta: 2.01"
+    },
+    {
+      "evidence_id": "AMD-BETA",
+      "evidence_text": "1Y Beta: 1.67"
+    },
+    {
+      "evidence_id": "MSFT-BETA",
+      "evidence_text": "1Y Beta: 1.16"
+    },
+    {
+      "evidence_id": "AAPL-BETA",
+      "evidence_text": "1Y Beta: 1.32"
+    },
+    {
+      "evidence_id": "NVDA-F2",
+      "evidence_text": "Gaming revenue increased 42% on higher GeForce GPU sales, while Data Center revenue surged 55% from hyperscale customer adoption for cloud computing and AI workloads."
+    },
+    {
+      "evidence_id": "AMD-F1",
+      "evidence_text": "Net revenue reached $4.3 billion for Q3 2021, representing 54% growth driven by Computing and Graphics segment growth of 44% and Enterprise segment growth of 69%."
+    },
+    {
+      "evidence_id": "NVDA-EC5",
+      "evidence_text": "The company is optimistic about the ongoing adoption of its A100 GPUs in data centers and anticipates that the demand for its products will remain strong throughout the year."
+    },
+    {
+      "evidence_id": "AMD-EC2",
+      "evidence_text": "The company achieved significant growth across all business segments, particularly in data center revenue, which more than doubled year-over-year."
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.18,
+    "AMD": 0.08,
+    "MSFT": 0.36,
+    "NVDA": 0.33,
+    "_CASH_": 0.05
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Real yields remain negative or rise only slowly (no sudden positive re-pricing).",
+          "Inflation stays elevated in the near term so pricing power matters.",
+          "Equity risk appetite persists while policy is still effectively accommodative at the policy rate."
+        ],
+        "claim_id": "C1",
+        "claim_text": "Inflationary-growth backdrop with deeply negative real yields supports equities broadly but favors high-quality, cash-generative platform firms with pricing power (limited duration sensitivity). Platforms preserve earnings power under inflation while retaining investor demand when real yields are negative.",
+        "claim_type": "macro",
+        "confidence": 0.78,
+        "evidence": [
+          "[L1-CPI]",
+          "[L1-REAL]",
+          "[L1-FF]",
+          "[MSFT-F1]",
+          "[AAPL-F1]"
+        ],
+        "evidence_ids": [
+          "AAPL-F1",
+          "L1-CPI",
+          "L1-FF",
+          "L1-REAL",
+          "MSFT-F1"
+        ],
+        "falsifiers": [
+          "10y real yield moves materially positive (e.g., real 10y \u003e +0.5%) invalidating negative-real environment [L1-REAL].",
+          "YoY CPI falls materially toward low single digits (e.g., \u003c3%) indicating rapid disinflation [L1-CPI].",
+          "Fed materially tightens faster than markets price (sharp, front-loaded hikes) [L1-FF]."
+        ],
+        "impacts_positions": [
+          "MSFT",
+          "AAPL"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Short-end yields lead the normalization process and remain a dominant signal for discount-rate repricing.",
+          "Markets will re-price higher short-term rates into equity multiples for rate-sensitive, high-beta names.",
+          "High-beta semiconductors\u0027 valuations are sufficiently long-duration that discount-rate changes materially affect multiples."
+        ],
+        "claim_id": "C2",
+        "claim_text": "Front-end yield repricing and early signs of policy normalization increase discount-rate sensitivity for long-duration, high-beta cyclic names (notably semiconductors). This raises downside volatility and justifies constraining\u2014but not eliminating\u2014exposure to high-beta semiconductor/AI names while maintaining a modest cash buffer for policy-induced drawdowns.",
+        "claim_type": "risk",
+        "confidence": 0.72,
+        "evidence": [
+          "[L1-2Y]",
+          "[L1-CURVE]",
+          "[NVDA-BETA]",
+          "[AMD-BETA]",
+          "[MSFT-BETA]",
+          "[AAPL-BETA]"
+        ],
+        "evidence_ids": [
+          "AAPL-BETA",
+          "AMD-BETA",
+          "L1-2Y",
+          "L1-CURVE",
+          "MSFT-BETA",
+          "NVDA-BETA"
+        ],
+        "falsifiers": [
+          "2Y Treasury reverses the recent repricing (i.e., short rates pull back) or Fed guidance confirms prolonged accommodation [L1-2Y].",
+          "Long-term real yields fall deeper negative (deepening negative real yield offsets front-end moves) [L1-REAL].",
+          "Semiconductor earnings growth materially outpace multiple compression, offsetting rate sensitivity."
+        ],
+        "impacts_positions": [
+          "NVDA",
+          "AMD",
+          "MSFT",
+          "AAPL",
+          "_CASH_"
+        ],
+        "reasoning_type": "causal | risk_assessment"
+      },
+      {
+        "assumptions": [
+          "End-demand (cloud, enterprise, gaming) remains robust over the next 12 months.",
+          "Supply constraints persist near-term, supporting favorable pricing/mix for semiconductor providers.",
+          "Companies can translate demand into realized revenue without large inventory write-downs."
+        ],
+        "claim_id": "C3",
+        "claim_text": "Demand-driven supply constraints in semiconductors plus strong secular cloud/AI adoption create an earnings tilt favoring semiconductor and cloud-exposed firms. This justifies meaningful semiconductor exposure to capture earnings leverage, but position sizes should reflect C2 rate/volatility risk.",
+        "claim_type": "sector",
+        "confidence": 0.75,
+        "evidence": [
+          "[NVDA-F2]",
+          "[AMD-F1]",
+          "[MSFT-F1]",
+          "[NVDA-EC5]",
+          "[AMD-EC2]"
+        ],
+        "evidence_ids": [
+          "AMD-EC2",
+          "AMD-F1",
+          "MSFT-F1",
+          "NVDA-EC5",
+          "NVDA-F2"
+        ],
+        "falsifiers": [
+          "Supply constraints abate quickly leading to sharp ASP declines for semiconductors [NVDA-F6], [AMD-F11].",
+          "Cloud/data-center demand weakens materially (enterprise capex cuts) reducing data-center revenue growth [MSFT-F1]."
+        ],
+        "impacts_positions": [
+          "NVDA",
+          "AMD",
+          "MSFT"
+        ],
+        "reasoning_type": "observational | causal"
+      }
+    ],
+    "confidence": 0.77,
+    "critique_responses": [
+      {
+        "disposition": "rebut",
+        "from_agent": "TECHNICAL",
+        "justification": "I rebut this critique. Technical correctly highlights strong momentum/RS for NVDA and AMD ([NVDA-MOM200], [NVDA-MOM12_1], [NVDA-RS60], [NVDA-RET60], [AMD-MOM200], [AMD-MOM12_1], [AMD-RS60], [AMD-RET60]). I acknowledge those signals as evidence of market leadership. However, the critique\u0027s weakest assumption is that momentum and relative strength are regime-agnostic and should supersede macro signals. That ignores concrete macro evidence of front-end repricing and the associated discount-rate channel: 2Y Treasury moved +45bps QoQ ([L1-2Y]) and the yield curve is positive ([L1-CURVE]). These facts increase the probability of Fed normalization and make high-beta semiconductors more sensitive to discount-rate moves, which I capture in C2 with supporting betas ([NVDA-BETA], [AMD-BETA], [MSFT-BETA], [AAPL-BETA]). Momentum can persist short-term, but it is fragile to macro shocks; if short rates continue to rise, the valuation pain for long-duration/high-beta names can be abrupt. Therefore, while I marginally increased semiconductor weights to respect observed momentum, I constrained them relative to a pure technical tilt to remain consistent with the macro regime. The critique did not invalidate the macro causal chain backed by [L1-2Y], [L1-CURVE], and beta evidence, so I reject replacing macro discipline with momentum-only allocation. Falsifier that would validate the technical view: a sustained RS/momentum flip in MSFT/AAPL (e.g., [MSFT-RS60], [AAPL-RS60] materially positive) while NVDA/AMD 200d momentum rolls over ([NVDA-MOM200], [AMD-MOM200] decline toward 1.0 or below) \u2014 in that case I would revise positioning.",
+        "target_claim": "C2"
+      }
+    ],
+    "position_rationale": [
+      {
+        "explanation": "Microsoft is the portfolio\u0027s ballast: cloud recurring revenue (Azure/Office/Commercial) and pricing power align with C1\u0027s preference for cash-generative platforms in an inflationary, negative-real-yield environment [MSFT-F1] [MSFT-EC2]. MSFT\u0027s lower beta reduces sensitivity to front-end rate moves per C2, while C3 captures ongoing secular cloud demand exposure.",
+        "supporting_claims": [
+          "C1",
+          "C3"
+        ],
+        "ticker": "MSFT",
+        "weight": 0.36
+      },
+      {
+        "explanation": "Apple combines services/installed-base monetization and strong product revenue that benefit from pricing power under inflation (C1) [AAPL-F1] [AAPL-EC11]. Ongoing supply and regulatory risks constrain sizing despite favorable services growth (C3).",
+        "supporting_claims": [
+          "C1",
+          "C3"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.18
+      },
+      {
+        "explanation": "NVIDIA is a high-conviction growth exposure to AI/data-center and gaming demand that can deliver outsized earnings (C3) [NVDA-F2] [NVDA-EC5]. C2 tempers position size because NVDA\u0027s high beta and duration-like valuation make it vulnerable to front-end re-pricing [NVDA-BETA] despite strong fundamentals.",
+        "supporting_claims": [
+          "C3",
+          "C2"
+        ],
+        "ticker": "NVDA",
+        "weight": 0.33
+      },
+      {
+        "explanation": "AMD provides additional semiconductor upside from server and client CPU cycles (C3) [AMD-F1] but is kept smaller than NVDA due to higher execution/integration risk and volatility (Xilinx integration, supply agreements) and elevated beta that increases rate sensitivity (C2) [AMD-F6] [AMD-F16] [AMD-BETA].",
+        "supporting_claims": [
+          "C3",
+          "C2"
+        ],
+        "ticker": "AMD",
+        "weight": 0.08
+      },
+      {
+        "explanation": "Maintain a modest cash buffer to provide optionality for policy-driven volatility and to deploy into drawdowns caused by front-end rate shocks; cash earns the prevailing risk-free rate and is consistent with C2\u0027s risk-management emphasis [L1-2Y] [L1-FF].",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "_CASH_",
+        "weight": 0.05
+      }
+    ],
+    "revision_notes": "Response to TECHNICAL critique: rejected. The critique correctly points to strong momentum for NVDA/AMD ([NVDA-MOM200], [AMD-MOM200], etc.), but its weakest assumption is that momentum should override macro regime signals. I retained the macro claims (C1, C2, C3) and made a limited allocation tweak to marginally increase NVDA (+0.03) and AMD (+0.01) while slightly reducing MSFT (-0.02) and AAPL (-0.02). Changes: NVDA 0.30 -\u003e 0.33, AMD 0.07 -\u003e 0.08, MSFT 0.38 -\u003e 0.36, AAPL 0.20 -\u003e 0.18, _CASH_ unchanged at 0.05. These small adjustments acknowledge technical leadership but preserve macro consistency: semiconductors remain constrained relative to a pure momentum bet because of front-end rate risks ([L1-2Y], [L1-CURVE]) and elevated betas ([NVDA-BETA], [AMD-BETA]). No claims were dropped; wording refined in C2 to emphasize \"constraining\u2014but not eliminating\u2014\" semiconductor exposure. Accepted critiques: none materially altered macro causal structure. Rejected critiques: TECHNICAL (rejected) because it substitutes cross-sectional momentum for macro-driven discount-rate risk without addressing short-end yield repricing evidence [L1-2Y].",
+    "risks_or_falsifiers": [
+      "Sharp, sustained rise in 10y real yields (10y real yield moves from -1.04% toward materially positive territory, e.g., \u003e+0.5%) that would re-rate long-duration/tech multiples [L1-REAL].",
+      "Rapid disinflation: YoY CPI falls materially toward low single digits (e.g., \u003c3%), undermining C1\u0027s pricing-power thesis [L1-CPI].",
+      "Front-end yields reverse lower (2Y retraces recent repricing) or Fed signals prolonged accommodation, which would reduce discount-rate pressure and favor longer-duration growth [L1-2Y].",
+      "A material slowdown in cloud/data-center or gaming demand that undercuts semiconductor revenue growth (e.g., indicators in NVDA-F2, AMD-F1, MSFT-F1 materially weaken)."
+    ],
+    "thesis": "Dominant macro regime: inflationary growth with deeply negative real yields but with early signs of policy normalization at the short end. Under this regime, high-quality, cash-generative platforms (MSFT, AAPL) are favored for their pricing power and recurring cash flows (C1), while secular demand + supply constraints justify material semiconductor exposure (NVDA, AMD) to capture earnings leverage (C3). However, front-end yield repricing (2Y) increases discount-rate risk for high-beta semiconductors, so semiconductors receive significant but constrained weights and a small cash buffer is retained to manage policy-driven volatility (C2). The allocation therefore balances durable platforms and secular growth in semiconductors consistent with the macro regime."
+  }
+}
+
+---
+
+# Evaluation Method
+
+Your evaluation must follow **two phases**.
+
+**PHASE 1 — Detection**
+Identify objective reasoning failures.
+
+**PHASE 2 — Judgment**
+Assign pillar scores based on detected failures.
+
+Detection should be **conservative and objective**.
+Scores must reflect the **number and severity of detected failures**.
+
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
+
+---
+
+# PHASE 1 — Detect Reasoning Failures
+
+Before assigning scores, detect the following reasoning failures.
+
+Record counts where possible.
+
+---
+
+## Logical Failures
+
+Detect:
+
+• contradictions within the argument
+• mutually incompatible claims
+• circular reasoning
+• missing reasoning steps between evidence and conclusions
+• conclusions that do not logically follow from earlier reasoning
+
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
+
+Example:
+
+• one claim implies recession
+• another implies strong cyclical expansion
+
+Also evaluate whether the **portfolio allocation logically follows from the thesis**.
+
+If contradictions exist, count them.
+
+---
+
+## Evidence Failures
+
+Evaluate how evidence supports claims.
+
+Cross-reference:
+
+`reasoning.claims[*].evidence_ids` with `evidence_citations`.
+
+If `evidence_ids` is present and non-empty on a claim, use it as the canonical evidence reference.
+
+If `evidence_ids` is empty or absent, check whether the claim's `claim_text` contains
+inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references exist
+but `evidence_ids` is empty, treat the claim as having evidence — the references were
+not captured in the structured field but are present in the text.
+
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
+
+Let:
+
+total_claims = number of claims in reasoning.claims
+unsupported_claims = number of claims failing the evidence rule
+
+unsupported_claim_rate = unsupported_claims / total_claims
+
+Detect:
+
+• claims with no evidence citations
+• citations that do not support the claim
+• misinterpretation of evidence
+• claims stronger than the cited evidence justifies
+
+Count unsupported claims.
+
+---
+
+## Alternative Reasoning Failures
+
+Evaluate how the agent handles competing explanations and critiques.
+
+Detect:
+
+• ignored critiques
+• critiques rejected without justification
+• accepted critiques that produce no meaningful reasoning change
+• failure to consider alternative explanations
+• premature certainty
+
+A critique is considered ADDRESSED only if the revision provides
+explicit reasoning responding to the critique.
+
+**Primary source**: `reasoning.critique_responses` — each entry explicitly maps a critique
+to a disposition (accept/rebut) with justification. Cross-reference these against
+`critiques_received` to identify ignored critiques.
+
+**Secondary evidence** of addressing may include:
+
+• revision_notes that explain why the critique is accepted or rejected
+• claim structure changes motivated by the critique
+• portfolio allocation changes motivated by the critique
+• new evidence introduced to evaluate the critique
+
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
+
+If a critique has no matching entry in `critique_responses` AND no secondary evidence
+of engagement, treat the critique as **ignored**.
+
+Strong reasoning should:
+
+• directly address critiques
+• justify accepting or rejecting them
+• acknowledge competing interpretations of evidence
+
+Count ignored critiques when applicable.
+
+---
+
+## Causal Reasoning Failures
+
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
+
+For each claim, independently determine its causal level:
+
+L1 — correlation / association: citing data patterns or statistical relationships.
+
+L2 — intervention / mechanism: the claim describes a plausible causal pathway
+(e.g., "Fed raises rates → higher discount rates → lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
+
+L3 — counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** (causal overreach), including:
+
+• L2 claims where no mechanism is described in the claim text
+• L3 claims without explicit counterfactual reasoning
+• claims whose conclusions require L2/L3 reasoning but evidence is purely L1
+• macro claims mapped to asset outcomes without transmission mechanisms
+
+Count causal overreach cases.
+
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
+
+---
+
+## Assumption Failures
+
+Detect:
+
+• critical assumptions that are not acknowledged
+• assumptions contradicted by evidence
+• assumptions doing most of the explanatory work
+
+These typically reduce evidential_support.
+
+## Conclusion Consistency Failures
+
+Determine whether the **portfolio allocation follows logically from the reasoning**.
+
+Use:
+
+• `position_rationale[*].supporting_claims`
+• `claims[*].impacts_positions`
+
+Detect:
+
+• positions >10% with no `supporting_claims` entries
+• `supporting_claims` entries that reference claim IDs not present in the claims array
+• claims that do not logically imply the allocation
+• portfolio changes without reasoning explanation
+
+Count orphaned positions (positions >10% that have no valid supporting claim).
+
+---
+
+# Failure → Pillar Mapping
+
+When failures are detected, penalties MUST map to pillars as follows:
+
+logical_validity penalties may only result from:
+
+• contradictions
+• missing reasoning steps
+• portfolio reasoning mismatch
+
+evidential_support penalties may only result from:
+
+• unsupported claims
+• evidence misuse
+
+alternative_consideration penalties may only result from:
+
+• ignored critiques
+• unjustified rejection of critiques
+• premature certainty
+
+causal_alignment penalties may only result from:
+
+• causal overreach
+• missing causal mechanisms
+
+premature certainty is detected when:
+
+• strong conclusions are asserted
+• while evidence is weak or ambiguous
+• or competing explanations are ignored
+---
+
+# PHASE 2 — Assign Pillar Scores
+
+After detecting failures in Phase 1, assign scores for the four CRIT pillars.
+
+Scores MUST be **consistent with the detected counts**.
+
+---
+
+# CRIT Pillar Definitions
+
+Each pillar measures a different dimension of reasoning quality.
+
+**logical_validity**
+
+Internal logical consistency of the argument.
+
+Penalize for:
+
+• contradictions
+• circular reasoning
+• missing reasoning steps
+• conclusions that do not follow from premises
+
+---
+
+**evidential_support**
+
+Whether factual claims are supported by evidence.
+
+Penalize for:
+
+• unsupported claims
+• weak or irrelevant citations
+• evidence misinterpretation
+• claims stronger than evidence allows
+
+---
+
+**alternative_consideration**
+
+Whether competing explanations are considered.
+
+Definition of premature certainty:
+
+strong conclusions expressed despite weak or limited evidence.
+
+Penalize for:
+
+• ignored critiques
+• rejecting critiques without justification
+• premature certainty
+• failure to consider alternative interpretations
+
+---
+
+**causal_alignment**
+
+Whether causal claims are justified by the evidence and reasoning.
+
+Penalize for:
+
+• causal overreach
+• missing causal mechanisms
+• counterfactual claims without counterfactual reasoning
+• mapping macro relationships to asset outcomes without causal explanation
+
+---
+
+# Score Interpretation
+
+Scores must be within **0.0 – 1.0**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor weaknesses
+0.70 — acceptable reasoning with noticeable gaps
+0.55 — mixed reasoning with clear problems
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+---
+
+# Score Constraints
+
+Apply these rules when failures are detected:
+
+• contradictions → logical_validity ≤ 0.70
+• unsupported claims → evidential_support ≤ 0.70
+• ignored critiques → alternative_consideration ≤ 0.70
+• causal overreach → causal_alignment ≤ 0.70
+
+Severity guidance:
+
+• **1 failure** → small penalty
+• **2–3 failures** → moderate penalty (typically ≤ 0.55)
+• **4+ failures** → severe penalty (typically ≤ 0.40)
+
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
+
+Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
+
+---
+
+# Diagnostic Boolean Rules
+
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
+
+---
+
+# Output
+
+Return **only the JSON object below**.
+
+No markdown.
+No text outside JSON.
+
+```json
+{
+  "pillar_scores": {
+    "logical_validity": <float>,
+    "evidential_support": <float>,
+    "alternative_consideration": <float>,
+    "causal_alignment": <float>
+  },
+  "diagnostics": {
+    "contradictions_detected": <bool>,
+    "unsupported_claims_detected": <bool>,
+    "ignored_critiques_detected": <bool>,
+    "premature_certainty_detected": <bool>,
+    "causal_overreach_detected": <bool>,
+    "conclusion_drift_detected": <bool>,
+    "contradictions_count": <int or null>,
+    "unsupported_claims_count": <int or null>,
+    "ignored_critiques_count": <int or null>,
+    "causal_overreach_count": <int or null>,
+    "orphaned_positions_count": <int or null>
+  },
+  "explanations": {
+    "logical_validity": "<1–2 sentences explaining key reasoning issues>",
+    "evidential_support": "<1–2 sentences explaining evidence usage>",
+    "alternative_consideration": "<1–2 sentences explaining critique handling>",
+    "causal_alignment": "<1–2 sentences explaining causal reasoning quality>"
+  }
+}

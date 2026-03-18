@@ -1,0 +1,27 @@
+{
+  "type": "intervention",
+  "round": 1,
+  "stage": "post_revision",
+  "rule": "reasoning_quality",
+  "action": "retry_revision",
+  "severity": "warning",
+  "retry": 1,
+  "metrics": {
+    "weak_agents": [
+      {
+        "role": "technical",
+        "rho_i": 0.818,
+        "weak_pillars": {
+          "causal_alignment": 0.68
+        },
+        "pillar_explanations": {
+          "causal_alignment": "C3 provides a plausible mechanism linking high beta/vol and front-end rates to drawdown risk (L2). However, C1 asserts momentum persistence as a causal claim while relying on associative evidence, creating a rung collapse (L1 evidence supporting an L2-stated claim)."
+        }
+      }
+    ],
+    "rho_threshold": 0.0
+  },
+  "nudge_text": {
+    "technical": "The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.\n\nCAUSAL ALIGNMENT REMEDIATION PROTOCOL\n\nYour causal reasoning score fell below the acceptable threshold.\nYou must correct causal overreach before finalizing your allocation.\n\nPearl's Causal Hierarchy applies:\n\nLevel 1 (Association): \"X and Y tend to co-occur\"\n  \u2192 Valid for observational claims only.\n\nLevel 2 (Intervention): \"If we change X, Y changes\"\n  \u2192 Requires an explicit mechanism, not just correlation.\n\nLevel 3 (Counterfactual): \"If X had not happened, Y would not have occurred\"\n  \u2192 Requires strong theoretical grounding.\n\nCommon causal errors to avoid:\n\n\u2022 Do NOT claim that momentum or trend persistence \"causes\"\n  future price movement unless you articulate why the pattern\n  should persist (e.g., institutional flow dynamics, behavioral\n  anchoring, supply/demand imbalance).\n\n\u2022 Do NOT treat SMA crossovers, relative strength, or price-above-MA\n  as causal drivers. These are associational patterns.\n\n\u2022 If you cite a causal relationship, you MUST explain the mechanism:\n  What is the channel? What are the intermediate steps?\n\n\u2022 Label your claims correctly:\n  - \"Observational/Pattern\" if based on technical indicators\n  - \"Causal\" only if you provide a transmission mechanism\n\nBefore finalizing:\n1. Review each claim labeled \"causal\" in your revision.\n2. For each, verify you have stated an explicit mechanism.\n3. Downgrade to \"observational\" or \"pattern-based\" if no mechanism exists.\n4. Ensure your allocation weights follow from correctly-labeled claims.\n\nA reasoning quality audit identified specific weaknesses in your revised argument. Your overall reasoning score (rho) and the specific pillar deficiencies are listed below.\n\nYou MUST address these weaknesses in your revised allocation. Focus on the specific remediation steps for each flagged pillar.\n\nAgent: TECHNICAL | rho = 0.82\n\n  [causal_alignment: 0.68]\n  Auditor finding: C3 provides a plausible mechanism linking high beta/vol and front-end rates to drawdown risk (L2). However, C1 asserts momentum persistence as a causal claim while relying on associative evidence, creating a rung collapse (L1 evidence supporting an L2-stated claim).\n  CAUSAL ALIGNMENT \u2014 Your causal reasoning is not justified by your evidence. Fix the following using Pearl's causal hierarchy:\n  - Rung collapse: if you claim a causal mechanism (L2), your claim text must describe the transmission pathway explicitly (e.g., 'Fed raises rates \u2192 higher discount rates \u2192 lower equity valuations'). Citing a correlation without describing the mechanism is L1 evidence supporting an L2 claim \u2014 this is causal overreach.\n  - Counterfactual claims (L3): if you reason about what would have happened under different conditions, you must explicitly state the counterfactual scenario. Do not assert counterfactual conclusions without counterfactual reasoning structure.\n  - Macro-to-asset mapping: do not directly map macro relationships to asset outcomes without explaining the transmission mechanism through which macro conditions affect the specific assets in your allocation.\n  - Reasoning type consistency: ensure your claims' reasoning_type labels (causal/observational/risk_assessment/pattern) match the actual reasoning structure in the claim text.\n"
+  }
+}

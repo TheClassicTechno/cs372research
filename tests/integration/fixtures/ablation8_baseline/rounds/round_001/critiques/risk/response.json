@@ -1,0 +1,46 @@
+{
+  "critiques": [
+    {
+      "target_role": "MACRO agent",
+      "target_claim": "C2",
+      "objection": "C2 assumes AAPL's Services/installed-base mix makes a 40% single-stock overweight safe in a tightening/high-inflation regime. That is fragile because the memo also documents material FX and supply\u2011chain headwinds and that margins remain subject to volatility\u2014conditions that can amplify losses for a large AAPL concentration even if Services are growing. The agent underestimates single-name concentration risk given AAPL's beta and past drawdowns.",
+      "counter_evidence": [
+        "[AAPL-F3]",
+        "[AAPL-F9]",
+        "[AAPL-F12]",
+        "[AAPL-BETA]",
+        "[AAPL-MDD1Y]",
+        "[L1-VIX]",
+        "[L1-CURVE]",
+        "[L1-HY]"
+      ],
+      "portfolio_implication": "A 40% AAPL position concentrates market, FX and supply\u2011chain risk into one name with 1Y beta >1 [AAPL-BETA] and past max drawdown -28.3% [AAPL-MDD1Y]. In a recessionary / volatility spike scenario signaled by inverted curve and high HY spreads [L1-CURVE][L1-HY] and elevated VIX [L1-VIX], correlations would converge and AAPL could suffer large, portfolio\u2011level losses (a 25-35% AAPL shock would translate to a 10-14% portfolio hit before accounting for contagion to other holdings).",
+      "suggested_adjustment": "Reduce AAPL exposure materially (e.g., from 40% -> 20-25%), cut AMD from 15% -> 5% given its high idiosyncratic risk, and increase CASH to ~60-70% to limit single-name concentration and provide liquidity to redeploy on clearer macro signals.",
+      "falsifier": "Evidence that would invalidate this objection: Services revenue and high-margin Services expansion materially accelerate and FX/supply headwinds abate (e.g., stronger Services growth and margin signals [AAPL-F1][AAPL-F4], plus management guidance showing resilience [AAPL-EC2]), and macro indicators show sustained volatility fall (VIX compresses) and curve re-steepening [L1-VIX][L1-CURVE].",
+      "objection_confidence": 0.9
+    },
+    {
+      "target_role": "TECHNICAL agent",
+      "target_claim": "C2",
+      "objection": "C2 relies on idiosyncratic momentum ([AAPL-IDMOM]) to justify a 40% AAPL overweight despite AAPL trading below all major SMAs. This is fragile because the broader trend structure is broken and downside volatility is elevated; momentum can fail quickly in regime shifts, producing outsized losses when combined with high market volatility.",
+      "counter_evidence": [
+        "[AAPL-SMA20]",
+        "[AAPL-SMA50]",
+        "[AAPL-SMA200]",
+        "[AAPL-IDMOM]",
+        "[AAPL-RET20]",
+        "[AAPL-DVOL60]",
+        "[L1-VIX]",
+        "[AAPL-MDD1Y]"
+      ],
+      "portfolio_implication": "A 40% overweight to AAPL while the price is below SMA20/50/200 increases exposure to trend failure. In a volatility spike (VIX already 31.62 [L1-VIX]) AAPL's downside volatility and historical drawdowns [AAPL-DVOL60][AAPL-MDD1Y] imply the position could lose a large fraction quickly, turning tactical momentum exposure into a portfolio-damaging event (e.g., a ~25% AAPL fall becomes a ~10% portfolio loss).",
+      "suggested_adjustment": "Reduce AAPL to a risk-calibrated weight (e.g., 20-25%), keep a higher cash buffer (increase CASH from 55% -> 60-65%) until AAPL confirms a break above SMA50/200. If the technical breakout occurs, re-risk from cash incrementally.",
+      "falsifier": "Evidence that would prove this objection wrong: AAPL price closes and holds above SMA50 and SMA200 with follow-through and sustained positive idiosyncratic momentum [AAPL-SMA50][AAPL-SMA200][AAPL-IDMOM], accompanied by a material and persistent drop in market volatility [L1-VIX].",
+      "objection_confidence": 0.85
+    }
+  ],
+  "self_critique": {
+    "weakest_claim": "C3 / portfolio construction (AAPL 30% concentration)",
+    "explanation": "The single greatest vulnerability is concentration in AAPL (30%) combined with only 50% cash. While sizing was based on AAPL's lower volatility relative to AMD, AAPL still has beta >1 [AAPL-BETA], elevated downside volatility and a meaningful 1y max drawdown [AAPL-DVOL60][AAPL-MDD1Y]. If market volatility spikes further (VIX already 31.62 [L1-VIX]) and correlations converge during a recessionary shock signalled by the inverted curve [L1-CURVE] and wider credit stress [L1-HY], AAPL could suffer a large decline that meaningfully damages portfolio capital. The position sizing may underweight the tail correlation risk (i.e., that AAPL, AMD and other growth names fall together), so a single-name shock would translate into a large portfolio drawdown. Mitigation would require lowering the single-name cap on equities (reduce AAPL toward 20-25%) or increasing cash beyond 50% until macro/volatility indicators normalize."
+  }
+}

@@ -1,0 +1,1183 @@
+=== SYSTEM PROMPT ===
+You are an analyst participating in a multi-agent portfolio allocation debate
+on a professional trading desk.
+
+Multiple agents will propose, critique, and revise portfolio allocations.
+Each agent represents a different analytical perspective.
+
+Your objective is to produce rigorous, evidence-based reasoning while
+critically evaluating the arguments of other agents.
+
+Focus on analytical rigor, clear reasoning, and disciplined use of evidence.
+
+
+---------------------------------------------------------------------
+
+## Evidence Citation — MANDATORY
+
+You MUST cite data using ONLY the exact bracketed evidence IDs
+from the investment memo.
+
+Valid citations look like:
+
+[L1-FF]
+[L1-VIX]
+[L1-10Y]
+[AAPL-RET60]
+
+Rules:
+
+• NEVER invent evidence labels
+• NEVER paraphrase evidence IDs
+• NEVER reference evidence that does not appear in the memo
+
+Any claim without a valid bracketed evidence ID is considered unsupported.
+
+
+---------------------------------------------------------------------
+
+## Reasoning Discipline
+
+Your reasoning must follow these principles:
+
+• Ground all claims in explicit evidence from the memo
+• Avoid unsupported speculation
+• Ensure arguments are internally consistent
+• Clearly connect evidence → reasoning → conclusion
+
+You should prioritize explanations that logically follow from
+the available data rather than making unsupported assumptions.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Construction Discipline
+
+When constructing or revising a portfolio:
+
+• Allocate more capital to higher-conviction ideas
+• Allocate less capital to lower-conviction ideas
+• Avoid equal-weight portfolios unless conviction is identical
+• Ensure allocations reflect the reasoning presented
+
+Your portfolio must clearly express your analytical thesis.
+
+
+---------------------------------------------------------------------
+
+## Active Critique Requirement
+
+During critique phases you must identify at least ONE
+concrete weakness in another agent's reasoning.
+
+Examples of critique targets:
+
+• unsupported claims
+• weak causal reasoning
+• ignoring relevant evidence
+• inconsistent logic
+• fragile assumptions
+
+
+---------------------------------------------------------------------
+
+## Weakest-Assumption Attacks
+
+When evaluating another agent's argument,
+identify the **single weakest assumption** in their thesis.
+
+Focus on assumptions that:
+
+• rely on unverified conditions
+• contradict available evidence
+• depend on fragile reasoning
+• ignore relevant data
+
+Explain clearly why the assumption weakens the argument.
+
+
+---------------------------------------------------------------------
+
+## Anti-Convergence Rule
+
+You are NOT required to converge with other agents.
+
+If critiques do not meaningfully invalidate your reasoning,
+you should defend your thesis rather than adopting another
+agent's conclusion.
+
+Do NOT shift toward neutral allocations simply to reduce disagreement.
+
+
+---------------------------------------------------------------------
+
+## Disagreement Tracking
+
+When revising your reasoning, explicitly state:
+
+Accepted critiques:
+- critiques you accept and how they changed your reasoning
+
+Rejected critiques:
+- critiques you reject and why they do not invalidate your thesis
+
+
+---------------------------------------------------------------------
+
+## Epistemic Calibration
+
+After presenting your thesis, explicitly state the conditions
+that would cause you to revise or abandon your position.
+
+These conditions must be:
+
+• concrete
+• falsifiable
+• tied to observable evidence
+
+Examples include:
+
+• new data contradicting key assumptions
+• evidence invalidating the reasoning chain
+• structural changes in the environment
+
+
+---------------------------------------------------------------------
+
+## Debate Objective
+
+The goal of this debate is not consensus for its own sake.
+
+The objective is to:
+
+• test competing analytical frameworks
+• identify weaknesses in reasoning
+• refine portfolio decisions through adversarial analysis
+
+Disagreement is expected and valuable when supported by
+evidence and sound reasoning.
+You are the TECHNICAL ANALYST on a multi-agent trading desk.
+
+Your responsibility is not to explain the market with stories.
+
+Your responsibility is to read **what the market is actually doing**.
+
+Your analytical objective is to determine **what price action, momentum,
+and trend structure are signaling right now, and which assets are most
+likely to continue outperforming based on those signals.**
+
+Your core question is:
+
+"What is price doing now, and which assets have the strongest probability
+of continued directional movement?"
+
+You are NOT a macro forecaster, fundamental storyteller, or risk bureaucrat.
+
+You are a reader of price.
+
+If the market is trending, you must recognize it.
+If momentum is accelerating, you must respect it.
+If price action contradicts a narrative, you must trust price first.
+
+
+---------------------------------------------------------------------
+
+## Primary Decision Lens
+
+You evaluate investments through **trend persistence, momentum strength,
+and price confirmation.**
+
+Your reasoning focuses on:
+
+• trend direction and continuation
+• momentum strength and acceleration
+• breakout versus exhaustion behavior
+• relative strength leadership
+• confirmation through price and volume
+
+Your portfolio must favor securities where **price action supports
+continued movement.**
+
+A stock with a beautiful story but broken price action is not your idea.
+A stock with strong price confirmation and relative strength demands respect,
+even if other agents dislike the narrative.
+
+
+---------------------------------------------------------------------
+
+## Analytical Domain
+
+Your analysis focuses on technical signals that reveal
+what the market is actually rewarding or punishing:
+
+• moving-average structure and trend alignment
+• short-, medium-, and long-horizon momentum
+• relative strength versus peers and the market
+• support and resistance behavior
+• breakout, continuation, and reversal structure
+• volume confirmation of price moves
+
+You evaluate securities primarily through the question:
+
+"Is price behavior confirming continued movement,
+or is the trend weakening and vulnerable to reversal?"
+
+You care first about **what the chart is saying**, not what
+other agents wish were true.
+
+
+---------------------------------------------------------------------
+
+## Technical Narrative
+
+You operate under the following technical principle:
+
+**Price is the market's final vote.**
+
+Under this framework:
+
+• price incorporates information faster than macro or fundamental interpretation
+• strong trends tend to persist until clearly broken
+• momentum often carries further than most analysts expect
+• relative strength leaders frequently remain leaders
+• fighting price with narrative is usually a losing habit
+
+The market does not owe anyone mean reversion.
+The market does not reverse just because something "feels overextended."
+The market does not care that a stock looks expensive if buyers are still in control.
+
+Your allocations should therefore prioritize **assets with strong,
+confirmed price behavior** rather than intellectually satisfying stories.
+
+
+---------------------------------------------------------------------
+
+## Technical Discipline
+
+You must assume that **price is ahead of explanation.**
+
+Before accepting another agent's thesis, ask:
+
+• Has price already rejected this argument?
+• Is the market already moving the other way?
+• Is this a real reversal signal, or just a narrative hoping for one?
+• Are we being asked to fight a strong trend without confirmation?
+
+Do not allocate against a strong trend merely because another agent
+has a compelling macro or fundamental explanation.
+
+Do not call a reversal unless price action gives actual evidence.
+
+Do not hide in ambiguity.
+You must take a clear view on whether a technical setup is:
+
+• trending
+• breaking out
+• range-bound
+• deteriorating
+
+
+---------------------------------------------------------------------
+
+## Evidence Priorities
+
+You prioritize evidence derived directly from **observed price behavior.**
+
+Primary evidence sources:
+
+• medium-term and long-term returns
+• momentum measures and trend strength
+• price relative to moving averages
+• relative strength rankings
+• volume confirmation of directional movement
+
+Secondary evidence sources:
+
+• sector rotation and cross-sectional momentum
+• volatility signals affecting trend persistence
+• correlation patterns relevant to momentum concentration
+
+Macro and fundamental information are secondary unless they are already
+confirmed by price action.
+
+If price is not confirming the thesis, the thesis is weak.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Objective
+
+Construct a portfolio that **captures trend persistence and momentum leadership.**
+
+Your allocations should favor securities that exhibit:
+
+• strong and persistent trend structure
+• positive momentum supported by recent price behavior
+• relative strength versus peers
+• price trading in alignment with dominant technical conditions
+• confirmation through volume or broad price follow-through
+
+You should avoid or sharply underweight securities that:
+
+• are in persistent downtrends
+• show weak relative strength
+• are breaking below important trend structure
+• require a reversal thesis without confirmation
+
+Your objective is not to buy what sounds attractive.
+Your objective is to own what the market is visibly rewarding.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Differentiation
+
+Your portfolio must clearly reflect **technical momentum logic.**
+
+If another agent focused on macro regimes or intrinsic value
+could plausibly arrive at the same portfolio without using price action,
+then your reasoning is insufficiently technical.
+
+A proper technical portfolio should show:
+
+• clear preference for momentum leaders
+• avoidance of technically weak assets
+• alignment with prevailing price structure
+• rotation toward assets and sectors with accelerating relative strength
+
+You are here to identify **where buyers are in control**
+and where sellers are in control.
+
+
+---------------------------------------------------------------------
+
+## Technical Market Regimes
+
+When evaluating market conditions, determine whether price behavior suggests:
+
+• a trending regime with persistent directional movement
+• a range-bound regime with weak follow-through
+• a breakout regime with strong resolution from consolidation
+• a reversal regime with genuine deterioration in trend structure
+
+Your portfolio must align with the **dominant technical regime**.
+
+Do NOT hedge across conflicting technical regimes just to appear balanced.
+
+If the market is trending, position for trend.
+If the market is breaking down, acknowledge the breakdown.
+If momentum is weak, do not pretend strength exists.
+
+
+---------------------------------------------------------------------
+
+## Technical Analyst Discipline
+
+Your default posture should be:
+
+**Respect price. Respect momentum. Distrust narrative reversals without confirmation.**
+
+Before favoring a position, ask:
+
+• Is the trend intact?
+• Is momentum strengthening or weakening?
+• Is relative strength confirming leadership?
+• Is price above or below key structure?
+• Is volume confirming the move?
+
+If you cannot answer those with conviction,
+your technical thesis is not strong enough.
+
+
+---------------------------------------------------------------------
+
+## Common Technical Reasoning Traps
+
+Avoid the following mistakes:
+
+• interpreting random noise as meaningful structure
+• calling reversals too early without confirmation
+• assuming a strong trend must reverse because it has already moved far
+• ignoring relative strength because a narrative sounds better
+• relying on lagging explanations after price has already changed
+• confusing a temporary bounce with a true regime change
+## Revision Tone: BALANCED
+
+Your objective is to improve the **accuracy, robustness, and internal consistency**
+of your thesis by incorporating critiques that materially strengthen the reasoning,
+while rejecting critiques that do not meaningfully affect your analytical framework.
+
+You are not trying to preserve your original thesis at all costs,
+and you are not trying to converge for its own sake.
+
+Your task is to determine:
+
+• which critiques genuinely expose weaknesses in your reasoning
+• which critiques are valid but low-impact
+• which critiques are inconsistent with the evidence or your analytical lens
+• how accepted critiques should change your thesis, confidence, and allocation
+
+
+---------------------------------------------------------------------
+
+### Balanced Revision Principles
+
+Apply the following standards when revising:
+
+• **Materiality**
+  Only accept critiques that change the strength, scope, or logic of the thesis.
+
+• **Role consistency**
+  Maintain your analytical lens as a TECHNICAL agent.
+  Do not adopt another agent’s reasoning framework wholesale.
+
+• **Reasoning improvement**
+  Your revised thesis must be more precise, better supported, or more robust
+  than the original.
+
+• **Allocation proportionality**
+  Portfolio changes should reflect the magnitude of the reasoning update.
+  Small reasoning updates should not produce extreme allocation swings.
+  Large reasoning failures should not leave the allocation unchanged.
+
+
+---------------------------------------------------------------------
+
+### Required Revision Actions
+
+For each critique, determine whether it is:
+
+• **accepted and material**
+  → it changes the reasoning, confidence, or allocation
+
+• **accepted but limited**
+  → it improves the framing or completeness of the thesis but does not
+    substantially change the allocation
+
+• **rejected**
+  → it does not meaningfully weaken the thesis within your analytical framework
+
+Then perform the following:
+
+1. **Diagnose the impact of accepted critiques**
+   Explain whether the critique changes:
+   • the causal mechanism
+   • the assumptions
+   • the interpretation of evidence
+   • the confidence of the thesis
+   • the portfolio implication
+
+2. **Repair the thesis**
+   Update the argument by doing at least one of the following:
+   • refine the causal explanation
+   • narrow or qualify the claim
+   • incorporate additional memo evidence
+   • revise assumptions or confidence
+   • explain how competing evidence is resolved
+
+3. **Reassess the allocation**
+   Determine whether accepted critiques imply:
+   • reducing a position
+   • increasing a position
+   • reallocating between positions
+   • leaving the portfolio largely unchanged despite a reasoning improvement
+
+4. **Preserve strategic coherence**
+   The revised portfolio should remain a coherent expression of your role-based thesis,
+   not a patchwork compromise with other agents.
+
+
+---------------------------------------------------------------------
+
+### Important Constraints
+
+• Do NOT repeat your original reasoning without meaningful modification.
+
+• Do NOT accept critiques merely because they sound plausible.
+
+• Do NOT reject critiques that clearly weaken your thesis.
+
+• Do NOT make portfolio changes that are larger than the reasoning warrants.
+
+• If your thesis remains mostly intact, explain why.
+  If your thesis materially changed, explain exactly what changed.
+
+
+---------------------------------------------------------------------
+
+### Reasoning Update Requirement
+
+You MUST update your reasoning in at least one substantive way.
+
+Valid updates include:
+
+• refining the causal mechanism
+• adjusting assumptions or uncertainty
+• incorporating additional evidence from the memo
+• clarifying how conflicting evidence is interpreted
+• reducing the scope or confidence of an overextended claim
+
+A revision that only rephrases the same thesis without changing its reasoning
+does NOT satisfy this requirement.
+
+
+---------------------------------------------------------------------
+
+### Portfolio Revision Principles
+
+Portfolio changes must follow from the revised reasoning.
+
+Use the following guidance:
+
+• If a critique weakens a core claim, reduce exposure accordingly.
+
+• If a critique only adds nuance without materially changing the thesis,
+  small or no allocation changes may be appropriate.
+
+• If a critique reveals a stronger interpretation of the evidence,
+  modestly strengthen the most justified positions.
+
+• Avoid excessive turnover between rounds unless the revised reasoning
+  clearly supports a different strategy.
+
+
+---------------------------------------------------------------------
+
+### Required Structure
+
+Accepted critiques
+- critiques that materially improved or refined your reasoning
+
+Rejected critiques
+- critiques that do not alter your thesis within your analytical framework
+
+Reasoning updates
+- exactly how your causal explanation, assumptions, confidence, or evidence use changed
+
+Revised thesis
+- updated explanation incorporating accepted critiques while preserving strategic coherence
+
+Portfolio changes
+- allocation adjustments and the reasoning that justifies them
+
+=== USER PROMPT ===
+You are the TECHNICAL ANALYST agent in a multi-agent portfolio allocation debate.
+
+Your analytical framework is **price behavior, momentum dynamics, and market structure**.
+
+Your investment thesis is based on the principle that **price contains information about supply, demand, and market participant positioning**.
+
+You previously proposed a portfolio using **technical causal claims (C1, C2, …)** derived from price-based signals.
+
+You have now received critiques from other agents.
+
+Your task is to **revise or defend your proposal while maintaining technical analysis discipline.**
+
+Your objective is **not to reach consensus** and **not to adopt fundamental reasoning frameworks**.
+
+Many critiques from other agents will rely on:
+
+• macroeconomic narratives
+• valuation-based arguments
+• long-term fundamental expectations
+
+Those arguments may be valid within their frameworks, but they **do not invalidate price-based signals**.
+
+Technical analysis focuses on **observable market behavior**:
+
+• price trends
+• momentum persistence
+• volatility regimes
+• drawdowns and recoveries
+• relative strength between assets
+
+You should therefore **reject critiques that ignore price behavior**.
+
+You should only revise claims if critiques demonstrate that **your interpretation of the price signals is incorrect.**
+
+---
+
+## Financial Context
+## Portfolio Allocation Task
+- Cash to allocate: $100,000.00
+- Allocation universe: AAPL, AMD, MSFT, NVDA, _CASH_
+- As-of: 2021-12-31
+- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).
+[INFO] QUARTERLY SNAPSHOT MEMO — 2021 Q4
+As-of date: 2021-12-31
+Tickers: 4
+
+This document is the complete data payload for agent deliberation.
+It contains macro regime, per-ticker price/fundamental metrics,
+SEC filing summaries, and news sentiment for the quarter.
+
+Agents must:
+  - Cite evidence IDs (e.g. [L1-10Y], [AAPL-RET60]) when making claims.
+  - Integrate across layers (macro -> filings -> sentiment -> price).
+  - Treat all interpretations as non-binding hypotheses.
+
+======================================================================
+LAYER 1 — MACRO REGIME
+======================================================================
+
+Rates & Yields:
+  [L1-FF]    Fed Funds: 0.07%
+  [L1-2Y]    2Y Treasury: 0.73% (+45bps QoQ)
+  [L1-10Y]   10Y Treasury: 1.52% (+0bps QoQ)
+  [L1-30Y]   30Y Treasury: 1.90%
+  [L1-CURVE] 10Y-2Y Spread: 0.79% (positive)
+  [L1-REAL]  10Y Real Yield: -1.04%
+
+Inflation:
+  [L1-CPI]   CPI YoY: 7.17%
+  [L1-CORE]  Core CPI YoY: 5.49%
+
+Growth & Labor:
+  [L1-INDPRO] Industrial Production Index: 100.57
+  [L1-UNEMP] Unemployment: 3.90%
+
+Credit & Commodities:
+  [L1-HY]    HY OAS Spread: 3.10%
+  [L1-DXY]   Dollar Index: 115.28
+  [L1-WTI]   WTI Crude: $75.33
+
+Volatility:
+  [L1-VIX]   VIX: 17.22
+  [L1-EQBC]  Equity-Bond Correlation: -0.30
+
+======================================================================
+TICKER: AAPL
+======================================================================
+
+  Price & Returns:
+    [AAPL-PX]       Close: $173.76
+    [AAPL-RET20]    20D Return: +8.4%
+    [AAPL-RET60]    60D Return: +25.2%
+    [AAPL-RET120]   120D Return: +22.3%
+    [AAPL-RET252]   1Y Return: +34.6%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 30.4%
+    [AAPL-VOL60]    60D Vol (ann): 23.8%
+    [AAPL-DVOL60]   60D Downside Vol: 15.4%
+    [AAPL-DD60]     60D Drawdown: -5.4%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -18.6%
+    [AAPL-SHARPE]   60D Sharpe: 3.98
+    [AAPL-BETA]     1Y Beta: 1.32
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $170.74
+    [AAPL-SMA50]    SMA 50D: $158.57
+    [AAPL-SMA200]   SMA 200D: $140.57
+    [AAPL-MOM200]   200D Momentum: 1.24
+    [AAPL-MOM12_1]  12-1M Momentum: +24.9%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.1267
+    [AAPL-TREND]    Trend Consistency: 0.57
+    [AAPL-RS60]     Relative Strength 60D: -6.8%
+    [AAPL-ESURP]    Earnings Surprise: +0.0%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $18,342,751,927
+
+  Sentiment (from earnings call):
+    [AAPL-SENT]     Mean Sentiment: 0.2071
+    [AAPL-SVOL]     Sentiment Volatility: 0.6601
+
+  Filing Evidence (10-K, filed 2021-10-29, fiscal period: FY2021 [FYE: Sep 30]):
+    [AAPL-F1] Total net sales increased 33% to $365.8 billion driven by iPhone revenue growth of 39% from new model launches and Services revenue increasing 27% led by advertising, App Store and cloud services.
+    [AAPL-F2] Mac, iPad and Wearables delivered strong double-digit growth with broad-based strength across all geographic regions.
+    [AAPL-F3] Operations faced COVID-19 disruptions including supply chain shortages, temporary retail store closures, and fourth quarter component supplier disruptions that impacted worldwide sales.
+    [AAPL-F4] Total gross margin expanded to 41.8% from 38.2% driven by higher volume, favorable product mix and foreign currency strength, with Products and Services margins both improving from scale benefits.
+    [AAPL-F5] Operating expenses grew from headcount expansion and infrastructure investments.
+    [AAPL-F6] Cost structure remained exposed to semiconductor shortages affecting component availability and pricing, plus ongoing tariff impacts on imports from China.
+    [AAPL-F7] Apple increased share repurchase authorization to $315 billion and raised quarterly dividend, repurchasing $85.5 billion of common stock and paying $14.5 billion in dividends during fiscal 2021.
+    [AAPL-F8] The company issued $6.5 billion in new debt across four tranches with maturities from 2028 to 2061.
+    [AAPL-F9] Manufacturing process equipment investments continued at outsourcing partner facilities with associated prepayments under long-term supply agreements.
+    [AAPL-F10] Global semiconductor shortages created material supply chain risks affecting product availability and manufacturing costs, while COVID-19 pandemic effects continued creating uncertainty around consumer demand and retail operations.
+    [AAPL-F11] Foreign currency movements provided net favorable impact on international sales from strengthening Chinese renminbi and European currencies.
+    [AAPL-F12] U.S.-China trade tensions resulted in ongoing tariff impacts on component costs and finished goods pricing.
+    [AAPL-F13] Management expects quarterly sales and operating results to fluctuate due to seasonal patterns, product life cycles and competitive pricing pressures while maintaining focused investments for future growth.
+    [AAPL-F14] The company continues emphasis on developing proprietary technologies and maintaining competitive differentiation through integrated hardware-software solutions.
+    [AAPL-F15] Strategic focus remains on managing supply chain relationships and component sourcing agreements to address ongoing semiconductor shortages.
+    [AAPL-F16] Intensifying antitrust investigations across multiple jurisdictions regarding App Store practices create exposure to significant fines and required business model changes, with proposed regulations potentially mandating fundamental alterations to platform access and developer fee structures.
+    [AAPL-F17] Ongoing litigation includes patent infringement cases and App Store-related legal challenges that could require business practice changes.
+    [AAPL-F18] Tax examinations across various jurisdictions create exposure to additional liabilities beyond current reserves, while cybersecurity risks and escalating data privacy compliance costs continue across evolving regulatory frameworks.
+
+  Earnings Call Evidence:
+    [AAPL-EC1] Apple reported a record revenue of $83.4 billion for Q4 FY2021, marking a 29% increase year-over-year, despite supply constraints estimated to have impacted revenue by $6 billion.
+    [AAPL-EC2] The company achieved significant growth across all product categories, with notable performance in iPhone, Mac, and services, which reached an all-time high of $18.3 billion.
+    [AAPL-EC3] The strong demand for new products, including the iPhone 13 lineup and MacBook Pro, contributed to the positive results.
+    [AAPL-EC4] Looking ahead, Apple anticipates that supply constraints will worsen in the December quarter, potentially exceeding the $6 billion impact experienced in Q4.
+    [AAPL-EC5] Despite this, the company expects solid year-over-year revenue growth across most product categories, although a decline is anticipated for iPad due to ongoing supply issues.
+    [AAPL-EC6] Management remains optimistic about customer demand and the performance of new product launches.
+    [AAPL-EC7] Apple faces significant risks from ongoing supply chain disruptions, particularly related to semiconductor shortages and COVID-related manufacturing challenges.
+    [AAPL-EC8] These issues could lead to further revenue impacts and affect the availability of products during the critical holiday season.
+    [AAPL-EC9] Additionally, the company must navigate regulatory pressures regarding its App Store practices and privacy policies, which could influence its services revenue.
+    [AAPL-EC10] Key drivers of Apple's performance include robust demand for its latest products, particularly the iPhone 13 and MacBook Pro, as well as strong growth in its services segment.
+    [AAPL-EC11] The installed base of active devices reached an all-time high, contributing to increased customer engagement and satisfaction.
+    [AAPL-EC12] Apple's continued investment in innovation and expansion into emerging markets also supports its growth trajectory.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $143.90
+    [AMD-RET20]    20D Return: -4.5%
+    [AMD-RET60]    60D Return: +38.9%
+    [AMD-RET120]   120D Return: +59.4%
+    [AMD-RET252]   1Y Return: +56.9%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 59.4%
+    [AMD-VOL60]    60D Vol (ann): 52.1%
+    [AMD-DVOL60]   60D Downside Vol: 29.5%
+    [AMD-DD60]     60D Drawdown: -17.4%
+    [AMD-MDD1Y]    1Y Max Drawdown: -24.8%
+    [AMD-SHARPE]   60D Sharpe: 2.65
+    [AMD-BETA]     1Y Beta: 1.67
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $142.85
+    [AMD-SMA50]    SMA 50D: $141.82
+    [AMD-SMA200]   SMA 200D: $104.68
+    [AMD-MOM200]   200D Momentum: 1.37
+    [AMD-MOM12_1]  12-1M Momentum: +62.6%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: 0.1246
+    [AMD-TREND]    Trend Consistency: 0.53
+    [AMD-RS60]     Relative Strength 60D: +6.8%
+    [AMD-ESURP]    Earnings Surprise: +10.6%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $7,548,850,087
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: 0.0539
+    [AMD-SVOL]     Sentiment Volatility: 0.6198
+
+  Filing Evidence (10-Q, filed 2021-10-27, fiscal period: 2021-Q3):
+    [AMD-F1] Net revenue reached $4.3 billion for Q3 2021, representing 54% growth driven by Computing and Graphics segment growth of 44% and Enterprise segment growth of 69%.
+    [AMD-F2] Computing and Graphics growth reflected 83% higher average selling prices from richer Ryzen, Radeon and AMD Instinct product mix, partially offset by lower unit shipments due to strategic focus on premium products in tight supply environment.
+    [AMD-F3] Enterprise growth was driven by higher EPYC server processor and semi-custom product sales including PlayStation and Xbox platforms.
+    [AMD-F4] International sales represented 67% of net revenue with manufacturing relying on third-party foundries primarily TSMC for 7nm production.
+    [AMD-F5] Gross margin improved to 48% from 44% in prior year period, primarily driven by richer mix of EPYC, Ryzen and Radeon processor sales.
+    [AMD-F6] Research and development and marketing expenses increased substantially due to expanded headcount, higher employee incentives, increased go-to-market activities and Xilinx acquisition-related costs.
+    [AMD-F7] Operating income reached $948 million compared to $449 million in prior year, as strong revenue growth more than offset higher operating expenses.
+    [AMD-F8] Company repurchased 7.2 million shares for $750 million during the quarter under the $4 billion share repurchase program, with $3 billion remaining available.
+    [AMD-F9] AMD amended its GLOBALFOUNDRIES wafer supply agreement removing exclusivity commitments while securing minimum capacity allocations through 2024 with annual purchase targets and prepayment requirements.
+    [AMD-F10] Holders converted $25 million principal amount of convertible notes into approximately 3 million shares, reducing debt balances.
+    [AMD-F11] COVID-19 pandemic continues impacting global supply chain causing disruptions to service providers and logistics flow.
+    [AMD-F12] Operations face political, legal and economic risks across international markets including trade protection measures, export licensing requirements, and currency exchange rate changes.
+    [AMD-F13] Chinese entity restrictions continue affecting the THATIC joint venture following BIS Entity List designation.
+    [AMD-F14] Cryptocurrency mining demand volatility continued affecting GPU revenue with regulatory restrictions in South Korea and China creating market uncertainty.
+    [AMD-F15] Management expects international sales to continue as significant portion of total sales with company making strategic investments in long-term supply chain capacity to support future revenue growth amid strong demand.
+    [AMD-F16] Xilinx acquisition currently expected to close by end of calendar year 2021, subject to remaining regulatory approvals.
+    [AMD-F17] Management expressed confidence in liquidity position with $3.6 billion in cash and short-term investments, supported by strong operating cash flow generation.
+    [AMD-F18] Xilinx merger completion remains subject to regulatory approvals from certain foreign jurisdictions with potential termination fees depending on circumstances, and regulatory approval deadline extended to April 2022.
+    [AMD-F19] Multiple ongoing patent litigation matters create potential liability exposure.
+    [AMD-F20] Key uncertainties include potential penalties if annual wafer purchase targets with GLOBALFOUNDRIES are not met and supply chain disruptions from semiconductor industry consolidation.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD reported a record annual revenue of $16.4 billion for 2021, a 68% increase year-over-year, with fourth quarter revenue reaching $4.8 billion, up 49% from the previous year.
+    [AMD-EC2] The company achieved significant growth across all business segments, particularly in data center revenue, which more than doubled year-over-year.
+    [AMD-EC3] AMD also expanded its gross margin for the sixth consecutive year and reported record net income and EPS, both more than doubling year-over-year.
+    [AMD-EC4] Looking ahead to 2022, AMD expects revenue to reach approximately $21.5 billion, a 31% increase year-over-year, driven by strong demand across all business segments.
+    [AMD-EC5] The company anticipates continued growth in its data center business and plans to launch new products, including the next-generation EPYC processors and Ryzen 6000 series CPUs.
+    [AMD-EC6] AMD is confident in its ability to secure supply capacity to meet this demand and maintain its growth trajectory.
+    [AMD-EC7] AMD acknowledges potential risks related to supply chain constraints and the competitive landscape, particularly with Intel's upcoming product launches.
+    [AMD-EC8] The company is also aware of the uncertainties in the global supply environment and the need to manage inventory levels carefully to avoid excess supply.
+    [AMD-EC9] Additionally, the ongoing integration of Xilinx presents both opportunities and challenges as the company navigates regulatory approvals and operational synergies.
+    [AMD-EC10] Key drivers of AMD's growth include strong demand for its Ryzen and EPYC processors, successful product launches, and an expanding customer base in both cloud and enterprise markets.
+    [AMD-EC11] The company has also seen significant traction in its semi-custom business, particularly with gaming consoles, and is leveraging its advanced technology, such as 3D stacking, to enhance product performance.
+    [AMD-EC12] The integration of Xilinx is expected to further strengthen AMD's position in high-performance computing and embedded markets.
+
+======================================================================
+TICKER: MSFT
+======================================================================
+
+  Price & Returns:
+    [MSFT-PX]       Close: $324.68
+    [MSFT-RET20]    20D Return: +2.1%
+    [MSFT-RET60]    60D Return: +14.9%
+    [MSFT-RET120]   120D Return: +20.1%
+    [MSFT-RET252]   1Y Return: +52.5%
+
+  Volatility & Risk:
+    [MSFT-VOL20]    20D Vol (ann): 28.4%
+    [MSFT-VOL60]    60D Vol (ann): 22.0%
+    [MSFT-DVOL60]   60D Downside Vol: 14.2%
+    [MSFT-DD60]     60D Drawdown: -6.8%
+    [MSFT-MDD1Y]    1Y Max Drawdown: -8.8%
+    [MSFT-SHARPE]   60D Sharpe: 2.66
+    [MSFT-BETA]     1Y Beta: 1.16
+
+  Trend & Momentum:
+    [MSFT-SMA20]    SMA 20D: $321.58
+    [MSFT-SMA50]    SMA 50D: $320.14
+    [MSFT-SMA200]   SMA 200D: $276.74
+    [MSFT-MOM200]   200D Momentum: 1.17
+    [MSFT-MOM12_1]  12-1M Momentum: +49.6%
+    [MSFT-IDMOM]    Idiosyncratic Momentum 60D: 0.0356
+    [MSFT-TREND]    Trend Consistency: 0.55
+    [MSFT-RS60]     Relative Strength 60D: -17.1%
+    [MSFT-ESURP]    Earnings Surprise: +30.9%
+    [MSFT-ADVOL]    Avg Dollar Volume 20D: $8,992,882,452
+
+  Sentiment (from earnings call):
+    [MSFT-SENT]     Mean Sentiment: 0.1088
+    [MSFT-SVOL]     Sentiment Volatility: 0.5993
+
+  Filing Evidence (10-Q, filed 2021-10-26, fiscal period: 2021-Q3 [FYE: Jun 30]):
+    [MSFT-F1] Microsoft Cloud revenue increased 36% to $20.7 billion driven by Azure growth of 50% and Office 365 Commercial growth of 23%.
+    [MSFT-F2] Office Commercial products and cloud services revenue increased 18% while Office Consumer revenue grew 10% with Microsoft 365 Consumer subscribers reaching 54.1 million.
+    [MSFT-F3] LinkedIn revenue surged 42% driven by Marketing Solutions growth of 61%, and Dynamics revenue increased 31% with Dynamics 365 growing 48%.
+    [MSFT-F4] Windows OEM licensing revenue increased 10% and Windows Commercial revenue grew 12%, while Xbox content and services revenue increased 2%.
+    [MSFT-F5] Primary expenses remain concentrated in employee compensation, product design and manufacturing, marketing and sales activities, and datacenter costs supporting cloud-based services.
+    [MSFT-F6] The company faces margin pressure from competing with low-cost or free operating systems and potential shifts toward vertically-integrated models that increase cost of revenue and reduce operating margins.
+    [MSFT-F7] Microsoft announced redemption of all outstanding €1.75 billion 2.125% Notes due December 2021, with redemption scheduled for September 6, 2021 at principal amount plus accrued interest.
+    [MSFT-F8] The company continues responding to COVID-19 impacts by ensuring employee safety, protecting community health, and providing technology resources to support remote work capabilities for customers.
+    [MSFT-F9] No specific forward guidance was provided in the filing materials reviewed.
+    [MSFT-F10] Competition intensifies across all product markets with low barriers to entry and rapidly evolving technologies creating disruptive shifts in user needs.
+    [MSFT-F11] Platform-based ecosystem competition remains significant with competing vertically-integrated models claiming security and performance advantages.
+    [MSFT-F12] Revenue faces pressure from devices that compete with traditional PCs and platforms licensed at low or no cost.
+
+  Earnings Call Evidence:
+    [MSFT-EC1] Microsoft reported a strong fiscal Q4 2021 with revenue of $46.2 billion, up 21% year-over-year, and earnings per share of $2.17, increasing 49%.
+    [MSFT-EC2] The commercial cloud surpassed $69 billion in annual revenue, growing 34%, driven by strong demand across various sectors and geographies.
+    [MSFT-EC3] Key segments such as Azure, LinkedIn, and Dynamics 365 showed significant growth, reflecting the company's robust performance in cloud services and enterprise solutions.
+    [MSFT-EC4] Management anticipates continued strong growth in commercial bookings and cloud services, driven by digital transformation trends.
+    [MSFT-EC5] They expect revenue growth across all segments, with Azure remaining stable in constant currency.
+    [MSFT-EC6] The company is focused on investing in high-growth areas and maintaining operational efficiency to support long-term margin improvement.
+    [MSFT-EC7] Risks include potential impacts from supply chain constraints affecting hardware sales, particularly in the OEM and Surface segments.
+    [MSFT-EC8] Additionally, the company faces uncertainties related to the ongoing effects of COVID-19 on market dynamics and customer behavior, which could influence future revenue growth and operational performance.
+    [MSFT-EC9] Key drivers of growth include the increasing adoption of cloud services, particularly Azure, and the expansion of Microsoft 365 and Dynamics 365 offerings.
+    [MSFT-EC10] The integration of Teams into various business processes and the rise of hybrid work models are also contributing to higher demand for Microsoft's solutions.
+    [MSFT-EC11] Furthermore, the company's strategic investments in security and AI are expected to enhance its competitive position.
+
+======================================================================
+TICKER: NVDA
+======================================================================
+
+  Price & Returns:
+    [NVDA-PX]       Close: $29.35
+    [NVDA-RET20]    20D Return: -8.5%
+    [NVDA-RET60]    60D Return: +42.1%
+    [NVDA-RET120]   120D Return: +45.3%
+    [NVDA-RET252]   1Y Return: +125.5%
+
+  Volatility & Risk:
+    [NVDA-VOL20]    20D Vol (ann): 64.0%
+    [NVDA-VOL60]    60D Vol (ann): 56.0%
+    [NVDA-DVOL60]   60D Downside Vol: 30.1%
+    [NVDA-DD60]     60D Drawdown: -16.9%
+    [NVDA-MDD1Y]    1Y Max Drawdown: -24.4%
+    [NVDA-SHARPE]   60D Sharpe: 2.63
+    [NVDA-BETA]     1Y Beta: 2.01
+
+  Trend & Momentum:
+    [NVDA-SMA20]    SMA 20D: $29.69
+    [NVDA-SMA50]    SMA 50D: $29.24
+    [NVDA-SMA200]   SMA 200D: $21.03
+    [NVDA-MOM200]   200D Momentum: 1.40
+    [NVDA-MOM12_1]  12-1M Momentum: +141.0%
+    [NVDA-IDMOM]    Idiosyncratic Momentum 60D: 0.1148
+    [NVDA-TREND]    Trend Consistency: 0.52
+    [NVDA-RS60]     Relative Strength 60D: +10.1%
+    [NVDA-ESURP]    Earnings Surprise: +9.1%
+    [NVDA-ADVOL]    Avg Dollar Volume 20D: $14,961,841,831
+
+  Sentiment (from earnings call):
+    [NVDA-SENT]     Mean Sentiment: 0.3616
+    [NVDA-SVOL]     Sentiment Volatility: 0.6001
+
+  Filing Evidence (10-Q, filed 2021-11-22, fiscal period: 2021-Q4 [FYE: Jan 31]):
+    [NVDA-F1] Revenue reached $7.10 billion in Q3 FY2022, up 50% year-over-year, driven by strong demand for NVIDIA Ampere architecture products across all platforms.
+    [NVDA-F2] Gaming revenue increased 42% on higher GeForce GPU sales, while Data Center revenue surged 55% from hyperscale customer adoption for cloud computing and AI workloads.
+    [NVDA-F3] Professional Visualization revenue jumped 144% as enterprises deployed hybrid work solutions, though Automotive revenue grew only 8% due to supply constraints.
+    [NVDA-F4] Gross margin expanded to 73.0% compared to 65.1% in the prior year period, benefiting from higher-end product mix within desktop and notebook GeForce GPUs, improved manufacturing yields, and reduced acquisition-related costs.
+    [NVDA-F5] Operating expenses increased 25% year-over-year driven by employee growth, higher compensation including stock-based compensation, and increased infrastructure costs.
+    [NVDA-F6] The company maintained supply-constrained operations with prepayments for long-term supply agreements and non-cancellable inventory orders.
+    [NVDA-F7] NVIDIA paid $100 million in quarterly cash dividends and repaid $1.00 billion of 2.20% Notes Due 2021 in August.
+    [NVDA-F8] The company announced general availability of NVIDIA Omniverse Enterprise and 65 new software development kits at GTC conference.
+    [NVDA-F9] Nearly all desktop Ampere architecture GeForce GPU shipments incorporated Lite Hash Rate technology to direct products toward gamers rather than cryptocurrency miners.
+    [NVDA-F10] Supply chain constraints from limited foundry capacity and component availability continue to impact production scaling and may result in higher input costs.
+    [NVDA-F11] Cryptocurrency market volatility, including the pending Ethereum 2.0 standard transition, may reduce GPU mining demand and increase aftermarket resales affecting retail pricing and channel inventory.
+    [NVDA-F12] COVID-19 pandemic effects continue creating demand forecasting difficulties and potential supply chain disruptions.
+    [NVDA-F13] Management expects to remain supply-constrained into fiscal year 2023 and continues placing advance inventory orders with premiums and deposits to secure capacity.
+    [NVDA-F14] The company maintains $7.24 billion in share repurchase authorization through December 2022 and continues quarterly dividend payments subject to board determination.
+    [NVDA-F15] NVIDIA announced plans to build Earth-2 AI supercomputer for climate change prediction and expanded partnerships with VMware for AI-ready enterprise platforms.
+    [NVDA-F16] The Arm acquisition faces potential termination by September 2022 if regulatory approvals are not obtained, with $1.25 billion of advanced consideration at risk following FTC concerns and Phase 2 reviews in the UK and EU.
+    [NVDA-F17] The company holds $638 million in unrecognized tax benefits with uncertain timing for resolution and faces IRS examination for fiscal years 2018-2019.
+    [NVDA-F18] Long manufacturing lead times create significant supply-demand mismatch risks, potentially resulting in product shortages or excess inventory charges if demand patterns shift.
+
+  Earnings Call Evidence:
+    [NVDA-EC1] NVIDIA reported a record revenue of $5 billion for Q4 fiscal 2021, marking a 61% year-on-year growth.
+    [NVDA-EC2] The full-year revenue reached $16.7 billion, up 53%, driven primarily by the gaming segment, which generated $2.5 billion in Q4, a 67% increase from the previous year.
+    [NVDA-EC3] The company anticipates continued strong demand for its GeForce RTX 30 Series products and expects Q1 revenue to be around $5.3 billion.
+    [NVDA-EC4] NVIDIA expects robust growth in its gaming and data center segments, with gaming being the primary driver for Q1.
+    [NVDA-EC5] The company is optimistic about the ongoing adoption of its A100 GPUs in data centers and anticipates that the demand for its products will remain strong throughout the year.
+    [NVDA-EC6] Management also highlighted the potential of its planned acquisition of Arm to enhance its position in the AI-driven computing market.
+    [NVDA-EC7] NVIDIA faces risks related to supply chain constraints, particularly in meeting the high demand for its GPUs.
+    [NVDA-EC8] Additionally, the company is navigating the evolving landscape of cryptocurrency mining, which could impact the availability of its gaming products.
+    [NVDA-EC9] Regulatory approvals for the Arm acquisition also pose a potential risk to future growth.
+    [NVDA-EC10] Key drivers of NVIDIA's growth include the strong demand for its gaming products, particularly the RTX 30 Series, and the increasing adoption of AI and accelerated computing in data centers.
+    [NVDA-EC11] The company is also focusing on expanding its presence in the automotive and healthcare sectors, leveraging its technology for self-driving vehicles and AI applications.
+
+======================================================================
+END OF MEMO
+======================================================================
+
+
+---
+
+## Your Original Proposal
+## Previous Portfolio Allocation
+AAPL: 0.1
+AMD: 0.3
+MSFT: 0.15
+NVDA: 0.4
+_CASH_: 0.05
+
+## Previous Thesis
+The portfolio prioritizes momentum leaders (NVDA, AMD) identified by strongest 200-day and 12-month momentum (C1) and confirmed by positive 60-day relative strength (C2). MSFT and AAPL retain modest allocations because their longer-term trends remain intact (supporting continuation per C1) but negative RS60 readings materially lower their leadership status versus NVDA/AMD (C2). A 5% cash sleeve addresses elevated short-term volatility and recent pullbacks in the leaders (C3). Overall structure: concentrated exposure to highest-conviction technical leaders, moderated by cash to control drawdown risk.
+
+## Previous Position Rationale
+NVDA (0.4): NVDA is top technical leader: highest momentum (NVDA-MOM200, NVDA-MOM12_1) and positive RS60 [NVDA-MOM200] [NVDA-MOM12_1] [NVDA-RS60]. Allocate largest weight to capture continued trend persistence (C1) and RS leadership (C2). C3 tempers position sizing because NVDA exhibits elevated short-term vol and recent 20-day pullback [NVDA-VOL20] [NVDA-RET20]; 40% reflects high conviction tempered by volatility risk.
+  Supported by claims: C1, C2, C3
+
+AMD (0.3): AMD shows very strong multi-horizon momentum (AMD-MOM200, AMD-MOM12_1) and positive RS60 [AMD-MOM200] [AMD-MOM12_1] [AMD-RS60], justifying a sizable overweight to capture continuation (C1,C2). Size is moderated by high realized vol and recent drawdown risk [AMD-VOL20] [AMD-DD60], addressed by the cash sleeve (C3).
+  Supported by claims: C1, C2, C3
+
+MSFT (0.15): MSFT has intact trend alignment above SMAs and positive longer-term momentum [MSFT-SMA20] [MSFT-SMA50] [MSFT-SMA200] [MSFT-MOM200], supporting a modest allocation (C1). However its negative RS60 [MSFT-RS60] reduces conviction vs NVDA/AMD (C2), so weight is moderate to capture steady trend with lower volatility than leaders.
+  Supported by claims: C1, C2
+
+AAPL (0.1): AAPL remains in a clear uptrend above key moving averages with positive longer-term momentum [AAPL-SMA20] [AAPL-SMA50] [AAPL-SMA200] [AAPL-MOM200], but shows negative 60d RS [AAPL-RS60], so AAPL is a tactical, smaller exposure to preserve participation in a smoother-trending large-cap name (C1,C2).
+  Supported by claims: C1, C2
+
+_CASH_ (0.05): Small cash sleeve (5%) to manage elevated short-term volatility and provide dry powder given NVDA/AMD pullback risk [NVDA-VOL20] [AMD-VOL20]; cash earns Fed Funds [L1-FF] while preserving optionality (C3).
+  Supported by claims: C3
+
+## Previous Claims
+C1: Momentum persistence: securities with the strongest multi‑quarter momentum are most likely to continue outperforming in the near term; NVDA and AMD show the highest 200-day momentum and 12-month momentum [NVDA-MOM200] [NVDA-MOM12_1] [AMD-MOM200] [AMD-MOM12_1], implying continued directional bias to the upside for NVDA and AMD absent structural breaks.
+  Reasoning Type: causal
+  Claim Type: technical
+  Evidence: [NVDA-MOM200], [NVDA-MOM12_1], [AMD-MOM200], [AMD-MOM12_1]
+  Assumptions: Momentum persistence remains a dominant cross-sectional force over the next 1-3 months, No idiosyncratic negative catalysts abruptly reverse trend momentum for NVDA/AMD
+  Falsifiers: NVDA or AMD 200-day momentum falls materially (MOM200 moves toward 1.0 or below) or 60d returns collapse, Price closes and stays below key trend support (e.g., SMA50/SMA200) for either stock
+  Confidence: 0.85
+
+C2: Relative strength leadership: NVDA and AMD exhibit positive 60-day relative strength versus peers while AAPL and MSFT show negative 60-day relative strength [NVDA-RS60] [AMD-RS60] [AAPL-RS60] [MSFT-RS60]; this cross-sectional RS indicates NVDA/AMD should be overweight as momentum leaders and AAPL/MSFT underweighted relative to those leaders.
+  Reasoning Type: observational
+  Claim Type: technical
+  Evidence: [NVDA-RS60], [AMD-RS60], [AAPL-RS60], [MSFT-RS60]
+  Assumptions: 60-day RS is a meaningful short-to-medium term predictor of leadership within this small tech universe, Sector/regime does not flip abruptly to favor previously lagging names
+  Falsifiers: RS60 for NVDA/AMD turns negative or materially deteriorates, AAPL/MSFT RS60 improves to materially positive readings
+  Confidence: 0.8
+
+C3: Short-term pullback vulnerability and volatility management: NVDA and AMD have elevated short-term volatility and recent 20-day pullbacks [NVDA-VOL20] [NVDA-RET20] [NVDA-DD60] [AMD-VOL20] [AMD-RET20] [AMD-DD60], so a modest cash sleeve reduces portfolio drawdown risk and allows reloading on confirmed resumption of trend.
+  Reasoning Type: risk_assessment
+  Claim Type: risk
+  Evidence: [NVDA-VOL20], [NVDA-RET20], [NVDA-DD60], [AMD-VOL20], [AMD-RET20], [AMD-DD60], [L1-FF]
+  Assumptions: High realized short-term volatility increases probability of near-term mean reversion/pullback, Holding a small cash buffer improves risk-adjusted entry into volatile leaders
+  Falsifiers: NVDA and AMD short-term volatility falls materially and 20-day returns turn strongly positive, reducing need for cash buffer, A clear breakout with strong follow-through and volume negates pullback risk
+  Confidence: 0.75
+
+## Previous Risks / Falsifiers
+- Major falsifier: NVDA or AMD price closes and remains below their 50-day SMA (e.g., NVDA closing below [NVDA-SMA50]) with MOM200 materially rolling over — would prompt rapid de-risking.
+- Relative strength reversal: NVDA/AMD RS60 turning negative while AAPL/MSFT RS60 turns strongly positive would invalidate the overweight case (observable via [NVDA-RS60] / [AMD-RS60] / [AAPL-RS60] / [MSFT-RS60]).
+- Volatility shock: a sharp market-wide volatility spike and equity selloff (VIX surge from baseline [L1-VIX]) that causes leaders to suffer >15% additional drawdown would force reassessment.
+- Sustained momentum failure: 60-day returns for NVDA/AMD turning deeply negative (e.g., new 60d drawdowns exceeding prior DD60 levels [NVDA-DD60] [AMD-DD60]) would invalidate C1 and trigger cuts.
+
+## Previous Confidence
+0.78
+
+## Critiques You Received
+### Critique 1 (from MACRO)
+- Target claim: C1
+- Objection: The momentum-persistence claim (C1) dangerously ignores macro regime forces—specifically front-end rate repricing and negative real yields that signal the start of policy normalization. Relying on price momentum as the primary driver for a concentrated overweight to NVDA/AMD fails to account for interest-rate sensitivity and valuation risk: rising short-term yields increase discount rates and disproportionately compress multiples on high-beta, high-duration semiconductor/AI names, making momentum more fragile than the agent assumes.
+- Counter-evidence: [L1-2Y], [L1-REAL], [L1-CPI], [NVDA-BETA], [AMD-BETA], [NVDA-VOL20], [AMD-VOL20]
+- Portfolio implication: Concentrating 70% in NVDA+AMD (NVDA 0.4, AMD 0.3) amplifies exposure to rate-driven multiple compression and episodic volatility. Given short-rate repricing ([L1-2Y]) and deeply negative real yields ([L1-REAL]) that are beginning to move, a momentum-based overweight risks larger-than-expected drawdowns as investors re-price duration-sensitive growth. The TECHNICAL portfolio also has limited ballast in cash-generative, lower-beta platform names that are relatively more resilient to rising short-term rates (MSFT, AAPL). High realized short-term vol on leaders ([NVDA-VOL20], [AMD-VOL20]) increases the likelihood of momentum failure during macro-driven selloffs.
+- Suggested adjustment: Reduce semiconductor concentration and tilt back toward cash-flow-rich platform names that are less sensitive to front-end rate moves. Example re-weighting consistent with the current macro regime: NVDA 0.25, AMD 0.10, MSFT 0.35, AAPL 0.25, CASH 0.05. This reduces rate/duration sensitivity (lower NVDA/AMD) while increasing exposure to firms with pricing power and recurring revenue that better withstand early policy normalization.
+- Falsifier: Evidence that would prove this objection wrong: short-term yields reverse materially (2Y Treasury [L1-2Y] falls back sharply) and/or the macro regime shifts to deeper accommodation (Fed funds [L1-FF] held or eased) while semiconductors sustain outsized earnings beats that materially outpace valuation pressures (sustained sequential revenue and margin acceleration in AMD and NVIDIA as documented in follow-up filings/earnings). Observing a persistent drop in realized vol for NVDA/AMD ([NVDA-VOL20], [AMD-VOL20] materially lower) alongside continued momentum would also falsify the macro vulnerability.
+- Objection confidence: 0.85
+
+Critiques reference your claims using their **claim IDs (C1, C2, …)**.
+
+---
+
+## Your Task
+
+Revise your proposal based on the critiques.
+
+You MUST address **each critique explicitly**.
+
+For each critique:
+
+• Determine whether the critique **invalidates your interpretation of the price signals**.
+
+Then either:
+
+### Option 1 — Rebut the critique
+
+If the critique **does not invalidate the technical evidence**:
+
+• Reject the critique
+• Explain why the critique ignores price behavior
+• Defend your claim using technical evidence
+
+### Option 2 — Accept the critique
+
+If the critique **reveals a genuine flaw in your technical interpretation**:
+
+• Revise the affected claim
+• Update assumptions, evidence, or signal interpretation
+• Adjust portfolio weights if necessary
+
+However:
+
+• Do NOT abandon a signal simply because fundamentals disagree
+• Do NOT adopt macro or valuation reasoning frameworks
+• Only revise when critiques expose **real weaknesses in the technical signals**
+
+---
+
+CRITICAL — Allocation universe constraint
+
+Your revised allocation must use **ONLY tickers from the allocation universe** in the Financial Context.
+
+Rules:
+
+• Do NOT add new tickers
+• Include **ALL universe tickers** in the allocation
+• Use **0.0 weight** for tickers you choose not to hold
+
+Weights must:
+
+• sum to **1.0**
+• remain within **0.0–1.00 per ticker**
+
+---
+
+
+
+---
+
+Your reasoning must remain consistent with **technical analysis principles**.
+
+Claims should follow the structure:
+
+price signal → market behavior → expected price movement
+
+Examples of valid technical reasoning include:
+
+• momentum persistence following strong returns
+• trend continuation after sustained upward price movement
+• volatility compression preceding directional breakouts
+• downside volatility indicating unstable price structure
+• relative strength signaling capital rotation between assets
+
+Avoid reasoning based purely on:
+
+• company fundamentals
+• long-term intrinsic value estimates
+• macroeconomic forecasts
+
+Those belong to other agents’ frameworks.
+
+---
+
+### Claim Revision Rules
+
+• Maintain **3–5 claims maximum**
+
+• Claims must retain **stable IDs** where possible (C1, C2, C3…)
+• If you drop a claim, you MUST document which claim was dropped and why in `revision_notes`
+
+If you change a claim:
+
+• update its text
+• update its evidence
+• update assumptions or falsifiers if needed
+
+If you remove a claim:
+
+• explain why in `revision_notes`
+
+If you add a new claim:
+
+• assign the next ID (e.g., C4)
+
+---
+
+### Claim → Allocation Consistency
+
+Your portfolio allocation must remain **consistent with your technical claims**.
+
+Rules:
+
+• Each claim must affect at least one ticker using `"impacts_positions"`
+• Every ticker with **weight > 0** must be supported by at least one claim
+• Do NOT keep claims that have no effect on the portfolio
+
+---
+
+### Position Rationale Update
+
+For each ticker with **weight > 0**:
+
+• explain which claims justify the position
+• ensure `"supported_by_claims"` references valid claim IDs
+
+If weights changed:
+
+• explain why in `"revision_notes"`
+
+---
+
+Respond with **valid JSON only**.
+
+You MUST include one entry in `critique_responses` for every critique you received. Omitting a critique is not allowed.
+
+{
+  "allocation": {
+    "TICKER": 0.XX
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "... revised technical hypothesis with evidence citations ...",
+      "claim_type": "macro | sector | firm | risk | technical",
+      "reasoning_type": "causal | observational | risk_assessment | pattern",
+      "evidence": ["[EVIDENCE-ID]", "..."],
+      "assumptions": ["..."],
+      "falsifiers": ["..."],
+      "impacts_positions": ["TICKER", "..."],
+      "confidence": 0.0-1.0
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "TICKER",
+      "weight": 0.XX,
+      "supported_by_claims": ["C1", "C2"],
+      "explanation": "Explain how the price signals justify the position."
+    }
+  ],
+
+  "portfolio_rationale": "Explain how the technical signals jointly imply the revised portfolio.",
+
+  "confidence": 0.0-1.0,
+
+  "risks_or_falsifiers": [
+    "Market condition that would invalidate the technical signals."
+  ],
+
+  "critique_responses": [
+    {
+      "from_agent": "agent role that sent the critique",
+      "target_claim": "C1",
+      "disposition": "accept | rebut",
+      "justification": "Why you accept or rebut this critique. Cite evidence IDs."
+    }
+  ],
+
+  "revision_notes": "Summary of changes. Reference claim IDs."
+}

@@ -1,0 +1,228 @@
+{
+  "roles": [
+    "macro",
+    "technical"
+  ],
+  "max_rounds": 1,
+  "propose_only": false,
+  "judge_type": "llm",
+  "enable_adversarial": false,
+  "model_name": "gpt-5-mini",
+  "llm_provider": "openai",
+  "role_llms": {},
+  "phase_llms": {},
+  "temperature": 0.3,
+  "parallel_agents": true,
+  "mock": false,
+  "no_rate_limit": false,
+  "llm_stagger_ms": 500,
+  "max_concurrent_llm": 3,
+  "verbose": false,
+  "log_tokens": false,
+  "log_rendered_prompts": false,
+  "log_prompt_manifest": false,
+  "trace_dir": "./traces",
+  "pid_enabled": false,
+  "prompt_logging": {},
+  "convergence_window": 2,
+  "delta_rho": 0.02,
+  "allocation_mode": true,
+  "skip_pipeline": true,
+  "logging_mode": "debug",
+  "console_display": true,
+  "prompt_file_overrides": {},
+  "prompt_profile": "default",
+  "role_overrides": {},
+  "agent_profiles": {
+    "macro": {
+      "system_prompts": {
+        "propose": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt"
+        ],
+        "critique": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt",
+          "tone"
+        ],
+        "revise": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/macro_enriched_intense.txt",
+          "tone"
+        ]
+      },
+      "user_prompts": {
+        "propose": {
+          "template": "phases/proposal_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "context",
+            "task",
+            "reasoning_structure",
+            "portfolio_construction",
+            "output_format"
+          ]
+        },
+        "critique": {
+          "template": "phases/critique_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "output_format"
+          ]
+        },
+        "revise": {
+          "template": "phases/revision_allocation_with_enumeration_macro_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "macro_revision_guidelines",
+            "output_format"
+          ]
+        }
+      }
+    },
+    "technical": {
+      "system_prompts": {
+        "propose": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt"
+        ],
+        "critique": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt",
+          "tone"
+        ],
+        "revise": [
+          "system_contract/enriched_reasoning_debate_protocol.txt",
+          "roles/technical_enriched_intense.txt",
+          "tone"
+        ]
+      },
+      "user_prompts": {
+        "propose": {
+          "template": "phases/proposal_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "context",
+            "task",
+            "reasoning_structure",
+            "portfolio_construction",
+            "output_format"
+          ]
+        },
+        "critique": {
+          "template": "phases/critique_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "output_format"
+          ]
+        },
+        "revise": {
+          "template": "phases/revision_allocation_with_enumeration_technical_enriched.txt",
+          "sections": [
+            "preamble",
+            "context",
+            "agent_data",
+            "task",
+            "technical_revision_guidelines",
+            "output_format"
+          ]
+        }
+      }
+    }
+  },
+  "agent_profile_names": {
+    "macro": "macro_enriched_intense",
+    "technical": "technical_enriched_intense"
+  },
+  "judge_profile": {
+    "system_prompts": {
+      "judge": [
+        "system_contract/system_causal_contract.txt",
+        "roles/judge.txt"
+      ]
+    },
+    "user_prompts": {
+      "judge": {
+        "template": "phases/judge_allocation.txt",
+        "sections": [
+          "preamble",
+          "context",
+          "agent_data",
+          "task",
+          "output_format"
+        ]
+      }
+    }
+  },
+  "crit_system_template": "crit_system_enumerated.jinja",
+  "crit_user_template": "crit_user_master.jinja",
+  "sector_config": null,
+  "allocation_constraints": null,
+  "intervention_config": {
+    "enabled": true,
+    "revision_limits": {
+      "max_changed_tickers": 2,
+      "max_change_pct": 5
+    },
+    "rules": {
+      "js_collapse": {
+        "enabled": true,
+        "threshold": 0.0,
+        "min_js_proposal": 0.1,
+        "max_retries": 1,
+        "nudge_prompts": {
+          "macro": "placeholder",
+          "technical": "placeholder"
+        }
+      },
+      "reasoning_quality": {
+        "enabled": true,
+        "rho_threshold": 0.0,
+        "max_retries": 1,
+        "agent_pillar_thresholds": {
+          "macro": {
+            "causal_alignment": 0.75
+          },
+          "technical": {
+            "causal_alignment": 0.75
+          }
+        },
+        "nudge_prompts": {
+          "macro": "The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.\n\nCAUSAL ALIGNMENT REMEDIATION PROTOCOL\n\nYour causal reasoning score fell below the acceptable threshold.\nYou must correct causal overreach before finalizing your allocation.\n\nPearl's Causal Hierarchy applies:\n\nLevel 1 (Association): \"X and Y tend to co-occur\"\n  \u2192 Valid for observational claims only.\n\nLevel 2 (Intervention): \"If we change X, Y changes\"\n  \u2192 Requires an explicit mechanism, not just correlation.\n\nLevel 3 (Counterfactual): \"If X had not happened, Y would not have occurred\"\n  \u2192 Requires strong theoretical grounding.\n\nCommon causal errors to avoid:\n\n\u2022 Do NOT claim that macro indicators \"cause\" market outcomes\n  unless you articulate the transmission mechanism\n  (e.g., rate hikes \u2192 higher discount rates \u2192 lower equity valuations).\n\n\u2022 Do NOT treat correlation between macro variables and asset prices\n  as evidence of causation.\n\n\u2022 If you cite a causal relationship, you MUST explain the mechanism:\n  What is the channel? What are the intermediate steps?\n\n\u2022 Label your claims correctly:\n  - \"Observational\" if based on co-occurrence\n  - \"Causal\" only if you provide a mechanism\n\nBefore finalizing:\n1. Review each claim labeled \"causal\" in your revision.\n2. For each, verify you have stated an explicit mechanism.\n3. Downgrade to \"observational\" if no mechanism exists.\n4. Ensure your allocation weights follow from correctly-labeled claims.\n",
+          "technical": "The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.\n\nCAUSAL ALIGNMENT REMEDIATION PROTOCOL\n\nYour causal reasoning score fell below the acceptable threshold.\nYou must correct causal overreach before finalizing your allocation.\n\nPearl's Causal Hierarchy applies:\n\nLevel 1 (Association): \"X and Y tend to co-occur\"\n  \u2192 Valid for observational claims only.\n\nLevel 2 (Intervention): \"If we change X, Y changes\"\n  \u2192 Requires an explicit mechanism, not just correlation.\n\nLevel 3 (Counterfactual): \"If X had not happened, Y would not have occurred\"\n  \u2192 Requires strong theoretical grounding.\n\nCommon causal errors to avoid:\n\n\u2022 Do NOT claim that momentum or trend persistence \"causes\"\n  future price movement unless you articulate why the pattern\n  should persist (e.g., institutional flow dynamics, behavioral\n  anchoring, supply/demand imbalance).\n\n\u2022 Do NOT treat SMA crossovers, relative strength, or price-above-MA\n  as causal drivers. These are associational patterns.\n\n\u2022 If you cite a causal relationship, you MUST explain the mechanism:\n  What is the channel? What are the intermediate steps?\n\n\u2022 Label your claims correctly:\n  - \"Observational/Pattern\" if based on technical indicators\n  - \"Causal\" only if you provide a transmission mechanism\n\nBefore finalizing:\n1. Review each claim labeled \"causal\" in your revision.\n2. For each, verify you have stated an explicit mechanism.\n3. Downgrade to \"observational\" or \"pattern-based\" if no mechanism exists.\n4. Ensure your allocation weights follow from correctly-labeled claims.\n"
+        }
+      }
+    }
+  },
+  "experiment_name": "vskarich_ablation_10",
+  "run_id": "run_2026-03-11_23-36-59",
+  "debate_id": "86ef5e54-4fac-4cf8-842d-e827eae86c9b",
+  "started_at": "2026-03-12T03:36:59.357757+00:00",
+  "completed_at": "2026-03-12T03:43:38.023535+00:00",
+  "config_paths": [
+    "causal_intervention_th075.yaml",
+    "scenario_2022Q1_tech.yaml"
+  ],
+  "crit_model_name": "gpt-5",
+  "actual_rounds": 1,
+  "terminated_early": false,
+  "termination_reason": "max_rounds",
+  "initial_beta": 0.5,
+  "final_beta": null,
+  "ticker_universe": [
+    "AAPL",
+    "AMD",
+    "MSFT",
+    "NVDA",
+    "_CASH_"
+  ],
+  "invest_quarter": "2021-12-31",
+  "final_js": 0.0958
+}

@@ -1,0 +1,996 @@
+=== SYSTEM PROMPT ===
+You are an analyst participating in a multi-agent portfolio allocation debate
+on a professional trading desk.
+
+Multiple agents will propose, critique, and revise portfolio allocations.
+Each agent represents a different analytical perspective.
+
+Your objective is to produce rigorous, evidence-based reasoning while
+critically evaluating the arguments of other agents.
+
+Focus on analytical rigor, clear reasoning, and disciplined use of evidence.
+
+
+---------------------------------------------------------------------
+
+## Evidence Citation — MANDATORY
+
+You MUST cite data using ONLY the exact bracketed evidence IDs
+from the investment memo.
+
+Valid citations look like:
+
+[L1-FF]
+[L1-VIX]
+[L1-10Y]
+[AAPL-RET60]
+
+Rules:
+
+• NEVER invent evidence labels
+• NEVER paraphrase evidence IDs
+• NEVER reference evidence that does not appear in the memo
+
+Any claim without a valid bracketed evidence ID is considered unsupported.
+
+
+---------------------------------------------------------------------
+
+## Reasoning Discipline
+
+Your reasoning must follow these principles:
+
+• Ground all claims in explicit evidence from the memo
+• Avoid unsupported speculation
+• Ensure arguments are internally consistent
+• Clearly connect evidence → reasoning → conclusion
+
+You should prioritize explanations that logically follow from
+the available data rather than making unsupported assumptions.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Construction Discipline
+
+When constructing or revising a portfolio:
+
+• Allocate more capital to higher-conviction ideas
+• Allocate less capital to lower-conviction ideas
+• Avoid equal-weight portfolios unless conviction is identical
+• Ensure allocations reflect the reasoning presented
+
+Your portfolio must clearly express your analytical thesis.
+
+
+---------------------------------------------------------------------
+
+## Active Critique Requirement
+
+During critique phases you must identify at least ONE
+concrete weakness in another agent's reasoning.
+
+Examples of critique targets:
+
+• unsupported claims
+• weak causal reasoning
+• ignoring relevant evidence
+• inconsistent logic
+• fragile assumptions
+
+
+---------------------------------------------------------------------
+
+## Weakest-Assumption Attacks
+
+When evaluating another agent's argument,
+identify the **single weakest assumption** in their thesis.
+
+Focus on assumptions that:
+
+• rely on unverified conditions
+• contradict available evidence
+• depend on fragile reasoning
+• ignore relevant data
+
+Explain clearly why the assumption weakens the argument.
+
+
+---------------------------------------------------------------------
+
+## Anti-Convergence Rule
+
+You are NOT required to converge with other agents.
+
+If critiques do not meaningfully invalidate your reasoning,
+you should defend your thesis rather than adopting another
+agent's conclusion.
+
+Do NOT shift toward neutral allocations simply to reduce disagreement.
+
+
+---------------------------------------------------------------------
+
+## Disagreement Tracking
+
+When revising your reasoning, explicitly state:
+
+Accepted critiques:
+- critiques you accept and how they changed your reasoning
+
+Rejected critiques:
+- critiques you reject and why they do not invalidate your thesis
+
+
+---------------------------------------------------------------------
+
+## Epistemic Calibration
+
+After presenting your thesis, explicitly state the conditions
+that would cause you to revise or abandon your position.
+
+These conditions must be:
+
+• concrete
+• falsifiable
+• tied to observable evidence
+
+Examples include:
+
+• new data contradicting key assumptions
+• evidence invalidating the reasoning chain
+• structural changes in the environment
+
+
+---------------------------------------------------------------------
+
+## Debate Objective
+
+The goal of this debate is not consensus for its own sake.
+
+The objective is to:
+
+• test competing analytical frameworks
+• identify weaknesses in reasoning
+• refine portfolio decisions through adversarial analysis
+
+Disagreement is expected and valuable when supported by
+evidence and sound reasoning.
+You are the MACRO STRATEGIST agent on a multi-agent trading desk.
+
+Your analytical objective is to determine **which macroeconomic regime
+dominates the market environment and how that regime should determine
+sector leadership and portfolio positioning.**
+
+Your core question is:
+
+"What macro regime dominates the current environment,
+and which sectors and companies benefit most from that regime?"
+
+You are responsible for identifying the **dominant macro forces**
+driving asset prices.
+
+You are NOT a stock picker, trend follower, or risk referee.
+Your role is to analyze the **macro environment and explain how it
+shapes expected asset performance.** Other agents will evaluate
+the same evidence through different analytical frameworks.
+
+
+---------------------------------------------------------------------
+
+## Primary Decision Lens
+
+You analyze markets through **macro regime dynamics**.
+
+Your reasoning focuses on how macroeconomic forces determine:
+
+• sector leadership
+• factor performance (growth vs value vs defensives)
+• valuation sensitivity to interest rates
+• earnings expansion or compression across sectors
+• broad market risk appetite
+
+Your portfolio should clearly express **a macro regime view**.
+
+If the macro regime is expansionary, allocations should reflect it.
+If the macro regime is tightening or contractionary, allocations
+must reflect that instead.
+
+You must not produce a portfolio that is macro-neutral or
+macro-agnostic.
+
+
+---------------------------------------------------------------------
+
+## Analytical Domain
+
+Your analysis focuses on macroeconomic drivers that shape markets:
+
+• central bank policy and forward guidance
+• real interest rates and yield curve dynamics
+• inflation trends and inflation expectations
+• economic growth indicators and labor markets
+• fiscal policy and government spending
+• global macro forces such as currencies and commodities
+
+You interpret company performance primarily through these macro forces.
+
+Company fundamentals matter, but **macro conditions determine which
+types of companies are likely to succeed.**
+
+
+---------------------------------------------------------------------
+
+## Narrative Commitment
+
+You operate under the following macro narrative:
+
+**Macroeconomic regimes dominate market behavior.**
+
+Under this framework:
+
+• monetary policy shifts reshape valuation regimes
+• economic cycles determine sector leadership
+• real interest rates influence asset pricing across markets
+• regime transitions create the largest investment opportunities
+
+Markets do not move purely because of company fundamentals.
+They move because **the macro environment changes the rules of the game.**
+
+Bottom-up analysis may explain individual companies,
+but macro conditions determine **which categories of companies win or lose.**
+
+Your responsibility is to identify that regime and position accordingly.
+
+
+---------------------------------------------------------------------
+
+## Macro Thesis Discipline
+
+You must take a **clear macro position**.
+
+Do NOT hedge across multiple macro regimes simply to appear balanced.
+
+A macro strategist who believes the environment is expansionary
+should not simultaneously construct a portfolio optimized for recession.
+
+Your portfolio must clearly reflect:
+
+• the macro regime you believe dominates
+• the sectors favored by that regime
+• the sectors disadvantaged by that regime
+
+
+---------------------------------------------------------------------
+
+## Evidence Priorities
+
+You prioritize macroeconomic evidence when forming your thesis.
+
+Primary evidence sources:
+
+• interest rates and central bank policy signals
+• yield curve structure and real rate dynamics
+• inflation indicators and expectations
+• economic growth and employment data
+• fiscal policy and government spending
+
+Secondary evidence sources:
+
+• sector sensitivity to macro conditions
+• corporate guidance referencing macro headwinds or tailwinds
+• global macro linkages including currency or commodity movements
+
+Company-level fundamentals should be interpreted **through the macro lens.**
+
+A strong company operating in a hostile macro environment
+may still underperform.
+
+
+---------------------------------------------------------------------
+
+## Portfolio Objective
+
+Construct a portfolio that **benefits from the dominant macro regime.**
+
+Your allocations should favor companies that:
+
+• operate in sectors advantaged by current macro conditions
+• benefit from prevailing interest rate dynamics
+• align with the economic cycle currently underway
+• exhibit earnings sensitivity to macro tailwinds
+
+Examples of macro-aligned positioning include:
+
+• cyclical sectors during economic expansion
+• defensive sectors during economic slowdown
+• commodity and real asset exposure during inflationary regimes
+• rate-sensitive sectors when monetary policy loosens
+
+
+---------------------------------------------------------------------
+
+## Portfolio Differentiation
+
+Your portfolio must clearly express **a macro thesis.**
+
+If another agent focused purely on company fundamentals
+or price momentum could construct the same portfolio,
+then your reasoning is insufficiently macro-oriented.
+
+A macro-driven portfolio should show:
+
+• clear sector tilts
+• alignment with the economic cycle
+• sensitivity to interest rate dynamics
+• positioning that reflects macro conditions
+
+
+---------------------------------------------------------------------
+
+## Macro Strategist Discipline
+
+Your default assumption should be:
+
+**Macro conditions dominate market behavior.**
+
+Before accepting another agent's argument, ask:
+
+• Does this thesis make sense under the current macro regime?
+• Would a change in interest rates invalidate this argument?
+• Is this company truly strong, or merely benefiting from macro tailwinds?
+• Are macro forces being ignored in favor of narrow company analysis?
+
+Do not abandon your macro thesis simply because another agent
+presents a compelling company story.
+
+
+---------------------------------------------------------------------
+
+## Common Macro Reasoning Traps
+
+Avoid the following mistakes:
+
+• assuming policy changes always produce identical market responses
+• ignoring the difference between macro levels and rate-of-change
+• confusing leading indicators with lagging indicators
+• treating company performance as independent of macro conditions
+• ignoring regime transitions while focusing only on recent trends
+## Revision Tone: BALANCED
+
+Your objective is to improve the **accuracy, robustness, and internal consistency**
+of your thesis by incorporating critiques that materially strengthen the reasoning,
+while rejecting critiques that do not meaningfully affect your analytical framework.
+
+You are not trying to preserve your original thesis at all costs,
+and you are not trying to converge for its own sake.
+
+Your task is to determine:
+
+• which critiques genuinely expose weaknesses in your reasoning
+• which critiques are valid but low-impact
+• which critiques are inconsistent with the evidence or your analytical lens
+• how accepted critiques should change your thesis, confidence, and allocation
+
+
+---------------------------------------------------------------------
+
+### Balanced Revision Principles
+
+Apply the following standards when revising:
+
+• **Materiality**
+  Only accept critiques that change the strength, scope, or logic of the thesis.
+
+• **Role consistency**
+  Maintain your analytical lens as a MACRO agent.
+  Do not adopt another agent’s reasoning framework wholesale.
+
+• **Reasoning improvement**
+  Your revised thesis must be more precise, better supported, or more robust
+  than the original.
+
+• **Allocation proportionality**
+  Portfolio changes should reflect the magnitude of the reasoning update.
+  Small reasoning updates should not produce extreme allocation swings.
+  Large reasoning failures should not leave the allocation unchanged.
+
+
+---------------------------------------------------------------------
+
+### Required Revision Actions
+
+For each critique, determine whether it is:
+
+• **accepted and material**
+  → it changes the reasoning, confidence, or allocation
+
+• **accepted but limited**
+  → it improves the framing or completeness of the thesis but does not
+    substantially change the allocation
+
+• **rejected**
+  → it does not meaningfully weaken the thesis within your analytical framework
+
+Then perform the following:
+
+1. **Diagnose the impact of accepted critiques**
+   Explain whether the critique changes:
+   • the causal mechanism
+   • the assumptions
+   • the interpretation of evidence
+   • the confidence of the thesis
+   • the portfolio implication
+
+2. **Repair the thesis**
+   Update the argument by doing at least one of the following:
+   • refine the causal explanation
+   • narrow or qualify the claim
+   • incorporate additional memo evidence
+   • revise assumptions or confidence
+   • explain how competing evidence is resolved
+
+3. **Reassess the allocation**
+   Determine whether accepted critiques imply:
+   • reducing a position
+   • increasing a position
+   • reallocating between positions
+   • leaving the portfolio largely unchanged despite a reasoning improvement
+
+4. **Preserve strategic coherence**
+   The revised portfolio should remain a coherent expression of your role-based thesis,
+   not a patchwork compromise with other agents.
+
+
+---------------------------------------------------------------------
+
+### Important Constraints
+
+• Do NOT repeat your original reasoning without meaningful modification.
+
+• Do NOT accept critiques merely because they sound plausible.
+
+• Do NOT reject critiques that clearly weaken your thesis.
+
+• Do NOT make portfolio changes that are larger than the reasoning warrants.
+
+• If your thesis remains mostly intact, explain why.
+  If your thesis materially changed, explain exactly what changed.
+
+
+---------------------------------------------------------------------
+
+### Reasoning Update Requirement
+
+You MUST update your reasoning in at least one substantive way.
+
+Valid updates include:
+
+• refining the causal mechanism
+• adjusting assumptions or uncertainty
+• incorporating additional evidence from the memo
+• clarifying how conflicting evidence is interpreted
+• reducing the scope or confidence of an overextended claim
+
+A revision that only rephrases the same thesis without changing its reasoning
+does NOT satisfy this requirement.
+
+
+---------------------------------------------------------------------
+
+### Portfolio Revision Principles
+
+Portfolio changes must follow from the revised reasoning.
+
+Use the following guidance:
+
+• If a critique weakens a core claim, reduce exposure accordingly.
+
+• If a critique only adds nuance without materially changing the thesis,
+  small or no allocation changes may be appropriate.
+
+• If a critique reveals a stronger interpretation of the evidence,
+  modestly strengthen the most justified positions.
+
+• Avoid excessive turnover between rounds unless the revised reasoning
+  clearly supports a different strategy.
+
+
+---------------------------------------------------------------------
+
+### Required Structure
+
+Accepted critiques
+- critiques that materially improved or refined your reasoning
+
+Rejected critiques
+- critiques that do not alter your thesis within your analytical framework
+
+Reasoning updates
+- exactly how your causal explanation, assumptions, confidence, or evidence use changed
+
+Revised thesis
+- updated explanation incorporating accepted critiques while preserving strategic coherence
+
+Portfolio changes
+- allocation adjustments and the reasoning that justifies them
+
+=== USER PROMPT ===
+You are the MACRO STRATEGIST agent in a multi-agent portfolio allocation debate.
+
+Your analytical framework is **macroeconomic regime analysis**.
+
+You previously proposed a portfolio based on **macro-driven causal claims (C1, C2, …)**.
+
+You have now received critiques from other agents.
+
+Your task is to **revise or defend your proposal while maintaining macroeconomic reasoning discipline.**
+
+Your objective is **not to reach agreement**.
+
+Your objective is to determine whether the critiques actually invalidate your **macro regime interpretation**.
+
+Most critiques from other agents will reflect **non-macro reasoning frameworks** such as:
+
+• price momentum (technical reasoning)
+• company valuation (fundamental reasoning)
+• portfolio volatility management (risk reasoning)
+
+Those critiques may be valid **within their frameworks**, but that does **not automatically invalidate a macro thesis**.
+
+You should therefore **reject critiques that fail to address macroeconomic regime dynamics.**
+
+You should only revise claims if the critique exposes a **genuine flaw in your macro reasoning.**
+
+---
+
+## Financial Context
+## Portfolio Allocation Task
+- Cash to allocate: $100,000.00
+- Allocation universe: AAPL, AMD, MSFT, NVDA, _CASH_
+- As-of: 2022-09-30
+- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).
+[INFO] WARNING: tickers not in snapshot data: MSFT, NVDA
+
+QUARTERLY SNAPSHOT MEMO — 2022 Q3
+As-of date: 2022-09-30
+Tickers: 2
+
+This document is the complete data payload for agent deliberation.
+It contains macro regime, per-ticker price/fundamental metrics,
+SEC filing summaries, and news sentiment for the quarter.
+
+Agents must:
+  - Cite evidence IDs (e.g. [L1-10Y], [AAPL-RET60]) when making claims.
+  - Integrate across layers (macro -> filings -> sentiment -> price).
+  - Treat all interpretations as non-binding hypotheses.
+
+======================================================================
+LAYER 1 — MACRO REGIME
+======================================================================
+
+Rates & Yields:
+  [L1-FF]    Fed Funds: 3.08%
+  [L1-2Y]    2Y Treasury: 4.22% (+130bps QoQ)
+  [L1-10Y]   10Y Treasury: 3.83% (+85bps QoQ)
+  [L1-30Y]   30Y Treasury: 3.79%
+  [L1-CURVE] 10Y-2Y Spread: -0.39% (inverted)
+  [L1-REAL]  10Y Real Yield: 1.68%
+
+Inflation:
+  [L1-CPI]   CPI YoY: 8.19%
+  [L1-CORE]  Core CPI YoY: 6.62%
+
+Growth & Labor:
+  [L1-INDPRO] Industrial Production Index: 101.29
+  [L1-UNEMP] Unemployment: 3.50%
+
+Credit & Commodities:
+  [L1-HY]    HY OAS Spread: 5.43%
+  [L1-DXY]   Dollar Index: 127.51
+  [L1-WTI]   WTI Crude: $79.91
+
+Volatility:
+  [L1-VIX]   VIX: 31.62
+  [L1-EQBC]  Equity-Bond Correlation: 0.13
+
+======================================================================
+TICKER: AAPL
+======================================================================
+
+  Price & Returns:
+    [AAPL-PX]       Close: $135.79
+    [AAPL-RET20]    20D Return: -12.5%
+    [AAPL-RET60]    60D Return: -5.4%
+    [AAPL-RET120]   120D Return: -18.5%
+    [AAPL-RET252]   1Y Return: -1.8%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 37.8%
+    [AAPL-VOL60]    60D Vol (ann): 30.8%
+    [AAPL-DVOL60]   60D Downside Vol: 21.7%
+    [AAPL-DD60]     60D Drawdown: -20.8%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -28.3%
+    [AAPL-SHARPE]   60D Sharpe: -0.76
+    [AAPL-BETA]     1Y Beta: 1.24
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $150.10
+    [AAPL-SMA50]    SMA 50D: $156.91
+    [AAPL-SMA200]   SMA 200D: $156.75
+    [AAPL-MOM200]   200D Momentum: 0.87
+    [AAPL-MOM12_1]  12-1M Momentum: +11.7%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.0387
+    [AAPL-TREND]    Trend Consistency: 0.45
+    [AAPL-RS60]     Relative Strength 60D: +0.0%
+    [AAPL-ESURP]    Earnings Surprise: +4.3%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $15,031,440,305
+
+  Sentiment (from earnings call):
+    [AAPL-SENT]     Mean Sentiment: 0.2080
+    [AAPL-SVOL]     Sentiment Volatility: 0.5537
+
+  Filing Evidence (10-Q, filed 2022-07-29, fiscal period: 2022-Q2 [FYE: Sep 30]):
+    [AAPL-F1] Total net sales increased 2% to $83.0 billion in Q3 2022, driven by iPhone revenue growth of 3% from new models and Services expansion of 12% led by advertising, cloud services and AppleCare, partially offset by Mac and Wearables declines.
+    [AAPL-F2] Geographic performance showed broad-based growth with double-digit expansion in Asia Pacific, modest increases in Americas and Europe, while Greater China and Japan declined.
+    [AAPL-F3] Foreign currency headwinds negatively impacted all segments during the quarter.
+    [AAPL-F4] Total gross margin held steady at 43.3% despite foreign exchange pressures, with Services margin expanding to 71.5% from improved leverage while Products margin compressed to 34.5% from currency impacts and mix shifts.
+    [AAPL-F5] Operating expenses increased to 15% of sales from higher R&D spending driven by headcount growth and engineering programs, plus elevated selling and advertising expenses.
+    [AAPL-F6] Apple repurchased $21.7 billion of common stock and paid $3.8 billion in dividends during Q3 2022.
+    [AAPL-F7] The company introduced the all-new MacBook Air and updated 13-inch MacBook Pro powered by the M2 chip at quarter-end.
+    [AAPL-F8] Apple announced major operating system updates including iOS 16, macOS Ventura, iPadOS 16 and watchOS 9 expected for fall 2022 release.
+    [AAPL-F9] COVID-19 pandemic continues impacting outsourcing partners, component suppliers and logistics providers with ongoing supply chain disruptions and potential future shortages.
+    [AAPL-F10] Foreign currency weakness relative to the U.S. dollar created significant headwinds across all product categories and geographic segments.
+    [AAPL-F11] Manufacturing purchase obligations represent substantial noncancelable commitments primarily tied to demand forecasts.
+    [AAPL-F12] Management expects gross margins to remain subject to volatility and downward pressure from various factors.
+    [AAPL-F13] The company maintains its commitment to annual dividend increases subject to Board approval, with quarterly dividend at $0.23 per share.
+    [AAPL-F14] Apple continues prioritizing focused R&D investments as critical to future growth and competitive positioning.
+    [AAPL-F15] Standard technology industry exposures to market volatility and operational disruptions remain unchanged.
+    [AAPL-F16] Effective tax rate fluctuations continue from foreign earnings mix, share-based compensation timing and regulatory changes including new Treasury regulations affecting foreign tax credits.
+    [AAPL-F17] Supply chain vulnerabilities persist from pandemic-related disruptions across manufacturing and logistics networks.
+
+  Earnings Call Evidence:
+    [AAPL-EC1] Apple reported a record revenue of $83 billion for Q3 FY 2022, a 2% increase year-over-year, despite supply constraints and foreign exchange headwinds.
+    [AAPL-EC2] The company achieved record revenues in multiple regions and product categories, particularly in iPhone and Services, which saw a 12% year-over-year increase to $19.6 billion.
+    [AAPL-EC3] The installed base of active devices reached an all-time high, driven by strong customer satisfaction and loyalty.
+    [AAPL-EC4] Looking ahead to the September quarter, Apple expects year-over-year revenue growth to accelerate compared to the June quarter, despite anticipated foreign exchange impacts and ongoing macroeconomic uncertainties.
+    [AAPL-EC5] The company is not providing specific revenue guidance but anticipates lower supply constraints than in the previous quarter.
+    [AAPL-EC6] Gross margin is projected to be between 41.5% and 42.5%, with operating expenses expected to be between $12.9 billion and $13.1 billion.
+    [AAPL-EC7] Apple faces several risks including significant foreign exchange headwinds, ongoing supply chain constraints, and the impact of geopolitical tensions, particularly related to its business in Russia.
+    [AAPL-EC8] Additionally, macroeconomic factors such as inflation and recession fears could affect consumer demand, particularly in the Wearables, Home, and Accessories segment, which has already shown signs of softness.
+    [AAPL-EC9] Key drivers of Apple's performance include the strong demand for the iPhone 13 lineup, which continues to attract new customers and switchers, particularly in emerging markets.
+    [AAPL-EC10] The growth of the Services segment, bolstered by an expanding installed base and increased customer engagement, also plays a crucial role.
+    [AAPL-EC11] Innovations in product offerings, such as the new MacBook Air and MacBook Pro powered by the M2 chip, are expected to further enhance Apple's competitive position.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $63.36
+    [AMD-RET20]    20D Return: -23.0%
+    [AMD-RET60]    60D Return: -20.1%
+    [AMD-RET120]   120D Return: -37.3%
+    [AMD-RET252]   1Y Return: -38.4%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 52.1%
+    [AMD-VOL60]    60D Vol (ann): 50.2%
+    [AMD-DVOL60]   60D Downside Vol: 33.4%
+    [AMD-DD60]     60D Drawdown: -39.0%
+    [AMD-MDD1Y]    1Y Max Drawdown: -60.9%
+    [AMD-SHARPE]   60D Sharpe: -1.88
+    [AMD-BETA]     1Y Beta: 2.08
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $74.62
+    [AMD-SMA50]    SMA 50D: $86.56
+    [AMD-SMA200]   SMA 200D: $101.96
+    [AMD-MOM200]   200D Momentum: 0.62
+    [AMD-MOM12_1]  12-1M Momentum: -17.5%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: -0.0784
+    [AMD-TREND]    Trend Consistency: 0.45
+    [AMD-RS60]     Relative Strength 60D: -14.7%
+    [AMD-ESURP]    Earnings Surprise: +1.0%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $5,865,449,219
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: 0.1643
+    [AMD-SVOL]     Sentiment Volatility: 0.4510
+
+  Filing Evidence (10-Q, filed 2022-08-03, fiscal period: 2022-Q2):
+    [AMD-F1] Total revenue reached $6.6 billion in Q2 2022, up 70% year-over-year, driven primarily by the Xilinx acquisition completed in February 2022.
+    [AMD-F2] Data Center segment increased 83% from higher EPYC server processor sales, Client segment grew 25% on strong Ryzen mobile processor demand with higher average selling prices, and Gaming segment rose 32% on discrete GPU and semi-custom revenue strength.
+    [AMD-F3] International sales comprised 70% of total revenue, with the company generating $2.0 billion in operating cash flow for the six-month period despite net working capital outflows.
+    [AMD-F4] Gross margin compressed to 46% from 48% in the prior year quarter due to acquisition-related intangible amortization and acquired inventory fair value step-up costs from the Xilinx transaction.
+    [AMD-F5] Operating expenses increased substantially driven by acquisition-related intangible amortization and headcount expansion for product development.
+    [AMD-F6] Manufacturing yields and wafer purchase commitments with GLOBALFOUNDRIES through 2025 continue to impact per-unit costs.
+    [AMD-F7] AMD completed the $48.8 billion Xilinx acquisition in February 2022, issuing 429 million shares, followed by the Pensando Systems acquisition in May 2022.
+    [AMD-F8] The company issued $1.0 billion in new senior notes in June 2022, established a $3.0 billion revolving credit facility, and repurchased $2.8 billion of common stock during the six-month period.
+    [AMD-F9] AMD amended its wafer supply agreement with GLOBALFOUNDRIES, removing exclusivity commitments while maintaining minimum annual capacity allocations through 2025.
+    [AMD-F10] The company maintains 70% international revenue exposure with manufacturing concentrated in Asia, utilizing forward contracts to hedge foreign currency fluctuations.
+    [AMD-F11] Export restrictions intensified with Chinese entities added to Entity List, while new sanctions against Russia, Belarus and Ukraine regions create additional compliance requirements.
+    [AMD-F12] Cryptocurrency mining demand volatility impacts GPU revenue with regulatory restrictions in multiple jurisdictions, while COVID-19 pandemic continues creating supply chain disruptions.
+    [AMD-F13] Management expects continued integration benefits from the Xilinx acquisition across data center and embedded markets with expanded product portfolio enabling hardware acceleration opportunities.
+    [AMD-F14] The company believes current cash position plus available credit facilities and operating cash flows will fund operations and purchase commitments over the next 12 months.
+    [AMD-F15] Product roadmap focuses on next-generation processors and FPGAs with advanced node production concentrated at TSMC.
+    [AMD-F16] The company faces measurement period adjustments for both Xilinx and Pensando acquisitions with purchase price allocations subject to revision within one year of closing dates.
+    [AMD-F17] Ongoing patent litigation involves multiple jurisdictions with mixed outcomes and appeals pending, alongside total debt with covenant restrictions including minimum interest coverage requirements.
+    [AMD-F18] AMD is upgrading its enterprise resource planning system creating implementation risks, while deferred tax liabilities related to acquired intangible assets increased due to utilization of tax attributes subject to potential limitations.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD reported third quarter 2022 revenue of $5.6 billion, a 29% year-over-year increase, but below expectations due to softening PC demand and inventory reductions.
+    [AMD-EC2] The Data Center segment saw a 45% revenue increase year-over-year, driven by strong EPYC processor sales, while the Client segment revenue declined 40% due to reduced shipments amid a weak PC market.
+    [AMD-EC3] The Gaming segment grew 14% year-over-year, supported by strong semi-custom sales, while the Embedded segment reached a record $1.3 billion in revenue.
+    [AMD-EC4] For Q4 2022, AMD expects revenue to be approximately $5.5 billion, flat sequentially but up 14% year-over-year, driven by growth in the Embedded and Data Center segments.
+    [AMD-EC5] The company anticipates continued challenges in the Client and Gaming segments, with a focus on managing inventory levels and aligning supply with demand.
+    [AMD-EC6] Looking ahead to 2023, AMD remains optimistic about growth in the Data Center market, particularly in North America, despite macroeconomic headwinds.
+    [AMD-EC7] AMD faces risks from a volatile PC market, with significant inventory corrections impacting the Client segment.
+    [AMD-EC8] The company is also navigating macroeconomic uncertainties that could affect enterprise spending and overall demand in the Data Center market.
+    [AMD-EC9] Additionally, geopolitical factors, such as U.S.-China trade restrictions, may pose challenges to revenue growth, particularly in consumer-facing segments.
+    [AMD-EC10] Key drivers for AMD's growth include the strong performance of its Data Center segment, particularly with the upcoming launch of the Genoa processors, and continued demand for semi-custom products in the Gaming segment.
+    [AMD-EC11] The Embedded segment is also expected to contribute significantly to revenue growth, supported by strong demand across various industries, including aerospace and defense.
+    [AMD-EC12] AMD's strategic focus on high-performance computing and adaptive solutions positions it well for long-term growth.
+
+======================================================================
+END OF MEMO
+======================================================================
+
+
+---
+
+## Your Original Proposal
+## Previous Portfolio Allocation
+AAPL: 0.4
+AMD: 0.15
+MSFT: 0.0
+NVDA: 0.0
+_CASH_: 0.45
+
+## Previous Thesis
+The dominant regime is one of monetary tightening, elevated real yields, high inflation and elevated recession signals (inverted curve + credit/volatility stress). C1 drives a reduction in exposure to long-duration, high-beta growth (semiconductors and pure-growth software); C2 favors firms with recurring, high-margin services and strong cash generation over consumer hardware highly sensitive to FX and demand; C3 raises the value of cash as defensive ballast. Together these claims justify a large cash weight (45%) to manage macro risk, a meaningful overweight to AAPL (40%) for services/cash-flow resilience, and a small tactical position in AMD (15%) to retain upside to data-center cycles while acknowledging high beta and downside risk. MSFT and NVDA are set to zero here given the regime view (rate-sensitivity/valuation risk and lack of snapshot fundamentals in this memo).
+
+## Previous Position Rationale
+AAPL (0.4): AAPL combines a large, resilient installed base and faster-growing Services (12% Services growth; services margin expansion) which provides recurring, higher-margin revenue that is less duration-sensitive than pure growth plays [AAPL-F1] [AAPL-F4]; this reduces downside in a high-inflation, high-rate environment (C2) and offers a relatively safer large-cap allocation versus high-beta semiconductors in a recessionary/risk-off regime (C3).
+  Supported by claims: C2, C3, C1
+
+AMD (0.15): AMD has meaningful high-beta, cyclical exposure (Client declines, Gaming weakness) and high volatility; C1 (higher yields) and C3 (recession risk) argue for underweighting cyclical semiconductor exposure, but a modest allocation preserves exposure to data-center tailwinds noted in filings (Data Center growth) if conditions outperform [AMD-EC1] [AMD-F2].
+  Supported by claims: C1, C3, C2
+
+CASH (0.45): Given inverted curve, elevated HY spreads and VIX that signal elevated recession risk (C3), and attractive near-term policy rates (Fed Funds 3.08%) providing carry (C1), holding a large cash position reduces downside risk and preserves optionality to re-deploy into beaten-down, rate-sensitive assets on a clearer macro pivot.
+  Supported by claims: C3, C1, C2
+
+## Previous Claims
+C1: Tightening monetary policy and higher short-term yields (Fed Funds 3.08%, 2Y = 4.22%) combined with elevated real yields [L1-FF] [L1-2Y] [L1-REAL] increase discount rates and compress multiples for long-duration, high-beta growth equities—this mechanism disproportionately hurts highly rate-sensitive, high-beta semiconductor and pure growth exposures (impacts AMD, NVDA, MSFT).
+  Reasoning Type: causal
+  Claim Type: macro
+  Evidence: [L1-FF], [L1-2Y], [L1-REAL], [AMD-BETA]
+  Assumptions: Real yields and short-term policy rates remain elevated or trend higher in the near term, Earnings growth does not accelerate enough to offset higher discount rates for long-duration cash flows
+  Falsifiers: Material fall in real yields or Fed pivot toward easing (e.g., Fed Funds declines meaningfully) [L1-FF] [L1-REAL], Persistent and broad acceleration in revenue/earnings for semiconductor names that offsets multiple compression
+  Confidence: 0.8
+
+C2: High inflation (CPI YoY 8.19%, Core CPI 6.62%) and a strong US dollar (DXY 127.51) create margin and demand pressure for consumer hardware while favoring businesses with high-margin, recurring services and strong cash generation—this benefits firms with large services mix and resilient installed base (AAPL) and hurts consumer-exposed hardware revenues (AMD Client/Gaming) [L1-CPI] [L1-CORE] [L1-DXY] [AAPL-F1] [AAPL-F4] [AMD-EC2].
+  Reasoning Type: causal
+  Claim Type: sector
+  Evidence: [L1-CPI], [L1-CORE], [L1-DXY], [AAPL-F1], [AAPL-F4], [AMD-EC2]
+  Assumptions: Inflation remains elevated enough that real incomes and discretionary consumer spending are constrained, Currency strength persists and materially impacts reported revenues/margins for export/exposed firms
+  Falsifiers: Rapid disinflation or dollar weakening that restores consumer purchasing power and relieves currency headwinds [L1-CPI] [L1-DXY], Unexpected strength in PC/game hardware demand despite inflation (contradicting [AMD-EC2])
+  Confidence: 0.75
+
+C3: Inverted yield curve (10Y-2Y = -0.39%), widening credit stress signals (HY OAS 5.43%) and elevated equity volatility (VIX 31.62) increase recession probability and favor higher cash holdings and defensive positioning while penalizing high-beta cyclicals (supports overweight CASH and underweight AMD) [L1-CURVE] [L1-HY] [L1-VIX] [AMD-BETA] [AAPL-BETA].
+  Reasoning Type: risk_assessment
+  Claim Type: risk
+  Evidence: [L1-CURVE], [L1-HY], [L1-VIX], [AMD-BETA], [AAPL-BETA]
+  Assumptions: Yield curve inversion and credit spread widening are signalling elevated near-term downside risk to growth, Risk-off episodes materially reduce risk appetite and push flows into cash/safer corporates
+  Falsifiers: Yield curve re-steepening and sustained compression of credit spreads (reduced HY OAS), and falling realized volatility [L1-CURVE] [L1-HY] [L1-VIX], Clear data showing growth resilience (e.g., industrials surge, unemployment spike down) contradicting recession signal
+  Confidence: 0.78
+
+## Previous Risks / Falsifiers
+- Real yields and policy rates decline materially (Fed pivot or rapid disinflation evidenced by falling CPI), which would restore valuation support for long-duration growth and invalidate the defensive/cash-heavy stance [L1-FF] [L1-REAL] [L1-CPI].
+- Sustained re-acceleration in enterprise/PC/Gaming demand (e.g., AMD Data Center and Client surprises) that contradict current guidance and reduces recession risk [AMD-EC1] [AMD-EC4].
+- Rapid dollar depreciation and easing of supply-chain/currency headwinds that restore margins for hardware-exporting firms (contradicts the currency/margin channel assumed) [L1-DXY] [AAPL-F3].
+
+## Previous Confidence
+0.72
+
+## Critiques You Received
+### Critique 1 (from RISK)
+- Target claim: C2
+- Objection: C2 assumes AAPL's Services/installed-base mix makes a 40% single-stock overweight safe in a tightening/high-inflation regime. That is fragile because the memo also documents material FX and supply‑chain headwinds and that margins remain subject to volatility—conditions that can amplify losses for a large AAPL concentration even if Services are growing. The agent underestimates single-name concentration risk given AAPL's beta and past drawdowns.
+- Counter-evidence: [AAPL-F3], [AAPL-F9], [AAPL-F12], [AAPL-BETA], [AAPL-MDD1Y], [L1-VIX], [L1-CURVE], [L1-HY]
+- Portfolio implication: A 40% AAPL position concentrates market, FX and supply‑chain risk into one name with 1Y beta >1 [AAPL-BETA] and past max drawdown -28.3% [AAPL-MDD1Y]. In a recessionary / volatility spike scenario signaled by inverted curve and high HY spreads [L1-CURVE][L1-HY] and elevated VIX [L1-VIX], correlations would converge and AAPL could suffer large, portfolio‑level losses (a 25-35% AAPL shock would translate to a 10-14% portfolio hit before accounting for contagion to other holdings).
+- Suggested adjustment: Reduce AAPL exposure materially (e.g., from 40% -> 20-25%), cut AMD from 15% -> 5% given its high idiosyncratic risk, and increase CASH to ~60-70% to limit single-name concentration and provide liquidity to redeploy on clearer macro signals.
+- Falsifier: Evidence that would invalidate this objection: Services revenue and high-margin Services expansion materially accelerate and FX/supply headwinds abate (e.g., stronger Services growth and margin signals [AAPL-F1][AAPL-F4], plus management guidance showing resilience [AAPL-EC2]), and macro indicators show sustained volatility fall (VIX compresses) and curve re-steepening [L1-VIX][L1-CURVE].
+- Objection confidence: 0.9
+
+### Critique 2 (from TECHNICAL)
+- Target claim: C2
+- Objection: C2 leans on AAPL's services resilience to justify a 40% overweight, but that fundamental narrative is not confirmed by price action: AAPL is trading below its short-, medium- and long-term SMAs and showing negative short-term returns, which signals a broken short-to-medium-term trend and higher probability of continued underperformance until price structure repairs. Overweighting AAPL at 40% fights the observable momentum and increases drawdown risk if the market continues to discount duration/FX/cyclicality.
+- Counter-evidence: [AAPL-SMA20], [AAPL-SMA50], [AAPL-SMA200], [AAPL-RET20], [AAPL-RET60], [AAPL-RET120], [AAPL-TREND], [L1-VIX], [AMD-SMA20], [AMD-SMA50], [AMD-SMA200], [AMD-RET60], [AMD-RET120]
+- Portfolio implication: By prioritizing a fundamental-services narrative over clear broken technical structure, the MACRO allocation risks concentrated losses if AAPL remains under its SMAs and momentum stays negative. The 40% AAPL weight is large relative to the technical evidence and therefore inconsistent with a trend-respecting approach — it exposes the portfolio to further downside rather than preserving optionality.
+- Suggested adjustment: Reduce AAPL from 40% to ~30% (or lower, e.g., 25%) and increase CASH to absorb risk (raise CASH toward 50–60%). Trim AMD from 15% to a small tactical recovery stake (e.g., 5–10%) because AMD's trend is materially worse. Re-open equity sizing only after price confirms a trend repair (AAPL holding above SMA50/200 with follow-through).
+- Falsifier: AAPL closes and holds above AAPL-SMA50 and AAPL-SMA200 with sustained follow-through volume (price-based confirmation) and short-/medium-term returns improve (AAPL-RET60 turns positive) — that would invalidate the objection and justify the MACRO overweight [AAPL-SMA50] [AAPL-SMA200] [AAPL-RET60].
+- Objection confidence: 0.8
+
+Critiques reference your claims using their **claim IDs (C1, C2, …)**.
+
+---
+
+## Your Task
+
+Revise your proposal based on the critiques.
+
+You MUST address **every critique explicitly**.
+
+For each critique:
+
+• Decide whether the critique **invalidates your macro reasoning**.
+
+Then either:
+
+### Option 1 — Rebut the critique
+
+If the critique does **not invalidate your macro regime interpretation**:
+
+• Reject the critique
+• Explain why the critique ignores or misinterprets macro conditions
+• Defend your original claim using macro evidence
+
+### Option 2 — Accept the critique
+
+If the critique **exposes a real flaw in your macro reasoning**:
+
+• Revise the affected claim
+• Update assumptions, evidence, or macro interpretation
+• Adjust portfolio weights if necessary
+
+However:
+
+• Do NOT revise claims simply to reduce disagreement
+• Do NOT adopt other agents' reasoning frameworks
+• Only revise when the critique **invalidates the macro regime logic**
+
+---
+
+CRITICAL — Allocation universe constraint
+
+Your revised allocation must use **ONLY tickers from the allocation universe** in the Financial Context.
+
+Rules:
+
+• Do NOT add new tickers
+• Include **ALL universe tickers** in the allocation
+• Use **0.0 weight** for tickers you choose not to hold
+
+Weights must:
+
+• sum to **1.0**
+• remain within **0.0–1.00 per ticker**
+
+---
+
+
+
+---
+
+Your reasoning must remain consistent with **macro regime analysis**.
+
+Claims should follow the structure:
+
+macro regime → sector implications → security positioning
+
+Examples of macro-driven reasoning include:
+
+• interest rate regime affecting growth vs value leadership
+• inflation dynamics affecting commodity or cyclical sectors
+• monetary policy affecting valuation regimes
+• economic cycle phases affecting sector performance
+
+You should **not abandon a macro thesis simply because another agent disagrees.**
+
+Macro regime transitions occur slowly and often contradict:
+
+• short-term momentum signals
+• individual company narratives
+
+---
+
+### Claim Revision Rules
+
+• Maintain **3–5 claims maximum**
+
+• Claims must retain **stable IDs** where possible (C1, C2, C3…)
+• If you drop a claim, you MUST document which claim was dropped and why in `revision_notes`
+
+If you change a claim:
+
+• update its text
+• update its evidence
+• update assumptions or falsifiers if needed
+
+If you remove a claim:
+
+• explain why in `revision_notes`
+
+If you add a new claim:
+
+• assign the next ID (e.g., C4)
+
+---
+
+### Claim → Allocation Consistency
+
+Your portfolio allocation must remain **consistent with your macro claims**.
+
+Rules:
+
+• Each claim must affect at least one ticker using `"impacts_positions"`
+• Every ticker with **weight > 0** must be supported by at least one claim
+• Do NOT keep claims that have no effect on the portfolio
+
+---
+
+### Position Rationale Update
+
+For each ticker with **weight > 0**:
+
+• explain which claims justify the position
+• ensure `"supported_by_claims"` references valid claim IDs
+
+If weights changed:
+
+• explain why in `"revision_notes"`
+
+---
+
+Respond with **valid JSON only**.
+
+You MUST include one entry in `critique_responses` for every critique you received. Omitting a critique is not allowed.
+
+{
+  "allocation": {
+    "TICKER": 0.XX
+  },
+
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "... revised macro hypothesis with evidence citations ...",
+      "claim_type": "macro | sector | firm | risk | technical",
+      "reasoning_type": "causal | observational | risk_assessment | pattern",
+      "evidence": ["[EVIDENCE-ID]", "..."],
+      "assumptions": ["..."],
+      "falsifiers": ["..."],
+      "impacts_positions": ["TICKER", "..."],
+      "confidence": 0.0-1.0
+    }
+  ],
+
+  "position_rationale": [
+    {
+      "ticker": "TICKER",
+      "weight": 0.XX,
+      "supported_by_claims": ["C1", "C2"],
+      "explanation": "Explain why these macro claims justify the position."
+    }
+  ],
+
+  "portfolio_rationale": "Explain how the macro regime interpretation implies the portfolio.",
+
+  "confidence": 0.0-1.0,
+
+  "risks_or_falsifiers": [
+    "Portfolio-level macro condition that would invalidate the strategy."
+  ],
+
+  "critique_responses": [
+    {
+      "from_agent": "agent role that sent the critique",
+      "target_claim": "C1",
+      "disposition": "accept | rebut",
+      "justification": "Why you accept or rebut this critique. Cite evidence IDs."
+    }
+  ],
+
+  "revision_notes": "Summary of changes. Reference claim IDs."
+}
