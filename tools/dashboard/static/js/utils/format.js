@@ -1,14 +1,23 @@
+/**
+ * utils/format.js
+ *
+ * Number and value formatting utilities for dashboard display.
+ */
+
+/** Format a numeric value to a fixed number of decimal places, defaulting to 4. */
 export function fmt(v, decimals) {
   if (v == null) return '\u2014';
   return Number(v).toFixed(decimals != null ? decimals : 4);
 }
 
+/** Format a percentage value to 2 decimal places, returning a dot for zero or null. */
 export function fmtPct(v) {
   if (v == null) return '\u00b7';
   if (v === 0) return '\u00b7';
   return v.toFixed(2);
 }
 
+/** Format a number with locale-aware thousand separators and 2 decimal places. */
 export function numFmt(n) {
   if (n == null) return '\u2014';
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });

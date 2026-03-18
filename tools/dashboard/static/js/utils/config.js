@@ -15,24 +15,17 @@
  */
 export function flattenConfig(obj, prefix) {
   if (obj === null || obj === undefined || typeof obj !== 'object') return [];
-  let result = [];
-  let keys = Object.keys(obj).sort();
-  for (let i = 0; i < keys.length; i++) {
-    let k = keys[i];
+  return Object.keys(obj).sort().flatMap(function (k) {
     let fullKey = prefix !== undefined ? prefix + '.' + k : k;
     let v = obj[k];
     if (v === null || v === undefined) {
-      result.push({ key: fullKey, value: '\u2014' });
+      return [{ key: fullKey, value: '\u2014' }];
     } else if (Array.isArray(v)) {
-      result.push({ key: fullKey, value: v.join(', ') });
+      return [{ key: fullKey, value: v.join(', ') }];
     } else if (typeof v === 'object') {
-      let nested = flattenConfig(v, fullKey);
-      for (let j = 0; j < nested.length; j++) {
-        result.push(nested[j]);
-      }
+      return flattenConfig(v, fullKey);
     } else {
-      result.push({ key: fullKey, value: String(v) });
+      return [{ key: fullKey, value: String(v) }];
     }
-  }
-  return result;
+  });
 }

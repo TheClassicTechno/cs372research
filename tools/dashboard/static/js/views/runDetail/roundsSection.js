@@ -15,20 +15,17 @@ import { appState } from '../../state.js';
  */
 export function loadRoundAgents(experiment, runId, roundNum) {
   let buttons = document.querySelectorAll('[data-action="load-agents"][data-round="' + roundNum + '"]');
-  let container = null;
-  for (let i = 0; i < buttons.length; i++) {
-    if (buttons[i].dataset.experiment === experiment && buttons[i].dataset.runId === runId) {
-      container = buttons[i].parentElement;
-      break;
-    }
-  }
-  if (!container) return;
+  let match = Array.from(buttons).find(function (btn) {
+    return btn.dataset.experiment === experiment && btn.dataset.runId === runId;
+  });
+  if (!match) return;
+  let container = match.parentElement;
 
   let agentLabel = makeAgentLabel(appState.manifest);
   container.innerHTML = '<span class="loading">Loading agent details...</span>';
   fetchRound(experiment, runId, roundNum)
     .then(function (detail) {
-      container.innerHTML = buildAgentCards(detail, agentLabel);
+      container.innerHTML = '<div data-testid="rounds-content">' + buildAgentCards(detail, agentLabel) + '</div>';
     })
     .catch(function () {
       container.innerHTML = '<span style="color:#900;">Failed to load agent details.</span>';
