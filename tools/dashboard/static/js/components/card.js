@@ -8,18 +8,18 @@ export function buildCard(title, body, startOpen) {
 }
 
 export function buildRoundCard(rs, experiment, runId) {
-  var roundNum = rs.round || 0;
-  var metrics = rs.metrics || {};
-  var pid = rs.pid || {};
-  var crit = rs.crit || {};
+  let roundNum = rs.round || 0;
+  let metrics = rs.metrics || {};
+  let pid = rs.pid || {};
+  let crit = rs.crit || {};
 
-  var summary = 'Round ' + roundNum + ' | ';
+  let summary = 'Round ' + roundNum + ' | ';
   summary += 'Beta: ' + fmt(pid.beta_in, 2) + ' \u2192 ' + fmt(pid.beta_new || metrics.beta_new, 2);
   summary += ' | <span style="text-decoration:overline">\u03c1</span>: ' + fmt(metrics.rho_bar || crit.rho_bar);
   summary += ' | ' + esc(pid.quadrant || metrics.quadrant || '\u2014');
   summary += ' | ' + esc(pid.tone_bucket || '\u2014');
 
-  var body = '<pre class="content">' + esc(JSON.stringify(rs, null, 2)) + '</pre>';
+  let body = '<pre class="content">' + esc(JSON.stringify(rs, null, 2)) + '</pre>';
   body += '<div style="margin-top:8px">';
   body += '<button data-action="load-agents" data-experiment="' + esc(experiment) + '" data-run-id="' + esc(runId) + '" data-round="' + roundNum + '">Load Agent Details</button>';
   body += '</div>';
@@ -30,8 +30,8 @@ export function buildRoundCard(rs, experiment, runId) {
 }
 
 export function buildEventCard(ev) {
-  var label = '[ROUND ' + ev.round + '] ' + ev.agent + ' \u2014 ' + ev.phase;
-  var h = '<div class="card" data-eid="' + esc(ev.id) + '">';
+  let label = '[ROUND ' + ev.round + '] ' + ev.agent + ' \u2014 ' + ev.phase;
+  let h = '<div class="card" data-eid="' + esc(ev.id) + '">';
   h += '<div class="card-header">';
   h += '<span>' + esc(label) + '</span>';
   h += '<span class="arrow">&#9654;</span>';
@@ -56,11 +56,11 @@ export function buildRunHeader(data) {
  * Accepts an agentLabel resolver to map role keys to display names.
  */
 export function buildAgentCards(detail, agentLabel) {
-  var agents = detail.agents || {};
-  var h = '';
+  let agents = detail.agents || {};
+  let h = '';
   Object.keys(agents).sort().forEach(function (role) {
-    var a = agents[role];
-    var agentBody = '';
+    let a = agents[role];
+    let agentBody = '';
     if (a.proposal != null) {
       agentBody += '<div class="section-label">PROPOSAL</div>';
       agentBody += '<pre class="content">' + esc(typeof a.proposal === 'string' ? a.proposal : JSON.stringify(a.proposal, null, 2)) + '</pre>';
@@ -82,9 +82,9 @@ export function buildAgentCards(detail, agentLabel) {
       agentBody += '<pre class="content">' + esc(JSON.stringify(a.revision_portfolio, null, 2)) + '</pre>';
     }
 
-    var cs = detail.crit_scores;
+    let cs = detail.crit_scores;
     if (cs && cs.agent_scores && cs.agent_scores[role]) {
-      var ags = cs.agent_scores[role];
+      let ags = cs.agent_scores[role];
       agentBody += '<div class="section-label">CRIT SCORES</div>';
       agentBody += '<pre class="content">rho_i: ' + fmt(ags.rho_i) + '\n';
       if (ags.pillar_scores) {
@@ -104,7 +104,7 @@ export function buildAgentCards(detail, agentLabel) {
       agentBody += '<pre class="content">' + esc(a.crit_response) + '</pre>';
     }
 
-    var displayName = (typeof agentLabel === 'function') ? agentLabel(role) : role;
+    let displayName = (typeof agentLabel === 'function') ? agentLabel(role) : role;
     h += '<div class="card">' +
       '<div class="card-header"><span>' + esc(displayName.toUpperCase()) + '</span><span class="arrow">&#9654;</span></div>' +
       '<div class="card-body">' + agentBody + '</div></div>';

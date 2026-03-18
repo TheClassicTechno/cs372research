@@ -20,16 +20,29 @@ export function numFmt(n) {
  */
 export function fmtDuration(s) {
   if (s == null) return '\u2014';
-  var sec = Math.round(s);
+  let sec = Math.round(s);
   if (sec < 60) return sec + 's';
-  var m = Math.floor(sec / 60);
-  var rem = sec % 60;
+  let m = Math.floor(sec / 60);
+  let rem = sec % 60;
   if (m >= 60) {
-    var h = Math.floor(m / 60);
+    let h = Math.floor(m / 60);
     m = m % 60;
     return h + 'h ' + m + 'm';
   }
   return m + 'm ' + rem + 's';
+}
+
+/** Return a CSS class for a p-value: green < 0.05, yellow < 0.10, red otherwise. */
+export function pvalueClass(p) {
+  if (p < 0.05) return 'perf-profit';
+  if (p < 0.10) return 'score-mid';
+  return 'perf-loss';
+}
+
+/** Format a p-value for display: "< 0.001" or 4-decimal. */
+export function fmtPvalue(p) {
+  if (p < 0.001) return '< 0.001';
+  return fmt(p, 4);
 }
 
 /** Return a CSS class encoding score magnitude as grayscale shading. */

@@ -331,10 +331,10 @@ class TestDivergenceTableLayout:
 # ---------------------------------------------------------------------------
 
 class TestAblationSideBySideLayout:
-    def test_quality_metrics_row_has_flex_display(
+    def test_quality_metrics_row_has_grid_display(
         self, page: Page, dashboard_url: str,
     ):
-        """Quality metrics row (rho, pillars, JS, evidence) uses flex layout."""
+        """Quality metrics row (rho, pillars, JS, evidence) uses grid layout."""
         page.goto(f"{dashboard_url}/#ablation")
         page.wait_for_selector(
             "[data-testid='ablation-experiment']", timeout=5000,
@@ -350,14 +350,14 @@ class TestAblationSideBySideLayout:
         display = page.evaluate(
             "(el) => window.getComputedStyle(el).display", row,
         )
-        assert display == "flex", (
-            f"Expected metrics-row display:flex, got '{display}'"
+        assert display == "grid", (
+            f"Expected metrics-row display:grid, got '{display}'"
         )
 
     def test_breakdowns_row_side_by_side(
         self, page: Page, dashboard_url: str,
     ):
-        """Per Scenario and Per Agent Config tables are in same flex row."""
+        """Per Scenario and Per Agent Config tables are in same grid row."""
         page.goto(f"{dashboard_url}/#ablation")
         page.wait_for_selector(
             "[data-testid='ablation-experiment']", timeout=5000,
@@ -373,14 +373,69 @@ class TestAblationSideBySideLayout:
         display = page.evaluate(
             "(el) => window.getComputedStyle(el).display", row,
         )
-        assert display == "flex", (
-            f"Expected breakdowns row display:flex, got '{display}'"
+        assert display == "grid", (
+            f"Expected breakdowns row display:grid, got '{display}'"
         )
         text = row.text_content()
         assert "Per Scenario" in text, "Missing 'Per Scenario' in breakdowns row"
         assert "Per Agent Config" in text, (
             "Missing 'Per Agent Config' in breakdowns row"
         )
+
+    def test_metrics_col_has_card_styling(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Quality metrics columns have card-like border and padding."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        col = page.wait_for_selector(
+            "[data-testid='metrics-row-quality'] .metrics-col", timeout=3000,
+        )
+        border = page.evaluate(
+            "(el) => window.getComputedStyle(el).borderStyle", col,
+        )
+        assert border == "solid", (
+            f"Expected metrics-col border-style:solid, got '{border}'"
+        )
+
+    def test_data_tables_full_width(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Data tables inside metrics columns fill their container width."""
+        page.goto(f"{dashboard_url}/#ablation")
+        page.wait_for_selector(
+            "[data-testid='ablation-experiment']", timeout=5000,
+        )
+        header = page.query_selector(
+            "[data-testid='ablation-experiment'] .card-header",
+        )
+        header.click()
+
+        page.wait_for_selector(
+            "[data-testid='metrics-row-quality'] .data-table", timeout=3000,
+        )
+        tables = page.query_selector_all(
+            "[data-testid='metrics-row-quality'] .data-table",
+        )
+        assert len(tables) > 0, "No data tables found in quality metrics row"
+        for table in tables:
+            parent_width = page.evaluate(
+                "(el) => el.parentElement.clientWidth", table,
+            )
+            table_width = page.evaluate(
+                "(el) => el.offsetWidth", table,
+            )
+            # Table should fill at least 90% of parent width
+            assert table_width >= parent_width * 0.9, (
+                f"Table width {table_width} too narrow for parent {parent_width}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -822,6 +877,53 @@ class TestCollapseDiagnostics:
         text = page.text_content("#collapse-section")
         assert "Leader" in text or "leader" in text
 
+    def test_collapse_definitions_grid_layout(self, page: Page, dashboard_url: str):
+        """Collapse definitions use a grid layout with term/description pairs."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector("#collapse-section .collapse-definitions", timeout=10000)
+        defs = page.query_selector("#collapse-section .collapse-definitions")
+        display = page.evaluate(
+            "(el) => window.getComputedStyle(el).display", defs,
+        )
+        assert display == "grid", (
+            f"Expected collapse-definitions display:grid, got '{display}'"
+        )
+        terms = page.query_selector_all("#collapse-section .collapse-def-term")
+        assert len(terms) == 4, f"Expected 4 definition terms, got {len(terms)}"
+        term_texts = [t.text_content().strip() for t in terms]
+        assert "Movement" in term_texts
+        assert "Dissent" in term_texts
+
+    def test_collapse_definitions_typography(self, page: Page, dashboard_url: str):
+        """Collapse definition terms use readable font size (>= 15px)."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-term", timeout=10000,
+        )
+        term = page.query_selector("#collapse-section .collapse-def-term")
+        font_size = page.evaluate(
+            "(el) => window.getComputedStyle(el).fontSize", term,
+        )
+        size_px = float(font_size.replace("px", ""))
+        assert size_px >= 15, (
+            f"Expected term font-size >= 15px, got {font_size}"
+        )
+
+    def test_collapse_definitions_row_spacing(self, page: Page, dashboard_url: str):
+        """Collapse definition rows have visible padding for readability."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(
+            "#collapse-section .collapse-def-desc", timeout=10000,
+        )
+        desc = page.query_selector("#collapse-section .collapse-def-desc")
+        padding = page.evaluate(
+            "(el) => window.getComputedStyle(el).paddingTop", desc,
+        )
+        pad_px = float(padding.replace("px", ""))
+        assert pad_px >= 8, (
+            f"Expected description padding-top >= 8px, got {padding}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # TEST 20 — Ticker performance table
@@ -896,3 +998,204 @@ class TestNoTruncation:
             assert overflow != "ellipsis", (
                 f"ov-htable cell should not truncate, got text-overflow: {overflow}"
             )
+
+
+# ---------------------------------------------------------------------------
+# TEST — Table labels loaded from JSON config
+# ---------------------------------------------------------------------------
+
+class TestTableLabelsLoaded:
+    def test_table_labels_loaded(self, page: Page, dashboard_url: str):
+        """Dashboard loads and uses table_labels.json for display strings."""
+        _goto_run_detail(page, dashboard_url)
+        page.wait_for_selector(".run-overview", timeout=10000)
+        text = page.text_content(".run-overview")
+        assert "Run ID" in text
+        assert "Experiment" in text
+
+    def test_divergence_labels_from_config(self, page: Page, dashboard_url: str):
+        """Divergence card title comes from table_labels.json."""
+        _goto_run_detail(page, dashboard_url)
+        section = page.wait_for_selector("#divergence-section", timeout=5000)
+        assert section is not None
+        text = section.text_content()
+        assert "Divergence Overview" in text, (
+            "Card title 'Divergence Overview' not found — labels may not be loading"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Financial Tests — Redesigned three-part layout
+# ---------------------------------------------------------------------------
+
+
+def _open_ablation_experiment(page: Page, url: str) -> None:
+    """Navigate to ablation tab and open the first experiment card."""
+    page.goto(f"{url}/#ablation")
+    page.wait_for_selector(
+        "[data-testid='ablation-experiment']", timeout=5000,
+    )
+    header = page.query_selector(
+        "[data-testid='ablation-experiment'] .card-header",
+    )
+    header.click()
+    page.wait_for_selector(
+        "[data-testid='ablation-experiment'].open .card-body",
+        timeout=3000,
+    )
+
+
+class TestFinancialTestsSection:
+    def test_financial_tests_section_renders(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Financial tests section appears inside the experiment card."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        assert section is not None, "Financial tests section did not render"
+
+    def test_financial_section_has_title(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Section title includes 'Financial Performance Impact'."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        text = section.text_content()
+        assert "Financial Performance Impact" in text, (
+            f"Expected 'Financial Performance Impact' in section, got: {text[:200]}"
+        )
+
+    def test_financial_section_has_subtitle(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Subtitle mentions effect of intervention vs baseline."""
+        _open_ablation_experiment(page, dashboard_url)
+        section = page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        subtitle = section.query_selector(".fin-subtitle")
+        assert subtitle is not None, "Subtitle element not found"
+        text = subtitle.text_content()
+        assert "intervention" in text.lower() or "baseline" in text.lower(), (
+            f"Subtitle should mention intervention/baseline: {text}"
+        )
+
+    def test_financial_table_has_correct_columns(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Table header has Metric, Baseline, Intervention, Delta, p-value."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        headers = table.query_selector_all("thead th")
+        header_texts = [h.text_content().strip() for h in headers]
+        assert "Metric" in header_texts, f"Missing 'Metric' header: {header_texts}"
+        assert "Baseline" in header_texts, f"Missing 'Baseline' header: {header_texts}"
+        assert "Intervention" in header_texts, (
+            f"Missing 'Intervention' header: {header_texts}"
+        )
+        assert "p-value" in header_texts, f"Missing 'p-value' header: {header_texts}"
+
+    def test_financial_table_has_group_headers(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Table contains group subheader rows (Performance, Risk, etc.)."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        groups = table.query_selector_all("tr.fin-group-header")
+        group_texts = [g.text_content().strip() for g in groups]
+        assert len(group_texts) >= 2, (
+            f"Expected at least 2 group headers, got {len(group_texts)}: {group_texts}"
+        )
+        assert "Performance" in group_texts, (
+            f"Missing 'Performance' group header: {group_texts}"
+        )
+
+    def test_financial_table_numeric_cells_right_aligned(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Numeric cells (num-cell) are right-aligned."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        cells = table.query_selector_all("td.num-cell")
+        assert len(cells) > 0, "No numeric cells found"
+        alignment = page.evaluate(
+            "(el) => window.getComputedStyle(el).textAlign", cells[0],
+        )
+        assert alignment == "right", (
+            f"Expected numeric cells right-aligned, got '{alignment}'"
+        )
+
+    def test_ci_hint_present(
+        self, page: Page, dashboard_url: str,
+    ):
+        """CI hint text appears below the table."""
+        _open_ablation_experiment(page, dashboard_url)
+        page.wait_for_selector(
+            "[data-testid='financial-tests-section']", timeout=8000,
+        )
+        hint = page.query_selector(".fin-ci-hint")
+        assert hint is not None, "CI hint not found"
+        assert "confidence interval" in hint.text_content().lower(), (
+            "CI hint should mention confidence intervals"
+        )
+
+    def test_delta_cells_have_ci_tooltip(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Delta cells have a title attribute with CI info."""
+        _open_ablation_experiment(page, dashboard_url)
+        table = page.wait_for_selector(
+            "[data-testid='financial-tests-table']", timeout=8000,
+        )
+        delta_cells = table.query_selector_all("td.num-cell[title]")
+        assert len(delta_cells) > 0, "No delta cells with title tooltip found"
+        title = delta_cells[0].get_attribute("title")
+        assert "95% CI" in title, f"Expected '95% CI' in tooltip, got: {title}"
+
+
+class TestFinancialSignificanceEndpoint:
+    def test_financial_significance_endpoint_returns_data(
+        self, page: Page, dashboard_url: str,
+    ):
+        """The /api/ablation/financial-significance endpoint returns valid data."""
+        import json
+        import urllib.request
+
+        resp = urllib.request.urlopen(
+            f"{dashboard_url}/api/ablation/financial-significance",
+        )
+        data = json.loads(resp.read())
+        assert "experiments" in data, "Missing 'experiments' key"
+        assert "metrics" in data, "Missing 'metrics' key"
+        assert len(data["experiments"]) >= 1, "Expected at least 1 experiment"
+        assert len(data["metrics"]) >= 1, "Expected at least 1 metric"
+
+    def test_financial_significance_metric_has_results(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Each metric entry contains results keyed by experiment."""
+        import json
+        import urllib.request
+
+        resp = urllib.request.urlopen(
+            f"{dashboard_url}/api/ablation/financial-significance",
+        )
+        data = json.loads(resp.read())
+        for m in data["metrics"]:
+            assert "metric" in m, "Missing 'metric' key in entry"
+            assert "results" in m, "Missing 'results' key in entry"
+            for exp in data["experiments"]:
+                r = m["results"].get(exp)
+                if r is not None:
+                    assert "mean_diff" in r, f"Missing mean_diff for {exp}"
+                    assert "p_value" in r, f"Missing p_value for {exp}"

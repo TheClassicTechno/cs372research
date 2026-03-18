@@ -1,0 +1,44 @@
+{
+  "critiques": [
+    {
+      "target_role": "TECHNICAL",
+      "target_claim": "C2",
+      "objection": "C2 overweights AAPL based on idiosyncratic/price momentum while effectively ignoring the dominant macro regime: rising policy/short rates and elevated long yields ([L1-FF], [L1-2Y], [L1-10Y]), high inflation ([L1-CPI], [L1-CORE]) and a strong dollar ([L1-DXY]). Apple specifically calls out foreign-currency headwinds and margin pressure ([AAPL-F3], [AAPL-F10], [AAPL-F4]) and the stock has beta >1 ([AAPL-BETA]). Relying on technical momentum without integrating these macro forces is fragile because higher discount rates and FX-driven margin compression can overwhelm short-term price momentum.",
+      "counter_evidence": [
+        "[L1-FF]",
+        "[L1-2Y]",
+        "[L1-10Y]",
+        "[L1-CPI]",
+        "[L1-CORE]",
+        "[L1-DXY]",
+        "[AAPL-F3]",
+        "[AAPL-F10]",
+        "[AAPL-F4]",
+        "[AAPL-BETA]"
+      ],
+      "portfolio_implication": "The Technical portfolio's 40% AAPL tilt (driven by C2) increases concentration to a rate- and FX-sensitive large-cap that may suffer multiple compression and margin deterioration if the macro regime persists. That concentration raises portfolio downside given elevated market volatility ([L1-VIX]) and AAPL's historical drawdown/volatility ([AAPL-MDD1Y], [AAPL-DVOL60]).",
+      "suggested_adjustment": "Re-size AAPL downward to reflect macro risk: reduce AAPL from 40% to ~20\u201325% and raise CASH from 55% to ~65\u201370% until macro signals improve (falling yields, weaker dollar, easing inflation). This adjusts exposure to the regime signaled by [L1-FF], [L1-CURVE], [L1-DXY], and [L1-VIX].",
+      "falsifier": "Evidence that would invalidate this objection: material and persistent decline in real/nominal yields and Fed easing (falling [L1-FF] and [L1-REAL] with 10Y declines), sustained disinflation (sharp drop in [L1-CPI] and [L1-CORE]) and a weaker dollar ([L1-DXY]) combined with company guidance showing accelerating Services revenue/margin (> [AAPL-F4], supportive [AAPL-EC4]).",
+      "objection_confidence": 0.8
+    },
+    {
+      "target_role": "RISK",
+      "target_claim": "C1",
+      "objection": "C1 correctly flags elevated VIX ([L1-VIX]) but treats a 50% cash allocation as sufficient. That understates the economic downside signaled by the inverted yield curve ([L1-CURVE]) and wide credit-risk premium ([L1-HY]) together with elevated policy rates ([L1-FF]). These macro signals point to heightened recession and financing stress risk that argue for a larger defensive tilt than 50% cash. Maintaining half the portfolio in equities exposes the portfolio to earnings and valuation downside in a regime that penalizes rate-sensitive and cyclical names.",
+      "counter_evidence": [
+        "[L1-VIX]",
+        "[L1-CURVE]",
+        "[L1-HY]",
+        "[L1-FF]"
+      ],
+      "portfolio_implication": "With substantial equity exposure (AAPL 30%, MSFT/NVDA small positions) the portfolio remains vulnerable to simultaneous earnings downgrades and multiple compression driven by tightening financial conditions and curve inversion ([L1-CURVE], [L1-FF]). High-beta cyclicals in the allocation (e.g., AMD-like exposures) would compound drawdowns given documented high betas ([AMD-BETA], [AAPL-BETA]).",
+      "suggested_adjustment": "Increase CASH to 60\u201370% (from 50%) and trim equity exposures\u2014e.g., cut AAPL to ~20%, reduce AMD to ~3\u20135%, and cap MSFT/NVDA to very small tactical stakes\u2014so the portfolio better reflects recession/financing stress signaled by [L1-CURVE], [L1-HY], [L1-FF] and tail-risk signaled by [L1-VIX].",
+      "falsifier": "Evidence that would disprove this objection: steep decline in market volatility ([L1-VIX] materially lower), a marked fall in long yields (10Y down, [L1-10Y] lower) and tightening HY spreads ([L1-HY] compresses), indicating easing financial conditions and lower recession risk.",
+      "objection_confidence": 0.75
+    }
+  ],
+  "self_critique": {
+    "weakest_claim": "C1 / portfolio construction (heavy CASH + AAPL overweight)",
+    "explanation": "My biggest macro-driven vulnerability is reliance on the persistence of elevated policy/real yields and inversion to justify a large cash weighting and AAPL over AMD. If real yields and nominal yields fall materially (e.g., [L1-REAL] declines and [L1-FF] eases) or inflation rapidly disinflates ([L1-CPI], [L1-CORE] fall), long-duration and high-beta semiconductor/growth exposures could re-rate higher and my cash-heavy stance would underperform. Additionally, if enterprise demand (Data Center) accelerates versus guidance (contradicting recession concern), AMD's growth drivers could outperform ([AMD-EC1]), making my reduced AMD weighting too conservative."
+  }
+}

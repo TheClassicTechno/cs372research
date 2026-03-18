@@ -4,9 +4,10 @@ import { buildPIDChart } from '../../components/charts.js';
 import { esc } from '../../utils/dom.js';
 import { fmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function loadPIDSection(experiment, runId, token) {
-  var div = document.getElementById('pid-section');
+  let div = document.getElementById('pid-section');
   fetchPID(experiment, runId)
     .then(function (data) {
       if (appState.viewToken !== token) return;
@@ -15,11 +16,16 @@ export function loadPIDSection(experiment, runId, token) {
         return;
       }
 
-      var h = '<div class="section-label">ROUND DYNAMICS</div>';
+      let pidCfg = T('pid_dynamics');
+      let h = '<div class="section-label">' + esc(pidCfg.title) + '</div>';
       h += '<table class="data-table">';
-      h += '<tr><th>Round</th><th>Quadrant</th><th>Tone Bucket</th><th>Beta In</th><th>Beta Out</th><th><span style="text-decoration:overline">\u03c1</span></th></tr>';
-      for (var i = 0; i < data.length; i++) {
-        var d = data[i];
+      h += '<tr>';
+      for (let pc = 0; pc < pidCfg.columns.length; pc++) {
+        h += '<th>' + pidCfg.columns[pc] + '</th>';
+      }
+      h += '</tr>';
+      for (let i = 0; i < data.length; i++) {
+        let d = data[i];
         h += '<tr>';
         h += '<td>' + d.round + '</td>';
         h += '<td>' + esc(d.quadrant || '\u2014') + '</td>';
@@ -31,10 +37,10 @@ export function loadPIDSection(experiment, runId, token) {
       }
       h += '</table>';
 
-      h += '<div class="section-label">PID TRAJECTORY</div>';
+      h += '<div class="section-label">' + esc(T('sections').pid_trajectory) + '</div>';
       h += '<div class="chart-container">' + buildPIDChart(data) + '</div>';
 
-      div.innerHTML = buildCard('PID Dynamics', h, true);
+      div.innerHTML = buildCard(T('cards').pid_dynamics, h, true);
       div.querySelector('.card').classList.add('open');
     })
     .catch(function () { if (appState.viewToken === token) div.innerHTML = ''; });

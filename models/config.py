@@ -190,6 +190,18 @@ class AgentConfig(BaseModel):
         "Set to false for minimal plain-text logging.",
     )
 
+    # --- Event logging (logging_v2 causal trace system) ---
+    event_logging: bool = Field(
+        default=False,
+        description="Enable logging_v2 append-only event stream. "
+        "Produces events.jsonl alongside the standard debate log.",
+    )
+    event_logging_store_full_text: bool = Field(
+        default=True,
+        description="Store full prompt/response text in event log. "
+        "Set to false for compact logs (hashes only).",
+    )
+
     # --- Agent profiles (new unified system) ---
     agents: dict[str, str] | None = Field(
         default=None,

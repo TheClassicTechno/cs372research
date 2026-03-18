@@ -1,0 +1,190 @@
+## Portfolio Allocation Task
+- Cash to allocate: $100,000.00
+- Allocation universe: AAPL, AMD, MSFT, NVDA, _CASH_
+- As-of: 2022-09-30
+- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).
+[INFO] WARNING: tickers not in snapshot data: MSFT, NVDA
+
+QUARTERLY SNAPSHOT MEMO — 2022 Q3
+As-of date: 2022-09-30
+Tickers: 2
+
+This document is the complete data payload for agent deliberation.
+It contains macro regime, per-ticker price/fundamental metrics,
+SEC filing summaries, and news sentiment for the quarter.
+
+Agents must:
+  - Cite evidence IDs (e.g. [L1-10Y], [AAPL-RET60]) when making claims.
+  - Integrate across layers (macro -> filings -> sentiment -> price).
+  - Treat all interpretations as non-binding hypotheses.
+
+======================================================================
+LAYER 1 — MACRO REGIME
+======================================================================
+
+Rates & Yields:
+  [L1-FF]    Fed Funds: 3.08%
+  [L1-2Y]    2Y Treasury: 4.22% (+130bps QoQ)
+  [L1-10Y]   10Y Treasury: 3.83% (+85bps QoQ)
+  [L1-30Y]   30Y Treasury: 3.79%
+  [L1-CURVE] 10Y-2Y Spread: -0.39% (inverted)
+  [L1-REAL]  10Y Real Yield: 1.68%
+
+Inflation:
+  [L1-CPI]   CPI YoY: 8.19%
+  [L1-CORE]  Core CPI YoY: 6.62%
+
+Growth & Labor:
+  [L1-INDPRO] Industrial Production Index: 101.29
+  [L1-UNEMP] Unemployment: 3.50%
+
+Credit & Commodities:
+  [L1-HY]    HY OAS Spread: 5.43%
+  [L1-DXY]   Dollar Index: 127.51
+  [L1-WTI]   WTI Crude: $79.91
+
+Volatility:
+  [L1-VIX]   VIX: 31.62
+  [L1-EQBC]  Equity-Bond Correlation: 0.13
+
+======================================================================
+TICKER: AAPL
+======================================================================
+
+  Price & Returns:
+    [AAPL-PX]       Close: $135.79
+    [AAPL-RET20]    20D Return: -12.5%
+    [AAPL-RET60]    60D Return: -5.4%
+    [AAPL-RET120]   120D Return: -18.5%
+    [AAPL-RET252]   1Y Return: -1.8%
+
+  Volatility & Risk:
+    [AAPL-VOL20]    20D Vol (ann): 37.8%
+    [AAPL-VOL60]    60D Vol (ann): 30.8%
+    [AAPL-DVOL60]   60D Downside Vol: 21.7%
+    [AAPL-DD60]     60D Drawdown: -20.8%
+    [AAPL-MDD1Y]    1Y Max Drawdown: -28.3%
+    [AAPL-SHARPE]   60D Sharpe: -0.76
+    [AAPL-BETA]     1Y Beta: 1.24
+
+  Trend & Momentum:
+    [AAPL-SMA20]    SMA 20D: $150.10
+    [AAPL-SMA50]    SMA 50D: $156.91
+    [AAPL-SMA200]   SMA 200D: $156.75
+    [AAPL-MOM200]   200D Momentum: 0.87
+    [AAPL-MOM12_1]  12-1M Momentum: +11.7%
+    [AAPL-IDMOM]    Idiosyncratic Momentum 60D: 0.0387
+    [AAPL-TREND]    Trend Consistency: 0.45
+    [AAPL-RS60]     Relative Strength 60D: +0.0%
+    [AAPL-ESURP]    Earnings Surprise: +4.3%
+    [AAPL-ADVOL]    Avg Dollar Volume 20D: $15,031,440,305
+
+  Sentiment (from earnings call):
+    [AAPL-SENT]     Mean Sentiment: 0.2080
+    [AAPL-SVOL]     Sentiment Volatility: 0.5537
+
+  Filing Evidence (10-Q, filed 2022-07-29, fiscal period: 2022-Q2 [FYE: Sep 30]):
+    [AAPL-F1] Total net sales increased 2% to $83.0 billion in Q3 2022, driven by iPhone revenue growth of 3% from new models and Services expansion of 12% led by advertising, cloud services and AppleCare, partially offset by Mac and Wearables declines.
+    [AAPL-F2] Geographic performance showed broad-based growth with double-digit expansion in Asia Pacific, modest increases in Americas and Europe, while Greater China and Japan declined.
+    [AAPL-F3] Foreign currency headwinds negatively impacted all segments during the quarter.
+    [AAPL-F4] Total gross margin held steady at 43.3% despite foreign exchange pressures, with Services margin expanding to 71.5% from improved leverage while Products margin compressed to 34.5% from currency impacts and mix shifts.
+    [AAPL-F5] Operating expenses increased to 15% of sales from higher R&D spending driven by headcount growth and engineering programs, plus elevated selling and advertising expenses.
+    [AAPL-F6] Apple repurchased $21.7 billion of common stock and paid $3.8 billion in dividends during Q3 2022.
+    [AAPL-F7] The company introduced the all-new MacBook Air and updated 13-inch MacBook Pro powered by the M2 chip at quarter-end.
+    [AAPL-F8] Apple announced major operating system updates including iOS 16, macOS Ventura, iPadOS 16 and watchOS 9 expected for fall 2022 release.
+    [AAPL-F9] COVID-19 pandemic continues impacting outsourcing partners, component suppliers and logistics providers with ongoing supply chain disruptions and potential future shortages.
+    [AAPL-F10] Foreign currency weakness relative to the U.S. dollar created significant headwinds across all product categories and geographic segments.
+    [AAPL-F11] Manufacturing purchase obligations represent substantial noncancelable commitments primarily tied to demand forecasts.
+    [AAPL-F12] Management expects gross margins to remain subject to volatility and downward pressure from various factors.
+    [AAPL-F13] The company maintains its commitment to annual dividend increases subject to Board approval, with quarterly dividend at $0.23 per share.
+    [AAPL-F14] Apple continues prioritizing focused R&D investments as critical to future growth and competitive positioning.
+    [AAPL-F15] Standard technology industry exposures to market volatility and operational disruptions remain unchanged.
+    [AAPL-F16] Effective tax rate fluctuations continue from foreign earnings mix, share-based compensation timing and regulatory changes including new Treasury regulations affecting foreign tax credits.
+    [AAPL-F17] Supply chain vulnerabilities persist from pandemic-related disruptions across manufacturing and logistics networks.
+
+  Earnings Call Evidence:
+    [AAPL-EC1] Apple reported a record revenue of $83 billion for Q3 FY 2022, a 2% increase year-over-year, despite supply constraints and foreign exchange headwinds.
+    [AAPL-EC2] The company achieved record revenues in multiple regions and product categories, particularly in iPhone and Services, which saw a 12% year-over-year increase to $19.6 billion.
+    [AAPL-EC3] The installed base of active devices reached an all-time high, driven by strong customer satisfaction and loyalty.
+    [AAPL-EC4] Looking ahead to the September quarter, Apple expects year-over-year revenue growth to accelerate compared to the June quarter, despite anticipated foreign exchange impacts and ongoing macroeconomic uncertainties.
+    [AAPL-EC5] The company is not providing specific revenue guidance but anticipates lower supply constraints than in the previous quarter.
+    [AAPL-EC6] Gross margin is projected to be between 41.5% and 42.5%, with operating expenses expected to be between $12.9 billion and $13.1 billion.
+    [AAPL-EC7] Apple faces several risks including significant foreign exchange headwinds, ongoing supply chain constraints, and the impact of geopolitical tensions, particularly related to its business in Russia.
+    [AAPL-EC8] Additionally, macroeconomic factors such as inflation and recession fears could affect consumer demand, particularly in the Wearables, Home, and Accessories segment, which has already shown signs of softness.
+    [AAPL-EC9] Key drivers of Apple's performance include the strong demand for the iPhone 13 lineup, which continues to attract new customers and switchers, particularly in emerging markets.
+    [AAPL-EC10] The growth of the Services segment, bolstered by an expanding installed base and increased customer engagement, also plays a crucial role.
+    [AAPL-EC11] Innovations in product offerings, such as the new MacBook Air and MacBook Pro powered by the M2 chip, are expected to further enhance Apple's competitive position.
+
+======================================================================
+TICKER: AMD
+======================================================================
+
+  Price & Returns:
+    [AMD-PX]       Close: $63.36
+    [AMD-RET20]    20D Return: -23.0%
+    [AMD-RET60]    60D Return: -20.1%
+    [AMD-RET120]   120D Return: -37.3%
+    [AMD-RET252]   1Y Return: -38.4%
+
+  Volatility & Risk:
+    [AMD-VOL20]    20D Vol (ann): 52.1%
+    [AMD-VOL60]    60D Vol (ann): 50.2%
+    [AMD-DVOL60]   60D Downside Vol: 33.4%
+    [AMD-DD60]     60D Drawdown: -39.0%
+    [AMD-MDD1Y]    1Y Max Drawdown: -60.9%
+    [AMD-SHARPE]   60D Sharpe: -1.88
+    [AMD-BETA]     1Y Beta: 2.08
+
+  Trend & Momentum:
+    [AMD-SMA20]    SMA 20D: $74.62
+    [AMD-SMA50]    SMA 50D: $86.56
+    [AMD-SMA200]   SMA 200D: $101.96
+    [AMD-MOM200]   200D Momentum: 0.62
+    [AMD-MOM12_1]  12-1M Momentum: -17.5%
+    [AMD-IDMOM]    Idiosyncratic Momentum 60D: -0.0784
+    [AMD-TREND]    Trend Consistency: 0.45
+    [AMD-RS60]     Relative Strength 60D: -14.7%
+    [AMD-ESURP]    Earnings Surprise: +1.0%
+    [AMD-ADVOL]    Avg Dollar Volume 20D: $5,865,449,219
+
+  Sentiment (from earnings call):
+    [AMD-SENT]     Mean Sentiment: 0.1643
+    [AMD-SVOL]     Sentiment Volatility: 0.4510
+
+  Filing Evidence (10-Q, filed 2022-08-03, fiscal period: 2022-Q2):
+    [AMD-F1] Total revenue reached $6.6 billion in Q2 2022, up 70% year-over-year, driven primarily by the Xilinx acquisition completed in February 2022.
+    [AMD-F2] Data Center segment increased 83% from higher EPYC server processor sales, Client segment grew 25% on strong Ryzen mobile processor demand with higher average selling prices, and Gaming segment rose 32% on discrete GPU and semi-custom revenue strength.
+    [AMD-F3] International sales comprised 70% of total revenue, with the company generating $2.0 billion in operating cash flow for the six-month period despite net working capital outflows.
+    [AMD-F4] Gross margin compressed to 46% from 48% in the prior year quarter due to acquisition-related intangible amortization and acquired inventory fair value step-up costs from the Xilinx transaction.
+    [AMD-F5] Operating expenses increased substantially driven by acquisition-related intangible amortization and headcount expansion for product development.
+    [AMD-F6] Manufacturing yields and wafer purchase commitments with GLOBALFOUNDRIES through 2025 continue to impact per-unit costs.
+    [AMD-F7] AMD completed the $48.8 billion Xilinx acquisition in February 2022, issuing 429 million shares, followed by the Pensando Systems acquisition in May 2022.
+    [AMD-F8] The company issued $1.0 billion in new senior notes in June 2022, established a $3.0 billion revolving credit facility, and repurchased $2.8 billion of common stock during the six-month period.
+    [AMD-F9] AMD amended its wafer supply agreement with GLOBALFOUNDRIES, removing exclusivity commitments while maintaining minimum annual capacity allocations through 2025.
+    [AMD-F10] The company maintains 70% international revenue exposure with manufacturing concentrated in Asia, utilizing forward contracts to hedge foreign currency fluctuations.
+    [AMD-F11] Export restrictions intensified with Chinese entities added to Entity List, while new sanctions against Russia, Belarus and Ukraine regions create additional compliance requirements.
+    [AMD-F12] Cryptocurrency mining demand volatility impacts GPU revenue with regulatory restrictions in multiple jurisdictions, while COVID-19 pandemic continues creating supply chain disruptions.
+    [AMD-F13] Management expects continued integration benefits from the Xilinx acquisition across data center and embedded markets with expanded product portfolio enabling hardware acceleration opportunities.
+    [AMD-F14] The company believes current cash position plus available credit facilities and operating cash flows will fund operations and purchase commitments over the next 12 months.
+    [AMD-F15] Product roadmap focuses on next-generation processors and FPGAs with advanced node production concentrated at TSMC.
+    [AMD-F16] The company faces measurement period adjustments for both Xilinx and Pensando acquisitions with purchase price allocations subject to revision within one year of closing dates.
+    [AMD-F17] Ongoing patent litigation involves multiple jurisdictions with mixed outcomes and appeals pending, alongside total debt with covenant restrictions including minimum interest coverage requirements.
+    [AMD-F18] AMD is upgrading its enterprise resource planning system creating implementation risks, while deferred tax liabilities related to acquired intangible assets increased due to utilization of tax attributes subject to potential limitations.
+
+  Earnings Call Evidence:
+    [AMD-EC1] AMD reported third quarter 2022 revenue of $5.6 billion, a 29% year-over-year increase, but below expectations due to softening PC demand and inventory reductions.
+    [AMD-EC2] The Data Center segment saw a 45% revenue increase year-over-year, driven by strong EPYC processor sales, while the Client segment revenue declined 40% due to reduced shipments amid a weak PC market.
+    [AMD-EC3] The Gaming segment grew 14% year-over-year, supported by strong semi-custom sales, while the Embedded segment reached a record $1.3 billion in revenue.
+    [AMD-EC4] For Q4 2022, AMD expects revenue to be approximately $5.5 billion, flat sequentially but up 14% year-over-year, driven by growth in the Embedded and Data Center segments.
+    [AMD-EC5] The company anticipates continued challenges in the Client and Gaming segments, with a focus on managing inventory levels and aligning supply with demand.
+    [AMD-EC6] Looking ahead to 2023, AMD remains optimistic about growth in the Data Center market, particularly in North America, despite macroeconomic headwinds.
+    [AMD-EC7] AMD faces risks from a volatile PC market, with significant inventory corrections impacting the Client segment.
+    [AMD-EC8] The company is also navigating macroeconomic uncertainties that could affect enterprise spending and overall demand in the Data Center market.
+    [AMD-EC9] Additionally, geopolitical factors, such as U.S.-China trade restrictions, may pose challenges to revenue growth, particularly in consumer-facing segments.
+    [AMD-EC10] Key drivers for AMD's growth include the strong performance of its Data Center segment, particularly with the upcoming launch of the Genoa processors, and continued demand for semi-custom products in the Gaming segment.
+    [AMD-EC11] The Embedded segment is also expected to contribute significantly to revenue growth, supported by strong demand across various industries, including aerospace and defense.
+    [AMD-EC12] AMD's strategic focus on high-performance computing and adaptive solutions positions it well for long-term growth.
+
+======================================================================
+END OF MEMO
+======================================================================

@@ -273,13 +273,68 @@ def read_file(
 # Ablation summary endpoints
 # ------------------------------------------------------------------
 
+@app.get("/api/ablation/financial-significance")
+def financial_significance():
+    """Cross-ablation financial significance summary table."""
+    return JSONResponse(
+        run_scanner.compute_financial_significance_summary(RUNS_BASE)
+    )
+
+
+@app.get("/api/ablation/crit-diagnostics/{experiment}")
+def crit_diagnostics(experiment: str):
+    """Aggregate CRIT reasoning diagnostics across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_crit_diagnostics(RUNS_BASE, experiment)
+    )
+
+
+@app.get("/api/ablation/paired-tests/{experiment}")
+def paired_tests(experiment: str):
+    """Paired t-test comparing collapse ratios across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_paired_tests(RUNS_BASE, experiment)
+    )
+
+
+@app.get("/api/ablation/financial-tests/{experiment}")
+def financial_tests(experiment: str):
+    """Paired t-tests on financial metrics (judge portfolio) across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_financial_paired_tests(RUNS_BASE, experiment)
+    )
+
+
+@app.get("/api/ablation/financial-tests/{experiment}/mean-revisions")
+def financial_tests_mean_rev(experiment: str):
+    """Paired t-tests on financial metrics (mean agent revisions) across debate configs."""
+    return JSONResponse(
+        run_scanner.compute_financial_paired_tests(
+            RUNS_BASE, experiment, use_mean_revisions=True,
+        )
+    )
+
+
 @app.get("/api/ablation")
 def ablation_summary():
-    """Return the ablation summary JSON, or a not_generated marker."""
+    """Return the ablation summary JSON with live-computed run counts.
+
+    The on-disk summary may have stale run_count values.  We overlay
+    the live count of *complete* runs so every section of the dashboard
+    shows consistent numbers.
+    """
     path = RUNS_BASE / "ablation_summary.json"
     if not path.exists():
         return JSONResponse({"error": "not_generated", "experiments": {}})
-    return JSONResponse(json.loads(path.read_text()))
+    data = json.loads(path.read_text())
+    # Overlay live complete-run counts
+    for exp_name, exp_data in data.items():
+        if not isinstance(exp_data, dict):
+            continue
+        runs = run_scanner.list_runs(RUNS_BASE, exp_name)
+        complete = [r for r in runs if r.get("status") == "complete"]
+        exp_data["run_count"] = len(complete)
+    return JSONResponse(data)
 
 
 @app.post("/api/ablation/regenerate")
@@ -301,6 +356,26 @@ def ablation_regenerate():
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 if __name__ == "__main__":
+    import socket
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    def _port_in_use(port: int) -> bool:
+        """Check if a port is in use via a client-side connect (read-only)."""
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        try:
+            s.connect(("127.0.0.1", port))
+            s.close()
+            return True
+        except (ConnectionRefusedError, OSError):
+            s.close()
+            return False
+
+    port = 8000
+    if _port_in_use(8000):
+        print("Port 8000 is occupied, using 8001.")
+        port = 8001
+
+    print(f"Starting dashboard on http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
+

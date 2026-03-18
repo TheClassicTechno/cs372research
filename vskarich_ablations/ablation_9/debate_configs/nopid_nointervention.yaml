@@ -1,0 +1,63 @@
+# ===========================================================================
+# Ablation 9 — No PID, No Intervention (control)
+# 2 agents, 2 rounds
+# Pipeline:  propose -> critique -> revise -> CRIT -> judge  (×2 rounds)
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+# --- Agent profiles ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini
+  crit_llm_model: gpt-5
+  temperature: 0.3
+
+  max_rounds: 2
+  max_retries: 3
+  propose_only: false
+
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_9
+
+  # --- PID controller ---
+  pid_enabled: false
+
+  # --- Intervention engine ---
+  intervention_config:
+    enabled: true
+    revision_limits:
+      max_changed_tickers: 2
+      max_change_pct: 5
+    rules:
+      js_collapse:
+        enabled: true
+        threshold: 0.0              # never fires
+        min_js_proposal: 0.10
+        max_retries: 1
+        nudge_prompts:
+          macro: "placeholder"
+          technical: "placeholder"
+      reasoning_quality:
+        enabled: false
+        rho_threshold: 0.5
+        max_retries: 1
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0

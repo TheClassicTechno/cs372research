@@ -1,0 +1,447 @@
+================================================================================
+ABLATION 11 -- EARLY RESULTS REPORT
+Generated: 2026-03-12
+================================================================================
+
+EXPERIMENT DESIGN
+-----------------
+- 3 agents: macro, technical, value (all enriched_intense profiles)
+- Model: gpt-5-mini (CRIT model: gpt-5)
+- 1 round max, allocation mode, LLM judge
+- 2 configs: baseline_no_intervention vs strict_intervention_th06
+  - Baseline: js_collapse threshold=0.0 (always fires, but uses placeholder nudge prompts)
+  - Intervention: js_collapse threshold=0.6 (fires when JS drops below 0.6, full nudge prompts)
+- 8 scenario pairs across multiple quarters and universe compositions
+- Total runs: 19 directories (16 original + 3 new still running)
+
+NOTE: The "baseline" config has threshold=0.0 with PLACEHOLDER nudge prompts.
+      The "intervention" config has threshold=0.6 with FULL role-specific nudge prompts.
+      Despite threshold=0.0, baseline nudges are just "placeholder" text -- effectively no
+      meaningful intervention content. The intervention config has detailed, role-specific
+      diversity protocol prompts.
+
+KEY FINDING: No intervention actually fired (intervention_fired=false for ALL runs).
+This is because with max_rounds=1, the JS collapse check may not trigger
+in the revision flow, or proposal JS was above min_js_proposal=0.1 threshold.
+
+================================================================================
+COMPLETED SCENARIO-PAIR COMPARISONS (6 pairs with full financial data)
+================================================================================
+
+--------------------------------------------------------------------------------
+PAIR 1: scenario_2022Q4_tech  |  Invest: 2022-09-30  |  Universe: AAPL,AMD,MSFT,NVDA,CASH
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-08-20_001            03-08-20
+Total Return %:                     -1.95                   -1.67
+Annualized Sharpe:                  -0.210                  -0.155
+Annualized Sortino:                 -0.333                  -0.247
+Annualized Volatility:              0.305                   0.316
+Max Drawdown %:                     9.33                    9.90
+Calmar Ratio:                       -0.814                  -0.660
+SPY Return %:                       4.79                    4.79
+Excess Return vs SPY %:             -6.75                   -6.47
+
+Debate Impact:
+  Mean Proposal Return:             -5.27                   -5.55
+  Final Debate Return:              -4.50                   -5.26
+  Debate Alpha:                     +0.77                   +0.29
+  Judge Return:                     -5.02                   -5.25
+  Collapse Index:                   1.00 (value)            1.00 (value)
+
+JS Divergence:
+  Proposal JS:                      0.1154                  0.1053
+  Revision JS:                      0.0794                  0.0916
+  Manifest final_js:                0.0794                  0.0916
+
+CRIT Scores:
+  rho_bar:                          0.814                   0.846
+  rho_macro:                        0.858                   0.853
+  rho_technical:                    0.765                   0.828
+  rho_value:                        0.820                   0.858
+
+VERDICT: Intervention config has better total return (-1.67 vs -1.95), better Sharpe
+  (-0.155 vs -0.210), and HIGHER CRIT scores (rho_bar 0.846 vs 0.814). However,
+  baseline had better debate alpha (+0.77 vs +0.29). Intervention maintained slightly
+  more divergence (JS 0.0916 vs 0.0794).
+
+--------------------------------------------------------------------------------
+PAIR 2: scenario_2022Q1  |  Invest: 2021-12-31  |  Universe: 22 tickers (broad)
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-08-20_002            03-08-20_003
+Total Return %:                     +0.001                  -0.048
+Annualized Sharpe:                  +0.078                  +0.068
+Annualized Sortino:                 +0.109                  +0.095
+Annualized Volatility:              0.166                   0.169
+Max Drawdown %:                     8.06                    8.08
+Calmar Ratio:                       +0.001                  -0.024
+SPY Return %:                       -5.16                   -5.16
+Excess Return vs SPY %:             +5.16                   +5.12
+
+Debate Impact:
+  Mean Proposal Return:             14.63                   15.26
+  Final Debate Return:              14.35                   14.69
+  Debate Alpha:                     -0.28                   -0.57
+  Judge Return:                     14.83                   14.68
+  Collapse Index:                   0.63 (technical)        0.62 (technical)
+
+JS Divergence:
+  Proposal JS:                      0.224                   0.246
+  Revision JS:                      0.151                   0.211
+  Manifest final_js:                0.151                   0.211
+
+CRIT Scores:
+  rho_bar:                          0.835                   0.843
+  rho_macro:                        0.878                   0.808
+  rho_technical:                    0.775                   0.838
+  rho_value:                        0.853                   0.883
+
+VERDICT: Very close financial performance. Baseline marginally better on total return
+  (+0.001 vs -0.048) and Sharpe. Intervention maintained MORE divergence (JS 0.211 vs
+  0.151) and had slightly higher overall CRIT (0.843 vs 0.835). Near-identical collapse
+  patterns.
+
+--------------------------------------------------------------------------------
+PAIR 3: scenario_2023Q2_rand8_1c8e1d3e  |  Invest: 2023-03-31  |  Universe: 9 tickers
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-14-15                03-14-22
+Total Return %:                     +3.16                   +1.77
+Annualized Sharpe:                  +0.626                  +0.239
+Annualized Sortino:                 +0.931                  +0.343
+Annualized Volatility:              0.143                   0.143
+Max Drawdown %:                     5.60                    6.04
+Calmar Ratio:                       +2.371                  +1.204
+SPY Return %:                       8.27                    8.27
+Excess Return vs SPY %:             -5.10                   -6.50
+
+Debate Impact:
+  Mean Proposal Return:             5.69                    4.85
+  Final Debate Return:              3.13                    3.55
+  Debate Alpha:                     -2.56                   -1.30
+  Judge Return:                     3.25                    2.91
+  Collapse Index:                   0.71 (technical)        1.00 (technical)
+
+JS Divergence:
+  Proposal JS:                      0.216                   0.259
+  Revision JS:                      0.119                   0.200
+  Manifest final_js:                0.119                   0.200
+
+CRIT Scores:
+  rho_bar:                          0.788                   0.861
+  rho_macro:                        0.795                   0.858
+  rho_technical:                    0.813                   0.870
+  rho_value:                        0.758                   0.855
+
+VERDICT: Baseline WINS on total return (+3.16 vs +1.77) and Sharpe (0.626 vs 0.239).
+  But intervention has MUCH higher CRIT (0.861 vs 0.788) and maintained more divergence
+  (JS 0.200 vs 0.119). The debate was worse in both configs (negative alpha), but
+  baseline lost less. Intervention had more collapse (1.0 vs 0.71).
+
+--------------------------------------------------------------------------------
+PAIR 4: scenario_2022Q4_rand7_5ec96480  |  Invest: 2022-09-30  |  Universe: 8 tickers
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-16-43                03-16-47
+Total Return %:                     +10.25                  +11.81
+Annualized Sharpe:                  +1.796                  +1.858
+Annualized Sortino:                 +3.054                  +3.150
+Annualized Volatility:              0.213                   0.239
+Max Drawdown %:                     8.46                    8.99
+Calmar Ratio:                       +5.644                  +6.267
+SPY Return %:                       4.79                    4.79
+Excess Return vs SPY %:             +5.45                   +7.02
+
+Debate Impact:
+  Mean Proposal Return:             3.64                    2.97
+  Final Debate Return:              3.37                    3.83
+  Debate Alpha:                     -0.27                   +0.86
+  Judge Return:                     3.34                    2.69
+  Collapse Index:                   0.71 (value)            0.49 (macro)
+
+JS Divergence:
+  Proposal JS:                      0.273                   0.388
+  Revision JS:                      0.203                   0.288
+  Manifest final_js:                0.203                   0.288
+
+CRIT Scores:
+  rho_bar:                          0.859                   0.808
+  rho_macro:                        0.885                   0.873
+  rho_technical:                    0.833                   0.780
+  rho_value:                        0.860                   0.773
+
+VERDICT: INTERVENTION WINS on returns (+11.81 vs +10.25), Sharpe (1.858 vs 1.796),
+  and debate alpha (+0.86 vs -0.27). Intervention maintained much more divergence
+  (JS 0.288 vs 0.203) and had LOWER collapse (0.49 vs 0.71). However, baseline had
+  higher CRIT scores (0.859 vs 0.808). This is the clearest "intervention helps" case.
+
+--------------------------------------------------------------------------------
+PAIR 5: scenario_2025Q1_tech  |  Invest: 2024-12-31  |  Universe: AAPL,AMD,AVGO,MSFT,NVDA,CASH
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-20-46                03-21-18
+Total Return %:                     -14.38                  -13.87
+Annualized Sharpe:                  -2.148                  -2.269
+Annualized Sortino:                 -2.547                  -2.725
+Annualized Volatility:              0.302                   0.278
+Max Drawdown %:                     16.86                   16.01
+Calmar Ratio:                       -2.744                  -2.808
+SPY Return %:                       -4.03                   -4.03
+Excess Return vs SPY %:             -10.35                  -9.84
+
+Debate Impact:
+  Mean Proposal Return:             10.86                   11.25
+  Final Debate Return:              11.08                   11.18
+  Debate Alpha:                     +0.22                   -0.07
+  Judge Return:                     8.49                    7.37
+  Collapse Index:                   0.70 (value)            0.57 (value)
+
+JS Divergence:
+  Proposal JS:                      0.324                   0.259
+  Revision JS:                      0.220                   0.160
+  Manifest final_js:                0.220                   0.160
+
+CRIT Scores:
+  rho_bar:                          0.825                   0.858
+  rho_macro:                        0.883                   0.883
+  rho_technical:                    0.783                   0.823
+  rho_value:                        0.810                   0.870
+
+VERDICT: Both bad (Q1 2025 tech drawdown). Intervention slightly better total return
+  (-13.87 vs -14.38) and lower max drawdown (16.01 vs 16.86), lower volatility
+  (0.278 vs 0.302). Intervention has HIGHER CRIT (0.858 vs 0.825) but LOWER divergence
+  (JS 0.160 vs 0.220). Intervention had lower collapse (0.57 vs 0.70).
+
+--------------------------------------------------------------------------------
+PAIR 6: scenario_2023Q1_rand9_2aba5c03  |  Invest: 2022-12-31  |  Universe: 10 tickers
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-22-38                03-22-50
+Total Return %:                     +1.33                   +1.72
+Annualized Sharpe:                  +0.149                  +0.246
+Annualized Sortino:                 +0.204                  +0.338
+Annualized Volatility:              0.141                   0.162
+Max Drawdown %:                     7.57                    8.78
+Calmar Ratio:                       +0.715                  +0.804
+SPY Return %:                       7.91                    7.91
+Excess Return vs SPY %:             -6.59                   -6.19
+
+Debate Impact:
+  Mean Proposal Return:             17.96                   17.49
+  Final Debate Return:              16.86                   17.78
+  Debate Alpha:                     -1.10                   +0.29
+  Judge Return:                     13.48                   17.60
+  Collapse Index:                   0.79 (technical)        1.00 (value)
+
+JS Divergence:
+  Proposal JS:                      0.214                   0.126
+  Revision JS:                      0.135                   0.096
+  Manifest final_js:                0.135                   0.096
+
+CRIT Scores:
+  rho_bar:                          0.827                   0.817
+  rho_macro:                        0.818                   0.825
+  rho_technical:                    0.820                   0.820
+  rho_value:                        0.843                   0.805
+
+VERDICT: Intervention WINS on total return (+1.72 vs +1.33), Sharpe (0.246 vs 0.149),
+  and debate alpha (+0.29 vs -1.10). Intervention had LOWER divergence (JS 0.096 vs
+  0.135) and higher collapse (1.00 vs 0.79). CRIT scores nearly identical (0.817 vs
+  0.827).
+
+================================================================================
+PARTIALLY COMPLETED PAIRS (CRIT data only, no financial metrics)
+================================================================================
+
+--------------------------------------------------------------------------------
+PAIR 7: scenario_2023Q2  |  Invest: 2023-03-31  |  Universe: 23 tickers (broadest)
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-26-19                03-26-53
+Completed:                          In progress*            In progress*
+  * manifest completed_at=null but CRIT data exists
+
+JS Divergence:
+  Proposal JS:                      0.571                   0.757
+  Revision JS:                      0.423                   0.628
+  Manifest final_js:                0.423                   0.628
+
+CRIT Scores:
+  rho_bar:                          0.853                   0.827
+  rho_macro:                        0.865                   0.803
+  rho_technical:                    0.878                   0.848
+  rho_value:                        0.815                   0.830
+
+NOTE: Very high divergence in both configs. 23-ticker universe creates much higher
+  natural disagreement. Intervention maintained even MORE divergence (JS 0.628 vs 0.423).
+
+--------------------------------------------------------------------------------
+PAIR 8: scenario_2022Q3_rand3_1  |  Invest: 2022-06-30  |  Universe: AAPL,BAC,XOM,CASH
+--------------------------------------------------------------------------------
+                                    BASELINE                INTERVENTION
+                                    --------                ------------
+Run ID:                             03-29-28                03-29-33
+Completed:                          CRIT only               STILL RUNNING
+
+CRIT (baseline only):
+  rho_bar:                          0.847
+  rho_macro:                        0.878
+  rho_technical:                    0.828
+  rho_value:                        0.835
+  Proposal JS:                      0.170
+  Revision JS:                      0.140
+
+Intervention run still in progress -- no data yet.
+
+================================================================================
+STILL RUNNING (no data yet)
+================================================================================
+
+- scenario_2023Q2_rand3_2: baseline (03-35-32) and intervention (03-36-06)
+- scenario_2025Q2: baseline only (03-36-09)
+
+================================================================================
+AGGREGATE SUMMARY (6 fully completed pairs)
+================================================================================
+
+FINANCIAL PERFORMANCE (Total Return %):
+  Scenario                    Baseline    Intervention    Delta (I-B)    Winner
+  ---------                   --------    ------------    -----------    ------
+  2022Q4_tech                 -1.95       -1.67           +0.28          INTV
+  2022Q1                      +0.001      -0.048          -0.05          BASE
+  2023Q2_rand8                +3.16       +1.77           -1.39          BASE
+  2022Q4_rand7                +10.25      +11.81          +1.56          INTV
+  2025Q1_tech                 -14.38      -13.87          +0.51          INTV
+  2023Q1_rand9                +1.33       +1.72           +0.39          INTV
+
+  Mean Baseline Return:       -0.26%
+  Mean Intervention Return:   -0.05%
+  Mean Delta (I-B):           +0.22 pp
+
+  Intervention wins: 4/6 scenarios on total return
+
+SHARPE RATIO:
+  Scenario                    Baseline    Intervention    Winner
+  ---------                   --------    ------------    ------
+  2022Q4_tech                 -0.210      -0.155          INTV
+  2022Q1                      +0.078      +0.068          BASE
+  2023Q2_rand8                +0.626      +0.239          BASE
+  2022Q4_rand7                +1.796      +1.858          INTV
+  2025Q1_tech                 -2.148      -2.269          BASE
+  2023Q1_rand9                +0.149      +0.246          INTV
+
+  Intervention wins: 3/6 on Sharpe (tied)
+
+CRIT REASONING QUALITY (rho_bar):
+  Scenario                    Baseline    Intervention    Delta     Winner
+  ---------                   --------    ------------    -----     ------
+  2022Q4_tech                 0.814       0.846           +0.032    INTV
+  2022Q1                      0.835       0.843           +0.008    INTV
+  2023Q2_rand8                0.788       0.861           +0.073    INTV
+  2022Q4_rand7                0.859       0.808           -0.051    BASE
+  2025Q1_tech                 0.825       0.858           +0.033    INTV
+  2023Q1_rand9                0.827       0.817           -0.010    BASE
+
+  Mean Baseline rho_bar:      0.825
+  Mean Intervention rho_bar:  0.839
+  Mean Delta:                 +0.014
+
+  Intervention wins: 4/6 on CRIT quality
+
+JS DIVERGENCE (revision, higher = more diversity):
+  Scenario                    Baseline    Intervention    Delta     Winner
+  ---------                   --------    ------------    -----     ------
+  2022Q4_tech                 0.079       0.092           +0.013    INTV
+  2022Q1                      0.151       0.211           +0.060    INTV
+  2023Q2_rand8                0.119       0.200           +0.081    INTV
+  2022Q4_rand7                0.203       0.288           +0.085    INTV
+  2025Q1_tech                 0.220       0.160           -0.060    BASE
+  2023Q1_rand9                0.135       0.096           -0.039    BASE
+
+  Mean Baseline JS:           0.151
+  Mean Intervention JS:       0.175
+  Mean Delta:                 +0.023
+
+  Intervention wins: 4/6 on maintaining divergence
+
+DEBATE ALPHA (debate impact on returns):
+  Scenario                    Baseline    Intervention    Winner
+  ---------                   --------    ------------    ------
+  2022Q4_tech                 +0.77       +0.29           BASE
+  2022Q1                      -0.28       -0.57           BASE
+  2023Q2_rand8                -2.56       -1.30           INTV
+  2022Q4_rand7                -0.27       +0.86           INTV
+  2025Q1_tech                 +0.22       -0.07           BASE
+  2023Q1_rand9                -1.10       +0.29           INTV
+
+  Mean Baseline Alpha:        -0.54
+  Mean Intervention Alpha:    -0.08
+  Intervention wins: 3/6 on debate alpha (tied)
+
+COLLAPSE INDEX (lower = less collapse, more maintained dissent):
+  Scenario                    Baseline    Intervention    Winner
+  ---------                   --------    ------------    ------
+  2022Q4_tech                 1.00        1.00            TIE
+  2022Q1                      0.63        0.62            INTV
+  2023Q2_rand8                0.71        1.00            BASE
+  2022Q4_rand7                0.71        0.49            INTV
+  2025Q1_tech                 0.70        0.57            INTV
+  2023Q1_rand9                0.79        1.00            BASE
+
+  Intervention wins: 3/6 on lower collapse (mixed)
+
+================================================================================
+KEY OBSERVATIONS
+================================================================================
+
+1. INTERVENTION NEVER ACTUALLY FIRED
+   Despite the intervention config having threshold=0.6, the intervention_fired
+   flag is false for ALL runs. This means the role-specific nudge prompts were
+   NEVER injected during any revision phase. The difference between configs
+   must therefore come from OTHER config differences (the threshold=0.0 baseline
+   uses "placeholder" nudge text vs threshold=0.6 intervention with full prompts,
+   but since neither actually fired, the observed differences are stochastic).
+
+2. FINANCIAL PERFORMANCE: MARGINAL INTERVENTION EDGE
+   Intervention wins 4/6 on total return with +0.22 pp average advantage.
+   This is a SMALL effect with high scenario variance. Not statistically
+   significant with n=6.
+
+3. CRIT SCORES: INTERVENTION CONSISTENTLY HIGHER
+   Intervention wins 4/6 on rho_bar with +0.014 average improvement. The
+   2023Q2_rand8 scenario shows the biggest gain (+0.073). This is interesting
+   but since intervention never fired, this is likely noise.
+
+4. DIVERGENCE: INTERVENTION MAINTAINS MORE
+   Intervention maintains higher JS divergence in 4/6 cases, with +0.023
+   average gain. Higher JS = agents maintained more independent views.
+
+5. NO INTERVENTION EFFECT IS REAL -- ALL DIFFERENCES ARE STOCHASTIC
+   Since the intervention mechanism never activated (intervention_fired=false
+   for all 16 runs), any differences between baseline and intervention configs
+   are due to LLM stochasticity, not the treatment. The configs are functionally
+   identical in terms of what actually happened during the runs.
+
+6. BOTH CONFIGS USE 3 AGENTS (macro, technical, value)
+   This is different from ablation 7 (2 agents) and ablation 8 (3 agents).
+   Ablation 11 adds the value agent perspective.
+
+7. LARGE UNIVERSE SCENARIOS SHOW HIGH DIVERGENCE
+   scenario_2023Q2 (23 tickers) has JS > 0.4, while narrow tech-focused
+   scenarios (5-6 tickers) cluster around 0.08-0.15. Universe size strongly
+   drives divergence.
+
+8. STILL RUNNING: 4-5 runs still in progress. Full results for 8 scenario
+   pairs will be available once all complete.
+
+================================================================================
+END REPORT
+================================================================================

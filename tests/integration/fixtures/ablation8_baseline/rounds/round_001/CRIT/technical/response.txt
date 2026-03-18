@@ -1,0 +1,27 @@
+{
+  "pillar_scores": {
+    "logical_validity": 0.86,
+    "evidential_support": 0.82,
+    "alternative_consideration": 0.90,
+    "causal_alignment": 0.68
+  },
+  "diagnostics": {
+    "contradictions_detected": false,
+    "unsupported_claims_detected": false,
+    "ignored_critiques_detected": false,
+    "premature_certainty_detected": false,
+    "causal_overreach_detected": true,
+    "conclusion_drift_detected": false,
+    "contradictions_count": 0,
+    "unsupported_claims_count": 0,
+    "ignored_critiques_count": 0,
+    "causal_overreach_count": 1,
+    "orphaned_positions_count": 0
+  },
+  "explanations": {
+    "logical_validity": "The allocation follows from the claims: reduced AAPL weight and increased cash align with broken trend and volatility risks, while maintaining relative momentum tilt. No internal contradictions or drift detected.",
+    "evidential_support": "All claims cite concrete technical evidence IDs; however, C1 asserts price is below SMAs without explicitly citing prices, slightly stretching the evidence beyond the provided SMA levels.",
+    "alternative_consideration": "Both critiques were directly addressed via critique_responses; the risk critique was accepted with a meaningful sizing change, and the macro critique was rebutted with a specialty-consistent rationale. The self-identified sizing weakness was corrected.",
+    "causal_alignment": "C2 is labeled causal but relies mainly on associational momentum persistence without detailing a clear mechanism, indicating mild causal overreach. C1 and C3 remain largely observational/risk-based and are consistent."
+  }
+}

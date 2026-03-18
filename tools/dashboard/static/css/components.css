@@ -45,10 +45,11 @@ table.data-table {
   border-collapse: collapse;
   font-size: 0.9em;
   margin-bottom: 16px;
+  width: 100%;
 }
 table.data-table th, table.data-table td {
   border: 1px solid #ccc;
-  padding: 5px 8px;
+  padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -58,6 +59,8 @@ table.data-table th {
   font-weight: bold;
   color: #5c4632;
 }
+table.data-table tbody tr:nth-child(even),
+table.data-table tr:nth-child(even) { background: #faf8f4; }
 table.data-table tr:hover { background: #f9f9f9; }
 table.data-table tr.clickable { cursor: pointer; }
 table.data-table tr.best-run { font-weight: bold; }
@@ -237,21 +240,35 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 
 /* Ablation metrics: side-by-side layout */
 .metrics-row {
-  display: flex;
-  gap: 32px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+/* Quality metrics (Rho, Pillars, JS, EO): 2×2 grid */
+.metrics-row-quality {
+  grid-template-columns: repeat(2, 1fr);
 }
 .metrics-col {
-  flex: 1;
-  min-width: 200px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #d6c4a1;
+  border-radius: 8px;
+  padding: 12px 14px;
 }
-/* Row 2 (PID + Collapse): push Collapse to the right */
+.metrics-col .section-label:first-child { margin-top: 0; }
+.metrics-col .section-label {
+  font-size: 0.85em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e8e0d4;
+}
+.metrics-col table.data-table { width: 100%; }
+.metrics-col table.data-table:last-child { margin-bottom: 0; }
+/* Row 2 (PID + Collapse): 2-column layout */
 .metrics-row-spread {
-  justify-content: space-between;
-}
-.metrics-row-spread .metrics-col {
-  flex: 0 1 auto;
+  grid-template-columns: repeat(2, 1fr);
 }
 /* Match section titles inside experiment cards to rest of dashboard */
 .ablation-experiment .card-body .section-label {
@@ -283,6 +300,50 @@ svg.chart text { font-family: "Courier New", monospace; font-size: 11px; }
 .config-card .section-label:first-child {
   margin-top: 0;
 }
+/* Debate impact sub-rows use flex (variable column count) */
+.config-card .metrics-row {
+  display: flex;
+  grid-template-columns: none;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.config-card .metrics-col {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Collapse diagnostics: definition grid */
+.collapse-definitions {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0 20px;
+  max-width: 900px;
+  margin-bottom: 16px;
+  background: #faf8f4;
+  border: 1px solid #d6c4a1;
+  border-radius: 4px;
+  padding: 16px 20px;
+}
+.collapse-def-term {
+  font-weight: 700;
+  font-size: 15px;
+  color: #5c4632;
+  padding: 10px 0;
+  border-bottom: 1px solid #e8e0d4;
+  align-self: start;
+}
+.collapse-def-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  padding: 10px 0;
+  border-bottom: 1px solid #e8e0d4;
+}
+/* Remove bottom border on the last row */
+.collapse-def-term:nth-last-child(2),
+.collapse-def-desc:last-child {
+  border-bottom: none;
+}
 
 /* PID Stats: score shading */
 .score-high { color: #a07b2d; font-weight: 600; }
@@ -300,4 +361,119 @@ table.data-table td.num-cell {
 }
 table.data-table th.num-col {
   text-align: right;
+}
+
+/* Financial Tests: redesigned section */
+.fin-section {
+  margin-bottom: 16px;
+}
+.fin-subtitle {
+  font-size: 0.75em;
+  color: #7a6650;
+  margin: 2px 0 10px 0;
+  font-style: italic;
+}
+
+/* Summary box — key improvements */
+.fin-summary-box {
+  background: #f0f7f0;
+  border: 1px solid #b5d5b5;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.fin-summary-title {
+  font-weight: 700;
+  font-size: 0.8em;
+  color: #2e7d32;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.fin-summary-items {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.fin-summary-item {
+  text-align: center;
+  min-width: 110px;
+  padding: 4px 12px;
+  background: #fff;
+  border: 1px solid #c8e0c8;
+  border-radius: 3px;
+}
+.fin-summary-label {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: #5c4632;
+  margin-bottom: 2px;
+}
+.fin-summary-value {
+  font-size: 1.15em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grouped table — subheader rows */
+table.fin-table {
+  border-collapse: collapse;
+}
+table.fin-table td,
+table.fin-table th {
+  border-left: 1px solid #e0d8cc;
+  border-right: 1px solid #e0d8cc;
+}
+table.fin-table tr.fin-group-header td {
+  background: #f5f0e8;
+  font-weight: 700;
+  font-size: 0.8em;
+  color: #5c4632;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-top: 2px solid #d6c4a1;
+  border-bottom: 1px solid #d6c4a1;
+}
+table.fin-table td.fin-metric-name {
+  font-weight: 600;
+  color: #333;
+}
+table.fin-table td.num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+table.fin-table td.num-cell[title] {
+  cursor: help;
+  text-decoration: underline dotted #999;
+  text-underline-offset: 3px;
+}
+
+/* CI hint below the table */
+.fin-ci-hint {
+  font-size: 0.7em;
+  color: #999;
+  margin-top: -12px;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+/* CRIT Diagnostics section */
+.crit-diag-section {
+  margin-bottom: 16px;
+}
+.crit-diag-subtitle {
+  font-size: 0.75em;
+  color: #7a6650;
+  margin: 2px 0 10px 0;
+  font-style: italic;
+}
+table.crit-diag-table td,
+table.crit-diag-table th {
+  border-left: 1px solid #e0d8cc;
+  border-right: 1px solid #e0d8cc;
+}
+table.crit-diag-table td.num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

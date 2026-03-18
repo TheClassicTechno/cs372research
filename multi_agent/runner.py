@@ -505,6 +505,7 @@ class MultiAgentRunner:
 
             crit_config = self.config.to_dict()
             crit_config["model_name"] = self.config.crit_model_name
+            self._crit_config = crit_config  # Keep ref for event logger injection
             base_llm_fn = lambda sys, usr, **kw: _call_llm(crit_config, sys, usr, phase="crit", **kw)
 
             def _logging_llm_fn(system_prompt: str, user_prompt: str, **kw) -> str:
@@ -556,6 +557,9 @@ class MultiAgentRunner:
             from .debate_logger import DebateLogger
             experiment = self.config.experiment_name or "default"
             self._debate_logger = DebateLogger(self.config, experiment)
+
+        # --- Event logger (logging_v2 causal trace system) ---
+        self._event_logger = None
 
         # --- Intervention engine (intra-round retry on acute failures) ---
         self._intervention_engine = None
@@ -619,6 +623,39 @@ class MultiAgentRunner:
                 raise ValueError(f"Decision dict missing 'role' key: {list(d.keys())}")
             by_role[role] = d
         return list(by_role.values())
+
+    def _extract_allocations(self, decisions: list[dict]) -> dict[str, dict[str, float]]:
+        """Extract {role: {ticker: weight}} from a list of decision dicts."""
+        result: dict[str, dict[str, float]] = {}
+        for d in self._latest_per_role(decisions):
+            role = d.get("role", "unknown")
+            alloc = d.get("action_dict", {}).get("allocation", {})
+            result[role] = dict(alloc) if alloc else {}
+        return result
+
+    def _log_event_snapshot(
+        self, snapshot_type: str, state: dict, round_num: int,
+        *, crit_scores: dict | None = None, rho_bar: float | None = None,
+        js_divergence: float | None = None,
+    ) -> None:
+        """Log a state_snapshot event if event logging is active."""
+        if self._event_logger is None:
+            return
+        source = state.get("revisions") or state.get("proposals") or []
+        if not source:
+            return
+        try:
+            allocations = self._extract_allocations(source)
+            self._event_logger.log_state_snapshot(
+                snapshot_type=snapshot_type,
+                allocations=allocations,
+                round_num=round_num,
+                crit_scores=crit_scores,
+                rho_bar=rho_bar,
+                js_divergence=js_divergence,
+            )
+        except Exception as e:
+            logger.warning("logging_v2 state snapshot failed: %s", e)
 
     def _get_js_divergence(self, state: dict) -> float | None:
         """Compute JS divergence between the latest agent allocations."""
@@ -743,6 +780,36 @@ class MultiAgentRunner:
             if self.config.logging_mode == "debug":
                 state["config"]["_prompt_capture"] = self._debate_logger.write_prompt
 
+        # Initialize event logger (logging_v2 causal trace system)
+        if self.config.event_logging:
+            from logging_v2 import EventLogger
+            from datetime import datetime, timezone as _tz
+            experiment = self.config.experiment_name or "default"
+            _run_id = self._debate_logger.run_dir.name if self._debate_logger else (
+                f"run_{datetime.now(_tz.utc).strftime('%Y-%m-%d_%H-%M-%S')}"
+            )
+            self._event_logger = EventLogger(
+                experiment=experiment,
+                run_id=_run_id,
+                debate_id=self._debate_id,
+                store_full_text=self.config.event_logging_store_full_text,
+            )
+            # Log run_metadata as the first event
+            self._event_logger.log_run_metadata(
+                config_snapshot=self.config.to_dict(),
+                start_time=datetime.now(_tz.utc).isoformat(),
+                ticker_universe=state.get("observation", {}).get("universe", []),
+                roles=list(self.config.roles),
+                max_rounds=self.config.max_rounds,
+            )
+            # Inject event logger into state config for _call_llm access
+            state["config"]["_event_logger"] = self._event_logger
+            state["config"]["_call_context"] = "initial"
+            # Also inject into CRIT config (separate closure dict)
+            if hasattr(self, "_crit_config"):
+                self._crit_config["_event_logger"] = self._event_logger
+                self._crit_config["_call_context"] = "initial"
+
         # Set LLM lifecycle callback for Rich console display
         if self.config.console_display:
             from .terminal_display import _llm_call_start, _llm_call_end, _reset_llm_tracker
@@ -862,6 +929,23 @@ class MultiAgentRunner:
             if not self.config.console_display:
                 print(f"[Logged] {self._debate_logger.run_dir}", flush=True)
 
+        # logging_v2: final portfolio snapshot + close
+        if self._event_logger is not None:
+            try:
+                final_action = state.get("final_action", {})
+                final_alloc = final_action.get("allocation", {}) if final_action else {}
+                self._event_logger.log_state_snapshot(
+                    snapshot_type="final_portfolio",
+                    allocations={"judge": final_alloc} if final_alloc else {},
+                    round_num=0,
+                )
+            except Exception as _e:
+                logger.warning("logging_v2 final snapshot failed: %s", _e)
+            try:
+                self._event_logger.close()
+            except Exception:
+                pass
+
         # Stamp intervention history onto state for downstream / test access
         if self._intervention_history:
             state["intervention_history"] = list(self._intervention_history)
@@ -921,6 +1005,10 @@ class MultiAgentRunner:
         if round_num == 1 and self._debate_logger:
             self._debate_logger.write_proposals(state["proposals"])
 
+        # logging_v2: post-propose snapshot
+        if round_num == 1:
+            self._log_event_snapshot("post_propose", state, round_num)
+
         # --- Propose-phase JS divergence + evidence overlap ---
         # In round 1, proposals are the source. In round 2+, the previous
         # round's final revisions serve as the effective "propose" input.
@@ -976,6 +1064,9 @@ class MultiAgentRunner:
         if self._debate_logger:
             self._debate_logger.write_critiques(state["critiques"])
 
+        # logging_v2: post-critique snapshot
+        self._log_event_snapshot("post_critique", state, round_num)
+
         # --- Revise phase (uses PID beta for tone) ---
         if use_display:
             render_phase_label("Revise")
@@ -991,6 +1082,9 @@ class MultiAgentRunner:
 
         if self._debate_logger:
             self._debate_logger.write_revisions(state["revisions"])
+
+        # logging_v2: post-revise snapshot
+        self._log_event_snapshot("post_revise", state, round_num)
 
         # --- Revise-phase JS divergence + evidence overlap ---
         # Written here (not inside _crit_and_pid_step) so it's logged
@@ -1217,7 +1311,53 @@ class MultiAgentRunner:
             )
             results = self._intervention_engine.evaluate(ctx)
             retry_actions = [r for r in results if r.action.startswith("retry")]
+
+            # --- logging_v2: intervention_eval decision boundary ---
+            if self._event_logger is not None:
+                try:
+                    _eval_inputs = {
+                        "rho_bar": _rho_bar,
+                        "agent_crit_scores": {},
+                        "js_revision": js_rev,
+                        "retry_count": retry_count,
+                        "stage": stage,
+                    }
+                    if _agent_crit_scores:
+                        from logging_v2.events import normalize_crit_scores as _norm_cs
+                        _eval_inputs["agent_crit_scores"] = _norm_cs(_agent_crit_scores)
+                    self._event_logger.log_decision_boundary(
+                        boundary_type="intervention_eval",
+                        stage=stage,
+                        inputs=_eval_inputs,
+                        decision="fire" if retry_actions else "skip",
+                        outputs={
+                            "rules_evaluated": [r.rule_name for r in results],
+                            "results": [
+                                {"rule": r.rule_name, "action": r.action,
+                                 "severity": r.severity,
+                                 "target_roles": r.target_roles}
+                                for r in retry_actions
+                            ],
+                        },
+                        round_num=round_num,
+                    )
+                except Exception as _e:
+                    logger.warning("logging_v2 intervention_eval failed: %s", _e)
+
             if not retry_actions:
+                # --- logging_v2: intervention_skip ---
+                if self._event_logger is not None:
+                    try:
+                        self._event_logger.log_decision_boundary(
+                            boundary_type="intervention_skip",
+                            stage=stage,
+                            inputs={"reason": "no_retry_actions"},
+                            decision="skip",
+                            outputs={},
+                            round_num=round_num,
+                        )
+                    except Exception:
+                        pass
                 break
 
             # Pick highest-severity action (critical > warning)
@@ -1225,6 +1365,30 @@ class MultiAgentRunner:
                 retry_actions,
                 key=lambda r: (r.severity == "critical", r.rule_name),
             )
+
+            # --- logging_v2: intervention_fire decision boundary ---
+            if self._event_logger is not None:
+                try:
+                    self._event_logger.log_decision_boundary(
+                        boundary_type="intervention_fire",
+                        stage=stage,
+                        inputs={
+                            "rule_name": action.rule_name,
+                            "action": action.action,
+                            "target_roles": action.target_roles,
+                            "nudge_text": action.nudge_text,
+                            "severity": action.severity,
+                            "metrics": action.metrics,
+                        },
+                        decision="fire",
+                        outputs={
+                            "retry_index": retry_count + 1,
+                            "roles_receiving_nudge": action.target_roles or list(self.config.roles),
+                        },
+                        round_num=round_num,
+                    )
+                except Exception as _e:
+                    logger.warning("logging_v2 intervention_fire failed: %s", _e)
 
             # Record in intervention history (runner-owned, survives invoke)
             history_entry = {
@@ -1291,11 +1455,14 @@ class MultiAgentRunner:
 
             # Re-run revise (only targeted agents call the LLM)
             state["config"]["_current_beta"] = beta
+            state["config"]["_call_context"] = "intervention_retry"
             if self._debate_logger:
                 self._debate_logger._prompt_retry = retry_count + 1
             state = self._revise_graph.invoke(state)
             if self._debate_logger:
                 self._debate_logger._prompt_retry = None
+            # Reset call_context after retry
+            state["config"]["_call_context"] = "initial"
             # Clear nudges and target roles after retry
             state["config"]["_intervention_nudge"] = None
             state["config"]["_intervention_target_roles"] = None
@@ -1314,6 +1481,9 @@ class MultiAgentRunner:
                     state["revisions"],
                     retry=retry_count + 1,
                 )
+
+            # logging_v2: post-intervention-retry snapshot
+            self._log_event_snapshot("post_intervention_retry", state, round_num)
 
             # Log retry JS divergence + evidence overlap
             retry_js = self._get_js_divergence(state)
@@ -1355,7 +1525,10 @@ class MultiAgentRunner:
                     from .terminal_display import _reset_llm_tracker
                     _reset_llm_tracker(n_agents)
                     print(f"  Re-scoring {n_agents} agents with CRIT", flush=True)
+                # logging_v2: set call context for CRIT retry LLM calls
+                state["config"]["_call_context"] = "crit_retry"
                 self._crit_and_pid_step(state, round_num, beta_in=beta)
+                state["config"]["_call_context"] = "initial"
 
             retry_count += 1
 
@@ -1421,6 +1594,17 @@ class MultiAgentRunner:
             )
 
         # --- CRIT audit (per-agent parallel scoring → RoundCritResult) ---
+        # Inject event logger into crit_config (mutable dict captured by closure)
+        # so _call_llm sees it during parallel CRIT LLM calls.
+        if self._event_logger is not None and hasattr(self, "_crit_config"):
+            self._crit_config["_event_logger"] = self._event_logger
+            # Ensure call_context is set (may be "crit_retry" from intervention)
+            if "_call_context" not in self._crit_config:
+                self._crit_config["_call_context"] = "initial"
+            # Sync call_context from state config (set by intervention checkpoint)
+            self._crit_config["_call_context"] = state["config"].get(
+                "_call_context", "initial"
+            )
         self._crit_current_captures = {}
         round_crit = self._crit_scorer.score(bundles)
         if round_num == 1:
@@ -1451,6 +1635,37 @@ class MultiAgentRunner:
             logger.warning("rho_bar is %s (round %d) — defaulting to 0.0",
                            rho_bar, round_num)
             rho_bar = 0.0
+
+        # --- logging_v2: post-CRIT snapshot (BEFORE intervention checkpoint) ---
+        # This is the CRITICAL capture: the CRIT scores that may trigger an
+        # intervention.  If an intervention fires and CRIT re-runs, this
+        # snapshot preserves the pre-intervention scores (e.g. CA=0.68).
+        # The v1 logger overwrites CRIT/agent/response.txt on re-scoring,
+        # losing these scores — logging_v2 preserves them immutably.
+        if self._event_logger is not None:
+            from logging_v2.events import normalize_crit_scores as _normalize
+            try:
+                _crit_normalized = _normalize(round_crit.agent_scores)
+                # Determine snapshot_type based on whether we're in a retry
+                _snap_type = "post_crit"
+                if any(
+                    h.get("stage") == "post_crit"
+                    for h in self._intervention_history
+                ):
+                    _snap_type = "post_crit_retry"
+                self._event_logger.log_state_snapshot(
+                    snapshot_type=_snap_type,
+                    allocations=self._extract_allocations(
+                        state["revisions"] if state["revisions"] else state["proposals"]
+                    ),
+                    crit_scores=_crit_normalized,
+                    rho_bar=rho_bar,
+                    js_divergence=js,
+                    evidence_overlap=ov,
+                    round_num=round_num,
+                )
+            except Exception as _e:
+                logger.warning("logging_v2 post-CRIT snapshot failed: %s", _e)
 
         # --- Store latest CRIT result for post-crit intervention checkpoint ---
         self._last_round_crit = round_crit
@@ -1488,6 +1703,33 @@ class MultiAgentRunner:
                 controller_output=ctrl_output,
             )
             self._pid_events.append(event)
+
+            # --- logging_v2: PID step decision boundary ---
+            if self._event_logger is not None:
+                try:
+                    self._event_logger.log_decision_boundary(
+                        boundary_type="pid_step",
+                        stage="post_crit",
+                        inputs={
+                            "rho_bar": rho_bar,
+                            "js": js,
+                            "ov": ov,
+                            "beta_in": beta_in,
+                        },
+                        decision="continue",
+                        outputs={
+                            "beta_new": pid_result.beta_new,
+                            "e_t": pid_result.e_t,
+                            "u_t": pid_result.u_t,
+                            "p_term": pid_result.p_term,
+                            "i_term": pid_result.i_term,
+                            "d_term": pid_result.d_term,
+                            "quadrant": pid_result.quadrant,
+                        },
+                        round_num=round_num,
+                    )
+                except Exception as _e:
+                    logger.warning("logging_v2 PID step logging failed: %s", _e)
 
         # --- Structured debate logger: CRIT metrics + prompts ---
         if self._debate_logger:

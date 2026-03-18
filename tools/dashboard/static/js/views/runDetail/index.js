@@ -14,9 +14,10 @@ import { loadRoundAgents } from './roundsSection.js';
 import { esc } from '../../utils/dom.js';
 import { fmt } from '../../utils/format.js';
 import { appState, setManifest } from '../../state.js';
+import { T } from '../../utils/labels.js';
 
 export function renderRunDetailView(experiment, runId, token) {
-  var appDiv = document.getElementById('app');
+  let appDiv = document.getElementById('app');
   appDiv.innerHTML = '<a class="back-link" href="#runs">&larr; Back to runs</a>' +
     '<div class="loading">Loading run detail...</div>';
 
@@ -33,11 +34,11 @@ export function renderRunDetailView(experiment, runId, token) {
 }
 
 function renderRunDetail(detail, experiment, runId, token) {
-  var m = detail.manifest || {};
+  let m = detail.manifest || {};
   setManifest(m);
-  var appDiv = document.getElementById('app');
+  let appDiv = document.getElementById('app');
 
-  var html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';
+  let html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';
 
   // Divergence + PID stats at the very top
   html += '<div id="divergence-section"></div>';
@@ -49,14 +50,15 @@ function renderRunDetail(detail, experiment, runId, token) {
   html += '<div id="detail-sections"></div>';
   appDiv.innerHTML = html;
 
-  var sectionsDiv = document.getElementById('detail-sections');
-  var sectionsHtml = '';
+  let sectionsDiv = document.getElementById('detail-sections');
+  let sectionsHtml = '';
 
   // Config cards (debate config, scenario config, ticker perf, macro)
   sectionsHtml += buildConfigCards(detail);
 
   // Raw manifest JSON
-  sectionsHtml += buildCard('Config (Raw)', '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
+  let cards = T('cards');
+  sectionsHtml += buildCard(cards.config_raw, '<pre class="content">' + esc(JSON.stringify(m, null, 2)) + '</pre>');
 
   sectionsHtml += '<div id="pid-section"></div>';
   sectionsHtml += '<div id="crit-section"></div>';
@@ -64,23 +66,24 @@ function renderRunDetail(detail, experiment, runId, token) {
 
   // Rounds (debate replay)
   if (detail.round_summaries && detail.round_summaries.length > 0) {
-    var roundsInner = '';
-    for (var i = 0; i < detail.round_summaries.length; i++) {
-      var rs = detail.round_summaries[i];
+    let roundsInner = '';
+    for (let i = 0; i < detail.round_summaries.length; i++) {
+      let rs = detail.round_summaries[i];
       roundsInner += buildRoundCard(rs, experiment, runId);
     }
-    sectionsHtml += buildCard('Rounds (Debate Replay)', roundsInner, true);
+    sectionsHtml += buildCard(cards.rounds_replay, roundsInner, true);
   }
 
   // Final Portfolio
   if (detail.final_portfolio) {
-    var sorted = Object.entries(detail.final_portfolio).sort(function (a, b) { return b[1] - a[1]; });
-    var ptHtml = '<table class="data-table"><tr><th>Ticker</th><th>Weight</th></tr>';
-    for (var i = 0; i < sorted.length; i++) {
+    let sorted = Object.entries(detail.final_portfolio).sort(function (a, b) { return b[1] - a[1]; });
+    let fpCfg = T('final_portfolio');
+    let ptHtml = '<table class="data-table"><tr><th>' + esc(fpCfg.columns[0]) + '</th><th>' + esc(fpCfg.columns[1]) + '</th></tr>';
+    for (let i = 0; i < sorted.length; i++) {
       ptHtml += '<tr><td>' + esc(sorted[i][0]) + '</td><td>' + fmt(sorted[i][1]) + '</td></tr>';
     }
     ptHtml += '</table>';
-    sectionsHtml += buildCard('Final Portfolio', ptHtml);
+    sectionsHtml += buildCard(cards.final_portfolio, ptHtml);
   }
 
   // File Explorer
@@ -100,14 +103,14 @@ function renderRunDetail(detail, experiment, runId, token) {
 
 export function handleAction(action, el) {
   if (action === 'load-agents') {
-    var experiment = el.dataset.experiment;
-    var runId = el.dataset.runId;
-    var round = parseInt(el.dataset.round);
+    const experiment = el.dataset.experiment;
+    const runId = el.dataset.runId;
+    const round = parseInt(el.dataset.round);
     loadRoundAgents(experiment, runId, round);
   } else if (action === 'load-file') {
-    var experiment = el.dataset.experiment;
-    var runId = el.dataset.runId;
-    var path = el.dataset.path;
+    const experiment = el.dataset.experiment;
+    const runId = el.dataset.runId;
+    const path = el.dataset.path;
     loadFileContent(experiment, runId, path);
   }
 }

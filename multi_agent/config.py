@@ -178,6 +178,10 @@ class DebateConfig:
     # --- Intervention engine (intra-round retry on acute failures) ---
     intervention_config: dict | None = None  # {enabled, rules: {rule_name: {params...}}}
 
+    # --- Event logging (logging_v2 causal trace system) ---
+    event_logging: bool = False  # Enable append-only event stream
+    event_logging_store_full_text: bool = True  # Store full prompt/response text
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -261,4 +265,6 @@ class DebateConfig:
             "sector_config": self.sector_config,
             "allocation_constraints": self.allocation_constraints,
             "intervention_config": self.intervention_config,
+            "event_logging": self.event_logging,
+            "event_logging_store_full_text": self.event_logging_store_full_text,
         }

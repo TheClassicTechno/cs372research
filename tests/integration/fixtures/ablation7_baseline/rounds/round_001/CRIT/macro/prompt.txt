@@ -1,0 +1,1592 @@
+=== SYSTEM PROMPT ===
+You are a **CRIT reasoning auditor**.
+
+Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+
+You evaluate **reasoning quality only** — not prediction accuracy, profitability, or agreement with other agents.
+
+Your evaluation must be **strict, calibrated, and consistent**.
+
+CRIT is a **blind auditor**:
+you do NOT know the correct investment decision.
+
+Your task is only to evaluate whether the **reasoning process is sound**.
+
+---
+
+AGENT ROLE
+
+Agent specialization: macro
+
+This agent specializes in **macro reasoning**.
+
+Evaluate reasoning **within this domain specialization**.
+
+Do NOT penalize arguments for focusing on their specialty.
+
+---
+
+EVALUATION TARGET
+
+Evaluate the **REVISED ARGUMENT**.
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the agent's revised argument
+
+Use the proposal and critiques ONLY to determine whether:
+
+• weaknesses were addressed
+• critiques were handled correctly
+• alternative hypotheses were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+STRUCTURED REASONING FORMAT
+
+The revised argument contains structured reasoning with the following fields:
+
+• reasoning.claims — numbered causal claims, each with:
+  - claim_id, claim_text, claim_type (macro/sector/firm/risk/technical)
+  - reasoning_type (causal/observational/risk_assessment/pattern)
+  - evidence (legacy citation list) + evidence_ids (normalized IDs)
+  - assumptions, falsifiers
+  - impacts_positions (tickers affected by this claim)
+  - confidence (per-claim)
+• reasoning.position_rationale — per-position entries with ticker, weight, supporting_claims, explanation
+• reasoning.thesis — the agent's overall portfolio thesis
+• reasoning.confidence — the agent's self-assessed confidence
+• reasoning.risks_or_falsifiers — portfolio-level invalidation conditions
+• reasoning.revision_notes — (revised argument only) how the agent responded to critiques:
+  which critiques were accepted, rejected, and why
+• portfolio_allocation — the allocation weights
+• evidence_citations — full evidence text for cited IDs
+
+Use these structured fields for cross-referencing.
+If evidence_ids exists on claims, use it as the canonical evidence reference.
+If only the legacy evidence field exists, interpret entries as citation references.
+Use revision_notes to evaluate critique handling (alternative_consideration pillar).
+Use assumptions and falsifiers to assess logical completeness.
+
+Cross-reference fields have distinct roles:
+• claims[*].impacts_positions — which assets the claim theoretically affects.
+  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
+• position_rationale[*].supporting_claims — which claims actually justify the allocation.
+  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
+
+---
+
+CLAIMS AND CRITIQUES STRUCTURE
+
+Arguments in the debate are organized using **numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Agents are expected to:
+
+• construct arguments using **explicit numbered claims**
+• critique specific claims using critique IDs
+• explicitly **accept or reject critiques during revision**
+
+You should use this structure to evaluate reasoning quality.
+
+Examples:
+
+A critique such as:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+represents **high-quality debate targeting**.
+
+A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
+
+---
+
+CLAIM REVISION EVALUATION
+
+Check whether the agent's revised argument properly engages with critiques.
+
+Specifically evaluate whether:
+
+• critiques targeting specific claims were addressed
+• accepted critiques resulted in meaningful reasoning updates
+• rejected critiques were justified with evidence or logic
+• claims were modified, strengthened, or abandoned appropriately
+
+If critiques_received is empty:
+• Do NOT penalize alternative_consideration for lack of critique handling
+• Evaluate whether the agent proactively considers alternative explanations
+• Absence of critiques does NOT imply strong reasoning — the agent must still demonstrate consideration of alternatives
+
+Potential failures include:
+
+• ignoring critiques entirely
+• rejecting critiques without justification
+• leaving challenged claims unchanged despite valid critiques
+• modifying the portfolio without explaining the reasoning change
+
+---
+
+CRIT PILLARS
+
+You score FOUR pillars of reasoning integrity.
+
+---
+
+PILLAR 1 — LOGICAL VALIDITY
+
+Does the reasoning logically support the conclusion?
+
+Detect:
+
+• contradictions within the argument
+• circular reasoning
+• non-sequitur conclusions
+• claims that invalidate earlier claims
+• reasoning steps missing between evidence and conclusion
+
+Also consider:
+
+• whether the portfolio allocation logically follows from the thesis
+• whether accepted critiques produce coherent reasoning updates
+
+---
+
+PILLAR 2 — EVIDENTIAL SUPPORT
+
+Are factual claims supported by evidence?
+
+Detect:
+
+• unsupported claims
+• missing citations for key assertions
+• citations that do not actually support the claim
+• cherry-picked evidence
+• claims stronger than the evidence allows
+
+Check whether:
+
+• claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
+• critiques identify evidence gaps
+• revisions introduce new supporting evidence where needed
+• count claims with zero valid citations — report as unsupported_claims_count
+
+---
+
+PILLAR 3 — ALTERNATIVE CONSIDERATION
+
+Does the agent consider competing explanations?
+
+Detect:
+
+• premature certainty
+• ignoring critiques
+• failure to address opposing arguments
+• failure to consider alternative interpretations of evidence
+• thesis changes without explanation
+
+Strong reasoning should:
+
+• engage with critiques directly
+• explain why critiques are accepted or rejected
+• consider competing causal explanations
+
+Use revision_notes to evaluate how critiques were handled.
+
+---
+
+PILLAR 4 — CAUSAL ALIGNMENT
+
+Are causal claims justified by the evidence?
+
+PRIMARY EVALUATION — Pearl's Causal Hierarchy
+
+You must independently classify each claim's reasoning depth using Pearl's ladder:
+
+L1 — Association / correlation: the claim cites data patterns or statistical relationships.
+L2 — Intervention / mechanism: the claim describes a plausible causal pathway or transmission mechanism (e.g., "Fed raises rates → higher discount rates → lower equity valuations"). Evidence must be consistent with the described mechanism (not literal experimental evidence).
+L3 — Counterfactual reasoning: the claim explicitly reasons about an alternative state or counterfactual scenario (e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** — higher-level conclusions supported only by lower-level evidence:
+
+• L2 claim with only associational evidence and no mechanism described
+• L3 claim without explicit counterfactual structure
+• causal conclusions drawn from purely correlational evidence
+• macro claims directly mapped to asset outcomes without transmission mechanism
+• missing causal pathway between variables
+
+SECONDARY DIAGNOSTIC — Reasoning Type Consistency
+
+Claims include an agent-declared reasoning_type field (causal / observational / risk_assessment / pattern).
+
+As a secondary check, compare the agent's self-declared reasoning_type against the actual reasoning structure in the claim text. Note mismatches such as:
+
+• "observational" label but the claim asserts causal effects
+• "causal" label but the reasoning is purely correlational
+• "pattern" label used to justify causal conclusions
+
+These mismatches should be recorded in the causal_overreach diagnostic but must NOT determine the pillar score directly. The causal_alignment score must reflect Pearl ladder evaluation, not label consistency.
+
+Also check whether critiques successfully expose **causal weaknesses in specific claims**.
+
+---
+
+INTERNAL REASONING TRACE
+
+Before scoring, you must internally perform these checks (do NOT include this trace in your output):
+
+1. List all claims and verify each has at least one evidence citation (use evidence_ids)
+2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
+3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
+4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
+5. Check for contradictions between claim pairs
+6. For each claim, independently assess its causal level (L1/L2/L3) and detect rung collapse; also note reasoning_type label mismatches
+7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
+
+---
+
+PATHOLOGY DETECTION
+
+Before assigning scores, detect the following reasoning failures:
+
+• contradictions
+• unsupported claims
+• ignored critiques
+• premature certainty
+• causal overreach
+• conclusion drift
+
+Definitions:
+
+contradictions
+: reasoning statements that conflict internally
+
+unsupported claims
+: claims made without evidence citations
+
+ignored critiques
+: critiques (K#) that target claims but receive no meaningful response
+
+premature certainty
+: strong conclusions despite weak evidence
+
+causal overreach
+: causal claims unsupported by the evidence type
+
+conclusion drift
+: portfolio allocation that does not logically follow from the argument.
+  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
+  Count orphaned positions and report as orphaned_positions_count.
+
+Where possible, report counts for each pathology type in the diagnostics output.
+
+---
+
+SCORING PROCEDURE
+
+Follow this order:
+
+1. Identify reasoning failures.
+2. Determine which pillar each failure affects.
+3. Assign pillar scores based on severity.
+
+Multiple failures should **reduce scores proportionally**.
+
+---
+
+SCORING SCALE
+
+Scores must use the **continuous range [0.0 – 1.0]**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor gaps
+0.70 — acceptable but noticeable weaknesses
+0.55 — mixed reasoning with clear issues
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+CALIBRATION WARNING:
+• Scores above 0.90 should be RARE
+• Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
+• If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Do NOT default to 0.5.
+
+Use the full scale.
+
+---
+
+WHAT YOU DO NOT EVALUATE
+
+Do NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• agreement with other agents
+• market outcomes
+
+You are evaluating **reasoning quality only**.
+
+UNCERTAINTY IS GOOD:
+• Hedging and qualification represent good reasoning — do NOT penalize
+• Penalize: certainty without evidence, confidence exceeding evidence support
+• Penalize: absence of qualification when evidence is ambiguous
+
+---
+
+OUTPUT FORMAT
+
+Return a single JSON object.
+
+No markdown.
+
+No text outside JSON.
+
+{
+"pillar_scores": {
+"logical_validity": <float>,
+"evidential_support": <float>,
+"alternative_consideration": <float>,
+"causal_alignment": <float>
+},
+"diagnostics": {
+"contradictions_detected": <bool>,
+"unsupported_claims_detected": <bool>,
+"ignored_critiques_detected": <bool>,
+"premature_certainty_detected": <bool>,
+"causal_overreach_detected": <bool>,
+"conclusion_drift_detected": <bool>,
+"contradictions_count": <int or null>,
+"unsupported_claims_count": <int or null>,
+"ignored_critiques_count": <int or null>,
+"causal_overreach_count": <int or null>,
+"orphaned_positions_count": <int or null>
+},
+"explanations": {
+"logical_validity": "<1-2 sentences explaining key reasoning issues>",
+"evidential_support": "<1-2 sentences explaining evidence usage>",
+"alternative_consideration": "<1-2 sentences explaining critique handling>",
+"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
+}
+}
+
+
+=== USER PROMPT ===
+## Round 1
+
+## Agent Under Evaluation
+
+MACRO
+
+Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
+
+CRIT evaluates **reasoning quality only**.
+
+You must NOT evaluate:
+
+• prediction accuracy
+• trading profitability
+• market outcomes
+• agreement with other agents
+
+You do **not know the correct investment decision**.
+
+Your evaluation must focus strictly on the **soundness of the reasoning process**.
+
+---
+
+# Evaluation Target
+
+You are provided:
+
+• the original proposal
+• critiques from other agents
+• the revised argument
+
+Use the proposal and critiques **only to determine**:
+
+• whether critiques exposed reasoning weaknesses
+• whether the revision addressed those weaknesses
+• whether competing explanations were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+# Agent Specialization
+
+Agent specialization: **macro**
+
+This agent focuses on **macro reasoning**.
+
+Evaluate reasoning **within this specialization**.
+
+Do NOT penalize arguments for focusing on their domain expertise.
+
+---
+
+# Structured Reasoning Format
+
+The revised argument contains structured reasoning fields.
+
+**reasoning.claims**
+
+Each claim includes:
+
+• claim_id
+• claim_text
+• claim_type (macro / sector / firm / risk / technical)
+• reasoning_type (causal / observational / risk_assessment / pattern)
+• evidence_ids (normalized evidence references)
+• assumptions
+• falsifiers
+• impacts_positions (tickers affected by this claim)
+• confidence
+
+**reasoning.position_rationale**
+
+Per-position explanations containing:
+
+• ticker
+• weight
+• supporting_claims (claim IDs that justify the position)
+• explanation
+
+**reasoning.risks_or_falsifiers**
+
+Portfolio-level invalidation conditions.
+
+**reasoning.revision_notes**
+
+Explanation of how critiques were handled.
+
+**reasoning.critique_responses**
+
+Per-critique structured responses. Each entry contains:
+
+• from_agent (which agent sent the critique)
+• target_claim (which claim was critiqued)
+• disposition ("accept" or "rebut")
+• justification (why the agent accepted or rebutted)
+
+Use this to determine whether each critique was explicitly addressed.
+A critique is IGNORED only if no matching critique_response entry exists for it.
+
+**portfolio_allocation**
+
+Final asset allocation.
+
+**evidence_citations**
+
+Full text for evidence references.
+
+Important distinctions:
+
+• **claims[*].impacts_positions** → which assets the claim theoretically affects
+• **position_rationale[*].supporting_claims** → which claims justify the allocation
+
+These serve different purposes:
+
+• impacts_positions → **causal completeness**
+• supporting_claims → **conclusion consistency**
+
+Important note about impacts_positions:
+
+The impacts_positions field may legitimately be empty.
+
+Some claims describe macro or market-wide relationships that affect the portfolio indirectly
+(e.g., interest rates affecting equity valuations broadly).
+
+Absence of impacts_positions is NOT automatically a reasoning failure.
+
+Only penalize causal completeness when a specific portfolio position is clearly implied
+by a claim but the reasoning fails to connect that claim to the position.
+
+---
+
+# Debate Structure
+
+Arguments are structured using explicit claims.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques may target specific claims or the portfolio allocation.
+
+During revision agents may:
+
+• **ACCEPT** critiques
+• **REJECT** critiques with justification
+
+Your task is to evaluate **whether the revised reasoning properly engages with critiques**.
+
+---
+
+# Original Proposal
+
+Use the proposal only to determine whether critiques revealed weaknesses.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-REAL",
+      "evidence_text": "10Y Real Yield: 1.68%"
+    },
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 3.08%"
+    },
+    {
+      "evidence_id": "AMD-RET252",
+      "evidence_text": "1Y Return: -38.4%"
+    },
+    {
+      "evidence_id": "AAPL-RET252",
+      "evidence_text": "1Y Return: -1.8%"
+    },
+    {
+      "evidence_id": "L1-2Y",
+      "evidence_text": "2Y Treasury: 4.22% (+130bps QoQ)"
+    },
+    {
+      "evidence_id": "JPM-EC2",
+      "evidence_text": "The firm experienced record revenue in Markets at $6.8 billion, driven by strong client activity, while net interest income (NII) excluding Markets rose significantly due to higher rates."
+    },
+    {
+      "evidence_id": "GS-EC1",
+      "evidence_text": "Goldman Sachs reported third quarter 2022 net revenues of $12 billion and earnings per share of $8.25, reflecting solid performance amid a challenging economic environment characterized by high inflation and geopolitical instability."
+    },
+    {
+      "evidence_id": "L1-CPI",
+      "evidence_text": "CPI YoY: 8.19%"
+    },
+    {
+      "evidence_id": "L1-WTI",
+      "evidence_text": "WTI Crude: $79.91"
+    },
+    {
+      "evidence_id": "COP-F2",
+      "evidence_text": "Average realized price increased to $88.57 per BOE from $50.03 per BOE driven by Brent crude averaging $113.78 per barrel and Henry Hub natural gas averaging $7.17 per MMBTU."
+    },
+    {
+      "evidence_id": "COP-EC1",
+      "evidence_text": "In Q3 2022, ConocoPhillips reported strong financial results, achieving record production levels of over 1.75 million barrels of oil equivalent per day."
+    },
+    {
+      "evidence_id": "CAT-F2",
+      "evidence_text": "Order backlog reached approximately $28.5 billion at quarter-end, up $2.0 billion from Q1, primarily driven by Energy \u0026 Transportation demand."
+    },
+    {
+      "evidence_id": "CAT-EC2",
+      "evidence_text": "Sales increased by 21% to $15 billion, driven by strong price realization and volume growth, despite ongoing supply chain challenges."
+    },
+    {
+      "evidence_id": "L1-INDPRO",
+      "evidence_text": "Industrial Production Index: 101.29"
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.1,
+    "AMD": 0.04,
+    "CAT": 0.16,
+    "COP": 0.3,
+    "GS": 0.1,
+    "JPM": 0.18,
+    "MS": 0.07,
+    "_CASH_": 0.05
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Real yields and short-term policy rates remain elevated or do not materially decline over the investment horizon",
+          "Equity risk premia do not compress enough to offset higher discount rates"
+        ],
+        "claim_id": "C1",
+        "claim_text": "Higher real and nominal rates from Fed tightening increase discount rates and pressure long-duration, high-beta technology exposures; evidence of elevated real yields and recent rate moves supports valuation compression risk [L1-REAL] [L1-FF] which is visible in steep tech drawdowns (e.g., AMD 1Y return -38.4% and AAPL recent drawdowns) [AMD-RET252] [AAPL-RET252].",
+        "claim_type": "macro",
+        "confidence": 0.75,
+        "evidence": [
+          "[L1-REAL]",
+          "[L1-FF]",
+          "[AMD-RET252]",
+          "[AAPL-RET252]"
+        ],
+        "evidence_ids": [
+          "AAPL-RET252",
+          "AMD-RET252",
+          "L1-FF",
+          "L1-REAL"
+        ],
+        "falsifiers": [
+          "Material decline in real yields (e.g., 10y real yield falls sharply) or Fed pivot to easing",
+          "Evidence of accelerating tech earnings that offset multiple compression"
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "AMD"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Term structure remains steep enough at the short end to sustain higher NII",
+          "Credit deterioration remains limited in the short term so higher NII outweighs provisions"
+        ],
+        "claim_id": "C2",
+        "claim_text": "An inverted yield curve and higher short rates (Fed Funds 3.08% and 2Y at 4.22%) indicate a tightening monetary regime that increases near-term net interest income for banks but raises recession/credit risk; banks reported rising NII and resilient markets revenue in Q3 (JPM NII strength, Goldman resilient revenues) [L1-FF] [L1-2Y] [JPM-EC2] [GS-EC1].",
+        "claim_type": "sector",
+        "confidence": 0.7,
+        "evidence": [
+          "[L1-FF]",
+          "[L1-2Y]",
+          "[JPM-EC2]",
+          "[GS-EC1]"
+        ],
+        "evidence_ids": [
+          "GS-EC1",
+          "JPM-EC2",
+          "L1-2Y",
+          "L1-FF"
+        ],
+        "falsifiers": [
+          "Rapid surge in loan defaults or materially worse-than-expected credit losses for banks",
+          "Short-term rates fall quickly or net interest margins compress"
+        ],
+        "impacts_positions": [
+          "JPM",
+          "GS",
+          "MS",
+          "_CASH_"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Oil \u0026 gas prices remain supported by geopolitical supply constraints and demand resilience",
+          "No immediate policy shock (e.g., severe demand destruction) that collapses commodity prices"
+        ],
+        "claim_id": "C3",
+        "claim_text": "Persistent high inflation and elevated commodity prices favor upstream energy producers: CPI and oil levels (CPI YoY 8.19% and WTI ~$79.91) support stronger cash flow for producers; ConocoPhillips\u0027 production, realized price and strong distributions indicate direct upside from sustained commodity prices [L1-CPI] [L1-WTI] [COP-F2] [COP-EC1].",
+        "claim_type": "sector",
+        "confidence": 0.8,
+        "evidence": [
+          "[L1-CPI]",
+          "[L1-WTI]",
+          "[COP-F2]",
+          "[COP-EC1]"
+        ],
+        "evidence_ids": [
+          "COP-EC1",
+          "COP-F2",
+          "L1-CPI",
+          "L1-WTI"
+        ],
+        "falsifiers": [
+          "Sharp collapse in oil prices (WTI falls materially) or rapid demand destruction from recession",
+          "Major policy changes (e.g., unexpected large strategic release) that depress prices"
+        ],
+        "impacts_positions": [
+          "COP"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "End-user capex and commodity-driven investment (energy, resources, infrastructure) remain sufficient to convert backlog into sales",
+          "Inflation-driven cost increases can be passed through via price realization"
+        ],
+        "claim_id": "C4",
+        "claim_text": "Cyclical industrials with strong order backlogs and pricing power can out-perform in an inflationary, higher-rate environment if end-demand holds; Caterpillar shows a large backlog and price realization supporting revenue and margin resilience amid higher input costs [CAT-F2] [CAT-EC2] [L1-INDPRO].",
+        "claim_type": "sector",
+        "confidence": 0.65,
+        "evidence": [
+          "[CAT-F2]",
+          "[CAT-EC2]",
+          "[L1-INDPRO]"
+        ],
+        "evidence_ids": [
+          "CAT-EC2",
+          "CAT-F2",
+          "L1-INDPRO"
+        ],
+        "falsifiers": [
+          "Large-scale cancellation of orders or collapse in industrial activity (industrial production falls sharply)",
+          "Inability to pass through material cost inflation leading to margin compression"
+        ],
+        "impacts_positions": [
+          "CAT"
+        ],
+        "reasoning_type": "causal"
+      }
+    ],
+    "confidence": 0.72,
+    "position_rationale": [
+      {
+        "explanation": "Underweight relative to market-cap bias due to C1: rising real rates and FX headwinds (Apple cites foreign currency impacts) [L1-REAL] [AAPL-F3] make AAPL vulnerable; maintain modest exposure for services recurring revenue and buyback policy noted in filings [AAPL-F6], but limit size because macro regime favors lower-duration names.",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.1
+      },
+      {
+        "explanation": "Small tactical exposure: C1 implies semiconductor/long-duration tech risk given rate sensitivity and sharp drawdowns [AMD-RET252]; retain limited upside exposure to data center demand (AMD-F1) but keep a low weight due to macro headwinds and elevated volatility.",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AMD",
+        "weight": 0.04
+      },
+      {
+        "explanation": "Overweight industrial cyclicals as per C4: Caterpillar\u0027s sizable backlog and price realization [CAT-F2] [CAT-EC2] position it to convert orders and preserve margins in an inflationary capex environment; weight reflects conviction but acknowledges execution/supply-chain risk.",
+        "supporting_claims": [
+          "C4"
+        ],
+        "ticker": "CAT",
+        "weight": 0.16
+      },
+      {
+        "explanation": "Largest overweight to energy per C3: ConocoPhillips\u0027 strong production, realized high prices and shareholder distributions [COP-F2] [COP-EC1] directly benefit from elevated WTI and inflation; position captures commodity upside and free-cash-flow returns to shareholders.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "COP",
+        "weight": 0.3
+      },
+      {
+        "explanation": "Moderate overweight to Goldman per C2: higher short rates and market volatility support trading and NII opportunities [GS-EC1]; weight balances opportunity with industry-specific volatility and recent revenue declines in some businesses [GS-F1].",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "GS",
+        "weight": 0.1
+      },
+      {
+        "explanation": "Significant bank allocation per C2: JPM reported rising NII and strong Markets revenue [JPM-EC2], benefiting from higher short-term rates; larger weight reflects combination of scale, diversified franchises, and clearer NII sensitivity.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "JPM",
+        "weight": 0.18
+      },
+      {
+        "explanation": "Smaller bank weight for Morgan Stanley: C2 supports exposure to financials, but MS has more wealth/asset-management mix which is less rate-sensitive and more fee-dependent [MS-EC2]; maintain modest exposure for diversification within financials.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "MS",
+        "weight": 0.07
+      },
+      {
+        "explanation": "Maintain a cash buffer as insurance given inverted curve and recession risk in C2 and valuations pressured in C1; cash captures attractive short-term policy rates (Fed Funds 3.08%) [L1-FF] and provides dry powder to reallocate on regime shifts.",
+        "supporting_claims": [
+          "C2",
+          "C1"
+        ],
+        "ticker": "_CASH_",
+        "weight": 0.05
+      }
+    ],
+    "risks_or_falsifiers": [
+      "Real yields and short-term rates fall materially (e.g., Fed pivots or 10y real yield declines), which would re-rate long-duration tech and invalidate the underweight to AAPL/AMD [L1-REAL].",
+      "A sharp global demand collapse causes oil prices to plunge (WTI falls substantially), invalidating COP overweight [L1-WTI].",
+      "Rapid increase in bank credit losses or unexpectedly large provisions would reverse the positive bank thesis and require de-risking financial positions (rising loan defaults observable in bank filings and guidance).",
+      "Industrial activity (industrial production) declines materially, causing order cancellations and undermining CAT backlog convertibility [L1-INDPRO] [CAT-F2]."
+    ],
+    "thesis": "Macro view: dominant regime is high inflation with monetary tightening (Fed funds elevated, inverted curve) leading to higher real yields and elevated volatility [L1-FF: Fed Funds: 3.08%] [L1-CURVE: 10Y-2Y Spread: -0.39% (inverted)] [L1-REAL: 10Y Real Yield: 1.68%] [L1-VIX: VIX: 31.62]. This favors commodity producers (COP) and cyclicals with backlog/pricing power (CAT) while benefiting banks in the near term via higher NII (JPM, GS, MS) but penalizes long-duration, high-beta tech (AAPL, AMD). Portfolio tilts: largest allocation to COP to capture commodity cashflows (C3); material bank exposure to monetize higher rates (C2) while keeping a modest cash buffer for recession/credit risk; cyclical industrial exposure (CAT) to benefit from order backlog and price realization (C4); reduced tech exposure reflecting C1. Weights reflect conviction: highest for COP (strongest direct macro linkage), sizable for banks (policy-rate beneficiaries) and medium for CAT; tech positions are limited but retained for idiosyncratic strengths."
+  }
+}
+
+---
+
+# Critiques Received
+
+Each critique contains:
+
+• from_role — which agent sent the critique
+• target_claim — which specific claim (C1, C2, …) is targeted
+• critique_text — the objection
+• evidence_citations — counter-evidence IDs with full text
+• portfolio_implication — how the flaw affects the portfolio
+• suggested_adjustment — what the critic recommends
+• falsifier — what would disprove the objection
+• objection_confidence — how confident the critic is
+
+Use `target_claim` to match critiques against `critique_responses` in the revised argument.
+
+
+Evaluate whether critiques were meaningfully addressed in the revision.
+
+
+[
+  {
+    "critique_text": "Claim C2 assumes banks will materially outperform because higher short rates raise NII ([L1-FF: Fed Funds: 3.08%], [L1-2Y: 2Y Treasury: 4.22% (+130bps QoQ)]) and Q3 commentary showed NII strength ([JPM-EC2: The firm experienced record revenue in Markets at $6.8 billion, driven by strong client activity, while net interest income (NII) excluding Markets rose significantly due to higher rates.], [GS-EC1: Goldman Sachs reported third quarter 2022 net revenues of $12 billion and earnings per share of $8.25, reflecting solid performance amid a challenging economic environment characterized by high inflation and geopolitical instability.]). Price action does not confirm a durable rotation into banks: JPM, GS and MS are trading below key longer-term SMAs (JPM-SMA200 [JPM-SMA200: SMA 200D: $118.25], GS-SMA200 [GS-SMA200: SMA 200D: $301.38], MS-SMA200 [MS-SMA200: SMA 200D: $77.93]) and show weak-to-negative medium-term returns (JPM-RET60 [JPM-RET60: 60D Return: -8.9%] -8.9%, GS-RET60 [GS-RET60: 60D Return: -1.1%] -1.1%). The weakest assumption in C2 is that accounting NII improvements have already been priced-in or will translate quickly into sustained price leadership despite the market keeping these names under short- and medium-term trend resistance. That assumption is contradicted by the observed trend structure: price below SMAs implies sellers remain in control and any allocation that leans heavily into banks is effectively fighting the market\u0027s current vote.",
+    "evidence_citations": [
+      {
+        "evidence_id": "JPM-SMA200",
+        "evidence_text": "SMA 200D: $118.25"
+      },
+      {
+        "evidence_id": "GS-SMA200",
+        "evidence_text": "SMA 200D: $301.38"
+      },
+      {
+        "evidence_id": "MS-SMA200",
+        "evidence_text": "SMA 200D: $77.93"
+      },
+      {
+        "evidence_id": "JPM-RET60",
+        "evidence_text": "60D Return: -8.9%"
+      },
+      {
+        "evidence_id": "GS-RET60",
+        "evidence_text": "60D Return: -1.1%"
+      },
+      {
+        "evidence_id": "JPM-RET252",
+        "evidence_text": "1Y Return: -34.3%"
+      }
+    ],
+    "falsifier": "The objection would be invalidated if the bank cohort posts technical confirmation: sustained closes above their 50d and then 200d SMAs with improving relative strength (e.g., JPM price moves above [JPM-SMA50] then [JPM-SMA200] and JPM-RS60 turns meaningfully positive). Strong, persistent positive RS60 and MOM200 turn-up for the banks would also falsify my technical caution.",
+    "from_role": "technical",
+    "objection_confidence": 0.85,
+    "portfolio_implication": "Ignoring the current price structure increases downside risk: sizable weights to JPM (0.18) and other banks assume mean-reversion that is not confirmed by price. If NII tailwinds do not immediately produce price breakout above SMAs, the portfolio will suffer from holding assets with broken intermediate-term trend alignment, undermining the Macro agent\u0027s intended rate\u2011beneficiary exposure.",
+    "suggested_adjustment": "If technical signals were respected, reduce near-term bank exposure until price confirms trend recovery. Specifically, cut JPM and GS weights materially (e.g., JPM 0.18 -\u003e 0.05, GS 0.10 -\u003e 0.05) and reallocate to either the clear momentum leader (COP) or CASH until price closes and sustains above 50d/200d SMAs and RS60 improves. Require confirmations: JPM/GS/MS price \u003e SMA50 and rising RS60 ([JPM-SMA50], [GS-SMA50], [MS-SMA50], [JPM-RS60], [GS-RS60], [MS-RS60]).",
+    "target_claim": "C2"
+  },
+  {
+    "critique_text": "Claim C4 argues Caterpillar should outperform because backlog and price realization support revenue/margins ([CAT-F2: Order backlog reached approximately $28.5 billion at quarter-end, up $2.0 billion from Q1, primarily driven by Energy \u0026 Transportation demand.], [CAT-EC2: Sales increased by 21% to $15 billion, driven by strong price realization and volume growth, despite ongoing supply chain challenges.], [L1-INDPRO: Industrial Production Index: 101.29]). Technically, CAT is in a down/repairing trend: price is below all key SMAs (CAT-SMA200 [CAT-SMA200: SMA 200D: $187.77] \u003e price, CAT-SMA50 [CAT-SMA50: SMA 50D: $173.76], CAT-SMA20 [CAT-SMA20: SMA 20D: $166.10]) and medium-term returns and RS are negative or poor (CAT-RET60 [CAT-RET60: 60D Return: -8.3%] -8.3%, CAT-RS60 [CAT-RS60: Relative Strength 60D: -2.9%] -2.9%). The single weakest assumption in C4 is that backlog and fundamental resilience will promptly translate into buyer dominance despite the chart showing sellers have the upper hand; price is the market\u2019s vote and currently rejects the bullish allocation to CAT.",
+    "evidence_citations": [
+      {
+        "evidence_id": "CAT-SMA200",
+        "evidence_text": "SMA 200D: $187.77"
+      },
+      {
+        "evidence_id": "CAT-RET60",
+        "evidence_text": "60D Return: -8.3%"
+      },
+      {
+        "evidence_id": "CAT-RS60",
+        "evidence_text": "Relative Strength 60D: -2.9%"
+      },
+      {
+        "evidence_id": "CAT-SMA20",
+        "evidence_text": "SMA 20D: $166.10"
+      },
+      {
+        "evidence_id": "CAT-SMA50",
+        "evidence_text": "SMA 50D: $173.76"
+      }
+    ],
+    "falsifier": "This objection would be proven wrong if CAT price clears and sustains above its 50d and 200d SMAs and RS60 flips positive (evidence: sustained closes above [CAT-SMA50] and [CAT-SMA200], plus a rising [CAT-RS60]), indicating buyers regained control.",
+    "from_role": "technical",
+    "objection_confidence": 0.8,
+    "portfolio_implication": "By overweighting CAT (0.16) without technical confirmation, the Macro portfolio accepts exposure to a name whose intermediate-term trend is impaired. If CAT fails to clear short- and medium-term resistance, the allocation risks underperformance and drawdown, contrary to the Macro agent\u0027s intention to capture cyclical upside.",
+    "suggested_adjustment": "Respect price: reduce CAT weight materially (e.g., 0.16 -\u003e 0.02\u20130.05) until CAT posts a clean breakout and sustains above the 50d and 200d SMAs with improving RS60. Allocate freed capital to momentum-confirmed names (COP) or CASH. Require confirmation signals before rebuilding CAT exposure: close \u003e [CAT-SMA50] and later \u003e [CAT-SMA200] with RS60 turning positive.",
+    "target_claim": "C4"
+  }
+]
+
+---
+
+
+# Agent Self-Critique
+
+The agent identified the following weakness in its own reasoning during the critique phase:
+
+{
+  "explanation": "The largest macro-driven vulnerability in my prior portfolio is the assumption in C2 that higher short-term rates and historical NII gains (JPM NII strength [JPM-EC2]) will continue to benefit banks without offsetting credit deterioration. The yield-curve inversion ([L1-CURVE]) and Fed funds level ([L1-FF]) signal an elevated recession probability; JPM itself flags recession and credit concerns ([JPM-EC7]). High HY spreads ([L1-HY] = 5.43%) and elevated equity volatility ([L1-VIX]) increase the risk that loan-loss provisions and credit impairments could erode the near-term benefits of higher NII. If credit weakens materially, my relatively large bank sleeve (JPM 0.18 + GS 0.10 + MS 0.07 = 0.35) could suffer synchronized losses, eroding the portfolio despite rate-driven NII improvements. This is the single-most fragile macro assumption and would prompt cutting financial exposure and increasing CASH if indicators of credit stress (widening HY spreads, bank provisioning increases in filings) materialize.",
+  "weakest_claim": "C2 (banks benefit from higher short rates outweighing credit risks)"
+}
+
+Evaluate whether the revision addresses the agent's own identified weakness.
+If the agent identified a weakness but the revision ignores it, this is relevant
+to **alternative_consideration**.
+
+Do not reward agents merely for writing a self-critique.
+Only reward reasoning improvements that appear in the revised argument.
+
+---
+
+
+# Revised Argument
+
+Focus primarily on the reasoning quality in this revision.
+
+{
+  "evidence_citations": [
+    {
+      "evidence_id": "L1-FF",
+      "evidence_text": "Fed Funds: 3.08%"
+    },
+    {
+      "evidence_id": "L1-REAL",
+      "evidence_text": "10Y Real Yield: 1.68%"
+    },
+    {
+      "evidence_id": "AAPL-RET252",
+      "evidence_text": "1Y Return: -1.8%"
+    },
+    {
+      "evidence_id": "AMD-RET252",
+      "evidence_text": "1Y Return: -38.4%"
+    },
+    {
+      "evidence_id": "L1-2Y",
+      "evidence_text": "2Y Treasury: 4.22% (+130bps QoQ)"
+    },
+    {
+      "evidence_id": "JPM-EC2",
+      "evidence_text": "The firm experienced record revenue in Markets at $6.8 billion, driven by strong client activity, while net interest income (NII) excluding Markets rose significantly due to higher rates."
+    },
+    {
+      "evidence_id": "GS-EC1",
+      "evidence_text": "Goldman Sachs reported third quarter 2022 net revenues of $12 billion and earnings per share of $8.25, reflecting solid performance amid a challenging economic environment characterized by high inflation and geopolitical instability."
+    },
+    {
+      "evidence_id": "JPM-SMA200",
+      "evidence_text": "SMA 200D: $118.25"
+    },
+    {
+      "evidence_id": "GS-SMA200",
+      "evidence_text": "SMA 200D: $301.38"
+    },
+    {
+      "evidence_id": "MS-SMA200",
+      "evidence_text": "SMA 200D: $77.93"
+    },
+    {
+      "evidence_id": "L1-CPI",
+      "evidence_text": "CPI YoY: 8.19%"
+    },
+    {
+      "evidence_id": "L1-WTI",
+      "evidence_text": "WTI Crude: $79.91"
+    },
+    {
+      "evidence_id": "COP-F2",
+      "evidence_text": "Average realized price increased to $88.57 per BOE from $50.03 per BOE driven by Brent crude averaging $113.78 per barrel and Henry Hub natural gas averaging $7.17 per MMBTU."
+    },
+    {
+      "evidence_id": "COP-EC1",
+      "evidence_text": "In Q3 2022, ConocoPhillips reported strong financial results, achieving record production levels of over 1.75 million barrels of oil equivalent per day."
+    },
+    {
+      "evidence_id": "CAT-F2",
+      "evidence_text": "Order backlog reached approximately $28.5 billion at quarter-end, up $2.0 billion from Q1, primarily driven by Energy \u0026 Transportation demand."
+    },
+    {
+      "evidence_id": "CAT-EC2",
+      "evidence_text": "Sales increased by 21% to $15 billion, driven by strong price realization and volume growth, despite ongoing supply chain challenges."
+    },
+    {
+      "evidence_id": "L1-INDPRO",
+      "evidence_text": "Industrial Production Index: 101.29"
+    }
+  ],
+  "portfolio_allocation": {
+    "AAPL": 0.09,
+    "AMD": 0.03,
+    "CAT": 0.1,
+    "COP": 0.34,
+    "GS": 0.08,
+    "JPM": 0.12,
+    "MS": 0.06,
+    "_CASH_": 0.18
+  },
+  "reasoning": {
+    "claims": [
+      {
+        "assumptions": [
+          "Real yields and short-term policy rates remain elevated relative to pre-tightening levels over the investment horizon",
+          "Tech earnings growth does not accelerate sufficiently to offset higher discount rates"
+        ],
+        "claim_id": "C1",
+        "claim_text": "Persistently higher nominal and real short-term rates from Fed tightening raise discount rates and favor lower-duration, cash-generative businesses over long-duration tech; this creates valuation headwinds for high-beta, long-duration technology exposures.",
+        "claim_type": "macro",
+        "confidence": 0.7,
+        "evidence": [
+          "[L1-FF]",
+          "[L1-REAL]",
+          "[AAPL-RET252]",
+          "[AMD-RET252]"
+        ],
+        "evidence_ids": [
+          "AAPL-RET252",
+          "AMD-RET252",
+          "L1-FF",
+          "L1-REAL"
+        ],
+        "falsifiers": [
+          "10y real yield falls materially or Fed pivots to easing (observable in [L1-REAL] and [L1-FF])",
+          "Sustained acceleration in tech revenue/earnings growth that overcomes multiple compression (observable in subsequent filings and [AAPL-EC4], [AMD-EC6])"
+        ],
+        "impacts_positions": [
+          "AAPL",
+          "AMD",
+          "CASH"
+        ],
+        "reasoning_type": "causal"
+      },
+      {
+        "assumptions": [
+          "Short-end rates remain elevated long enough to expand NII (observable via [L1-FF] and [L1-2Y])",
+          "Credit deterioration is not rapid enough to swamp NII gains in the very near term",
+          "Market prices may reflect technical/flow-driven downside before fundamental NII improvements fully translate to multiples"
+        ],
+        "claim_id": "C2",
+        "claim_text": "An inverted yield curve and higher short-term rates boost near-term net interest income for major banks, supporting earnings even as recession risk rises; however, short\u2011term price action can lag fundamentals so tactical trimming is warranted until technical risks are respected.",
+        "claim_type": "sector",
+        "confidence": 0.65,
+        "evidence": [
+          "[L1-FF]",
+          "[L1-2Y]",
+          "[JPM-EC2]",
+          "[GS-EC1]",
+          "[JPM-SMA200]",
+          "[GS-SMA200]",
+          "[MS-SMA200]"
+        ],
+        "evidence_ids": [
+          "GS-EC1",
+          "GS-SMA200",
+          "JPM-EC2",
+          "JPM-SMA200",
+          "L1-2Y",
+          "L1-FF",
+          "MS-SMA200"
+        ],
+        "falsifiers": [
+          "Material rise in loan defaults and provisions visible in subsequent bank filings and guidance",
+          "Short-term rates decline quickly (Fed pivot) removing the NII tailwind"
+        ],
+        "impacts_positions": [
+          "JPM",
+          "GS",
+          "MS",
+          "CASH"
+        ],
+        "reasoning_type": "causal | risk_assessment"
+      },
+      {
+        "assumptions": [
+          "Commodity prices remain supported by supply constraints and/or demand resilience",
+          "Cyclicals can pass cost increases through to customers and convert backlog into revenue"
+        ],
+        "claim_id": "C3",
+        "claim_text": "High inflation and elevated commodity prices favor upstream energy producers and commodity-linked cyclicals; energy producers with strong production and distribution policies (ConocoPhillips) directly capture higher realized prices while cyclicals with backlog and price realization (Caterpillar) benefit if end-demand converts backlog into sales.",
+        "claim_type": "sector",
+        "confidence": 0.78,
+        "evidence": [
+          "[L1-CPI]",
+          "[L1-WTI]",
+          "[COP-F2]",
+          "[COP-EC1]",
+          "[CAT-F2]",
+          "[CAT-EC2]",
+          "[L1-INDPRO]"
+        ],
+        "evidence_ids": [
+          "CAT-EC2",
+          "CAT-F2",
+          "COP-EC1",
+          "COP-F2",
+          "L1-CPI",
+          "L1-INDPRO",
+          "L1-WTI"
+        ],
+        "falsifiers": [
+          "WTI collapses materially (observable in [L1-WTI])",
+          "Industrial production weakens sharply and backlog conversions stall (observable in [L1-INDPRO] and subsequent [CAT-EC*] updates)"
+        ],
+        "impacts_positions": [
+          "COP",
+          "CAT",
+          "CASH"
+        ],
+        "reasoning_type": "causal"
+      }
+    ],
+    "confidence": 0.65,
+    "critique_responses": [
+      {
+        "disposition": "accept",
+        "from_agent": "TECHNICAL",
+        "justification": "I accept the technical critique that intra-quarter price structures for banks (JPM, GS, MS trading below 200d SMAs) introduce meaningful short-term downside/lag risk that my original allocation underweighted. Evidence: [JPM-SMA200], [GS-SMA200], [MS-SMA200], [JPM-RET60]. However, I do not accept that this invalidates the macro causal link that higher short rates and an inverted curve support near-term NII gains [L1-FF], [L1-2Y], and reported NII strength [JPM-EC2], [GS-EC1]. Practical response: I reduced bank weights (JPM 0.18\u21920.12, GS 0.10\u21920.08, MS 0.07\u21920.06) and increased CASH and COP to reflect tactical price risk while preserving macro exposure to rate beneficiaries. This addresses the critic\u0027s weakest-assumption attack (that NII improvements immediately translate into price leadership) by explicitly accounting for timing/technical risk in allocation without abandoning the macro rationale.",
+        "target_claim": "C2"
+      },
+      {
+        "disposition": "accept",
+        "from_agent": "TECHNICAL",
+        "justification": "I accept the critique that Caterpillar\u0027s intermediate-term price structure is impaired and that backlog/price-realization fundamentals may take time to show up in prices. Evidence supporting the critique: [CAT-SMA200], [CAT-SMA50], [CAT-SMA20], [CAT-RET60], [CAT-RS60]. This does not negate the macro causal claim that cyclicals with backlogs benefit from inflationary capex [CAT-F2], [CAT-EC2], [L1-INDPRO], but it does require tactical moderation. As a result I trimmed CAT exposure from 0.16 to 0.10 and reallocated to higher-conviction, momentum-confirmed COP and CASH as near-term insurance against technical-driven underperformance.",
+        "target_claim": "C3 (CAT exposure)"
+      }
+    ],
+    "position_rationale": [
+      {
+        "explanation": "Under C1: elevated real rates and FX headwinds create valuation risk for long-duration tech; retain a modest position to capture Services recurring revenue and buyback support noted in filings [AAPL-F6] and positive call tone [AAPL-EC4], but keep weight constrained given macro rate sensitivity [L1-REAL].",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AAPL",
+        "weight": 0.09
+      },
+      {
+        "explanation": "Small tactical exposure consistent with C1: semiconductors are rate-sensitive and have shown large drawdowns [AMD-RET252]; maintain limited upside exposure to data-center growth [AMD-F1] but keep low weight due to elevated volatility and macro headwinds.",
+        "supporting_claims": [
+          "C1"
+        ],
+        "ticker": "AMD",
+        "weight": 0.03
+      },
+      {
+        "explanation": "C3 supports industrial cyclicals via backlog and price realization [CAT-F2] [CAT-EC2] in an inflationary capex environment [L1-INDPRO]. However, we trimmed CAT versus the prior allocation to respect short\u2011term technical fragility (price below key SMAs) while preserving exposure to cyclical upside.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "CAT",
+        "weight": 0.1
+      },
+      {
+        "explanation": "Largest weight: energy directly benefits from high CPI and elevated WTI [L1-CPI] [L1-WTI]. ConocoPhillips shows strong realized prices and production [COP-F2] and robust Q3 results [COP-EC1], and its momentum/relative strength is strong [COP-RET60] [COP-RS60], making it the highest-conviction macro play on commodity upside.",
+        "supporting_claims": [
+          "C3"
+        ],
+        "ticker": "COP",
+        "weight": 0.34
+      },
+      {
+        "explanation": "GS benefits from higher short-term rates and market volatility that support trading and FICC [GS-EC1] per C2. We reduced GS weight modestly relative to the prior portfolio to reflect intermediate-term technical resistance ([GS-SMA200]) and the risk that price action lags fundamentals.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "GS",
+        "weight": 0.08
+      },
+      {
+        "explanation": "JPM is a primary beneficiary of rising NII [JPM-EC2] consistent with C2. Weight is material but trimmed from the prior portfolio to acknowledge technical headwinds ([JPM-SMA200]) and to preserve liquidity if credit or market stress accelerates.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "JPM",
+        "weight": 0.12
+      },
+      {
+        "explanation": "Morgan Stanley provides diversified exposure to financials with wealth management resilience [MS-EC2]. Maintain a smaller allocation given its business mix and intermediate-term price below longer SMAs ([MS-SMA200]) while keeping exposure to potential NII/markets tailwinds.",
+        "supporting_claims": [
+          "C2"
+        ],
+        "ticker": "MS",
+        "weight": 0.06
+      },
+      {
+        "explanation": "Higher cash balance reflects tactical insurance against short-term technical risks called out by critics (banks and CAT price structure) and the non-trivial recession/credit risk embedded in an inverted curve [L1-CURVE]. Cash captures attractive policy rates [L1-FF] and provides dry powder to increase positions if macro signals strengthen or price confirms.",
+        "supporting_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "ticker": "CASH",
+        "weight": 0.18
+      }
+    ],
+    "revision_notes": "Kept macro regime thesis (high inflation + tightening). Retained C1\u2013C3 but updated C2 to explicitly incorporate tactical/technical timing risk. Accepted technical critiques as limited and material: reduced bank weights (JPM 0.18\u21920.12; GS 0.10\u21920.08; MS 0.07\u21920.06) and trimmed CAT (0.16\u21920.10). Reallocated freed capital into higher-conviction COP (0.30\u21920.34) and increased CASH (0.05\u21920.18) to provide liquidity and insurance against short-term technical risk and potential regime shock. AMD and AAPL remain constrained under C1 (AAPL 0.10\u21920.09; AMD 0.04\u21920.03). Claims retained; no claims dropped. Changes reflect material but proportionate adjustments to respect technical timing without abandoning macro causal logic.",
+    "risks_or_falsifiers": [
+      "Fed pivots to easing or real yields fall materially (observable in [L1-REAL], [L1-FF]) \u2192 would re-rate long-duration tech and invalidate large energy/bank tilt.",
+      "WTI collapses materially (observable in [L1-WTI]) or global demand destruction occurs \u2192 would undercut COP thesis.",
+      "Rapid deterioration in credit leading to rising provisions and losses at banks (observable in subsequent bank filings and allowance metrics) \u2192 would invalidate C2 and require de-risking financials.",
+      "Industrial production and order conversions fall sharply (observable in [L1-INDPRO] and Caterpillar updates) \u2192 would undermine CAT exposure."
+    ],
+    "thesis": "Dominant macro regime is high inflation with monetary tightening: Fed funds and short yields are elevated and the curve is inverted ([L1-FF: Fed Funds: 3.08%], [L1-2Y: 2Y Treasury: 4.22% (+130bps QoQ)], [L1-CURVE: 10Y-2Y Spread: -0.39% (inverted)], [L1-REAL: 10Y Real Yield: 1.68%]). This regime favors commodity producers and cyclical firms that can pass through prices (COP and CAT) and benefits banks via higher NII (JPM, GS, MS) in the near term. It penalizes long-duration tech (AAPL, AMD) via higher discount rates. Portfolio tilts largest to COP (direct commodity exposure and momentum), maintains material but trimmed bank exposure to capture NII upside while respecting short-term technical/flow risk, keeps cyclical CAT exposure but reduced for tactical risk, and holds elevated cash to manage regime transition and fund future redeployments if macro confirmation occurs."
+  }
+}
+
+---
+
+# Evaluation Method
+
+Your evaluation must follow **two phases**.
+
+**PHASE 1 — Detection**
+Identify objective reasoning failures.
+
+**PHASE 2 — Judgment**
+Assign pillar scores based on detected failures.
+
+Detection should be **conservative and objective**.
+Scores must reflect the **number and severity of detected failures**.
+
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
+
+---
+
+# PHASE 1 — Detect Reasoning Failures
+
+Before assigning scores, detect the following reasoning failures.
+
+Record counts where possible.
+
+---
+
+## Logical Failures
+
+Detect:
+
+• contradictions within the argument
+• mutually incompatible claims
+• circular reasoning
+• missing reasoning steps between evidence and conclusions
+• conclusions that do not logically follow from earlier reasoning
+
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
+
+Example:
+
+• one claim implies recession
+• another implies strong cyclical expansion
+
+Also evaluate whether the **portfolio allocation logically follows from the thesis**.
+
+If contradictions exist, count them.
+
+---
+
+## Evidence Failures
+
+Evaluate how evidence supports claims.
+
+Cross-reference:
+
+`reasoning.claims[*].evidence_ids` with `evidence_citations`.
+
+If `evidence_ids` is present and non-empty on a claim, use it as the canonical evidence reference.
+
+If `evidence_ids` is empty or absent, check whether the claim's `claim_text` contains
+inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references exist
+but `evidence_ids` is empty, treat the claim as having evidence — the references were
+not captured in the structured field but are present in the text.
+
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
+
+Let:
+
+total_claims = number of claims in reasoning.claims
+unsupported_claims = number of claims failing the evidence rule
+
+unsupported_claim_rate = unsupported_claims / total_claims
+
+Detect:
+
+• claims with no evidence citations
+• citations that do not support the claim
+• misinterpretation of evidence
+• claims stronger than the cited evidence justifies
+
+Count unsupported claims.
+
+---
+
+## Alternative Reasoning Failures
+
+Evaluate how the agent handles competing explanations and critiques.
+
+Detect:
+
+• ignored critiques
+• critiques rejected without justification
+• accepted critiques that produce no meaningful reasoning change
+• failure to consider alternative explanations
+• premature certainty
+
+A critique is considered ADDRESSED only if the revision provides
+explicit reasoning responding to the critique.
+
+**Primary source**: `reasoning.critique_responses` — each entry explicitly maps a critique
+to a disposition (accept/rebut) with justification. Cross-reference these against
+`critiques_received` to identify ignored critiques.
+
+**Secondary evidence** of addressing may include:
+
+• revision_notes that explain why the critique is accepted or rejected
+• claim structure changes motivated by the critique
+• portfolio allocation changes motivated by the critique
+• new evidence introduced to evaluate the critique
+
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
+
+If a critique has no matching entry in `critique_responses` AND no secondary evidence
+of engagement, treat the critique as **ignored**.
+
+Strong reasoning should:
+
+• directly address critiques
+• justify accepting or rejecting them
+• acknowledge competing interpretations of evidence
+
+Count ignored critiques when applicable.
+
+---
+
+## Causal Reasoning Failures
+
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
+
+For each claim, independently determine its causal level:
+
+L1 — correlation / association: citing data patterns or statistical relationships.
+
+L2 — intervention / mechanism: the claim describes a plausible causal pathway
+(e.g., "Fed raises rates → higher discount rates → lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
+
+L3 — counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** (causal overreach), including:
+
+• L2 claims where no mechanism is described in the claim text
+• L3 claims without explicit counterfactual reasoning
+• claims whose conclusions require L2/L3 reasoning but evidence is purely L1
+• macro claims mapped to asset outcomes without transmission mechanisms
+
+Count causal overreach cases.
+
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
+
+---
+
+## Assumption Failures
+
+Detect:
+
+• critical assumptions that are not acknowledged
+• assumptions contradicted by evidence
+• assumptions doing most of the explanatory work
+
+These typically reduce evidential_support.
+
+## Conclusion Consistency Failures
+
+Determine whether the **portfolio allocation follows logically from the reasoning**.
+
+Use:
+
+• `position_rationale[*].supporting_claims`
+• `claims[*].impacts_positions`
+
+Detect:
+
+• positions >10% with no `supporting_claims` entries
+• `supporting_claims` entries that reference claim IDs not present in the claims array
+• claims that do not logically imply the allocation
+• portfolio changes without reasoning explanation
+
+Count orphaned positions (positions >10% that have no valid supporting claim).
+
+---
+
+# Failure → Pillar Mapping
+
+When failures are detected, penalties MUST map to pillars as follows:
+
+logical_validity penalties may only result from:
+
+• contradictions
+• missing reasoning steps
+• portfolio reasoning mismatch
+
+evidential_support penalties may only result from:
+
+• unsupported claims
+• evidence misuse
+
+alternative_consideration penalties may only result from:
+
+• ignored critiques
+• unjustified rejection of critiques
+• premature certainty
+
+causal_alignment penalties may only result from:
+
+• causal overreach
+• missing causal mechanisms
+
+premature certainty is detected when:
+
+• strong conclusions are asserted
+• while evidence is weak or ambiguous
+• or competing explanations are ignored
+---
+
+# PHASE 2 — Assign Pillar Scores
+
+After detecting failures in Phase 1, assign scores for the four CRIT pillars.
+
+Scores MUST be **consistent with the detected counts**.
+
+---
+
+# CRIT Pillar Definitions
+
+Each pillar measures a different dimension of reasoning quality.
+
+**logical_validity**
+
+Internal logical consistency of the argument.
+
+Penalize for:
+
+• contradictions
+• circular reasoning
+• missing reasoning steps
+• conclusions that do not follow from premises
+
+---
+
+**evidential_support**
+
+Whether factual claims are supported by evidence.
+
+Penalize for:
+
+• unsupported claims
+• weak or irrelevant citations
+• evidence misinterpretation
+• claims stronger than evidence allows
+
+---
+
+**alternative_consideration**
+
+Whether competing explanations are considered.
+
+Definition of premature certainty:
+
+strong conclusions expressed despite weak or limited evidence.
+
+Penalize for:
+
+• ignored critiques
+• rejecting critiques without justification
+• premature certainty
+• failure to consider alternative interpretations
+
+---
+
+**causal_alignment**
+
+Whether causal claims are justified by the evidence and reasoning.
+
+Penalize for:
+
+• causal overreach
+• missing causal mechanisms
+• counterfactual claims without counterfactual reasoning
+• mapping macro relationships to asset outcomes without causal explanation
+
+---
+
+# Score Interpretation
+
+Scores must be within **0.0 – 1.0**.
+
+Use the following anchors:
+
+1.00 — excellent reasoning
+0.85 — strong reasoning with minor weaknesses
+0.70 — acceptable reasoning with noticeable gaps
+0.55 — mixed reasoning with clear problems
+0.40 — weak reasoning with major flaws
+0.20 — very weak reasoning
+0.00 — severe reasoning failure
+
+---
+
+# Score Constraints
+
+Apply these rules when failures are detected:
+
+• contradictions → logical_validity ≤ 0.70
+• unsupported claims → evidential_support ≤ 0.70
+• ignored critiques → alternative_consideration ≤ 0.70
+• causal overreach → causal_alignment ≤ 0.70
+
+Severity guidance:
+
+• **1 failure** → small penalty
+• **2–3 failures** → moderate penalty (typically ≤ 0.55)
+• **4+ failures** → severe penalty (typically ≤ 0.40)
+
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
+
+Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
+
+---
+
+# Diagnostic Boolean Rules
+
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
+
+---
+
+# Output
+
+Return **only the JSON object below**.
+
+No markdown.
+No text outside JSON.
+
+```json
+{
+  "pillar_scores": {
+    "logical_validity": <float>,
+    "evidential_support": <float>,
+    "alternative_consideration": <float>,
+    "causal_alignment": <float>
+  },
+  "diagnostics": {
+    "contradictions_detected": <bool>,
+    "unsupported_claims_detected": <bool>,
+    "ignored_critiques_detected": <bool>,
+    "premature_certainty_detected": <bool>,
+    "causal_overreach_detected": <bool>,
+    "conclusion_drift_detected": <bool>,
+    "contradictions_count": <int or null>,
+    "unsupported_claims_count": <int or null>,
+    "ignored_critiques_count": <int or null>,
+    "causal_overreach_count": <int or null>,
+    "orphaned_positions_count": <int or null>
+  },
+  "explanations": {
+    "logical_validity": "<1–2 sentences explaining key reasoning issues>",
+    "evidential_support": "<1–2 sentences explaining evidence usage>",
+    "alternative_consideration": "<1–2 sentences explaining critique handling>",
+    "causal_alignment": "<1–2 sentences explaining causal reasoning quality>"
+  }
+}

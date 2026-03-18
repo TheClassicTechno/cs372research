@@ -1,0 +1,55 @@
+{
+  "critiques": [
+    {
+      "target_role": "MACRO",
+      "target_claim": "C2",
+      "objection": "C2 leans on AAPL's services resilience to justify a 40% overweight, but that fundamental narrative is not confirmed by price action: AAPL is trading below its short-, medium- and long-term SMAs and showing negative short-term returns, which signals a broken short-to-medium-term trend and higher probability of continued underperformance until price structure repairs. Overweighting AAPL at 40% fights the observable momentum and increases drawdown risk if the market continues to discount duration/FX/cyclicality.",
+      "counter_evidence": [
+        "[AAPL-SMA20]",
+        "[AAPL-SMA50]",
+        "[AAPL-SMA200]",
+        "[AAPL-RET20]",
+        "[AAPL-RET60]",
+        "[AAPL-RET120]",
+        "[AAPL-TREND]",
+        "[L1-VIX]",
+        "[AMD-SMA20]",
+        "[AMD-SMA50]",
+        "[AMD-SMA200]",
+        "[AMD-RET60]",
+        "[AMD-RET120]"
+      ],
+      "portfolio_implication": "By prioritizing a fundamental-services narrative over clear broken technical structure, the MACRO allocation risks concentrated losses if AAPL remains under its SMAs and momentum stays negative. The 40% AAPL weight is large relative to the technical evidence and therefore inconsistent with a trend-respecting approach \u2014 it exposes the portfolio to further downside rather than preserving optionality.",
+      "suggested_adjustment": "Reduce AAPL from 40% to ~30% (or lower, e.g., 25%) and increase CASH to absorb risk (raise CASH toward 50\u201360%). Trim AMD from 15% to a small tactical recovery stake (e.g., 5\u201310%) because AMD's trend is materially worse. Re-open equity sizing only after price confirms a trend repair (AAPL holding above SMA50/200 with follow-through).",
+      "falsifier": "AAPL closes and holds above AAPL-SMA50 and AAPL-SMA200 with sustained follow-through volume (price-based confirmation) and short-/medium-term returns improve (AAPL-RET60 turns positive) \u2014 that would invalidate the objection and justify the MACRO overweight [AAPL-SMA50] [AAPL-SMA200] [AAPL-RET60].",
+      "objection_confidence": 0.8
+    },
+    {
+      "target_role": "RISK",
+      "target_claim": "C1",
+      "objection": "RISK's C1 cites elevated VIX to cut equities to 50%, but then maintains a 50% equity allocation. Technical price evidence shows both available equities (AAPL and AMD) are in broken short-to-medium trends (price below SMA20/50/200 with negative short-term returns), implying the technical regime is risk-off and warrants an even lower equity exposure than 50%. Keeping half the portfolio in equities under these price conditions increases the chance of meaningful interim drawdown and is inconsistent with a strictly trend-respecting posture.",
+      "counter_evidence": [
+        "[L1-VIX]",
+        "[AAPL-SMA20]",
+        "[AAPL-SMA50]",
+        "[AAPL-SMA200]",
+        "[AAPL-RET20]",
+        "[AMD-SMA20]",
+        "[AMD-SMA50]",
+        "[AMD-SMA200]",
+        "[AMD-RET20]",
+        "[AMD-RET60]",
+        "[AMD-VOL60]",
+        "[AMD-MDD1Y]"
+      ],
+      "portfolio_implication": "Maintaining 50% equities despite clear downtrends in both tradable names risks larger-than-expected drawdowns and reduces the value of the supposed 'capital preservation' objective. The sizing decision does not align with the dominant technical regime (broken trends, high idiosyncratic and market volatility).",
+      "suggested_adjustment": "Lower total equity exposure to 30\u201340% and move the difference to CASH given both names are below key SMAs. Within the reduced equity sleeve, allocate more to the relatively stronger name (AAPL) and keep AMD minimal (e.g., AAPL ~30%, AMD ~5%, CASH ~65% total), until price confirms trend repair (SMA reclaim + positive momentum).",
+      "falsifier": "Both AAPL and AMD reclaim their SMA50 (and ideally SMA200) and sustain positive medium-term returns (AAPL-RET60 and AMD-RET60 turning materially less negative or positive) with volatility normalizing \u2014 that would justify a 50% equity allocation [AAPL-SMA50] [AMD-SMA50] [AAPL-RET60] [AMD-RET60] [L1-VIX].",
+      "objection_confidence": 0.75
+    }
+  ],
+  "self_critique": {
+    "weakest_claim": "portfolio construction (AAPL overweight at 40%)",
+    "explanation": "The single biggest technical vulnerability in my prior proposal is the 40% tilt to AAPL despite AAPL trading below its short-, medium-, and long-term SMAs ([AAPL-SMA20], [AAPL-SMA50], [AAPL-SMA200]) and showing large recent short-term weakness ([AAPL-RET20] = -12.5%). The overweight relies mainly on a modest positive idiosyncratic momentum signal ([AAPL-IDMOM]) and shallower medium-term losses versus AMD, but that idiosyncratic signal is small relative to the clear SMA breakdown and limited trend consistency ([AAPL-TREND]=0.45). If price continues to trade below major SMAs or AAPL posts further negative short-term returns, the 40% weight could materially amplify portfolio drawdown. The position should be resized lower or paired with stricter stop/reentry rules until price confirms trend repair (AAPL holding above SMA50/200 with follow-through)."
+  }
+}

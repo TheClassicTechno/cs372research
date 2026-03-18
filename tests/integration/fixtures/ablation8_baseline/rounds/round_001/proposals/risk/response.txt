@@ -1,0 +1,146 @@
+{
+  "allocation": {
+    "AAPL": 0.30,
+    "AMD": 0.05,
+    "MSFT": 0.10,
+    "NVDA": 0.05,
+    "CASH": 0.50
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Elevated realized/implied volatility (VIX = 31.62) increases the probability of large, simultaneous equity drawdowns, so overall equity exposure should be cut in favor of cash to preserve capital [L1-VIX].",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "macro",
+      "evidence": [
+        "[L1-VIX]"
+      ],
+      "assumptions": [
+        "High VIX implies higher near-term tail risk for equities.",
+        "Cash (risk-free) provides capital preservation during volatility spikes."
+      ],
+      "falsifiers": [
+        "VIX compresses materially (e.g., below 15) and stays low over weeks, indicating calm markets [L1-VIX].",
+        "Evidence of sustained equity risk-on where equities rally while volatility falls."
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD",
+        "MSFT",
+        "NVDA",
+        "CASH"
+      ],
+      "confidence": 0.80
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Rising long-term yields (10Y = 3.83%) and an inverted 10Y-2Y curve increase financing and discount-rate risk for growth and high-beta equities; high-beta names (AMD beta 2.08, AAPL beta 1.24) should be sized down relative to cash/lower-beta holdings [L1-10Y] [L1-CURVE] [AMD-BETA] [AAPL-BETA].",
+      "reasoning_type": "causal",
+      "claim_type": "macro",
+      "evidence": [
+        "[L1-10Y]",
+        "[L1-CURVE]",
+        "[AMD-BETA]",
+        "[AAPL-BETA]"
+      ],
+      "assumptions": [
+        "Higher discount rates reduce present value of long-duration expected cash flows and amplify downside for high-beta equities.",
+        "Inverted curve increases recession risk which worsens earnings downside for cyclical/growth firms."
+      ],
+      "falsifiers": [
+        "10Y yields materially decline and curve steepens (reducing rate/discountrate pressure) [L1-10Y] [L1-CURVE].",
+        "Firm-specific evidence shows earnings surprisingly resilient to higher rates and recession risk."
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD",
+        "MSFT",
+        "NVDA"
+      ],
+      "confidence": 0.75
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Security-level realized downside volatility and prior extreme drawdowns identify asymmetric tail risk: AMD exhibits very high realized vol and a 1y max drawdown (-60.9%), while AAPL shows meaningful downside vol and drawdown; positions should be sized inversely to realized downside risk to limit portfolio drawdown contribution [AMD-VOL60] [AMD-MDD1Y] [AAPL-DVOL60] [AAPL-MDD1Y].",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "firm",
+      "evidence": [
+        "[AMD-VOL60]",
+        "[AMD-MDD1Y]",
+        "[AAPL-DVOL60]",
+        "[AAPL-MDD1Y]"
+      ],
+      "assumptions": [
+        "Past realized downside volatility and large historical drawdowns are informative about future tail sensitivity absent structural changes.",
+        "Sizing positions inversely to downside volatility reduces portfolio tail-risk contribution."
+      ],
+      "falsifiers": [
+        "AMD and/or AAPL exhibit materially lower realized downside volatility over an extended period (e.g., 60d vol halves) [AMD-VOL60] [AAPL-DVOL60].",
+        "New firm-specific liquidity or balance-sheet changes materially reduce downside fragility."
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD",
+        "NVDA"
+      ],
+      "confidence": 0.85
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "AAPL",
+      "weight": 0.30,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "AAPL is given a moderate allocation because, while it has nontrivial downside vol and past drawdowns ([AAPL-DVOL60], [AAPL-MDD1Y]) and a beta >1 [AAPL-BETA] (C2,C3), its volatility is lower than AMD and it has liquidity and cash-return actions (buybacks) noted in filings which support survivability in stress (justifying a reduced-but-meaningful position). The allocation is capped to limit drawdown contribution per C1 and C3."
+    },
+    {
+      "ticker": "AMD",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "AMD receives a very small allocation because it has extremely high realized volatility and large historical drawdowns ([AMD-VOL60], [AMD-MDD1Y]) and a high beta [AMD-BETA], making it a disproportionate tail-risk contributor (C2,C3). Size is minimal to retain optional upside while limiting catastrophic loss to portfolio capital (C1)."
+    },
+    {
+      "ticker": "MSFT",
+      "weight": 0.10,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "MSFT is sized conservatively (small weight) because elevated market volatility increases downside risk (C1) and rising yields/inversion raise discount-rate risk for large growth names (C2). Without firm-specific snapshot evidence in the memo, treat MSFT as a general large-cap growth exposure and size accordingly."
+    },
+    {
+      "ticker": "NVDA",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "NVDA is assigned a small allocation as a higher-volatility growth exposure likely to suffer in a volatility spike and rising-rate environment (C1,C2); C3 advises small sizing for securities that can contribute outsized drawdowns even if firm-specific evidence is not provided in the memo."
+    },
+    {
+      "ticker": "CASH",
+      "weight": 0.50,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "Cash is the largest allocation to preserve capital through elevated volatility and rate-driven risk (C1,C2). With Fed funds at 3.08% providing a positive risk-free yield [L1-FF], holding cash reduces forced liquidations and gives optionality to redeploy after volatility normalizes."
+    }
+  ],
+  "portfolio_rationale": "Given elevated market volatility (VIX 31.62) and rising yields with curve inversion, the portfolio prioritizes capital preservation by keeping 50% in cash (C1,C2). Equity exposure is deliberately limited (50%) and allocated with volatility- and beta-aware sizing: moderate allocation to AAPL (liquid, lower-vol relative to AMD) and small allocations to MSFT, NVDA, and a minimal stake in AMD to avoid concentration of tail risk (C2,C3). This structure reduces concentration and limits the portfolio's vulnerability to volatility spikes, correlation convergence, and rate-driven re-pricing while retaining measured exposure to potential upside. Position sizes are driven by downside-volatility and beta evidence so that no single equity can generate a catastrophic drawdown under stress scenarios described in claims.",
+  "confidence": 0.80,
+  "risks_or_falsifiers": [
+    "Volatility collapses and remains low (VIX falls below ~15) and yields materially decline (10Y < 2.5%), which would justify redeploying cash into equities [L1-VIX] [L1-10Y].",
+    "Macro data show rapid disinflation and easing of rate-hike expectations (CPI falls sharply from 8.19%), invalidating the high-rate/high-volatility premise [L1-CPI].",
+    "Firm-specific evidence (not in memo) shows AMD materially reduces leverage/volatility or AAPL/MSFT/NVDA show large, persistent downside volatility improvements; this would require resizing per C3 [AMD-VOL60] [AAPL-DVOL60]."
+  ]
+}

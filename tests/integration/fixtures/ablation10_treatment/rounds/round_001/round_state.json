@@ -1,0 +1,74 @@
+{
+  "round": 1,
+  "beta": 0.5,
+  "proposals": {
+    "macro": {
+      "allocation": {
+        "AAPL": 0.2,
+        "AMD": 0.07,
+        "MSFT": 0.38,
+        "NVDA": 0.3,
+        "_CASH_": 0.05
+      },
+      "confidence": 0.78
+    },
+    "technical": {
+      "allocation": {
+        "AAPL": 0.1,
+        "AMD": 0.3,
+        "MSFT": 0.15,
+        "NVDA": 0.4,
+        "_CASH_": 0.05
+      },
+      "confidence": 0.78
+    }
+  },
+  "revisions": {
+    "macro": {
+      "allocation": {
+        "AAPL": 0.18,
+        "AMD": 0.08,
+        "MSFT": 0.36,
+        "NVDA": 0.33,
+        "_CASH_": 0.05
+      },
+      "confidence": 0.77
+    },
+    "technical": {
+      "allocation": {
+        "AAPL": 0.1,
+        "AMD": 0.3,
+        "MSFT": 0.15,
+        "NVDA": 0.35,
+        "_CASH_": 0.1
+      },
+      "confidence": 0.73
+    }
+  },
+  "metrics": {
+    "js_divergence": 0.0958,
+    "evidence_overlap": 0.2963
+  },
+  "crit": {
+    "rho_bar": 0.8325,
+    "macro": {
+      "rho_i": 0.83,
+      "pillars": {
+        "LV": 0.87,
+        "ES": 0.82,
+        "AC": 0.8,
+        "CA": 0.83
+      }
+    },
+    "technical": {
+      "rho_i": 0.835,
+      "pillars": {
+        "LV": 0.86,
+        "ES": 0.78,
+        "AC": 0.88,
+        "CA": 0.82
+      }
+    }
+  },
+  "pid": {}
+}

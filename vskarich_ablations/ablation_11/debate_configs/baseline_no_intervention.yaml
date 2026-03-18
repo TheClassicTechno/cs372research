@@ -1,0 +1,72 @@
+# ===========================================================================
+# Ablation 11 — Baseline: No intervention control (3 agents: macro, technical, value)
+# Config: baseline_no_intervention
+# Pipeline:  propose -> critique -> revise -> CRIT -> judge
+# ===========================================================================
+
+# --- Data source ---
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+# --- Agent profiles (intense enriched, 3 agents) ---
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+  value: value_enriched_intense
+
+judge_profile: judge_standard
+
+# --- Debate setup ---
+debate_setup:
+
+  # LLM configuration
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-5-mini            # debate agent model
+  crit_llm_model: gpt-5            # CRIT auditor model (higher capability)
+  temperature: 0.3
+
+  # Debate structure
+  max_rounds: 1
+  max_retries: 3
+  propose_only: false
+
+  # Logging & parallelism
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: vskarich_ablation_11
+
+  # --- PID controller ---
+  pid_enabled: false                # no inter-round beta adjustment
+
+  # --- Intervention engine ---
+  # Enabled with threshold 0.0 so CRIT scoring runs but no intervention
+  # can ever trigger.  Keeps baseline pipeline identical to treatment
+  # except for the actual nudge.
+  intervention_config:
+    enabled: true
+    revision_limits:
+      max_changed_tickers: 2
+      max_change_pct: 5
+    rules:
+      js_collapse:
+        enabled: true
+        threshold: 0.0
+        min_js_proposal: 0.10
+        max_retries: 1
+        nudge_prompts:
+          macro: "placeholder"
+          technical: "placeholder"
+          value: "placeholder"
+      reasoning_quality:
+        enabled: false
+        rho_threshold: 0.5
+        max_retries: 1
+
+# --- Broker ---
+broker:
+  initial_cash: 100000.0

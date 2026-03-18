@@ -1,0 +1,154 @@
+{
+  "allocation": {
+    "AAPL": 0.20,
+    "AMD": 0.07,
+    "MSFT": 0.38,
+    "NVDA": 0.30,
+    "_CASH_": 0.05
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Persistently elevated inflation combined with deeply negative real yields and an accommodative Fed funds rate creates a nominal pro-risk backdrop that supports equities broadly and favors firms with pricing power and resilient cash flows [L1-CPI] [L1-REAL] [L1-FF].",
+      "reasoning_type": "causal",
+      "claim_type": "macro",
+      "evidence": [
+        "[L1-CPI]",
+        "[L1-REAL]",
+        "[L1-FF]"
+      ],
+      "assumptions": [
+        "Real yields remain negative or only rise slowly",
+        "Inflation stays elevated in the near term (no rapid disinflation)",
+        "Equity risk appetite persists while policy remains accommodative"
+      ],
+      "falsifiers": [
+        "Real 10y yields rise from -1.04% to materially positive levels (e.g., >0.5%)",
+        "Fed funds rate is raised quickly and materially above market expectations",
+        "YoY CPI falls materially toward low single digits"
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "AMD",
+        "_CASH_"
+      ],
+      "confidence": 0.80
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "Short-term yields and front-end rates have repriced higher (2Y up 45bps QoQ), signaling the start of policy normalization — this path raises discount rates for long-duration, highly cyclical and high-beta semiconductor/AI names, increasing their downside volatility relative to larger, cash-generative platform firms [L1-2Y] [L1-CURVE] [NVDA-BETA] [AMD-BETA] [AAPL-BETA] [MSFT-BETA].",
+      "reasoning_type": "causal",
+      "claim_type": "risk",
+      "evidence": [
+        "[L1-2Y]",
+        "[L1-CURVE]",
+        "[NVDA-BETA]",
+        "[AMD-BETA]",
+        "[AAPL-BETA]",
+        "[MSFT-BETA]"
+      ],
+      "assumptions": [
+        "Short-end yields continue to lead rate-normalization signaling",
+        "Market discounts higher probability of Fed tightening over next 12 months",
+        "High-beta semiconductors exhibit greater sensitivity to discount-rate moves"
+      ],
+      "falsifiers": [
+        "Short rates fall back (2Y reverses the +45bps move) or forward guidance indicates prolonged accommodation",
+        "Long-term real yields fall deeper negative reducing discount-rate pressure",
+        "Semiconductor earnings growth outpaces valuation contraction enough to offset rate effects"
+      ],
+      "impacts_positions": [
+        "NVDA",
+        "AMD",
+        "AAPL",
+        "MSFT"
+      ],
+      "confidence": 0.70
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "Demand-driven supply constraints across semiconductors and strong cloud/AI adoption create an earnings tilt favoring semiconductor and cloud-exposed firms: AMD and NVIDIA show outsized revenue/gross-margin expansion from product cycle and data-center adoption while Microsoft and Apple benefit from recurring services and cloud exposure that smooth earnings [AMD-F1] [NVDA-F2] [MSFT-F1] [AAPL-F1].",
+      "reasoning_type": "observational",
+      "claim_type": "sector",
+      "evidence": [
+        "[AMD-F1]",
+        "[NVDA-F2]",
+        "[MSFT-F1]",
+        "[AAPL-F1]"
+      ],
+      "assumptions": [
+        "End-demand (cloud, gaming, enterprise) remains robust",
+        "Supply constraints persist near-term sustaining favorable pricing/mix",
+        "Companies convert demand into realized revenue without large inventory write-downs"
+      ],
+      "falsifiers": [
+        "Supply constraints abate quickly leading to sharp ASP declines",
+        "Cloud/data-center demand weakens materially or cyclical end-markets deteriorate",
+        "Regulatory or trade actions materially constrain market access for any firm"
+      ],
+      "impacts_positions": [
+        "NVDA",
+        "AMD",
+        "MSFT",
+        "AAPL"
+      ],
+      "confidence": 0.75
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "MSFT",
+      "weight": 0.38,
+      "supported_by_claims": [
+        "C1",
+        "C3"
+      ],
+      "explanation": "Microsoft is overweighted because C1 favors firms with pricing power and resilient cash flows in an inflationary, negative-real-rate environment, and C3 highlights durable cloud revenue (Azure/Office/Commercial Cloud) as a stabilizer during early policy normalization [L1-CPI] [L1-REAL] [MSFT-F1] [MSFT-EC2]. MSFT's lower beta relative to pure semiconductors reduces sensitivity to front-end rate moves cited in C2 while capturing secular cloud/AI demand."
+    },
+    {
+      "ticker": "NVDA",
+      "weight": 0.30,
+      "supported_by_claims": [
+        "C2",
+        "C3"
+      ],
+      "explanation": "NVIDIA is a high-conviction cyclic/AI exposure: C3 documents strong data-center and gaming revenue growth which should drive earnings upside [NVDA-F2] [NVDA-EC5], while C2 recognizes elevated beta and sensitivity to rate-driven multiple contraction; weight reflects high upside balanced against higher downside volatility [NVDA-BETA]."
+    },
+    {
+      "ticker": "AAPL",
+      "weight": 0.20,
+      "supported_by_claims": [
+        "C1",
+        "C3"
+      ],
+      "explanation": "Apple benefits from C1's inflation/pro-cash-flow backdrop via strong services and iPhone pricing/mix [AAPL-F1] and high installed-base monetization [AAPL-EC11], but supply-chain and regulatory risks (AAPL-F3, AAPL-F16) limit overweight size relative to MSFT and NVDA; AAPL offers a combination of secular services growth and some defensive qualities against rate volatility."
+    },
+    {
+      "ticker": "AMD",
+      "weight": 0.07,
+      "supported_by_claims": [
+        "C2",
+        "C3"
+      ],
+      "explanation": "AMD provides additional semiconductor upside from server and Ryzen momentum (AMD-F1) but carries higher volatility and execution/integration risks (Xilinx integration, supply agreements), so it's a smaller tactical exposure aligned with C3's earnings upside but constrained by C2 rate/volatility risk [AMD-F1] [AMD-F6]."
+    },
+    {
+      "ticker": "_CASH_",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C2"
+      ],
+      "explanation": "Maintain a modest cash buffer because C2 signals a shift to policy normalization and potential front-end rate volatility (2Y repricing); cash provides optionality to rebalance into rate-driven drawdowns and earns the risk-free rate [L1-2Y] [L1-FF]."
+    }
+  ],
+  "portfolio_rationale": "The dominant regime is inflationary growth with negative real yields and the start of policy normalization. C1 motivates overweight to high-quality, cash-generative platform names that preserve earnings power under inflation (MSFT, AAPL). C3 supports exposure to semiconductors/cloud secular demand (NVDA, AMD) to capture earnings leverage from supply-constrained markets. C2 constrains sizes on high-beta semiconductors due to rising short-term rates and valuation sensitivity, so NVDA receives a sizable but not majority weight, AMD a small tactical stake, and a small cash buffer is held for policy-driven volatility. The portfolio balances secular growth/AI exposure with durable cash-flow franchises to manage rate and inflation risks.",
+  "confidence": 0.78,
+  "risks_or_falsifiers": [
+    "Sharp and sustained rise in real yields (10y real yield moving from -1.04% to >0.5%) that materially re-rates long-duration equities and semiconductors [L1-REAL]",
+    "Rapid fall in CPI toward low single digits indicating disinflation and reducing the premium for nominal asset allocation (CPI YoY dropping from 7.17% to <3%) [L1-CPI]",
+    "Front-end yields reversing to lower levels (2Y retraces the +45bps move) or the Fed signaling prolonged accommodation, which would favor more aggressive long-duration growth positioning [L1-2Y] [L1-FF]",
+    "Unexpected demand shock in cloud/data-center or gaming (e.g., enterprise capex cutbacks) that undermines NVDA/AMD revenue growth projections [NVDA-F2] [AMD-F1]"
+  ]
+}

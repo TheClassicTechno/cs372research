@@ -1,0 +1,127 @@
+{
+  "allocation": {
+    "AAPL": 0.40,
+    "AMD": 0.05,
+    "MSFT": 0.0,
+    "NVDA": 0.0,
+    "_CASH_": 0.55
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "Both AAPL and AMD are trading below short-, medium-, and long-term moving averages (AAPL price < SMA20/50/200 [AAPL-SMA20][AAPL-SMA50][AAPL-SMA200]; AMD price < SMA20/50/200 [AMD-SMA20][AMD-SMA50][AMD-SMA200]), indicating a short-to-medium-term bearish trend; price below major SMAs implies downward trend persistence and higher probability of continued underperformance absent a clear breakout.",
+      "reasoning_type": "pattern",
+      "claim_type": "technical",
+      "evidence": [
+        "[AAPL-SMA20]",
+        "[AAPL-SMA50]",
+        "[AAPL-SMA200]",
+        "[AMD-SMA20]",
+        "[AMD-SMA50]",
+        "[AMD-SMA200]"
+      ],
+      "assumptions": [
+        "Moving-average alignment (price below SMA20/50/200) correctly signals dominant short-to-medium-term trend direction.",
+        "No abrupt liquidity-driven spike will immediately restore trend structure across both names."
+      ],
+      "falsifiers": [
+        "Price for AAPL closes and holds above AAPL-SMA50 and AAPL-SMA200 with follow-through volume.",
+        "Price for AMD closes and holds above AMD-SMA50 and AMD-SMA200 with follow-through volume."
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD",
+        "_CASH_"
+      ],
+      "confidence": 0.80
+    },
+    {
+      "claim_id": "C2",
+      "claim_text": "AAPL shows relatively stronger idiosyncratic and medium-term momentum compared with AMD (AAPL Idiosyncratic Momentum positive [AAPL-IDMOM] and less severe 60/120d losses [AAPL-RET60][AAPL-RET120]; AMD has negative idiosyncratic momentum and much larger medium-term losses [AMD-IDMOM][AMD-RET60][AMD-RET120]); therefore, in a risk-managed tactical portfolio, overweight AAPL relative to AMD because price-driven momentum persistence favors the stronger technical profile.",
+      "reasoning_type": "causal",
+      "claim_type": "technical",
+      "evidence": [
+        "[AAPL-IDMOM]",
+        "[AAPL-RET60]",
+        "[AAPL-RET120]",
+        "[AMD-IDMOM]",
+        "[AMD-RET60]",
+        "[AMD-RET120]"
+      ],
+      "assumptions": [
+        "Idiosyncratic momentum and recent returns are predictive of near-term relative performance within this small universe.",
+        "No firm-specific event will immediately reverse idiosyncratic momentum signals."
+      ],
+      "falsifiers": [
+        "AMD idiosyncratic momentum turns positive and AMD 60d/120d returns materially improve (e.g., RET60 trending toward positive) while AAPL momentum deteriorates.",
+        "AAPL idiosyncratic momentum turns negative with sustained new lows."
+      ],
+      "impacts_positions": [
+        "AAPL",
+        "AMD"
+      ],
+      "confidence": 0.75
+    },
+    {
+      "claim_id": "C3",
+      "claim_text": "AMD's materially higher volatility and deeper drawdowns (AMD 60d vol and 1y max drawdown [AMD-VOL60][AMD-MDD1Y]) plus elevated market volatility (VIX 31.62 [L1-VIX]) increase the cost of holding aggressive positions in AMD; risk-adjusted technical allocation should shift capital to cash to preserve optionality until clearer trend confirmation.",
+      "reasoning_type": "risk_assessment",
+      "claim_type": "risk",
+      "evidence": [
+        "[AMD-VOL60]",
+        "[AMD-MDD1Y]",
+        "[L1-VIX]"
+      ],
+      "assumptions": [
+        "Higher idiosyncratic volatility and large recent drawdowns increase tail risk and reduce reward-to-risk absent technical recovery.",
+        "Cash yields (Fed Funds) provide an acceptable tactical alternative while trends remain broken."
+      ],
+      "falsifiers": [
+        "AMD volatility subsides materially and price begins to establish higher lows with sustained moves above AMD-SMA50/200.",
+        "VIX falls below levels indicating stable risk-on regime and equities show broad technical recovery."
+      ],
+      "impacts_positions": [
+        "AMD",
+        "_CASH_"
+      ],
+      "confidence": 0.78
+    }
+  ],
+  "position_rationale": [
+    {
+      "ticker": "AAPL",
+      "weight": 0.40,
+      "supported_by_claims": [
+        "C1",
+        "C2"
+      ],
+      "explanation": "AAPL is below its SMAs (C1) so this is a tactical risk; however, AAPL's positive idiosyncratic momentum and shallower medium-term losses relative to AMD (C2: [AAPL-IDMOM], [AAPL-RET60], [AAPL-RET120]) justify a measured overweight (40%) to capture any momentum persistence and relative recovery while keeping a large cash buffer."
+    },
+    {
+      "ticker": "AMD",
+      "weight": 0.05,
+      "supported_by_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "explanation": "AMD is clearly broken across moving averages (C1) with negative idiosyncratic momentum and much larger medium-term declines (C2: [AMD-IDMOM], [AMD-RET60], [AMD-RET120]) and very high volatility and drawdown (C3: [AMD-VOL60], [AMD-MDD1Y]); allocate a small (5%) speculative/recovery exposure while prioritizing capital preservation."
+    },
+    {
+      "ticker": "_CASH_",
+      "weight": 0.55,
+      "supported_by_claims": [
+        "C1",
+        "C3"
+      ],
+      "explanation": "Given both names sit below major SMAs (C1) and market plus AMD-specific volatility are elevated (C3: [L1-VIX], [AMD-VOL60]), hold majority allocation in cash (risk-free via Fed Funds [L1-FF]) to preserve capital and wait for clear technical evidence of trend repair before increasing equity exposures."
+    }
+  ],
+  "portfolio_rationale": "Price action shows broken short-to-medium trends for both equities (C1), but cross-sectional momentum favors AAPL over AMD (C2). Elevated idiosyncratic and market volatility (C3) argues for a large cash position to limit drawdown risk while retaining a tactical overweight to the stronger technical name (AAPL) and a small recovery catch-up allocation to the weaker, high-volatility name (AMD). The portfolio emphasizes trend-respecting positioning: avoid fighting the current broken SMA structure, prefer capital preservation in cash, and maintain limited exposure to the asset with superior price-based momentum.",
+  "confidence": 0.78,
+  "risks_or_falsifiers": [
+    "AAPL closes and holds above AAPL-SMA50 and AAPL-SMA200 with strong follow-through volume and improving short-term returns (would prompt increasing AAPL allocation) [AAPL-SMA50][AAPL-SMA200].",
+    "AMD volatility falls materially and AMD price reclaims AMD-SMA50/200 with sustained positive returns and positive idiosyncratic momentum (would prompt increasing AMD allocation) [AMD-VOL60][AMD-SMA50][AMD-SMA200][AMD-IDMOM].",
+    "Market volatility (VIX) reverts lower into a sustained risk-on regime and broad equity indices show technical breakouts (would prompt re-risking from cash) [L1-VIX]."
+  ]
+}

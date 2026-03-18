@@ -1,0 +1,84 @@
+# ===========================================================================
+# Test config — event_logging smoke test
+# Copy of causal_intervention_th075 with event_logging enabled.
+# Run with:
+#   python run_simulation.py \
+#     --agents vskarich_ablations/ablation_10/debate_configs/test_event_logging.yaml \
+#     --scenario config/scenarios/2022Q1_inflation_shock.yaml
+#
+# Then inspect:
+#   python -m logging_v2.inspector logging_v2/runs/test_event_logging/*/events.jsonl --all
+# ===========================================================================
+
+case_format: memo
+dataset_path: data-pipeline/final_snapshots
+memo_format: text
+num_episodes: 1
+
+agents:
+  macro: macro_enriched_intense
+  technical: technical_enriched_intense
+
+judge_profile: judge_standard
+
+debate_setup:
+  agent_system: multi_agent_debate
+  llm_provider: openai
+  llm_model: gpt-4.1-nano
+  crit_llm_model: gpt-4.1-nano
+  temperature: 0.3
+
+  max_rounds: 1
+  max_retries: 3
+  propose_only: false
+
+  logging_mode: debug
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+  experiment_name: test_event_logging
+
+  # --- EVENT LOGGING (logging_v2) ---
+  event_logging: true
+  event_logging_store_full_text: true
+
+  pid_enabled: false
+
+  # --- Intervention engine (same as ablation 10 treatment) ---
+  intervention_config:
+    enabled: true
+    revision_limits:
+      max_changed_tickers: 2
+      max_change_pct: 5
+    rules:
+      js_collapse:
+        enabled: true
+        threshold: 0.0
+        min_js_proposal: 0.10
+        max_retries: 1
+        nudge_prompts:
+          macro: "placeholder"
+          technical: "placeholder"
+      reasoning_quality:
+        enabled: true
+        rho_threshold: 0.0
+        max_retries: 1
+        agent_pillar_thresholds:
+          macro:
+            causal_alignment: 0.75
+          technical:
+            causal_alignment: 0.75
+        nudge_prompts:
+          macro: |
+            The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.
+            CAUSAL ALIGNMENT REMEDIATION PROTOCOL
+            Your causal reasoning score fell below the acceptable threshold.
+            You must correct causal overreach before finalizing your allocation.
+          technical: |
+            The CRIT reasoning auditor has identified causal reasoning weaknesses in your revision.
+            CAUSAL ALIGNMENT REMEDIATION PROTOCOL
+            Your causal reasoning score fell below the acceptable threshold.
+            You must correct causal overreach before finalizing your allocation.
+
+broker:
+  initial_cash: 100000.0

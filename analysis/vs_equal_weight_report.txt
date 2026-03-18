@@ -1,0 +1,56 @@
+==========================================================================================
+  DEBATE PORTFOLIOS vs EQUAL-WEIGHT (1/N) BENCHMARK
+==========================================================================================
+
+  Ablation 1  (n=245)
+  --------------------------------------------------------------------------------
+                                       Debate     Equal-Wt       Diff        p
+  Mean Return %                        -3.641       -3.283     -0.358   0.0000
+  Mean Sharpe                          -0.956       -0.570     -0.386   0.0000
+
+  Beats EW on return:  77/245 (31%)
+  Binomial test (win rate vs 50%): p=0.0000
+       treatment: excess=-0.358%, beats=77/245 (31%), p=0.0000
+
+  Ablation 7  (n=70)
+  --------------------------------------------------------------------------------
+                                       Debate     Equal-Wt       Diff        p
+  Mean Return %                        +2.202       +4.466     -2.264   0.0008
+  Mean Sharpe                          +0.573       +1.217     -0.644   0.0000
+
+  Beats EW on return:  21/70 (30%)
+  Binomial test (win rate vs 50%): p=0.0011
+        baseline: excess=-2.679%, beats=9/35 (26%), p=0.0044
+       treatment: excess=-1.850%, beats=12/35 (34%), p=0.0624
+
+  Ablation 8  (n=70)
+  --------------------------------------------------------------------------------
+                                       Debate     Equal-Wt       Diff        p
+  Mean Return %                        +1.535       +4.466     -2.931   0.0000
+  Mean Sharpe                          +0.442       +1.217     -0.774   0.0000
+
+  Beats EW on return:  24/70 (34%)
+  Binomial test (win rate vs 50%): p=0.0115
+        baseline: excess=-3.008%, beats=13/35 (37%), p=0.0029
+       treatment: excess=-2.853%, beats=11/35 (31%), p=0.0037
+
+  Ablation 10  (n=70)
+  --------------------------------------------------------------------------------
+                                       Debate     Equal-Wt       Diff        p
+  Mean Return %                        +2.507       +4.466     -1.959   0.0023
+  Mean Sharpe                          +0.612       +1.217     -0.605   0.0000
+
+  Beats EW on return:  28/70 (40%)
+  Binomial test (win rate vs 50%): p=0.1196
+        baseline: excess=-1.861%, beats=15/35 (43%), p=0.0435
+       treatment: excess=-2.058%, beats=13/35 (37%), p=0.0248
+
+==========================================================================================
+  POOLED ACROSS ALL ABLATIONS
+==========================================================================================
+  n=455
+  Mean excess vs EW: -1.293%  (t=-7.222, p=0.0000)
+  Beats EW: 150/455 (33%)
+  Binomial test: p=0.0000
+
+  Mean Sharpe diff vs EW: -0.519  (t=-15.103, p=0.0000)
