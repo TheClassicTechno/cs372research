@@ -1,17 +1,27 @@
+/**
+ * api/runs.js
+ *
+ * API functions for fetching experiment, run, and round-level data from the server.
+ */
+
 import { fetchJSON } from './client.js';
 
+/** Fetch the list of available experiments. */
 export function fetchExperiments() {
   return fetchJSON('/runs/');
 }
 
+/** Fetch the list of runs for a given experiment. */
 export function fetchRuns(experiment) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment));
 }
 
+/** Fetch detailed metadata for a specific run. */
 export function fetchRunDetail(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId));
 }
 
+/** Fetch portfolio performance metrics for a run. */
 export function fetchPerformance(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance');
 }
@@ -21,18 +31,22 @@ export function fetchAgentPerformance(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/performance/by-agent');
 }
 
+/** Fetch PID controller diagnostics for a run. */
 export function fetchPID(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/pid');
 }
 
+/** Fetch CRIT (critique) analysis data for a run. */
 export function fetchCRIT(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/crit');
 }
 
+/** Fetch agent opinion divergence data for a run. */
 export function fetchDivergence(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/divergence');
 }
 
+/** Fetch portfolio allocation snapshots for a run. */
 export function fetchPortfolio(experiment, runId) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/portfolio');
 }
@@ -53,6 +67,7 @@ export function fetchCollapse(experiment, runId) {
                    '/' + encodeURIComponent(runId) + '/collapse');
 }
 
+/** Fetch detailed data for a specific debate round. */
 export function fetchRound(experiment, runId, roundNum) {
   return fetchJSON('/runs/' + encodeURIComponent(experiment) + '/' + encodeURIComponent(runId) + '/round/' + roundNum);
 }

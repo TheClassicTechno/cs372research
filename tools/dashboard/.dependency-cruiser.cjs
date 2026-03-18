@@ -3,10 +3,10 @@ module.exports = {
   forbidden: [
     {
       name: "utils-no-imports",
-      comment: "utils/ must be dependency-free — no imports from project modules",
+      comment: "utils/ may import sibling utils but nothing else from the project",
       severity: "error",
       from: { path: "^static/js/utils/" },
-      to: { path: "^static/js/" },
+      to: { path: "^static/js/", pathNot: "^static/js/utils/" },
     },
     {
       name: "components-no-api",

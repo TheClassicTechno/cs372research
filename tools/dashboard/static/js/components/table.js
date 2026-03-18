@@ -1,3 +1,9 @@
+/**
+ * components/table.js
+ *
+ * Pure HTML builders for data tables: allocations, performance, debate impact, Sharpe, and collapse diagnostics.
+ */
+
 import { esc } from '../utils/dom.js';
 import { fmtPct, numFmt } from '../utils/format.js';
 import { T } from '../utils/labels.js';
@@ -34,25 +40,24 @@ export function buildAgentPerfTable(perf, label, id) {
  * @returns {string[]} Sorted ticker names
  */
 function collectSortedTickers(agents, agentNames) {
-  let seen = {};
-  for (let a = 0; a < agentNames.length; a++) {
-    let alloc = agents[agentNames[a]];
+  let seen = agentNames.reduce(function (acc, name) {
+    let alloc = agents[name];
     if (alloc !== undefined && alloc !== null) {
-      let keys = Object.keys(alloc);
-      for (let k = 0; k < keys.length; k++) { seen[keys[k]] = true; }
+      Object.keys(alloc).forEach(function (k) { acc[k] = true; });
     }
-  }
+    return acc;
+  }, {});
   return Object.keys(seen).sort(function (x, y) {
-    let maxX = 0; let maxY = 0;
-    for (let i = 0; i < agentNames.length; i++) {
-      let ag = agents[agentNames[i]];
-      if (ag !== undefined && ag !== null) {
-        let wx = ag[x] !== undefined ? ag[x] : 0;
-        let wy = ag[y] !== undefined ? ag[y] : 0;
-        if (wx > maxX) { maxX = wx; }
-        if (wy > maxY) { maxY = wy; }
-      }
-    }
+    let maxX = agentNames.reduce(function (mx, name) {
+      let ag = agents[name];
+      if (ag !== undefined && ag !== null && ag[x] !== undefined && ag[x] > mx) return ag[x];
+      return mx;
+    }, 0);
+    let maxY = agentNames.reduce(function (my, name) {
+      let ag = agents[name];
+      if (ag !== undefined && ag !== null && ag[y] !== undefined && ag[y] > my) return ag[y];
+      return my;
+    }, 0);
     return maxY - maxX;
   });
 }
@@ -71,15 +76,14 @@ export function buildRoundAllocTable(agents, agentNames, agentLabel, testId) {
   let tid = testId ? ' data-testid="' + esc(testId) + '"' : '';
   let h = '<table class="data-table"' + tid + '>';
   h += '<tr><th></th>';
-  for (let a = 0; a < agentNames.length; a++) {
-    h += '<th>' + esc(agentLabel(agentNames[a]).toUpperCase()) + '</th>';
+  for (const agent of agentNames) {
+    h += '<th>' + esc(agentLabel(agent).toUpperCase()) + '</th>';
   }
   h += '</tr>';
-  for (let t = 0; t < tickers.length; t++) {
-    let ticker = tickers[t];
+  for (const ticker of tickers) {
     h += '<tr><td style="font-weight:600;">' + esc(ticker) + '</td>';
-    for (let a = 0; a < agentNames.length; a++) {
-      let w = agents[agentNames[a]] ? agents[agentNames[a]][ticker] : null;
+    for (const agent of agentNames) {
+      let w = agents[agent] ? agents[agent][ticker] : null;
       h += '<td style="font-weight:600;text-align:right;">' + fmtPct(w) + '</td>';
     }
     h += '</tr>';
@@ -121,15 +125,16 @@ function fmtDelta(phase) {
 function buildImpactHeader() {
   let cfg = T('debate_impact_agents');
   let bdr = ' style="border-left:2px solid #d6c4a1"';
+  let groupsExceptLast = cfg.groups.slice(0, -1);
   let h = '<tr><th rowspan="2">' + esc(cfg.sub_columns[0]).replace(esc(cfg.sub_columns[0]), 'Agent') + '</th>';
-  for (let g = 0; g < cfg.groups.length - 1; g++) {
-    h += '<th colspan="2"' + bdr + '>' + esc(cfg.groups[g]) + '</th>';
+  for (const group of groupsExceptLast) {
+    h += '<th colspan="2"' + bdr + '>' + esc(group) + '</th>';
   }
   h += '<th' + bdr + '>' + esc(cfg.groups[cfg.groups.length - 1]) + '</th></tr>';
   h += '<tr>';
-  for (let c = 0; c < cfg.groups.length - 1; c++) {
+  groupsExceptLast.forEach(function () {
     h += '<th>' + esc(cfg.sub_columns[0]) + '</th><th>' + esc(cfg.sub_columns[1]) + '</th>';
-  }
+  });
   h += '<th>' + esc(cfg.sub_columns[1]) + '</th></tr>';
   return h;
 }
@@ -144,8 +149,8 @@ function buildImpactHeader() {
 function buildImpactRow(d, label) {
   let h = '<tr><td style="font-weight:600;">' + esc(label) + '</td>';
   let phases = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
-  for (let p = 0; p < phases.length; p++) {
-    let ph = d[phases[p]];
+  for (const phase of phases) {
+    let ph = d[phase];
     h += '<td style="text-align:right;">' + fmtPV(ph) + '</td>';
     h += '<td style="text-align:right;">' + fmtDelta(ph) + '</td>';
   }
@@ -172,8 +177,8 @@ export function buildDebateImpactTable(agentDeltas, agentLabel) {
   let roles = Object.keys(agentDeltas).sort();
   let h = '<table class="data-table" data-testid="debate-impact-agents">';
   h += buildImpactHeader();
-  for (let i = 0; i < roles.length; i++) {
-    h += buildImpactRow(agentDeltas[roles[i]], agentLabel(roles[i]).toUpperCase());
+  for (const role of roles) {
+    h += buildImpactRow(agentDeltas[role], agentLabel(role).toUpperCase());
   }
   h += '</table>';
   return h;
@@ -246,9 +251,9 @@ export function buildSimpleAllocTable(portfolio) {
   let cfg = T('simple_alloc');
   let h = '<table class="data-table" id="judge-alloc-table">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
-  for (let i = 0; i < sorted.length; i++) {
-    h += '<tr><td style="font-weight:600;">' + esc(sorted[i][0]) + '</td>';
-    h += '<td style="font-weight:600;">' + fmtPct(sorted[i][1]) + '</td></tr>';
+  for (const entry of sorted) {
+    h += '<tr><td style="font-weight:600;">' + esc(entry[0]) + '</td>';
+    h += '<td style="font-weight:600;">' + fmtPct(entry[1]) + '</td></tr>';
   }
   h += '</table>';
   return h;
@@ -277,9 +282,9 @@ export function buildSharpeTable(sharpe) {
   let phaseKeys = ['r1_proposal', 'r1_revision', 'r1_js', 'r2_revision', 'r2_js'];
   let h = '<table class="data-table" data-testid="debate-impact-sharpe">';
   h += '<tr><th>' + esc(cfg.columns[0]) + '</th><th>' + esc(cfg.columns[1]) + '</th></tr>';
-  for (let i = 0; i < phaseKeys.length; i++) {
-    let val = sharpe[phaseKeys[i]];
-    h += '<tr><td>' + esc(cfg.rows[phaseKeys[i]]) + '</td>';
+  for (const key of phaseKeys) {
+    let val = sharpe[key];
+    h += '<tr><td>' + esc(cfg.rows[key]) + '</td>';
     h += '<td style="text-align:right;">' + fmtSharpe(val) + '</td></tr>';
   }
   h += '</table>';
@@ -296,9 +301,9 @@ export function buildSharpeTable(sharpe) {
 function buildCollapseRows(agents, agentLabel) {
   let roles = Object.keys(agents).sort();
   let h = '';
-  for (let i = 0; i < roles.length; i++) {
-    let a = agents[roles[i]];
-    h += '<tr><td style="font-weight:600;">' + esc(agentLabel(roles[i]).toUpperCase()) + '</td>';
+  for (const role of roles) {
+    let a = agents[role];
+    h += '<tr><td style="font-weight:600;">' + esc(agentLabel(role).toUpperCase()) + '</td>';
     h += '<td style="text-align:right;">' + a.movement.toFixed(4) + '</td>';
     h += '<td style="text-align:right;">' + a.toward_consensus.toFixed(4) + '</td>';
     h += '<td style="text-align:right;">';
@@ -321,8 +326,8 @@ export function buildCollapseTable(roundData, agentLabel) {
   let h = '<div class="ov-subtitle" style="margin-top:8px;">Round ' + roundData.round + '</div>';
   h += '<table class="data-table">';
   h += '<tr>';
-  for (let c = 0; c < cfg.columns.length; c++) {
-    h += '<th>' + esc(cfg.columns[c]) + '</th>';
+  for (const col of cfg.columns) {
+    h += '<th>' + esc(col) + '</th>';
   }
   h += '</tr>';
   h += buildCollapseRows(roundData.agents, agentLabel);
@@ -382,9 +387,7 @@ export function buildDebateSummaryPanel(summary) {
     { label: cfg.cells.final_sharpe, value: summary.final_sharpe, pct: false },
   ];
   let h = '<div class="debate-summary-grid" data-testid="debate-summary-panel">';
-  for (let i = 0; i < cells.length; i++) {
-    h += buildSummaryCell(cells[i]);
-  }
+  h += cells.map(function (cell) { return buildSummaryCell(cell); }).join('');
   h += '</div>';
   return h;
 }

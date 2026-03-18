@@ -1,3 +1,8 @@
+/**
+ * views/runDetail/overviewSection.js
+ *
+ * Builds the run overview panel and collapsible config detail cards.
+ */
 import { esc } from '../../utils/dom.js';
 import { fmt, numFmt } from '../../utils/format.js';
 import { flattenConfig } from '../../utils/config.js';
@@ -21,63 +26,9 @@ export function buildOverviewPanel(detail, experiment, runId) {
   let html = '<div class="run-overview">';
   html += '<div class="ov-title">' + esc(sec.run_overview) + '</div>';
 
-  // --- Table 1: Run identity ---
-  let statusCls = '';
-  if (detail.status === 'complete' || detail.status === 'partial') {
-    statusCls = ' class="status-ok"';
-  } else if (detail.status === 'running') {
-    statusCls = ' class="status-running"';
-  } else if (detail.status === 'failed') {
-    statusCls = ' class="status-failed"';
-  }
-
-  let idCfg = T('overview_identity');
-  html += '<table class="ov-htable">';
-  html += '<tr>';
-  for (let ic = 0; ic < idCfg.columns.length; ic++) {
-    html += '<th>' + esc(idCfg.columns[ic]) + '</th>';
-  }
-  html += '</tr>';
-  html += '<tr>';
-  html += '<td>' + esc(runId) + '</td>';
-  html += '<td>' + esc(experiment) + '</td>';
-  html += '<td>' + esc(m.model_name || '\u2014') + '</td>';
-  html += '<td>' + esc(m.crit_model_name || '\u2014') + '</td>';
-  html += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
-  html += '</tr></table>';
-
-  // --- Table 2: Config and agents ---
-  let cfgLabels = T('overview_config');
-  let fields = extractConfigFields(m);
-  html += '<table class="ov-htable" style="table-layout:auto;">';
-  html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.config) + '</th><td>' + esc(fields.configName) + '</td></tr>';
-  html += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.agents) + '</th><td>' + esc(fields.agentsStr) + '</td></tr>';
-  html += '</table>';
-
-  // --- Table 3: Key metrics ---
-  let tickersStr = '\u2014';
-  if (m.ticker_universe && m.ticker_universe.length > 0) {
-    tickersStr = m.ticker_universe.filter(function (t) { return t !== '_CASH_'; }).join(', ');
-  }
-  let roundsStr = (m.actual_rounds != null ? m.actual_rounds : '\u2014')
-    + ' / ' + (m.max_rounds != null ? m.max_rounds : '\u2014');
-
-  let metCfg = T('overview_metrics');
-  html += '<table class="ov-htable">';
-  html += '<tr>';
-  for (let mc = 0; mc < metCfg.columns.length; mc++) {
-    html += '<th>' + metCfg.columns[mc] + '</th>';
-  }
-  html += '</tr>';
-  html += '<tr>';
-  html += '<td>' + esc(tickersStr) + '</td>';
-  html += '<td>' + esc(roundsStr) + '</td>';
-  html += '<td>' + esc(m.termination_reason || '\u2014') + '</td>';
-  html += '<td>' + fmt(m.initial_beta) + '</td>';
-  html += '<td>' + fmt(m.final_beta) + '</td>';
-  html += '<td>' + fmt(q.final_rho_bar) + '</td>';
-  html += '<td>' + fmt(q.js_drop) + '</td>';
-  html += '</tr></table>';
+  html += buildIdentityTable(detail, runId, experiment);
+  html += buildConfigTable(m);
+  html += buildOverviewMetricsTable(m, q);
 
   if (q.reasoning_collapse) {
     html += '<div class="ov-warn">REASONING COLLAPSE DETECTED</div>';
@@ -88,6 +39,84 @@ export function buildOverviewPanel(detail, experiment, runId) {
 
   html += '</div>';
   return html;
+}
+
+/**
+ * Build the run identity table (run ID, experiment, models, status).
+ *
+ * @param {object} detail - Full run detail from API
+ * @param {string} runId - Run ID
+ * @param {string} experiment - Experiment name
+ * @returns {string} HTML table string
+ */
+function buildIdentityTable(detail, runId, experiment) {
+  let m = detail.manifest || {};
+  let statusCls = '';
+  if (detail.status === 'complete' || detail.status === 'partial') {
+    statusCls = ' class="status-ok"';
+  } else if (detail.status === 'running') {
+    statusCls = ' class="status-running"';
+  } else if (detail.status === 'failed') {
+    statusCls = ' class="status-failed"';
+  }
+
+  let idCfg = T('overview_identity');
+  let h = '<table class="ov-htable">';
+  h += '<tr>' + idCfg.columns.map(function (col) { return '<th>' + esc(col) + '</th>'; }).join('') + '</tr>';
+  h += '<tr>';
+  h += '<td>' + esc(runId) + '</td>';
+  h += '<td>' + esc(experiment) + '</td>';
+  h += '<td>' + esc(m.model_name || '\u2014') + '</td>';
+  h += '<td>' + esc(m.crit_model_name || '\u2014') + '</td>';
+  h += '<td' + statusCls + '>' + esc(detail.status) + '</td>';
+  h += '</tr></table>';
+  return h;
+}
+
+/**
+ * Build the config and agents summary table.
+ *
+ * @param {object} manifest - Run manifest object
+ * @returns {string} HTML table string
+ */
+function buildConfigTable(manifest) {
+  let cfgLabels = T('overview_config');
+  let fields = extractConfigFields(manifest);
+  let h = '<table class="ov-htable" style="table-layout:auto;">';
+  h += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.config) + '</th><td>' + esc(fields.configName) + '</td></tr>';
+  h += '<tr><th style="width:1%;white-space:nowrap">' + esc(cfgLabels.rows.agents) + '</th><td>' + esc(fields.agentsStr) + '</td></tr>';
+  h += '</table>';
+  return h;
+}
+
+/**
+ * Build the key metrics table (tickers, rounds, termination, beta, quality).
+ *
+ * @param {object} manifest - Run manifest object
+ * @param {object} quality - Run quality metrics object
+ * @returns {string} HTML table string
+ */
+function buildOverviewMetricsTable(manifest, quality) {
+  let tickersStr = '\u2014';
+  if (manifest.ticker_universe && manifest.ticker_universe.length > 0) {
+    tickersStr = manifest.ticker_universe.filter(function (t) { return t !== '_CASH_'; }).join(', ');
+  }
+  let roundsStr = (manifest.actual_rounds != null ? manifest.actual_rounds : '\u2014')
+    + ' / ' + (manifest.max_rounds != null ? manifest.max_rounds : '\u2014');
+
+  let metCfg = T('overview_metrics');
+  let h = '<table class="ov-htable">';
+  h += '<tr>' + metCfg.columns.map(function (col) { return '<th>' + col + '</th>'; }).join('') + '</tr>';
+  h += '<tr>';
+  h += '<td>' + esc(tickersStr) + '</td>';
+  h += '<td>' + esc(roundsStr) + '</td>';
+  h += '<td>' + esc(manifest.termination_reason || '\u2014') + '</td>';
+  h += '<td>' + fmt(manifest.initial_beta) + '</td>';
+  h += '<td>' + fmt(manifest.final_beta) + '</td>';
+  h += '<td>' + fmt(quality.final_rho_bar) + '</td>';
+  h += '<td>' + fmt(quality.js_drop) + '</td>';
+  h += '</tr></table>';
+  return h;
 }
 
 /**
@@ -206,22 +235,13 @@ function buildConfigGroupsHtml(config, testId, excludeKeys, groupDefs) {
   if (flat.length === 0) return '';
 
   let excludeSet = {};
-  for (let e = 0; e < excludeKeys.length; e++) {
-    excludeSet[excludeKeys[e]] = true;
-  }
-  let filtered = [];
-  for (let i = 0; i < flat.length; i++) {
-    if (!excludeSet[flat[i].key]) {
-      filtered.push(flat[i]);
-    }
-  }
+  excludeKeys.forEach(function (k) { excludeSet[k] = true; });
+  let filtered = flat.filter(function (item) { return !excludeSet[item.key]; });
   if (filtered.length === 0) return '';
 
   let grouped = groupConfigItems(filtered, groupDefs);
   let h = '<div class="ov-config-groups" data-testid="' + esc(testId) + '">';
-  for (let g = 0; g < grouped.length; g++) {
-    h += renderGroupCard(grouped[g]);
-  }
+  grouped.forEach(function (grp) { h += renderGroupCard(grp); });
   h += '</div>';
   return h;
 }
@@ -235,38 +255,28 @@ function buildConfigGroupsHtml(config, testId, excludeKeys, groupDefs) {
  */
 function groupConfigItems(flatItems, groupDefs) {
   let groups = {};
-  let groupOrder = [];
-  for (let i = 0; i < groupDefs.length; i++) {
-    groups[groupDefs[i].name] = [];
-    groupOrder.push(groupDefs[i].name);
-  }
+  let groupOrder = groupDefs.map(function (gd) { return gd.name; });
+  groupOrder.forEach(function (name) { groups[name] = []; });
   groups['Other'] = [];
 
-  for (let j = 0; j < flatItems.length; j++) {
-    let item = flatItems[j];
-    let matched = false;
-    for (let k = 0; k < groupDefs.length; k++) {
-      let prefixes = groupDefs[k].prefixes;
-      for (let p = 0; p < prefixes.length; p++) {
-        if (item.key === prefixes[p] || item.key.indexOf(prefixes[p] + '.') === 0) {
-          groups[groupDefs[k].name].push(item);
-          matched = true;
-          break;
+  flatItems.forEach(function (item) {
+    let matched = groupDefs.some(function (gd) {
+      return gd.prefixes.some(function (prefix) {
+        if (item.key === prefix || item.key.indexOf(prefix + '.') === 0) {
+          groups[gd.name].push(item);
+          return true;
         }
-      }
-      if (matched) break;
-    }
+        return false;
+      });
+    });
     if (!matched) {
       groups['Other'].push(item);
     }
-  }
+  });
 
-  let result = [];
-  for (let g = 0; g < groupOrder.length; g++) {
-    if (groups[groupOrder[g]].length > 0) {
-      result.push({ name: groupOrder[g], items: groups[groupOrder[g]] });
-    }
-  }
+  let result = groupOrder.filter(function (name) { return groups[name].length > 0; }).map(function (name) {
+    return { name: name, items: groups[name] };
+  });
   if (groups['Other'].length > 0) {
     result.push({ name: 'Other', items: groups['Other'] });
   }
@@ -283,8 +293,7 @@ function renderGroupCard(group) {
   let h = '<div class="ov-config-group">';
   h += '<div class="ov-config-group-title">' + esc(group.name) + '</div>';
   h += '<div class="ov-config-group-body">';
-  for (let i = 0; i < group.items.length; i++) {
-    let item = group.items[i];
+  for (const item of group.items) {
     let val = item.value;
     let truncated = val.length > 60 ? val.slice(0, 60) + '\u2026' : val;
     let titleAttr = val.length > 60 ? ' title="' + esc(val) + '"' : '';
@@ -307,13 +316,8 @@ function buildTickerPerfHtml(tickerPerf) {
   if (!tickerPerf || tickerPerf.length === 0) return '';
   let tpCfg = T('ticker_perf');
   let h = '<table class="data-table" data-testid="ticker-perf-table">';
-  h += '<tr>';
-  for (let tc = 0; tc < tpCfg.columns.length; tc++) {
-    h += '<th>' + esc(tpCfg.columns[tc]) + '</th>';
-  }
-  h += '</tr>';
-  for (let i = 0; i < tickerPerf.length; i++) {
-    let t = tickerPerf[i];
+  h += '<tr>' + tpCfg.columns.map(function (col) { return '<th>' + esc(col) + '</th>'; }).join('') + '</tr>';
+  for (const t of tickerPerf) {
     let cls = t.pct_change >= 0 ? 'perf-profit' : 'perf-loss';
     let sign = t.pct_change >= 0 ? '+' : '';
     h += '<tr><td style="font-weight:600;">' + esc(t.ticker) + '</td>';

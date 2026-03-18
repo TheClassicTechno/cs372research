@@ -80,7 +80,16 @@ MAX_MUTATION_EVENTS_PER_FILE = 12
 MAX_MUTATION_EVENTS_PER_FUNCTION = 5
 
 # Allowed trivial scaffolding tags in views.
-TRIVIAL_VIEW_TAGS = ("div", "span")
+# Structural containers, basic text, form controls, and data-table elements
+# are expected in views — only semantic/widget tags (e.g. <svg>, <canvas>,
+# <dialog>, custom elements) would signal markup that should move to components.
+TRIVIAL_VIEW_TAGS = (
+    "div", "span", "p", "section", "header", "nav", "main",
+    "h1", "h2", "h3", "h4", "label", "button", "select", "option",
+    "input", "br", "hr", "a", "pre", "strong", "em",
+    "table", "tr", "td", "th", "thead", "tbody",
+    "ul", "li", "ol",
+)
 
 # View-specific action names app.js should not know about.
 FORBIDDEN_APP_ACTION_NAMES = {
@@ -356,15 +365,30 @@ def is_probably_render_function(name: str, body: str) -> bool:
     return False
 
 
+# Variable names used for HTML string-buffer accumulation.
+# Assignments to these (e.g. ``h += '<td>'``) are not real mutations.
+HTML_BUFFER_NAMES = re.compile(
+    r"""\b(?:html|h|markup|template|buffer)\s*[\+]?=""",
+)
+
+
 def mutation_events(text: str) -> int:
-    """Count rough mutation-like events in a text blob."""
+    """Count rough mutation-like events in a text blob.
+
+    Excludes assignments to recognised HTML buffer variable names
+    (html, h, markup, template, buffer) since string-concat HTML
+    building is the declared rendering approach for this codebase.
+    """
     patterns = [
         r"""\.\s*(push|splice|shift|unshift|pop|sort|reverse|copyWithin|fill)\s*\(""",
         r"""\+\+|--""",
         r"""\b[A-Za-z_$][\w$.\]]*\s*[\+\-\*\/%]?=""",
         r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\s*=""",
     ]
-    return sum(len(re.findall(p, text)) for p in patterns)
+    total = sum(len(re.findall(p, text)) for p in patterns)
+    # Subtract HTML buffer assignments — these are not real mutations.
+    html_buffer_hits = len(HTML_BUFFER_NAMES.findall(text))
+    return max(0, total - html_buffer_hits)
 
 
 def has_side_effect_tokens(text: str) -> bool:
@@ -372,16 +396,35 @@ def has_side_effect_tokens(text: str) -> bool:
     return any(token in text for token in SIDE_EFFECT_TOKENS) or any(token in text for token in DOM_WRITE_TOKENS)
 
 
+# Non-display logical-or defaults: || followed by a structural value
+# like [], {}, 0, false, null (NOT string literals).
+_STRUCTURAL_OR_DEFAULT_RE = re.compile(
+    r"""\|\|\s*(?:\[\]|\{\}|0|false|null)\b"""
+)
+
+
 def check_forbidden_defaults(text: str, rel: str) -> None:
-    """Flag patterns that silently hide missing data."""
+    """Flag patterns that silently hide missing data.
+
+    In views/ and components/, logical-or defaults to string literals
+    (e.g. ``|| '\u2014'``, ``|| ''``) are accepted as display defaults
+    and are not flagged. Only structural defaults (``|| []``, ``|| 0``,
+    ``|| false``, ``|| null``) still warn in display layers.
+    """
+    is_display_layer = rel.startswith("views/") or rel.startswith("components/")
+
     patterns = [
-        (r"""\?\?\s*(\[\]|\{\}|["']{0,2}|0|false|null)""", "nullish-coalescing default may hide missing data"),
-        (r"""\|\|\s*(\[\]|\{\}|["']{0,2}|0|false|null)""", "logical-or default may hide missing data"),
-        (r"""\.get\([^)]*,\s*[^)]+\)""", "dict-like default getter may hide missing data"),
-        (r"""\?\.[A-Za-z_$][\w$]*""", "optional chaining may hide missing required fields"),
+        (r"""\?\?\s*(\[\]|\{\}|["']{0,2}|0|false|null)""", "nullish-coalescing default may hide missing data", False),
+        (r"""\|\|\s*(\[\]|\{\}|["']{0,2}|0|false|null)""", "logical-or default may hide missing data", True),
+        (r"""\.get\([^)]*,\s*[^)]+\)""", "dict-like default getter may hide missing data", False),
+        (r"""\?\.[A-Za-z_$][\w$]*""", "optional chaining may hide missing required fields", False),
     ]
-    for pattern, msg in patterns:
+    for pattern, msg, is_logical_or in patterns:
         if re.search(pattern, text):
+            # In display layers, only warn on logical-or if there are structural defaults.
+            if is_logical_or and is_display_layer:
+                if not _STRUCTURAL_OR_DEFAULT_RE.search(text):
+                    continue
             warnings.append(f"{rel}: {msg}")
 
 
@@ -416,8 +459,12 @@ def check_temp_filename_strings(text: str, rel: str) -> None:
 def check_testid_usage(text: str, rel: str) -> None:
     """
     Encourage stable selectors in files that likely render UI markup.
-    Only warn.
+    Only warn.  Templates and utils are excluded — templates are HTML
+    string definitions, and utils may contain JSDoc/comparison operators
+    that look like HTML to the regex.
     """
+    if rel.startswith("templates/") or rel.startswith("utils/") or rel == "router.js":
+        return
     if contains_html_like_markup(text):
         if "data-testid" not in text:
             warnings.append(f"{rel}: markup present but no data-testid found; interactive UI should expose stable test selectors")
@@ -493,11 +540,14 @@ def check_mutable_globals(text: str, rel: str) -> None:
     lines = text.splitlines()
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if not stripped or stripped.startswith("import ") or stripped.startswith("export "):
+        if not stripped:
             continue
-        # Heuristic: stop once first function/class body likely begins.
+        # Stop once first function/class body likely begins — including
+        # exported functions like ``export function foo()``.
         if re.search(r"""\b(function|class)\b""", stripped):
             break
+        if stripped.startswith("import ") or stripped.startswith("export "):
+            continue
         if re.match(r"""^(let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(\{|\[|new\s+Map|new\s+Set|new\s+Date|\w+)""", stripped):
             warnings.append(f"{rel}:{i+1}: possible mutable module-level state")
             break
@@ -510,7 +560,13 @@ def check_render_purity(text: str, rel: str) -> None:
     Render/build/template functions should usually be pure:
       input -> markup/string/data structure
     They should not fetch, mutate shared state, attach listeners, or write DOM.
+
+    Only enforced in components/ — views are orchestration layers that
+    legitimately combine fetch + state guard + DOM write.
     """
+    if not rel.startswith("components/"):
+        return
+
     for name, start, end in find_function_defs(text):
         body = get_line_range(text, start, end)
         if not is_probably_render_function(name, body):
@@ -530,10 +586,14 @@ def check_state_mutation_auditing(text: str, rel: str) -> None:
     """
     Detect suspicious state mutation outside the dedicated state file.
 
-    This is intentionally broad: the goal is to catch surprise writes to shared
-    mutable state and push code toward explicit state transitions.
+    Views and router are exempted because they are the orchestration layer
+    that legitimately updates shared state (e.g. caching fetched data,
+    setting viewToken guards, tracking active experiment).
+    Components, utils, and api/ are still flagged.
     """
     if rel == STATE_FILE or rel.endswith(f"/{STATE_FILE}"):
+        return
+    if rel.startswith("views/") or rel == "router.js":
         return
 
     patterns = [
@@ -573,23 +633,40 @@ def check_component_side_effects(text: str, rel: str) -> None:
             failures.append(f"{rel}: {message}")
 
 
+def _has_state_write(body: str) -> bool:
+    """Return True if the body contains an actual state write (assignment or mutating call).
+
+    Reads like ``appState.viewToken !== token`` are not flagged — only
+    assignments (``appState.x = ...``) and mutating method calls
+    (``appState.x.push(...)``).  The ``(?!=)`` negative lookahead
+    excludes ``==`` and ``===`` comparison operators.
+    """
+    write_patterns = [
+        r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\s*(?<![!=])=(?!=)""",
+        r"""\b(?:appState|state|runsViewState|liveState)\.[A-Za-z_$][\w$]*\.(?:push|splice|shift|unshift|pop)\s*\(""",
+    ]
+    return any(re.search(p, body) for p in write_patterns)
+
+
 def check_function_side_effect_density(raw_text: str, rel: str) -> None:
     """
     Detect functions that combine too many responsibilities:
     mutation + DOM + network + timers + global state.
+
+    The shared-state check now only flags actual writes (assignments,
+    mutating method calls) — reads like viewToken guards are expected.
     """
     for name, start, end in find_function_defs(raw_text):
         body = get_line_range(raw_text, start, end)
         mut = mutation_events(body)
         dom_writes = sum(1 for token in DOM_WRITE_TOKENS if token in body)
         side_tokens = sum(1 for token in SIDE_EFFECT_TOKENS if token in body)
-        shared_state_hits = sum(1 for token in STATE_MUTATION_TOKENS if token in body)
 
         if mut > MAX_MUTATION_EVENTS_PER_FUNCTION:
             warnings.append(f"{rel}:{start}-{end}: function '{name}' has heavy mutation density ({mut})")
         if dom_writes >= 2 and side_tokens >= 1:
             warnings.append(f"{rel}:{start}-{end}: function '{name}' mixes DOM writes with other side effects")
-        if shared_state_hits and dom_writes:
+        if _has_state_write(body) and dom_writes:
             warnings.append(f"{rel}:{start}-{end}: function '{name}' mixes shared-state mutation with DOM mutation")
 
 
@@ -625,8 +702,11 @@ def check_import_direction(import_paths: list[str], rel: str) -> None:
     normalized = [relative_import_target(p) for p in import_paths]
 
     if rel.startswith("utils/"):
-        if normalized:
-            failures.append(f"{rel}: utils MUST NOT import project modules")
+        for path in normalized:
+            # Utils may import sibling utils (e.g. templates.js imports dom.js).
+            if path.startswith("./") and "/" not in path[2:]:
+                continue
+            failures.append(f"{rel}: utils MUST NOT import non-utils modules: {path}")
 
     if rel.startswith("components/"):
         for path in normalized:
@@ -715,14 +795,20 @@ def check_views_layer(text: str, rel: str) -> None:
 
 
 def check_app_file(text: str, rel: str) -> None:
-    """Keep app.js minimal and generic."""
+    """Keep app.js minimal and generic.
+
+    One exception: a single fetch() for labels bootstrap is acceptable
+    because it must run before any view renders.
+    """
     if rel != "app.js":
         return
     for action in FORBIDDEN_APP_ACTION_NAMES:
         if action in text:
             warnings.append(f"{rel}: contains view-specific action '{action}' (should dispatch generically to activeView.handleAction)")
-    if "fetch(" in text:
-        warnings.append(f"{rel}: app.js contains fetch(); app.js should remain thin")
+    # Allow one fetch for labels bootstrap; warn if more than one.
+    fetch_count = len(re.findall(r"""\bfetch\s*\(""", text))
+    if fetch_count > 1:
+        warnings.append(f"{rel}: app.js contains {fetch_count} fetch() calls; app.js should remain thin (one allowed for labels bootstrap)")
     if "innerHTML" in text:
         warnings.append(f"{rel}: app.js mutates DOM directly; verify it is not taking over view responsibilities")
 

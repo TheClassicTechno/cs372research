@@ -1,3 +1,8 @@
+/**
+ * views/runDetail/pidSection.js
+ *
+ * Loads and renders the PID dynamics table and beta/rho trajectory chart.
+ */
 import { fetchPID } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { buildPIDChart } from '../../components/charts.js';
@@ -6,6 +11,7 @@ import { fmt } from '../../utils/format.js';
 import { appState } from '../../state.js';
 import { T } from '../../utils/labels.js';
 
+/** Fetches PID data and renders the dynamics table and trajectory chart into the pid-section div. */
 export function loadPIDSection(experiment, runId, token) {
   let div = document.getElementById('pid-section');
   fetchPID(experiment, runId)
@@ -19,13 +25,8 @@ export function loadPIDSection(experiment, runId, token) {
       let pidCfg = T('pid_dynamics');
       let h = '<div class="section-label">' + esc(pidCfg.title) + '</div>';
       h += '<table class="data-table">';
-      h += '<tr>';
-      for (let pc = 0; pc < pidCfg.columns.length; pc++) {
-        h += '<th>' + pidCfg.columns[pc] + '</th>';
-      }
-      h += '</tr>';
-      for (let i = 0; i < data.length; i++) {
-        let d = data[i];
+      h += '<tr>' + pidCfg.columns.map(function (col) { return '<th>' + col + '</th>'; }).join('') + '</tr>';
+      data.forEach(function (d) {
         h += '<tr>';
         h += '<td>' + d.round + '</td>';
         h += '<td>' + esc(d.quadrant || '\u2014') + '</td>';
@@ -34,13 +35,13 @@ export function loadPIDSection(experiment, runId, token) {
         h += '<td>' + fmt(d.beta_new) + '</td>';
         h += '<td>' + fmt(d.rho_bar) + '</td>';
         h += '</tr>';
-      }
+      });
       h += '</table>';
 
       h += '<div class="section-label">' + esc(T('sections').pid_trajectory) + '</div>';
       h += '<div class="chart-container">' + buildPIDChart(data) + '</div>';
 
-      div.innerHTML = buildCard(T('cards').pid_dynamics, h, true);
+      div.innerHTML = '<div data-testid="pid-section-content">' + buildCard(T('cards').pid_dynamics, h, true) + '</div>';
       div.querySelector('.card').classList.add('open');
     })
     .catch(function () { if (appState.viewToken === token) div.innerHTML = ''; });
