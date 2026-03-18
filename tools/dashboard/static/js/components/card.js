@@ -1,12 +1,24 @@
+/**
+ * components/card.js
+ *
+ * Pure HTML builders for collapsible card UI elements used across views.
+ */
+
 import { esc } from '../utils/dom.js';
 import { fmt } from '../utils/format.js';
+import { renderTemplate } from '../utils/templates.js';
+import '../templates/card.js';
 
+/** Build a generic collapsible card with a title header and HTML body. */
 export function buildCard(title, body, startOpen) {
-  return '<div class="card' + (startOpen ? ' open' : '') + '">' +
-    '<div class="card-header"><span>' + esc(title) + '</span><span class="arrow">&#9654;</span></div>' +
-    '<div class="card-body">' + body + '</div></div>';
+  return renderTemplate('card', {
+    openClass: startOpen ? ' open' : '',
+    title: title,
+    body: body,
+  });
 }
 
+/** Build a collapsible card summarizing a single debate round's PID and CRIT metrics. */
 export function buildRoundCard(rs, experiment, runId) {
   let roundNum = rs.round || 0;
   let metrics = rs.metrics || {};
@@ -24,14 +36,15 @@ export function buildRoundCard(rs, experiment, runId) {
   body += '<button data-action="load-agents" data-experiment="' + esc(experiment) + '" data-run-id="' + esc(runId) + '" data-round="' + roundNum + '">Load Agent Details</button>';
   body += '</div>';
 
-  return '<div class="card">' +
+  return '<div class="card" data-testid="round-card">' +
     '<div class="card-header"><span>' + summary + '</span><span class="arrow">&#9654;</span></div>' +
     '<div class="card-body">' + body + '</div></div>';
 }
 
+/** Build a collapsible card for a single agent event (proposal, critique, etc.). */
 export function buildEventCard(ev) {
   let label = '[ROUND ' + ev.round + '] ' + ev.agent + ' \u2014 ' + ev.phase;
-  let h = '<div class="card" data-eid="' + esc(ev.id) + '">';
+  let h = '<div class="card" data-testid="event-card" data-eid="' + esc(ev.id) + '">';
   h += '<div class="card-header">';
   h += '<span>' + esc(label) + '</span>';
   h += '<span class="arrow">&#9654;</span>';
@@ -46,6 +59,7 @@ export function buildEventCard(ev) {
   return h;
 }
 
+/** Build a styled header bar displaying experiment name, run ID, and status. */
 export function buildRunHeader(data) {
   return '<div style="font-weight:600;font-size:0.85em;padding:6px 8px;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin-top:12px;margin-bottom:6px;background:#f0f0f0;">' +
     esc(data.experiment + ' / ' + data.run_id) + ' &mdash; ' + esc(data.status) + '</div>';

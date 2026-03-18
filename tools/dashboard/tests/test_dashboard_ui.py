@@ -468,8 +468,8 @@ class TestRunsDurationColumn:
             "#runs-table .data-table tr.clickable", timeout=5000,
         )
         cells = row.query_selector_all("td")
-        # Duration is the 11th column (0-indexed: 10)
-        duration_cell = cells[10]
+        # Duration is the 10th column (0-indexed: 9)
+        duration_cell = cells[9]
         text = duration_cell.text_content().strip()
         assert "s" in text or "m" in text, (
             f"Duration cell should show formatted time, got '{text}'"
@@ -1161,3 +1161,101 @@ class TestFinancialTestsSection:
         assert len(delta_cells) > 0, "No delta cells with title tooltip found"
         title = delta_cells[0].get_attribute("title")
         assert "95% CI" in title, f"Expected '95% CI' in tooltip, got: {title}"
+
+
+# ---------------------------------------------------------------------------
+# TEST — Card template rendering
+# ---------------------------------------------------------------------------
+
+class TestCardTemplateRendering:
+    """Verify that cards rendered via the template system have correct structure."""
+
+    def test_card_has_header_and_body(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Cards rendered via buildCard have a header with title and a body."""
+        _goto_run_detail(page, dashboard_url)
+        card = page.wait_for_selector(".card", timeout=5000)
+        assert card is not None, "No card found on run detail page"
+        header = card.query_selector(".card-header")
+        assert header is not None, "Card missing .card-header"
+        body = card.query_selector(".card-body")
+        assert body is not None, "Card missing .card-body"
+
+    def test_card_header_has_arrow(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Card header contains an arrow indicator for expand/collapse."""
+        _goto_run_detail(page, dashboard_url)
+        card = page.wait_for_selector(".card", timeout=5000)
+        arrow = card.query_selector(".card-header .arrow")
+        assert arrow is not None, "Card header missing .arrow element"
+
+    def test_open_card_has_visible_body(
+        self, page: Page, dashboard_url: str,
+    ):
+        """A card with the 'open' class has its body visible."""
+        _goto_run_detail(page, dashboard_url)
+        open_card = page.wait_for_selector(".card.open", timeout=5000)
+        assert open_card is not None, "No open card found"
+        body = open_card.query_selector(".card-body")
+        assert body is not None, "Open card missing body"
+        assert body.is_visible(), "Open card body should be visible"
+
+
+# ---------------------------------------------------------------------------
+# TEST — data-testid selectors are present
+# ---------------------------------------------------------------------------
+
+class TestDataTestIds:
+    """Verify that key UI elements expose stable data-testid selectors."""
+
+    def test_run_detail_content_testid(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Run detail page has a data-testid='run-detail-content' wrapper."""
+        _goto_run_detail(page, dashboard_url)
+        el = page.wait_for_selector(
+            "[data-testid='run-detail-content']", timeout=5000,
+        )
+        assert el is not None
+
+    def test_pid_section_content_testid(
+        self, page: Page, dashboard_url: str,
+    ):
+        """PID section has a data-testid='pid-section-content' wrapper."""
+        _goto_run_detail(page, dashboard_url)
+        el = page.wait_for_selector(
+            "[data-testid='pid-section-content']", timeout=8000,
+        )
+        assert el is not None
+
+    def test_crit_chart_testid(
+        self, page: Page, dashboard_url: str,
+    ):
+        """CRIT chart SVG has data-testid='crit-chart'."""
+        _goto_run_detail(page, dashboard_url)
+        el = page.wait_for_selector(
+            "[data-testid='crit-chart']", timeout=8000,
+        )
+        assert el is not None
+
+    def test_runs_view_content_testid(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Runs view has data-testid='runs-view-content'."""
+        page.goto(f"{dashboard_url}/#runs")
+        el = page.wait_for_selector(
+            "[data-testid='runs-view-content']", timeout=5000,
+        )
+        assert el is not None
+
+    def test_runs_table_content_testid(
+        self, page: Page, dashboard_url: str,
+    ):
+        """Runs table has data-testid='runs-table-content'."""
+        page.goto(f"{dashboard_url}/#runs")
+        el = page.wait_for_selector(
+            "[data-testid='runs-table-content']", timeout=5000,
+        )
+        assert el is not None

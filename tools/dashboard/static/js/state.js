@@ -1,3 +1,9 @@
+/**
+ * state.js
+ *
+ * Centralized mutable application state and state-mutation helpers.
+ */
+
 export const liveState = {
   renderedIds: {},
   clearedIds: {},

@@ -13,6 +13,7 @@
 export function makeAgentLabel(manifest) {
   let m = manifest !== undefined && manifest !== null ? manifest : {};
   let profileMap = (m.agent_profiles && typeof m.agent_profiles === 'object') ? m.agent_profiles : null;
+  /** Resolve an agent role key to its display name from the profile map. */
   return function agentLabel(role) {
     if (profileMap !== null && profileMap[role] !== undefined) {
       let val = profileMap[role];

@@ -131,28 +131,26 @@ let SUMMARY_METRICS = [
  * Returns an HTML string.
  */
 function buildSummaryBox(metricsMap) {
-  let items = [];
-  for (let i = 0; i < SUMMARY_METRICS.length; i++) {
-    let key = SUMMARY_METRICS[i];
-    let m = metricsMap[key];
-    if (m === undefined) continue;
-    let cfg = getMetricConfig(key);
-    let diff = m.mean_diff;
-    if (diff == null) continue;
-    let improved = isPositiveGood(key) ? diff > 0 : diff < 0;
-    if (!improved) continue;
-    items.push({ label: cfg.label, value: fmtFinDelta(diff, cfg.type) });
-  }
+  let items = SUMMARY_METRICS
+    .filter(function (key) {
+      let m = metricsMap[key];
+      if (m === undefined || m.mean_diff == null) return false;
+      return isPositiveGood(key) ? m.mean_diff > 0 : m.mean_diff < 0;
+    })
+    .map(function (key) {
+      let cfg = getMetricConfig(key);
+      return { label: cfg.label, value: fmtFinDelta(metricsMap[key].mean_diff, cfg.type) };
+    });
 
   if (items.length === 0) return '';
 
   let h = '<div class="fin-summary-box" data-testid="financial-summary-box">';
   h += '<div class="fin-summary-title">Key Improvements from Intervention</div>';
   h += '<div class="fin-summary-items">';
-  for (let j = 0; j < items.length; j++) {
+  for (const item of items) {
     h += '<div class="fin-summary-item">';
-    h += '<div class="fin-summary-label">' + esc(items[j].label) + '</div>';
-    h += '<div class="fin-summary-value perf-profit">' + esc(items[j].value) + '</div>';
+    h += '<div class="fin-summary-label">' + esc(item.label) + '</div>';
+    h += '<div class="fin-summary-value perf-profit">' + esc(item.value) + '</div>';
     h += '</div>';
   }
   h += '</div></div>';
@@ -176,8 +174,7 @@ function buildMetricsTable(data, metricsMap) {
 
   let currentGroup = '';
 
-  for (let i = 0; i < METRIC_ORDER.length; i++) {
-    let key = METRIC_ORDER[i];
+  for (const key of METRIC_ORDER) {
     let m = metricsMap[key];
     if (m === undefined) continue;
 
@@ -225,10 +222,10 @@ export function buildFinancialTestsSection(data) {
   let metrics = data.metrics;
   if (!Array.isArray(metrics) || metrics.length === 0) return '';
 
-  let metricsMap = {};
-  for (let i = 0; i < metrics.length; i++) {
-    metricsMap[metrics[i].metric] = metrics[i];
-  }
+  let metricsMap = metrics.reduce(function (map, m) {
+    map[m.metric] = m;
+    return map;
+  }, {});
 
   let sourceLabel = data.source === 'mean_revisions'
     ? 'Mean Agent Revisions' : 'Judge Portfolio';

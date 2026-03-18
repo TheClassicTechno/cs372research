@@ -34,9 +34,9 @@ function renderContent(token, data, impactMap) {
 
   const impacts = impactMap !== undefined && impactMap !== null ? impactMap : {};
   let html = buildAblationOverview(data);
-  for (let i = 0; i < names.length; i++) {
-    html += buildExperimentCard(names[i], data[names[i]], impacts[names[i]]);
-  }
+  names.forEach(function (name) {
+    html += buildExperimentCard(name, data[name], impacts[name]);
+  });
   container.innerHTML = html;
 
   loadPairedTests(token, names);
@@ -51,18 +51,17 @@ function renderContent(token, data, impactMap) {
  */
 function loadPairedTests(token, names) {
   const slots = document.querySelectorAll('[data-testid="paired-tests-slot"]');
-  for (let i = 0; i < names.length; i++) {
-    (function (expName, slot) {
-      fetchPairedTests(expName)
-        .then(function (result) {
-          if (appState.viewToken !== token) return;
-          slot.innerHTML = buildPairedTestsSection(result);
-        })
-        .catch(function () {
-          // Non-critical — leave slot empty if endpoint unavailable
-        });
-    })(names[i], slots[i]);
-  }
+  names.forEach(function (expName, i) {
+    let slot = slots[i];
+    fetchPairedTests(expName)
+      .then(function (result) {
+        if (appState.viewToken !== token) return;
+        slot.innerHTML = buildPairedTestsSection(result);
+      })
+      .catch(function () {
+        // Non-critical — leave slot empty if endpoint unavailable
+      });
+  });
 }
 
 /**
@@ -72,18 +71,17 @@ function loadPairedTests(token, names) {
  */
 function loadFinancialTests(token, names) {
   const slots = document.querySelectorAll('[data-testid="financial-tests-slot"]');
-  for (let i = 0; i < names.length; i++) {
-    (function (expName, slot) {
-      fetchFinancialTests(expName)
-        .then(function (result) {
-          if (appState.viewToken !== token) return;
-          slot.innerHTML = buildFinancialTestsSection(result);
-        })
-        .catch(function () {
-          // Non-critical — leave slot empty if endpoint unavailable
-        });
-    })(names[i], slots[i]);
-  }
+  names.forEach(function (expName, i) {
+    let slot = slots[i];
+    fetchFinancialTests(expName)
+      .then(function (result) {
+        if (appState.viewToken !== token) return;
+        slot.innerHTML = buildFinancialTestsSection(result);
+      })
+      .catch(function () {
+        // Non-critical — leave slot empty if endpoint unavailable
+      });
+  });
 }
 
 /**
@@ -93,18 +91,17 @@ function loadFinancialTests(token, names) {
  */
 function loadFinancialTestsMeanRev(token, names) {
   const slots = document.querySelectorAll('[data-testid="financial-tests-mr-slot"]');
-  for (let i = 0; i < names.length; i++) {
-    (function (expName, slot) {
-      fetchFinancialTestsMeanRev(expName)
-        .then(function (result) {
-          if (appState.viewToken !== token) return;
-          slot.innerHTML = buildFinancialTestsSection(result);
-        })
-        .catch(function () {
-          // Non-critical — leave slot empty if endpoint unavailable
-        });
-    })(names[i], slots[i]);
-  }
+  names.forEach(function (expName, i) {
+    let slot = slots[i];
+    fetchFinancialTestsMeanRev(expName)
+      .then(function (result) {
+        if (appState.viewToken !== token) return;
+        slot.innerHTML = buildFinancialTestsSection(result);
+      })
+      .catch(function () {
+        // Non-critical — leave slot empty if endpoint unavailable
+      });
+  });
 }
 
 /**

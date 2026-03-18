@@ -1,3 +1,9 @@
+/**
+ * app.js
+ *
+ * Application entry point that loads label data, wires up global event delegation, and starts hash routing.
+ */
+
 import { route, getActiveView } from './router.js';
 import { initLabels } from './utils/labels.js';
 

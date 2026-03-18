@@ -1,3 +1,8 @@
+/**
+ * views/runDetail/index.js
+ *
+ * Orchestrates the run detail view, fetching run data and assembling all sub-sections.
+ */
 import { fetchRunDetail } from '../../api/runs.js';
 import { buildCard } from '../../components/card.js';
 import { buildRoundCard } from '../../components/card.js';
@@ -16,6 +21,7 @@ import { fmt } from '../../utils/format.js';
 import { appState, setManifest } from '../../state.js';
 import { T } from '../../utils/labels.js';
 
+/** Fetches run detail data and kicks off rendering once the response arrives. */
 export function renderRunDetailView(experiment, runId, token) {
   let appDiv = document.getElementById('app');
   appDiv.innerHTML = '<a class="back-link" href="#runs">&larr; Back to runs</a>' +
@@ -33,12 +39,14 @@ export function renderRunDetailView(experiment, runId, token) {
     });
 }
 
+/** Builds the full run detail page layout and triggers async section loads. */
 function renderRunDetail(detail, experiment, runId, token) {
   let m = detail.manifest || {};
   setManifest(m);
   let appDiv = document.getElementById('app');
 
   let html = '<a class="back-link" href="#runs">&larr; Back to runs</a>';
+  html += '<div data-testid="run-detail-content">';
 
   // Divergence + PID stats at the very top
   html += '<div id="divergence-section"></div>';
@@ -48,6 +56,7 @@ function renderRunDetail(detail, experiment, runId, token) {
 
   // Container for remaining async sections
   html += '<div id="detail-sections"></div>';
+  html += '</div>';
   appDiv.innerHTML = html;
 
   let sectionsDiv = document.getElementById('detail-sections');
@@ -66,11 +75,9 @@ function renderRunDetail(detail, experiment, runId, token) {
 
   // Rounds (debate replay)
   if (detail.round_summaries && detail.round_summaries.length > 0) {
-    let roundsInner = '';
-    for (let i = 0; i < detail.round_summaries.length; i++) {
-      let rs = detail.round_summaries[i];
-      roundsInner += buildRoundCard(rs, experiment, runId);
-    }
+    let roundsInner = detail.round_summaries.map(function (rs) {
+      return buildRoundCard(rs, experiment, runId);
+    }).join('');
     sectionsHtml += buildCard(cards.rounds_replay, roundsInner, true);
   }
 
@@ -79,9 +86,9 @@ function renderRunDetail(detail, experiment, runId, token) {
     let sorted = Object.entries(detail.final_portfolio).sort(function (a, b) { return b[1] - a[1]; });
     let fpCfg = T('final_portfolio');
     let ptHtml = '<table class="data-table"><tr><th>' + esc(fpCfg.columns[0]) + '</th><th>' + esc(fpCfg.columns[1]) + '</th></tr>';
-    for (let i = 0; i < sorted.length; i++) {
-      ptHtml += '<tr><td>' + esc(sorted[i][0]) + '</td><td>' + fmt(sorted[i][1]) + '</td></tr>';
-    }
+    ptHtml += sorted.map(function (entry) {
+      return '<tr><td>' + esc(entry[0]) + '</td><td>' + fmt(entry[1]) + '</td></tr>';
+    }).join('');
     ptHtml += '</table>';
     sectionsHtml += buildCard(cards.final_portfolio, ptHtml);
   }
@@ -101,6 +108,7 @@ function renderRunDetail(detail, experiment, runId, token) {
   loadFileExplorer(experiment, runId, token);
 }
 
+/** Handles delegated click actions for loading round agents or file content. */
 export function handleAction(action, el) {
   if (action === 'load-agents') {
     const experiment = el.dataset.experiment;

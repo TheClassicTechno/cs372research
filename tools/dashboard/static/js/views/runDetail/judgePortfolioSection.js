@@ -36,21 +36,20 @@ function loadAllocTable(experiment, runId, finalPortfolio, agentLabel, token) {
 
       let th = '<table class="data-table" id="judge-alloc-table">';
       th += '<tr><th></th>';
-      for (let a = 0; a < agentNames.length; a++) {
-        th += '<th>' + esc(agentLabel(agentNames[a]).toUpperCase()) + '</th>';
-      }
+      th += agentNames.map(function (name) {
+        return '<th>' + esc(agentLabel(name).toUpperCase()) + '</th>';
+      }).join('');
       th += '<th>' + esc(T('simple_alloc').columns[1]) + '</th></tr>';
 
-      for (let t = 0; t < tickers.length; t++) {
-        let ticker = tickers[t];
+      tickers.forEach(function (ticker) {
         th += '<tr><td style="font-weight:600;">' + esc(ticker) + '</td>';
-        for (let a = 0; a < agentNames.length; a++) {
-          let w = agents[agentNames[a]] ? agents[agentNames[a]][ticker] : null;
+        for (const name of agentNames) {
+          let w = agents[name] ? agents[name][ticker] : null;
           th += '<td style="font-weight:600;text-align:right;">' + fmtPct(w) + '</td>';
         }
         th += '<td style="font-weight:600;text-align:right;border-left:2px solid #d6c4a1;">' + fmtPct(finalPortfolio[ticker]) + '</td>';
         th += '</tr>';
-      }
+      });
       th += '</table>';
       wrap.innerHTML = th;
     })
@@ -111,12 +110,10 @@ function loadAgentPerf(experiment, runId, agentLabel, token) {
         return;
       }
       let roles = Object.keys(data.agents).sort();
-      let html = '';
-      for (let i = 0; i < roles.length; i++) {
-        let label = agentLabel(roles[i]).toUpperCase();
-        html += '<div>' + buildAgentPerfTable(data.agents[roles[i]], label) + '</div>';
-      }
-      wrap.innerHTML = html;
+      wrap.innerHTML = roles.map(function (role) {
+        let label = agentLabel(role).toUpperCase();
+        return '<div>' + buildAgentPerfTable(data.agents[role], label) + '</div>';
+      }).join('');
     })
     .catch(function () {
       if (appState.viewToken !== token) return;
@@ -132,17 +129,12 @@ function loadAgentPerf(experiment, runId, agentLabel, token) {
 function buildAllRoundsHtml(trajectory, roundPerf, agentLabel) {
   let perfByRound = {};
   if (Array.isArray(roundPerf)) {
-    for (let p = 0; p < roundPerf.length; p++) {
-      perfByRound[roundPerf[p].round] = roundPerf[p];
-    }
+    roundPerf.forEach(function (p) { perfByRound[p.round] = p; });
   }
-  let html = '';
-  for (let i = 0; i < trajectory.length; i++) {
-    let entry = trajectory[i];
+  return trajectory.map(function (entry) {
     let perf = perfByRound[entry.round];
-    html += buildRoundSection(entry, perf !== undefined ? perf : {}, entry.round, agentLabel);
-  }
-  return html;
+    return buildRoundSection(entry, perf !== undefined ? perf : {}, entry.round, agentLabel);
+  }).join('');
 }
 
 /**
@@ -182,8 +174,7 @@ function buildRoundSection(entry, perf, roundNum, agentLabel) {
     { key: 'proposals', label: 'PROPOSALS' },
     { key: 'revisions', label: 'REVISIONS' },
   ];
-  for (let p = 0; p < phases.length; p++) {
-    let phase = phases[p];
+  for (const phase of phases) {
     let agents = entry[phase.key] || {};
     let agentNames = Object.keys(agents).sort();
     if (agentNames.length === 0) continue;
@@ -200,30 +191,27 @@ function buildRoundSection(entry, perf, roundNum, agentLabel) {
   // Intervention retry phases
   let retries = entry.retries || [];
   let retryPerfs = (perf && perf.retries) || [];
-  for (let r = 0; r < retries.length; r++) {
-    let retryAgents = retries[r] || {};
+  h += retries.reduce(function (acc, retryEntry, r) {
+    let retryAgents = retryEntry || {};
     let retryNames = Object.keys(retryAgents).sort();
-    if (retryNames.length === 0) continue;
+    if (retryNames.length === 0) return acc;
 
     let retryNum = r + 1;
     let retryTestId = 'round-' + roundNum + '-retry-' + retryNum;
-    h += '<div class="ov-title" style="margin-top:16px;" data-testid="' + esc(retryTestId) + '-title">';
-    h += 'ROUND ' + roundNum + ' \u2014 RETRY ' + retryNum + ' (INTERVENTION)</div>';
-    h += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
-    h += buildRoundAllocTable(retryAgents, retryNames, agentLabel, retryTestId + '-alloc');
+    acc += '<div class="ov-title" style="margin-top:16px;" data-testid="' + esc(retryTestId) + '-title">';
+    acc += 'ROUND ' + roundNum + ' \u2014 RETRY ' + retryNum + ' (INTERVENTION)</div>';
+    acc += '<div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">';
+    acc += buildRoundAllocTable(retryAgents, retryNames, agentLabel, retryTestId + '-alloc');
     let retryPerf = retryPerfs[r];
     if (retryPerf) {
-      for (let a = 0; a < retryNames.length; a++) {
-        let role = retryNames[a];
-        let agentPerf = retryPerf[role];
-        if (agentPerf) {
-          let label = agentLabel(role).toUpperCase();
-          h += '<div>' + buildAgentPerfTable(agentPerf, label) + '</div>';
-        }
-      }
+      acc += retryNames.filter(function (role) { return !!retryPerf[role]; }).map(function (role) {
+        let label = agentLabel(role).toUpperCase();
+        return '<div>' + buildAgentPerfTable(retryPerf[role], label) + '</div>';
+      }).join('');
     }
-    h += '</div>';
-  }
+    acc += '</div>';
+    return acc;
+  }, '');
   return h;
 }
 
@@ -234,15 +222,10 @@ function buildRoundSection(entry, perf, roundNum, agentLabel) {
 function buildRoundPerfTables(perf, phaseKey, agentNames, agentLabel) {
   let phasePerf = perf[phaseKey];
   if (!phasePerf) return '';
-  let h = '';
-  for (let i = 0; i < agentNames.length; i++) {
-    let role = agentNames[i];
-    let agentPerf = phasePerf[role];
-    if (!agentPerf) continue;
+  return agentNames.filter(function (role) { return !!phasePerf[role]; }).map(function (role) {
     let label = agentLabel(role).toUpperCase();
-    h += '<div>' + buildAgentPerfTable(agentPerf, label) + '</div>';
-  }
-  return h;
+    return '<div>' + buildAgentPerfTable(phasePerf[role], label) + '</div>';
+  }).join('');
 }
 
 /**
@@ -294,9 +277,9 @@ function renderCollapseDiagnostics(collapse, agentLabel) {
   ch += '<div class="collapse-def-term">Dissent</div>';
   ch += '<div class="collapse-def-desc">L\u2081 distance between the agent\u2019s final revision and consensus. How differentiated the agent remains after revision.</div>';
   ch += '</div>';
-  for (let i = 0; i < collapse.length; i++) {
-    ch += buildCollapseTable(collapse[i], agentLabel);
-  }
+  collapse.forEach(function (c) {
+    ch += buildCollapseTable(c, agentLabel);
+  });
   collapseWrap.innerHTML = ch;
 }
 
