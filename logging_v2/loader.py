@@ -1,7 +1,7 @@
 """Event log loading and query utilities.
 
 Provides:
-- ``load_event_log(path)`` — parse events.jsonl into list of dicts
+- ``load_event_log(path)`` — parse events from segments or legacy events.jsonl
 - ``filter_events(...)`` — filter by any combination of fields
 - ``get_pre_intervention_crit(events)`` — extract the CRIT snapshot
   taken BEFORE an intervention fired (the key query that was impossible
@@ -10,6 +10,10 @@ Provides:
 - ``get_decision_boundaries(events)`` — extract all decision boundary events
 - ``get_state_snapshots(events)`` — extract all state snapshot events
 - ``get_intervention_timeline(events)`` — extract intervention event sequence
+
+Supports two layouts:
+  - Segment-based: ``run_dir/events/segment_*.jsonl``
+  - Legacy single-file: ``run_dir/events.jsonl``
 """
 
 from __future__ import annotations
@@ -19,19 +23,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 
-def load_event_log(path: Path | str) -> list[dict[str, Any]]:
-    """Load events.jsonl into a list of dicts, ordered by logical_clock.
-
-    Args:
-        path: Path to events.jsonl file.
-
-    Returns:
-        List of event dicts sorted by logical_clock.
-
-    Raises:
-        FileNotFoundError: If the file doesn't exist.
-        json.JSONDecodeError: If any line is malformed JSON.
-    """
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Load events from a single JSONL file."""
     events: list[dict[str, Any]] = []
     with open(path, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
@@ -42,11 +35,65 @@ def load_event_log(path: Path | str) -> list[dict[str, Any]]:
                 events.append(json.loads(line))
             except json.JSONDecodeError as e:
                 raise json.JSONDecodeError(
-                    f"Malformed JSON on line {line_num}: {e.msg}",
+                    f"Malformed JSON on line {line_num} of {path.name}: {e.msg}",
                     e.doc, e.pos,
                 ) from e
-    events.sort(key=lambda e: e.get("logical_clock", 0))
     return events
+
+
+def load_event_log(path: Path | str) -> list[dict[str, Any]]:
+    """Load events into a list of dicts, ordered by logical_clock.
+
+    ``path`` can be:
+    - A run directory containing ``events/segment_*.jsonl`` (new format)
+    - A run directory containing ``events.jsonl`` (legacy format)
+    - A direct path to an ``events.jsonl`` file (legacy format)
+
+    The loader tries segment-based loading first, then falls back to
+    legacy single-file loading.
+
+    Returns:
+        List of event dicts sorted by logical_clock.
+
+    Raises:
+        FileNotFoundError: If no event files are found.
+        json.JSONDecodeError: If any line is malformed JSON.
+    """
+    path = Path(path)
+
+    # If path points directly to a .jsonl file, load it
+    if path.is_file() and path.suffix == ".jsonl":
+        events = _load_jsonl(path)
+        events.sort(key=lambda e: e.get("logical_clock", 0))
+        return events
+
+    # path is a directory — try segment-based first
+    if path.is_dir():
+        events_dir = path / "events"
+        segments = sorted(events_dir.glob("segment_*.jsonl")) if events_dir.is_dir() else []
+
+        if segments:
+            # Segment-based loading: concatenate all segments in order
+            all_events: list[dict[str, Any]] = []
+            for seg_path in segments:
+                all_events.extend(_load_jsonl(seg_path))
+            all_events.sort(key=lambda e: e.get("logical_clock", 0))
+            return all_events
+
+        # Fall back to legacy events.jsonl in the directory
+        legacy_path = path / "events.jsonl"
+        if legacy_path.exists():
+            events = _load_jsonl(legacy_path)
+            events.sort(key=lambda e: e.get("logical_clock", 0))
+            return events
+
+        raise FileNotFoundError(
+            f"No event files found in {path} "
+            f"(checked events/segment_*.jsonl and events.jsonl)"
+        )
+
+    # path doesn't exist or isn't a file/directory we understand
+    raise FileNotFoundError(f"Event log path not found: {path}")
 
 
 def filter_events(

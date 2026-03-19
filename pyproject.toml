@@ -33,6 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 viewer = ["fastapi>=0.100", "uvicorn>=0.20"]
+s3 = ["boto3>=1.28"]
 
 [tool.pytest.ini_options]
 markers = [
