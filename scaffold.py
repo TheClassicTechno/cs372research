@@ -159,7 +159,7 @@ def main() -> None:
             return state
         """,
 
-        "core/graph_builder.py": """
+        "core/pipeline_compiler.py": """
         from langgraph.graph import StateGraph, START, END
         from core.state import PipelineState
         from core.runtime import run_stage
