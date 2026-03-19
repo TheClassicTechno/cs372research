@@ -349,7 +349,7 @@ def main() -> None:
         description="Inspect logging_v2 event logs",
         prog="python -m logging_v2.inspector",
     )
-    parser.add_argument("events_file", type=Path, help="Path to events.jsonl")
+    parser.add_argument("events_file", type=Path, help="Path to events.jsonl or run directory")
     parser.add_argument("--summary", action="store_true", default=True,
                         help="Print event log summary (default)")
     parser.add_argument("--interventions", action="store_true",

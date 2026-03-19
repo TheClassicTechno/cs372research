@@ -182,6 +182,11 @@ class DebateConfig:
     event_logging: bool = False  # Enable append-only event stream
     event_logging_store_full_text: bool = True  # Store full prompt/response text
 
+    # --- S3 sync (WAL-based upload of event segments) ---
+    s3_sync_enabled: bool = False
+    s3_bucket: str = ""
+    s3_prefix: str = "debate-logs"
+
     @property
     def evaluation_mode(self) -> str:
         """Return 'in_loop' if PID is enabled, 'post_hoc' otherwise."""
@@ -267,4 +272,7 @@ class DebateConfig:
             "intervention_config": self.intervention_config,
             "event_logging": self.event_logging,
             "event_logging_store_full_text": self.event_logging_store_full_text,
+            "s3_sync_enabled": self.s3_sync_enabled,
+            "s3_bucket": self.s3_bucket,
+            "s3_prefix": self.s3_prefix,
         }

@@ -227,17 +227,18 @@ def event_log_run(ablation10_manifest, ablation10_responses, monkeypatch, tmp_pa
     runner = MultiAgentRunner(config)
     state = runner.run_returning_state(observation)
 
-    # Find the events.jsonl file
-    event_files = list(tmp_path.rglob("events.jsonl"))
-    assert event_files, f"No events.jsonl found under {tmp_path}"
-    events_path = event_files[0]
+    # Find the run directory (contains events/ subdir with segment files)
+    segment_dirs = list(tmp_path.rglob("events"))
+    assert segment_dirs, f"No events/ directory found under {tmp_path}"
+    run_dir = segment_dirs[0].parent
 
     from logging_v2.loader import load_event_log
-    events = load_event_log(events_path)
+    events = load_event_log(run_dir)
 
     return {
         "events": events,
-        "events_path": events_path,
+        "run_dir": run_dir,
+        "events_dir": segment_dirs[0],
         "state": state,
         "replay_llm": replay_llm,
         "config": config,
@@ -251,9 +252,11 @@ def event_log_run(ablation10_manifest, ablation10_responses, monkeypatch, tmp_pa
 class TestEventLogCreation:
     """Verify events.jsonl is created and has correct structure."""
 
-    def test_events_file_exists(self, event_log_run):
-        assert event_log_run["events_path"].exists()
-        assert event_log_run["events_path"].stat().st_size > 0
+    def test_events_dir_exists(self, event_log_run):
+        assert event_log_run["events_dir"].exists()
+        segments = list(event_log_run["events_dir"].glob("segment_*.jsonl"))
+        assert segments, "No segment files found"
+        assert segments[0].stat().st_size > 0
 
     def test_first_event_is_run_metadata(self, event_log_run):
         events = event_log_run["events"]
@@ -635,17 +638,17 @@ class TestEventLogValidation:
         assert meta["roles"] == ROLES
 
     def test_event_log_is_valid_jsonl(self, event_log_run):
-        """Every line in events.jsonl must be valid JSON."""
-        path = event_log_run["events_path"]
-        with open(path) as f:
-            for i, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    json.loads(line)
-                except json.JSONDecodeError as e:
-                    pytest.fail(f"Invalid JSON on line {i}: {e}")
+        """Every line in every segment file must be valid JSON."""
+        for seg_path in sorted(event_log_run["events_dir"].glob("segment_*.jsonl")):
+            with open(seg_path) as f:
+                for i, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        json.loads(line)
+                    except json.JSONDecodeError as e:
+                        pytest.fail(f"Invalid JSON in {seg_path.name} line {i}: {e}")
 
 
 class TestEventReplayLLM:
@@ -761,6 +764,6 @@ class TestDisabledEventLogging:
         runner = MultiAgentRunner(config)
         state = runner.run_returning_state(observation)
 
-        # No events.jsonl should be created
-        event_files = list(tmp_path.rglob("events.jsonl"))
-        assert not event_files, f"events.jsonl created despite event_logging=False: {event_files}"
+        # No segment files should be created
+        segment_files = list(tmp_path.rglob("segment_*.jsonl"))
+        assert not segment_files, f"Segment files created despite event_logging=False: {segment_files}"

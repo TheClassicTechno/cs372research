@@ -129,9 +129,14 @@ def perfect_replay_run(fixture_events, fixture_config, fixture_observation, tmp_
         runner = MultiAgentRunner(fixture_config)
         state = runner.run_returning_state(fixture_observation)
 
-    # Load replay-generated events
-    replay_event_files = list(tmp_path.rglob("events.jsonl"))
-    replay_events = load_event_log(replay_event_files[0]) if replay_event_files else []
+    # Load replay-generated events (segment-based or legacy)
+    segment_dirs = list(tmp_path.rglob("events"))
+    if segment_dirs:
+        run_dir = segment_dirs[0].parent
+        replay_events = load_event_log(run_dir)
+    else:
+        replay_event_files = list(tmp_path.rglob("events.jsonl"))
+        replay_events = load_event_log(replay_event_files[0]) if replay_event_files else []
 
     return {
         "state": state,

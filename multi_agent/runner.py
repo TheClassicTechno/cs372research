@@ -560,6 +560,7 @@ class MultiAgentRunner:
 
         # --- Event logger (logging_v2 causal trace system) ---
         self._event_logger = None
+        self._s3_sync_worker = None
 
         # --- Intervention engine (intra-round retry on acute failures) ---
         self._intervention_engine = None
@@ -810,6 +811,22 @@ class MultiAgentRunner:
                 self._crit_config["_event_logger"] = self._event_logger
                 self._crit_config["_call_context"] = "initial"
 
+            # Start S3 sync worker if enabled
+            if self.config.s3_sync_enabled and self.config.s3_bucket:
+                try:
+                    from logging_v2.s3_sync import S3SyncWorker
+                    self._s3_sync_worker = S3SyncWorker(
+                        event_logger=self._event_logger,
+                        bucket=self.config.s3_bucket,
+                        prefix=self.config.s3_prefix,
+                        run_id=_run_id,
+                    )
+                    self._s3_sync_worker.start()
+                except ImportError:
+                    logger.warning("boto3 not installed — S3 sync disabled")
+                except Exception as _e:
+                    logger.warning("S3SyncWorker failed to start: %s", _e)
+
         # Set LLM lifecycle callback for Rich console display
         if self.config.console_display:
             from .terminal_display import _llm_call_start, _llm_call_end, _reset_llm_tracker
@@ -945,6 +962,14 @@ class MultiAgentRunner:
                 self._event_logger.close()
             except Exception:
                 pass
+
+            # S3 sync: final upload + manifest
+            if self._s3_sync_worker is not None:
+                try:
+                    self._s3_sync_worker.stop()
+                    self._s3_sync_worker.finalize()
+                except Exception as _e:
+                    logger.warning("S3 sync finalize failed: %s", _e)
 
         # Stamp intervention history onto state for downstream / test access
         if self._intervention_history:

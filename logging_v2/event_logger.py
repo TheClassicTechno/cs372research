@@ -1,12 +1,23 @@
-"""Append-only, thread-safe event logger for the causal execution trace system.
+"""Append-only, thread-safe event logger with WAL-based segment files.
 
-Writes one JSONL file per debate run:
-    logging_v2/runs/<experiment>/<run_id>/events.jsonl
+Writes segmented JSONL files per debate run:
+    logging_v2/runs/<experiment>/<run_id>/events/segment_000000.jsonl
+    logging_v2/runs/<experiment>/<run_id>/events/segment_000001.jsonl
+    ...
+
+Legacy single-file format (events.jsonl) is still supported by the loader.
 
 Each event is a single JSON line.  The file is opened in append mode —
 no seek, no truncate, no overwrite.  Thread safety is guaranteed by
 a threading.Lock that guards both the logical clock increment and
 the file write as a single atomic operation.
+
+Segment rotation: when the active segment reaches ``segment_max_events``
+events, it is closed and a new segment is opened.  Only CLOSED segments
+(not the active one) are eligible for S3 upload.
+
+Restart safety: ``event_index.txt`` persists the logical clock counter
+so that a restarted logger picks up where it left off.
 
 Usage:
     logger = EventLogger(
@@ -46,6 +57,8 @@ from .events import (
 _REPO_ROOT = Path(__file__).resolve().parents[1]  # cs372research/
 _DEFAULT_BASE_DIR = _REPO_ROOT / "logging_v2" / "runs"
 
+DEFAULT_SEGMENT_MAX_EVENTS = 1000
+
 
 def _get_git_commit() -> Optional[str]:
     """Return the current git commit hash, or None if not in a git repo."""
@@ -63,14 +76,16 @@ def _get_git_commit() -> Optional[str]:
 
 
 class EventLogger:
-    """Append-only causal event logger.
+    """Append-only causal event logger with WAL-based segment files.
 
     Thread-safe.  Each ``log_*`` method:
     1. Acquires ``self._lock``
     2. Increments ``self._logical_clock``
     3. Serializes the event to JSON
-    4. Writes one line to the JSONL file
-    5. Releases the lock
+    4. Writes one line to the active segment JSONL file
+    5. Persists event_index to disk
+    6. Rotates segment if threshold reached
+    7. Releases the lock
 
     The logical clock provides total ordering across all events in this
     debate run, even when LLM calls run in parallel threads.
@@ -84,13 +99,14 @@ class EventLogger:
         *,
         base_dir: Optional[Path] = None,
         store_full_text: bool = True,
+        segment_max_events: int = DEFAULT_SEGMENT_MAX_EVENTS,
     ) -> None:
         self._experiment = experiment
         self._run_id = run_id
         self._debate_id = debate_id
         self._store_full_text = store_full_text
+        self._segment_max_events = segment_max_events
 
-        self._logical_clock: int = 0
         self._lock = threading.Lock()
 
         # Auto-track call_index per (round_num, phase, role) — thread-safe
@@ -105,17 +121,115 @@ class EventLogger:
         # Track causal chain IDs for retry linkage
         self._causal_chains: dict[str, str] = {}
 
-        out_dir = (base_dir or _DEFAULT_BASE_DIR) / experiment / run_id
-        out_dir.mkdir(parents=True, exist_ok=True)
-        self._path = out_dir / "events.jsonl"
-        # Line-buffered append mode — each write is atomic for lines < PIPE_BUF
-        self._file = open(self._path, "a", buffering=1, encoding="utf-8")
+        # --- Directory setup ---
+        self._run_dir = (base_dir or _DEFAULT_BASE_DIR) / experiment / run_id
+        self._run_dir.mkdir(parents=True, exist_ok=True)
+        self._events_dir = self._run_dir / "events"
+        self._events_dir.mkdir(parents=True, exist_ok=True)
+
+        # --- Restore event_index from disk (restart safety) ---
+        self._event_index_path = self._run_dir / "event_index.txt"
+        self._logical_clock = self._load_event_index()
+
+        # --- Segment state ---
+        self._segment_index = self._find_next_segment_index()
+        self._segment_event_count = self._count_events_in_active_segment()
+        self._active_segment_path = self._segment_path(self._segment_index)
+        self._file = open(self._active_segment_path, "a", buffering=1, encoding="utf-8")
         self._closed = False
+
+        # Legacy compatibility: expose path to run_dir
+        self._path = self._run_dir / "events.jsonl"
 
     @property
     def path(self) -> Path:
-        """Path to the events.jsonl file."""
+        """Path to the run directory's legacy events.jsonl location."""
         return self._path
+
+    @property
+    def run_dir(self) -> Path:
+        """Path to the run directory."""
+        return self._run_dir
+
+    @property
+    def events_dir(self) -> Path:
+        """Path to the events/ segment directory."""
+        return self._events_dir
+
+    # ── Segment helpers ─────────────────────────────────────────────
+
+    def _segment_path(self, index: int) -> Path:
+        """Return the path for segment N."""
+        return self._events_dir / f"segment_{index:06d}.jsonl"
+
+    def _find_next_segment_index(self) -> int:
+        """Find the highest existing segment index, or 0 if none exist."""
+        existing = sorted(self._events_dir.glob("segment_*.jsonl"))
+        if not existing:
+            return 0
+        # Parse the index from the last segment filename
+        last = existing[-1].stem  # "segment_000003"
+        return int(last.split("_")[1])
+
+    def _count_events_in_active_segment(self) -> int:
+        """Count lines in the active segment (for restart recovery)."""
+        path = self._segment_path(self._segment_index)
+        if not path.exists():
+            return 0
+        count = 0
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    count += 1
+        return count
+
+    def _rotate_segment(self) -> None:
+        """Close the active segment and open a new one. MUST be called under lock."""
+        self._file.flush()
+        self._file.close()
+        self._segment_index += 1
+        self._segment_event_count = 0
+        self._active_segment_path = self._segment_path(self._segment_index)
+        self._file = open(self._active_segment_path, "a", buffering=1, encoding="utf-8")
+
+    def get_closed_segments(self) -> list[Path]:
+        """Return paths of all CLOSED segments (all except the active one).
+
+        Only closed segments are safe for S3 upload.
+        """
+        result = []
+        for i in range(self._segment_index):
+            p = self._segment_path(i)
+            if p.exists():
+                result.append(p)
+        return result
+
+    def get_all_segments(self) -> list[Path]:
+        """Return paths of all segment files (closed + active), sorted."""
+        return sorted(self._events_dir.glob("segment_*.jsonl"))
+
+    # ── Event index persistence ─────────────────────────────────────
+
+    def _load_event_index(self) -> int:
+        """Load the persisted event index, or 0 if not found."""
+        if self._event_index_path.exists():
+            try:
+                text = self._event_index_path.read_text(encoding="utf-8").strip()
+                return int(text)
+            except (ValueError, OSError):
+                pass
+        return 0
+
+    def _persist_event_index(self) -> None:
+        """Write the current logical clock to event_index.txt. MUST be called under lock."""
+        try:
+            self._event_index_path.write_text(
+                str(self._logical_clock), encoding="utf-8"
+            )
+        except OSError:
+            pass  # Best-effort; don't crash the logger
+
+    # ── Core write path ─────────────────────────────────────────────
 
     def _next_clock(self) -> int:
         """Increment and return the logical clock. MUST be called under lock."""
@@ -129,6 +243,13 @@ class EventLogger:
         """
         line = json.dumps(event_dict, separators=(",", ":"), default=str)
         self._file.write(line + "\n")
+        self._segment_event_count += 1
+        self._persist_event_index()
+
+        # Rotate segment if threshold reached
+        if self._segment_event_count >= self._segment_max_events:
+            self._rotate_segment()
+
         return event_dict["event_id"]
 
     def _get_causal_chain(self, phase: str, role: str) -> str:
@@ -402,7 +523,11 @@ class EventLogger:
     # ── Lifecycle ────────────────────────────────────────────────────
 
     def close(self) -> None:
-        """Flush and close the event log file."""
+        """Flush and close the event log file.
+
+        After close(), the active segment becomes a closed segment
+        (eligible for S3 upload).
+        """
         if not self._closed:
             self._file.flush()
             self._file.close()
