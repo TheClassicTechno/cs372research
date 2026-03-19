@@ -680,7 +680,7 @@ class MultiAgentRunner:
         rendered system prompt, then the user-prompt (phase) template.
         """
         config = state["config"]
-        manifest = build_prompt_manifest(config)
+        manifest = build_prompt_manifest(config, round_context=state.get("round_context"))
 
         snapshot_id = _extract_snapshot_id(
             state.get("enriched_context", ""),
@@ -832,7 +832,7 @@ class MultiAgentRunner:
 
             # Write prompt manifest to structured log (first round only)
             if t == 0 and self._debate_logger:
-                manifest = build_prompt_manifest(state["config"])
+                manifest = build_prompt_manifest(state["config"], round_context=state.get("round_context"))
                 self._debate_logger.write_prompt_manifest(manifest)
 
             # Reset critiques so operator.add (parallel graph) doesn't
@@ -992,7 +992,7 @@ class MultiAgentRunner:
                 from .terminal_display import _reset_llm_tracker
                 _reset_llm_tracker(n_agents)
                 print(f"  Calling {n_agents} agents: {role_names}", flush=True)
-            state["config"]["_current_beta"] = None
+            state["round_context"]["control"]["beta"] = None
             state = self._propose_graph.invoke(state)
 
         display_source = state["revisions"] if state["revisions"] else state["proposals"]
@@ -1058,7 +1058,7 @@ class MultiAgentRunner:
             from .terminal_display import _reset_llm_tracker
             _reset_llm_tracker(n_agents)
             print(f"  Calling {n_agents} agents: {role_names}", flush=True)
-        state["config"]["_current_beta"] = beta
+        state["round_context"]["control"]["beta"] = beta
         state = self._critique_graph.invoke(state)
 
         if self._debate_logger:
@@ -1073,7 +1073,7 @@ class MultiAgentRunner:
             from .terminal_display import _reset_llm_tracker
             _reset_llm_tracker(n_agents)
             print(f"  Calling {n_agents} agents: {role_names}", flush=True)
-        state["config"]["_current_beta"] = beta
+        state["round_context"]["control"]["beta"] = beta
         state = self._revise_graph.invoke(state)
         if use_display:
             render_portfolio_table(state["revisions"], "Revisions")
@@ -1416,23 +1416,26 @@ class MultiAgentRunner:
                 revision_limits=revision_limits,
             )
 
-            # Inject nudge and target roles into state config.
+            # Inject nudge and target roles into round_context.
             # nudge_text may be a str (broadcast) or dict (per-agent).
             nudge = enriched_nudge
+            control = state["round_context"]["control"]
             if action.target_roles:
                 # Per-agent targeting: only targeted roles see the nudge
                 # and only targeted roles re-run the LLM call
-                state["config"]["_intervention_nudge"] = None
-                state["config"]["_intervention_target_roles"] = action.target_roles
+                control["intervention_nudge"] = None
+                control["intervention_target_roles"] = action.target_roles
+                nudges_by_role = {}
                 for role in action.target_roles:
                     if isinstance(nudge, dict):
-                        state["config"][f"_intervention_nudge_{role}"] = nudge.get(role, "")
+                        nudges_by_role[role] = nudge.get(role, "")
                     else:
-                        state["config"][f"_intervention_nudge_{role}"] = nudge
+                        nudges_by_role[role] = nudge
+                control["intervention_nudges_by_role"] = nudges_by_role
             else:
                 # Broadcast: all agents see the same nudge and re-run
-                state["config"]["_intervention_nudge"] = nudge if isinstance(nudge, str) else ""
-                state["config"]["_intervention_target_roles"] = None
+                control["intervention_nudge"] = nudge if isinstance(nudge, str) else ""
+                control["intervention_target_roles"] = None
 
             # Console display
             if use_display:
@@ -1454,7 +1457,7 @@ class MultiAgentRunner:
                 )
 
             # Re-run revise (only targeted agents call the LLM)
-            state["config"]["_current_beta"] = beta
+            state["round_context"]["control"]["beta"] = beta
             state["config"]["_call_context"] = "intervention_retry"
             if self._debate_logger:
                 self._debate_logger._prompt_retry = retry_count + 1
@@ -1464,11 +1467,10 @@ class MultiAgentRunner:
             # Reset call_context after retry
             state["config"]["_call_context"] = "initial"
             # Clear nudges and target roles after retry
-            state["config"]["_intervention_nudge"] = None
-            state["config"]["_intervention_target_roles"] = None
-            if action.target_roles:
-                for role in action.target_roles:
-                    state["config"].pop(f"_intervention_nudge_{role}", None)
+            control = state["round_context"]["control"]
+            control.pop("intervention_nudge", None)
+            control.pop("intervention_target_roles", None)
+            control.pop("intervention_nudges_by_role", None)
 
             if use_display:
                 render_portfolio_table(state["revisions"], "Revisions (retry)")
@@ -1973,6 +1975,7 @@ class MultiAgentRunner:
         return {
             "observation": observation.model_dump(),
             "config": self.config.to_dict(),
+            "round_context": {"control": {}, "audit": {}, "retry": {}},
             "news_digest": "",
             "data_analysis": "",
             "enriched_context": "",

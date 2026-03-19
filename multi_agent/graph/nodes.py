@@ -78,6 +78,7 @@ def _has_agent_profiles(config: dict) -> bool:
 
 def _build_system_prompt_from_profile(
     config: dict, role: str, phase: str, user_prompt: str,
+    *, round_context: dict | None = None,
 ) -> "PromptBuildResult":
     """Build system prompt using new agent profile system."""
     profiles = config["agent_profiles"]
@@ -90,7 +91,7 @@ def _build_system_prompt_from_profile(
         role=role,
         phase=phase,
         profile=profile,
-        beta=resolve_beta(config, phase),
+        beta=resolve_beta(config, phase, round_context=round_context),
         user_prompt=user_prompt,
     )
 
@@ -379,6 +380,7 @@ def propose_node(state: DebateState) -> dict:
         return {}
 
     config = state["config"]
+    rc = state.get("round_context")
     context = state["enriched_context"]
     obs = state["observation"]
     roles = config.get("roles", ["macro", "value", "risk"])
@@ -411,13 +413,13 @@ def propose_node(state: DebateState) -> dict:
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "propose", user_prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "propose", user_prompt, round_context=rc)
         else:
             system_blocks = profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="propose",
-                beta=resolve_beta(config, "propose"),
+                beta=resolve_beta(config, "propose", round_context=rc),
                 user_prompt=user_prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -481,6 +483,7 @@ def propose_node(state: DebateState) -> dict:
 def critique_node(state: DebateState) -> dict:
     """All role agents critique each other's proposals (or prior revisions)."""
     config = state["config"]
+    rc = state.get("round_context")
     if config.get("propose_only"):
         return {}
     context = state["enriched_context"]
@@ -531,13 +534,13 @@ def critique_node(state: DebateState) -> dict:
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "critique", prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "critique", prompt, round_context=rc)
         else:
             system_blocks = profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="critique",
-                beta=resolve_beta(config, "critique"),
+                beta=resolve_beta(config, "critique", round_context=rc),
                 user_prompt=prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -596,6 +599,7 @@ def critique_node(state: DebateState) -> dict:
 def revise_node(state: DebateState) -> dict:
     """All role agents revise their proposals based on critiques received."""
     config = state["config"]
+    rc = state.get("round_context")
     if config.get("propose_only"):
         return {}
     context = state["enriched_context"]
@@ -609,7 +613,11 @@ def revise_node(state: DebateState) -> dict:
     revisions = []
     turns = []
 
-    target_roles = config.get("_intervention_target_roles")
+    _rc_control = (rc or {}).get("control", {})
+    if "intervention_target_roles" in _rc_control:
+        target_roles = _rc_control["intervention_target_roles"]
+    else:
+        target_roles = config.get("_intervention_target_roles")
 
     for i, p in enumerate(source):
         role = p["role"]
@@ -663,12 +671,18 @@ def revise_node(state: DebateState) -> dict:
             config.get("sector_config"), role,
         )
         overrides = _get_prompt_file_overrides(config, role, "revise")
-        # Per-role nudge takes priority over broadcast nudge
-        _nudge = (
-            config.get(f"_intervention_nudge_{role}")
-            or config.get("_intervention_nudge")
-            or ""
-        )
+        # Per-role nudge: round_context preferred, config fallback
+        _rc_nudges = _rc_control.get("intervention_nudges_by_role", {})
+        if role in _rc_nudges:
+            _nudge = _rc_nudges[role]
+        elif "intervention_nudge" in _rc_control:
+            _nudge = _rc_control["intervention_nudge"] or ""
+        else:
+            _nudge = (
+                config.get(f"_intervention_nudge_{role}")
+                or config.get("_intervention_nudge")
+                or ""
+            )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             prompt_file_overrides=overrides,
@@ -681,13 +695,13 @@ def revise_node(state: DebateState) -> dict:
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "revise", prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "revise", prompt, round_context=rc)
         else:
             system_blocks = profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="revise",
-                beta=resolve_beta(config, "revise"),
+                beta=resolve_beta(config, "revise", round_context=rc),
                 user_prompt=prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -791,6 +805,7 @@ def make_propose_node(role: str):
             return {}
 
         config = state["config"]
+        rc = state.get("round_context")
         context = state["enriched_context"]
         obs = state["observation"]
         roles = config.get("roles", ["macro", "value", "risk"])
@@ -820,13 +835,13 @@ def make_propose_node(role: str):
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "propose", user_prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "propose", user_prompt, round_context=rc)
         else:
             system_blocks = _profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="propose",
-                beta=resolve_beta(config, "propose"),
+                beta=resolve_beta(config, "propose", round_context=rc),
                 user_prompt=user_prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -901,6 +916,7 @@ def make_critique_node(role: str):
 
     def _critique(state: ParallelRoundState) -> dict:
         config = state["config"]
+        rc = state.get("round_context")
         if config.get("propose_only"):
             return {}
         context = state["enriched_context"]
@@ -962,13 +978,13 @@ def make_critique_node(role: str):
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "critique", prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "critique", prompt, round_context=rc)
         else:
             system_blocks = _profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="critique",
-                beta=resolve_beta(config, "critique"),
+                beta=resolve_beta(config, "critique", round_context=rc),
                 user_prompt=prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -1040,11 +1056,16 @@ def make_revise_node(role: str):
 
     def _revise(state: ParallelRoundState) -> dict:
         config = state["config"]
+        rc = state.get("round_context")
+        _rc_control = (rc or {}).get("control", {})
         if config.get("propose_only"):
             return {}
 
         # --- Selective retry: skip LLM call for non-targeted agents ---
-        target_roles = config.get("_intervention_target_roles")
+        if "intervention_target_roles" in _rc_control:
+            target_roles = _rc_control["intervention_target_roles"]
+        else:
+            target_roles = config.get("_intervention_target_roles")
         if target_roles and role not in target_roles:
             # Carry forward existing revision unchanged (no LLM call)
             raw_source = state.get("revisions") if state.get("revisions") else state["proposals"]
@@ -1120,12 +1141,18 @@ def make_revise_node(role: str):
             config.get("sector_config"), role,
         )
         overrides = _get_prompt_file_overrides(config, role, "revise")
-        # Per-role nudge takes priority over broadcast nudge
-        _nudge = (
-            config.get(f"_intervention_nudge_{role}")
-            or config.get("_intervention_nudge")
-            or ""
-        )
+        # Per-role nudge: round_context preferred, config fallback
+        _rc_nudges = _rc_control.get("intervention_nudges_by_role", {})
+        if role in _rc_nudges:
+            _nudge = _rc_nudges[role]
+        elif "intervention_nudge" in _rc_control:
+            _nudge = _rc_control["intervention_nudge"] or ""
+        else:
+            _nudge = (
+                config.get(f"_intervention_nudge_{role}")
+                or config.get("_intervention_nudge")
+                or ""
+            )
         prompt = build_revision_prompt(
             role, context, my_proposal, critiques_received,
             prompt_file_overrides=overrides,
@@ -1138,13 +1165,13 @@ def make_revise_node(role: str):
         )
 
         if use_profiles:
-            build_result = _build_system_prompt_from_profile(config, role, "revise", prompt)
+            build_result = _build_system_prompt_from_profile(config, role, "revise", prompt, round_context=rc)
         else:
             system_blocks = _profile.get("system_blocks")
             registry = get_registry(config)
             build_result = registry.build(
                 role=role, phase="revise",
-                beta=resolve_beta(config, "revise"),
+                beta=resolve_beta(config, "revise", round_context=rc),
                 user_prompt=prompt,
                 block_order=system_blocks,
                 prompt_file_overrides=overrides,
@@ -1239,6 +1266,7 @@ def should_continue(state: DebateState) -> str:
 def judge_node(state: DebateState) -> dict:
     """Judge synthesizes the debate into a single final trading decision."""
     config = state["config"]
+    rc = state.get("round_context")
     judge_type = config.get("judge_type", "llm")
 
     if not config.get("console_display"):
@@ -1326,13 +1354,13 @@ def judge_node(state: DebateState) -> dict:
     )
 
     if use_profiles:
-        build_result = _build_system_prompt_from_profile(config, "judge", "judge", prompt)
+        build_result = _build_system_prompt_from_profile(config, "judge", "judge", prompt, round_context=rc)
     else:
         system_blocks = profile.get("system_blocks")
         registry = get_registry(config)
         build_result = registry.build(
             role="judge", phase="judge",
-            beta=resolve_beta(config, "judge"),
+            beta=resolve_beta(config, "judge", round_context=rc),
             user_prompt=prompt,
             block_order=system_blocks,
             prompt_file_overrides=overrides,

@@ -13,6 +13,9 @@ class DebateState(TypedDict):
     observation: dict
     config: dict
 
+    # --- Ephemeral per-round context (written by runner, read by nodes) ---
+    round_context: dict  # {"control": {}, "audit": {}, "retry": {}}
+
     # --- Pipeline outputs (set by pipeline nodes) ---
     news_digest: str
     data_analysis: str
@@ -49,6 +52,9 @@ class ParallelRoundState(TypedDict):
     # --- Inputs (set once at invocation) ---
     observation: dict
     config: dict
+
+    # --- Ephemeral per-round context (written by runner, read by nodes) ---
+    round_context: dict  # {"control": {}, "audit": {}, "retry": {}}
 
     # --- Pipeline outputs (set by pipeline nodes) ---
     news_digest: str

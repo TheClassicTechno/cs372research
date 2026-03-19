@@ -147,21 +147,27 @@ def beta_to_bucket(beta: float) -> str:
     return "adversarial"
 
 
-def resolve_beta(config: dict, phase: str) -> float | None:
+def resolve_beta(config: dict, phase: str, *, round_context: dict | None = None) -> float | None:
     """Get PID beta for tone selection.
 
-    For critique/revise: returns ``_current_beta`` set by the PID runner.
+    For critique/revise: returns beta from ``round_context["control"]``
+    (preferred) or falls back to ``config["_current_beta"]`` (legacy).
     For propose/judge: always returns ``None`` (no tone injection).
 
     Args:
         config: The LangGraph state config dict (state["config"]).
         phase: Debate phase — "propose", "critique", "revise", or "judge".
+        round_context: Optional ephemeral round context dict from state.
 
     Returns:
         Beta value in [0, 1] for critique/revise, or None for propose/judge.
     """
     if phase not in ("critique", "revise"):
         return None
+    if round_context:
+        control = round_context.get("control", {})
+        if "beta" in control:
+            return control["beta"]
     return config.get("_current_beta")
 
 
@@ -186,7 +192,7 @@ _PHASE_TEMPLATE_OVERRIDE_KEYS = {
 }
 
 
-def build_prompt_manifest(config: dict) -> dict:
+def build_prompt_manifest(config: dict, *, round_context: dict | None = None) -> dict:
     """Return prompt file names for all phases, without loading content.
 
     Mirrors the file-selection logic in ``PromptRegistry.build()`` and the
@@ -195,6 +201,7 @@ def build_prompt_manifest(config: dict) -> dict:
 
     Args:
         config: The LangGraph state config dict (state["config"]).
+        round_context: Optional ephemeral round context dict from state.
 
     Returns:
         Dict with keys: role_files, tone, beta, beta_bucket, phase_templates.
@@ -220,7 +227,7 @@ def build_prompt_manifest(config: dict) -> dict:
     manifest["role_files"] = role_files
 
     # --- Tone files (critique/revise only) ---
-    beta = resolve_beta(config, "critique")
+    beta = resolve_beta(config, "critique", round_context=round_context)
     if beta is not None:
         bucket = beta_to_bucket(beta)
         manifest["beta"] = beta
