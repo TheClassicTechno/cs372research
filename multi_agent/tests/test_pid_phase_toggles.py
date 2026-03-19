@@ -1,9 +1,9 @@
 """Tests for once-per-round PID beta routing.
 
 Verifies that _run_round_with_pid() correctly routes β:
-    - Propose: _current_beta=None (no tone)
-    - Critique: _current_beta=β
-    - Revise: _current_beta=β
+    - Propose: round_context["control"]["beta"]=None (no tone)
+    - Critique: round_context["control"]["beta"]=β
+    - Revise: round_context["control"]["beta"]=β
 
 β stays constant across all three phases within a round. CRIT + PID
 update happens once after revise, providing β for the next round.
@@ -58,26 +58,43 @@ def _mock_decisions():
     ]
 
 
+def _make_state(**overrides):
+    """Build a minimal state dict with round_context included."""
+    base = {
+        "config": {},
+        "round_context": {"control": {}, "audit": {}, "retry": {}},
+        "proposals": [],
+        "revisions": [],
+    }
+    base.update(overrides)
+    return base
+
+
+def _read_beta(state):
+    """Read beta from round_context (new path)."""
+    return state.get("round_context", {}).get("control", {}).get("beta")
+
+
 class TestBetaRouting:
-    """Verify that each phase gets the correct _current_beta value."""
+    """Verify that each phase gets the correct round_context beta value."""
 
     def test_propose_has_no_beta(self):
-        """Propose always has _current_beta=None (no tone injection)."""
+        """Propose always has beta=None (no tone injection)."""
         runner = _make_runner(initial_beta=0.7)
 
         recorded = {}
 
         def mock_propose_invoke(state):
-            recorded["propose_beta"] = state["config"].get("_current_beta")
+            recorded["propose_beta"] = _read_beta(state)
             state["proposals"] = _mock_decisions()
             return state
 
         def mock_critique_invoke(state):
-            recorded["critique_beta"] = state["config"].get("_current_beta")
+            recorded["critique_beta"] = _read_beta(state)
             return state
 
         def mock_revise_invoke(state):
-            recorded["revise_beta"] = state["config"].get("_current_beta")
+            recorded["revise_beta"] = _read_beta(state)
             state["revisions"] = _mock_decisions()
             return state
 
@@ -88,7 +105,7 @@ class TestBetaRouting:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = mock_revise_invoke
 
-        state = {"config": {}, "proposals": [], "revisions": []}
+        state = _make_state()
         runner._run_round_with_pid(state, round_num=1)
 
         # Propose uses no tone
@@ -106,7 +123,7 @@ class TestBetaRouting:
 
         def capture(phase):
             def fn(state):
-                recorded[f"{phase}_beta"] = state["config"].get("_current_beta")
+                recorded[f"{phase}_beta"] = _read_beta(state)
                 if phase == "propose":
                     state["proposals"] = _mock_decisions()
                 elif phase == "revise":
@@ -121,7 +138,7 @@ class TestBetaRouting:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = capture("revise")
 
-        state = {"config": {}, "proposals": [], "revisions": []}
+        state = _make_state()
         runner._run_round_with_pid(state, round_num=1)
 
         # Critique and revise should get the same beta
@@ -142,7 +159,7 @@ class TestBetaValuePropagation:
 
         def capture(phase):
             def fn(state):
-                recorded[f"{phase}_beta"] = state["config"].get("_current_beta")
+                recorded[f"{phase}_beta"] = _read_beta(state)
                 if phase == "revise":
                     state["revisions"] = _mock_decisions()
                 return state
@@ -156,7 +173,7 @@ class TestBetaValuePropagation:
         runner._revise_graph.invoke = capture("revise")
 
         # Round 2 expects prior revisions to exist
-        state = {"config": {}, "proposals": _mock_decisions(), "revisions": _mock_decisions()}
+        state = _make_state(proposals=_mock_decisions(), revisions=_mock_decisions())
         runner._run_round_with_pid(state, round_num=2)
 
         # Propose is skipped in round 2+ (uses prior revisions), so no
@@ -176,7 +193,7 @@ class TestBetaValuePropagation:
 
             def capture(phase):
                 def fn(state):
-                    recorded[f"{phase}_beta"] = state["config"].get("_current_beta")
+                    recorded[f"{phase}_beta"] = _read_beta(state)
                     if phase == "propose":
                         state["proposals"] = _mock_decisions()
                     elif phase == "revise":
@@ -191,7 +208,7 @@ class TestBetaValuePropagation:
             runner._revise_graph = MagicMock()
             runner._revise_graph.invoke = capture("revise")
 
-            state = {"config": {}, "proposals": [], "revisions": []}
+            state = _make_state()
             runner._run_round_with_pid(state, round_num=1)
 
             assert recorded["critique_beta"] == pytest.approx(beta_val)
@@ -199,16 +216,16 @@ class TestBetaValuePropagation:
 
 
 class TestToneBucketInteraction:
-    """Verify tone bucket mapping gets correct _current_beta."""
+    """Verify tone bucket mapping gets correct round_context beta."""
 
     def test_propose_never_gets_tone(self):
-        """Propose never gets _current_beta for tone."""
+        """Propose never gets beta for tone."""
         runner = _make_runner(initial_beta=0.9)
 
         recorded = {}
 
         def mock_propose(state):
-            recorded["propose_beta"] = state["config"].get("_current_beta")
+            recorded["propose_beta"] = _read_beta(state)
             state["proposals"] = _mock_decisions()
             return state
 
@@ -223,21 +240,21 @@ class TestToneBucketInteraction:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = mock_revise
 
-        state = {"config": {}, "proposals": [], "revisions": []}
+        state = _make_state()
         runner._run_round_with_pid(state, round_num=1)
 
         # Propose NEVER gets tone beta
         assert recorded["propose_beta"] is None
 
     def test_critique_and_revise_get_tone(self):
-        """Critique and revise get _current_beta for tone injection."""
+        """Critique and revise get beta for tone injection."""
         runner = _make_runner(initial_beta=0.9)
 
         recorded = {}
 
         def capture(phase):
             def fn(state):
-                recorded[f"{phase}_beta"] = state["config"].get("_current_beta")
+                recorded[f"{phase}_beta"] = _read_beta(state)
                 if phase == "propose":
                     state["proposals"] = _mock_decisions()
                 elif phase == "revise":
@@ -252,7 +269,7 @@ class TestToneBucketInteraction:
         runner._revise_graph = MagicMock()
         runner._revise_graph.invoke = capture("revise")
 
-        state = {"config": {}, "proposals": [], "revisions": []}
+        state = _make_state()
         runner._run_round_with_pid(state, round_num=1)
 
         assert recorded["critique_beta"] == pytest.approx(0.9)
