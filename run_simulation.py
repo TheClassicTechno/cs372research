@@ -202,6 +202,12 @@ def _parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="Path to a user-provided memo file. Skips memo generation entirely.",
     )
+    parser.add_argument(
+        "--event-log",
+        action="store_true",
+        help="Enable event-sourced WAL logging (logging_v2). "
+        "Writes append-only events + LLM artifacts to logging_v2/runs/.",
+    )
     return parser.parse_args()
 
 
@@ -573,6 +579,16 @@ async def _main() -> None:
         config.debate_setup.log_tokens = True
         logger.info("Per-request token logging enabled")
 
+    # --event-log: enable event-sourced WAL + artifact logging.
+    if args.event_log:
+        config.debate_setup.event_logging = True
+        if not config.debate_setup.experiment_name:
+            config.debate_setup.experiment_name = Path(args.agents).stem
+        logger.info(
+            "Event logging enabled (experiment=%s)",
+            config.debate_setup.experiment_name,
+        )
+
     # --- Build effective command string with all resolved args ---
     cmd_parts = ["python run_simulation.py"]
     cmd_parts.append(f"--agents {args.agents}")
@@ -594,6 +610,8 @@ async def _main() -> None:
         cmd_parts.append("--log-tokens")
     if args.custom_memo:
         cmd_parts.append(f"--custom-memo {args.custom_memo}")
+    if args.event_log:
+        cmd_parts.append("--event-log")
     config.debate_setup.run_command = " ".join(cmd_parts)
 
     config_paths = [str(Path(args.agents).resolve())]

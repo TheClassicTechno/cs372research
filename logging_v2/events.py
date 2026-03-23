@@ -4,7 +4,8 @@ All events share a common envelope (EventEnvelope) and specialize by
 event_type.  Each event is a frozen dataclass with a ``to_dict()`` method
 that produces a JSON-serializable dict.
 
-Schema version: "v1" — bump when adding/removing fields.
+Schema version: "v2" — v2 adds workflow-agnostic context, artifact storage,
+and the make_event() factory for producing compact WAL events.
 """
 
 from __future__ import annotations
@@ -14,10 +15,27 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 
-SCHEMA_VERSION = "v1"
+SCHEMA_VERSION = "v2"
+
+# ── Valid Event Types (v2) ───────────────────────────────────────────
+VALID_EVENT_TYPES = frozenset({
+    # Core v2 types
+    "llm_call_start",
+    "llm_call_end",
+    "artifact_created",
+    "evaluation_computed",
+    "control_flow",
+    "state_snapshot",
+    "error",
+    # Legacy types (backward compat)
+    "run_metadata",
+    "llm_call",
+    "decision_boundary",
+})
 
 # Monotonic logical clock shared across the process.  Guarded externally
 # by EventLogger._lock — never incremented without holding the lock.
@@ -88,6 +106,58 @@ def _make_envelope(
         "thread_id": str(threading.current_thread().ident),
         "parent_event_id": parent_event_id,
         "causal_chain_id": causal_chain_id or str(uuid.uuid4()),
+    }
+
+
+# ── v2 Event Factory ─────────────────────────────────────────────────
+
+
+def make_event(
+    event_type: str,
+    run_id: str,
+    logical_clock: int,
+    payload: dict[str, Any],
+    *,
+    parent_event_id: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Create an event dict in the v2 schema.
+
+    This is the canonical way to produce events for the WAL going forward.
+    Events are small, atomic, and workflow-agnostic.
+
+    Args:
+        event_type: One of VALID_EVENT_TYPES.
+        run_id: The run identifier.
+        logical_clock: Monotonically increasing clock value.
+        payload: Event-specific data (must be small — no full prompts).
+        parent_event_id: Optional link to a parent event.
+        context: Optional workflow context dict with keys:
+            workflow, stage, agent_id.
+
+    Returns:
+        A JSON-serializable event dict.
+    """
+    if event_type not in VALID_EVENT_TYPES:
+        raise ValueError(
+            f"Invalid event_type {event_type!r}. "
+            f"Valid types: {sorted(VALID_EVENT_TYPES)}"
+        )
+
+    ctx = context or {}
+    return {
+        "event_id": _new_event_id(),
+        "parent_event_id": parent_event_id,
+        "run_id": run_id,
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "logical_clock": logical_clock,
+        "context": {
+            "workflow": ctx.get("workflow"),
+            "stage": ctx.get("stage"),
+            "agent_id": ctx.get("agent_id"),
+        },
+        "payload": payload,
     }
 
 

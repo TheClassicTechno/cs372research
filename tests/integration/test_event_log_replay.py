@@ -264,8 +264,8 @@ class TestEventLogCreation:
 
     def test_all_events_have_required_envelope_fields(self, event_log_run):
         required = {
-            "event_id", "event_type", "schema_version",
-            "debate_id", "logical_clock", "wall_time_ns", "thread_id",
+            "event_id", "event_type", "run_id",
+            "logical_clock", "timestamp", "parent_event_id",
         }
         for evt in event_log_run["events"]:
             missing = required - set(evt.keys())
@@ -282,7 +282,7 @@ class TestEventLogCreation:
     def test_schema_version_consistent(self, event_log_run):
         versions = {e.get("schema_version") for e in event_log_run["events"]}
         assert len(versions) == 1
-        assert "v1" in versions
+        assert "v2" in versions
 
     def test_debate_id_consistent(self, event_log_run):
         debate_ids = {e.get("debate_id") for e in event_log_run["events"]}

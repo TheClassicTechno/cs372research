@@ -19,6 +19,7 @@ Usage:
 from .event_logger import EventLogger
 from .events import (
     SCHEMA_VERSION,
+    VALID_EVENT_TYPES,
     DecisionBoundaryEvent,
     ErrorEvent,
     LLMCallEvent,
@@ -26,6 +27,7 @@ from .events import (
     StateSnapshotEvent,
     compute_allocation_diff,
     compute_crit_diff,
+    make_event,
     normalize_crit_scores,
 )
 from .replay import EventReplayLLM
@@ -36,6 +38,8 @@ __all__ = [
     "EventReplayLLM",
     "StrictReplayLLM",
     "SCHEMA_VERSION",
+    "VALID_EVENT_TYPES",
+    "make_event",
     "RunMetadataEvent",
     "LLMCallEvent",
     "DecisionBoundaryEvent",

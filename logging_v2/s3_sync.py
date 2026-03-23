@@ -88,6 +88,10 @@ class S3SyncWorker:
         """Build the full S3 key for a segment file."""
         return f"{self._prefix}/{self._username}/{self._run_id}/events/{segment_name}"
 
+    def _s3_artifact_key(self, relative_path: str) -> str:
+        """Build the full S3 key for an artifact file."""
+        return f"{self._prefix}/{self._username}/{self._run_id}/{relative_path}"
+
     def _manifest_key(self) -> str:
         """Build the S3 key for the run manifest."""
         return f"{self._prefix}/{self._username}/{self._run_id}/manifest.json"
@@ -228,12 +232,28 @@ class S3SyncWorker:
                 self._save_uploaded()
                 logger.info("Uploaded segment %s → s3://%s/%s", seg_name, self._bucket, key)
 
+        # Upload artifact files
+        artifacts_dir = self._event_logger.run_dir / "artifacts" / "llm_calls"
+        artifact_files: list[str] = []
+        if artifacts_dir.is_dir():
+            for artifact_path in sorted(artifacts_dir.glob("*.json")):
+                relative = f"artifacts/llm_calls/{artifact_path.name}"
+                key = self._s3_artifact_key(relative)
+                if not self._s3_object_exists(key):
+                    if self._upload_file(artifact_path, key):
+                        logger.info(
+                            "Uploaded artifact %s → s3://%s/%s",
+                            artifact_path.name, self._bucket, key,
+                        )
+                artifact_files.append(relative)
+
         # Upload manifest with status=complete
         manifest = {
             "run_id": self._run_id,
             "username": self._username,
             "status": "complete",
             "segments": sorted(self._uploaded),
+            "artifacts": artifact_files,
             "total_events": self._event_logger._logical_clock,
         }
         manifest_path = self._event_logger.run_dir / "manifest.json"

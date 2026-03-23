@@ -5,6 +5,7 @@ Handles LLM invocation with retries, prompt logging, and JSON parsing.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -225,6 +226,27 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
     max_retries = 6
     stagger_ms = 0 if config.get("no_rate_limit", False) else config.get("llm_stagger_ms", _DEFAULT_STAGGER_MS)
     sem = _get_semaphore(config.get("max_concurrent_llm", 0))
+    # --- logging_v2: emit llm_call_start before the call ---
+    _event_logger = config.get("_event_logger")
+    _start_event_id: str | None = None
+    if _event_logger is not None:
+        try:
+            _start_event_id = _event_logger.emit(
+                "llm_call_start",
+                {
+                    "model": model_name,
+                    "system_prompt_hash": hashlib.sha256(system_prompt.encode()).hexdigest(),
+                    "user_prompt_hash": hashlib.sha256(user_prompt.encode()).hexdigest(),
+                },
+                context={
+                    "workflow": config.get("experiment_name"),
+                    "stage": phase,
+                    "agent_id": role,
+                },
+            )
+        except Exception:
+            pass
+
     for attempt in range(max_retries):
         try:
             _t0 = time.monotonic()
@@ -265,6 +287,32 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
                 if sem is not None:
                     sem.release()
             _latency_ms = (time.monotonic() - _t0) * 1000.0
+            # Extract token usage from response (all providers)
+            _token_usage: dict | None = None
+            if provider == "anthropic":
+                _tu = response.response_metadata.get("token_usage", {})
+                if _tu:
+                    _token_usage = {
+                        "prompt_tokens": _tu.get("prompt_tokens", 0),
+                        "completion_tokens": _tu.get("completion_tokens", 0),
+                        "total_tokens": _tu.get("total_tokens", 0),
+                    }
+            elif provider == "google":
+                _tu = getattr(response, "usage_metadata", None)
+                if _tu and hasattr(_tu, "prompt_token_count"):
+                    _token_usage = {
+                        "prompt_tokens": _tu.prompt_token_count,
+                        "completion_tokens": _tu.candidates_token_count,
+                        "total_tokens": _tu.total_token_count,
+                    }
+            else:
+                _tu = response.usage
+                if _tu:
+                    _token_usage = {
+                        "prompt_tokens": _tu.input_tokens,
+                        "completion_tokens": _tu.output_tokens,
+                        "total_tokens": _tu.total_tokens,
+                    }
             # Log token usage if enabled
             if config.get("log_tokens"):
                 if provider == "anthropic":
@@ -304,7 +352,6 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
             log_prompt(system=system_prompt, user=user_prompt, model=model_name, response=result,
                        role=role or "", phase=phase or "", round_num=round_num)
             # --- logging_v2: event logger hook ---
-            _event_logger = config.get("_event_logger")
             if _event_logger is not None:
                 try:
                     _event_logger.log_llm_call(
@@ -315,12 +362,13 @@ def _call_llm(config: dict, system_prompt: str, user_prompt: str, role: str | No
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         response=result,
-                        raw_response=result,
                         model_name=model_name,
                         provider=provider,
                         temperature=temperature,
                         latency_ms=_latency_ms,
                         round_num=round_num,
+                        token_usage=_token_usage,
+                        parent_event_id=_start_event_id,
                     )
                 except Exception as _evt_err:
                     logger.warning("logging_v2 event log failed: %s", _evt_err)

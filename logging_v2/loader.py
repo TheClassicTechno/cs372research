@@ -23,6 +23,28 @@ from pathlib import Path
 from typing import Any, Optional
 
 
+def _flatten_v2(event: dict[str, Any]) -> dict[str, Any]:
+    """Flatten a v2 event for backward-compatible field access.
+
+    Merges ``context`` and ``payload`` into the top level so that
+    downstream code can access ``evt["phase"]``, ``evt["allocations"]``,
+    etc. without knowing about the v2 envelope structure.
+
+    v1 events (no ``context``/``payload``) pass through unchanged.
+    """
+    if "context" not in event or "payload" not in event:
+        return event
+    flat = {k: v for k, v in event.items() if k not in ("context", "payload")}
+    ctx = event.get("context") or {}
+    for k, v in ctx.items():
+        if v is not None:
+            flat[k] = v
+    payload = event.get("payload") or {}
+    for k, v in payload.items():
+        flat[k] = v
+    return flat
+
+
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     """Load events from a single JSONL file."""
     events: list[dict[str, Any]] = []
@@ -61,11 +83,13 @@ def load_event_log(path: Path | str) -> list[dict[str, Any]]:
     """
     path = Path(path)
 
+    def _sort_and_flatten(evts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        evts.sort(key=lambda e: e.get("logical_clock", 0))
+        return [_flatten_v2(e) for e in evts]
+
     # If path points directly to a .jsonl file, load it
     if path.is_file() and path.suffix == ".jsonl":
-        events = _load_jsonl(path)
-        events.sort(key=lambda e: e.get("logical_clock", 0))
-        return events
+        return _sort_and_flatten(_load_jsonl(path))
 
     # path is a directory — try segment-based first
     if path.is_dir():
@@ -77,15 +101,12 @@ def load_event_log(path: Path | str) -> list[dict[str, Any]]:
             all_events: list[dict[str, Any]] = []
             for seg_path in segments:
                 all_events.extend(_load_jsonl(seg_path))
-            all_events.sort(key=lambda e: e.get("logical_clock", 0))
-            return all_events
+            return _sort_and_flatten(all_events)
 
         # Fall back to legacy events.jsonl in the directory
         legacy_path = path / "events.jsonl"
         if legacy_path.exists():
-            events = _load_jsonl(legacy_path)
-            events.sort(key=lambda e: e.get("logical_clock", 0))
-            return events
+            return _sort_and_flatten(_load_jsonl(legacy_path))
 
         raise FileNotFoundError(
             f"No event files found in {path} "

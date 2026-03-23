@@ -32,8 +32,13 @@ Usage:
 from __future__ import annotations
 
 import hashlib
+import json
+import logging
 import threading
+from pathlib import Path
 from typing import Any, Optional
+
+_logger = logging.getLogger(__name__)
 
 
 # ── Replay key ────────────────────────────────────────────────────────
@@ -108,7 +113,9 @@ class StrictReplayLLM:
         events: list[dict[str, Any]],
         *,
         strict: bool = True,
+        run_dir: Optional[Path] = None,
     ) -> None:
+        self._run_dir = Path(run_dir) if run_dir else None
         # Index llm_call events by unique 4-tuple key
         self._events_by_key: dict[ReplayKey, dict[str, Any]] = {}
         for evt in events:
@@ -298,6 +305,12 @@ class StrictReplayLLM:
         # 7. Record call and return stored response
         response = expected.get("response", "")
 
+        # If response is empty but artifact_path exists, load from artifact
+        if not response and expected.get("artifact_path") and self._run_dir:
+            response = self._load_response_from_artifact(
+                self._run_dir / expected["artifact_path"]
+            )
+
         with self._lock:
             self.calls.append({
                 "phase": phase,
@@ -314,6 +327,18 @@ class StrictReplayLLM:
             })
 
         return response
+
+    # ── Artifact loading ────────────────────────────────────────────
+
+    @staticmethod
+    def _load_response_from_artifact(artifact_path: Path) -> str:
+        """Load the response text from an artifact JSON file."""
+        try:
+            data = json.loads(artifact_path.read_text(encoding="utf-8"))
+            return data.get("response", "")
+        except (OSError, json.JSONDecodeError) as e:
+            _logger.warning("Failed to load artifact %s: %s", artifact_path, e)
+            return ""
 
     # ── Verification methods ─────────────────────────────────────────
 

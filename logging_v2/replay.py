@@ -29,7 +29,9 @@ Usage:
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
+from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -69,10 +71,12 @@ class EventReplayLLM:
         *,
         mode: str = "strict",
         debate_id: Optional[str] = None,
+        run_dir: Optional[Path] = None,
     ) -> None:
         if mode not in ("strict", "hash_only", "best_effort"):
             raise ValueError(f"Invalid mode: {mode!r}")
         self._mode = mode
+        self._run_dir = Path(run_dir) if run_dir else None
 
         # Auto-detect debate_id from events if not provided
         if debate_id is None:
@@ -207,6 +211,12 @@ class EventReplayLLM:
 
         response = evt.get("response", "")
 
+        # If response is empty but artifact_path exists, load from artifact
+        if not response and evt.get("artifact_path") and self._run_dir:
+            response = self._load_response_from_artifact(
+                self._run_dir / evt["artifact_path"]
+            )
+
         call_record = {
             "phase": phase,
             "role": role,
@@ -223,6 +233,18 @@ class EventReplayLLM:
         self.calls.append(call_record)
 
         return response
+
+    # ── Artifact loading ────────────────────────────────────────────
+
+    @staticmethod
+    def _load_response_from_artifact(artifact_path: Path) -> str:
+        """Load the response text from an artifact JSON file."""
+        try:
+            data = json.loads(artifact_path.read_text(encoding="utf-8"))
+            return data.get("response", "")
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Failed to load artifact %s: %s", artifact_path, e)
+            return ""
 
     # ── Verification methods ─────────────────────────────────────────
 
