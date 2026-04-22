@@ -1,0 +1,133 @@
+# =============================================================================
+# Regime Manifest
+# =============================================================================
+# Maps scenario filename patterns (substring match, case-insensitive) to a
+# canonical market-regime label.
+#
+# Rules are evaluated top-to-bottom; first match wins.
+# A scenario that matches no rule gets regime "unknown".
+#
+# Regime labels used in stratified_analysis.py:
+#   inflation_shock   — 2021–2022 inflation surge & rate shock
+#   recession         — 2022 rate-shock-induced recession fears / banking stress
+#   rates_stress      — 2023 higher-for-longer / SVB aftermath
+#   tech_rally        — 2023–2024 AI / tech bull run
+#   neutral           — generic or uncategorised scenarios
+#
+# When you add new scenarios, add an entry here before running the analysis.
+# The regime label is the unit of stratification for Recommendation #3.
+# =============================================================================
+
+patterns:
+  # -------------------------
+  # Inflation regime
+  # -------------------------
+  - pattern: "inflation_emergence"
+    regime: "inflation_shock"
+    notes: "2021 Q3/Q4 — early inflation signal, pre-rate-hike"
+
+  - pattern: "inflation_shock"
+    regime: "inflation_shock"
+    notes: "2022 Q1 — CPI >8%, first aggressive Fed hike cycle"
+
+  # -------------------------
+  # Recession / banking stress
+  # -------------------------
+  - pattern: "recession"
+    regime: "recession"
+    notes: "2022 Q2 — inverted yield curve, recession fears"
+
+  - pattern: "banking_crisis"
+    regime: "recession"
+    notes: "2022 Q4 / 2023 Q1 — SVB, Credit Suisse, regional bank stress"
+
+  # -------------------------
+  # Higher-for-longer rates stress
+  # -------------------------
+  - pattern: "higher_for_longer"
+    regime: "rates_stress"
+    notes: "2023 Q2/Q3 — Fed pause but rates held high, growth slowdown"
+
+  - pattern: "higher_for_longer_insanity"
+    regime: "rates_stress"
+    notes: "2023 Q2 enriched variant"
+
+  # -------------------------
+  # Tech / AI rally
+  # -------------------------
+  - pattern: "ai_boom"
+    regime: "tech_rally"
+    notes: "2023 Q4 / 2024 Q1 — ChatGPT wave, Nvidia surge"
+
+  - pattern: "2023q4"
+    regime: "tech_rally"
+    notes: "Q4 2023 data window — AI momentum"
+
+  - pattern: "2024q1"
+    regime: "tech_rally"
+    notes: "Q1 2024 — continued AI rally"
+
+  # -------------------------
+  # Neutral / generic
+  # -------------------------
+  - pattern: "broad_14ticker"
+    regime: "neutral"
+    notes: "Generic broad universe, no specific macro regime"
+
+  - pattern: "financials_heavy"
+    regime: "neutral"
+    notes: "Sector-focus scenario, no specific macro regime"
+
+  - pattern: "healthcare_focus"
+    regime: "neutral"
+    notes: "Sector-focus scenario, no specific macro regime"
+
+  - pattern: "sector_constrained"
+    regime: "neutral"
+    notes: "Sector-constraint test scenario"
+
+  - pattern: "simple_test"
+    regime: "neutral"
+    notes: "Dev/test scenario"
+
+  - pattern: "mock"
+    regime: "neutral"
+    notes: "Mock/synthetic scenario"
+
+  - pattern: "2025"
+    regime: "neutral"
+    notes: "2025 data — no labelled regime yet"
+
+# =============================================================================
+# invest_quarter → regime fallback
+# =============================================================================
+# Used when scenario filename doesn't match any pattern above.
+# Maps ISO-date quarter starts to regimes.
+# invest_quarter in manifest.json is stored as "YYYY-MM-DD" (quarter-end date).
+#
+# Quarter-end dates:
+#   2021-09-30  →  inflation_shock  (2021 Q3)
+#   2021-12-31  →  inflation_shock  (2021 Q4)
+#   2022-03-31  →  inflation_shock  (2022 Q1 — first hike)
+#   2022-06-30  →  recession        (2022 Q2)
+#   2022-09-30  →  recession        (2022 Q3)
+#   2022-12-31  →  recession        (2022 Q4 — banking stress builds)
+#   2023-03-31  →  recession        (2023 Q1 — SVB)
+#   2023-06-30  →  rates_stress     (2023 Q2)
+#   2023-09-30  →  rates_stress     (2023 Q3)
+#   2023-12-31  →  tech_rally       (2023 Q4)
+#   2024-03-31  →  tech_rally       (2024 Q1)
+#   default     →  neutral
+
+quarter_fallback:
+  "2021-09-30": "inflation_shock"
+  "2021-12-31": "inflation_shock"
+  "2022-03-31": "inflation_shock"
+  "2022-06-30": "recession"
+  "2022-09-30": "recession"
+  "2022-12-31": "recession"
+  "2023-03-31": "recession"
+  "2023-06-30": "rates_stress"
+  "2023-09-30": "rates_stress"
+  "2023-12-31": "tech_rally"
+  "2024-03-31": "tech_rally"
