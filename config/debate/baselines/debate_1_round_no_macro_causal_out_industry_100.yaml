@@ -1,0 +1,38 @@
+# Alias for the expanded 100-scenario industry JS-divergence batch.
+# Kept separate from the 12-scenario rerun so scripts/run_scenario_list.py
+# writes an independent tracking CSV.
+
+case_format: "memo"
+dataset_path: "data-pipeline/final_snapshots"
+memo_format: "text"
+
+num_episodes: 1
+
+agents:
+  value: "value_standard"
+  technical: "technical_standard"
+  risk: "risk_standard"
+
+judge_profile: "judge_standard"
+
+debate_setup:
+  agent_system: "multi_agent_debate"
+  llm_provider: "openai"
+  llm_model: "gpt-5-mini"
+  temperature: 0.3
+  max_retries: 3
+  max_rounds: 1
+  propose_only: false
+  pid_enabled: false
+  judge_type: "llm"
+  logging_mode: "debug"
+  pid_log_metrics: false
+  pid_log_llm_calls: false
+  log_rendered_prompts: false
+  log_prompt_manifest: false
+  parallel_agents: true
+  llm_stagger_ms: 500
+  max_concurrent_llm: 3
+
+broker:
+  initial_cash: 100000.0

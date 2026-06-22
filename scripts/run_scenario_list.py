@@ -9,6 +9,7 @@ import math
 import hashlib
 import time
 import threading
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,8 +43,22 @@ def get_processed_scenarios(tracking_file, current_config_hash):
         with open(tracking_file, "r", newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Only skip if the config hash matches and there was no error
-                if not row.get("error") and row.get("config_hash") == current_config_hash:
+                # Only skip if the config hash matches, there was no error,
+                # and the simulation produced at least one episode summary.
+                summary_path = Path(row.get("results_dir", "")) / "summary.json"
+                has_summary = False
+                if summary_path.exists():
+                    try:
+                        with open(summary_path, "r") as sf:
+                            summary = json.load(sf)
+                        has_summary = bool(summary.get("episode_summaries"))
+                    except Exception:
+                        has_summary = False
+                if (
+                    not row.get("error")
+                    and row.get("config_hash") == current_config_hash
+                    and has_summary
+                ):
                     processed[row["scenario"]] = {
                         "results_dir": row["results_dir"],
                         "log_dir": row.get("log_dir", "N/A"),
@@ -66,7 +81,7 @@ def run_simulation(config_path, scenario_path, output_root, verbose=False, is_pa
         actual_output_root = output_root / c_name
 
     cmd = [
-        "python3", "run_simulation.py",
+        sys.executable, "run_simulation.py",
         "--agents", config_path,
         "--scenario", scenario_path,
         "--no-display",
@@ -109,6 +124,16 @@ def run_simulation(config_path, scenario_path, output_root, verbose=False, is_pa
                 error = f"Exit code {process.returncode}"
     except Exception as e:
         error = str(e)
+
+    if error is None:
+        summary_path = Path(results_dir) / "summary.json"
+        try:
+            with open(summary_path, "r") as sf:
+                summary = json.load(sf)
+            if not summary.get("episode_summaries"):
+                error = "No episode summaries"
+        except Exception as e:
+            error = f"Missing or invalid summary: {e}"
 
     return results_dir, log_dir, error
 
