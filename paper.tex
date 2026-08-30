@@ -127,9 +127,7 @@ noisy outcome signal rather than ground-truth reasoning correctness
 
 Our results answer all three, and the answers diverge from what the proxies alone
 would suggest. Reasoning scores are highly controllable---structured prompting raises
-mean CRIT quality $\bar{\rho}$ from $0.72$ to $0.84$---yet across 210 runs
-$\bar{\rho}$ is essentially uncorrelated with Sharpe ($r{=}{+}0.07$, $p{=}0.29$) and
-with return ($r{=}{+}0.03$, $p{=}0.70$), and debate portfolios beat an equal-weight
+mean CRIT quality $\bar{\rho}$ from $0.72$ to $0.84$---yet across 210 repeated-condition runs $\bar{\rho}$ is essentially uncorrelated with Sharpe (descriptive $r{=}{+}0.07$) and with return ($r{=}{+}0.03$), and debate portfolios beat an equal-weight
 $1/N$ baseline only 33\% of the time. Debate's measurable benefit is risk reduction rather than alpha. The only intervention producing a significant risk-adjusted gain is one that blocks premature convergence ($+0.14$ Sharpe, $p{=}0.028$; raw return $+0.83$pp, $p{=}0.052$), whereas one that verifiably repairs causal-reasoning scores slightly degrades performance.
 
 \vspace{-2pt}
@@ -190,8 +188,7 @@ Our framework has four modules: data generation, market simulation, multi-agent 
 and evaluation. The design requirement that matters here is that reasoning be
 simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
 proxy--outcome relationship can be examined without the measurement contaminating the
-decision. Each subsystem sees the others only through defined interfaces, and every round writes immutable artifacts (proposals, critiques, revisions, CRIT scores, controller state, portfolio decisions) so a debate can be replayed and audited in full;
-reported correlations come from complete stored traces rather than runtime state.
+decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state; the per-round CRIT records underlying RQ1 were not preserved in the released artifact set, which we disclose in Section~\ref{sec:limitations}.
 Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
 \citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
