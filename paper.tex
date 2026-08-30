@@ -110,9 +110,7 @@ Most reasoning benchmarks do not provide one.
 
 We therefore study the proxy--outcome relationship directly, in a setting that does.
 Simulated portfolio allocation supplies conflicting evidence, complete auditable
-reasoning traces, and an objective downstream outcome---realized return, Sharpe
-ratio, and drawdown over a held-out quarter---that is measured strictly after the
-decision is made. We stress that finance is the \emph{testbed}, not the subject: we
+reasoning traces, and an objective downstream outcome (realized return, Sharpe ratio, and drawdown over a held-out quarter) measured strictly after the decision is made. We stress that finance is the \emph{testbed}, not the subject: we
 make no claim that these agents are deployable traders, and realized return is a
 noisy outcome signal rather than ground-truth reasoning correctness
 (Section~\ref{sec:limitations}). We ask three questions:
@@ -151,11 +149,10 @@ repairs causal-reasoning scores slightly degrades performance.
 \begin{enumerate}[label=(\arabic*),leftmargin=2.2em,itemsep=1pt,topsep=2pt]
     \item We provide evidence that a four-pillar reasoning rubric can be moved
     substantially by prompt design (Cohen's $d{\approx}2.0$) while remaining
-    uninformative about the external outcome it is used to justify---a proxy-validity
-    failure measured against a decision outcome rather than against another rubric.
+    uninformative about the external outcome it is used to justify: a proxy-validity failure measured against a decision outcome rather than against another rubric.
     \item We evaluate debate against matched single-agent and \emph{independent
     ensemble} controls on identical scenarios, separating the effect of interaction
-    from the effect of agent diversity---a control that is frequently missing when
+    from the effect of agent diversity, a control frequently missing when
     debate is credited with a gain.
     \item We identify and operationalize \emph{consensus convergence}: agents move
     toward the group position during revision without introducing new evidence, with
@@ -191,9 +188,7 @@ such as ABIDES \citep{abides2019,abidesgym2021} supply microstructure realism bu
 little agent reasoning, and production systems prioritize robustness over auditability
 \citep{fticonsulting2023}.
 
-\textbf{Reasoning evaluation and control.} RAudit \citep{raudit} scores reasoning as the
-mean $\rho$ of four pillars---logical validity ($P_1$), evidential support ($P_2$),
-alternative consideration ($P_3$), causal alignment ($P_4$)---measures agreement via
+\textbf{Reasoning evaluation and control.} RAudit \citep{raudit} scores reasoning as the mean $\rho$ of four pillars (logical validity $P_1$, evidential support $P_2$, alternative consideration $P_3$, causal alignment $P_4$), measures agreement via
 Jensen--Shannon divergence, and shows $\rho$ can be stabilized by PID control without
 ground-truth access. \cite{rca} target trace--output consistency to reduce sycophancy
 via retries with escalating feedback. Both establish that reasoning quality is
@@ -209,9 +204,7 @@ Our framework has four modules: data generation, market simulation, multi-agent 
 and evaluation. The design requirement that matters here is that reasoning be
 simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
 proxy--outcome relationship can be examined without the measurement contaminating the
-decision. Each subsystem sees the others only through defined interfaces, and every
-round writes immutable artifacts---proposals, critiques, revisions, CRIT scores,
-controller state, portfolio decisions---so a debate can be replayed and audited in full;
+decision. Each subsystem sees the others only through defined interfaces, and every round writes immutable artifacts (proposals, critiques, revisions, CRIT scores, controller state, portfolio decisions) so a debate can be replayed and audited in full;
 reported correlations come from complete stored traces rather than runtime state.
 Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
@@ -228,8 +221,7 @@ The orchestrator is a LangGraph \texttt{StateGraph} \citep{langgraph} running
 $\rightleftharpoons$ \texttt{revise} $\to$ \texttt{judge}. For each round
 $t=1,\dots,T_{\max}$ agents (1) propose an allocation over the scenario's ticker
 universe, (2) critique other agents' proposals, and (3) revise their own in light of
-those critiques. Six specialist roles are implemented---macro, value, risk, technical,
-sentiment, and a devil's advocate configured to disagree---though experiments use
+those critiques. Six specialist roles are implemented (macro, value, risk, technical, sentiment, and a devil's advocate configured to disagree), though experiments use
 subsets of 3--4. The debate is aggregated into one portfolio either by an LLM judge that
 synthesizes final revisions with their justifications, or by an unweighted mean of each
 agent's last revision; the latter is our \emph{independent-ensemble} control when
@@ -237,8 +229,7 @@ critique and revision are disabled.
 
 \vspace{-4pt}
 \paragraph{Reasoning measurement and control.}
-Following an RAudit-style scheme \citep{raudit}, a CRIT evaluator
-\citep{chang2023promptinglargelanguagemodels} scores each agent's reasoning on four
+Following an RAudit-style scheme \citep{raudit}, a CRIT evaluator (Critical Reading Inquisitive Template) \citep{chang2023promptinglargelanguagemodels} scores each agent's reasoning on four
 pillars $P_1^{(i)},\dots,P_4^{(i)}\in[0,1]$, averaged into a per-agent score
 $\rho_i=\tfrac14\sum_k P_k^{(i)}$ and a group mean
 $\bar{\rho}=\tfrac1n\sum_i \rho_i$. A PID controller drives $\bar{\rho}$ toward a target
@@ -247,13 +238,12 @@ critique tone. Debate ends at $T_{\max}$ or on PID early stop (high reasoning qu
 with low diversity: $\mathrm{JSD}_t<\epsilon$ and
 $|\bar{\rho}_t-\bar{\rho}_{t-1}|<\Delta\rho$). Crucially, the evaluator never sees
 realized prices or any post-decision outcome, so $\bar{\rho}$ and the financial metrics
-are measured independently. A separate consistency evaluator implementing RCA
-\citep{rca} checks whether an agent's revision rationally addresses the critiques it
+are measured independently. A separate consistency evaluator implementing Regulated Causal Anchoring (RCA) \citep{rca} checks whether an agent's revision rationally addresses the critiques it
 received or merely capitulates; when it fails, the turn is retried with feedback whose
 tone is set by the PID state.
 
 
- \section{Comprehensive Evaluation, Analysis of Results, and Failure Modes}
+ \section{Results}
 \vspace{-0.15cm}
 \subsection{Experimental Setup}
 \vspace{-0.15cm}
@@ -294,7 +284,7 @@ numbered within each (e.g.\ RQ1-E1).
 \vspace{-0.2cm}
 % \subsubsection{RQ1-E1: Reasoning Quality and Financial Outcomes}
 
-Across \textbf{210 runs} (Ablations 7, 8, 10) Appendix~\ref{app:crit_financial}, CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no meaningful relationship with financial performance}. Pooled correlations between reasoning quality and portfolio outcomes are near zero, and paired changes in reasoning do not predict changes in performance. Regression models controlling for experimental design factors likewise find no predictive signal from $\bar{\rho}$. Subgroup analysis in Appendix~\ref{app:correlation_betwen_agents} reveals two localized signals: value-agent reasoning negatively correlates with Sharpe, while risk-agent reasoning weakly correlates with returns, though the latter is not statistically significant.
+Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no meaningful relationship with financial performance}. Pooled correlations are near zero, paired changes in reasoning do not predict changes in performance, and regressions controlling for design factors find no predictive signal from $\bar{\rho}$. Subgroup analysis in Appendix~\ref{app:correlation_betwen_agents} reveals two localized signals: value-agent reasoning negatively correlates with Sharpe, while risk-agent reasoning weakly correlates with returns, though the latter is not statistically significant.
 
 Table~\ref{tab:correlation_reasoning} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} (binomial $p<0.001$) and exhibit consistently lower Sharpe ratios.  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:debate_portofolio} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
@@ -318,7 +308,7 @@ $\Delta\rho$ vs $\Delta$Return (paired) & $+0.01$ & 0.91 & 105 \\
 \end{table}
 
 
-Trajectory analysis shows that these gains are \textbf{front-loaded rather than iterative}: enriched prompts produce substantially higher reasoning scores in Round 1, but $\bar{\rho}$ declines across subsequent debate rounds for all conditions. Thus, structured scaffolding improves \textbf{initial reasoning quality}, but debate dynamics do not further improve reasoning and the gains do \textbf{not translate into better risk-adjusted returns}.
+These gains are \textbf{front-loaded rather than iterative}: enriched prompts score highest in Round 1, then $\bar{\rho}$ declines across later rounds in every condition. Scaffolding improves initial reasoning quality; debate does not improve it further, and neither translates into better risk-adjusted returns.
 
 % It seems to correlate with lower risk, just not higher returns, no? YES, this is an important nuance, will address tomorrow!
 
@@ -365,7 +355,7 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 
 \textbf{Prompt baselines.} All comparisons below are paired across the same 35 scenarios, with 95\% CIs from a bootstrap resampled at the scenario level (the independent sampling unit). Replacing a single `basic'-prompt agent with the mean vote of minimal Value, Risk, and Technical agents increased diversification and trended volatility and drawdown down, but return and Sharpe down as well; none of these differences is distinguishable from zero (return $-0.12$pp, CI $[-0.73,+0.48]$, $p{=}0.69$; columns A--B of Table~\ref{tab:prompts}). \textbf{Adding causal scaffolding to the same three-role ensemble did raise return and Sharpe} relative to the basic ensemble (return $+0.47$pp, CI $[+0.09,+0.84]$, $p{=}0.024$, $d{=}0.40$; Sharpe $+0.08$, CI $[+0.01,+0.16]$, $p{=}0.043$, $d{=}0.36$; column C). We note this gain does \emph{not} survive comparison against the single-agent baseline (return $+0.34$pp, CI $[-0.38,+1.06]$, $p{=}0.37$), so causal scaffolding is best read as recovering ground lost by ensembling rather than as beating a single agent. Enriched prompts (column D) produced the only large effects in this table: volatility $-0.04$ (CI $[-0.05,-0.02]$, $p{<}0.001$, $d{=}{-}1.02$) and max drawdown $-1.54$pp (CI $[-2.11,-1.02]$, $p{<}0.001$, $d{=}{-}0.92$) versus the single agent, partly attributable to a rise in uninvested cash from ${\sim}8\%$ to $17\%$; return trended lower while Sharpe was largely retained. Structured prompting therefore reliably reduces \emph{risk}; its effect on return is small and, against the strongest baseline, not statistically distinguishable from zero.
 
-\textbf{Causal debate baselines} Continuing with the Causal prompt, adding a single round of critique, revise, and final judgement led to significant improvements in volatility and drawdown partially attributed to additional cash, though return and Sharpe trended lower (Appendix \ref{app:debate_rca} column B). 
+\textbf{Causal debate baselines.} Continuing with the Causal prompt, adding a single round of critique, revise, and final judgement led to significant improvements in volatility and drawdown partially attributed to additional cash, though return and Sharpe trended lower (Appendix \ref{app:debate_rca} column B). 
  
 
 % \textbf{Test Suite.}
@@ -380,7 +370,7 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 % (4)~\emph{Multiple rounds deepen reasoning}: Increasing debate rounds (\#6) showed agents upgrading claims from L1 to L2 across revisions. These observations are qualitative; systematic causal level scoring $P_4$ and trading-metric correlation are planned as part of the full experimental protocol.
 
 
-\paragraph{Enriched debate baselines (RQ2-E2)}
+\paragraph{Enriched debate baselines (RQ2-E2).}
 While debate underperformed simple average for causal prompts, we investigated the same for enriched prompts and longer debates, over three diverse challenge scenarios (2022\,Q1, 2022\,Q4 tech-heavy, 2023\,Q2 random-8 tickers) presented in Table~\ref{tab:financial-results_across}.
 
 \begin{table}[h]
@@ -398,7 +388,7 @@ Enriched Debate (4-ag.) & 2 & $-0.27 \pm 0.29$ & $-0.05 \pm 0.06$ & $-0.07 \pm 0
 \end{tabular}
 \vspace{4pt}
 \setlength{\belowcaptionskip}{-4pt}
-\caption{Financial performance across configurations (mean $\pm$ SEM). Excess vs SPY is portfolio return minus S\&P~500 return over the same quarter. Enriched 3-agent debate achieves the best risk-adjusted returns (highest Sharpe and Sortino, lowest max drawdown). The 4-agent 5-round debate exhibits negative returns, suggesting over-convergence degrades performance.}
+\caption{Financial performance across configurations (mean $\pm$ SEM). Excess vs SPY is portfolio return minus S\&P~500 return over the same quarter. At $N{=}2$--$3$ these intervals are wide and overlapping, so the ordering is indicative only: the 3-agent enriched debate shows the highest Sharpe and Sortino and the lowest drawdown, while the 4-agent 5-round debate is the only configuration with negative mean return.}
 \label{tab:financial-results_across}
 \end{table}
 
@@ -410,7 +400,7 @@ The 3-agent 2-round debate achieves higher per-round scores
 ($\bar{\rho} = 0.876$ in round~1, $0.901$ in round~2), with all agents 
 above 0.83 on every pillar. That the 3-agent configuration produces both 
 higher CRIT scores \emph{and} better financial performance suggests that 
-fewer agents and fewer rounds reduce sycophantic convergence, allowing 
+fewer agents and fewer rounds reduce consensus convergence, allowing 
 the enriched prompt scaffolding to be more effective.
 
 \paragraph{Cross-provider robustness (RQ2-E3).}
@@ -432,14 +422,14 @@ In this section we investigate whether targeted reasoning interventions can repa
 
 
 \vspace{-0.2cm}
-\subsubsection{RQ3-E1: Repairing Sycophantic Convergence via RCA}
+\subsubsection{RQ3-E1: Repairing Consensus Convergence via RCA}
 \vspace{-0.2cm}
 Introducing an RCA-style consistency check in the revise phase of our causal-prompt debates reduced volatility and drawdown relative to the unregulated mean vote, while leaving return and Sharpe unchanged (column C of Table~\ref{tab:debate_rca}; paired over the same 35 scenarios). The risk reductions are the clearest effects in that table: volatility $-0.02$ (CI $[-0.02,-0.01]$, $p{<}0.001$, $d{=}{-}0.88$) and max drawdown $-0.69$pp (CI $[-1.09,-0.30]$, $p{=}0.002$, $d{=}{-}0.56$), whereas return ($-0.32$pp, CI $[-0.84,+0.20]$, $p{=}0.25$) and Sharpe ($-0.05$, CI $[-0.14,+0.04]$, $p{=}0.31$) are indistinguishable from zero. \textbf{Debate regulated by an RCA-style check therefore reduced risk without improving returns} on this scenario set: an investor optimizing raw return would still prefer the simple average of causally-scaffolded agents. 
 
 \vspace{-0.2cm}
-\subsubsection{RQ3-E2: Repairing Sycophantic Convergence via JSD}
+\subsubsection{RQ3-E2: Repairing Consensus Convergence via JSD}
 \vspace{-0.2cm}
-We also tried preventing sycophantic convergence and preserving healthy disagreement 
+We also tried preventing consensus convergence (Section~\ref{sec:failure-modes}) and preserving disagreement 
 % between agents improves portfolio outcomes. The intervention detects , where agents prematurely align their allocations during debate revision. To regulate this behavior we 
 by introducing a JSD collapse trigger at the post-revision checkpoint (between \textit{revise} and \textit{CRIT}). If the collapse ratio $JS_{\text{rev}} / JS_{\text{prop}}$ falls below threshold, role-specific nudge prompts are injected and the \textit{revise} phase is re-executed before the updated portfolios proceed to CRIT and judging. 
 
@@ -458,9 +448,9 @@ This experiment tests whether explicitly repairing causal reasoning failures imp
 \subsection{Failure Modes of Debate}
 \label{sec:failure-modes}
 \paragraph{Consensus convergence.}
-The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios. This suggests that sycophancy is deeply embedded in the critique-revise interaction pattern and cannot be adequately controlled through prompt modulation alone. Shorter debates, and interventions that forcibly slow convergence, partially mitigate this by giving agents less opportunity to converge---preserving more portfolio diversity while retaining some of the risk-lowering benefits of structured critique.
+The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios. This suggests the pattern is embedded in the critique-revise interaction itself and is not adequately controlled by prompt modulation alone. Shorter debates, and interventions that forcibly slow convergence, partially mitigate this by giving agents less opportunity to converge, preserving more portfolio diversity while retaining some of the risk-lowering benefits of structured critique.
 \paragraph{Causal alignment is the weakest pillar.} \vspace{-0.2cm}
-Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
+Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence on Pearl's causal ladder \citep{pearl2009causality}. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
 
 \paragraph{Other failure modes.}
 \textbf{Ticker Hallucination.} When Gemini-2.5-flash serves as judge, it hallucinated a ticker (JNJ) not present in the scenario universe in 3 of 6 runs, causing those runs to produce invalid allocations.
@@ -473,7 +463,7 @@ Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scor
 To ground the quantitative null results in mechanistic terms, we examine three concrete failure patterns identified through trace analysis of ablation logs.
 
 \paragraph{High CRIT, negative returns: convergent portfolio collapse.}
-The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$). Trace inspection reveals the mechanism: cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after sycophantic convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This explains why $\bar{\rho}$ and Sharpe are uncorrelated across the 210-run dataset: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
+The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$). Trace inspection reveals the mechanism: cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after consensus convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This explains why $\bar{\rho}$ and Sharpe are uncorrelated across the 210-run dataset: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
 
 \paragraph{Reasoning--allocation disconnect across providers.}
 In the Claude-3.5-Sonnet (macro) + GPT-5-mini (risk, judge) configuration across 17~scenarios, trace analysis identifies \textbf{reasoning--allocation disconnect as the dominant failure in 10 of~17 runs}: agents produced internally coherent, well-scored arguments ($\rho_i$ high) but the judge's final portfolio allocation did not follow from those stated positions. In 7~runs, critique-ignoring compounded the disconnect---agents acknowledged critique points yet subsequent revisions were structurally unchanged. The macro agent was most frequently the weakest link, exhibiting causal overreach ($P_4$ failures) that destabilized the downstream allocation decision. The \texttt{position\_rationale} linkage, which requires positions to cite supporting claim IDs, provides a structural safeguard but does not prevent a judge from discarding the debate's reasoning trail in favor of a simpler heuristic. Detecting this disconnect requires trace inspection; it is invisible to aggregate CRIT scores.
@@ -657,13 +647,13 @@ Across all three research questions we find reasoning behavior to be highly cont
 
 
 \textbf{CRIT and agreement measure coherence, not comprehensive correctness.}
-CRIT evaluates whether an argument is well-structured---logically valid, evidentially grounded, causally explicit---not whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 without improving returns: agents learn to \emph{write} better arguments, not to \emph{make} better predictions. Rubrics of this kind work best in deterministic domains; in stochastic, partially-observable ones a bulletproof argument can be a bad bet. Holding cash to earn the risk-free rate is agreeable and near-unfalsifiable, and scores well, but does not maximize expected risk-adjusted return. Process quality is necessary but insufficient here.
+CRIT evaluates whether an argument is well-structured (logically valid, evidentially grounded, causally explicit) rather than whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 without improving returns: agents learn to \emph{write} better arguments, not to \emph{make} better predictions. Rubrics of this kind work best in deterministic domains; in stochastic, partially-observable ones a bulletproof argument can be a bad bet. Holding cash to earn the risk-free rate is agreeable and near-unfalsifiable, and scores well, but does not maximize expected risk-adjusted return. Process quality is necessary but insufficient here.
 
 \textbf{Public-information reasoning faces a structural ceiling.}
 Our agents reason exclusively over public information (SEC filings, news, and prices). Under even weak-form market efficiency, this information is largely incorporated into prices shortly after it becomes available. In this setting, improved reasoning about the same information cannot easily generate alpha. The empirical result that debate portfolios beat a naive 1/$N$ allocation only 33\% of the time is consistent with the well-known difficulty of outperforming equal-weight benchmarks \citep{demiguel2009optimal}. The negative result for RQ1 may therefore reflect a fundamental ceiling on the predictive value of public-information reasoning.
 
 \textbf{Our simulation captures selection, not timing.}
-Quarterly rebalancing without transaction costs removes the dimensions where reasoning might matter most---\emph{when} and \emph{how} to trade. Portfolios with similar holdings perform similarly over a quarter regardless of reasoning quality. A different task design could therefore yield a different answer to RQ1.
+Quarterly rebalancing without transaction costs removes the dimensions where reasoning might matter most: \emph{when} and \emph{how} to trade. Portfolios with similar holdings perform similarly over a quarter regardless of reasoning quality. A different task design could therefore yield a different answer to RQ1.
 \vspace{-6pt}
 \paragraph{Signal diversity as the mechanism for debate value (RQ2).}
 \vspace{-4pt}
@@ -674,7 +664,7 @@ Debate alters reasoning behavior and portfolio characteristics, but its benefits
 \paragraph{Limits of causal evaluation in financial reasoning (RQ3).}
 \vspace{-4pt}
 
-Interventions can modify reasoning behavior without reliably improving performance. Causal Alignment ($P_4$) is consistently the weakest pillar, yet explicitly repairing it (A10) slightly \emph{degrades} outcomes---challenging the assumption that deeper causal reasoning is universally beneficial here. Technical analysis rests on statistical patterns (momentum, mean reversion, volume) that are empirically useful \citep{jegadeesh1993returns} but fundamentally associative: momentum does not \emph{cause} price increase. Forcing such signals into higher-rung causal language produces ``causal overreach'', so the technical agent scores low on $P_4$ not because it reasons badly but because its paradigm is non-causal, while macro reasoning is natively causal (``CPI surprise $\to$ Fed tightening $\to$ rate-sensitive underperformance''). A uniform causal criterion conflates two legitimate reasoning styles; evaluation frameworks should allow role-specific metrics---causal coherence for macro agents, statistical grounding for technical ones. 
+Interventions can modify reasoning behavior without reliably improving performance. Causal Alignment ($P_4$) is consistently the weakest pillar, yet explicitly repairing it (A10) slightly \emph{degrades} outcomes---challenging the assumption that deeper causal reasoning is universally beneficial here. Technical analysis rests on statistical patterns (momentum, mean reversion, volume) that are empirically useful \citep{jegadeesh1993returns} but fundamentally associative: momentum does not \emph{cause} price increase. Forcing such signals into higher-rung causal language produces ``causal overreach'', so the technical agent scores low on $P_4$ not because it reasons badly but because its paradigm is non-causal, while macro reasoning is natively causal (``CPI surprise $\to$ Fed tightening $\to$ rate-sensitive underperformance''). A uniform causal criterion conflates two legitimate reasoning styles; evaluation frameworks should allow role-specific metrics: causal coherence for macro agents, statistical grounding for technical ones. 
 
 Across all three questions the dominant driver of performance is the preservation of independent informational signals across agents, not improvement in individual reasoning quality. For practitioners building verifiers, the implication is narrow but concrete: a rubric that scores an agent's argument in isolation cannot detect that the argument was adopted rather than derived, and so cannot substitute for an external outcome check when one is available.
 
@@ -729,8 +719,7 @@ correctness: a well-reasoned allocation can lose money and a poorly-reasoned one
 profit. Our null result for RQ1 shows CRIT does not predict this outcome; it does not
 show CRIT measures nothing.
 \textbf{Possible pre-training leakage.} Scenarios use historical data that may overlap
-LLM training corpora, so models may recall which stocks performed well---rewarding
-agents that reach the right answer without valid justification.
+LLM training corpora, so models may recall which stocks performed well, rewarding agents that reach the right answer without valid justification.
 \textbf{Limited realism.} A small ticker universe over a handful of quarters, with no
 transaction costs, spreads, taxes, or liquidity constraints, and no dynamic tool use:
 agents read precomputed memos and cannot compute or fetch live data.
@@ -744,7 +733,7 @@ stratified results.
 and~\ref{tab:debate_rca} regenerates exactly from stored per-scenario artifacts, as do
 the bootstrap CIs above. Three gaps remain. The configuration files for two of six
 conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
-by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run---all 35 scenarios differ from the unregulated condition---but only as an uncommitted working copy. And the per-round CRIT logs behind the $n{=}210$
+by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run (all 35 scenarios differ from the unregulated condition) but only as an uncommitted working copy. And the per-round CRIT logs behind the $n{=}210$
 correlations, the pillar tables, and the $\bar{\rho}\,0.72\!\to\!0.84$ gain are not in
 the released artifact set, so those numbers rest on author records rather than a
 re-runnable pipeline. RQ1 is our central claim and carries this caveat.
@@ -752,7 +741,7 @@ re-runnable pipeline. RQ1 is our central claim and carries this caveat.
 \vspace{-6pt}
 \subsection{Broader Impact}
 \vspace{-6pt}
-That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. If similar convergence arises across independently deployed systems reading the same public information, it could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide---a risk we infer from simulation, not deployment.
+That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. If similar convergence arises across independently deployed systems reading the same public information, it could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk we infer from simulation rather than deployment.
 
 % $
 % \text{CI}_i
