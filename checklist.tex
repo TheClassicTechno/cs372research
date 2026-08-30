@@ -5,7 +5,7 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The abstract and Section~1 state three research questions (RQ1--RQ3) and the paper's central, appropriately hedged finding (reasoning quality and consensus are controllable but do not reliably predict financial outcomes); Sections~3--4 report results organized around exactly these questions and do not claim more than the measured effects.
+    \item[] Justification: The abstract and Section~1 state three research questions and the central finding: reasoning quality and consensus are both controllable, but neither predicts financial outcomes on our scenario set. Sections~3 and~4 are organized around those same questions. Where an effect is not separable from zero we say so rather than describing it as a trend.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
@@ -17,7 +17,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~5.1 discusses statistical power (small-$N$ configurations, wide intervals), outcome noise (realized return is not ground-truth reasoning correctness), possible pre-training leakage from historical market data, limited realism (no transaction costs/taxes/liquidity constraints), absence of dynamic tool use, coupling between the generation scaffolding and the CRIT rubric that makes rubric gains easier to obtain, a stratified role/regime re-analysis that is implemented but not yet run, and uneven reproducibility across our own results.
+    \item[] Justification: Section~5.1 lists them. The ones that most constrain the conclusions are outcome noise, since realized return is not ground-truth reasoning correctness, and the coupling between our generation scaffolding and the CRIT rubric, which makes rubric gains easier to obtain than they should be. We also cover small-$N$ configurations, possible pre-training leakage from historical data, the absence of transaction costs and dynamic tool use, a stratified re-analysis we implemented but could not run, and the fact that our own results are not uniformly reproducible.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper.
@@ -33,7 +33,7 @@
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
     \item[] Answer: \answerNA{}
-    \item[] Justification: The paper is empirical; it contains no theorems or formal proofs.
+    \item[] Justification: The paper is empirical. It contains no theorems or proofs.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results.
@@ -47,7 +47,7 @@
 \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~3 specifies the backtesting protocol, scenario construction, model choices (\texttt{gpt-5-mini} for agents, \texttt{gpt-5} for CRIT evaluation), and the three configuration layers; debate mechanics, evaluator scoring, and full prompts are given in Section~2 and the appendix. We additionally audited the reported financial tables against stored per-scenario artifacts and they regenerate exactly. Section~5.1 (``Uneven reproducibility'') discloses three specific gaps rather than claiming uniform reproducibility: two of six run configurations no longer match a surviving config file by hash, the in-loop RCA retry is not a wired code path in the current release, and the per-round CRIT logs behind the $n{=}210$ correlations are not in the released artifact set.
+    \item[] Justification: Section~3 gives the backtesting protocol, scenario construction, model choices (\texttt{gpt-5-mini} for agents, \texttt{gpt-5} for CRIT evaluation), and the three configuration layers. Section~2 and the appendix cover debate mechanics, evaluator scoring, and the full prompts. We additionally audited the reported financial tables against stored per-scenario artifacts and they regenerate exactly. Section~5.1 (``Uneven reproducibility'') discloses three specific gaps rather than claiming uniform reproducibility: two of six run configurations no longer match a surviving config file by hash, the in-loop RCA retry is not a wired code path in the current release, and the per-round CRIT logs behind the $n{=}210$ correlations are not in the released artifact set.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -60,7 +60,7 @@
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
     \item[] Answer: \answerNo{}
-    \item[] Justification: The submission is anonymized for double-blind review; a de-anonymized code/data release will be provided if the paper is accepted, consistent with NeurIPS anonymity requirements for the review period.
+    \item[] Justification: We are not releasing code or data during review, because anonymizing the repository is not something we can do reliably in the time available. If the paper is accepted we will release a de-anonymized version.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -71,7 +71,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~3.1 reports the backtesting split (allocate on preceding-quarter data, hold and evaluate through the following quarter), the 35-scenario/12-quarter evaluation set, temperature settings, and model assignments; debate-specific hyperparameters (rounds, PID gains, agreeableness) are described in Section~2.3 and the appendix.
+    \item[] Justification: Section~3.1 reports the backtesting split (allocate on the preceding quarter's data, hold through the following quarter), the 35-scenario set across 12 quarters, temperatures, and model assignments. Debate hyperparameters such as round count, PID gains, and agreeableness are in Section~2 and the appendix.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -82,7 +82,7 @@
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Table~1 reports Pearson correlations with $n$ and $p$-values. For the prompt-tier and debate/RCA comparisons we report paired $t$-tests, Cohen's $d$, and 95\% confidence intervals from a percentile bootstrap resampled at the \emph{scenario} level (10{,}000 resamples), which is the independent sampling unit; all such comparisons are paired across the same 35 scenarios. Where an interval crosses zero we say so explicitly rather than describing the difference as an improvement. Section~5.1 flags that small-$N$ ($N{=}2$--$3$) configurations yield wide intervals and are exploratory, not confirmatory.
+    \item[] Justification: For the prompt-tier and debate comparisons we report paired $t$-tests, Cohen's $d$, and 95\% bootstrap confidence intervals resampled at the scenario level, since the scenario is the independent sampling unit. Every such comparison is paired across the same 35 scenarios. Where an interval crosses zero we say so instead of calling the difference an improvement. Table~1 also reports Pearson correlations, but those 210 runs reuse scenarios across conditions, so we present them as effect sizes rather than significance tests. Small-$N$ configurations are flagged as exploratory in Section~5.1.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -95,7 +95,7 @@
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
     \item[] Answer: \answerYes{}
-    \item[] Justification: All experiments call hosted LLM APIs rather than training or running models locally; Section~5.1 reports approximate per-scenario wall-clock time (7--13 minutes for extended debate) and API cost (\$5--\$8 per scenario), and notes that full-scale ablations are constrained by rate limits and budget.
+    \item[] Justification: Nothing was trained or run locally. Every experiment calls a hosted LLM API, so the relevant cost is wall-clock time and API spend rather than GPU hours. Section~5.1 gives 7--13 minutes and \$5--\$8 per scenario for extended debate, and explains that rate limits and budget are what capped our sample sizes.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -107,7 +107,7 @@
 \item {\bf Code of ethics}
     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The research uses only public financial data (SEC filings, market prices, news) and involves no human subjects, crowdsourcing, or personally identifiable data; we have reviewed the NeurIPS Code of Ethics and identify no conflicts.
+    \item[] Justification: We reviewed the Code of Ethics and found no conflicts. The work uses only public financial data (SEC filings, market prices, news). There are no human subjects, no crowdsourcing, and no personally identifiable data.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the authors have not reviewed the NeurIPS Code of Ethics.
@@ -118,7 +118,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~5.2 discusses that our central finding (reasoning/consensus metrics can be maximized while financial performance stagnates or worsens due to consensus convergence) implies a risk of correlated positioning if similar dynamics occur across independently deployed multi-agent trading systems, while noting this risk is inferred from simulated results rather than measured at deployment scale.
+    \item[] Justification: Section~5.2 covers this. Our central finding is that reasoning and consensus metrics can be maximized while performance stagnates, which argues against trusting those metrics in deployed financial agents. If the same convergence happened across independently deployed systems reading the same public information, it could concentrate positioning rather than diversify it. We infer that risk from simulation and have not measured it at deployment scale.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -130,7 +130,7 @@
 \item {\bf Safeguards}
     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?
     \item[] Answer: \answerNA{}
-    \item[] Justification: The paper does not release a pretrained model, generative system, or scraped dataset with high misuse potential; it releases analysis code and simulation configurations over public financial data.
+    \item[] Justification: There is nothing here with high misuse potential. We release analysis code and simulation configurations over public financial data, not a pretrained model, a generative system, or a scraped dataset.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper poses no such risks.
@@ -141,7 +141,7 @@
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Data sources (Yahoo Finance, SEC EDGAR, Finnhub) and the LangGraph orchestration framework are cited in Section~2.1--2.2 and in the bibliography; the paper accesses these sources under their public terms of use and does not redistribute their underlying data.
+    \item[] Justification: Section~2 and the bibliography cite the data sources (Yahoo Finance, SEC EDGAR, Finnhub) and the LangGraph orchestration framework. We access each under its public terms of use and redistribute none of the underlying data.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -154,7 +154,7 @@
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
     \item[] Answer: \answerNA{}
-    \item[] Justification: The submission does not release a new public dataset or pretrained model; the multi-agent debate/evaluation codebase will be documented and released alongside a de-anonymized version if accepted.
+    \item[] Justification: No new dataset or pretrained model. If the paper is accepted we will document and release the debate and evaluation codebase with the de-anonymized version.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.
@@ -186,7 +186,7 @@
 \item {\bf Declaration of LLM usage}
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     \item[] Answer: \answerYes{}
-    \item[] Justification: LLMs are an original, non-standard, and central component of the method itself (debate agents, LLM judge, and the CRIT reasoning evaluator), and this usage is described throughout Sections~2--3, not merely for writing assistance.
+    \item[] Justification: LLMs are the method, not a writing aid. They serve as the debate agents, the judge, and the CRIT reasoning evaluator. Sections~2 and~3 describe each role and the models used.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.
