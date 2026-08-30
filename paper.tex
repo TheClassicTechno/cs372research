@@ -1,27 +1,17 @@
 \documentclass{article}
-\makeatletter
-\providecommand{\cebox}[2][]{#2}
-\providecommand{\@noticestring}{}
 % if you need to pass options to natbib, use, e.g.:
-%     \PassOptionsToPackage{numbers, coxwmpress}{natbib}
-% before loading neurips_2024
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2026
 
+% NeurIPS 2026 Workshop track, double-blind reviewing (anonymous submission).
+\usepackage[dblblindworkshop]{neurips_2026}
+\workshoptitle{Verify-Agents: Who Verifies the Agents?}
 
-% ready for submission
-\usepackage[final]{neurips_2024}
-
-
-% to compile a preprint version, e.g., for submission to arXiv, add add the
-% [preprint] option:
-%     \usepackage[preprint]{neurips_2024}
-
-
-% to compile a camera-ready version, add the [final] option, e.g.:
-%     \usepackage[final]{neurips_2024}
-
+% to compile a camera-ready version after acceptance, add the [final] option:
+%     \usepackage[dblblindworkshop, final]{neurips_2026}
 
 % to avoid loading the natbib package, add option nonatbib:
-%    \usepackage[nonatbib]{neurips_2024}
+%    \usepackage[dblblindworkshop, nonatbib]{neurips_2026}
 
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -53,10 +43,8 @@
   showstringspaces=false
 }
 
-\title{Multi-Agent Debate for Explainable Trading
- : Reasoning, Consensus, Performance in Simulated Markets
-% \thanks{GitHub repository: \url{https://github.com/TheClassicTechno/cs372research}}
-}
+\title{Do Reasoning-Quality Metrics Predict Better Decisions?\\
+Verifying Multi-Agent Debate Against External Market Outcomes}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -68,276 +56,201 @@
 % \AND instead of \And before the third author name.
 
 
-\author{
- \hspace{-2.5em}
-  Juli Huang, Alanood Alrassan, 
-  Deveen Harischandra, Theodore Wu, Veljko Skarich, Matthew Hayes \\
-  Department of Engineering, Stanford University \\
-  \texttt{\{julih, alanoodr, deveen, wutheodo, vskarich, mhayes3\}@stanford.edu}
+\author{%
+  Anonymous Author(s) \\
+  Affiliation \\
+  Address \\
+  \texttt{email}
 }
-% \author{%
-%   Juli Huang \\
-%   % \thanks{Use footnote for providing further information about author (webpage, alternative address)-\emph{not} for acknowledging funding agencies.} \\
-%   Department of Computer Science\\
-%   Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{julih@stanford.edu} \\
-%   \And
-%   Alanood Alrassan \\
-%   Department of Energy Science and Engineering \\
-%    Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{alanoodr@stanford.edu} \\
-%   \And
-%   Deveen Harischandra\\
-%   Department of Computer Science\\
-%   Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{deveen@stanford.edu} \\
-%   \AND
-%   Theodore Wu \\
-%   Department of Computer Science\\
-%   Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{wutheodo@stanford.edu} \\
-%   \And
-%   Veljko Skarich \\
-%   Department of Computer Science\\
-%   Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{vskarich@stanford.edu} \\
-%   \And
-%   Matthew Hayes \\
-%   Department of Computer Science\\
-%   Stanford University\\
-%   Stanford, CA 94305 \\
-%   \texttt{mhayes3@stanford.edu} \\
-% }
 \begin{document}
 \maketitle
-% \begin{abstract}
-%   The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
-%   both the left- and right-hand margins. Use 10~point type, with a vertical
-%   spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
-%   bold, and in point size 12. Two line spaces precede the abstract. The abstract
-%   must be limited to one paragraph.
-% \end{abstract}
-% \vspace{-20pt}
-% INTERNAL STRUCTURE PROPOSAL FOR PAPER (TEAM NOTE)
-% This section proposes a NeurIPS-style structure for reorganizing the paper.
+\vspace{-0.5cm}
+\begin{abstract}
+Multi-agent LLM systems increasingly use structured debate to improve reasoning, and
+their outputs are commonly evaluated with internal reasoning-quality rubrics and
+consensus measures. Whether those proxies predict better \emph{decisions} is rarely
+tested, because most benchmarks lack an external outcome to check them against. We
+use simulated portfolio allocation as a testbed where complete reasoning traces can
+be compared against an objective downstream outcome, evaluating specialist LLM agents
+under single-agent, independent-ensemble, and multi-round debate conditions, scored
+with a CRIT-style four-pillar rubric and Jensen--Shannon portfolio divergence against
+realized return, Sharpe, and drawdown. Across 210 runs, CRIT reasoning scores are
+essentially uncorrelated with financial outcomes ($r{=}{+}0.07$ with Sharpe,
+$p{=}0.29$; $r{=}{+}0.03$ with return, $p{=}0.70$), even though structured prompting
+moves those scores substantially ($\bar{\rho}$ from $0.72$ to $0.84$, Cohen's
+$d{\approx}2.0$) and debate portfolios beat an equal-weight baseline only 33\% of the
+time. The interventions that do improve outcomes are those that \emph{preserve
+disagreement} rather than those that deepen reasoning: a divergence-collapse trigger
+raises Sharpe by $+0.14$ ($p{=}0.028$, $d{=}0.39$), while an intervention that
+successfully repairs causal-reasoning scores slightly degrades performance. We find
+debate's measurable value lies in risk reduction through retained signal diversity,
+not alpha, and that consensus and rubric scores can both be maximized while decision
+quality stagnates. These results suggest internal reasoning proxies should be
+validated against external task outcomes before being treated as evidence of agent
+decision quality.
+\end{abstract}
+\vspace{-0.35cm}
+\vspace{-0.35cm}
+\section{Introduction}
+\vspace{-6pt}
 
-% \section*{Internal Note: Proposed Narrative and Structure for the Final Paper}
+Multi-agent LLM systems increasingly resolve hard problems by deliberation: agents
+propose, critique, and revise before committing to an answer. Because the ground
+truth for such tasks is often unavailable at evaluation time, these systems are
+routinely judged by \emph{internal proxies}---rubric-based reasoning scores,
+self-consistency, inter-agent agreement---and improvements in those proxies are
+treated as evidence that the system is deciding better.
 
-% \subsection*{Proposed NeurIPS-Style Paper Outline}
-% \textbf{Two Main Ideas: 
-% 1) Organize Experiments by Hypothesis Addressed. 
-% 2) Reworking of our three hypotheses to better align with performed experiments/results and narrative flow.}
+That inference is rarely tested. A rubric can reward an argument that is coherent,
+well-cited, and causally explicit without any guarantee that the resulting
+\emph{decision} is better; consensus can reflect social capitulation as easily as
+error correction. Establishing whether a proxy tracks decision quality requires a
+task with an external, objectively measurable outcome that the evaluator cannot see.
+Most reasoning benchmarks do not provide one.
 
+We therefore study the proxy--outcome relationship directly, in a setting that does.
+Simulated portfolio allocation supplies conflicting evidence, complete auditable
+reasoning traces, and an objective downstream outcome---realized return, Sharpe
+ratio, and drawdown over a held-out quarter---that is measured strictly after the
+decision is made. We stress that finance is the \emph{testbed}, not the subject: we
+make no claim that these agents are deployable traders, and realized return is a
+noisy outcome signal rather than ground-truth reasoning correctness
+(Section~\ref{sec:limitations}). We ask three questions:
 
-% \textbf{Original Hypotheses}:
-% \begin{enumerate}[label=H\arabic*.]
-%     \item  \label{RQ1} Reasoning-evaluative metrics are economically predictive. 
-%     \item  \label{RQ2} Reasoning quality can be improved by debate and  control signals.
-%     \item  \label{RQ3} Controlling causal reasoning depth (i.e., using the correct  Pearl causality rung \citep{pearl2009causality} significantly improves portfolio performance.
-% \end{enumerate}
+\vspace{-4pt}
+\begin{enumerate}[label=\textbf{RQ\arabic*.},leftmargin=2.6em,itemsep=1pt,topsep=2pt]
+    \item \label{RQ1} \textbf{Do reasoning-quality metrics predict financial
+    performance?} If a CRIT-style rubric captures decision-relevant reasoning,
+    higher scores should associate with better outcomes. \emph{Falsifier:} near-zero
+    association, or rubric gains alongside flat or worse performance.
+    \item \label{RQ2} \textbf{Does structured debate improve reasoning and portfolio
+    performance?} Debate may expose weak arguments and improve decisions.
+    \emph{Competing explanation:} any gain comes from having multiple perspectives at
+    all, not from interaction. \emph{Falsifier:} an independent ensemble with no
+    communication matches or beats debate on matched scenarios.
+    \item \label{RQ3} \textbf{Can targeted interventions repair reasoning failures
+    during debate?} \emph{Falsifier:} interventions that verifiably repair the
+    measured reasoning deficit leave outcomes unchanged or worse.
+\end{enumerate}
+\vspace{-4pt}
 
-% \textbf{New Hypotheses}:
-% \begin{enumerate}[label=H\arabic*.]
-%     \item  \label{RQ1} Do Reasoning Metrics Predict Performance?   
-%     \item  \label{RQ2} Does Debate Improve Reasoning/Performance? 
-%     \item  \label{RQ3} Can Interventions Improve Reasoning/Performance?
-% \end{enumerate}
+Our results answer all three, and the answers diverge from what the proxies alone
+would suggest. Reasoning scores are highly controllable---structured prompting raises
+mean CRIT quality $\bar{\rho}$ from $0.72$ to $0.84$---yet across 210 runs
+$\bar{\rho}$ is essentially uncorrelated with Sharpe ($r{=}{+}0.07$, $p{=}0.29$) and
+with return ($r{=}{+}0.03$, $p{=}0.70$), and debate portfolios beat an equal-weight
+$1/N$ baseline only 33\% of the time. Debate's measurable benefit is risk reduction
+rather than alpha, and it arises from \emph{retained disagreement}: the single
+intervention producing a significant return gain is one that blocks premature
+convergence ($+0.14$ Sharpe, $p{=}0.028$), whereas an intervention that successfully
+repairs causal-reasoning scores slightly degrades performance.
 
-% \textbf{Alternative New Hypotheses}:
-% \begin{enumerate}[label=H\arabic*.]
-%     \item  \label{RQ1} Do reasoning metrics predict economic performance?
-%     \item  \label{RQ2} Does multi-agent debate improve reasoning quality or portfolio outcomes?
-%     \item  \label{RQ3} Can debate dynamics be improved through targeted interventions?
-% \end{enumerate}
-
-% The old ones are a subset of the new ones, with some redistribution of focus of each to better reflect experiments/results. T
-% he new hypotheses are framed as research questions, but can be put into hypothesis format as well. 
-
-
-\vspace{-0.6cm}
-\section{Problem Statement and Background}
-\vspace{-8pt}
-
-% Current quantitative trading firms such as Renaissance Technologies have been integrating statistical and machine learning methods into trading, but their decision processes remain opaque, lacking visibility into how models reason about news, macro events, or resolve alpha disagreements. Investment banks also use machine learning but more discreetly for execution/risk, with discretionary desks still human-led. However, most financial firms lag behind on using modern deep learning/LLMs, favoring traditional factors/classical machine learning methods such as boosted trees due to data secrecy, non-stationarity, and reliability concerns. \cite{quantblueprint2025}
-
-% On the other hand, LLMs and multi-agent systems offer explainable alternatives: agents that debate trading decisions in natural language within realistic simulators. Early work (\cite{xiao2025tradingagentsmultiagentsllmfinancial}) shows specialized agents (fundamental, technical, risk) debating before trades improving returns/Sharpe vs single-agent baselines. Existing simulators (e.g. ABIDES, \cite{abides2019}) generate realistic dynamics but expose little agent reasoning. Live data (Yahoo Finance) lacks inspectable multi-agent processes. \cite{digitalalpha2025}
-
-% In our research, we plan to target this gap. In a stock simulator maximizing profit under risk constraints (Sharpe, drawdown), we plan to build agents as trading companies (value, momentum, macro) that (1) observe market/news data, (2) debate trades with justifications/counter-arguments, (3) articulate causal claims ("CPI surprise caused selloff"). Evaluate single vs multi-agent, debate vs no-debate using T³/CRIT on reasoning quality vs PnL(profit and loss) and Sharpe ratio correlation.
-
-% - - 
-% Quant trading firms rely on 
-% % opaque statistical models while LLM/agentic trading products generate fluent narratives without rigorous logic. 
-% statistical/ML systems where reasoning, especially driven by news etc., remains opaque. Meanwhile, many LLM/agentic products generate fluent narratives without reliable ``alpha"--talking rather than reasoning. Markets are a harsh testbed for improving reasoning because traders often succeed by interpreting narratives (Fed communication, CPI surprises, geopolitical headlines), not just forecasting from past prices.
-
-% We target this gap by building a multi-agent debate system for explainable trading inside a stock-market simulator. Specialized agents (macro, value, momentum, risk) will 
-% % ingest market + news inputs, 
-% debate trade proposals to produce auditable explanations/
-% % with explicit claims and counterclaims, and output explanations linking news, mechanism, and trade.
-% We will compare single-agent vs. multi-agent and debate vs. no-debate, evaluating reasoning quality (via T³/CRIT-style rubric) and performance (PnL, Sharpe, drawdown), and test whether better reasoning predicts better outcomes. \cite{digitalalpha2025}
-
-
-% % Today’s LLMs can sound confident while making brittle causal stories, and many agentic trading systems fail to consistently outperform because they optimize persuasion more than calibrated reasoning.
-
-% Our motivation is to test whether structured disagreement (multi-agent debate + skepticism constraints) reduces common LLM failure modes (overconfidence, hallucinated causality, groupthink, sycophancy) and produces explanations that are both auditable and insightful. If reasoning quality improves and correlates with risk-adjusted returns, that supports debate as a mechanism for decision-making under uncertainty; if not, we can identify where debate breaks down and distill the best constraints into stronger single-agent prompts/policies. \cite{quantagents2025} \cite{xiao2025tradingagentsmultiagentsllmfinancial}
-\subsection{Introduction}
-% Quantitative trading firms traditionally leverage statistical models that forecast stock price movements. But this approach is constrained by its inability to capture the full complexity of market factors, from qualitative sources such as earnings reports and financial news. Recent advances in Large Language Models (LLMs) have motivated LLM-based trading products that can synthesize information and produce transparent decision-making on such textual sources \citep{xiao2025tradingagentsmultiagentsllmfinancial}. However, despite their promise, LLMs remain susceptible to reasoning failures such as sycophancy, overconfidence, hallucinated causality, and groupthink, which can undermine the reliability and soundness of investment decisions. 
-% Meanwhile, current LLM trading products often generate fluent narratives without reliable ``alpha", essentially ``talking" rather than reasoning . We target this gap by building a multi-agent debate system inside a stock-market simulator. Specialized agents (macro, value, risk) will debate trade proposals to produce auditable explanations linking news and indicators to action. Markets serve as a harsh testbed for this goal because traders must interpret complex narratives (e.g., Fed communications) rather than just forecast prices.
-% Our motivation is to explore whether structured disagreement in multi-agent debate, reasoning-quality interventions, and [ causal control of debate can improve investment performance by enhancing reasoning quality]. Markets are complex environments with a high number of confounding factors. For LLM agents managing investment portfolios, we hypothesize that: 
-
-% Quantitative trading firms traditionally rely on statistical models that forecast asset price movements from structured market data. While effective in many settings, such approaches struggle to incorporate the full range of information relevant to investment decisions, including qualitative signals from earnings reports, financial filings, and news. Recent advances in Large Language Models (LLMs) have motivated LLM-based trading systems that can synthesize such textual information and produce interpretable reasoning for portfolio decisions \cite{quantagents2025} \cite{xiao2025tradingagentsmultiagentsllmfinancial}.
-
-% However, LLM reasoning remains fragile. Prior work has documented failures such as sycophancy, overconfidence, hallucinated causal explanations, and groupthink—behaviors that can undermine the reliability of agentic decision systems. 
-
-% In this work, we investigate whether structured multi-agent debate and reasoning-quality interventions can improve the reliability of LLM-driven portfolio allocation. Specifically, we evaluate three research questions:
-Large Language Models (LLMs) are increasingly used to support financial decision-making because they can synthesize qualitative information such as earnings reports, financial filings, and news. Recent work has explored LLM-based trading agents that generate portfolio decisions together with interpretable reasoning \cite{quantagents2025,xiao2025tradingagentsmultiagentsllmfinancial}. However, the reliability of this reasoning is uncertain, as prior studies document systematic failure modes that can undermine the soundness of agentic decisions.
-
-This raises a fundamental question: \emph{does improving the reasoning process of LLM agents actually lead to better financial outcomes?} Markets provide a challenging testbed for LLM reasoning, as investment decisions must integrate multiple signals under uncertainty. We study whether structured multi-agent debate and reasoning-quality interventions improve the reliability of portfolio allocation through the following research questions:
-
-\begin{enumerate}[label=\textbf{RQ`\arabic*.}]
-    \item  \label{RQ1} Do Reasoning Metrics Predict Financial Performance? 
-    \item  \label{RQ2} Does Structured Debate Improve Reasoning and Portfolio Performance?
-    \item  \label{RQ3} Can Interventions Improve Reasoning and Portfolio Performance?
+\vspace{-2pt}
+\paragraph{Contributions.}
+\vspace{-4pt}
+\begin{enumerate}[label=(\arabic*),leftmargin=2.2em,itemsep=1pt,topsep=2pt]
+    \item We provide evidence that a four-pillar reasoning rubric can be moved
+    substantially by prompt design (Cohen's $d{\approx}2.0$) while remaining
+    uninformative about the external outcome it is used to justify---a proxy-validity
+    failure measured against a decision outcome rather than against another rubric.
+    \item We evaluate debate against matched single-agent and \emph{independent
+    ensemble} controls on identical scenarios, separating the effect of interaction
+    from the effect of agent diversity---a control that is frequently missing when
+    debate is credited with a gain.
+    \item We identify and operationalize \emph{consensus convergence}: agents move
+    toward the group position during revision without introducing new evidence, with
+    portfolio divergence collapsing after the first revision and no accompanying
+    outcome gain. We show this removes the ensemble-diversity benefit that explains
+    debate's risk advantage.
+    \item We show reasoning quality and decision quality can be regulated
+    independently: interventions preserving disagreement improve outcomes, while
+    interventions repairing the weakest reasoning pillar do not.
 \end{enumerate}
 
-To answer these questions, we build a multi-agent debate system that produces auditable reasoning traces for portfolio allocation. 
-Our results reveal a nuanced picture: diverse opinions can improve certain financial metrics, but extended unconstrained debate can degrade raw returns through sycophantic convergence, even when reasoning quality is maximal as measured by CRIT. We analyze these dynamics and distill implications for multi-agent financial reasoning systems.
-
-
-
-% We compare various LLM agent configurations within a stock-market simulation using real-world market narratives and price data, with and without blind intervention. Through analysis of reasoning traces, we evaluate whether improved reasoning quality (via CRIT-style rubrics \citep{chang2023promptinglargelanguagemodels, raudit}) correlates with better risk-adjusted returns. Our results reveal a nuanced picture: debate with enriched prompts improves reasoning quality and risk-adjusted metrics (Sharpe, drawdown), but extended debate can degrade raw returns through sycophantic convergence. We analyze these dynamics and distill implications for multi-agent financial reasoning systems \citep{quantagents2025, xiao2025tradingagentsmultiagentsllmfinancial}.
-% - - \\
-
-
-
-% second version
-% Quantitative trading firms (e.g. Renaissance) rely heavily on statistical/ML systems, but the reasoning behind trades, especially when driven by news or macro events, remains largely opaque. At the same time, many “LLM/agentic trading” products generate fluent narratives without reliable, repeatable alpha, raising skepticism that current systems are mostly agents talking rather than agents reasoning. We target this gap by building a multi-agent debate system for explainable trading inside a stock-market simulator. Specialized agents (macro, value, momentum, risk) will ingest market + news inputs, debate trade proposals with explicit claims and counterclaims, and output auditable explanations linking news, mechanism, and trade. We will compare single-agent vs. multi-agent and debate vs. no-debate, evaluating both reasoning quality (via T³/CRIT-style rubric) and performance (PnL, Sharpe, drawdown), and test whether better reasoning predicts better outcomes. 
-
-
-% Our motivation is to study how multi-agent debate and explicit reasoning constraints affect both reasoning quality and trading performance in a financial context. Specifically, we will test whether debate improves causal reasoning about markets relative to single-agent baselines. We also experiment with whether debate reduces common LLM failure modes such as overconfidence and sycophancy. Additionally, we examine whether improvements in reasoning quality predict better trading performance, as measured by metrics like PnL and Sharpe ratio. We further investigate whether constraints discovered through debate can be distilled into improved prompts for single agents. Finally, we aim to produce auditable agent arguments that link reasoning directly to trading outcomes, thereby bridging modern LLM research with the cautious production systems of quantitative trading firms through explainable multi-agent AI. \cite{quantagents2025} \cite{xiao2025tradingagentsmultiagentsllmfinancial}
-
-% second version
-% Markets are a harsh testbed for the course’s central goal—better reasoning—because traders often succeed by interpreting narratives (Fed communication, CPI surprises, geopolitical headlines), not just forecasting from past prices. Today’s LLMs can sound confident while making brittle causal stories, and many agentic trading systems fail to consistently outperform because they optimize persuasion more than calibrated reasoning. Our motivation is to test whether structured disagreement (multi-agent debate + skepticism constraints) reduces common LLM failure modes (overconfidence, hallucinated causality, groupthink) and produces explanations that are both auditable and useful. If reasoning quality improves and correlates with risk-adjusted returns, that supports debate as a mechanism for decision-making under uncertainty; if not, we can identify where debate breaks down and distill the best constraints into stronger single-agent prompts/policies.
+\vspace{-8pt}
 
 \vspace{-8pt}
 \subsection{Related Work}
 \vspace{-6pt}
 
-% Modern systematic trading is dominated by data-driven models, but many production systems prioritize robustness and operational reliability over interpret-ability, which makes it hard to audit why a model preferred one trade over another or how it reconciled conflicting “alpha” signals (\cite{fticonsulting2023}). Our project re-frames trading as an audit-able decision-making process: each LLM agent acts like a specialized “desk” (value/momentum/macro), produces explicit natural-language arguments, and then a debate protocol selects trades creating a traceable link from reasoning → action → outcome (\cite{du2023multidebate}). Industry-faced discussions of AI trading also motivate “multi-agent debate + risk viewpoints” as an analogue to real investment workflows  (\cite{digitalalpha2025}).
- 
+\textbf{Multi-agent debate.} \cite{du2023multidebate} show that having model instances
+propose and challenge each other over rounds improves reasoning and reduces
+hallucination relative to single-shot generation. That result, and the systems built on
+it, are evaluated on tasks with known answers; our question is what happens when the
+only available check is a rubric.
 
-%  A key challenge in finance research is that realism (market microstructure, latency, order-book dynamics) often conflicts with inspection (why an agent acted). ABIDES is a widely used agent-based discrete-event market simulator that models exchange protocols, messaging, and latency making it well-suited for realistic back testing of multi-agent strategies. ABIDES-Gym extends ABIDES into Gym-style environments for training/evaluating agents in a standardized RL interface, which is helpful in our project to have a repeatable experiment loops and benchmark scenarios (\cite{abidesgym2021}). Related simulation work also emphasizes how agent-based market environments can reproduce “stylized facts” and realistic behaviors, supporting our choice to evaluate debate-driven trading in simulation rather than only on static datasets (\cite{yao2024rlmarketsim}).
+\textbf{LLM agents in markets.} \cite{xiao2025tradingagentsmultiagentsllmfinancial}
+model a trading firm whose specialized agents debate before trading, reporting improved
+metrics over simple baselines; \cite{quantagents2025} emphasize evaluation protocols
+beyond profitability; \cite{alphaagents2025} evaluate role-based collaboration on
+stock-picking under varying risk tolerance; and \cite{lopezlira2025llmtrade} use market
+simulations to test financial theories with LLM agents. These works largely report
+whether a multi-agent configuration performs better. None, to our knowledge, tests
+whether the reasoning scores used to justify such systems track the outcome. Simulators
+such as ABIDES \citep{abides2019,abidesgym2021} supply microstructure realism but expose
+little agent reasoning, and production systems prioritize robustness over auditability
+\citep{fticonsulting2023}.
 
-% TradingAgents (\cite{xiao2025tradingagentsmultiagentsllmfinancial}) models a trading-firm-like organization with specialized LLM agents (fundamental/sentiment/technical, bull vs bear researchers, risk management, trader) who communicate and debate before producing trades, and it reports improved trading metrics over simpler baselines. QuantAgents (\cite{quantagents2025}) develops a multi-agent financial system explicitly centered on simulated trading and argues that current LLM agent behaviors differ from real-world fund processes (e.g., reliance on “post-reflection”), motivating careful evaluation protocols and analysis beyond raw profitability. AlphaAgents (\cite{alphaagents2025}) targets equity research and portfolio construction using role-based multi-agent collaboration and evaluates stock-picking performance against benchmarks under different risk tolerances. \cite{lopezlira2025llmtrade} evaluates LLM agents in market simulations to test financial theories and trading behaviors, which supports our argument that agent-based simulation is an appropriate evaluation setting for LLM trading policies rather than only forecasting accuracy. Multi-Agent Debate (\cite{du2023multidebate}), shows that letting multiple model instances propose and challenge reasoning over multiple rounds can improve reasoning quality and reduce certain failure modes (e.g., errors/hallucinations) compared to single-shot generation.This connects cleanly to our hypothesis that debate may reduce finance-relevant LLM failures overconfidence, one-sided narratives, and weak causal claims while producing more audit-able argument trails for post-hoc failure analysis.
-Most production trading systems prioritize robustness over interpretability, making it difficult to audit how conflicting signals are reconciled \citep{fticonsulting2023}. To balance market realism with inspection, simulators such as ABIDES \citep{abides2019} and ABIDES-Gym \citep{abidesgym2021} are often used to model exchange latency and order-book dynamics while providing a standardized interface for repeatable experiments.
-% TradingAgents (\cite{xiao2025tradingagentsmultiagentsllmfinancial}) and QuantAgents (\cite{quantagents2025}) demonstrate the utility of role-based LLM frameworks, and AlphaAgents (\cite{alphaagents2025}) explores collaboration, we specifically leverage "Multi-Agent Debate" (\cite{du2023multidebate}). By forcing agents to challenge reasoning over multiple rounds rather than just collaborating, we aim to expose weak causal claims and produce a transparent decision trail that standard ensemble methods often lack.
-Recent financial research has begun to explore the use of multi-agent LLM systems to enhance stock trading performance in markets. \cite{xiao2025tradingagentsmultiagentsllmfinancial} models a trading firm where specialized LLM agents debate to execute trades, achieving superior metrics compared to simple baselines. Building on realistic fund processes, \cite{quantagents2025} introduces a simulated multi-agent system that emphasizes thorough evaluation protocols beyond profitability. \cite{alphaagents2025} focuses on equity research and portfolio construction, evaluating collaborative agents on stock-picking performance under varying risk constraints. Similarly, \cite{lopezlira2025llmtrade} uses market simulations to evaluate LLM agents and test financial theories, reinforcing that agent-based simulation provides a more comprehensive evaluation setting than basic forecasting accuracy. Finally, \cite{du2023multidebate} demonstrates multi-agent debate enhances reasoning and reduces hallucinations, supporting our hypothesis that structured debate mitigates financial LLM failures, such as overconfidence and weak causal claims, while ensuring auditable decision trails.
-
-RAudit \citep{raudit} scores (and controls) reasoning based on an average score ($\rho$) of four pillars: logical validity ($P_1$), evidential support ($P_2$), alternative consideration ($P_3$), and causal alignment ($P_4$). It measures agreement using Jensen-Shannon divergence (JSD), and establishes that reasoning quality can be measured and stabilized with PID control, without access to the ground truth. \cite{rca} takes a similar approach with RCA but focuses on measuring trace-output consistency to reduce sycophancy with a PID controller for retries with escalating feedback.
+\textbf{Reasoning evaluation and control.} RAudit \citep{raudit} scores reasoning as the
+mean $\rho$ of four pillars---logical validity ($P_1$), evidential support ($P_2$),
+alternative consideration ($P_3$), causal alignment ($P_4$)---measures agreement via
+Jensen--Shannon divergence, and shows $\rho$ can be stabilized by PID control without
+ground-truth access. \cite{rca} target trace--output consistency to reduce sycophancy
+via retries with escalating feedback. Both establish that reasoning quality is
+\emph{measurable and controllable}; neither establishes that moving it changes external
+decision quality, which is the gap we address.
 
 \vspace{-8pt}
-\section{Full System Description}
-\href{https://github.com/TheClassicTechno/cs372research/}{Project Github}
-
-
-Our framework comprises four modules: (1) data generation, (2) market simulation, (3) PID-controlled multi-agent debate, and (4) evaluation and visualization tools Appendix~\ref{fig:dashboard_1} Appendix~\ref{fig:dashboard_2} to measure and visualize the quality of debate reasoning traces. Figure~\ref{fig:system-design} illustrates the interaction among these components.
+\section{System and Evaluation Setup}
 \label{sys_des}
-\vspace{-8pt}
-\subsection{System Design Philosophy}
-\vspace{-0.2cm}
-The system's central architectural insight is that reasoning quality must be simultaneously producible, measurable, and regulable in order to ensure data and result integrity to confidently answer the three research questions. Our data pipeline produces
-the information environment; the debate system produces the reasoning; the CRIT scorer measures it; the PID controller, prompts and RCA-style retry intervention regulates it; and the evaluator measure its economic consequences. Each subsystem sees the others' output only through the defined interfaces, and every intermediate state is logged for post-hoc analysis. Importantly, the system uses an append-only logging architecture to guarantee that every debate can be fully reconstructed from its execution trace. Each round writes immutable artifacts—including proposals, critiques, revisions, CRIT scores, controller state, and portfolio decisions—so that the entire reasoning trajectory can be replayed and audited post-hoc. This design ensures data integrity for evaluation: correlations between reasoning metrics and financial outcomes are computed from complete historical traces rather than transient runtime state, enabling reproducibility and rigorous analysis. Our pipeline distills each financial source into structured summaries merged into quarterly case-study scenarios. Macroeconomic regime data is extracted from the FRED API (treasury yields, CPI, index prices). Per-ticker data includes SEC EDGAR filings \citep{SEC_EDGAR_API}, Yahoo Finance asset features and daily prices \citep{yahoofinance}, FinnHub news sentiment \citep{finnhub_api}, and earnings call transcripts. Each snapshot case is converted to a plain-text memo Appendix~\ref{app:memo} with stable evidence IDs (e.g., \texttt{[L1-FF] Fed Funds}) that agents reference to defend claims.
-
-Interestingly, using LLM code generation tools to help implement the system revealed failure modes similar to those studied in the agents themselves. Claude frequently produced “helpful” code that avoided crashes by silently masking errors or returning fallback values, reflecting a form of sycophantic behavior that led to prolonged debugging and ultimately required strict guardrails on generated code.
-
-% Macroeconomic signals, such as treasury yields, CPI, and index prices are retrieved the Federal Reserve Economic Data (FRED) API. SEC EDGAR filings \citep{SEC_EDGAR_API} and asset features \citep{yahoofinance} are used to encode each company's enterprise performance. Company news sentiment and earnings call data are summarized using data from the FinnHub API \citep{finnhub_api}. Finally, daily stock price data from Yahoo Finance \citep{yahoofinance} are used to summarize recent price, returns, risk measures, trends, and momentum for trailing ranges. We encode a range of market scenarios by generating scenario cases for different ticker universes across financial quarters between 2021 and 2025.
-\vspace{-0.15cm}
-\subsection{Market Simulation Environment}
-\vspace{-0.15cm}
-We designed a controlled, reproducible simulation environment to evaluate financial decision-making in multi-LLM debate architectures. On each run, the simulation initializes a fresh cash portfolio and a universe of up to 35 stock tickers spanning a range of sectors. 
-% The environment acts as a stockbroker, maintaining the portfolio state of cash balances and equity positions. 
-One or more agents must converge on a portfolio allocation across stock tickers, and a broker component logs trades for that allocation.  For each run, the environment records the config used to launch the experiment, debate reasoning, and  proposed portfolio. These artifacts enable evaluation of financial performance over the next quarter, and qualitative assessment of reasoning behavior under controlled, repeatable conditions. 
-\vspace{-0.15cm}
-\subsection{Multi-Agent Debate System}
-\vspace{-0.15cm}
-We implemented the debate system using LangGraph \citep{langgraph}. The orchestrator is a \texttt{StateGraph}. The system is organized into three distinct phases:
-\vspace{-0.2cm}
-\begin{center}
-\texttt{START} $\to$ \texttt{load\_scenario} $\to$ \texttt{propose} $\rightleftharpoons$ \texttt{critique} $\rightleftharpoons$ \texttt{revise} $\to$ \texttt{judge} $\to$ \texttt{END}
-\end{center}
-\vspace{-0.15cm}
-
-For each round $t = 1,\dots,T_{max}$, multiple LLM agents engage in a structured debate round. Each round is orchestrated to follow a strict sequence: (1) Propose, where agents suggest a portfolio distribution across the given scenario's ticker universe; (2) Critique, where agents criticize the proposals from other debate participants; and (3) Revise, where agents review the critique and adjust their own positions. The number of agents and roles are configurable. We implemented six specialist roles: the `macro' role focuses on the macroeconomic regime; `value' on company valuation metric such as P/E; `risk' minimizes downside risk; `technical' focuses on price/volume patterns; `sentiment'  interprets news and text sentiment; and the ``devil's advocate", is explicitly configured to disagree and amplify counterarguments. However, our experiments primarily use subsets of 3-4 roles. 
-
-\vspace{-6pt}
-\subsection{Evaluation \& Control Framework}
-
-To regulate the debate, we draw on an RAudit-style control scheme \citep{raudit}. In each debate round, a CRIT evaluator \citep{chang2023promptinglargelanguagemodels} scores each debate agent’s reasoning on the four pillars disucssed above. Pillar scores \(P_1^{(i)},\dots,P_4^{(i)} \in [0,1]\) for agent \(i\) are averaged into a per-agent quality score \(\rho_i = \tfrac{1}{4}\sum_{k=1}^4 P_k^{(i)}\) and then into a group mean \(\bar{\rho} = \tfrac{1}{n} \sum_{i=1}^n \rho_i\). A PID controller is applied to drive $\bar{\rho}$ towards a target reasoning quality \(\rho^\star\) by regulating a contentiousness parameter \(\beta_t \in [0,1]\) that controls the tone of each agent's critique in the debate. The debate terminates when $t=T_{max}$ or when PID early stop is triggered (``converged"  quadrant with high reasoning quality and low diversity, $\mathrm{JSD}_t < \epsilon$ and  $|\bar{\rho}_t - \bar{\rho}_{t-1}| < \Delta\rho$). The system then applies one of two approaches to aggregate the debate into a single portfolio decision: (1) an LLM judge that synthesizes the final revision of each agent, including its justifications or (2) an a simple unweighted mean of each agent's last revised allocation.
-
-% However, rather than treating reasoning quality as a single composite signal, we decompose it into the four CRIT-style pillars $P_1$–$P_4$ \citep{chang2023promptinglargelanguagemodels} and analyze each dimension independently.
-% Each pillar is scored on a continuous $[0,1]$ scale by a dedicated CRIT evaluator.
-
-% The per-agent reasoning quality $\rho_i = \frac{1}{4}\sum_{k=1}^{4} P_k^{(i)}$ and the group mean $\bar{\rho} = \frac{1}{n}\sum_i \rho_i$ serve as the primary reasoning quality signals. CRIT additionally emits binary diagnostics (contradictions detected, causal overreach, premature certainty, conclusion drift, ignored critiques, unsupported claims) that identify specific failure modes per agent per round.
-
-
-% Pydantic models define \texttt{Observation} (market state, text context), \texttt{Action} (orders, justification, causal claims), and \texttt{AgentTrace} (auditable debate record). Six specialist roles are supported -- Macro Strategist, Value Analyst, Risk Manager, Technical Analyst, Sentiment Analyst, and Devil's Advocate -- though our experiments primarily use subsets of 3--4 roles (Value, Risk, Technical, and optionally Macro). Roles are typically enriched with a system prompt that requires agents to output causal claims with \texttt{PearlLevel} tags (L1: association, L2: intervention, L3: counterfactual) \citep{pearl2009causality} and three anti-failure injections: (i) requiring L2/L3 claims with explicit assumptions and falsifiers, (ii) a \emph{Forced Uncertainty} block requiring the agent to state what evidence would change its mind, and (iii) a \emph{Trap Awareness} block listing common reasoning errors.
-
-
-
-% Input nodes (\texttt{news\_digest}, \texttt{price\_history}) preprocess raw inputs in parallel. In the loop, agents independently propose trades with causal claims, critique other agents' proposals (including self-critique), and revise. A conditional edge loops critique$\to$revise for a configurable number of rounds before a judge (additional LLM call or simple average) synthesizes a final decision. The judge preserves the strongest dissenting objection even if overruled. The \texttt{build\_trace} node packages the full debate into a JSON trace.
-
-% \textbf{Experimental Knobs.}
-% A \texttt{DebateConfig} dataclass centralizes all parameters: agent roster (any subset of six roles), max debate rounds (default~1), agreeableness $\beta \in [0,1]$ (default~0.3, with higher $\beta$ resulting in more confrontational critiques), adversarial mode (adding Devil's Advocate role), pipeline components, and LLM model configurations. In our experiments, we typically use \texttt{gpt-5-mini} (temperature~0.3) for agent reasoning and \texttt{gpt-5} for CRIT evaluation, establishing a model hierarchy where the evaluator is stronger than the agents it scores. Per-role LLM overrides allow assigning different models to individual agent roles. 
-% % OpenAI API calls are configured with retry logic (up to 6 attempts, exponential back-off). 
-% An agreeableness parameter adjusts the tone of the prompts, ranging from confrontational to collaborative. Judge behavior is also configurable, supporting portfolio via LLM judgment or simple averaging across debate candidates.
-
-
-
-% Can this go into the experimental section?
-% We additionally developed \emph{enriched} agent prompt templates that impose structured claim-citation formatting on agent outputs. Each agent must enumerate claims (C1, C2, C3, \ldots) with explicit references to evidence from the case context (e.g., ticker return statistics, macro indicators). Critiques must reference specific claims by label, and revisions must address each critique point-by-point. This scaffolding improved CRIT reasoning scores from $\bar{\rho} \approx 0.73$ (unstructured prompts) to $\bar{\rho} \approx 0.84$ (enriched prompts), a ${\sim}15\%$ increase, by reducing ambiguity for both downstream agents and the CRIT evaluator.
-
-
-Our evaluation framework is structured around three layers: 
-(1) \emph{measurement}, 
-(2) \emph{controllability}, and 
-(3) \emph{causal regulation}. 
-Financial performance is treated as an external validation signal rather than a primary optimization objective. 
-The central question is whether improvements in reasoning quality are 
-measurable, controllable, and economically meaningful.
-
-
-\textbf{RCA:}
-Separately from RAudit, a  \texttt{ConsistencyJudge} implements RCA \cite{rca}, evaluating whether each agent's output at every debate turn is logically consistent with its reasoning trace. A separate implementation is available for each turn type -- proposal, critique, revision, and judge decision -- but we found the most promising results when applied to the revise phase. Revisions are checked for whether the critiques are rationally addressed and reasoning is reflected in the revised proposal or if the agent is being sycophantic or stubborn. In the case of failure, the turn is retried with feedback, whose tone is adjusted according to PID. We were not able to experiment with executing agent code as in the original paper, so the final escalation simply tells the agents to treat the task as an optimization problem.  
-% Judge decisions are evaluated for whether the final synthesis accurately reflects the strongest arguments and dissent.
-
-% Failures are classified into three categories: \textsc{Inconsistent\_Sycophantic} (unreasonably agreeing with others), \textsc{Inconsistent\_Stubborn} (persisting despite valid critiques), and \textsc{Inconsistent\_Other} (logic errors, hallucinated objections, or off-topic reasoning). This taxonomy extends standard RCA by explicitly modeling multi-agent disagreement and sycophancy/stubbornness dynamics. The \texttt{ConsistencyJudge} is run automatically on all debate traces, and its outputs are aggregated to produce per-agent and per-experiment consistency scores, which are then correlated with financial performance metrics.
-
-% \textbf{Portfolio Divergence (Agreement Measurement).}
-% The \texttt{DebateDivergenceAnalyzer} quantifies the degree of agreement/disagreement among agents at each debate round. It computes 2 metrics:
-% \begin{itemize}
-%   \item \textbf{Generalized Jensen--Shannon Divergence (JSD):} Measures the information-theoretic distance between each agent's implied portfolio weight distribution and the group consensus, capturing how much agents disagree in their trade recommendations.
-%   \item \textbf{Generalized Active Share:} a standard financial metric for portfolio differentiation computes half the mean L1 distance between each agent's portfolio and the consensus portfolio. This provides a highly interpretable measure of how "different" each agent's trades are from the group average and handles short sales (negative weights) naturally where JSD fails.
-% \end{itemize}
-% The analyzer tracks these metrics across debate rounds to assess whether debate converges to agreement or persistent disagreement. It also compares the judge's final portfolio to the mean agent portfolio to quantify the judge's deviation from consensus. Both metrics are used to analyze the effects of debate configuration on group decision dynamics.
-
-% Both evaluators are integrated into the experimental pipeline: after each debate, traces are passed to the ConsistencyJudge and DebateDivergenceAnalyzer, and their outputs are logged for downstream statistical analysis. This enables systematic study of the relationship between reasoning quality, debate structure, and financial outcomes.
-
-
-
-
-
-
-
-
-
 \vspace{-6pt}
 
+Our framework has four modules: data generation, market simulation, multi-agent debate,
+and evaluation. The design requirement that matters here is that reasoning be
+simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
+proxy--outcome relationship can be examined without the measurement contaminating the
+decision. Each subsystem sees the others only through defined interfaces, and every
+round writes immutable artifacts---proposals, critiques, revisions, CRIT scores,
+controller state, portfolio decisions---so a debate can be replayed and audited in full;
+reported correlations come from complete stored traces rather than runtime state.
+Scenario memos are distilled from FRED macro data, SEC EDGAR filings
+\citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
+\citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
+evidence ID (e.g.\ \texttt{[L1-FF]}) that agents must cite to defend a claim
+(Appendix~\ref{app:memo}). Each run initializes a fresh cash portfolio over a universe of
+up to 35 tickers, and a broker component logs the trades implied by the agreed
+allocation.
 
-\vspace{-6pt}
+\vspace{-4pt}
+\paragraph{Debate protocol.}
+The orchestrator is a LangGraph \texttt{StateGraph} \citep{langgraph} running
+\texttt{load\_scenario} $\to$ \texttt{propose} $\rightleftharpoons$ \texttt{critique}
+$\rightleftharpoons$ \texttt{revise} $\to$ \texttt{judge}. For each round
+$t=1,\dots,T_{\max}$ agents (1) propose an allocation over the scenario's ticker
+universe, (2) critique other agents' proposals, and (3) revise their own in light of
+those critiques. Six specialist roles are implemented---macro, value, risk, technical,
+sentiment, and a devil's advocate configured to disagree---though experiments use
+subsets of 3--4. The debate is aggregated into one portfolio either by an LLM judge that
+synthesizes final revisions with their justifications, or by an unweighted mean of each
+agent's last revision; the latter is our \emph{independent-ensemble} control when
+critique and revision are disabled.
+
+\vspace{-4pt}
+\paragraph{Reasoning measurement and control.}
+Following an RAudit-style scheme \citep{raudit}, a CRIT evaluator
+\citep{chang2023promptinglargelanguagemodels} scores each agent's reasoning on four
+pillars $P_1^{(i)},\dots,P_4^{(i)}\in[0,1]$, averaged into a per-agent score
+$\rho_i=\tfrac14\sum_k P_k^{(i)}$ and a group mean
+$\bar{\rho}=\tfrac1n\sum_i \rho_i$. A PID controller drives $\bar{\rho}$ toward a target
+$\rho^\star$ by regulating a contentiousness parameter $\beta_t\in[0,1]$ that sets
+critique tone. Debate ends at $T_{\max}$ or on PID early stop (high reasoning quality
+with low diversity: $\mathrm{JSD}_t<\epsilon$ and
+$|\bar{\rho}_t-\bar{\rho}_{t-1}|<\Delta\rho$). Crucially, the evaluator never sees
+realized prices or any post-decision outcome, so $\bar{\rho}$ and the financial metrics
+are measured independently. A separate consistency evaluator implementing RCA
+\citep{rca} checks whether an agent's revision rationally addresses the critiques it
+received or merely capitulates; when it fails, the turn is retried with feedback whose
+tone is set by the PID state.
 
 
  \section{Comprehensive Evaluation, Analysis of Results, and Failure Modes}
@@ -345,40 +258,34 @@ Separately from RAudit, a  \texttt{ConsistencyJudge} implements RCA \cite{rca}, 
 \subsection{Experimental Setup}
 \vspace{-0.15cm}
 We evaluate agent allocations through backtesting on real historical market data. Agents construct portfolio allocations on the first day of each quarter using the preceding quarter's data, hold positions through the quarter, and are evaluated daily. Our largest-scale experiments use 35 market scenarios spanning 12 quarters (2021Q4--2025Q3), covering multiple regimes including the 2022 bear market, the regional banking crisis, and the AI-driven rally. Ticker universes range from 3--35 tickers (mean 11.5) across seven sectors; cross-scenario similarity is low (mean Jaccard 0.216), with intentional skew toward 2022 as a stress-test for reasoning interventions. Daily prices from Yahoo Finance plus S\&P~500 (SPY) enable computation of daily equity curves and meaningful financial metrics beyond return: Sharpe and Sortino ratios, volatility, and maximum drawdown. Unless otherwise specified, agents use \texttt{gpt-5-mini} (temperature 0.3); CRIT evaluation uses \texttt{gpt-5}. Agent behavior is parameterized through three configuration layers: a \textbf{debate configuration} (orchestration protocol, agent roles, rounds, LLM provider, PID gains); a \textbf{scenario configuration} (quarter, ticker universe, sector mappings, allocation constraints); and per-role \textbf{agent profiles} (YAML files declaring ordered prompt blocks, structured user-prompt templates, and required variables for each debate phase).
-\vspace{-0.3cm}
-\subsubsection{Reasoning Profile Tiers}\vspace{-0.20cm}
-Agent profiles exist at three tiers of reasoning structure:
+\paragraph{Reasoning profile tiers.}
+Agent prompts exist at three tiers of increasing structure, which is the independent
+variable in our RQ2 prompt experiments. \textbf{Baseline} profiles
+(Appendix~\ref{app:macro-basic}) give a minimal role definition ($\sim$30 lines) plus a
+contract requiring bracketed evidence citation. \textbf{Causal scaffolding} profiles
+(Appendix~\ref{app:macro-causal}) expand this to $\sim$140 lines, adding disagreement
+tracking, epistemic calibration, weakest-assumption attacks, a narrative commitment
+(e.g.\ ``macroeconomic regimes drive sector leadership''), and differentiation rules that
+keep agents inside their analytical lens. \textbf{Enriched} profiles
+(Appendix~\ref{app:role-prompt}) add stricter output structure: numbered claims
+(\texttt{C1},\,\ldots) with typed \texttt{reasoning\_type}, cited evidence IDs,
+assumptions, falsifiers, and confidence, where critiques must reference claims by label
+and each position must cite the claim IDs justifying it
+(Appendix~\ref{app:claim-schema}).
 
-\textbf{1. Baseline profiles} (Example Appendix~\ref{app:macro-basic}) attach a minimal role definition
-($\sim$30 lines specifying analytical domain and evidence citation rules) with
-a standard system contract requiring bracketed evidence citation.\\
-\textbf{2.\ Causal Scaffolding profiles} (Example Appendix~\ref{app:macro-causal}) expand the basic agent role prompt with a structured reasoning protocol that
-introduces disagreement tracking, epistemic calibration requirements, and weakest-assumption
-attacks. The role prompt expands to $\sim$140 lines, incorporating a narrative commitment
-(e.g., ``macroeconomic regimes are the primary driver of sector leadership''),
-evidence priorities, and portfolio differentiation rules that prevent agents from drifting
-outside their analytical lens.\\ 
-\textbf{3. Enriched profiles} (Example Appendix~\ref{app:role-prompt}) further enforce causal discipline in two ways: they extend the causal scaffolding profile with more detailed reasoning requirements, as well as enforcing an stricter format for structured reasoning that requires explicit labeled enumeration of claims, critiques and evidence.
+Scaffolding tiers 2--3 require each proposal to make at least one causal or
+risk-assessment claim, state what evidence would change the agent's belief, and name
+potential confounders, with explicit warnings against reverse causation, confounding,
+selection bias, post-hoc narrative construction, and survivorship bias. We flag one
+design property as a limitation on interpretation: the same causal hierarchy is encoded
+in both the generation prompts and the CRIT \textit{Causal Alignment} rubric
+(Appendix~\ref{app:crit-prompt}), so agents are partly scored against the scaffolding
+they were given. This makes CRIT gains from enriched prompting easier to obtain and is
+one reason we treat rubric improvement as insufficient evidence of better decisions.
 
-\textbf{Causal Scaffolding and Evaluation.}
-The causal scaffolding in the 2nd and 3rd tier agents serves a dual purpose: encouraging structured reasoning during generation and providing the evaluation rubric. Each proposal must include at least one causal or risk-assessment claim (pure associations are insufficient), cite evidence that would change the agent's belief, and identify potential confounders. Agents are also explicitly warned against common reasoning traps: reverse causation, confounding, selection bias, post-hoc narrative construction, and survivorship bias. The CRIT scorer's \textit{Causal Alignment} pillar (Appendix~\ref{app:crit-prompt}) independently verifies adherence, detecting \textit{rung collapse} — interventional conclusions drawn from purely correlational evidence. Encoding the same causal hierarchy in both generation prompts and the evaluation rubric creates a closed feedback loop between scaffolding and measurement.\\
-\textbf{Structured Claim-Evidence Schema}
-As mentioned above, central to the enriched prompt design is a structured output schema built around
-\textbf{enumerated claims} and \textbf{evidence identifiers}. The data pipeline assigns every
-quantitative data point in the investment memo a bracketed evidence ID, for example ticker-level metrics such
-as \texttt{[AAPL-RET60]} (60-day return) or \texttt{[NVDA-BETA]} (market beta), and macro indicators
-such as \texttt{[L1-VIX]} or \texttt{[L1-10Y]} (10-year Treasury yield). Agents must emit a numbered list of claims (\texttt{C1}, \texttt{C2}, \ldots), each structured with
-the following fields:
+Experiments below are organized by research question (RQ1--RQ3), with sub-experiments
+numbered within each (e.g.\ RQ1-E1).
 
-\textbf{Claim fields:} \texttt{reasoning\_type} (\texttt{causal}, \texttt{observational}, \texttt{risk\_assessment}, \texttt{pattern}),
-\texttt{evidence} (cited IDs), \texttt{assumptions}, \texttt{falsifiers}, \texttt{impacts\_positions}, and \texttt{confidence}.
-
-Critiques must also reference specific claims by label, and revisions must address each critique point-by-point. A companion \texttt{position\_rationale} array then closes the reasoning loop: each portfolio
-position must reference the specific claim IDs (\texttt{supporting\_claims}) that justify its
-weight. This bidirectional linkage, claims cite evidence and positions cite claims, creates a
-traceable chain from raw financial data to portfolio allocation decisions. 
-
-The experiments below are organized hierarchically by research question  \textbf{(RQ1–RQ3)}, with sub-experiments labeled sequentially within each question, for example \textbf{Section 3.2.1: RQ1–E1} describes experiment \textbf{E1} as it relates to answering research question \textbf{RQ1}.
 
 \vspace{-0.2cm}
 \subsection{RQ1: Do Reasoning Metrics Predict Financial Performance?}
@@ -418,7 +325,7 @@ Trajectory analysis shows that these gains are \textbf{front-loaded rather than 
 
 
 % \vspace{-0.8cm}
-These results definitely answer RQ1: our CRIT reasoning metrics are not predictive of financial performance in the trading task. We are, however, still interested in whether debate itself improves reasoning or financial outcomes.
+These results answer RQ1 in the negative for this setting: CRIT reasoning scores are not predictive of financial performance on our scenario set. We are, however, still interested in whether debate itself improves reasoning or financial outcomes.
 \vspace{-0.2cm}
 \subsection{RQ2: Does Debate Improve Reasoning and Portfolio Performance?}
 \vspace{-0.2cm}
@@ -456,7 +363,7 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 \vspace{-1em}
 \end{table}
 
-\textbf{Prompt baselines} Comparing a single agent with the `basic' prompt to the mean vote of minimal Value, Risk, Technical agents, we see diversification increase, and volatility and drawdown trended down, but so did return and sharpe ratios (Column A and B of Appendix \ref{app:prompts}).  \textbf{Adding the causal scaffolding to the agents’ prompts significantly increased return and Sharpe}, while maintaining the lower volatility and drawdown (column C). Finally, using the Enriched prompts (column D) resulted in a highly significant decrease in volatility and drawdown, partially attributed to increased cash holdings.  Return trended lower, but sharpe was largely retained.  We conclude causal scaffolding was highly valuable to both increase returns and reduce risk.
+\textbf{Prompt baselines.} All comparisons below are paired across the same 35 scenarios, with 95\% CIs from a bootstrap resampled at the scenario level (the independent sampling unit). Replacing a single `basic'-prompt agent with the mean vote of minimal Value, Risk, and Technical agents increased diversification and trended volatility and drawdown down, but return and Sharpe down as well; none of these differences is distinguishable from zero (return $-0.12$pp, CI $[-0.73,+0.48]$, $p{=}0.69$; columns A--B of Table~\ref{tab:prompts}). \textbf{Adding causal scaffolding to the same three-role ensemble did raise return and Sharpe} relative to the basic ensemble (return $+0.47$pp, CI $[+0.09,+0.84]$, $p{=}0.024$, $d{=}0.40$; Sharpe $+0.08$, CI $[+0.01,+0.16]$, $p{=}0.043$, $d{=}0.36$; column C). We note this gain does \emph{not} survive comparison against the single-agent baseline (return $+0.34$pp, CI $[-0.38,+1.06]$, $p{=}0.37$), so causal scaffolding is best read as recovering ground lost by ensembling rather than as beating a single agent. Enriched prompts (column D) produced the only large effects in this table: volatility $-0.04$ (CI $[-0.05,-0.02]$, $p{<}0.001$, $d{=}{-}1.02$) and max drawdown $-1.54$pp (CI $[-2.11,-1.02]$, $p{<}0.001$, $d{=}{-}0.92$) versus the single agent, partly attributable to a rise in uninvested cash from ${\sim}8\%$ to $17\%$; return trended lower while Sharpe was largely retained. Structured prompting therefore reliably reduces \emph{risk}; its effect on return is small and, against the strongest baseline, not statistically distinguishable from zero.
 
 \textbf{Causal debate baselines} Continuing with the Causal prompt, adding a single round of critique, revise, and final judgement led to significant improvements in volatility and drawdown partially attributed to additional cash, though return and Sharpe trended lower (Appendix \ref{app:debate_rca} column B). 
  
@@ -487,7 +394,7 @@ Single Agent            & 3 & $+1.59 \pm 0.99$ & $0.35 \pm 0.17$ & $0.52 \pm 0.2
 Multi-Agent Mean        & 3 & $+2.43 \pm 1.23$ & $0.58 \pm 0.30$ & $0.88 \pm 0.46$ & $8.61 \pm 1.95$ & $-0.13 \pm 3.09$ \\
 Enriched Debate (3-ag.) & 3 & $+2.46 \pm 1.74$ & $0.76 \pm 0.48$ & $1.16 \pm 0.75$ & $5.33 \pm 0.71$ & $+0.04 \pm 4.04$ \\
 Enriched Debate (4-ag.) & 2 & $-0.27 \pm 0.29$ & $-0.05 \pm 0.06$ & $-0.07 \pm 0.09$ & $6.09 \pm 0.82$ & $+0.14 \pm 4.47$ \\
-\bottomrule % TODO
+\bottomrule
 \end{tabular}
 \vspace{4pt}
 \setlength{\belowcaptionskip}{-4pt}
@@ -495,7 +402,7 @@ Enriched Debate (4-ag.) & 2 & $-0.27 \pm 0.29$ & $-0.05 \pm 0.06$ & $-0.07 \pm 0
 \label{tab:financial-results_across}
 \end{table}
 
-Again, no configuration consistently outperforms SPY (excess returns cluster near zero with wide variance). However, the 3-agent enriched debate nearly halves maximum drawdown relative to the single-agent baseline ($5.33\%$ vs.\ $9.73\%$)--more than doubling risk-adjusted returns (Sharpe ratio $0.76$ vs.\ $0.35$ and Sortino ratio $1.16$ vs.\ $0.52$). This confirms that structured debate's primary value is in risk management---reducing tail losses and improving return consistency---rather than generating alpha. The 4-agent 5-round debate produces negative returns ($-0.27\%$) despite maintaining stable per-round CRIT scores ($\bar{\rho} \approx 0.83$--$0.85$, \ref{app:crit-scores}), illustrating that extended debate can degrade performance through over-convergence. Appendix~\ref{app:per-scenario-debate} breaks down per-scenario variance across market regimes. % \textbf{Reasoning Quality (CRIT Scores)} 
+Again, no configuration consistently outperforms SPY (excess returns cluster near zero with wide variance). However, the 3-agent enriched debate nearly halves maximum drawdown relative to the single-agent baseline ($5.33\%$ vs.\ $9.73\%$)--more than doubling risk-adjusted returns (Sharpe ratio $0.76$ vs.\ $0.35$ and Sortino ratio $1.16$ vs.\ $0.52$). This is consistent with structured debate's primary value being risk management---reducing tail losses and improving return consistency---rather than generating alpha. The 4-agent 5-round debate produces negative returns ($-0.27\%$) despite maintaining stable per-round CRIT scores ($\bar{\rho} \approx 0.83$--$0.85$, \ref{app:crit-scores}), illustrating that extended debate can degrade performance through over-convergence. Appendix~\ref{app:per-scenario-debate} breaks down per-scenario variance across market regimes. % \textbf{Reasoning Quality (CRIT Scores)} 
 % \label{sec:crit-results}
 Appendix~\ref{app:crit-scores} reports CRIT pillar scores for the 4-agent enriched debate. Per-round reasoning quality remains stable at $\bar{\rho} \approx 0.83$
 --$0.85$, with Causal Alignment ($P_4$) consistently the weakest pillar. 
@@ -506,78 +413,19 @@ higher CRIT scores \emph{and} better financial performance suggests that
 fewer agents and fewer rounds reduce sycophantic convergence, allowing 
 the enriched prompt scaffolding to be more effective.
 
-\vspace{-0.3cm}
-\subsubsection{RQ2-E3: LLM Providers Comparisons} % TODO!
-\vspace{-0.3cm}
-To test if using different LLMs generated more effective debates, and whether our findings were agnostic to LLM providers, we ran the following experiments.
-\paragraph{GPT and Gemini:}
-
-With GPT-5-mini serving as Macro, Value, \& Judge, and Gemini-2.5-flash
-    serving as Risk, 6/6 scenarios completed successfully. With Gemini-2.5-flash as Macro, Value, \& Judge and GPT-5-mini as Risk only 3/6 scenarios completed due to Gemini as judge hallucinated ticker JNJ, which was not in the scenario universe. Appendix ~\ref{app:llm-comparison} reports per-scenario results for these two experiments. Returns are comparable across LLM assignments when runs complete successfully, suggesting the system is largely LLM-agnostic in terms of financial outcomes.
-In a striking demonstration, all three LLM configurations produced byte-identical
-portfolios on the same scenario- same positions, same cash, same quarterly
-return, despite using different providers and running at different times. This
-convergence to equal-weight allocation under severe market stress illustrates how
-sycophantic convergence during debate drives agents toward similar allocations
-regardless of the underlying model. GPT-5-mini as judge is significantly more
-reliable (6/6 vs.\ 3/6 completion rate).
-
-\textbf{Phase-LLM:} In this experiment GPT-5-mini responds for all roles for propose and revise phases, while Gemini-2.5-flash responds for critique and judge. On the 2022\,Q1 Inflation Shock scenario (10 tickers), this returned $-16.22\%$ (Sharpe $-2.11$, Sortino $-2.63$, Max DD $17.67\%$),
-    with excess vs.\ SPY of $+0.13\%$ (SPY returned $-16.35\%$, full results in \ref{tab:phase-llm}.
-
-\textbf{GPT and Anthropic:} In this configuration, the macro agent used Claude-3.5-Sonnet while both the risk agent and judge used GPT-5-mini. The system was evaluated across 17
-historical market scenarios from 2021--2025, with agents participating in three
-debate rounds before the judge selected the final portfolio allocation. Across scenarios, the system achieved a mean return of $-1.11\%$ and a mean
-excess return versus the S\&P 500 of $+1.01\%$. Performance outcomes were
-highly dispersed, ranging from $+21.71\%$ to $-70.10\%$, with Sharpe ratios
-between $-2.73$ and $4.38$ (Appendix~\ref{app:ablation_performance}). Failure
-analysis identified reasoning--allocation disconnect as the dominant issue
-(10 of 17 runs), where agents produced coherent reasoning but inconsistent
-portfolio allocations; critique-ignoring or stalled revision occurred in 7 runs.
-The macro agent was most frequently identified as weakest, often exhibiting
-unsupported claims or causal overreach that contributed to unstable portfolio
-revisions. % To evaluate the impact of \textbf{LLM routing strategies}, we conducted a set of experiments comparing role-based and phase-based model assignments within the multi-agent trading system. In the role-only configuration, the macro agent used an Anthropic-Claude-3.5-Sonnet model while the risk and judge agents used GPT-5-mini models. Hybrid phase experiments instead routed different debate phases to different models, with Anthropic-Claude-3.5-Sonnet used for proposal and revision steps and GPT-5-mini used for critique. All experiments used the same three-round debate structure and market scenario configuration.
-Appendix~\ref{app:llm_routing_experiments} compares role-only and hybrid
-phase-routing configurations under the same three-round debate structure.
-Across all three experiments, excess returns vs.\ SPY remained consistently
-positive ($+2.26\%$--$+3.16\%$) despite negative absolute returns
-($-2.37\%$ to $-1.42\%$). Role-only with Claude as macro agent achieved
-the strongest excess return; hybrid phase routing produced slightly lower
-Sharpe ratios and higher final JS divergence, suggesting less debate
-convergence. The most common failure mode across all configurations was
-critique-ignoring, where agents failed to incorporate feedback during
-revision phases.
+\paragraph{Cross-provider robustness (RQ2-E3).}
+To test whether these findings depend on a particular model family, we repeated
+debates with mixed GPT/Gemini and GPT/Anthropic role assignments and with
+phase-level model routing. Returns were comparable across assignments whenever runs
+completed, and the dominant failure mode (agents acknowledging critiques without
+materially revising) recurred under every provider combination, so we treat the
+proxy--outcome findings as not specific to one model family. These runs are small
+($N{=}2$--$17$) and one configuration failed in 3 of 6 scenarios when Gemini-2.5-flash
+served as judge and hallucinated a ticker outside the scenario universe; we therefore
+report them as supporting rather than confirmatory evidence, with full per-scenario
+results in Appendix~\ref{app:llm-comparison}--\ref{app:llm_routing_experiments}.
 
 
-
-
-
-% \subsection{RQ3: Can Interventions Improve Reasoning and Portfolio Performance?}
-% While debate may improve reasoning by introducing structured disagreement, LLM reasoning processes can still exhibit systematic failure modes such as premature convergence, sycophancy, and causal reasoning errors. In this section we investigate whether targeted reasoning interventions can repair these failures during the debate process. Unlike the experiments in Section~3.3, which modify the debate configuration, these interventions operate dynamically by detecting reasoning failures and triggering corrective actions such as response retries or debate regulation.
-% \vspace{-0.2cm}
-% \subsubsection{RQ3-E1: Repairing Sycophantic Convergence}
-% \vspace{-0.2cm}
-% This section evaluates whether explicitly regulating causal reasoning depth improves portfolio outcomes. Each ablation modifies the intervention engine while holding the debate configuration fixed.
-% Appendix~\ref{app:financial-results} and Appendix~\ref{app:paired-ttests}
-
-% \setlength{\tabcolsep}{3pt}
-
-% \vspace{-10pt}
-
-% \subsubsection{RQ3-E2: Repairing Causal Rung Collapse}
-% \paragraph{Debate-Time Interventions Can Modify Reasoning Behavior}
-% All three ablations share a five-phase pipeline: \textit{propose → critique → revise → CRIT audit → judge}, with the intervention engine operating at two checkpoints. A7 and A8 introduce a Jensen–Shannon (JS) divergence collapse trigger at the post-revision checkpoint (between \textit{revise} and \textit{CRIT}). If the collapse ratio $JS_{\text{rev}} / JS_{\text{prop}}$ falls below threshold, role-specific nudge prompts are injected and only the \textit{revise} phase is re-executed; the updated portfolios then proceed to CRIT and judging. A10 instead uses a CRIT-based reasoning-quality trigger at the post-CRIT checkpoint. Agents whose causal reasoning score $\rho$ falls below threshold receive targeted prompt nudges and re-run both \textit{revise} and \textit{CRIT}, requiring $N$ additional LLM calls for re-scoring. Appendix~\ref{app:financial-results} summarizes portfolio outcomes across the intervention regimes. A7 is the only configuration producing a consistent positive signal. The intervention improves Sharpe by +0.14 ($t=2.30$, $p=0.028$, $d=0.39$) and Sortino by +0.25 ($p=0.026$, $d=0.39$), with total return trending upward (+0.83pp, $p=0.052$). Max drawdown remains unchanged, indicating that gains arise from improved return generation rather than risk attenuation. This suggests the intervention recovers alpha lost to \textit{sycophantic convergence}, where agents prematurely align their positions during revision.
-
-% \paragraph{Mechanisms: Sycophantic Convergence vs Causal Rung Collapse}
-
-% A8 adds a third risk-specialist agent while retaining the same JS-divergence trigger. Treatment effects collapse to near zero (Sharpe diff +0.04, $p=0.53$). A key factor is the role of the technical agent, which was both the primary source of sycophantic collapse and the intended beneficiary of the JS intervention. In two-agent debates, the technical agent frequently converged toward the macro agent’s position during revision, driving the drop in JS divergence; the JS intervention in A7 was therefore designed largely to preserve this independent signal. At the same time, the technical agent is uniquely susceptible to causal rung collapse. Macro arguments naturally express cause–effect relationships, whereas technical analysis relies primarily on pattern recognition. While such signals can be rationalized causally, doing so is structurally more difficult, making the technical agent’s arguments more vulnerable to CRIT penalties for weak causal structure. The technical agent was therefore also the primary target of the CRIT-based reasoning intervention in A10. This places the technical agent at the intersection of the two failure modes: sycophantic convergence and causal rung collapse. Interventions that preserve disagreement can recover the technical signal (A7), whereas enforcing stricter causal reasoning does not improve performance and may suppress useful pattern-based heuristics.
-
-% A10 replaces the JS trigger with a CRIT-based reasoning intervention in the two-agent setting. Although the intervention successfully repairs causal reasoning scores, it slightly reduces return metrics (Sharpe $-0.09$, $p=0.22$) and increases max drawdown (+0.53pp, $p=0.062$).
-% \vspace{-0.2cm}
-% \subsection{Experiment Results Summary}
-% \vspace{-0.2cm}
-% Taken together, these experiments clarify the role of reasoning evaluation in multi-agent debate systems. While reasoning behavior can be manipulated through targeted intervention signals (RQ2), improvements in reasoning metrics do not reliably translate into economic gains (RQ1). Instead, the primary driver of performance improvements appears to be the preservation of independent agent signals rather than the enforcement of deeper causal reasoning. These findings suggest that reasoning control mechanisms may be most effective when they regulate interaction dynamics between agents rather than attempting to directly optimize internal reasoning quality. These results suggest that while reasoning behavior is controllable (RQ2), improvements in reasoning metrics alone do not reliably translate into economic gains (RQ1 and RQ3). Instead, preserving independent signals across agents appears to be the primary mechanism through which debate improves portfolio performance.
-\vspace{-0.3cm}
 \subsection{RQ3: Can Interventions Improve Reasoning and Portfolio Performance?}
 \vspace{-0.2cm}
 In this section we investigate whether targeted reasoning interventions can repair these failures during the debate process. Unlike the experiments in Section~3.3 (RQ2), which modify the debate configuration, these interventions operate dynamically by detecting reasoning failures and triggering corrective actions such as response retries or debate regulation.
@@ -586,7 +434,7 @@ In this section we investigate whether targeted reasoning interventions can repa
 \vspace{-0.2cm}
 \subsubsection{RQ3-E1: Repairing Sycophantic Convergence via RCA}
 \vspace{-0.2cm}
-When we introduced RCA to combate sycophancy in the revise phase of our causal-prompt debates, we observed further reduced volatility and drawdown, with Sharpe trending up (column C of \ref{tab:debate_rca}). Thus while an investor might favor a simple average of diverse agents with causal scaffolding for raw returns, \textbf{debate, when regulated by RCA, may have significant value for risk-averse investors}. 
+Introducing an RCA-style consistency check in the revise phase of our causal-prompt debates reduced volatility and drawdown relative to the unregulated mean vote, while leaving return and Sharpe unchanged (column C of Table~\ref{tab:debate_rca}; paired over the same 35 scenarios). The risk reductions are the clearest effects in that table: volatility $-0.02$ (CI $[-0.02,-0.01]$, $p{<}0.001$, $d{=}{-}0.88$) and max drawdown $-0.69$pp (CI $[-1.09,-0.30]$, $p{=}0.002$, $d{=}{-}0.56$), whereas return ($-0.32$pp, CI $[-0.84,+0.20]$, $p{=}0.25$) and Sharpe ($-0.05$, CI $[-0.14,+0.04]$, $p{=}0.31$) are indistinguishable from zero. \textbf{Debate regulated by an RCA-style check therefore reduced risk without improving returns} on this scenario set: an investor optimizing raw return would still prefer the simple average of causally-scaffolded agents. 
 
 \vspace{-0.2cm}
 \subsubsection{RQ3-E2: Repairing Sycophantic Convergence via JSD}
@@ -595,7 +443,7 @@ We also tried preventing sycophantic convergence and preserving healthy disagree
 % between agents improves portfolio outcomes. The intervention detects , where agents prematurely align their allocations during debate revision. To regulate this behavior we 
 by introducing a JSD collapse trigger at the post-revision checkpoint (between \textit{revise} and \textit{CRIT}). If the collapse ratio $JS_{\text{rev}} / JS_{\text{prop}}$ falls below threshold, role-specific nudge prompts are injected and the \textit{revise} phase is re-executed before the updated portfolios proceed to CRIT and judging. 
 
-Appendix~\ref{app:financial-results} and Appendix~\ref{app:paired-ttests} report the full financial metrics. Across the 35 evaluation scenarios, this intervention produces the only statistically significant gains on raw and risk-adjusted returns, with a strict pre-pended prompt that placed a hard limit on how much a portfolio could change in the revision phase (max 10\%); softer nudges had no measurable effect. Sharpe improves by +0.14 ($t=2.30$, $p=0.028$, $d=0.39$) and Sortino improves by +0.25 ($p=0.026$, $d=0.39$), with total return trending upward (+0.83pp, $p=0.052$). Max drawdown remains unchanged, suggesting the gains arise from improved return generation rather than reduced risk. \textbf{These results confirm that debate interventions CAN recover alpha lost to premature agreement between agents.} 
+Appendix~\ref{app:financial-results} and Appendix~\ref{app:paired-ttests} report the full financial metrics. Across the 35 evaluation scenarios, this intervention produces the only statistically significant gains on raw and risk-adjusted returns, with a strict pre-pended prompt that placed a hard limit on how much a portfolio could change in the revision phase (max 10\%); softer nudges had no measurable effect. Sharpe improves by +0.14 ($t=2.30$, $p=0.028$, $d=0.39$) and Sortino improves by +0.25 ($p=0.026$, $d=0.39$), with total return trending upward (+0.83pp, $p=0.052$). Max drawdown remains unchanged, suggesting the gains arise from improved return generation rather than reduced risk. \textbf{These results indicate that a debate intervention can recover return lost to premature agreement, under this two-agent configuration and scenario set.} 
 
 A related ablation (A8 in \ref{app:financial-results}) retains the same JS-divergence trigger but adds a third risk-specialist agent. In this setting the treatment effect collapses (Sharpe diff +0.04, $p=0.53$). The result highlights the role of the technical agent in two-agent debates: the technical agent frequently converged toward the macro agent’s position during revision, driving the JS collapse that the intervention was designed to detect. \textbf{Preserving the Technical Agent's independent signal appears to be the primary mechanism through which the intervention improves performance.}
 
@@ -608,19 +456,13 @@ This experiment tests whether explicitly repairing causal reasoning failures imp
 
 
 \subsection{Failure Modes of Debate}
-\vspace{-0.3cm}
-\subsubsection{Sycophantic Convergence}
-
-\vspace{-0.3cm}
-The most consistent failure mode is \emph{sycophantic convergence}: agents abandon their distinct investment theses during the critique-revise cycle. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios. This suggests that sycophancy is deeply embedded in the critique-revise interaction pattern and cannot be adequately controlled through prompt modulation alone. Shorter debates and inter partially mitigates this problem--by giving the agents less opportunity to converge, or focibly slowing convergence--preserving more portfolio diversity while retaining some of the risk-lowering benefits of structured critique.
-\vspace{-0.2cm}
-\subsubsection{Causal Alignment as the Weakest Pillar} \vspace{-0.2cm}
+\label{sec:failure-modes}
+\paragraph{Consensus convergence.}
+The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios. This suggests that sycophancy is deeply embedded in the critique-revise interaction pattern and cannot be adequately controlled through prompt modulation alone. Shorter debates, and interventions that forcibly slow convergence, partially mitigate this by giving agents less opportunity to converge---preserving more portfolio diversity while retaining some of the risk-lowering benefits of structured critique.
+\paragraph{Causal alignment is the weakest pillar.} \vspace{-0.2cm}
 Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
 
-\vspace{-0.2cm}
-\subsubsection{Other Failure Modes}
-
-\vspace{-0.2cm}
+\paragraph{Other failure modes.}
 \textbf{Ticker Hallucination.} When Gemini-2.5-flash serves as judge, it hallucinated a ticker (JNJ) not present in the scenario universe in 3 of 6 runs, causing those runs to produce invalid allocations.
 \textbf{Silent Prompt and Template Bugs.} Missing template variables and import errors caused incomplete prompts and hidden quality degradation. These were discovered through the dashboard file explorer, not through runtime errors: the system continued operating with degraded inputs rather than failing.
 
@@ -630,22 +472,13 @@ Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scor
 
 To ground the quantitative null results in mechanistic terms, we examine three concrete failure patterns identified through trace analysis of ablation logs.
 
-\vspace{-0.2cm}
-\subsubsection{High-CRIT, Negative Returns: Sycophantic Portfolio Collapse}
-\vspace{-0.2cm}
-
+\paragraph{High CRIT, negative returns: convergent portfolio collapse.}
 The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$). Trace inspection reveals the mechanism: cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after sycophantic convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This explains why $\bar{\rho}$ and Sharpe are uncorrelated across the 210-run dataset: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
 
-\vspace{-0.2cm}
-\subsubsection{Reasoning--Allocation Disconnect in Cross-Provider Debate}
-\vspace{-0.2cm}
-
+\paragraph{Reasoning--allocation disconnect across providers.}
 In the Claude-3.5-Sonnet (macro) + GPT-5-mini (risk, judge) configuration across 17~scenarios, trace analysis identifies \textbf{reasoning--allocation disconnect as the dominant failure in 10 of~17 runs}: agents produced internally coherent, well-scored arguments ($\rho_i$ high) but the judge's final portfolio allocation did not follow from those stated positions. In 7~runs, critique-ignoring compounded the disconnect---agents acknowledged critique points yet subsequent revisions were structurally unchanged. The macro agent was most frequently the weakest link, exhibiting causal overreach ($P_4$ failures) that destabilized the downstream allocation decision. The \texttt{position\_rationale} linkage, which requires positions to cite supporting claim IDs, provides a structural safeguard but does not prevent a judge from discarding the debate's reasoning trail in favor of a simpler heuristic. Detecting this disconnect requires trace inspection; it is invisible to aggregate CRIT scores.
 
-\vspace{-0.2cm}
-\subsubsection{When Intervention Succeeds: Targeted Signal Preservation}
-\vspace{-0.2cm}
-
+\paragraph{When intervention succeeds: targeted signal preservation.}
 The only statistically significant performance gain in the study (A7 JSD intervention: Sharpe $+0.14$, $p=0.028$, $d=0.39$) illuminates the conditions under which debate repair succeeds. The two-agent baseline (macro + technical) exhibits a specific failure mode: the technical agent systematically converges toward the macro agent's position during revision, driving JSD collapse. The intervention succeeds through two features: (1) a \textbf{hard allocation constraint} (maximum 10\% portfolio change per revision) rather than a soft prompt nudge, and (2) the constraint directly targeting the specific agent pair driving convergence. When a third risk-specialist agent is added (A8), the treatment effect collapses (Sharpe diff $+0.04$, $p=0.53$): convergence distributes across three agents and the trigger loses its specific target. This illustrates a general principle: \textbf{debate interventions must be designed around the precise failure mechanism}. The same intervention can be the sole significant positive result in one configuration and statistically null in another depending on whether its target failure mode is actually present.
 
 % \textbf{Metric and Hypothesis Risk.} If RQ1 fails (reasoning quality does not predict returns), PID control framework (RQ2, RQ3) lacks meaningful signal. Specifically, it is possible that due to the simulation gap, sticking to any `answer key' available in the pretraining data could triumph \emph{without} reason.
@@ -660,7 +493,7 @@ The only statistically significant performance gain in the study (A7 JSD interve
 
 % \subsubsection{Prompt baselines}
 
-% Comparing a single agent with a minimal prompt to the mean vote of minimal Value, Risk, Technical agents, we see diversification increase, and volatility and drawdown trended down, but so did return and sharpe ratios (Column A and B of Appendix \ref{app:prompts}).  Adding causal scaffolding to the agents’ prompts significantly increased return and sharpe, while maintaining the lower volatility and drawdown (column C). Using the Enriched prompts (column D) resulted in a highly significant decrease in volatility and drawdown, partially attributed to increased cash holdings.  Return trended lower, but sharpe was largely retained.  We conclude causal scaffolding was highly valuable to both increase returns and reduce risk.
+% Comparing a single agent with a minimal prompt to the mean vote of minimal Value, Risk, Technical agents, we see diversification increase, and volatility and drawdown trended down, but so did return and sharpe ratios (Column A and B of Table~\ref{tab:prompts}).  Adding causal scaffolding to the agents’ prompts significantly increased return and sharpe, while maintaining the lower volatility and drawdown (column C). Using the Enriched prompts (column D) resulted in a highly significant decrease in volatility and drawdown, partially attributed to increased cash holdings.  Return trended lower, but sharpe was largely retained.  We conclude causal scaffolding was highly valuable to both increase returns and reduce risk.
 
 
 
@@ -816,35 +649,34 @@ The only statistically significant performance gain in the study (A7 JSD interve
 \section{Conclusions}
 \vspace{-0.3cm}
 
-Our experiments evaluate 3 research questions: whether reasoning metrics predict financial performance (RQ1), structured multi-agent debate improves reasoning and portfolio outcomes (RQ2), and if targeted interventions can repair reasoning failures during debate (RQ3). Across all experiments we find reasoning behavior is highly controllable through prompting, debate structure, and interventions but improvements in reasoning metrics rarely translate into improved financial performance. 
+Across all three research questions we find reasoning behavior to be highly controllable---through prompting, debate structure, and interventions---while improvements in reasoning metrics rarely translate into improved financial performance. 
 
 \vspace{-6pt}
-\subsection{Why Reasoning Metrics Do Not Predict Financial Returns (RQ1)}
+\paragraph{Why reasoning metrics do not predict returns (RQ1).}
 \vspace{-4pt}
 
-Three complementary explanations account for the negative result for \textbf{RQ1}.
 
 \textbf{CRIT and agreement measure coherence, not comprehensive correctness.}
-CRIT evaluates whether an argument is well-structured—logically valid, evidentially grounded, and causally explicit—not whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 without improving returns, confirming that agents learn to \emph{write} better arguments, not necessarily \emph{make} better predictions. CRIT has been shown to be effective in deterministic domains, but in stochastic, non-fully-observable domains, where arguments with many counterarguments should downweighted--but critically not discounted entirely. E.g.\ keeping cash to earn the risk-free rate, and other low-risk arguments are agreeable and bulletproof from a reasoning perspective, but they do not generate the highest expected risk-adjusted returns. Process quality therefore appears necessary but insufficient in domains such as financial markets.
+CRIT evaluates whether an argument is well-structured---logically valid, evidentially grounded, causally explicit---not whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 without improving returns: agents learn to \emph{write} better arguments, not to \emph{make} better predictions. Rubrics of this kind work best in deterministic domains; in stochastic, partially-observable ones a bulletproof argument can be a bad bet. Holding cash to earn the risk-free rate is agreeable and near-unfalsifiable, and scores well, but does not maximize expected risk-adjusted return. Process quality is necessary but insufficient here.
 
 \textbf{Public-information reasoning faces a structural ceiling.}
 Our agents reason exclusively over public information (SEC filings, news, and prices). Under even weak-form market efficiency, this information is largely incorporated into prices shortly after it becomes available. In this setting, improved reasoning about the same information cannot easily generate alpha. The empirical result that debate portfolios beat a naive 1/$N$ allocation only 33\% of the time is consistent with the well-known difficulty of outperforming equal-weight benchmarks \citep{demiguel2009optimal}. The negative result for RQ1 may therefore reflect a fundamental ceiling on the predictive value of public-information reasoning.
 
 \textbf{Our simulation captures selection, not timing.}
-Quarterly rebalancing without transaction costs removes the dimensions where reasoning quality might matter most: \emph{when} and \emph{how} to trade. Portfolios with similar holdings perform similarly over a quarter regardless of reasoning quality. Notably, debate \emph{does} improve risk-adjusted metrics such as Sharpe ratio and drawdown, suggesting that reasoning may influence risk management even when it does not generate alpha.
+Quarterly rebalancing without transaction costs removes the dimensions where reasoning might matter most---\emph{when} and \emph{how} to trade. Portfolios with similar holdings perform similarly over a quarter regardless of reasoning quality. A different task design could therefore yield a different answer to RQ1.
 \vspace{-6pt}
-\subsection{Signal Diversity as the Mechanism for Debate Value (RQ2)}
+\paragraph{Signal diversity as the mechanism for debate value (RQ2).}
 \vspace{-4pt}
 
-Results related to \textbf{RQ2} show that structured debate alters reasoning behavior and portfolio characteristics, but its benefits arise primarily through signal diversity rather than improved reasoning accuracy. The central finding across all debate experiments is that mechanisms preserving disagreement improve financial outcomes, while mechanisms enforcing deeper reasoning do not. This pattern aligns with ensemble diversity theory: the error of an averaged ensemble equals the mean member error \emph{minus} a diversity term \citep{krogh1994neural}. Greater diversity among members reduces ensemble error even if individual accuracy remains unchanged. Our multi-agent trading system functions as such an ensemble. Sycophantic convergence collapses agents toward similar allocations, eliminating the diversity benefit. The critique–revise cycle unintentionally introduces correlation because agents condition on each other's positions. This mirrors the prediction of Condorcet's jury theorem: majority voting improves decision accuracy only when voters remain independent. The A7 JSD interventions and RCA-revise interventions succeed because they preserve disagreement between agents, maintaining ensemble diversity. By contrast, interventions that improve collective reasoning quality without maintaining diversity fail to improve outcomes. These results suggest that multi-agent investment debate systems should be viewed primarily as mechanisms for regulating signal diversity rather than for improving reasoning quality alone.
+Debate alters reasoning behavior and portfolio characteristics, but its benefits appear to arise through signal diversity rather than improved reasoning accuracy: across our experiments, mechanisms preserving disagreement improved outcomes while mechanisms enforcing deeper reasoning did not. This is what ensemble diversity theory predicts---averaged-ensemble error equals mean member error \emph{minus} a diversity term \citep{krogh1994neural}---and our system is such an ensemble. The critique--revise cycle introduces correlation because agents condition on each other's positions, so consensus convergence collapses allocations together and spends the diversity term; Condorcet's jury theorem makes the same point, that voting helps only while voters stay independent. We therefore read multi-agent debate here as a mechanism for regulating signal diversity rather than for improving reasoning quality. We note this is an interpretation consistent with our results rather than a directly tested mechanism: we did not manipulate diversity independently of the intervention.
 
 \vspace{-4pt}
-\subsection{The Limits of Causal Evaluation in Financial Reasoning (RQ3)}
+\paragraph{Limits of causal evaluation in financial reasoning (RQ3).}
 \vspace{-4pt}
 
-Results for \textbf{RQ3} show that interventions can modify reasoning behavior but do not reliably improve financial performance. The $P_4$ (Causal Alignment) pillar is consistently the weakest CRIT dimension, and explicitly improving it through intervention (A10) slightly \emph{degrades} portfolio performance. This finding challenges the assumption that deeper causal reasoning is universally beneficial in financial domains. Technical analysis relies primarily on statistical patterns—momentum, mean reversion, and volume signals—rather than explicit causal mechanisms. These signals are empirically useful \citep{jegadeesh1993returns} but are fundamentally associative--e.g.\ momentum does not actually \emph{cause} price increase, but future causes are indeterminate in markets and \emph{potential} causes may actually be less predictive. Forcing agents to express valuable associative signals in higher-rung causal terms produces ``causal overreach''. As a result, the technical agent frequently receives low $P_4$ scores not because its reasoning is weak, but because its reasoning paradigm is inherently non-causal. Macro reasoning, by contrast, is more strictly causal  ``CPI surprise $\to$ Fed tightening $\to$ rate-sensitive underperformance''). Applying a uniform causal evaluation criterion across both domains conflates fundamentally different reasoning styles that are both valuable in such an underspecified, stochastic domain. Future evaluation frameworks should therefore allow role-specific reasoning metrics—for example, causal coherence for macro agents and statistical grounding for technical agents. 
+Interventions can modify reasoning behavior without reliably improving performance. Causal Alignment ($P_4$) is consistently the weakest pillar, yet explicitly repairing it (A10) slightly \emph{degrades} outcomes---challenging the assumption that deeper causal reasoning is universally beneficial here. Technical analysis rests on statistical patterns (momentum, mean reversion, volume) that are empirically useful \citep{jegadeesh1993returns} but fundamentally associative: momentum does not \emph{cause} price increase. Forcing such signals into higher-rung causal language produces ``causal overreach'', so the technical agent scores low on $P_4$ not because it reasons badly but because its paradigm is non-causal, while macro reasoning is natively causal (``CPI surprise $\to$ Fed tightening $\to$ rate-sensitive underperformance''). A uniform causal criterion conflates two legitimate reasoning styles; evaluation frameworks should allow role-specific metrics---causal coherence for macro agents, statistical grounding for technical ones. 
 
-Overall, our results suggest CRIT reasoning metrics alone are insufficient predictors of financial outcomes (RQ1), structured debate primarily improves portfolios through diversification and risk management rather than alpha generation (RQ2), and that interventions aimed at improving reasoning quality don't necessarily improve economic performance (RQ3). The dominant driver of performance is the preservation of independent informational signals across agents, not improvements in individual reasoning quality.
+Across all three questions the dominant driver of performance is the preservation of independent informational signals across agents, not improvement in individual reasoning quality. For practitioners building verifiers, the implication is narrow but concrete: a rubric that scores an agent's argument in isolation cannot detect that the argument was adopted rather than derived, and so cannot substitute for an external outcome check when one is available.
 
 % \section{Discussion}
 % \vspace{-0.2cm}
@@ -884,24 +716,53 @@ Overall, our results suggest CRIT reasoning metrics alone are insufficient predi
 
 \vspace{-6pt}
 \section{Limitations and Future Work}
+\label{sec:limitations}
 \vspace{-6pt}
 \subsection{Limitations}
 \vspace{-6pt}
-\textbf{High Costs \& Low Statistical Power.}
-With our API budget and timeline, we were only able to test many configurations with  $N = 2$--$3$ scenarios, resulting wide confidence intervals. While paired t-tests on our largest 35-scenario set yielded statistical significance for some financial measures, others may require thousands of scenarios due to inherent stochasticity of market reasoning. For extended debate, each scenario requires 7-13 minutes and roughly \$5-\$8 in API fees; full-scale ablations are expensive and can hit rate limits, interrupting batch execution.\\
-\textbf{Possible Pre-training Leakage.}
-Our scenarios use historical data that may  overlap with LLM training corpora. Models may recall which stocks performed well, weakening backtest comparisons, and rewarding agents who stick to this answer key without causal justification.\\
-\textbf{Limited Realism.}
-We test on a small ticker universe across a handful of quarters, without modeling transaction costs, spreads, taxes, or liquidity constraints. Results may not generalize to real portfolio construction.\\
-\textbf{No Dynamic Tool Use.}
-Agents rely entirely on precomputed case memos and cannot run calculations or fetch live data, limiting numerical analysis. \\
-\textbf{Compute Cost.}
+\textbf{Statistical power.} Budget and rate limits meant many configurations were run at
+$N{=}2$--$3$ scenarios, giving wide intervals; those results are exploratory, not
+confirmatory. Only the 35-scenario paired comparisons support the significance claims we
+make. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
+\textbf{Outcome noise.} Realized return is a noisy signal, not ground-truth reasoning
+correctness: a well-reasoned allocation can lose money and a poorly-reasoned one can
+profit. Our null result for RQ1 shows CRIT does not predict this outcome; it does not
+show CRIT measures nothing.
+\textbf{Possible pre-training leakage.} Scenarios use historical data that may overlap
+LLM training corpora, so models may recall which stocks performed well---rewarding
+agents that reach the right answer without valid justification.
+\textbf{Limited realism.} A small ticker universe over a handful of quarters, with no
+transaction costs, spreads, taxes, or liquidity constraints, and no dynamic tool use:
+agents read precomputed memos and cannot compute or fetch live data.
+\textbf{Rubric--prompt coupling.} The causal hierarchy appears in both the generation
+scaffolding and the CRIT rubric, so enriched agents are partly graded on the structure
+they were handed.
+\textbf{Stratified analysis not executed.} A role- and regime-stratified re-analysis is
+implemented and unit-tested but has not been run against the full corpus; we report no
+stratified results.
+\textbf{Uneven reproducibility.} Every cell of Tables~\ref{tab:prompts}
+and~\ref{tab:debate_rca} regenerates exactly from stored per-scenario artifacts, as do
+the bootstrap CIs above. Three gaps remain. The configuration files for two of six
+conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
+by hash, so those runs can be re-analyzed but not re-executed byte-identically. The
+in-loop RCA retry is not a wired code path in the current release---only the post-hoc
+consistency evaluator remains. And the per-round CRIT logs behind the $n{=}210$
+correlations, the pillar tables, and the $\bar{\rho}\,0.72\!\to\!0.84$ gain are not in
+the released artifact set, so those numbers rest on author records rather than a
+re-runnable pipeline. RQ1 is our central claim and carries this caveat.
 
+\vspace{-6pt}
+\subsection{Broader Impact}
+\vspace{-6pt}
+That reasoning-quality metrics and consensus can both be maximized while financial
+performance stagnates is a caution against treating such metrics as sufficient evidence
+of good decision-making in deployed financial agents. If similar consensus convergence
+occurs across independently deployed multi-agent systems reacting to the same public
+information, it could amplify correlated positioning during market stress rather than
+supplying the diversified viewpoints such systems are assumed to provide. We do not
+study live deployment, real capital, or systemic effects at scale, so this risk is
+inferred from simulated results rather than measured.
 
-% \textbf{2. Full CRIT Evaluation and Control.}
-% Implement evaluators for the remaining CRIT pillars ($P_2$--$P_4$) and use them with divergence metrics to control debate via RAudit-style \citep{raudit} PID \citep{Tore}. We will separately measure each pillar's correlation with financial performance to identify which aspects of reasoning are most economically predictive. We treat the mean reasoning score $\rho_t = \frac{1}{n}\sum_i \rho_{i,t}$ as a regulated state with target $\rho^*$ and error $e_t = \rho^* - \rho_t$, using a PID controller to adjust debate constraints. 
-
-% We also define a Causal Instability Index (CI) for agent $i$ over $T$ debate rounds as
 % $
 % \text{CI}_i
 % =
@@ -984,7 +845,12 @@ Agents rely entirely on precomputed case memos and cannot run calculations or fe
 % \textbf{8. Decision Regret.}
 % Implement multi-decision episodes, exploring regret and learning from past trade decisions to enhance future reasoning.
 \vspace{-6pt}
-\subsection{Future Work}
+\newpage
+\appendix
+
+\section{Appendix - Future Work}
+\label{app:future-work}
+
 \vspace{-0.01cm}
 \vspace{-6pt}
 \textbf{Precise Sycophancy Intervention.}
@@ -1000,8 +866,6 @@ If our strongest configurations--3-agent causal mean, and 3-agent intervened deb
 constraints- structured claims and point-by-point critique- into single-agent prompts to capture
 multi-agent benefits at lower latency and cost.
 
-\newpage
-\appendix
 
 \section{Appendix - System Diagram}
 \begin{figure}[h]
@@ -1428,6 +1292,47 @@ Total Return \% & $4.63\% \pm 1.54\%$ & $4.47\% \pm 1.49\%$ & $4.31\% \pm 1.41\%
 \label{tab:crit-scores}
 \end{table}
 
+\subsection{Cross-Provider Debate: Detailed Findings}
+\label{app:cross-provider}
+
+This appendix preserves the full narrative for the cross-provider experiments
+summarized in the main text (RQ2-E3).
+
+\textbf{GPT and Gemini.} With \texttt{gpt-5-mini} serving as Macro, Value, and Judge
+and \texttt{gemini-2.5-flash} as Risk, 6/6 scenarios completed successfully. With the
+assignment reversed, only 3/6 completed: Gemini as judge hallucinated ticker JNJ,
+which was not in the scenario universe, invalidating those allocations. Returns are
+comparable across assignments when runs complete, suggesting financial outcomes are
+largely provider-agnostic, while judge \emph{reliability} is not (6/6 vs.\ 3/6
+completion). Notably, all three configurations produced byte-identical portfolios on
+one scenario---same positions, same cash, same quarterly return---despite different
+providers and run times. This convergence to equal-weight allocation under market
+stress is consistent with the consensus-convergence dynamic described in
+Section~\ref{sec:failure-modes} operating independently of the underlying model.
+
+\textbf{Phase-level routing.} With \texttt{gpt-5-mini} handling propose and revise and
+\texttt{gemini-2.5-flash} handling critique and judge, the 2022\,Q1 Inflation Shock
+scenario (10 tickers) returned $-16.22\%$ (Sharpe $-2.11$, Sortino $-2.63$, max
+drawdown $17.67\%$), an excess of $+0.13\%$ against SPY's $-16.35\%$
+(Table~\ref{tab:phase-llm}).
+
+\textbf{GPT and Anthropic.} With \texttt{claude-3.5-sonnet} as macro agent and
+\texttt{gpt-5-mini} as risk agent and judge across 17 scenarios (2021--2025, three
+debate rounds), mean return was $-1.11\%$ and mean excess return versus the S\&P~500
+was $+1.01\%$. Outcomes were highly dispersed ($+21.71\%$ to $-70.10\%$; Sharpe
+$-2.73$ to $4.38$; Appendix~\ref{app:ablation_performance}). Trace analysis identified
+reasoning--allocation disconnect as dominant (10 of 17 runs) and critique-ignoring or
+stalled revision in 7 runs, with the macro agent most often flagged weakest for
+unsupported claims or causal overreach. Comparing role-only against hybrid
+phase-routing under the same three-round structure
+(Appendix~\ref{app:llm_routing_experiments}), excess returns versus SPY stayed
+positive ($+2.26\%$ to $+3.16\%$) despite negative absolute returns ($-2.37\%$ to
+$-1.42\%$); role-only with Claude as macro achieved the strongest excess return, while
+hybrid phase routing produced slightly lower Sharpe and higher final JS divergence,
+indicating less convergence. Given $N{=}2$--$17$ and the judge-hallucination failures,
+these comparisons are exploratory.
+
+
 \subsection{GPT and Gemini Experiments}
 \label{app:llm-comparison}
 
@@ -1669,6 +1574,26 @@ Logical Validity & 0.87 & 0.82 & $-0.05$ & $-0.44$ \\
 
 % \appendix
 % \section{Two Key Prompts: CRIT, Enriched Agent Roles}
+\subsection{Structured Claim--Evidence Schema}
+\label{app:claim-schema}
+
+\textbf{Structured Claim-Evidence Schema}
+As mentioned above, central to the enriched prompt design is a structured output schema built around
+\textbf{enumerated claims} and \textbf{evidence identifiers}. The data pipeline assigns every
+quantitative data point in the investment memo a bracketed evidence ID, for example ticker-level metrics such
+as \texttt{[AAPL-RET60]} (60-day return) or \texttt{[NVDA-BETA]} (market beta), and macro indicators
+such as \texttt{[L1-VIX]} or \texttt{[L1-10Y]} (10-year Treasury yield). Agents must emit a numbered list of claims (\texttt{C1}, \texttt{C2}, \ldots), each structured with
+the following fields:
+
+\textbf{Claim fields:} \texttt{reasoning\_type} (\texttt{causal}, \texttt{observational}, \texttt{risk\_assessment}, \texttt{pattern}),
+\texttt{evidence} (cited IDs), \texttt{assumptions}, \texttt{falsifiers}, \texttt{impacts\_positions}, and \texttt{confidence}.
+
+Critiques must also reference specific claims by label, and revisions must address each critique point-by-point. A companion \texttt{position\_rationale} array then closes the reasoning loop: each portfolio
+position must reference the specific claim IDs (\texttt{supporting\_claims}) that justify its
+weight. This bidirectional linkage, claims cite evidence and positions cite claims, creates a
+traceable chain from raw financial data to portfolio allocation decisions. 
+
+
 \subsection{CRIT Prompt}
 \label{app:crit-prompt}
 
@@ -2982,20 +2907,11 @@ Trend and Momentum:
   [CAT-ESURP]    Earnings Surprise: +10.8 percent
   [CAT-ADVOL]    Avg Dollar Volume 20D: 638767761 USD
 \end{lstlisting}
-\begin{figure}[H]
-\centering
-\includegraphics[width=1.0\linewidth]{images/dashboard_1_ex.png}
-\caption{Dashboard Runs View.}
-\label{fig:dashboard_1}
-\end{figure}
-\begin{figure}[H]
-\centering
-\includegraphics[width=1.0\linewidth]{images/dashboard_2_ex.png}
-\caption{Dashboard Aggregate Stats View.}
-\label{fig:dashboard_2}
-\end{figure}
 \newpage
 \bibliographystyle{plainnat}  % or abbrvnat, ieeetr, etc.
 \bibliography{refs}
+
+\newpage
+\input{checklist.tex}
 
 \end{document}
