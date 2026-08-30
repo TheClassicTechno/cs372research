@@ -47,7 +47,7 @@
 \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~3 gives the backtesting protocol, scenario construction, model choices (\texttt{gpt-5-mini} for agents, \texttt{gpt-5} for CRIT evaluation), and the three configuration layers. Section~2 and the appendix cover debate mechanics, evaluator scoring, and the full prompts. We additionally audited the reported financial tables against stored per-scenario artifacts and they regenerate exactly. Section~5.1 (``Uneven reproducibility'') discloses three specific gaps rather than claiming uniform reproducibility: two of six run configurations no longer match a surviving config file by hash, the in-loop RCA retry is not a wired code path in the current release, and the per-round CRIT logs behind the $n{=}210$ correlations are not in the released artifact set.
+    \item[] Justification: Everything needed to rerun the financial analyses is in Section~3: the backtesting protocol, scenario construction, model choices (\texttt{gpt-5-mini} for agents, \texttt{gpt-5} for CRIT evaluation), and the three configuration layers. Section~2 and the appendix cover debate mechanics, evaluator scoring, and the full prompts. We additionally audited the reported financial tables against stored per-scenario artifacts and they regenerate exactly. Section~5.1 (``Uneven reproducibility'') discloses three specific gaps rather than claiming uniform reproducibility: two of six run configurations no longer match a surviving config file by hash, the in-loop RCA retry is not a wired code path in the current release, and the per-round CRIT logs behind the $n{=}210$ correlations are not in the released artifact set.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -71,7 +71,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~3.1 reports the backtesting split (allocate on the preceding quarter's data, hold through the following quarter), the 35-scenario set across 12 quarters, temperatures, and model assignments. Debate hyperparameters such as round count, PID gains, and agreeableness are in Section~2 and the appendix.
+    \item[] Justification: Yes, in Section~3.1. It gives the split (allocate on the preceding quarter's data, hold through the following quarter), the 35-scenario set across 12 quarters, temperatures, and model assignments. Debate hyperparameters such as round count, PID gains, and agreeableness are in Section~2 and the appendix.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -118,7 +118,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~5.2 covers this. Our central finding is that reasoning and consensus metrics can be maximized while performance stagnates, which argues against trusting those metrics in deployed financial agents. If the same convergence happened across independently deployed systems reading the same public information, it could concentrate positioning rather than diversify it. We infer that risk from simulation and have not measured it at deployment scale.
+    \item[] Justification: This is Section~5.2. Our central finding is that reasoning and consensus metrics can be maximized while performance stagnates, which argues against trusting those metrics in deployed financial agents. If the same convergence happened across independently deployed systems reading the same public information, it could concentrate positioning rather than diversify it. We infer that risk from simulation and have not measured it at deployment scale.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -141,7 +141,7 @@
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Section~2 and the bibliography cite the data sources (Yahoo Finance, SEC EDGAR, Finnhub) and the LangGraph orchestration framework. We access each under its public terms of use and redistribute none of the underlying data.
+    \item[] Justification: We cite the data sources (Yahoo Finance, SEC EDGAR, Finnhub) and the LangGraph orchestration framework in Section~2 and the bibliography. We access each under its public terms of use and redistribute none of the underlying data.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -165,7 +165,7 @@
 \item {\bf Crowdsourcing and research with human subjects}
     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)?
     \item[] Answer: \answerNA{}
-    \item[] Justification: The paper involves no crowdsourcing or human-subject experiments.
+    \item[] Justification: No crowdsourcing was used. The only participants in our experiments are LLM agents.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
@@ -175,7 +175,7 @@
 \item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
     \item[] Answer: \answerNA{}
-    \item[] Justification: The paper involves no human-subject research.
+    \item[] Justification: No human subjects, so no IRB review was sought or required.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
