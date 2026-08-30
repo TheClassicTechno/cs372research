@@ -75,11 +75,10 @@ be compared against an objective downstream outcome, evaluating specialist LLM a
 under single-agent, independent-ensemble, and multi-round debate conditions, scored
 with a CRIT-style four-pillar rubric and Jensen--Shannon portfolio divergence against
 realized return, Sharpe, and drawdown. Across 210 runs, CRIT reasoning scores are
-essentially uncorrelated with financial outcomes ($r{=}{+}0.07$ with Sharpe,
-$p{=}0.29$; $r{=}{+}0.03$ with return, $p{=}0.70$), even though structured prompting
+essentially uncorrelated with financial outcomes (descriptive $r{=}{+}0.07$ with Sharpe, $r{=}{+}0.03$ with return), even though structured prompting
 moves those scores substantially ($\bar{\rho}$ from $0.72$ to $0.84$, Cohen's
 $d{\approx}2.0$) and debate portfolios beat an equal-weight baseline only 33\% of the
-time. Improved outcomes align with interventions that limit consensus collapse rather than with interventions that raise reasoning scores: a divergence-collapse trigger improves Sharpe by $+0.14$ ($p{=}0.028$), while an intervention that verifiably repairs causal-reasoning scores slightly degrades performance. That trigger also constrained revision magnitude, so we cannot isolate disagreement preservation as the mechanism. Debate's measurable value here is risk reduction rather than alpha, and consensus and rubric scores can both be maximized while decision quality stagnates. These results suggest internal reasoning proxies should be
+time. Improved outcomes align with interventions that limit consensus collapse rather than with interventions that raise reasoning scores: a divergence-collapse trigger improves Sharpe by $+0.14$ ($p{=}0.028$), while an intervention that verifiably repairs causal-reasoning scores slightly degrades performance. That trigger also constrained revision magnitude, so we cannot isolate disagreement preservation as the mechanism. Across our tested configurations the clearest benefits concern risk and risk-adjusted performance rather than consistent alpha, and consensus and rubric scores can both be maximized while decision quality stagnates. These results suggest internal reasoning proxies should be
 validated against external task outcomes before being treated as evidence of agent
 decision quality.
 \end{abstract}
@@ -147,8 +146,7 @@ $1/N$ baseline only 33\% of the time. Debate's measurable benefit is risk reduct
     \item We identify and operationalize \emph{consensus convergence}: agents move
     toward the group position during revision without introducing new evidence, with
     portfolio divergence collapsing after the first revision and no accompanying
-    outcome gain. We show this removes the ensemble-diversity benefit that explains
-    debate's risk advantage.
+    outcome gain. This coincides with loss of ensemble diversity and no outcome gain.
     \item We show reasoning quality and decision quality can be regulated independently: an intervention that limits consensus collapse improves risk-adjusted outcomes while one that repairs the weakest reasoning pillar does not, though the former also constrains revision size and so does not isolate the mechanism.
 \end{enumerate}
 
@@ -683,9 +681,7 @@ Across all three questions the dominant driver of performance is the preservatio
 \vspace{-6pt}
 \subsection{Limitations}
 \vspace{-6pt}
-\textbf{Statistical power.} Budget and rate limits meant many configurations were run at
-$N{=}2$--$3$ scenarios, giving wide intervals; those results are exploratory, not
-confirmatory. Only the 35-scenario paired comparisons support the significance claims we make; a direct run-to-run probe (Appendix~\ref{app:seed-variance}) confirms single-scenario comparisons at these effect sizes are uninterpretable. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
+\textbf{Statistical power.} Many configurations ran at $N{=}2$--$3$ scenarios, giving wide intervals; those results are exploratory. Only the 35-scenario paired comparisons support the significance claims we make; a direct run-to-run probe (Appendix~\ref{app:seed-variance}) confirms single-scenario comparisons at these effect sizes are uninterpretable. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
 \textbf{Outcome noise.} Realized return is a noisy signal, not ground-truth reasoning
 correctness: a well-reasoned allocation can lose money and a poorly-reasoned one can
 profit. Our null result for RQ1 shows CRIT does not predict this outcome; it does not
@@ -713,7 +709,7 @@ re-runnable pipeline. RQ1 is our central claim and carries this caveat.
 \vspace{-6pt}
 \subsection{Broader Impact}
 \vspace{-6pt}
-That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. If similar convergence arises across independently deployed systems reading the same public information, it could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk we infer from simulation, not deployment.
+That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. Similar convergence across independently deployed systems could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk inferred from simulation.
 
 % $
 % \text{CI}_i
