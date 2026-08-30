@@ -744,9 +744,7 @@ stratified results.
 and~\ref{tab:debate_rca} regenerates exactly from stored per-scenario artifacts, as do
 the bootstrap CIs above. Three gaps remain. The configuration files for two of six
 conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
-by hash, so those runs can be re-analyzed but not re-executed byte-identically. The
-in-loop RCA retry is not a wired code path in the current release---only the post-hoc
-consistency evaluator remains. And the per-round CRIT logs behind the $n{=}210$
+by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run---all 35 scenarios differ from the unregulated condition---but only as an uncommitted working copy. And the per-round CRIT logs behind the $n{=}210$
 correlations, the pillar tables, and the $\bar{\rho}\,0.72\!\to\!0.84$ gain are not in
 the released artifact set, so those numbers rest on author records rather than a
 re-runnable pipeline. RQ1 is our central claim and carries this caveat.
@@ -754,14 +752,7 @@ re-runnable pipeline. RQ1 is our central claim and carries this caveat.
 \vspace{-6pt}
 \subsection{Broader Impact}
 \vspace{-6pt}
-That reasoning-quality metrics and consensus can both be maximized while financial
-performance stagnates is a caution against treating such metrics as sufficient evidence
-of good decision-making in deployed financial agents. If similar consensus convergence
-occurs across independently deployed multi-agent systems reacting to the same public
-information, it could amplify correlated positioning during market stress rather than
-supplying the diversified viewpoints such systems are assumed to provide. We do not
-study live deployment, real capital, or systemic effects at scale, so this risk is
-inferred from simulated results rather than measured.
+That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. If similar convergence arises across independently deployed systems reading the same public information, it could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide---a risk we infer from simulation, not deployment.
 
 % $
 % \text{CI}_i
