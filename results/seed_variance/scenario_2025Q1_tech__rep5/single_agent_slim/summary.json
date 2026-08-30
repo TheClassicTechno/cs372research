@@ -1,0 +1,51 @@
+{
+  "run_name": "single_agent_slim",
+  "num_episodes": 1,
+  "episode_summaries": [
+    {
+      "episode_id": "ep_000",
+      "initial_cash": 100000.0,
+      "final_cash": 5758.969999999994,
+      "final_positions": {
+        "AAPL": 60,
+        "AVGO": 108,
+        "MSFT": 35,
+        "NVDA": 297
+      },
+      "final_prices": {
+        "AAPL": 221.17,
+        "AMD": 102.74,
+        "AVGO": 166.43,
+        "MSFT": 372.54,
+        "NVDA": 108.36,
+        "_CASH_": 1.0
+      },
+      "position_values": {
+        "AAPL": 13270.199999999999,
+        "AVGO": 17974.440000000002,
+        "MSFT": 13038.900000000001,
+        "NVDA": 32182.92
+      },
+      "book_value": 82225.43,
+      "return_pct": -17.774570000000008,
+      "return_pct_with_cash_interest": -17.71321657854435,
+      "total_trades": 4,
+      "sharpe_ratio": null,
+      "sortino_ratio": null,
+      "max_drawdown": 17713.21657854435,
+      "max_drawdown_pct": 17.71321657854435,
+      "calmar_ratio": -3.057152557767323,
+      "daily_metrics": {
+        "trading_days": 60,
+        "total_return_pct": -17.716152936769184,
+        "annualized_sharpe": -1.8173083118745952,
+        "annualized_sortino": -2.1481963349591804,
+        "annualized_volatility": 0.42340276031032537,
+        "max_drawdown_pct": 21.548844723280546,
+        "calmar_ratio": -2.5132924737084408,
+        "spy_return_pct": -4.031069434308774,
+        "excess_return_pct": -13.68508350246041
+      }
+    }
+  ]
+}

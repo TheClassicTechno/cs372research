@@ -1,0 +1,47 @@
+{
+  "run_name": "single_agent_slim",
+  "num_episodes": 1,
+  "episode_summaries": [
+    {
+      "episode_id": "ep_000",
+      "initial_cash": 100000.0,
+      "final_cash": 10143.94000000001,
+      "final_positions": {
+        "AAPL": 111,
+        "BAC": 884,
+        "XOM": 663
+      },
+      "final_prices": {
+        "AAPL": 135.79,
+        "BAC": 27.6,
+        "XOM": 77.61,
+        "_CASH_": 1.0
+      },
+      "position_values": {
+        "AAPL": 15072.689999999999,
+        "BAC": 24398.4,
+        "XOM": 51455.43
+      },
+      "book_value": 101070.46000000002,
+      "return_pct": 1.070460000000021,
+      "return_pct_with_cash_interest": 1.1102933213683865,
+      "total_trades": 3,
+      "sharpe_ratio": null,
+      "sortino_ratio": null,
+      "max_drawdown": 0.0,
+      "max_drawdown_pct": 0.0,
+      "calmar_ratio": null,
+      "daily_metrics": {
+        "trading_days": 64,
+        "total_return_pct": 1.1109268558060577,
+        "annualized_sharpe": 0.23409622741514538,
+        "annualized_sortino": 0.34241041587693105,
+        "annualized_volatility": 0.23233763439432362,
+        "max_drawdown_pct": 12.312415401467089,
+        "calmar_ratio": 0.36697160806396084,
+        "spy_return_pct": -5.926117785785124,
+        "excess_return_pct": 7.037044641591182
+      }
+    }
+  ]
+}

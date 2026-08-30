@@ -4,7 +4,13 @@ node_modules/
 # Traces
 traces/
 demo_debate_traces/
-results/
+# Run outputs: ignored by default so ad-hoc runs don't get committed,
+# but the result sets a paper depends on are tracked explicitly. Each run
+# dir carries its own config.yaml snapshot, which is what makes a reported
+# number re-derivable later.
+results/*
+!results/scenario_runs/
+!results/seed_variance/
 logging/
 !logging/runs/test/
 

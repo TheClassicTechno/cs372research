@@ -1,0 +1,296 @@
+{
+  "episode_id": "ep_000",
+  "agent_id": "multi_agent_debate_000",
+  "decision_point_logs": [
+    {
+      "case_id": "ep_000:0",
+      "decision_point_idx": 0,
+      "portfolio_before": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "portfolio_after": {
+        "cash": 5312.520000000004,
+        "positions": {
+          "AAPL": 80,
+          "AMD": 57,
+          "AVGO": 87,
+          "MSFT": 43,
+          "NVDA": 223
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 80
+          },
+          {
+            "ticker": "AMD",
+            "side": "buy",
+            "quantity": 57
+          },
+          {
+            "ticker": "AVGO",
+            "side": "buy",
+            "quantity": 87
+          },
+          {
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 43
+          },
+          {
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 223
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "abb6368ae609",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 0,
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 80,
+            "price": 249.06
+          },
+          {
+            "trade_id": "7dd8d4eaabfc",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 1,
+            "ticker": "AMD",
+            "side": "buy",
+            "quantity": 57,
+            "price": 120.79
+          },
+          {
+            "trade_id": "1cf26f0f050d",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 2,
+            "ticker": "AVGO",
+            "side": "buy",
+            "quantity": 87,
+            "price": 229.76
+          },
+          {
+            "trade_id": "e437ee40d89a",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 3,
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 43,
+            "price": 417.46
+          },
+          {
+            "trade_id": "b86ab9785809",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 4,
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 223,
+            "price": 134.25
+          }
+        ],
+        "message": "Executed 5 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [],
+          "allocation": {
+            "AAPL": 0.2,
+            "AMD": 0.07,
+            "AVGO": 0.2,
+            "MSFT": 0.18,
+            "NVDA": 0.3,
+            "_CASH_": 0.05
+          },
+          "justification": "Simple average of 1 agent allocations.",
+          "confidence": 0.72,
+          "claims": []
+        },
+        "debate_trace": {
+          "observation_timestamp": "2024-12-31",
+          "architecture": "debate",
+          "what_i_saw": "## Portfolio Allocation Task\n- Cash to allocate: $100,000.00\n- Allocation universe: AAPL, AMD, AVGO, MSFT, NVDA, _CASH_\n- As-of: 2024-12-31\n- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).\n[INFO] QUARTERLY SNAPSHOT MEMO \u2014 2024 Q4\nAs-of date: 2024-12-31\nTickers: 5\n\nThis document is the complete data payload for agent deliberation.\nIt contains macro regime, per-ticker price/fundamental metrics,\nSEC filing summaries, and news sentiment for the...",
+          "hypothesis": "Multi-agent debate: 1 agents (single_agent), rounds=1",
+          "decision": "Hold",
+          "risks_or_falsifiers": "Simple average of agent allocations.",
+          "strongest_objection": "",
+          "debate_turns": null,
+          "action": {
+            "orders": [],
+            "allocation": {
+              "AAPL": 0.2,
+              "AMD": 0.07,
+              "AVGO": 0.2,
+              "MSFT": 0.18,
+              "NVDA": 0.3,
+              "_CASH_": 0.05
+            },
+            "justification": "Simple average of 1 agent allocations.",
+            "confidence": 0.72,
+            "claims": []
+          },
+          "logged_at": "2026-08-30T01:47:23.487793+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 249.06,
+              "AMD": 120.79,
+              "AVGO": 229.76,
+              "MSFT": 417.46,
+              "NVDA": 134.25,
+              "_CASH_": 1.0
+            },
+            "returns": {
+              "AAPL": 0.0,
+              "AMD": 0.0,
+              "AVGO": 0.0,
+              "MSFT": 0.0,
+              "NVDA": 0.0,
+              "_CASH_": 0.0
+            },
+            "volatility": {
+              "AAPL": 0.0,
+              "AMD": 0.0,
+              "AVGO": 0.0,
+              "MSFT": 0.0,
+              "NVDA": 0.0,
+              "_CASH_": 0.0
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 100000.0,
+            "positions": {},
+            "exposures": null
+          },
+          "pid_events": null
+        },
+        "debate_justification": "Simple average of 1 agent allocations.",
+        "debate_confidence": 0.72
+      },
+      "elapsed_seconds": 17.426323042003787,
+      "timestamp": "2026-08-30T01:47:23.488471+00:00",
+      "case_prices": {}
+    },
+    {
+      "case_id": "ep_000:1",
+      "decision_point_idx": 1,
+      "portfolio_before": {
+        "cash": 5312.520000000004,
+        "positions": {
+          "AAPL": 80,
+          "AMD": 57,
+          "AVGO": 87,
+          "MSFT": 43,
+          "NVDA": 223
+        }
+      },
+      "portfolio_after": {
+        "cash": 5312.520000000004,
+        "positions": {
+          "AAPL": 80,
+          "AMD": 57,
+          "AVGO": 87,
+          "MSFT": 43,
+          "NVDA": 223
+        }
+      },
+      "extracted_decision": {
+        "orders": []
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [],
+        "message": "Hold \u2014 no orders submitted."
+      },
+      "agent_output": {
+        "type": "mark_to_market"
+      },
+      "elapsed_seconds": 0.0,
+      "timestamp": "2026-08-30T01:47:23.488532+00:00",
+      "case_prices": {}
+    }
+  ],
+  "trades": [
+    {
+      "trade_id": "abb6368ae609",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 0,
+      "ticker": "AAPL",
+      "side": "buy",
+      "quantity": 80,
+      "price": 249.06
+    },
+    {
+      "trade_id": "7dd8d4eaabfc",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 1,
+      "ticker": "AMD",
+      "side": "buy",
+      "quantity": 57,
+      "price": 120.79
+    },
+    {
+      "trade_id": "1cf26f0f050d",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 2,
+      "ticker": "AVGO",
+      "side": "buy",
+      "quantity": 87,
+      "price": 229.76
+    },
+    {
+      "trade_id": "e437ee40d89a",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 3,
+      "ticker": "MSFT",
+      "side": "buy",
+      "quantity": 43,
+      "price": 417.46
+    },
+    {
+      "trade_id": "b86ab9785809",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 4,
+      "ticker": "NVDA",
+      "side": "buy",
+      "quantity": 223,
+      "price": 134.25
+    }
+  ],
+  "final_portfolio": {
+    "cash": 5312.520000000004,
+    "positions": {
+      "AAPL": 80,
+      "AMD": 57,
+      "AVGO": 87,
+      "MSFT": 43,
+      "NVDA": 223
+    }
+  },
+  "final_prices": {
+    "AAPL": 221.17,
+    "AMD": 102.74,
+    "AVGO": 166.43,
+    "MSFT": 372.54,
+    "NVDA": 108.36,
+    "_CASH_": 1.0
+  },
+  "timestamp": "2026-08-30T01:47:23.488548+00:00"
+}

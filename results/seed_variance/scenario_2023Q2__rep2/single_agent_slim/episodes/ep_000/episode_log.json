@@ -1,0 +1,891 @@
+{
+  "episode_id": "ep_000",
+  "agent_id": "multi_agent_debate_000",
+  "decision_point_logs": [
+    {
+      "case_id": "ep_000:0",
+      "decision_point_idx": 0,
+      "portfolio_before": {
+        "cash": 100000.0,
+        "positions": {}
+      },
+      "portfolio_after": {
+        "cash": 1769.339999999981,
+        "positions": {
+          "AAPL": 36,
+          "AMD": 30,
+          "AMZN": 38,
+          "BAC": 75,
+          "CAT": 13,
+          "COP": 33,
+          "COST": 10,
+          "CVX": 27,
+          "GS": 6,
+          "JNJ": 28,
+          "JPM": 41,
+          "MS": 25,
+          "MSFT": 35,
+          "NKE": 8,
+          "NVDA": 612,
+          "PG": 21,
+          "RTX": 21,
+          "SLB": 44,
+          "TSLA": 14,
+          "UNH": 22,
+          "WMT": 63,
+          "XOM": 60
+        }
+      },
+      "extracted_decision": {
+        "orders": [
+          {
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 36
+          },
+          {
+            "ticker": "AMD",
+            "side": "buy",
+            "quantity": 30
+          },
+          {
+            "ticker": "AMZN",
+            "side": "buy",
+            "quantity": 38
+          },
+          {
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 75
+          },
+          {
+            "ticker": "CAT",
+            "side": "buy",
+            "quantity": 13
+          },
+          {
+            "ticker": "COP",
+            "side": "buy",
+            "quantity": 33
+          },
+          {
+            "ticker": "COST",
+            "side": "buy",
+            "quantity": 10
+          },
+          {
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 27
+          },
+          {
+            "ticker": "GS",
+            "side": "buy",
+            "quantity": 6
+          },
+          {
+            "ticker": "JNJ",
+            "side": "buy",
+            "quantity": 28
+          },
+          {
+            "ticker": "JPM",
+            "side": "buy",
+            "quantity": 41
+          },
+          {
+            "ticker": "MS",
+            "side": "buy",
+            "quantity": 25
+          },
+          {
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 35
+          },
+          {
+            "ticker": "NKE",
+            "side": "buy",
+            "quantity": 8
+          },
+          {
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 612
+          },
+          {
+            "ticker": "PG",
+            "side": "buy",
+            "quantity": 21
+          },
+          {
+            "ticker": "RTX",
+            "side": "buy",
+            "quantity": 21
+          },
+          {
+            "ticker": "SLB",
+            "side": "buy",
+            "quantity": 44
+          },
+          {
+            "ticker": "TSLA",
+            "side": "buy",
+            "quantity": 14
+          },
+          {
+            "ticker": "UNH",
+            "side": "buy",
+            "quantity": 22
+          },
+          {
+            "ticker": "WMT",
+            "side": "buy",
+            "quantity": 63
+          },
+          {
+            "ticker": "XOM",
+            "side": "buy",
+            "quantity": 60
+          }
+        ]
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [
+          {
+            "trade_id": "50ffb74317ca",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 0,
+            "ticker": "AAPL",
+            "side": "buy",
+            "quantity": 36,
+            "price": 162.55
+          },
+          {
+            "trade_id": "4e1b64e82f24",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 1,
+            "ticker": "AMD",
+            "side": "buy",
+            "quantity": 30,
+            "price": 98.01
+          },
+          {
+            "trade_id": "fc04b8922a5f",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 2,
+            "ticker": "AMZN",
+            "side": "buy",
+            "quantity": 38,
+            "price": 103.29
+          },
+          {
+            "trade_id": "6c61b0d1bc02",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 3,
+            "ticker": "BAC",
+            "side": "buy",
+            "quantity": 75,
+            "price": 26.46
+          },
+          {
+            "trade_id": "6a7dc2fd9c1d",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 4,
+            "ticker": "CAT",
+            "side": "buy",
+            "quantity": 13,
+            "price": 217.95
+          },
+          {
+            "trade_id": "c873c735dfe6",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 5,
+            "ticker": "COP",
+            "side": "buy",
+            "quantity": 33,
+            "price": 90.23
+          },
+          {
+            "trade_id": "b56d19604b32",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 6,
+            "ticker": "COST",
+            "side": "buy",
+            "quantity": 10,
+            "price": 477.71
+          },
+          {
+            "trade_id": "f070d16ca18b",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 7,
+            "ticker": "CVX",
+            "side": "buy",
+            "quantity": 27,
+            "price": 143.71
+          },
+          {
+            "trade_id": "b481e68c5aea",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 8,
+            "ticker": "GS",
+            "side": "buy",
+            "quantity": 6,
+            "price": 303.94
+          },
+          {
+            "trade_id": "fa48c2db7e93",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 9,
+            "ticker": "JNJ",
+            "side": "buy",
+            "quantity": 28,
+            "price": 141.75
+          },
+          {
+            "trade_id": "d490ae1f4eb5",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 10,
+            "ticker": "JPM",
+            "side": "buy",
+            "quantity": 41,
+            "price": 121.37
+          },
+          {
+            "trade_id": "f080e579fca9",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 11,
+            "ticker": "MS",
+            "side": "buy",
+            "quantity": 25,
+            "price": 79.97
+          },
+          {
+            "trade_id": "ecf992bc216a",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 12,
+            "ticker": "MSFT",
+            "side": "buy",
+            "quantity": 35,
+            "price": 281.63
+          },
+          {
+            "trade_id": "bd148507a08a",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 13,
+            "ticker": "NKE",
+            "side": "buy",
+            "quantity": 8,
+            "price": 115.86
+          },
+          {
+            "trade_id": "01a30d432980",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 14,
+            "ticker": "NVDA",
+            "side": "buy",
+            "quantity": 612,
+            "price": 27.75
+          },
+          {
+            "trade_id": "cb04b025dc4a",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 15,
+            "ticker": "PG",
+            "side": "buy",
+            "quantity": 21,
+            "price": 137.73
+          },
+          {
+            "trade_id": "2d06ea26ec5f",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 16,
+            "ticker": "RTX",
+            "side": "buy",
+            "quantity": 21,
+            "price": 91.73
+          },
+          {
+            "trade_id": "0034fcfddf3b",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 17,
+            "ticker": "SLB",
+            "side": "buy",
+            "quantity": 44,
+            "price": 45.16
+          },
+          {
+            "trade_id": "5e73b4424407",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 18,
+            "ticker": "TSLA",
+            "side": "buy",
+            "quantity": 14,
+            "price": 207.46
+          },
+          {
+            "trade_id": "509489bd5e83",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 19,
+            "ticker": "UNH",
+            "side": "buy",
+            "quantity": 22,
+            "price": 448.98
+          },
+          {
+            "trade_id": "d4706798f508",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 20,
+            "ticker": "WMT",
+            "side": "buy",
+            "quantity": 63,
+            "price": 47.58
+          },
+          {
+            "trade_id": "c42c8fad7b75",
+            "case_id": "ep_000:0",
+            "agent_id": "multi_agent_debate_000",
+            "order_index": 21,
+            "ticker": "XOM",
+            "side": "buy",
+            "quantity": 60,
+            "price": 99.01
+          }
+        ],
+        "message": "Executed 22 trade(s)."
+      },
+      "agent_output": {
+        "debate_action": {
+          "orders": [],
+          "allocation": {
+            "AAPL": 0.06,
+            "AMD": 0.03,
+            "AMZN": 0.04,
+            "BAC": 0.02,
+            "CAT": 0.03,
+            "COP": 0.03,
+            "COST": 0.05,
+            "CVX": 0.04,
+            "GS": 0.02,
+            "JNJ": 0.04,
+            "JPM": 0.05,
+            "MS": 0.02,
+            "MSFT": 0.1,
+            "NKE": 0.01,
+            "NVDA": 0.17,
+            "PG": 0.03,
+            "RTX": 0.02,
+            "SLB": 0.02,
+            "TSLA": 0.03,
+            "UNH": 0.1,
+            "WMT": 0.03,
+            "XOM": 0.06,
+            "_CASH_": 0.0
+          },
+          "justification": "Simple average of 1 agent allocations.",
+          "confidence": 0.65,
+          "claims": []
+        },
+        "debate_trace": {
+          "observation_timestamp": "2023-03-31",
+          "architecture": "debate",
+          "what_i_saw": "## Portfolio Allocation Task\n- Cash to allocate: $100,000.00\n- Allocation universe: AAPL, AMD, AMZN, BAC, CAT, COP, COST, CVX, GS, JNJ, JPM, MS, MSFT, NKE, NVDA, PG, RTX, SLB, TSLA, UNH, WMT, XOM, _CASH_\n- As-of: 2023-03-31\n- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).\n[INFO] QUARTERLY SNAPSHOT MEMO \u2014 2023 Q1\nAs-of date: 2023-03-31\nTickers: 22\n\nThis document is the complete data payload for agent deliberation.\nIt contains macro regime, p...",
+          "hypothesis": "Multi-agent debate: 1 agents (single_agent), rounds=1",
+          "decision": "Hold",
+          "risks_or_falsifiers": "Simple average of agent allocations.",
+          "strongest_objection": "",
+          "debate_turns": null,
+          "action": {
+            "orders": [],
+            "allocation": {
+              "AAPL": 0.06,
+              "AMD": 0.03,
+              "AMZN": 0.04,
+              "BAC": 0.02,
+              "CAT": 0.03,
+              "COP": 0.03,
+              "COST": 0.05,
+              "CVX": 0.04,
+              "GS": 0.02,
+              "JNJ": 0.04,
+              "JPM": 0.05,
+              "MS": 0.02,
+              "MSFT": 0.1,
+              "NKE": 0.01,
+              "NVDA": 0.17,
+              "PG": 0.03,
+              "RTX": 0.02,
+              "SLB": 0.02,
+              "TSLA": 0.03,
+              "UNH": 0.1,
+              "WMT": 0.03,
+              "XOM": 0.06,
+              "_CASH_": 0.0
+            },
+            "justification": "Simple average of 1 agent allocations.",
+            "confidence": 0.65,
+            "claims": []
+          },
+          "logged_at": "2026-08-30T01:44:34.739854+00:00",
+          "initial_market_state": {
+            "prices": {
+              "AAPL": 162.55,
+              "AMD": 98.01,
+              "AMZN": 103.29,
+              "BAC": 26.46,
+              "CAT": 217.95,
+              "COP": 90.23,
+              "COST": 477.71,
+              "CVX": 143.71,
+              "GS": 303.94,
+              "JNJ": 141.75,
+              "JPM": 121.37,
+              "MS": 79.97,
+              "MSFT": 281.63,
+              "NKE": 115.86,
+              "NVDA": 27.75,
+              "PG": 137.73,
+              "RTX": 91.73,
+              "SLB": 45.16,
+              "TSLA": 207.46,
+              "UNH": 448.98,
+              "WMT": 47.58,
+              "XOM": 99.01,
+              "_CASH_": 1.0
+            },
+            "returns": {
+              "AAPL": 0.0,
+              "AMD": 0.0,
+              "AMZN": 0.0,
+              "BAC": 0.0,
+              "CAT": 0.0,
+              "COP": 0.0,
+              "COST": 0.0,
+              "CVX": 0.0,
+              "GS": 0.0,
+              "JNJ": 0.0,
+              "JPM": 0.0,
+              "MS": 0.0,
+              "MSFT": 0.0,
+              "NKE": 0.0,
+              "NVDA": 0.0,
+              "PG": 0.0,
+              "RTX": 0.0,
+              "SLB": 0.0,
+              "TSLA": 0.0,
+              "UNH": 0.0,
+              "WMT": 0.0,
+              "XOM": 0.0,
+              "_CASH_": 0.0
+            },
+            "volatility": {
+              "AAPL": 0.0,
+              "AMD": 0.0,
+              "AMZN": 0.0,
+              "BAC": 0.0,
+              "CAT": 0.0,
+              "COP": 0.0,
+              "COST": 0.0,
+              "CVX": 0.0,
+              "GS": 0.0,
+              "JNJ": 0.0,
+              "JPM": 0.0,
+              "MS": 0.0,
+              "MSFT": 0.0,
+              "NKE": 0.0,
+              "NVDA": 0.0,
+              "PG": 0.0,
+              "RTX": 0.0,
+              "SLB": 0.0,
+              "TSLA": 0.0,
+              "UNH": 0.0,
+              "WMT": 0.0,
+              "XOM": 0.0,
+              "_CASH_": 0.0
+            }
+          },
+          "initial_portfolio_state": {
+            "cash": 100000.0,
+            "positions": {},
+            "exposures": null
+          },
+          "pid_events": null
+        },
+        "debate_justification": "Simple average of 1 agent allocations.",
+        "debate_confidence": 0.65
+      },
+      "elapsed_seconds": 23.83316087500134,
+      "timestamp": "2026-08-30T01:44:34.741674+00:00",
+      "case_prices": {}
+    },
+    {
+      "case_id": "ep_000:1",
+      "decision_point_idx": 1,
+      "portfolio_before": {
+        "cash": 1769.339999999981,
+        "positions": {
+          "AAPL": 36,
+          "AMD": 30,
+          "AMZN": 38,
+          "BAC": 75,
+          "CAT": 13,
+          "COP": 33,
+          "COST": 10,
+          "CVX": 27,
+          "GS": 6,
+          "JNJ": 28,
+          "JPM": 41,
+          "MS": 25,
+          "MSFT": 35,
+          "NKE": 8,
+          "NVDA": 612,
+          "PG": 21,
+          "RTX": 21,
+          "SLB": 44,
+          "TSLA": 14,
+          "UNH": 22,
+          "WMT": 63,
+          "XOM": 60
+        }
+      },
+      "portfolio_after": {
+        "cash": 1769.339999999981,
+        "positions": {
+          "AAPL": 36,
+          "AMD": 30,
+          "AMZN": 38,
+          "BAC": 75,
+          "CAT": 13,
+          "COP": 33,
+          "COST": 10,
+          "CVX": 27,
+          "GS": 6,
+          "JNJ": 28,
+          "JPM": 41,
+          "MS": 25,
+          "MSFT": 35,
+          "NKE": 8,
+          "NVDA": 612,
+          "PG": 21,
+          "RTX": 21,
+          "SLB": 44,
+          "TSLA": 14,
+          "UNH": 22,
+          "WMT": 63,
+          "XOM": 60
+        }
+      },
+      "extracted_decision": {
+        "orders": []
+      },
+      "execution_result": {
+        "status": "accepted",
+        "executed_trades": [],
+        "message": "Hold \u2014 no orders submitted."
+      },
+      "agent_output": {
+        "type": "mark_to_market"
+      },
+      "elapsed_seconds": 0.0,
+      "timestamp": "2026-08-30T01:44:34.741762+00:00",
+      "case_prices": {}
+    }
+  ],
+  "trades": [
+    {
+      "trade_id": "50ffb74317ca",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 0,
+      "ticker": "AAPL",
+      "side": "buy",
+      "quantity": 36,
+      "price": 162.55
+    },
+    {
+      "trade_id": "4e1b64e82f24",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 1,
+      "ticker": "AMD",
+      "side": "buy",
+      "quantity": 30,
+      "price": 98.01
+    },
+    {
+      "trade_id": "fc04b8922a5f",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 2,
+      "ticker": "AMZN",
+      "side": "buy",
+      "quantity": 38,
+      "price": 103.29
+    },
+    {
+      "trade_id": "6c61b0d1bc02",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 3,
+      "ticker": "BAC",
+      "side": "buy",
+      "quantity": 75,
+      "price": 26.46
+    },
+    {
+      "trade_id": "6a7dc2fd9c1d",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 4,
+      "ticker": "CAT",
+      "side": "buy",
+      "quantity": 13,
+      "price": 217.95
+    },
+    {
+      "trade_id": "c873c735dfe6",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 5,
+      "ticker": "COP",
+      "side": "buy",
+      "quantity": 33,
+      "price": 90.23
+    },
+    {
+      "trade_id": "b56d19604b32",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 6,
+      "ticker": "COST",
+      "side": "buy",
+      "quantity": 10,
+      "price": 477.71
+    },
+    {
+      "trade_id": "f070d16ca18b",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 7,
+      "ticker": "CVX",
+      "side": "buy",
+      "quantity": 27,
+      "price": 143.71
+    },
+    {
+      "trade_id": "b481e68c5aea",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 8,
+      "ticker": "GS",
+      "side": "buy",
+      "quantity": 6,
+      "price": 303.94
+    },
+    {
+      "trade_id": "fa48c2db7e93",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 9,
+      "ticker": "JNJ",
+      "side": "buy",
+      "quantity": 28,
+      "price": 141.75
+    },
+    {
+      "trade_id": "d490ae1f4eb5",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 10,
+      "ticker": "JPM",
+      "side": "buy",
+      "quantity": 41,
+      "price": 121.37
+    },
+    {
+      "trade_id": "f080e579fca9",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 11,
+      "ticker": "MS",
+      "side": "buy",
+      "quantity": 25,
+      "price": 79.97
+    },
+    {
+      "trade_id": "ecf992bc216a",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 12,
+      "ticker": "MSFT",
+      "side": "buy",
+      "quantity": 35,
+      "price": 281.63
+    },
+    {
+      "trade_id": "bd148507a08a",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 13,
+      "ticker": "NKE",
+      "side": "buy",
+      "quantity": 8,
+      "price": 115.86
+    },
+    {
+      "trade_id": "01a30d432980",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 14,
+      "ticker": "NVDA",
+      "side": "buy",
+      "quantity": 612,
+      "price": 27.75
+    },
+    {
+      "trade_id": "cb04b025dc4a",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 15,
+      "ticker": "PG",
+      "side": "buy",
+      "quantity": 21,
+      "price": 137.73
+    },
+    {
+      "trade_id": "2d06ea26ec5f",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 16,
+      "ticker": "RTX",
+      "side": "buy",
+      "quantity": 21,
+      "price": 91.73
+    },
+    {
+      "trade_id": "0034fcfddf3b",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 17,
+      "ticker": "SLB",
+      "side": "buy",
+      "quantity": 44,
+      "price": 45.16
+    },
+    {
+      "trade_id": "5e73b4424407",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 18,
+      "ticker": "TSLA",
+      "side": "buy",
+      "quantity": 14,
+      "price": 207.46
+    },
+    {
+      "trade_id": "509489bd5e83",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 19,
+      "ticker": "UNH",
+      "side": "buy",
+      "quantity": 22,
+      "price": 448.98
+    },
+    {
+      "trade_id": "d4706798f508",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 20,
+      "ticker": "WMT",
+      "side": "buy",
+      "quantity": 63,
+      "price": 47.58
+    },
+    {
+      "trade_id": "c42c8fad7b75",
+      "case_id": "ep_000:0",
+      "agent_id": "multi_agent_debate_000",
+      "order_index": 21,
+      "ticker": "XOM",
+      "side": "buy",
+      "quantity": 60,
+      "price": 99.01
+    }
+  ],
+  "final_portfolio": {
+    "cash": 1769.339999999981,
+    "positions": {
+      "AAPL": 36,
+      "AMD": 30,
+      "AMZN": 38,
+      "BAC": 75,
+      "CAT": 13,
+      "COP": 33,
+      "COST": 10,
+      "CVX": 27,
+      "GS": 6,
+      "JNJ": 28,
+      "JPM": 41,
+      "MS": 25,
+      "MSFT": 35,
+      "NKE": 8,
+      "NVDA": 612,
+      "PG": 21,
+      "RTX": 21,
+      "SLB": 44,
+      "TSLA": 14,
+      "UNH": 22,
+      "WMT": 63,
+      "XOM": 60
+    }
+  },
+  "final_prices": {
+    "AAPL": 191.46,
+    "AMD": 113.91,
+    "AMZN": 130.36,
+    "BAC": 26.75,
+    "CAT": 235.62,
+    "COP": 95.29,
+    "COST": 518.7,
+    "CVX": 139.95,
+    "GS": 301.98,
+    "JNJ": 152.51,
+    "JPM": 136.53,
+    "MS": 78.46,
+    "MSFT": 333.39,
+    "NKE": 104.61,
+    "NVDA": 42.27,
+    "PG": 141.44,
+    "RTX": 92.32,
+    "SLB": 45.76,
+    "TSLA": 261.77,
+    "UNH": 458.5,
+    "WMT": 50.91,
+    "XOM": 97.68,
+    "_CASH_": 1.0
+  },
+  "timestamp": "2026-08-30T01:44:34.741775+00:00"
+}

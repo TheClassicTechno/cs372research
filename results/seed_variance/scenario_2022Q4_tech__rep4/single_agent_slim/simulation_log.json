@@ -1,0 +1,363 @@
+{
+  "run_name": "single_agent_slim",
+  "config": {
+    "dataset_path": "data-pipeline/final_snapshots",
+    "output_dir": "results/baseline_sweep/tech",
+    "top_n_news": null,
+    "debate_setup": {
+      "agent_system": "multi_agent_debate",
+      "llm_provider": "openai",
+      "llm_model": "gpt-5-mini",
+      "role_llms": null,
+      "phase_llms": null,
+      "temperature": 0.3,
+      "max_retries": 3,
+      "system_prompt_override": null,
+      "max_rounds": 1,
+      "propose_only": true,
+      "judge_type": "average",
+      "debate_roles": null,
+      "enable_adversarial": false,
+      "parallel_agents": true,
+      "no_rate_limit": false,
+      "llm_stagger_ms": 500,
+      "max_concurrent_llm": 3,
+      "log_tokens": false,
+      "log_rendered_prompts": false,
+      "log_prompt_manifest": false,
+      "pid_enabled": false,
+      "pid_kp": 0.15,
+      "pid_ki": 0.01,
+      "pid_kd": 0.03,
+      "pid_rho_star": 0.8,
+      "pid_initial_beta": 0.5,
+      "pid_epsilon": 0.001,
+      "convergence_window": 2,
+      "delta_rho": 0.02,
+      "pid_log_metrics": false,
+      "pid_log_llm_calls": false,
+      "prompt_logging": {},
+      "logging_mode": "debug",
+      "experiment_name": null,
+      "console_display": false,
+      "event_logging": false,
+      "event_logging_store_full_text": true,
+      "agents": {
+        "single_agent": "single_agent_slim"
+      },
+      "judge_profile": "judge_slim",
+      "system_prompt_block_order": null,
+      "user_prompt_section_order": null,
+      "prompt_file_overrides": {
+        "output_allocation": "output_format/allocation_output_slim.txt"
+      },
+      "prompt_profile": "default",
+      "role_overrides": null,
+      "intervention_config": null,
+      "crit_llm_model": "gpt-5-mini",
+      "crit_system_template": "crit_system_enumerated.jinja",
+      "crit_user_template": "crit_user_master.jinja",
+      "run_command": "python run_simulation.py --agents config/debate/baselines/single_agent_slim.yaml --scenario config/scenarios/baseline_sweep/scenario_2022Q4_tech.yaml --output-dir results/seed_variance/scenario_2022Q4_tech__rep4 --log-level DEBUG --logging-mode debug --crit-model gpt-5-mini --no-display",
+      "config_paths": [
+        "/Users/julih/Documents/cs372research/config/debate/baselines/single_agent_slim.yaml",
+        "/Users/julih/Documents/cs372research/config/scenarios/baseline_sweep/scenario_2022Q4_tech.yaml"
+      ],
+      "sector_config": null,
+      "allocation_constraints": null
+    },
+    "agents": {
+      "single_agent": "single_agent_slim"
+    },
+    "judge_profile": "judge_slim",
+    "broker": {
+      "initial_cash": 100000.0
+    },
+    "tickers": [
+      "AAPL",
+      "AMD",
+      "MSFT",
+      "NVDA"
+    ],
+    "quarters": null,
+    "merge_tickers": false,
+    "num_episodes": 1,
+    "memo_format": "text",
+    "invest_quarter": "2022Q4",
+    "memo_override_path": "data-pipeline/final_snapshots/scenario_memos/scenario_2022Q4_tech_memo_2022_Q3.txt",
+    "use_cash_virtual_ticker": true,
+    "allocation_constraints": {
+      "max_weight": 1.0,
+      "min_holdings": 1,
+      "fully_invested": true,
+      "max_tickers": 4
+    },
+    "sectors": null,
+    "sector_limits": null,
+    "agent_sector_permissions": null,
+    "max_sector_weight": null
+  },
+  "episode_logs": [
+    {
+      "episode_id": "ep_000",
+      "agent_id": "multi_agent_debate_000",
+      "decision_point_logs": [
+        {
+          "case_id": "ep_000:0",
+          "decision_point_idx": 0,
+          "portfolio_before": {
+            "cash": 100000.0,
+            "positions": {}
+          },
+          "portfolio_after": {
+            "cash": 20333.379999999997,
+            "positions": {
+              "AAPL": 220,
+              "AMD": 78,
+              "MSFT": 154,
+              "NVDA": 825
+            }
+          },
+          "extracted_decision": {
+            "orders": [
+              {
+                "ticker": "AAPL",
+                "side": "buy",
+                "quantity": 220
+              },
+              {
+                "ticker": "AMD",
+                "side": "buy",
+                "quantity": 78
+              },
+              {
+                "ticker": "MSFT",
+                "side": "buy",
+                "quantity": 154
+              },
+              {
+                "ticker": "NVDA",
+                "side": "buy",
+                "quantity": 825
+              }
+            ]
+          },
+          "execution_result": {
+            "status": "accepted",
+            "executed_trades": [
+              {
+                "trade_id": "704c6085e112",
+                "case_id": "ep_000:0",
+                "agent_id": "multi_agent_debate_000",
+                "order_index": 0,
+                "ticker": "AAPL",
+                "side": "buy",
+                "quantity": 220,
+                "price": 135.79
+              },
+              {
+                "trade_id": "07d87dc74243",
+                "case_id": "ep_000:0",
+                "agent_id": "multi_agent_debate_000",
+                "order_index": 1,
+                "ticker": "AMD",
+                "side": "buy",
+                "quantity": 78,
+                "price": 63.36
+              },
+              {
+                "trade_id": "1650433ff43e",
+                "case_id": "ep_000:0",
+                "agent_id": "multi_agent_debate_000",
+                "order_index": 2,
+                "ticker": "MSFT",
+                "side": "buy",
+                "quantity": 154,
+                "price": 226.31
+              },
+              {
+                "trade_id": "1a6f02b57e4d",
+                "case_id": "ep_000:0",
+                "agent_id": "multi_agent_debate_000",
+                "order_index": 3,
+                "ticker": "NVDA",
+                "side": "buy",
+                "quantity": 825,
+                "price": 12.12
+              }
+            ],
+            "message": "Executed 4 trade(s)."
+          },
+          "agent_output": {
+            "debate_action": {
+              "orders": [],
+              "allocation": {
+                "AAPL": 0.3,
+                "AMD": 0.05,
+                "MSFT": 0.35,
+                "NVDA": 0.1,
+                "_CASH_": 0.2
+              },
+              "justification": "Simple average of 1 agent allocations.",
+              "confidence": 0.62,
+              "claims": []
+            },
+            "debate_trace": {
+              "observation_timestamp": "2022-09-30",
+              "architecture": "debate",
+              "what_i_saw": "## Portfolio Allocation Task\n- Cash to allocate: $100,000.00\n- Allocation universe: AAPL, AMD, MSFT, NVDA, _CASH_\n- As-of: 2022-09-30\n- Note: _CASH_ is a virtual ticker which earns the risk-free rate (see Fed Funds rate in Macro section).\n[INFO] QUARTERLY SNAPSHOT MEMO \u2014 2022 Q3\nAs-of date: 2022-09-30\nTickers: 4\n\nThis document is the complete data payload for agent deliberation.\nIt contains macro regime, per-ticker price/fundamental metrics,\nSEC filing summaries, and news sentiment for the quart...",
+              "hypothesis": "Multi-agent debate: 1 agents (single_agent), rounds=1",
+              "decision": "Hold",
+              "risks_or_falsifiers": "Simple average of agent allocations.",
+              "strongest_objection": "",
+              "debate_turns": null,
+              "action": {
+                "orders": [],
+                "allocation": {
+                  "AAPL": 0.3,
+                  "AMD": 0.05,
+                  "MSFT": 0.35,
+                  "NVDA": 0.1,
+                  "_CASH_": 0.2
+                },
+                "justification": "Simple average of 1 agent allocations.",
+                "confidence": 0.62,
+                "claims": []
+              },
+              "logged_at": "2026-08-30T01:43:06.310464+00:00",
+              "initial_market_state": {
+                "prices": {
+                  "AAPL": 135.79,
+                  "AMD": 63.36,
+                  "MSFT": 226.31,
+                  "NVDA": 12.12,
+                  "_CASH_": 1.0
+                },
+                "returns": {
+                  "AAPL": 0.0,
+                  "AMD": 0.0,
+                  "MSFT": 0.0,
+                  "NVDA": 0.0,
+                  "_CASH_": 0.0
+                },
+                "volatility": {
+                  "AAPL": 0.0,
+                  "AMD": 0.0,
+                  "MSFT": 0.0,
+                  "NVDA": 0.0,
+                  "_CASH_": 0.0
+                }
+              },
+              "initial_portfolio_state": {
+                "cash": 100000.0,
+                "positions": {},
+                "exposures": null
+              },
+              "pid_events": null
+            },
+            "debate_justification": "Simple average of 1 agent allocations.",
+            "debate_confidence": 0.62
+          },
+          "elapsed_seconds": 12.106194334002794,
+          "timestamp": "2026-08-30T01:43:06.311418+00:00",
+          "case_prices": {}
+        },
+        {
+          "case_id": "ep_000:1",
+          "decision_point_idx": 1,
+          "portfolio_before": {
+            "cash": 20333.379999999997,
+            "positions": {
+              "AAPL": 220,
+              "AMD": 78,
+              "MSFT": 154,
+              "NVDA": 825
+            }
+          },
+          "portfolio_after": {
+            "cash": 20333.379999999997,
+            "positions": {
+              "AAPL": 220,
+              "AMD": 78,
+              "MSFT": 154,
+              "NVDA": 825
+            }
+          },
+          "extracted_decision": {
+            "orders": []
+          },
+          "execution_result": {
+            "status": "accepted",
+            "executed_trades": [],
+            "message": "Hold \u2014 no orders submitted."
+          },
+          "agent_output": {
+            "type": "mark_to_market"
+          },
+          "elapsed_seconds": 0.0,
+          "timestamp": "2026-08-30T01:43:06.311488+00:00",
+          "case_prices": {}
+        }
+      ],
+      "trades": [
+        {
+          "trade_id": "704c6085e112",
+          "case_id": "ep_000:0",
+          "agent_id": "multi_agent_debate_000",
+          "order_index": 0,
+          "ticker": "AAPL",
+          "side": "buy",
+          "quantity": 220,
+          "price": 135.79
+        },
+        {
+          "trade_id": "07d87dc74243",
+          "case_id": "ep_000:0",
+          "agent_id": "multi_agent_debate_000",
+          "order_index": 1,
+          "ticker": "AMD",
+          "side": "buy",
+          "quantity": 78,
+          "price": 63.36
+        },
+        {
+          "trade_id": "1650433ff43e",
+          "case_id": "ep_000:0",
+          "agent_id": "multi_agent_debate_000",
+          "order_index": 2,
+          "ticker": "MSFT",
+          "side": "buy",
+          "quantity": 154,
+          "price": 226.31
+        },
+        {
+          "trade_id": "1a6f02b57e4d",
+          "case_id": "ep_000:0",
+          "agent_id": "multi_agent_debate_000",
+          "order_index": 3,
+          "ticker": "NVDA",
+          "side": "buy",
+          "quantity": 825,
+          "price": 12.12
+        }
+      ],
+      "final_portfolio": {
+        "cash": 20333.379999999997,
+        "positions": {
+          "AAPL": 220,
+          "AMD": 78,
+          "MSFT": 154,
+          "NVDA": 825
+        }
+      },
+      "final_prices": {
+        "AAPL": 127.88,
+        "AMD": 64.77,
+        "MSFT": 233.69,
+        "NVDA": 14.6,
+        "_CASH_": 1.0
+      },
+      "timestamp": "2026-08-30T01:43:06.311500+00:00"
+    }
+  ],
+  "errors": []
+}
