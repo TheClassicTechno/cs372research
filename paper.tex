@@ -355,6 +355,8 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 
 \textbf{Prompt baselines.} All comparisons below are paired across the same 35 scenarios, with 95\% CIs from a bootstrap resampled at the scenario level (the independent sampling unit). Replacing a single `basic'-prompt agent with the mean vote of minimal Value, Risk, and Technical agents increased diversification and trended volatility and drawdown down, but return and Sharpe down as well; none of these differences is distinguishable from zero (return $-0.12$pp, CI $[-0.73,+0.48]$, $p{=}0.69$; columns A--B of Table~\ref{tab:prompts}). \textbf{Adding causal scaffolding to the same three-role ensemble did raise return and Sharpe} relative to the basic ensemble (return $+0.47$pp, CI $[+0.09,+0.84]$, $p{=}0.024$, $d{=}0.40$; Sharpe $+0.08$, CI $[+0.01,+0.16]$, $p{=}0.043$, $d{=}0.36$; column C). We note this gain does \emph{not} survive comparison against the single-agent baseline (return $+0.34$pp, CI $[-0.38,+1.06]$, $p{=}0.37$), so causal scaffolding is best read as recovering ground lost by ensembling rather than as beating a single agent. Enriched prompts (column D) produced the only large effects in this table: volatility $-0.04$ (CI $[-0.05,-0.02]$, $p{<}0.001$, $d{=}{-}1.02$) and max drawdown $-1.54$pp (CI $[-2.11,-1.02]$, $p{<}0.001$, $d{=}{-}0.92$) versus the single agent, partly attributable to a rise in uninvested cash from ${\sim}8\%$ to $17\%$; return trended lower while Sharpe was largely retained. Structured prompting therefore reliably reduces \emph{risk}; its effect on return is small and, against the strongest baseline, not statistically distinguishable from zero.
 
+\textbf{Run-to-run noise floor.} Each run is a single draw at temperature 0.3. Re-running the column-A configuration six times on each of five scenarios (30 runs, everything else fixed) gives a pooled within-scenario SD of $1.30$pp in return and $0.159$ in Sharpe, $4$--$16\times$ any between-condition difference in Table~\ref{tab:prompts}: single-scenario comparisons at these effect sizes are uninterpretable. Over 35 paired scenarios that noise implies a standard error of $0.31$pp and $0.038$, the same order as the differences ($0.26$--$1.84\times$). Our nulls therefore look like genuine nulls, and the volatility and drawdown effects ($d\approx-1.0$) are the only results clearly above sampling noise. One configuration only; debate configurations make more calls and may be noisier (Appendix~\ref{app:seed-variance}).
+
 \textbf{Causal debate baselines.} Continuing with the Causal prompt, adding a single round of critique, revise, and final judgement led to significant improvements in volatility and drawdown partially attributed to additional cash, though return and Sharpe trended lower (Appendix \ref{app:debate_rca} column B). 
  
 
@@ -371,28 +373,10 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 
 
 \paragraph{Enriched debate baselines (RQ2-E2).}
-While debate underperformed simple average for causal prompts, we investigated the same for enriched prompts and longer debates, over three diverse challenge scenarios (2022\,Q1, 2022\,Q4 tech-heavy, 2023\,Q2 random-8 tickers) presented in Table~\ref{tab:financial-results_across}.
+Debate underperformed the simple average under causal prompts, so we also examined enriched prompts and longer debates on three challenge scenarios (2022\,Q1, 2022\,Q4 tech-heavy, 2023\,Q2 random-8 tickers). We report these separately in Appendix~\ref{app:enriched-smalln} rather than alongside the 35-scenario results, because at $N{=}2$--$3$ the intervals are wide and overlapping and the ordering between configurations is not resolvable; we read them as hypothesis-generating.
 
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-\textbf{Configuration} & \textbf{N} & \textbf{Return \%} & \textbf{Sharpe} & \textbf{Sortino} & \textbf{Max DD \%} & \textbf{Excess vs SPY \%} \\
-\midrule
-Single Agent            & 3 & $+1.59 \pm 0.99$ & $0.35 \pm 0.17$ & $0.52 \pm 0.25$ & $9.73 \pm 1.90$ & $-1.01 \pm 3.12$ \\
-Multi-Agent Mean        & 3 & $+2.43 \pm 1.23$ & $0.58 \pm 0.30$ & $0.88 \pm 0.46$ & $8.61 \pm 1.95$ & $-0.13 \pm 3.09$ \\
-Enriched Debate (3-ag.) & 3 & $+2.46 \pm 1.74$ & $0.76 \pm 0.48$ & $1.16 \pm 0.75$ & $5.33 \pm 0.71$ & $+0.04 \pm 4.04$ \\
-Enriched Debate (4-ag.) & 2 & $-0.27 \pm 0.29$ & $-0.05 \pm 0.06$ & $-0.07 \pm 0.09$ & $6.09 \pm 0.82$ & $+0.14 \pm 4.47$ \\
-\bottomrule
-\end{tabular}
-\vspace{4pt}
-\setlength{\belowcaptionskip}{-4pt}
-\caption{Financial performance across configurations (mean $\pm$ SEM). Excess vs SPY is portfolio return minus S\&P~500 return over the same quarter. At $N{=}2$--$3$ these intervals are wide and overlapping, so the ordering is indicative only: the 3-agent enriched debate shows the highest Sharpe and Sortino and the lowest drawdown, while the 4-agent 5-round debate is the only configuration with negative mean return.}
-\label{tab:financial-results_across}
-\end{table}
 
-Again, no configuration consistently outperforms SPY (excess returns cluster near zero with wide variance). However, the 3-agent enriched debate nearly halves maximum drawdown relative to the single-agent baseline ($5.33\%$ vs.\ $9.73\%$)--more than doubling risk-adjusted returns (Sharpe ratio $0.76$ vs.\ $0.35$ and Sortino ratio $1.16$ vs.\ $0.52$). This is consistent with structured debate's primary value being risk management---reducing tail losses and improving return consistency---rather than generating alpha. The 4-agent 5-round debate produces negative returns ($-0.27\%$) despite maintaining stable per-round CRIT scores ($\bar{\rho} \approx 0.83$--$0.85$, \ref{app:crit-scores}), illustrating that extended debate can degrade performance through over-convergence. Appendix~\ref{app:per-scenario-debate} breaks down per-scenario variance across market regimes. % \textbf{Reasoning Quality (CRIT Scores)} 
+No configuration consistently outperforms SPY there either; excess returns cluster near zero with wide variance. The 3-agent enriched debate shows the lowest drawdown ($5.33\%$ vs.\ $9.73\%$ for the single agent) and the highest Sharpe ($0.76$ vs.\ $0.35$), but at $N{=}3$, with SEMs of $\pm0.71$ and $\pm0.48$, these gaps are not separable from zero. They point the same direction as the 35-scenario result in Table~\ref{tab:prompts}, where structured prompting reliably reduced risk without improving return, and we treat them as consistent with rather than independent evidence for that reading. The 4-agent 5-round debate produces negative returns ($-0.27\%$) despite maintaining stable per-round CRIT scores ($\bar{\rho} \approx 0.83$--$0.85$, \ref{app:crit-scores}), illustrating that extended debate can degrade performance through over-convergence. Appendix~\ref{app:per-scenario-debate} breaks down per-scenario variance across market regimes. % \textbf{Reasoning Quality (CRIT Scores)} 
 % \label{sec:crit-results}
 Appendix~\ref{app:crit-scores} reports CRIT pillar scores for the 4-agent enriched debate. Per-round reasoning quality remains stable at $\bar{\rho} \approx 0.83$
 --$0.85$, with Causal Alignment ($P_4$) consistently the weakest pillar. 
@@ -440,7 +424,7 @@ A related ablation (A8 in \ref{app:financial-results}) retains the same JS-diver
 \vspace{-0.2cm}
 \subsubsection{RQ3-E3: Repairing Causal Rung Collapse}
 \vspace{-0.2cm}
-This experiment tests whether explicitly repairing causal reasoning failures improves portfolio performance. Instead of monitoring disagreement, the intervention targets the \textit{causal alignment} pillar of the CRIT reasoning audit. After the CRIT phase, agents whose causal reasoning score $\rho$ falls below a predefined threshold receive targeted prompt nudges and re-run both \textit{revise} and \textit{CRIT} phases. This intervention therefore attempts to regulate reasoning quality directly rather than debate dynamics. Although intervention successfully improves causal reasoning scores, this, again, does not translate into financial gains. In the two-agent configuration (A10), Sharpe decreases slightly ($-0.09$, $p=0.22$) and max drawdown increases (+0.53pp, $p=0.062$). A key reason appears to be the structural role of the technical agent. While macroeconomic arguments naturally express causal relationships, technical analysis relies primarily on pattern recognition signals that are not always easily expressed in causal form. As a result, enforcing stricter causal reasoning may penalize or suppress useful pattern-based heuristics. 
+This experiment tests whether explicitly repairing causal reasoning failures improves portfolio performance. Instead of monitoring disagreement, the intervention targets the \textit{causal alignment} pillar of the CRIT reasoning audit. After the CRIT phase, agents whose causal reasoning score $\rho$ falls below a predefined threshold receive targeted prompt nudges and re-run both \textit{revise} and \textit{CRIT} phases. This intervention therefore attempts to regulate reasoning quality directly rather than debate dynamics. Although intervention successfully improves causal reasoning scores, this, again, does not translate into financial gains. In the two-agent configuration (A10), Sharpe decreases slightly ($-0.09$, $p=0.22$) and max drawdown increases (+0.53pp, $p=0.062$). We discuss the likely reason, the technical agent's non-causal reasoning paradigm, in Section~4. 
 
 \vspace{-0.3cm}
 
@@ -712,8 +696,7 @@ Across all three questions the dominant driver of performance is the preservatio
 \vspace{-6pt}
 \textbf{Statistical power.} Budget and rate limits meant many configurations were run at
 $N{=}2$--$3$ scenarios, giving wide intervals; those results are exploratory, not
-confirmatory. Only the 35-scenario paired comparisons support the significance claims we
-make. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
+confirmatory. Only the 35-scenario paired comparisons support the significance claims we make; a direct run-to-run probe (Appendix~\ref{app:seed-variance}) confirms single-scenario comparisons at these effect sizes are uninterpretable. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
 \textbf{Outcome noise.} Realized return is a noisy signal, not ground-truth reasoning
 correctness: a well-reasoned allocation can lose money and a poorly-reasoned one can
 profit. Our null result for RQ1 shows CRIT does not predict this outcome; it does not
@@ -1224,6 +1207,70 @@ Total Return \% & $4.63\% \pm 1.54\%$ & $4.47\% \pm 1.49\%$ & $4.31\% \pm 1.41\%
 \vspace{4pt}
 \caption{Mean over 35 quarter+tickers scenarios $\pm$ SEM. Superscripts indicate stat.\ sig.\ in paired t-test with the specified column(s). Unbolded: $p < 0.15$, \textbf{Bolded}: $p < 0.01$).}
 \label{tab:debate_rca}
+\end{table}
+
+\subsection{Run-to-Run Variance Probe}
+\label{app:seed-variance}
+
+To quantify sampling noise at fixed configuration, we re-ran the
+\texttt{single\_agent\_slim} configuration (Table~\ref{tab:prompts}, column A) six times on
+each of five scenarios spanning distinct regimes, varying only the LLM sampling draw
+(temperature 0.3); configuration, scenario, and evaluation window were held constant.
+All 30 runs completed successfully.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lrrrrrr}
+\toprule
+& \multicolumn{3}{c}{Total return \%} & \multicolumn{3}{c}{Annualized Sharpe} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Scenario & mean & SD & range & mean & SD & range \\
+\midrule
+2022\,Q1              & $2.29$   & $1.25$ & $3.17$ & $0.566$  & $0.285$ & $0.739$ \\
+2022\,Q3 rand3        & $1.25$   & $0.25$ & $0.70$ & $0.257$  & $0.043$ & $0.118$ \\
+2022\,Q4 tech         & $1.37$   & $0.59$ & $1.43$ & $0.229$  & $0.077$ & $0.194$ \\
+2023\,Q2              & $12.81$  & $2.29$ & $6.92$ & $3.140$  & $0.173$ & $0.476$ \\
+2025\,Q1 tech         & $-16.47$ & $1.11$ & $3.25$ & $-1.982$ & $0.091$ & $0.280$ \\
+\midrule
+Pooled SD (one run)   & \multicolumn{3}{c}{$1.30$} & \multicolumn{3}{c}{$0.159$} \\
+Implied SEM, $n{=}35$ paired & \multicolumn{3}{c}{$0.31$} & \multicolumn{3}{c}{$0.038$} \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Run-to-run variance at fixed configuration and scenario ($n{=}6$ repeats each).
+Within-scenario SD exceeds every between-condition difference in
+Table~\ref{tab:prompts}, so single-scenario comparisons between those configurations are
+uninformative. The implied paired standard error over 35 scenarios is the same order as
+those differences. Variance is heterogeneous across scenarios, so the pooled figure should
+be read as an approximation.}
+\label{tab:seed-variance}
+\end{table}
+
+Reproduced by \texttt{analysis/seed\_variance\_runs.sh} and
+\texttt{analysis/seed\_variance.py}; per-run artifacts are stored under
+\texttt{results/seed\_variance/}.
+
+
+\subsection{Enriched Debate Configurations (Small-$N$)}
+\label{app:enriched-smalln}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Configuration} & \textbf{N} & \textbf{Return \%} & \textbf{Sharpe} & \textbf{Sortino} & \textbf{Max DD \%} & \textbf{Excess vs SPY \%} \\
+\midrule
+Single Agent            & 3 & $+1.59 \pm 0.99$ & $0.35 \pm 0.17$ & $0.52 \pm 0.25$ & $9.73 \pm 1.90$ & $-1.01 \pm 3.12$ \\
+Multi-Agent Mean        & 3 & $+2.43 \pm 1.23$ & $0.58 \pm 0.30$ & $0.88 \pm 0.46$ & $8.61 \pm 1.95$ & $-0.13 \pm 3.09$ \\
+Enriched Debate (3-ag.) & 3 & $+2.46 \pm 1.74$ & $0.76 \pm 0.48$ & $1.16 \pm 0.75$ & $5.33 \pm 0.71$ & $+0.04 \pm 4.04$ \\
+Enriched Debate (4-ag.) & 2 & $-0.27 \pm 0.29$ & $-0.05 \pm 0.06$ & $-0.07 \pm 0.09$ & $6.09 \pm 0.82$ & $+0.14 \pm 4.47$ \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\setlength{\belowcaptionskip}{-4pt}
+\caption{Financial performance across configurations (mean $\pm$ SEM). Excess vs SPY is portfolio return minus S\&P~500 return over the same quarter. At $N{=}2$--$3$ these intervals are wide and overlapping, so the ordering is indicative only: the 3-agent enriched debate shows the highest Sharpe and Sortino and the lowest drawdown, while the 4-agent 5-round debate is the only configuration with negative mean return.}
+\label{tab:financial-results_across}
 \end{table}
 
 \subsection{Enriched Debate Scenario Breakdown}

@@ -1,0 +1,48 @@
+RUN-TO-RUN VARIANCE PROBE
+==========================================================================
+Config held fixed : single_agent_slim (Table 2, column A)
+Varying           : LLM sampling draw only (temperature 0.3)
+Scenarios         : 5
+
+--- Total return % ---
+  scenario                                  n      mean       sd     range
+  scenario_2022Q1                           6      2.29     1.25      3.17
+  scenario_2022Q3_rand3_1                   6      1.25     0.25      0.70
+  scenario_2022Q4_tech                      6      1.37     0.59      1.43
+  scenario_2023Q2                           6     12.81     2.29      6.92
+  scenario_2025Q1_tech                      6    -16.47     1.11      3.25
+
+  pooled within-scenario SD, one run   : 1.30
+  implied SD of a 1-vs-1 paired diff    : 1.84
+  implied SEM of that diff over n=35    : 0.31
+
+  Table 2 between-condition effects vs column A:
+    B  3 Roles Mean, Basic         -0.12   |effect| vs single-run SD = 0.09x   vs n=35 SEM = 0.39x
+    C  3 Roles Mean, Causal        +0.34   |effect| vs single-run SD = 0.26x   vs n=35 SEM = 1.09x
+    D  3 Roles Mean, Enriched      -0.21   |effect| vs single-run SD = 0.16x   vs n=35 SEM = 0.68x
+
+  Reading: the first ratio says whether a SINGLE run at ONE scenario
+  could show the effect by chance; the second says whether the paired
+  35-scenario design can resolve it. Only the second bears on Table 2.
+
+--- Annualized Sharpe ---
+  scenario                                  n      mean       sd     range
+  scenario_2022Q1                           6     0.566    0.285     0.739
+  scenario_2022Q3_rand3_1                   6     0.257    0.043     0.118
+  scenario_2022Q4_tech                      6     0.229    0.077     0.194
+  scenario_2023Q2                           6     3.140    0.173     0.476
+  scenario_2025Q1_tech                      6    -1.982    0.091     0.280
+
+  pooled within-scenario SD, one run   : 0.159
+  implied SD of a 1-vs-1 paired diff    : 0.225
+  implied SEM of that diff over n=35    : 0.038
+
+  Table 2 between-condition effects vs column A:
+    B  3 Roles Mean, Basic         -0.010   |effect| vs single-run SD = 0.06x   vs n=35 SEM = 0.26x
+    C  3 Roles Mean, Causal        +0.070   |effect| vs single-run SD = 0.44x   vs n=35 SEM = 1.84x
+    D  3 Roles Mean, Enriched      +0.040   |effect| vs single-run SD = 0.25x   vs n=35 SEM = 1.05x
+
+  Reading: the first ratio says whether a SINGLE run at ONE scenario
+  could show the effect by chance; the second says whether the paired
+  35-scenario design can resolve it. Only the second bears on Table 2.
+
