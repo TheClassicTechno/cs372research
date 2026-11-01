@@ -271,7 +271,7 @@ one reason we treat rubric improvement as insufficient evidence of better decisi
 
 Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. Every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
 
-Appendix~\ref{app:debate_portofolio} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} (binomial $p<0.001$) and exhibit consistently lower Sharpe ratios.  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:improvement_in_crit} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
+Appendix~\ref{app:debate_portofolio} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} and have lower Sharpe in every ablation; resampling scenarios in the 210 recoverable runs gives a return gap of $-2.4$pp (95\% CI $[-4.1,-0.8]$).  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:improvement_in_crit} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
 \begin{table}[H]
 \centering
@@ -1604,19 +1604,19 @@ Risk agent $\rho$ vs Return & Pearson & $+0.22$ & 0.006 & 152 \\
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Ablation} & \textbf{n} & \textbf{Debate Return} & \textbf{EW Return} & \textbf{Diff} & \textbf{Beats EW} \\
+\textbf{Ablation} & \textbf{n} & \textbf{Debate Return} & \textbf{EW Return} & \textbf{Diff} & \textbf{Sharpe Diff} & \textbf{Beats EW} \\
 \midrule
-Abl 1 & 245 & $-3.64\%$ & $-3.28\%$ & $-0.36\%$ & 31\% \\
-Abl 7 & 70 & $+2.20\%$ & $+4.47\%$ & $-2.26\%$ & 30\% \\
-Abl 8 & 70 & $+1.54\%$ & $+4.47\%$ & $-2.93\%$ & 34\% \\
-Abl 10 & 70 & $+2.51\%$ & $+4.47\%$ & $-1.96\%$ & 40\% \\
-\textbf{Pooled} & 455 & --- & --- & $\mathbf{-1.29\%}$ & \textbf{33\%} \\
+Abl 1 & 245 & $-3.64\%$ & $-3.28\%$ & $-0.36\%$ & $-0.39$ & 31\% \\
+Abl 7 & 70 & $+2.20\%$ & $+4.47\%$ & $-2.26\%$ & $-0.64$ & 30\% \\
+Abl 8 & 70 & $+1.54\%$ & $+4.47\%$ & $-2.93\%$ & $-0.77$ & 34\% \\
+Abl 10 & 70 & $+2.51\%$ & $+4.47\%$ & $-1.96\%$ & $-0.61$ & 40\% \\
+\textbf{Pooled} & 455 & --- & --- & $\mathbf{-1.29\%}$ & $\mathbf{-0.52}$ & \textbf{33\%} \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\caption{Debate portfolio performance compared to an equal-weight baseline.}
+\caption{Debate portfolio performance compared to an equal-weight (1/N) baseline over the same tickers and quarter (\texttt{analysis/vs\_equal\_weight\_report.txt}). Runs reuse scenarios, so per-run binomial tests overstate the evidence and are not reported. For the 210 A7/A8/A10 runs, whose run directories were recovered, treating each of the 35 scenarios as one observation gives a win rate of 35\% (scenario-cluster bootstrap 95\% CI $[22,48]\%$; 23 scenarios below one half vs.\ 11 above, sign test $p{=}0.058$), a return gap of $-2.4$pp ($[-4.1,-0.8]$), and a Sharpe gap of $-0.67$ ($[-1.01,-0.37]$) (\texttt{analysis/vs\_equal\_weight\_clustered.py}). Ablation~1 spans only two market quarters and its runs were not recovered, so it cannot be re-tested. The 1/N benchmark is fully invested, whereas debate portfolios hold some \texttt{\_CASH\_}, which lowers their return in rising quarters.}
 \label{tab:debate_vs_ew}
 \end{table}
 

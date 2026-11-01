@@ -10,7 +10,7 @@ manuscript. Regenerate with `python3 analysis/verify_paper_tables.py`.
 | Paired Δρ̄ does not track ΔSharpe/Δreturn | same JSON (`paired:*`), n=105 pairs | r, cluster CI | **Yes** | −0.02 [−0.22, +0.18]; +0.01 [−0.19, +0.21] |
 | Equivalence at δ=0.20 | same JSON (`equiv_screen_inside_delta`) | 90% CI inside ±0.20 | **Yes, with caveat** | δ chosen post hoc; called "a screen, not a formal equivalence test"; pooled CRIT–Sharpe fails it |
 | Debate increases CRIT (prompting does) | author records | $\bar\rho$ 0.72→0.84, d≈2.0 | **No — source logs absent** | stated with the coupling caveat |
-| Debate beats 1/N only 33% of time | author records | binomial p<0.001 | **No — source logs absent** | as stated |
+| Debate beats 1/N only 33% of time | `analysis/vs_equal_weight_report.txt` (455 runs: Abl 1 245 + A7/A8/A10 210); A7/A8/A10 re-tested in `analysis/vs_equal_weight_clustered.py` → `analysis/rq1/vs_equal_weight_clustered.json` | 33% descriptive; A7/8/10 scenario-cluster: win 35% [22, 48]%, return gap −2.4pp [−4.1, −0.8], Sharpe gap −0.67 [−1.01, −0.37], sign test p=0.058 | **Yes** for the 210 (win counts reproduce the report); Abl 1 not re-testable | binomial p removed; clustered CI in §3.2 and appendix |
 | Causal scaffolding raises return/Sharpe | `results/scenario_runs`, n=35 paired | +0.47pp p=0.024 d=0.40; Sharpe +0.08 p=0.043 | **Yes** | scoped to the ensemble baseline, and explicitly *not* to the single agent (p=0.37) |
 | Enriched prompts cut drawdown | same | −1.54pp, p<0.001, d=−0.92 | **Yes** | "reliably reduces risk" |
 | Enriched prompts cut volatility | same | −0.04, p<0.001, d=−1.02 | **Yes** | as stated |
