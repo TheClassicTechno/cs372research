@@ -376,9 +376,9 @@ No configuration consistently outperforms SPY. The 3-agent enriched debate shows
 To test whether these findings depend on a particular model family, we repeated
 debates with mixed GPT/Gemini and GPT/Anthropic role assignments and with
 phase-level model routing. Returns were comparable across assignments whenever runs
-completed, and the dominant failure mode (agents acknowledging critiques without
-materially revising) recurred under every provider combination, so we treat the
-proxy--outcome findings as not specific to one model family. These runs are small
+completed, and in the GPT/Anthropic runs, the only cross-provider runs whose traces we
+analyzed, agents again acknowledged critiques without materially revising, so we see
+no sign that the proxy--outcome findings are specific to one model family. These runs are small
 ($N{=}2$--$17$) and one configuration failed in 3 of 6 scenarios when Gemini-2.5-flash
 served as judge and hallucinated a ticker outside the scenario universe; we therefore
 report them as supporting rather than confirmatory evidence, with full per-scenario
@@ -1360,16 +1360,20 @@ This appendix preserves the full narrative for the cross-provider experiments
 summarized in the main text (RQ2-E3).
 
 \textbf{GPT and Gemini.} With \texttt{gpt-5-mini} serving as Macro, Value, and Judge
-and \texttt{gemini-2.5-flash} as Risk, 6/6 scenarios completed successfully. With the
-assignment reversed, only 3/6 completed: Gemini as judge hallucinated ticker JNJ,
+(Exp~A), 6/6 scenarios completed successfully. Exp~A's Risk agent was
+\texttt{gemini-2.5-flash} in the configuration as first committed and \texttt{gpt-5-mini}
+after a later edit; the run logs that would show which was used were not retained, so
+Exp~A may be a GPT-only reference rather than a mixed run. With \texttt{gemini-2.5-flash}
+as Macro, Value, and Judge and \texttt{gpt-5-mini} as Risk (Exp~B), only 3/6
+completed: Gemini as judge hallucinated ticker JNJ,
 which was not in the scenario universe, invalidating those allocations. Returns are
 comparable across assignments when runs complete, suggesting financial outcomes are
 largely provider-agnostic, while judge \emph{reliability} is not (6/6 vs.\ 3/6
-completion). Notably, all three configurations produced byte-identical portfolios on
-one scenario---same positions, same cash, same quarterly return---despite different
-providers and run times. This convergence to equal-weight allocation under market
-stress is consistent with the consensus-convergence dynamic described in
-Section~\ref{sec:failure-modes} operating independently of the underlying model.
+completion). Exp~A and Exp~B produced identical metrics on 2022\,Q1
+(Table~\ref{tab:llm-comparison}), whereas phase-level routing on the same scenario did
+not ($-16.22\%$ vs.\ $-19.40\%$). Identical results from different providers are
+unexpected; those run logs were not retained, so we cannot check whether both runs
+reduced to the same allocation.
 
 \textbf{Phase-level routing.} With \texttt{gpt-5-mini} handling propose and revise and
 \texttt{gemini-2.5-flash} handling critique and judge, the 2022\,Q1 Inflation Shock
@@ -1428,7 +1432,7 @@ these comparisons are exploratory.
 \end{tabular}
 \vspace{4pt}
 \setlength{\belowcaptionskip}{-4pt}
-\caption{Per-scenario LLM comparison. Exp~A uses GPT-5-mini for all roles; Exp~B uses Gemini-2.5-flash for Macro/Value/Judge and GPT-5-mini for Risk. Exp~B failures are caused by Gemini hallucinating ticker JNJ (not in scenario universe). Where both complete, returns are comparable- e.g., 2022\,Q1 produces byte-identical portfolios.}
+\caption{Per-scenario LLM comparison. Exp~A uses GPT-5-mini for Macro/Value/Judge; whether its Risk agent was GPT-5-mini or Gemini-2.5-flash cannot be confirmed (Appendix~\ref{app:cross-provider}). Exp~B uses Gemini-2.5-flash for Macro/Value/Judge and GPT-5-mini for Risk. Exp~B failures are caused by Gemini hallucinating ticker JNJ (not in scenario universe). Where both complete, returns are comparable- e.g., 2022\,Q1 produces byte-identical portfolios.}
 \label{tab:llm-comparison}
 \end{table}
 
