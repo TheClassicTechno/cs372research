@@ -1,0 +1,107 @@
+PAPER TABLE VERIFICATION -- scenario-level uncertainty & provenance
+==============================================================================
+Bootstrap resamples : 10,000
+Seed                : 20260829
+CI level            : 95% (percentile bootstrap)
+Independent unit    : market scenario (checklist 14/17)
+Surviving config YAMLs hashed: 272
+
+Point estimates and paired-t markers are produced by
+scripts/compare_multiple_configs.py; this script reuses that loader and
+adds bootstrap CIs plus config-provenance resolution.
+
+==============================================================================
+tab:prompts  --  Prompt tier baselines (main text)
+==============================================================================
+Scenarios common to all columns: 35
+
+Config provenance (recorded run hash -> surviving YAML):
+  [A] 54bfb3bf2d76eefa  config/debate/baselines/single_agent_slim.yaml
+  [B] 5b72cd466a22753f  config/debate/baselines/vote_slim_no_macro.yaml
+  [C] 81d25963ccf7bea5  *** NO SURVIVING CONFIG MATCHES THIS HASH ***
+  [D] 80d90d880610501f  config/debate/baselines/vote_no_macro_enriched.yaml
+
+--- Excess Return % (v SPY) ---
+  [A]     0.77  SEM 1.03  boot95% [-1.25, 2.69]
+  [B]     0.65  SEM 0.93  boot95% [-1.24, 2.45]   | vs A: -0.12 [-0.71, +0.49] p=0.693 d=-0.07  (CI crosses 0)
+  [C]     1.12  SEM 0.93  boot95% [-0.68, 2.89]   | vs A: +0.34 [-0.37, +1.09] p=0.372 d=+0.15  (CI crosses 0)
+  [D]     0.57  SEM 0.91  boot95% [-1.20, 2.31]   | vs A: -0.21 [-1.20, +0.71] p=0.680 d=-0.07  (CI crosses 0)
+
+--- Sharpe ---
+  [A]     1.00  SEM 0.30  boot95% [0.43, 1.57]
+  [B]     0.99  SEM 0.30  boot95% [0.41, 1.57]   | vs A: -0.01 [-0.12, +0.10] p=0.830 d=-0.04  (CI crosses 0)
+  [C]     1.07  SEM 0.30  boot95% [0.50, 1.65]   | vs A: +0.07 [-0.05, +0.21] p=0.297 d=+0.18  (CI crosses 0)
+  [D]     1.04  SEM 0.30  boot95% [0.47, 1.60]   | vs A: +0.04 [-0.11, +0.19] p=0.641 d=+0.08  (CI crosses 0)
+
+--- Volatility ---
+  [A]     0.22  SEM 0.01  boot95% [0.19, 0.24]
+  [B]     0.21  SEM 0.01  boot95% [0.18, 0.24]   | vs A: -0.01 [-0.02, +0.00] p=0.162 d=-0.24  (CI crosses 0)
+  [C]     0.21  SEM 0.01  boot95% [0.18, 0.23]   | vs A: -0.01 [-0.02, +0.00] p=0.092 d=-0.29  (CI crosses 0)
+  [D]     0.18  SEM 0.01  boot95% [0.16, 0.20]   | vs A: -0.04 [-0.05, -0.02] p=0.000 d=-1.02  (CI excludes 0)
+
+--- Max Drawdown % ---
+  [A]     9.84  SEM 0.97  boot95% [7.99, 11.72]
+  [B]     9.60  SEM 0.93  boot95% [7.85, 11.41]   | vs A: -0.24 [-0.62, +0.12] p=0.219 d=-0.21  (CI crosses 0)
+  [C]     9.33  SEM 0.90  boot95% [7.63, 11.11]   | vs A: -0.51 [-0.98, -0.05] p=0.043 d=-0.35  (CI excludes 0)
+  [D]     8.29  SEM 0.77  boot95% [6.85, 9.82]   | vs A: -1.54 [-2.11, -1.02] p=0.000 d=-0.92  (CI excludes 0)
+
+--- Sortino ---
+  [A]     1.76  SEM 0.46  boot95% [0.87, 2.66]
+  [B]     1.75  SEM 0.47  boot95% [0.86, 2.66]   | vs A: -0.01 [-0.19, +0.17] p=0.947 d=-0.01  (CI crosses 0)
+  [C]     1.87  SEM 0.47  boot95% [0.97, 2.78]   | vs A: +0.11 [-0.09, +0.32] p=0.295 d=+0.18  (CI crosses 0)
+  [D]     1.80  SEM 0.47  boot95% [0.91, 2.70]   | vs A: +0.04 [-0.18, +0.29] p=0.720 d=+0.06  (CI crosses 0)
+
+--- Total Return % ---
+  [A]     4.29  SEM 1.62  boot95% [1.09, 7.33]
+  [B]     4.16  SEM 1.52  boot95% [1.20, 7.06]   | vs A: -0.12 [-0.73, +0.48] p=0.693 d=-0.07  (CI crosses 0)
+  [C]     4.63  SEM 1.54  boot95% [1.61, 7.56]   | vs A: +0.34 [-0.38, +1.10] p=0.372 d=+0.15  (CI crosses 0)
+  [D]     4.08  SEM 1.36  boot95% [1.41, 6.69]   | vs A: -0.21 [-1.21, +0.73] p=0.680 d=-0.07  (CI crosses 0)
+
+==============================================================================
+tab:debate_rca  --  Causal debate baselines & RCA (appendix)
+==============================================================================
+Scenarios common to all columns: 35
+
+Config provenance (recorded run hash -> surviving YAML):
+  [A] 81d25963ccf7bea5  *** NO SURVIVING CONFIG MATCHES THIS HASH ***
+  [B] cf376506f1dee925  config/debate/baselines/debate_1_round_no_macro_causal_out.yaml
+  [C] a503355d691a8fbc  *** NO SURVIVING CONFIG MATCHES THIS HASH ***
+
+--- Excess Return % (v SPY) ---
+  [A]     1.12  SEM 0.93  boot95% [-0.70, 2.92]
+  [B]     0.95  SEM 0.96  boot95% [-0.94, 2.78]   | vs A: -0.16 [-0.72, +0.43] p=0.584 d=-0.09  (CI crosses 0)
+  [C]     0.80  SEM 0.88  boot95% [-0.96, 2.49]   | vs A: -0.32 [-0.85, +0.19] p=0.252 d=-0.20  (CI crosses 0)
+
+--- Sharpe ---
+  [A]     1.07  SEM 0.30  boot95% [0.49, 1.64]
+  [B]     1.01  SEM 0.30  boot95% [0.42, 1.59]   | vs A: -0.06 [-0.17, +0.05] p=0.295 d=-0.18  (CI crosses 0)
+  [C]     1.03  SEM 0.30  boot95% [0.46, 1.58]   | vs A: -0.05 [-0.14, +0.04] p=0.309 d=-0.17  (CI crosses 0)
+
+--- Volatility ---
+  [A]     0.21  SEM 0.01  boot95% [0.18, 0.23]
+  [B]     0.20  SEM 0.01  boot95% [0.17, 0.22]   | vs A: -0.01 [-0.02, -0.01] p=0.000 d=-0.66  (CI excludes 0)
+  [C]     0.19  SEM 0.01  boot95% [0.17, 0.21]   | vs A: -0.02 [-0.02, -0.01] p=0.000 d=-0.88  (CI excludes 0)
+
+--- Max Drawdown % ---
+  [A]     9.33  SEM 0.90  boot95% [7.67, 11.07]
+  [B]     8.88  SEM 0.83  boot95% [7.37, 10.54]   | vs A: -0.45 [-0.81, -0.11] p=0.018 d=-0.42  (CI excludes 0)
+  [C]     8.64  SEM 0.80  boot95% [7.17, 10.25]   | vs A: -0.69 [-1.09, -0.30] p=0.002 d=-0.56  (CI excludes 0)
+
+--- Sortino ---
+  [A]     1.87  SEM 0.47  boot95% [0.95, 2.78]
+  [B]     1.82  SEM 0.49  boot95% [0.87, 2.79]   | vs A: -0.05 [-0.24, +0.12] p=0.559 d=-0.10  (CI crosses 0)
+  [C]     1.80  SEM 0.47  boot95% [0.91, 2.70]   | vs A: -0.07 [-0.23, +0.08] p=0.358 d=-0.16  (CI crosses 0)
+
+--- Total Return % ---
+  [A]     4.63  SEM 1.54  boot95% [1.60, 7.52]
+  [B]     4.47  SEM 1.49  boot95% [1.60, 7.31]   | vs A: -0.16 [-0.72, +0.41] p=0.584 d=-0.09  (CI crosses 0)
+  [C]     4.31  SEM 1.41  boot95% [1.56, 7.03]   | vs A: -0.32 [-0.84, +0.20] p=0.252 d=-0.20  (CI crosses 0)
+
+==============================================================================
+NOT VERIFIABLE FROM THIS REPOSITORY
+==============================================================================
+The CRIT reasoning scores underlying tab:correlation_reasoning (n=210),
+the CRIT pillar tables, and the rho=0.72->0.84 prompt-tier gain are NOT
+reproducible here: no per-round CRIT log corpus is present. The only
+crit_scores.json files in the tree are unit-test fixtures under tests/.
+Those numbers are author-verified only and are reported as such.

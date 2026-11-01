@@ -1,0 +1,43 @@
+table,column,config,metric,n_scenarios,mean,sem,boot_ci_low,boot_ci_high,paired_vs,diff_mean,diff_ci_low,diff_ci_high,paired_t,paired_p,cohens_d
+tab:prompts,A,"Single Agent, Basic",Excess Return % (v SPY),35,0.7738,1.0307,-1.2537,2.6931,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Excess Return % (v SPY),35,0.6498,0.928,-1.2358,2.4464,A,-0.124,-0.7085,0.4864,-0.3981,0.693,-0.0673
+tab:prompts,C,"3 Roles Mean, Causal",Excess Return % (v SPY),35,1.1151,0.9278,-0.6843,2.8854,A,0.3413,-0.3721,1.0907,0.905,0.3718,0.153
+tab:prompts,D,"3 Roles Mean, Enriched",Excess Return % (v SPY),35,0.5669,0.9088,-1.2047,2.3131,A,-0.2069,-1.203,0.7134,-0.4162,0.6799,-0.0703
+tab:prompts,A,"Single Agent, Basic",Sharpe,35,1.0026,0.2954,0.4312,1.5737,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Sharpe,35,0.9906,0.2999,0.4143,1.5654,A,-0.012,-0.1171,0.0976,-0.2169,0.8296,-0.0367
+tab:prompts,C,"3 Roles Mean, Causal",Sharpe,35,1.0726,0.2972,0.5009,1.65,A,0.07,-0.0531,0.2057,1.0588,0.2972,0.179
+tab:prompts,D,"3 Roles Mean, Enriched",Sharpe,35,1.0382,0.2965,0.4693,1.6041,A,0.0356,-0.1059,0.1858,0.4702,0.6412,0.0795
+tab:prompts,A,"Single Agent, Basic",Volatility,35,0.2159,0.0134,0.1911,0.242,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Volatility,35,0.2093,0.0127,0.1849,0.2351,A,-0.0066,-0.0155,0.0025,-1.4283,0.1623,-0.2414
+tab:prompts,C,"3 Roles Mean, Causal",Volatility,35,0.2073,0.0125,0.1841,0.2327,A,-0.0087,-0.0179,0.0013,-1.7366,0.0915,-0.2935
+tab:prompts,D,"3 Roles Mean, Enriched",Volatility,35,0.18,0.0095,0.1625,0.199,A,-0.0359,-0.0479,-0.0249,-6.0476,0.0,-1.0222
+tab:prompts,A,"Single Agent, Basic",Max Drawdown %,35,9.8367,0.9681,7.9928,11.7158,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Max Drawdown %,35,9.5969,0.9252,7.852,11.4053,A,-0.2398,-0.6194,0.124,-1.2519,0.2192,-0.2116
+tab:prompts,C,"3 Roles Mean, Causal",Max Drawdown %,35,9.3304,0.9047,7.6259,11.1125,A,-0.5063,-0.9774,-0.0496,-2.098,0.0434,-0.3546
+tab:prompts,D,"3 Roles Mean, Enriched",Max Drawdown %,35,8.2917,0.7722,6.8467,9.8235,A,-1.545,-2.1148,-1.017,-5.4227,0.0,-0.9166
+tab:prompts,A,"Single Agent, Basic",Sortino,35,1.7602,0.4608,0.8713,2.6553,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Sortino,35,1.754,0.4708,0.8575,2.6594,A,-0.0062,-0.1871,0.1731,-0.0674,0.9467,-0.0114
+tab:prompts,C,"3 Roles Mean, Causal",Sortino,35,1.8739,0.4699,0.9695,2.7833,A,0.1136,-0.0872,0.3194,1.0647,0.2945,0.18
+tab:prompts,D,"3 Roles Mean, Enriched",Sortino,35,1.8041,0.4669,0.9096,2.7048,A,0.0439,-0.1813,0.2879,0.3617,0.7198,0.0611
+tab:prompts,A,"Single Agent, Basic",Total Return %,35,4.2886,1.6201,1.0925,7.3299,,,,,,,
+tab:prompts,B,"3 Roles Mean, Basic",Total Return %,35,4.1646,1.5204,1.1961,7.0638,A,-0.124,-0.7263,0.4836,-0.3981,0.693,-0.0673
+tab:prompts,C,"3 Roles Mean, Causal",Total Return %,35,4.6299,1.5373,1.6056,7.5564,A,0.3413,-0.3801,1.0957,0.905,0.3718,0.153
+tab:prompts,D,"3 Roles Mean, Enriched",Total Return %,35,4.0817,1.3637,1.4064,6.6891,A,-0.2069,-1.2134,0.7297,-0.4162,0.6799,-0.0703
+tab:debate_rca,A,"3 Roles Mean, Causal",Excess Return % (v SPY),35,1.1151,0.9278,-0.7045,2.915,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Excess Return % (v SPY),35,0.9525,0.9627,-0.9421,2.7836,A,-0.1626,-0.721,0.4256,-0.5522,0.5845,-0.0933
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Excess Return % (v SPY),35,0.7989,0.8833,-0.9605,2.4875,A,-0.3162,-0.853,0.1949,-1.1659,0.2518,-0.1971
+tab:debate_rca,A,"3 Roles Mean, Causal",Sharpe,35,1.0726,0.2972,0.4855,1.6384,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Sharpe,35,1.0137,0.3037,0.4186,1.588,A,-0.0589,-0.1672,0.0463,-1.0628,0.2954,-0.1796
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Sharpe,35,1.0252,0.2954,0.4611,1.5832,A,-0.0474,-0.1382,0.0408,-1.0325,0.3091,-0.1745
+tab:debate_rca,A,"3 Roles Mean, Causal",Volatility,35,0.2073,0.0125,0.184,0.2324,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Volatility,35,0.1957,0.0121,0.1733,0.2196,A,-0.0115,-0.0173,-0.006,-3.9297,0.0004,-0.6642
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Volatility,35,0.1899,0.0106,0.1704,0.211,A,-0.0174,-0.024,-0.0112,-5.211,0.0,-0.8808
+tab:debate_rca,A,"3 Roles Mean, Causal",Max Drawdown %,35,9.3304,0.9047,7.6709,11.0708,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Max Drawdown %,35,8.8831,0.8275,7.3705,10.5359,A,-0.4473,-0.8083,-0.107,-2.4776,0.0184,-0.4188
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Max Drawdown %,35,8.6406,0.7967,7.1687,10.2468,A,-0.6897,-1.0912,-0.3014,-3.3356,0.0021,-0.5638
+tab:debate_rca,A,"3 Roles Mean, Causal",Sortino,35,1.8739,0.4699,0.9521,2.7782,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Sortino,35,1.8194,0.4928,0.8745,2.7857,A,-0.0545,-0.2408,0.12,-0.5894,0.5595,-0.0996
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Sortino,35,1.7997,0.4691,0.9082,2.7048,A,-0.0742,-0.226,0.082,-0.9313,0.3583,-0.1574
+tab:debate_rca,A,"3 Roles Mean, Causal",Total Return %,35,4.6299,1.5373,1.5967,7.5156,,,,,,,
+tab:debate_rca,B,"3 Roles Debate, Causal",Total Return %,35,4.4673,1.4869,1.5984,7.3094,A,-0.1626,-0.7184,0.4117,-0.5522,0.5845,-0.0933
+tab:debate_rca,C,"3 Roles Debate, Causal + RCA",Total Return %,35,4.3137,1.4057,1.5574,7.0255,A,-0.3162,-0.8421,0.202,-1.1659,0.2518,-0.1971
