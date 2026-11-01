@@ -409,7 +409,7 @@ Adding a third risk-specialist agent under the same trigger (A8) collapses the e
 \vspace{-0.2cm}
 \subsubsection{RQ3-E3: Repairing Causal Rung Collapse}
 \vspace{-0.2cm}
-This experiment tests whether explicitly repairing causal reasoning failures improves portfolio performance. Instead of monitoring disagreement, the intervention targets the \textit{causal alignment} pillar of the CRIT reasoning audit. After the CRIT phase, agents whose causal reasoning score $\rho$ falls below a predefined threshold receive targeted prompt nudges and re-run both \textit{revise} and \textit{CRIT} phases. This intervention therefore attempts to regulate reasoning quality directly rather than debate dynamics. Although intervention successfully improves causal reasoning scores, this, again, does not translate into financial gains. In the two-agent configuration (A10), Sharpe decreases slightly ($-0.09$, $p=0.22$) and max drawdown increases (+0.53pp, $p=0.062$). We discuss the likely reason, the technical agent's non-causal reasoning paradigm, in Section~4. 
+This experiment tests whether explicitly repairing causal reasoning failures improves portfolio performance. Instead of monitoring disagreement, the intervention targets the \textit{causal alignment} pillar of the CRIT reasoning audit. After the CRIT phase, agents whose causal-alignment pillar $P_4$ falls below $0.75$ receive targeted prompt nudges and re-run both \textit{revise} and \textit{CRIT} phases. This intervention therefore attempts to regulate reasoning quality directly rather than debate dynamics. Although intervention successfully improves causal reasoning scores, this, again, does not translate into financial gains. In the two-agent configuration (A10), Sharpe decreases slightly ($-0.09$, $p=0.22$) and max drawdown increases (+0.53pp, $p=0.062$). We discuss the likely reason, the technical agent's non-causal reasoning paradigm, in Section~4. 
 
 \vspace{-0.3cm}
 
@@ -1511,11 +1511,11 @@ Exp 3 Hybrid phases & -1.70 & 2.84 & -0.53 & 0.7946 \\
 \midrule
 \multirow{2}{*}{A8}
 & Base & 35 & $+1.46 \pm 1.21$ & $+0.42 \pm 0.28$ & $+0.81 \pm 0.44$ & $+8.07 \pm 0.71$ & $-2.06 \pm 0.87$ \\
-& +CRIT & 35 & $+1.61 \pm 1.26$ & $+0.46 \pm 0.28$ & $+0.86 \pm 0.43$ & $+8.27 \pm 0.78$ & $-1.90 \pm 0.94$ \\
+& +JS & 35 & $+1.61 \pm 1.26$ & $+0.46 \pm 0.28$ & $+0.86 \pm 0.43$ & $+8.27 \pm 0.78$ & $-1.90 \pm 0.94$ \\
 \midrule
 \multirow{2}{*}{A10}
 & Base & 35 & $+2.61 \pm 1.54$ & $+0.66 \pm 0.28$ & $+1.18 \pm 0.44$ & $+9.80 \pm 0.87$ & $-0.91 \pm 1.04$ \\
-& +JS & 35 & $+2.41 \pm 1.59$ & $+0.57 \pm 0.27$ & $+1.04 \pm 0.42$ & {\color{red}$\mathbf{+10.33 \pm 0.93}$} & $-1.11 \pm 1.07$ \\
+& +CRIT & 35 & $+2.41 \pm 1.59$ & $+0.57 \pm 0.27$ & $+1.04 \pm 0.42$ & {\color{red}$\mathbf{+10.33 \pm 0.93}$} & $-1.11 \pm 1.07$ \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
@@ -1525,7 +1525,7 @@ Exp 3 Hybrid phases & -1.70 & 2.84 & -0.53 & 0.7946 \\
 \textbf{A8} applies the same JS intervention with an added \textit{risk} agent (three agents total); 
 the intervention fired frequently (97\% of debates) but produced no measurable effect. 
 \textbf{A10} replaces the JS trigger with a CRIT-based reasoning intervention that fires when 
-causal reasoning quality $(\rho_4 < 0.8)$.}
+either agent's causal-alignment pillar falls below threshold ($P_4 < 0.75$).}
 \vspace{-10pt}
 \label{tab:financial-results}
 
