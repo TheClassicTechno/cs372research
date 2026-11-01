@@ -74,8 +74,8 @@ use simulated portfolio allocation as a testbed where complete reasoning traces 
 be compared against an objective downstream outcome, evaluating specialist LLM agents
 under single-agent, independent-ensemble, and multi-round debate conditions, scored
 with a CRIT-style four-pillar rubric and Jensen--Shannon portfolio divergence against
-realized return, Sharpe, and drawdown. Across 210 runs, CRIT reasoning scores are
-essentially uncorrelated with financial outcomes (descriptive $r{=}{+}0.07$ with Sharpe, $r{=}{+}0.03$ with return), even though structured prompting
+realized return, Sharpe, and drawdown. Across 210 runs on 35 reused scenarios, CRIT reasoning scores show
+no detectable association with financial outcomes (Sharpe: pooled $r{=}{+}0.07$, scenario-clustered 95\% CI $[-0.13,0.25]$; within-scenario $r{=}{-}0.02$, $[-0.16,0.12]$), even though structured prompting
 moves those scores substantially ($\bar{\rho}$ from $0.72$ to $0.84$, Cohen's
 $d{\approx}2.0$) and debate portfolios beat an equal-weight baseline only 33\% of the
 time. Improved outcomes align with interventions that limit consensus collapse rather than with interventions that raise reasoning scores: a divergence-collapse trigger improves Sharpe by $+0.14$ ($p{=}0.028$), while an intervention that verifiably repairs causal-reasoning scores slightly degrades performance. That trigger also constrained revision magnitude, so we cannot isolate disagreement preservation as the mechanism. Across our tested configurations the clearest benefits concern risk and risk-adjusted performance rather than consistent alpha, and consensus and rubric scores can both be maximized while decision quality stagnates. These results suggest internal reasoning proxies should be
@@ -127,7 +127,7 @@ noisy outcome signal rather than ground-truth reasoning correctness
 
 Our results answer all three, and the answers diverge from what the proxies alone
 would suggest. Reasoning scores are highly controllable---structured prompting raises
-mean CRIT quality $\bar{\rho}$ from $0.72$ to $0.84$---yet across 210 repeated-condition runs $\bar{\rho}$ is essentially uncorrelated with Sharpe (descriptive $r{=}{+}0.07$) and with return ($r{=}{+}0.03$), and debate portfolios beat an equal-weight
+mean CRIT quality $\bar{\rho}$ from $0.72$ to $0.84$---yet across 210 repeated-condition runs $\bar{\rho}$ shows no detectable association with Sharpe (pooled $r{=}{+}0.07$, scenario-clustered 95\% CI $[-0.13,0.25]$) or return ($r{=}{+}0.03$), and debate portfolios beat an equal-weight
 $1/N$ baseline only 33\% of the time. Debate's measurable benefit is risk reduction rather than alpha. The only intervention producing a significant risk-adjusted gain is one that blocks premature convergence ($+0.14$ Sharpe, $p{=}0.028$; raw return $+0.83$pp, $p{=}0.052$), whereas one that verifiably repairs causal-reasoning scores slightly degrades performance.
 
 \vspace{-2pt}
@@ -135,8 +135,8 @@ $1/N$ baseline only 33\% of the time. Debate's measurable benefit is risk reduct
 \vspace{-4pt}
 \begin{enumerate}[label=(\arabic*),leftmargin=2.2em,itemsep=1pt,topsep=2pt]
     \item We provide evidence that a four-pillar reasoning rubric can be moved
-    substantially by prompt design (Cohen's $d{\approx}2.0$) while remaining
-    uninformative about the external outcome it is used to justify: a proxy-validity failure measured against a decision outcome rather than against another rubric.
+    substantially by prompt design (Cohen's $d{\approx}2.0$) while showing no detectable
+    association with the external outcome it is used to justify: a proxy-validity failure measured against a decision outcome rather than against another rubric.
     \item We evaluate debate against matched single-agent and \emph{independent
     ensemble} controls on identical scenarios, separating the effect of interaction
     from the effect of agent diversity, a control frequently missing when
@@ -188,7 +188,7 @@ Our framework has four modules: data generation, market simulation, multi-agent 
 and evaluation. The design requirement that matters here is that reasoning be
 simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
 proxy--outcome relationship can be examined without the measurement contaminating the
-decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state; the per-round CRIT records underlying RQ1 were not preserved in the released artifact set, which we disclose in Section~\ref{sec:limitations}.
+decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state, as are the RQ1 correlations; other CRIT tables rest on author records (Section~\ref{sec:limitations}).
 Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
 \citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
@@ -267,7 +267,7 @@ numbered within each (e.g.\ RQ1-E1).
 \vspace{-0.2cm}
 % \subsubsection{RQ1-E1: Reasoning Quality and Financial Outcomes}
 
-Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no meaningful relationship with financial performance}. Pooled correlations are near zero, paired changes in reasoning do not predict changes in performance, and regressions controlling for design factors find no predictive signal from $\bar{\rho}$. These 210 runs reuse scenarios across conditions, so the observations are not independent and the $p$-values are not scenario-clustered; we read the correlations descriptively, as effect sizes near zero rather than as a significance test. Subgroup analysis in Appendix~\ref{app:correlation_betwen_agents} reveals two localized signals: value-agent reasoning negatively correlates with Sharpe, while risk-agent reasoning weakly correlates with returns, though the latter is not statistically significant.
+Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. Every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}). Subgroup analysis in Appendix~\ref{app:correlation_betwen_agents} reveals two localized signals: value-agent reasoning negatively correlates with Sharpe, while risk-agent reasoning weakly correlates with returns, though the latter is not statistically significant.
 
 Table~\ref{tab:correlation_reasoning} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} (binomial $p<0.001$) and exhibit consistently lower Sharpe ratios.  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:debate_portofolio} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
@@ -276,16 +276,17 @@ Table~\ref{tab:correlation_reasoning} shows that across all experiments the deba
 \small
 \begin{tabular}{lccc}
 \toprule
-\textbf{Analysis} & \textbf{r} & \textbf{p} & \textbf{n} \\ \midrule
-$\bar{\rho}$ vs Sharpe & $+0.07$ & 0.29 & 210 \\
-$\bar{\rho}$ vs Return & $+0.03$ & 0.70 & 210 \\
-$\Delta\rho$ vs $\Delta$Sharpe (paired) & $-0.02$ & 0.87 & 105 \\
-$\Delta\rho$ vs $\Delta$Return (paired) & $+0.01$ & 0.91 & 105 \\
-
+\textbf{Analysis} & \textbf{r} & \textbf{Scenario-clustered 95\% CI} & \textbf{n} \\ \midrule
+Pooled $\bar{\rho}$ vs Sharpe & $+0.07$ & $[-0.13,\,+0.25]$ & 210 \\
+Pooled $\bar{\rho}$ vs Return & $+0.03$ & $[-0.16,\,+0.21]$ & 210 \\
+Within-scenario $\bar{\rho}$ vs Sharpe & $-0.02$ & $[-0.16,\,+0.12]$ & 210 \\
+Within-scenario $\bar{\rho}$ vs Return & $-0.01$ & $[-0.12,\,+0.10]$ & 210 \\
+$\Delta\bar{\rho}$ vs $\Delta$Sharpe (paired) & $-0.02$ & $[-0.22,\,+0.18]$ & 105 \\
+$\Delta\bar{\rho}$ vs $\Delta$Return (paired) & $+0.01$ & $[-0.19,\,+0.21]$ & 105 \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\caption{Pearson correlation between reasoning quality and financial outcomes.}
+\caption{Pearson $r$ between CRIT $\bar{\rho}$ and outcomes; CIs resample whole scenarios (10{,}000 draws).}
 \label{tab:correlation_reasoning}
 \vspace{-1em}
 \end{table}
@@ -298,7 +299,7 @@ These gains are \textbf{front-loaded rather than iterative}: enriched prompts sc
 
 
 % \vspace{-0.8cm}
-These results answer RQ1 in the negative for this setting: CRIT reasoning scores are not predictive of financial performance on our scenario set. We are, however, still interested in whether debate itself improves reasoning or financial outcomes.
+These results answer RQ1 in the negative for this setting: CRIT scores show no detectable association with financial performance on our scenario set and, within a scenario, rule out all but weak correlations. They do not show that the pooled association is zero.
 \vspace{-0.2cm}
 \subsection{RQ2: Does Debate Improve Reasoning and Portfolio Performance?}
 \vspace{-0.2cm}
@@ -369,7 +370,7 @@ Total Return \% & $4.29\% \pm 1.62\%$ & ${4.16\% \pm 1.52\%}^{C}$ & ${4.63\% \pm
 Debate underperformed the simple average under causal prompts, so we also examined enriched prompts and longer debates on three challenge scenarios. At $N{=}2$--$3$ the intervals are wide and overlapping, so we report these in Appendix~\ref{app:enriched-smalln} as hypothesis-generating rather than alongside the 35-scenario results.
 
 
-No configuration consistently outperforms SPY there either. The 3-agent enriched debate shows the lowest drawdown ($5.33\%$ vs.\ $9.73\%$) and highest Sharpe ($0.76$ vs.\ $0.35$), but at $N{=}3$ with SEMs of $\pm0.71$ and $\pm0.48$ these gaps are not separable from zero; they point the same way as the 35-scenario result and we treat them as consistent with, not independent evidence for, it. The 4-agent 5-round debate returns $-0.27\%$ while holding $\bar{\rho}\approx0.83$--$0.85$ (Appendix~\ref{app:crit-scores}), the clearest single instance of high rubric scores alongside poor outcomes.
+No configuration consistently outperforms SPY. The 3-agent enriched debate shows the lowest drawdown ($5.33\%$ vs.\ $9.73\%$) and highest Sharpe ($0.76$ vs.\ $0.35$), but at $N{=}3$ (SEMs $\pm0.71$, $\pm0.48$) these gaps are not separable from zero. The 4-agent 5-round debate returns $-0.27\%$ while holding $\bar{\rho}\approx0.83$--$0.85$ (Appendix~\ref{app:crit-scores}), the clearest single instance of high rubric scores alongside poor outcomes.
 
 \paragraph{Cross-provider robustness (RQ2-E3).}
 To test whether these findings depend on a particular model family, we repeated
@@ -386,7 +387,7 @@ results in Appendix~\ref{app:llm-comparison}--\ref{app:llm_routing_experiments}.
 
 \subsection{RQ3: Can Interventions Improve Reasoning and Portfolio Performance?}
 \vspace{-0.2cm}
-In this section we investigate whether targeted reasoning interventions can repair these failures during the debate process. Unlike the experiments in Section~3.3 (RQ2), which modify the debate configuration, these interventions operate dynamically by detecting reasoning failures and triggering corrective actions such as response retries or debate regulation.
+Unlike the RQ2 experiments, which change the debate configuration, these interventions detect reasoning failures during the debate and trigger corrective retries.
 
 
 \vspace{-0.2cm}
@@ -416,7 +417,7 @@ This experiment tests whether explicitly repairing causal reasoning failures imp
 \subsection{Failure Modes of Debate}
 \label{sec:failure-modes}
 \paragraph{Consensus convergence.}
-The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios. This suggests the pattern is embedded in the critique-revise interaction itself and is not adequately controlled by prompt modulation alone. Shorter debates, and interventions that forcibly slow convergence, partially mitigate this by giving agents less opportunity to converge, preserving more portfolio diversity while retaining some of the risk-lowering benefits of structured critique.
+The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios, which suggests the pattern is embedded in the critique-revise interaction and is not adequately controlled by prompt modulation alone.
 \paragraph{Causal alignment is the weakest pillar.} \vspace{-0.2cm}
 Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence on Pearl's causal ladder \citep{pearl2009causality}. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
 
@@ -431,13 +432,13 @@ Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scor
 To ground the quantitative null results in mechanistic terms, we examine three concrete failure patterns identified through trace analysis of ablation logs.
 
 \paragraph{High CRIT, negative returns: convergent portfolio collapse.}
-The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$). Trace inspection reveals the mechanism: cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after consensus convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This explains why $\bar{\rho}$ and Sharpe are uncorrelated across the 210-run dataset: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
+The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$), with the cash and JSD convergence described above. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after consensus convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This is one candidate reason (untested; this configuration is not in the 210-run corpus) why $\bar{\rho}$ shows no detectable association with Sharpe there: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
 
 \paragraph{Reasoning--allocation disconnect across providers.}
-In the Claude-3.5-Sonnet (macro) + GPT-5-mini (risk, judge) configuration across 17~scenarios, trace analysis identifies \textbf{reasoning--allocation disconnect as the dominant failure in 10 of~17 runs}: agents produced internally coherent, well-scored arguments ($\rho_i$ high) but the judge's final portfolio allocation did not follow from those stated positions. In 7~runs, critique-ignoring compounded the disconnect---agents acknowledged critique points yet subsequent revisions were structurally unchanged. The macro agent was most frequently the weakest link, exhibiting causal overreach ($P_4$ failures) that destabilized the downstream allocation decision. The \texttt{position\_rationale} linkage, which requires positions to cite supporting claim IDs, provides a structural safeguard but does not prevent a judge from discarding the debate's reasoning trail in favor of a simpler heuristic. Detecting this disconnect requires trace inspection; it is invisible to aggregate CRIT scores.
+In the Claude-3.5-Sonnet (macro) + GPT-5-mini (risk, judge) configuration across 17~scenarios, trace analysis identifies \textbf{reasoning--allocation disconnect as the dominant failure in 10 of~17 runs}: agents produced internally coherent, well-scored arguments ($\rho_i$ high) but the judge's final portfolio allocation did not follow from those stated positions. In 7~runs, critique-ignoring compounded the disconnect---agents acknowledged critique points yet subsequent revisions were structurally unchanged. The macro agent was most frequently the weakest link, exhibiting causal overreach ($P_4$ failures) that destabilized the downstream allocation decision. Detecting this disconnect requires trace inspection; it is invisible to aggregate CRIT scores.
 
 \paragraph{When intervention succeeds: targeted signal preservation.}
-The only statistically significant performance gain in the study (A7 JSD intervention: Sharpe $+0.14$, $p=0.028$, $d=0.39$) illuminates the conditions under which debate repair succeeds. The two-agent baseline (macro + technical) exhibits a specific failure mode: the technical agent systematically converges toward the macro agent's position during revision, driving JSD collapse. It pairs a hard allocation constraint (max 10\% change per revision) with targeting of the specific pair driving convergence. Adding a third agent (A8) collapses the effect ($+0.04$ Sharpe, $p=0.53$): convergence spreads and the trigger loses its target. \textbf{Debate interventions must be designed around the precise failure mechanism}: the same intervention is the sole positive result in one configuration and null in another.
+The A7 gain (Sharpe $+0.14$) illuminates when debate repair succeeds. The two-agent baseline (macro + technical) exhibits a specific failure mode: the technical agent systematically converges toward the macro agent's position during revision, driving JSD collapse. It pairs a hard allocation constraint (max 10\% change per revision) with targeting of the specific pair driving convergence. Adding a third agent (A8) collapses the effect ($+0.04$ Sharpe, $p=0.53$): convergence spreads and the trigger loses its target. \textbf{Debate interventions must be designed around the precise failure mechanism}: the same intervention is the sole positive result in one configuration and null in another.
 
 % \textbf{Metric and Hypothesis Risk.} If RQ1 fails (reasoning quality does not predict returns), PID control framework (RQ2, RQ3) lacks meaningful signal. Specifically, it is possible that due to the simulation gap, sticking to any `answer key' available in the pretraining data could triumph \emph{without} reason.
 
@@ -610,7 +611,7 @@ The only statistically significant performance gain in the study (A7 JSD interve
 Across all three research questions we find reasoning behavior to be highly controllable---through prompting, debate structure, and interventions---while improvements in reasoning metrics rarely translate into improved financial performance. 
 
 \vspace{-6pt}
-\paragraph{Why reasoning metrics do not predict returns (RQ1).}
+\paragraph{Why reasoning metrics may not track returns (RQ1).}
 \vspace{-4pt}
 
 
@@ -681,8 +682,8 @@ Across all three questions the dominant driver of performance is the preservatio
 \textbf{Statistical power.} Many configurations ran at $N{=}2$--$3$ scenarios, giving wide intervals; those results are exploratory. Only the 35-scenario paired comparisons support the significance claims we make; a direct run-to-run probe (Appendix~\ref{app:seed-variance}) confirms single-scenario comparisons at these effect sizes are uninterpretable. Extended debate costs 7--13 minutes and \$5--\$8 per scenario.
 \textbf{Outcome noise.} Realized return is a noisy signal, not ground-truth reasoning
 correctness: a well-reasoned allocation can lose money and a poorly-reasoned one can
-profit. Our null result for RQ1 shows CRIT does not predict this outcome; it does not
-show CRIT measures nothing.
+profit. RQ1 finds no detectable association between CRIT and this outcome; that does
+not show CRIT measures nothing.
 \textbf{Possible pre-training leakage.} Scenarios use historical data that may overlap
 LLM training corpora, so models may recall which stocks performed well, rewarding agents that reach the right answer without valid justification.
 \textbf{Limited realism.} A small ticker universe over a handful of quarters, with no
@@ -698,10 +699,11 @@ stratified results.
 and~\ref{tab:debate_rca} regenerates exactly from stored per-scenario artifacts, as do
 the bootstrap CIs above. Three gaps remain. The configuration files for two of six
 conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
-by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run (all 35 scenarios differ from the unregulated condition) but only as an uncommitted working copy. And the per-round CRIT logs behind the $n{=}210$
-correlations, the pillar tables, and the $\bar{\rho}\,0.72\!\to\!0.84$ gain are not in
-the released artifact set, so those numbers rest on author records rather than a
-re-runnable pipeline. RQ1 is our central claim and carries this caveat.
+by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run (all 35 scenarios differ from the unregulated condition) but only as an uncommitted working copy. The per-run CRIT records behind the $n{=}210$ correlations
+were missing from the submitted artifact set; we recovered the original run directories
+(checksum-verified), and Table~\ref{tab:correlation_reasoning} regenerates from them. The
+pillar tables and the $\bar{\rho}\,0.72\!\to\!0.84$ gain come from other runs whose CRIT
+logs we have not recovered, so those numbers still rest on author records.
 
 \vspace{-6pt}
 \subsection{Broader Impact}
@@ -1169,6 +1171,52 @@ Changes in CRIT quality do NOT significantly predict changes in financial perfor
 Note: Correlations marked with * are significant at p < 0.05.
 All p values are two tailed.
 \end{lstlisting}
+
+\subsection{Dependence-Aware Uncertainty for the CRIT--Outcome Correlations}
+\label{app:rq1_clustered}
+
+The 210 runs are 35 scenarios $\times$ 3 ablations $\times$ 2 conditions; the same 35
+scenarios appear in every ablation, so runs on one scenario share realized prices. We
+resample whole scenarios with replacement (all six runs, and hence all three
+baseline/treatment pairs, move together; 10{,}000 draws, fixed seed) and report
+percentile intervals. \emph{Within} subtracts each scenario's mean from $\bar{\rho}$ and
+the outcome. \emph{FE} correlates residuals after additive scenario and
+ablation$\times$condition fixed effects. \emph{Paired} correlates treatment$-$baseline
+differences within each (scenario, ablation). As a sensitivity check we resample the 12
+calendar quarters instead, since scenarios in one quarter share market moves; with 12
+clusters these intervals are themselves imprecise. The equivalence margin
+$|r|{<}0.20$ was chosen after the point estimates were known, and ``90\% CI inside the
+margin'' is a percentile-interval screen, not a calibrated cluster-robust equivalence
+test. On synthetic data with a planted within-scenario correlation, the procedure was
+unbiased and its 95\% interval covered the true value in 39 of 40 replicates.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{llcccc}
+\toprule
+Outcome & Statistic & $r$ & Scenario 95\% CI & Scenario 90\% CI & Quarter 95\% CI \\
+\midrule
+Sharpe & Pooled  & $+0.074$ & $[-0.130,+0.254]$ & $[-0.098,+0.227]$ & $[-0.110,+0.230]$ \\
+       & Within  & $-0.022$ & $[-0.164,+0.115]$ & $[-0.140,+0.093]$ & $[-0.144,+0.210]$ \\
+       & FE      & $-0.013$ & $[-0.154,+0.132]$ & $[-0.134,+0.108]$ & $[-0.148,+0.242]$ \\
+       & Paired  & $-0.016$ & $[-0.224,+0.176]$ & $[-0.187,+0.143]$ & $[-0.147,+0.077]$ \\
+\midrule
+Return & Pooled  & $+0.026$ & $[-0.157,+0.209]$ & $[-0.129,+0.180]$ & $[-0.142,+0.184]$ \\
+       & Within  & $-0.010$ & $[-0.119,+0.096]$ & $[-0.101,+0.078]$ & $[-0.202,+0.145]$ \\
+       & FE      & $-0.018$ & $[-0.136,+0.108]$ & $[-0.120,+0.087]$ & $[-0.211,+0.143]$ \\
+       & Paired  & $+0.011$ & $[-0.189,+0.214]$ & $[-0.159,+0.180]$ & $[-0.103,+0.113]$ \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Cluster-bootstrap intervals for the correlation between CRIT $\bar{\rho}$ and
+financial outcomes ($n{=}210$ runs; $n{=}105$ pairs). Every interval includes zero.
+Only pooled CRIT--Sharpe has a 90\% scenario interval extending past $\pm0.20$.}
+\label{tab:rq1_clustered}
+\end{table}
+
+Reproduced by \texttt{analysis/build\_per\_run\_table.py} (which reuses the original
+loader unchanged and checks that the four Appendix~\ref{app:crit_financial} correlations
+reproduce to four decimals) and \texttt{analysis/rq1\_clustered\_stats.py}.
 
 \subsection{Causal Debate Baselines \& RCA}
 \label{app:debate_rca}
