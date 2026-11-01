@@ -234,7 +234,7 @@ tone is set by the PID state.
 \vspace{-0.15cm}
 \subsection{Experimental Setup}
 \vspace{-0.15cm}
-We evaluate agent allocations through backtesting on real historical market data. Agents construct portfolio allocations on the first day of each quarter using the preceding quarter's data, hold positions through the quarter, and are evaluated daily. Our largest-scale experiments use 35 market scenarios spanning 12 quarters (2021Q4--2025Q3), covering multiple regimes including the 2022 bear market, the regional banking crisis, and the AI-driven rally. Ticker universes range from 3--35 tickers (mean 11.5) across seven sectors; cross-scenario similarity is low (mean Jaccard 0.216), with intentional skew toward 2022 as a stress-test for reasoning interventions. Daily prices from Yahoo Finance plus S\&P~500 (SPY) enable computation of daily equity curves and meaningful financial metrics beyond return: Sharpe and Sortino ratios, volatility, and maximum drawdown. Unless otherwise specified, agents use \texttt{gpt-5-mini} (temperature 0.3); CRIT evaluation uses \texttt{gpt-5}. Agent behavior is set by a debate configuration (protocol, roles, rounds, provider, PID gains), a scenario configuration (quarter, tickers, constraints), and per-role YAML prompt profiles.
+We evaluate agent allocations through backtesting on real historical market data. Agents construct portfolio allocations on the first day of each quarter using the preceding quarter's data, hold positions through the quarter, and are evaluated daily. Our largest-scale experiments use 35 market scenarios spanning 12 quarters (2021Q4--2025Q3), covering multiple regimes including the 2022 bear market, the regional banking crisis, and the AI-driven rally. Ticker universes range from 3--35 tickers (mean 11.5) across seven sectors; cross-scenario similarity is low (mean Jaccard 0.216), with intentional skew toward 2022 as a stress-test for reasoning interventions. Daily prices from Yahoo Finance plus S\&P~500 (SPY) enable computation of daily equity curves and meaningful financial metrics beyond return: Sharpe and Sortino ratios, volatility, and maximum drawdown. Unless otherwise specified, agents use \texttt{gpt-5-mini} (temperature 0.3); CRIT evaluation uses \texttt{gpt-5}. Agent behavior is set by a debate configuration (protocol, roles, rounds, provider, PID gains), a scenario configuration (quarter, tickers, constraints), and per-role YAML prompt profiles. Appendix~\ref{app:experiment-map} lists every condition and ablation.
 \paragraph{Reasoning profile tiers.}
 Agent prompts exist at three tiers of increasing structure, which is the independent
 variable in our RQ2 prompt experiments. \textbf{Baseline} profiles
@@ -829,6 +829,35 @@ multi-agent benefits at lower latency and cost.
 \caption{Our simulation pipeline builds data cases from input financial sources, orchestrates multi-agent debate in a market environment, then scores the decision-making through financial performance and reasoning quality (left). LLM agents with clear roles participate in Propose-Critique-Revise debate loops. The revision tone is adjusted by PID control (center). Input sources are summarized and formatted into quarterly snapshot memos Appendix~\ref{app:memo}.}
 \label{fig:system-design}
 \end{figure}
+
+
+\subsection{Experiment Map}
+\label{app:experiment-map}
+
+Every condition and ablation in the paper. ``Paired'' means each condition ran once on the same 35 scenarios (Section~\ref{sys_des}). Only the paired families support significance claims; the others are exploratory. The 210-run RQ1 corpus is A7, A8 and A10 together; it is not the total number of runs.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{@{}p{2.2cm}p{3.9cm}p{2.4cm}p{1.5cm}p{2.0cm}@{}}
+\toprule
+\textbf{Family (RQ)} & \textbf{Conditions} & \textbf{Agents} & \textbf{Scenarios} & \textbf{Reported in} \\
+\midrule
+Prompt and aggregation baselines (RQ2-E1) & single agent, basic prompt; 3-role mean vote with basic, causal, or enriched prompts & 1; value, risk, technical & 35, paired & Table~\ref{tab:prompts}, Fig.~\ref{fig:effect-vs-noise} \\
+Causal debate (RQ2-E1, RQ3-E1) & 3-role causal mean vote; 1-round debate with LLM judge; same debate with RCA retry & value, risk, technical & 35, paired & Table~\ref{tab:debate_rca} \\
+Intervention A7 (RQ1, RQ3-E2) & baseline vs.\ JS-collapse retry ($JS_{\text{rev}}/JS_{\text{prop}}<0.8$) & macro, technical & 35, paired & Tables~\ref{tab:correlation_reasoning}, \ref{tab:financial-results}, \ref{tab:paired-ttests} \\
+Intervention A8 (RQ1, RQ3-E2) & same as A7 & macro, technical, risk & 35, paired & same \\
+Intervention A10 (RQ1, RQ3-E3) & baseline vs.\ causal-pillar retry ($P_4<0.75$) & macro, technical & 35, paired & same \\
+Run-to-run noise & single agent, basic prompt, 6 repeats & 1 & 5 & Table~\ref{tab:seed-variance} \\
+Enriched debates (RQ2-E2) & single agent; 3-role mean; 3-agent enriched debate (up to 2 rounds, PID); 4-agent 5-round enriched debate & 1--4 & 2--3 & Tables~\ref{tab:financial-results_across}--\ref{tab:crit-scores} \\
+Cross-provider (RQ2-E3) & GPT/Gemini role swap (Exp~A, B); GPT/Gemini phase routing; GPT/Anthropic role and phase routing & 3 + judge & 1--17 & Tables~\ref{tab:llm-comparison}--\ref{tab:llm_routing_experiments} \\
+Ablation~1 & 8 agent pairings $\times$ 4 prompt tiers $\times$ 2 PID settings & 2--3 of macro, value, risk, technical & 4 configs in 2 quarters (245 runs) & Tables~\ref{tab:prompt_tiers}, \ref{tab:subgroup_corr}, \ref{tab:debate_vs_ew} \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Experiment map. Agents use \texttt{gpt-5-mini} unless the family varies the provider. Configurations for the causal mean vote and the RCA debate no longer match a surviving file (Section~\ref{sec:limitations}).}
+\label{tab:experiment-map}
+\end{table}
 
 
 \section{Appendix - Tables}
