@@ -23,6 +23,8 @@ manuscript. Regenerate with `python3 analysis/verify_paper_tables.py`.
 | Consensus reflects sycophancy | §3.5 operational definition | 3-part criterion | **Partially** | "consistent with sycophancy"; mechanism explicitly not isolated |
 | Findings not model-family-specific | N=2–17 cross-provider | mixed | **No** | "supporting rather than confirmatory" |
 | Run-to-run noise floor | `results/seed_variance`, 30 runs | SD 1.30pp return, 0.159 Sharpe | **Yes** | Figure 1, Appendix |
+| Uninvested cash is deliberate `_CASH_` weight, not a broker artifact | `analysis/cash_audit.py` → `analysis/cash_audit.json`; 32 of 35 scenarios per config, purchases rebuilt from entry prices | rounding ≤ ≈2 pts; deliberate ≥ 5.7–15.2 pts | **Yes** (bounded, allocations not stored) | §2: "share rounding explains at most ≈2 points and the rest is deliberate `_CASH_` weight" |
+| Cash converges 10–50% → 55–61% (4-agent 5-round) | trace inspection | `_CASH_` weights | **No — logs not retained** | labelled as such in §3.5 |
 
 ## Table-level verification
 

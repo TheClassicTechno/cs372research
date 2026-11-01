@@ -193,9 +193,13 @@ Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
 \citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
 evidence ID (e.g.\ \texttt{[L1-FF]}) that agents must cite to defend a claim
-(Appendix~\ref{app:memo}). Each run initializes a fresh cash portfolio over a universe of
-up to 35 tickers, and a broker component logs the trades implied by the agreed
-allocation.
+(Appendix~\ref{app:memo}). Each run initializes a fresh \$100k cash portfolio over up to
+35 tickers plus a virtual \texttt{\_CASH\_} ticker that earns the risk-free rate, so the
+prompts' ``fully invested'' rule means weights sum to one \emph{including} cash. A broker
+buys whole shares at the decision-date close, and the ``uninvested cash'' in our tables is
+what it leaves; rebuilding those purchases (32 of 35 scenarios) shows share rounding
+explains at most ${\approx}2$ points and the rest is deliberate \texttt{\_CASH\_} weight.
+Reported returns include interest on cash.
 
 \vspace{-4pt}
 \paragraph{Debate protocol.}
@@ -230,7 +234,7 @@ tone is set by the PID state.
 \vspace{-0.15cm}
 \subsection{Experimental Setup}
 \vspace{-0.15cm}
-We evaluate agent allocations through backtesting on real historical market data. Agents construct portfolio allocations on the first day of each quarter using the preceding quarter's data, hold positions through the quarter, and are evaluated daily. Our largest-scale experiments use 35 market scenarios spanning 12 quarters (2021Q4--2025Q3), covering multiple regimes including the 2022 bear market, the regional banking crisis, and the AI-driven rally. Ticker universes range from 3--35 tickers (mean 11.5) across seven sectors; cross-scenario similarity is low (mean Jaccard 0.216), with intentional skew toward 2022 as a stress-test for reasoning interventions. Daily prices from Yahoo Finance plus S\&P~500 (SPY) enable computation of daily equity curves and meaningful financial metrics beyond return: Sharpe and Sortino ratios, volatility, and maximum drawdown. Unless otherwise specified, agents use \texttt{gpt-5-mini} (temperature 0.3); CRIT evaluation uses \texttt{gpt-5}. Agent behavior is parameterized through three configuration layers: a \textbf{debate configuration} (orchestration protocol, agent roles, rounds, LLM provider, PID gains); a \textbf{scenario configuration} (quarter, ticker universe, sector mappings, allocation constraints); and per-role \textbf{agent profiles} (YAML files declaring ordered prompt blocks, structured user-prompt templates, and required variables for each debate phase).
+We evaluate agent allocations through backtesting on real historical market data. Agents construct portfolio allocations on the first day of each quarter using the preceding quarter's data, hold positions through the quarter, and are evaluated daily. Our largest-scale experiments use 35 market scenarios spanning 12 quarters (2021Q4--2025Q3), covering multiple regimes including the 2022 bear market, the regional banking crisis, and the AI-driven rally. Ticker universes range from 3--35 tickers (mean 11.5) across seven sectors; cross-scenario similarity is low (mean Jaccard 0.216), with intentional skew toward 2022 as a stress-test for reasoning interventions. Daily prices from Yahoo Finance plus S\&P~500 (SPY) enable computation of daily equity curves and meaningful financial metrics beyond return: Sharpe and Sortino ratios, volatility, and maximum drawdown. Unless otherwise specified, agents use \texttt{gpt-5-mini} (temperature 0.3); CRIT evaluation uses \texttt{gpt-5}. Agent behavior is set by a debate configuration (protocol, roles, rounds, provider, PID gains), a scenario configuration (quarter, tickers, constraints), and per-role YAML prompt profiles.
 \paragraph{Reasoning profile tiers.}
 Agent prompts exist at three tiers of increasing structure, which is the independent
 variable in our RQ2 prompt experiments. \textbf{Baseline} profiles
@@ -256,8 +260,6 @@ in both the generation prompts and the CRIT \textit{Causal Alignment} rubric
 they were given. This makes CRIT gains from enriched prompting easier to obtain and is
 one reason we treat rubric improvement as insufficient evidence of better decisions.
 
-Experiments below are organized by research question (RQ1--RQ3), with sub-experiments
-numbered within each (e.g.\ RQ1-E1).
 
 
 \vspace{-0.2cm}
@@ -417,7 +419,7 @@ This experiment tests whether explicitly repairing causal reasoning failures imp
 \subsection{Failure Modes of Debate}
 \label{sec:failure-modes}
 \paragraph{Consensus convergence.}
-The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, cash allocations converge from 10--50\% at initial proposal to 55--61\% by round~5, and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios, which suggests the pattern is embedded in the critique-revise interaction and is not adequately controlled by prompt modulation alone.
+The most consistent failure mode is \emph{consensus convergence}: agents abandon their distinct investment theses during the critique-revise cycle. We use the term operationally, for a revision in which (i) an agent's allocation moves substantially toward the group consensus, (ii) the revision introduces no new evidence ID not already cited, and (iii) no identifiable factual or reasoning error in the agent's prior position was corrected. Where all three hold and the outcome does not improve, we describe the pattern as \emph{consistent with sycophancy}; we do not claim to have isolated a social-deference mechanism, since legitimate error correction can also produce convergence and our design does not separate the two. In the 4-agent 5-round debate, agents' \texttt{\_CASH\_} weights converge from 10--50\% at initial proposal to 55--61\% by round~5 (from trace inspection; those logs were not retained), and JSD between agent portfolios drops sharply after the first revision. The largest JSD drop occurs between the initial proposal and the first revision: by the time PID adjusts $\beta$ in subsequent rounds, the damage is done; thus PID prompt-based interventions (adjusting agreeableness $\beta$ based on $\bar{\rho}$ and JS divergence) have minimal practical effect. Even with aggressive anti-convergence prompts, agents converge to similar high-cash portfolios, which suggests the pattern is embedded in the critique-revise interaction and is not adequately controlled by prompt modulation alone.
 \paragraph{Causal alignment is the weakest pillar.} \vspace{-0.2cm}
 Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence on Pearl's causal ladder \citep{pearl2009causality}. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
 
@@ -2455,6 +2457,7 @@ No text outside JSON.
 
 \subsection{Macro Role Basic Prompt}
 \label{app:macro-basic}
+Prompts are reproduced verbatim. At runtime the allocation universe also contains the virtual \texttt{\_CASH\_} ticker (Section~\ref{sys_des}), so ``fully invested, no cash reserve'' requires weights summing to one over a universe that includes cash.
 \begin{lstlisting}
 [backgroundcolor=\color{promptbg}]
 
