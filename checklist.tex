@@ -59,8 +59,8 @@
 
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-    \item[] Answer: \answerNo{}
-    \item[] Justification: We are not releasing code or data during review, because anonymizing the repository is not something we can do reliably in the time available. If the paper is accepted we will release a de-anonymized version.
+    \item[] Answer: \answerYes{}
+    \item[] Justification: The code is public at \url{https://github.com/TheClassicTechno/cs372research}: the debate system, simulator, configurations, prompts, per-scenario results for Tables~2 and~5, and the analysis scripts behind every table, including the clustered re-analyses. The 210-run CRIT package behind Table~1 (376\,MB) is not in the repository because of its size; its manifest and checksums are described in the analysis scripts. Gaps in the stored artifacts are listed in Section~5.1.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -153,8 +153,8 @@
 
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerNA{}
-    \item[] Justification: No new dataset or pretrained model. If the paper is accepted we will document and release the debate and evaluation codebase with the de-anonymized version.
+    \item[] Answer: \answerYes{}
+    \item[] Justification: The only new asset is the debate and evaluation codebase, released at \url{https://github.com/TheClassicTechno/cs372research} with READMEs for the debate system and the trading simulation. No new dataset or pretrained model is introduced.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.

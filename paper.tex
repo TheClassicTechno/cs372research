@@ -4,7 +4,7 @@
 % before loading neurips_2026
 
 % NeurIPS 2026 Workshop track, double-blind reviewing (anonymous submission).
-\usepackage[dblblindworkshop]{neurips_2026}
+\usepackage[dblblindworkshop, final]{neurips_2026}
 \workshoptitle{Verify-Agents: Who Verifies the Agents?}
 
 % to compile a camera-ready version after acceptance, add the [final] option:
@@ -44,7 +44,7 @@
 }
 
 \title{Do Reasoning-Quality Metrics Predict Better Decisions?\\
-Verifying Multi-Agent Debate Against External Market Outcomes}
+Verifying Multi-Agent Debate Against External Market Outcomes\thanks{Code, configurations, and analysis scripts: \url{https://github.com/TheClassicTechno/cs372research}.}}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -57,10 +57,10 @@ Verifying Multi-Agent Debate Against External Market Outcomes}
 
 
 \author{%
-  Anonymous Author(s) \\
-  Affiliation \\
-  Address \\
-  \texttt{email}
+  Juli Huang \quad Alanood Alrassan \quad Deveen Harischandra \\
+  Theodore Wu \quad Veljko Skarich \quad Matthew Hayes \\
+  Stanford University \\
+  \texttt{\{julih, alanoodr, deveen, wutheodo, vskarich, mhayes3\}@stanford.edu}
 }
 \begin{document}
 \maketitle
@@ -795,6 +795,9 @@ That reasoning scores and consensus can both be maximized while performance stag
 % \textbf{8. Decision Regret.}
 % Implement multi-decision episodes, exploring regret and learning from past trade decisions to enhance future reasoning.
 \vspace{-6pt}
+\begin{ack}
+This work began as a project in Stanford CS372, AI for Reasoning, Planning, and Decision Making (Winter 2026). We thank Professor Edward Y.\ Chang for his guidance throughout the course.
+\end{ack}
 \newpage
 \bibliographystyle{plainnat}  % or abbrvnat, ieeetr, etc.
 \bibliography{refs}
