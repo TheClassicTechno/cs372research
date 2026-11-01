@@ -36,6 +36,9 @@ Bootstrap 95% CIs added at the **scenario** level (10,000 resamples, seed
 
 ## Numbers deliberately NOT used
 
+- Per-agent subgroup correlations (value −0.29, risk +0.22): from the Ablation 1 report
+  (`analysis/crit_financial_correlation_abl1_report.txt` §6; 245 runs, two market quarters). Shown in
+  the appendix as exploratory only; the iid p-values are not valid and are not cited as evidence.
 
 - Any stratified-by-role or stratified-by-regime CRIT correlation. The 210-run CRIT
   corpus was recovered on 2026-10-30 (`CS372_210_debate_runs/`, not committed), but no

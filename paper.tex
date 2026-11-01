@@ -267,7 +267,7 @@ numbered within each (e.g.\ RQ1-E1).
 \vspace{-0.2cm}
 % \subsubsection{RQ1-E1: Reasoning Quality and Financial Outcomes}
 
-Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. Every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}). Subgroup analysis in Appendix~\ref{app:correlation_betwen_agents} reveals two localized signals: value-agent reasoning negatively correlates with Sharpe, while risk-agent reasoning weakly correlates with returns, though the latter is not statistically significant.
+Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. Every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
 
 Appendix~\ref{app:debate_portofolio} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} (binomial $p<0.001$) and exhibit consistently lower Sharpe ratios.  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:improvement_in_crit} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
@@ -1578,7 +1578,7 @@ Intense         & 60 & 0.834 & -0.967 & -3.75 \\
 \label{tab:prompt_tiers}
 \end{table}
 
-\subsection{Pearson correlation between Agent Reasoning Quality and Performance}
+\subsection{Per-Agent Reasoning Quality and Performance (Ablation 1, Exploratory)}
 \label{app:correlation_betwen_agents}
 
 \begin{table}[H]
@@ -1586,14 +1586,14 @@ Intense         & 60 & 0.834 & -0.967 & -3.75 \\
 \small
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Subgroup} & \textbf{Metric} & \textbf{r} & \textbf{p} & \textbf{n} \\
+\textbf{Subgroup} & \textbf{Metric} & \textbf{r} & \textbf{p (iid)} & \textbf{n} \\
 \midrule
 Value agent $\rho$ vs Sharpe & Pearson & $-0.29$ & 0.001 & 126 \\
 Risk agent $\rho$ vs Return & Pearson & $+0.22$ & 0.006 & 152 \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\caption{Selected subgroup correlations between agent reasoning quality and performance.}
+\caption{Exploratory per-agent correlations from Ablation~1 (245 runs; four scenario configurations over two market quarters, 2022\,Q2 and 2023\,Q2), not the 210-run corpus of Table~\ref{tab:correlation_reasoning}. These are the two largest of eight Pearson tests (four agents $\times$ two outcomes). The $p$-values treat runs as independent, but the runs share only two market windows and each agent appears only in some agent pairings, so they are not valid significance tests. Source: \texttt{analysis/crit\_financial\_correlation\_abl1\_report.txt}, \S6.}
 \label{tab:subgroup_corr}
 \end{table}
 
