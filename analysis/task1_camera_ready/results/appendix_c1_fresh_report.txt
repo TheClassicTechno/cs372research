@@ -1,0 +1,338 @@
+
+========================================================================
+CRIT-FINANCIAL CORRELATION ANALYSIS
+========================================================================
+Date: 2026-11-08 16:51
+Total runs loaded: 210
+  Ablation 7: 70 runs (baseline=35, treatment=35)
+  Ablation 8: 70 runs (baseline=35, treatment=35)
+  Ablation 10: 70 runs (baseline=35, treatment=35)
+
+Descriptive statistics:
+          rho_bar: mean=0.8359  std=0.0225  min=0.7288  max=0.8762
+           sharpe: mean=0.5425  std=1.6479  min=-2.5705  max=4.8684
+     total_return: mean=2.0813  std=8.5611  min=-19.0297  max=24.9141
+
+========================================================================
+1. POOLED CORRELATIONS (all runs)
+========================================================================
+  rho_bar vs Sharpe  (n=210)
+    Pearson  r=+0.0744  p=0.2833
+    Spearman r=+0.0369  p=0.5949
+
+  rho_bar vs TotalReturn  (n=210)
+    Pearson  r=+0.0232  p=0.7383
+    Spearman r=+0.0108  p=0.8767
+
+
+========================================================================
+2. WITHIN-ABLATION CORRELATIONS
+========================================================================
+
+--- Ablation 7 ---
+  rho_bar vs Sharpe  (n=70)
+    Pearson  r=+0.0228  p=0.8513
+    Spearman r=-0.0191  p=0.8753
+
+  rho_bar vs TotalReturn  (n=70)
+    Pearson  r=-0.0097  p=0.9365
+    Spearman r=-0.0128  p=0.9163
+
+
+--- Ablation 8 ---
+  rho_bar vs Sharpe  (n=70)
+    Pearson  r=+0.1725  p=0.1533
+    Spearman r=+0.1004  p=0.4081
+
+  rho_bar vs TotalReturn  (n=70)
+    Pearson  r=+0.1350  p=0.2652
+    Spearman r=+0.0813  p=0.5036
+
+
+--- Ablation 10 ---
+  rho_bar vs Sharpe  (n=70)
+    Pearson  r=+0.0530  p=0.6629
+    Spearman r=+0.0404  p=0.7397
+
+  rho_bar vs TotalReturn  (n=70)
+    Pearson  r=-0.0186  p=0.8787
+    Spearman r=-0.0239  p=0.8445
+
+
+========================================================================
+3. WITHIN-CONDITION CORRELATIONS
+========================================================================
+
+--- Condition: baseline ---
+  (n=105 runs)
+  rho_bar vs Sharpe  (n=105)
+    Pearson  r=+0.0481  p=0.6262
+    Spearman r=+0.0461  p=0.6407
+
+  rho_bar vs TotalReturn  (n=105)
+    Pearson  r=+0.0172  p=0.8619
+    Spearman r=+0.0434  p=0.6606
+
+
+--- Condition: treatment ---
+  (n=105 runs)
+  rho_bar vs Sharpe  (n=105)
+    Pearson  r=+0.0980  p=0.3200
+    Spearman r=+0.0374  p=0.7051
+
+  rho_bar vs TotalReturn  (n=105)
+    Pearson  r=+0.0290  p=0.7688
+    Spearman r=-0.0114  p=0.9080
+
+
+--- Within ablation x condition ---
+  Abl 7, baseline (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=-0.0783  p=0.6548
+    Spearman r=-0.0813  p=0.6426
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=-0.0462  p=0.7920
+    Spearman r=-0.0298  p=0.8649
+
+  Abl 7, treatment (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=+0.0940  p=0.5911
+    Spearman r=+0.0566  p=0.7467
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=+0.0166  p=0.9247
+    Spearman r=+0.0237  p=0.8926
+
+  Abl 8, baseline (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=+0.1278  p=0.4644
+    Spearman r=+0.1115  p=0.5235
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=+0.0809  p=0.6441
+    Spearman r=+0.0881  p=0.6146
+
+  Abl 8, treatment (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=+0.2316  p=0.1806
+    Spearman r=+0.1698  p=0.3295
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=+0.1926  p=0.2676
+    Spearman r=+0.1530  p=0.3803
+
+  Abl 10, baseline (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=+0.1353  p=0.4385
+    Spearman r=+0.2153  p=0.2143
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=+0.0589  p=0.7368
+    Spearman r=+0.1586  p=0.3627
+
+  Abl 10, treatment (n=35):
+  rho_bar vs Sharpe  (n=35)
+    Pearson  r=-0.0373  p=0.8313
+    Spearman r=-0.1081  p=0.5367
+
+  rho_bar vs TotalReturn  (n=35)
+    Pearson  r=-0.1100  p=0.5294
+    Spearman r=-0.1875  p=0.2807
+
+
+========================================================================
+4. WITHIN-SCENARIO PAIRED DIFFERENCES (delta analysis)
+========================================================================
+For each scenario appearing in both baseline and treatment within an ablation,
+compute delta_rho = treatment.rho_bar - baseline.rho_bar
+         delta_sharpe = treatment.sharpe - baseline.sharpe
+         delta_return = treatment.total_return - baseline.total_return
+Then correlate the deltas.
+
+Paired scenarios found: 105
+  Ablation 7: 35 pairs
+  Ablation 8: 35 pairs
+  Ablation 10: 35 pairs
+
+
+--- Pooled deltas ---
+  delta_rho:    mean=-0.0014  std=0.0292
+  delta_sharpe: mean=+0.0327  std=0.4072
+  delta_return: mean=+0.2622  std=2.0966
+
+  delta_rho vs delta_Sharpe  (n=105)
+    Pearson  r=+0.0466  p=0.6372
+    Spearman r=+0.0856  p=0.3854
+
+  delta_rho vs delta_Return  (n=105)
+    Pearson  r=+0.0569  p=0.5643
+    Spearman r=+0.0594  p=0.5473
+
+
+--- Deltas within ablation 7 ---
+  n=35 pairs
+  delta_rho:    mean=-0.0016  std=0.0332
+  delta_sharpe: mean=+0.1432  std=0.3684
+  delta_return: mean=+0.8285  std=2.4367
+
+  delta_rho vs delta_Sharpe  (n=35)
+    Pearson  r=+0.0632  p=0.7184
+    Spearman r=+0.0221  p=0.8996
+
+  delta_rho vs delta_Return  (n=35)
+    Pearson  r=+0.0653  p=0.7094
+    Spearman r=+0.0707  p=0.6863
+
+
+--- Deltas within ablation 8 ---
+  n=35 pairs
+  delta_rho:    mean=-0.0124  std=0.0207
+  delta_sharpe: mean=+0.0439  std=0.4085
+  delta_return: mean=+0.1557  std=1.8887
+
+  delta_rho vs delta_Sharpe  (n=35)
+    Pearson  r=-0.0078  p=0.9643
+    Spearman r=+0.0307  p=0.8611
+
+  delta_rho vs delta_Return  (n=35)
+    Pearson  r=+0.1264  p=0.4692
+    Spearman r=+0.1247  p=0.4754
+
+
+--- Deltas within ablation 10 ---
+  n=35 pairs
+  delta_rho:    mean=+0.0098  std=0.0286
+  delta_sharpe: mean=-0.0890  std=0.4203
+  delta_return: mean=-0.1975  std=1.8389
+
+  delta_rho vs delta_Sharpe  (n=35)
+    Pearson  r=+0.2116  p=0.2224
+    Spearman r=+0.2111  p=0.2234
+
+  delta_rho vs delta_Return  (n=35)
+    Pearson  r=+0.0885  p=0.6133
+    Spearman r=+0.0479  p=0.7846
+
+
+========================================================================
+5. PER-AGENT RHO CORRELATIONS
+========================================================================
+Agents found across dataset: macro, risk, technical
+
+
+--- Agent: macro ---
+  n=210 runs with rho_macro
+  rho_macro vs Sharpe  (n=210)
+    Pearson  r=+0.0541  p=0.4358
+    Spearman r=+0.0070  p=0.9198
+
+  rho_macro vs TotalReturn  (n=210)
+    Pearson  r=+0.0252  p=0.7168
+    Spearman r=-0.0087  p=0.9001
+
+
+--- Agent: risk ---
+  n=70 runs with rho_risk
+  rho_risk vs Sharpe  (n=70)
+    Pearson  r=-0.0066  p=0.9564
+    Spearman r=-0.0788  p=0.5170
+
+  rho_risk vs TotalReturn  (n=70)
+    Pearson  r=-0.0110  p=0.9280
+    Spearman r=-0.0885  p=0.4664
+
+
+--- Agent: technical ---
+  n=210 runs with rho_technical
+  rho_technical vs Sharpe  (n=210)
+    Pearson  r=+0.0756  p=0.2753
+    Spearman r=+0.0603  p=0.3848
+
+  rho_technical vs TotalReturn  (n=210)
+    Pearson  r=+0.0271  p=0.6965
+    Spearman r=+0.0403  p=0.5617
+
+
+--- Agent rho comparison table (Pearson r with Sharpe) ---
+  Agent                  r        p     n
+  --------------------------------------
+  macro            +0.0541   0.4358   210
+  risk             -0.0066   0.9564    70
+  technical        +0.0756   0.2753   210
+
+
+--- Agent rho comparison table (Pearson r with TotalReturn) ---
+  Agent                  r        p     n
+  --------------------------------------
+  macro            +0.0252   0.7168   210
+  risk             -0.0110   0.9280    70
+  technical        +0.0271   0.6965   210
+
+========================================================================
+6. OLS REGRESSION: Sharpe ~ rho_bar + ablation dummies
+========================================================================
+Controls for ablation-level effects using dummy variables.
+Reference ablation: the lowest-numbered ablation.
+
+
+--- Dependent variable: Sharpe (ref ablation=7) ---
+  n=210, R²=0.0080, Adj-R²=-0.0064
+  F(3,206)=0.555, p=0.6456
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -4.2609     4.3110   -0.988   0.3241
+  rho_bar                       5.8290     5.1932    1.122   0.2630
+  abl_8_dummy                  -0.1847     0.2836   -0.651   0.5156
+  abl_10_dummy                 -0.0224     0.2848   -0.079   0.9373
+
+
+--- Dependent variable: TotalReturn (ref ablation=7) ---
+  n=210, R²=0.0029, Adj-R²=-0.0117
+  F(3,206)=0.198, p=0.8980
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -5.7823    22.4542   -0.258   0.7970
+  rho_bar                       9.6279    27.0493    0.356   0.7222
+  abl_8_dummy                  -0.7560     1.4772   -0.512   0.6093
+  abl_10_dummy                  0.2032     1.4834    0.137   0.8912
+
+
+--- Extended model: Sharpe ~ rho_bar + ablation dummies + condition dummy ---
+  n=210, R²=0.0082, Adj-R²=-0.0112
+  F(4,205)=0.422, p=0.7927
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -4.3062     4.3286   -0.995   0.3210
+  rho_bar                       5.8589     5.2082    1.125   0.2619
+  abl_8_dummy                  -0.1850     0.2843   -0.651   0.5159
+  abl_10_dummy                 -0.0228     0.2855   -0.080   0.9365
+  treatment_dummy               0.0410     0.2288    0.179   0.8581
+
+
+--- Extended model: TotalReturn ~ rho_bar + ablation dummies + condition dummy ---
+  n=210, R²=0.0031, Adj-R²=-0.0163
+  F(4,205)=0.161, p=0.9579
+  Variable                        Coef         SE        t        p
+  ---------------------------------------------------------------
+  (intercept)                  -6.0874    22.5445   -0.270   0.7874
+  rho_bar                       9.8294    27.1256    0.362   0.7175
+  abl_8_dummy                  -0.7579     1.4807   -0.512   0.6093
+  abl_10_dummy                  0.2010     1.4869    0.135   0.8926
+  treatment_dummy               0.2761     1.1918    0.232   0.8171
+
+
+========================================================================
+7. SUMMARY AND INTERPRETATION
+========================================================================
+Total observations: 210
+Pooled rho_bar-Sharpe:      Pearson r=+0.0744 (p=0.2833), Spearman r=+0.0369 (p=0.5949)
+Pooled rho_bar-TotalReturn: Pearson r=+0.0232 (p=0.7383)
+
+=> No statistically significant pooled correlation between CRIT scores and Sharpe.
+
+Delta analysis (paired within-scenario): r=+0.0466 (p=0.6372)
+=> Changes in CRIT quality do NOT significantly predict changes in financial performance.
+
+Note: Correlations marked with * are significant at p < 0.05.
+All p-values are two-tailed.

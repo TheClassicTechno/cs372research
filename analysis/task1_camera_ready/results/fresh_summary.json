@@ -1,0 +1,102 @@
+{
+  "runs": 210,
+  "successful_agent_calls": 490,
+  "requested_models": [
+    "gpt-5"
+  ],
+  "returned_models": [
+    "gpt-5-2025-08-07"
+  ],
+  "mean_historical_rho": 0.8370619047619047,
+  "mean_fresh_rho": 0.8358908730158732,
+  "mean_absolute_rho_change": 0.01207325396825397,
+  "old_vs_fresh_rho_pearson": 0.7511395714518729,
+  "usage": {
+    "prompt_tokens": 7568830,
+    "completion_tokens": 1528232,
+    "total_tokens": 9097062
+  },
+  "usage_scope": "Successful final evaluations only; failed/retried calls excluded",
+  "correlations": [
+    {
+      "version": "fresh",
+      "analysis": "pooled",
+      "outcome": "sharpe",
+      "n": 210,
+      "pearson_r": 0.07438235110360292,
+      "pearson_p": 0.2832908470714867,
+      "spearman_r": 0.036906320180143386,
+      "spearman_p": 0.5948559372723949
+    },
+    {
+      "version": "fresh",
+      "analysis": "paired_delta",
+      "outcome": "sharpe",
+      "n": 105,
+      "pearson_r": 0.04655777666374907,
+      "pearson_p": 0.6371978266000795,
+      "spearman_r": 0.08556995249212161,
+      "spearman_p": 0.38543353926680124
+    },
+    {
+      "version": "fresh",
+      "analysis": "pooled",
+      "outcome": "total_return",
+      "n": 210,
+      "pearson_r": 0.023187558482678103,
+      "pearson_p": 0.738335073160852,
+      "spearman_r": 0.010767556114988376,
+      "spearman_p": 0.8767347055741171
+    },
+    {
+      "version": "fresh",
+      "analysis": "paired_delta",
+      "outcome": "total_return",
+      "n": 105,
+      "pearson_r": 0.05689915460013224,
+      "pearson_p": 0.564256380360307,
+      "spearman_r": 0.059391466995955496,
+      "spearman_p": 0.5472886052671602
+    },
+    {
+      "version": "historical",
+      "analysis": "pooled",
+      "outcome": "sharpe",
+      "n": 210,
+      "pearson_r": 0.07354728235201075,
+      "pearson_p": 0.28874564988852247,
+      "spearman_r": 0.04812688432575346,
+      "spearman_p": 0.48789285336809995
+    },
+    {
+      "version": "historical",
+      "analysis": "paired_delta",
+      "outcome": "sharpe",
+      "n": 105,
+      "pearson_r": -0.01568392543336719,
+      "pearson_p": 0.8738277397878054,
+      "spearman_r": 0.006629914447283414,
+      "spearman_p": 0.9464830630382208
+    },
+    {
+      "version": "historical",
+      "analysis": "pooled",
+      "outcome": "total_return",
+      "n": 210,
+      "pearson_r": 0.02646398932489709,
+      "pearson_p": 0.7029974074912586,
+      "spearman_r": 0.013883938986080868,
+      "spearman_p": 0.8414757833540564
+    },
+    {
+      "version": "historical",
+      "analysis": "paired_delta",
+      "outcome": "total_return",
+      "n": 105,
+      "pearson_r": 0.011365847448927907,
+      "pearson_p": 0.9083858027962082,
+      "spearman_r": 0.03312365388439485,
+      "spearman_p": 0.737289015304602
+    }
+  ]
+}
