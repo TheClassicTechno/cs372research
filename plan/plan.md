@@ -222,4 +222,4 @@ This CRIT reasoning rubric can be raised by prompting without better decisions: 
 ### Commit history (pushed to origin/camera-ready, 2026-11-15)
 Small commits `db6a229`…`a2cc812`: analysis and figures first, then Alanood's paper revision (authored by her), the Nov 10 fixes, one commit per plan item, checklist, sync, plan. Every intermediate paper version compiles with 0 errors and 0 undefined references.
 
-**Not committed:** `neurips_poster_template_for_agentic_financial_one/`. Another session (cs372research-54) was editing the poster at the time, and the current `poster.tex` compiles to 2 pages (footer overflow, an overlapping Macro-agent box, ■ glyph in the RQ3 table). It needs fixing before it is committed or printed.
+**Poster:** committed after the other session (cs372research-54) went idle and its edits compiled to one clean page (`ab19263`…`9a81727`). One fix before committing: the Scope line said "21 stocks" for all 35 scenarios; it now says "3–35 stocks each" (only the 2022 Q1 scenario has 21). Backups and LaTeX build files are ignored in the poster folder's `.gitignore`.
