@@ -813,6 +813,15 @@ hypothesis tests on metrics. Expanding the ticker universe to 50-100+ tickers wo
 \textbf{Temporal and Regime Coverage.}
 Run simulations across consecutive quarters with realistic spreads and tax implications so agents can observe consequences of past decisions, incorporate regret signals, and learn. Systematically evaluate across bull, bear, and high-volatility regimes
 to assess regime-dependent behavior beyond our current sample.\\
+\textbf{Open controls from review.}
+(i) A cap-only control: rerun A7 with every retry carrying the revision limit but no JSD trigger,
+on the same 35 scenarios, to separate disagreement preservation from the limit.
+(ii) A leakage probe: repeat one configuration on a quarter after the models' training cutoff, or
+with tickers masked and renamed.
+(iii) A second judge: re-score a stratified subset of CRIT evaluations with a different model
+family, plus a small expert audit, and report agreement with \texttt{gpt-5}.
+(iv) Re-run the basic and enriched prompt tiers with CRIT logging on the 35 scenarios, so the
+$\bar{\rho}\,0.72\!\to\!0.84$ gain no longer rests on author records.\\
 \textbf{Distillation.}
 If our strongest configurations--3-agent causal mean, and 3-agent intervened debate--risk-adjusted advantage holds at scale, distill their most effective
 constraints- structured claims and point-by-point critique- into single-agent prompts to capture
