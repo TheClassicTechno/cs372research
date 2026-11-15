@@ -1,0 +1,147 @@
+% neurips26-poster.sty: an unofficial LaTeX poster style for NeurIPS 2026, made by the Quantitative Research
+% Society (qrsntu.org/service/neurips26/posters/). Not affiliated with NeurIPS. Sizes follow the official poster
+% instructions (neurips.cc/Conferences/2026/PosterInstructions), checked 5 Nov 2026:
+%   main conference  140 cm wide x 90 cm high, landscape   -> \usepackage[main]{neurips26-poster}
+%   workshops         61 cm wide x 85 cm high, portrait    -> \usepackage[workshop]{neurips26-poster}
+% Compiles with pdflatex, xelatex or lualatex. MIT licence: use and change it freely.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{neurips26-poster}[2026/11/05 Unofficial NeurIPS 2026 poster style]
+
+\newif\ifnp@workshop
+\DeclareOption{main}{\np@workshopfalse}
+\DeclareOption{workshop}{\np@workshoptrue}
+\ExecuteOptions{main}
+\ProcessOptions\relax
+
+\RequirePackage[T1]{fontenc}
+\RequirePackage{lmodern}
+\RequirePackage[scaled]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage{anyfontsize}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{tikz}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{qrcode}
+\RequirePackage{enumitem}
+\RequirePackage{microtype}
+
+% ---------------------------------------------------------------- paper and type
+% The page is the printed size. Do not scale it up: the instructions say not to print larger.
+\ifnp@workshop
+  \RequirePackage[paperwidth=61cm,paperheight=85cm,margin=2cm]{geometry}
+  \newcommand{\np@body}{\fontsize{24}{31}\selectfont}
+  \newcommand{\np@titlesize}{\fontsize{64}{72}\selectfont}
+  \newcommand{\np@authorsize}{\fontsize{30}{38}\selectfont}
+  \newcommand{\np@headsize}{\fontsize{36}{42}\selectfont}
+  \newcommand{\np@footsize}{\fontsize{20}{25}\selectfont}
+  \newlength{\np@gap}\setlength{\np@gap}{1.4cm}
+  \newlength{\np@qr}\setlength{\np@qr}{5.5cm}
+\else
+  \RequirePackage[paperwidth=140cm,paperheight=90cm,margin=2.5cm]{geometry}
+  \newcommand{\np@body}{\fontsize{34}{44}\selectfont}
+  \newcommand{\np@titlesize}{\fontsize{104}{116}\selectfont}
+  \newcommand{\np@authorsize}{\fontsize{44}{54}\selectfont}
+  \newcommand{\np@headsize}{\fontsize{50}{58}\selectfont}
+  \newcommand{\np@footsize}{\fontsize{28}{34}\selectfont}
+  \newlength{\np@gap}\setlength{\np@gap}{2cm}
+  \newlength{\np@qr}\setlength{\np@qr}{8cm}
+\fi
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+\setlist{leftmargin=1.1em,itemsep=0.25em,topsep=0.3em}
+
+% ---------------------------------------------------------------- colours: change these to your lab's
+\definecolor{npink}{HTML}{14242B}    % header band and headings
+\definecolor{nppaper}{HTML}{FBF9F4}  % page
+\definecolor{npaccent}{HTML}{E0A100} % rules and key points
+\definecolor{npsoft}{HTML}{F1ECDF}   % key-result boxes
+\pagecolor{nppaper}
+
+% ---------------------------------------------------------------- what you fill in
+% Starred, so a field left empty matches \@empty and its line is left out.
+\newcommand*{\np@title}{Your paper title}
+\newcommand*{\np@authors}{Author One, Author Two}
+\newcommand*{\np@affiliations}{Your institution}
+\newcommand*{\np@paperurl}{}
+\newcommand*{\np@posterid}{}
+\newcommand*{\np@session}{}
+\newcommand*{\np@contact}{}
+\newcommand*{\np@logos}{}
+\renewcommand*{\title}[1]{\renewcommand*{\np@title}{#1}}
+\renewcommand*{\author}[1]{\renewcommand*{\np@authors}{#1}}
+\newcommand*{\affiliation}[1]{\renewcommand*{\np@affiliations}{#1}}
+\newcommand*{\paperurl}[1]{\renewcommand*{\np@paperurl}{#1}}
+\newcommand*{\posterid}[1]{\renewcommand*{\np@posterid}{#1}}
+\newcommand*{\session}[1]{\renewcommand*{\np@session}{#1}}
+\newcommand*{\contact}[1]{\renewcommand*{\np@contact}{#1}}
+% \logos{\includegraphics[height=6cm]{lab-logo}\hspace{2cm}\includegraphics[height=6cm]{uni-logo}}
+\newcommand{\logos}[1]{\renewcommand*{\np@logos}{#1}}
+
+% ---------------------------------------------------------------- header and footer
+\newcommand{\makeheader}{%
+  \begin{tcolorbox}[enhanced, colback=npink, colframe=npink, arc=0pt, boxrule=0pt,
+      left=\np@gap, right=\np@gap, top=0.8\np@gap, bottom=0.8\np@gap, frame hidden,
+      borderline south={6mm}{0pt}{npaccent}]
+    \color{nppaper}%
+    \begin{minipage}[c]{\ifx\np@logos\@empty\linewidth\else0.78\linewidth\fi}%
+      \raggedright{\np@titlesize\bfseries\np@title\par}
+      \vspace{0.35em}
+      {\np@authorsize\np@authors\par}
+      \vspace{0.15em}
+      {\np@authorsize\color{npaccent}\np@affiliations\par}
+    \end{minipage}%
+    \ifx\np@logos\@empty\else\hfill
+    \begin{minipage}[c]{0.2\linewidth}\raggedleft\np@logos\end{minipage}\fi%
+  \end{tcolorbox}
+  \vspace{\np@gap}}
+
+\newcommand{\makefooter}{%
+  \vfill
+  {\color{npaccent}\rule{\linewidth}{4mm}}\par\vspace{0.6\np@gap}
+  \np@footsize
+  \begin{minipage}[c]{\dimexpr\linewidth-\np@qr-\np@gap\relax}
+    \ifx\np@session\@empty\else\textbf{\np@session}\par\fi
+    \ifx\np@posterid\@empty\else Poster ID \np@posterid\par\fi
+    \ifx\np@contact\@empty\else\np@contact\par\fi
+    \ifx\np@paperurl\@empty\else\texttt{\np@paperurl}\par\fi
+  \end{minipage}\hfill
+  \ifx\np@paperurl\@empty\else
+  \begin{minipage}[c]{\np@qr}\raggedleft\qrcode[height=\np@qr]{\np@paperurl}\end{minipage}\fi}
+
+% ---------------------------------------------------------------- columns and blocks
+% \begin{columns}{3} ... \nextcolumn ... \end{columns}: equal columns that fill the space between header and footer.
+\newcounter{np@cols}
+\newlength{\np@colw}
+\newenvironment{columns}[1]{%
+  \setcounter{np@cols}{#1}%
+  \setlength{\np@colw}{\dimexpr(\linewidth-\numexpr#1-1\relax\np@gap)/#1\relax}%
+  \np@body\noindent\begin{minipage}[t]{\np@colw}\vspace{0pt}}{\end{minipage}\par}
+% \vspace{0pt} makes every column start at the same height, whatever its first box is.
+\newcommand{\nextcolumn}{\end{minipage}\hspace{\np@gap}\begin{minipage}[t]{\np@colw}\vspace{0pt}}
+
+% \begin{block}{Heading} ... \end{block}
+\newenvironment{block}[1]{%
+  \begin{tcolorbox}[enhanced, breakable=false, colback=nppaper, colframe=nppaper, arc=0pt, boxrule=0pt,
+      left=0pt, right=0pt, top=0pt, bottom=0.4\np@gap, spartan]
+  {\np@headsize\bfseries\color{npink}#1\par}\vspace{0.2em}
+  {\color{npaccent}\rule{6cm}{3mm}}\par\vspace{0.4em}}{\end{tcolorbox}}
+
+% \begin{keyresult} ... \end{keyresult}: the one thing someone should remember from a three-second glance.
+\newenvironment{keyresult}{%
+  \begin{tcolorbox}[enhanced, colback=npsoft, colframe=npsoft, arc=0pt, boxrule=0pt,
+      borderline west={8mm}{0pt}{npaccent}, left=1.4em, right=1em, top=0.8em, bottom=0.8em, spartan]
+  \np@headsize}{\end{tcolorbox}}
+
+% \placeholder{height}{label}: a box that stands in for a figure until you add \includegraphics.
+\newcommand{\placeholder}[2]{%
+  \tikz{\draw[line width=2mm, draw=npink!35, fill=npsoft] (1mm,1mm) rectangle (\linewidth-1mm,#1)
+    node[midway, align=center, text=npink!70] {\np@body #2};}\par}
+
+% The type sizes, for your own TikZ labels or tables: \postertext, \posterheading.
+\newcommand{\postertext}{\np@body}
+\newcommand{\posterheading}{\np@headsize}
+
+\endinput

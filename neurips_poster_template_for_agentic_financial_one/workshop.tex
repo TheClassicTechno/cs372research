@@ -1,0 +1,65 @@
+% Unofficial NeurIPS 2026 workshop poster: 61 cm wide x 85 cm high, portrait.
+% From the Quantitative Research Society's attendee guide, qrsntu.org/service/neurips26/posters/.
+% Not an official NeurIPS template. Check the official poster instructions before you print.
+\documentclass{article}
+\usepackage[workshop]{neurips26-poster}
+
+\title{A Clear Title That Says What You Found}
+\author{Author One and Author Two}
+\affiliation{University One}
+\paperurl{https://openreview.net/forum?id=XXXXXXXX}
+\session{Workshop name \quad Sat 12 Dec}
+\contact{author.one@example.edu}
+% \logos{\includegraphics[height=4cm]{logo-lab}}
+
+\begin{document}
+\makeheader
+
+\begin{columns}{2}
+\begin{block}{The problem}
+  One or two sentences on what is hard and why it matters.
+  \begin{itemize}
+    \item The setting, in plain words
+    \item Why existing methods fall short
+  \end{itemize}
+\end{block}
+
+\begin{block}{Our idea}
+  The core idea in one sentence.
+  \[ \hat{\theta} = \arg\min_\theta \sum_i \ell\bigl(f_\theta(x_i), y_i\bigr) \]
+\end{block}
+
+\begin{block}{Method}
+  \placeholder{12cm}{Figure: method}
+  \par\vspace{0.4em}
+  Replace with \verb|\includegraphics[width=\linewidth]{figure}|.
+\end{block}
+
+\nextcolumn
+
+\begin{block}{Key result}
+  \begin{keyresult}
+    \textbf{One sentence} with the number that matters.
+  \end{keyresult}
+\end{block}
+
+\begin{block}{Results}
+  \placeholder{10cm}{Plot: main result}
+  \par\vspace{0.4em}
+  \begin{tabular}{lr}
+    \textbf{Method} & \textbf{Score} \\ \hline
+    Baseline        & 71.3           \\
+    Ours            & \textbf{75.5}  \\
+  \end{tabular}
+\end{block}
+
+\begin{block}{Takeaways}
+  \begin{itemize}
+    \item What to do differently
+    \item The main limitation
+  \end{itemize}
+\end{block}
+\end{columns}
+
+\makefooter
+\end{document}

@@ -1,0 +1,91 @@
+% Unofficial NeurIPS 2026 main conference poster: 140 cm wide x 90 cm high, landscape.
+% From the Quantitative Research Society's attendee guide, qrsntu.org/service/neurips26/posters/.
+% Not an official NeurIPS template. Check the official poster instructions before you print.
+\documentclass{article}
+\usepackage[main]{neurips26-poster}
+
+\title{A Clear Title That Says What You Found}
+\author{Author One, Author Two and Author Three}
+\affiliation{University One \quad Company Two}
+\paperurl{https://neurips.cc/virtual/2026/poster/000000}
+\posterid{000000}
+\session{Sydney Poster Session 1 \quad Tue 8 Dec, 10:00--13:00, Hall 1-4}
+\contact{author.one@example.edu}
+% Add your logos as image files next to this one, then:
+% \logos{\includegraphics[height=7cm]{logo-lab}\hspace{1.5cm}\includegraphics[height=7cm]{logo-university}}
+
+\begin{document}
+\makeheader
+
+\begin{columns}{3}
+\begin{block}{The problem}
+  One or two sentences on what is hard and why it matters. Most visitors read this block and the key result,
+  then decide whether to stop.
+  \begin{itemize}
+    \item The setting, in plain words
+    \item Why existing methods fall short
+    \item What a solution would let people do
+  \end{itemize}
+\end{block}
+
+\begin{block}{Our idea}
+  The core idea in one sentence, then the one equation that carries it:
+  \[ \mathcal{L}(\theta) = \mathbb{E}_{(x,y)\sim\mathcal{D}} \bigl[\ell(f_\theta(x), y)\bigr] + \lambda \lVert \theta \rVert_2^2 \]
+  Define every symbol a visitor needs, and no others.
+\end{block}
+
+\begin{block}{Contributions}
+  \begin{enumerate}
+    \item A method that does X
+    \item A guarantee that Y holds
+    \item Experiments on Z benchmarks
+  \end{enumerate}
+\end{block}
+
+\nextcolumn
+
+\begin{block}{Method}
+  \centering
+  \begin{tikzpicture}[x=1cm, y=1cm, every node/.style={font=\postertext, align=center}]
+    \draw[line width=2mm, fill=npsoft] (0,0) rectangle (11,7) node[midway] {Input};
+    \draw[line width=2mm, -stealth] (11.5,3.5) -- (15.5,3.5);
+    \draw[line width=2mm, fill=npsoft] (16,0) rectangle (27,7) node[midway] {Model};
+    \draw[line width=2mm, -stealth] (27.5,3.5) -- (31.5,3.5);
+    \draw[line width=2mm, fill=npaccent!40] (32,0) rectangle (41,7) node[midway] {Output};
+  \end{tikzpicture}
+  \par\raggedright\vspace{0.6em}
+  Replace this diagram with your own figure: \verb|\includegraphics[width=\linewidth]{figure}|.
+  \par\vspace{0.6em}
+  \placeholder{16cm}{Figure: the main illustration}
+\end{block}
+
+\begin{block}{Key result}
+  \begin{keyresult}
+    \textbf{Our method improves accuracy by 4.2 points} at the same compute budget.
+  \end{keyresult}
+\end{block}
+
+\nextcolumn
+
+\begin{block}{Results}
+  \placeholder{14cm}{Plot: accuracy against compute}
+  \par\vspace{0.6em}
+  \begin{tabular}{lrr}
+    \textbf{Method} & \textbf{Accuracy} & \textbf{Cost} \\ \hline
+    Baseline A      & 71.3              & 1.0$\times$   \\
+    Baseline B      & 72.8              & 1.6$\times$   \\
+    Ours            & \textbf{75.5}     & 1.0$\times$   \\
+  \end{tabular}
+\end{block}
+
+\begin{block}{Takeaways}
+  \begin{itemize}
+    \item What a practitioner should do differently
+    \item The main limitation, stated honestly
+    \item Where the code and data are
+  \end{itemize}
+\end{block}
+\end{columns}
+
+\makefooter
+\end{document}
