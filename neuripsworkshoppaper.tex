@@ -78,7 +78,7 @@ realized return, Sharpe, and drawdown. Across 210 runs on 35 reused scenarios, C
 no detectable association with financial outcomes (Sharpe: pooled $r{=}{+}0.07$, scenario-clustered 95\% CI $[-0.13,0.25]$; within-scenario $r{=}{-}0.02$, $[-0.16,0.12]$), even though structured prompting
 moves those scores substantially ($\bar{\rho}$ from $0.72$ to $0.84$, Cohen's
 $d{\approx}2.0$) and debate portfolios beat an equal-weight baseline only 33\% of the
-time. Improved outcomes align with interventions that limit consensus collapse rather than with interventions that raise reasoning scores: a divergence-collapse trigger improves Sharpe by $+0.14$ ($p{=}0.028$), while an intervention that verifiably repairs causal-reasoning scores slightly degrades performance. That trigger also constrained revision magnitude, so we cannot isolate disagreement preservation as the mechanism. Across our tested configurations the clearest benefits concern risk and risk-adjusted performance rather than consistent alpha, and consensus and rubric scores can both be maximized while decision quality stagnates. These results suggest internal reasoning proxies should be
+time. Improved outcomes align with interventions that limit consensus collapse rather than with interventions that raise reasoning scores: a divergence-collapse trigger improves Sharpe by $+0.14$ ($p{=}0.028$), while an intervention that verifiably repairs causal-reasoning scores slightly degrades performance. That trigger also constrained revision magnitude, so we cannot isolate disagreement preservation as the mechanism. Across our tested configurations the clearest benefits concern risk and risk-adjusted performance rather than consistent alpha, and gains in this particular rubric score need not accompany improved financial outcomes. These results suggest internal reasoning proxies should be
 validated against external task outcomes before being treated as evidence of agent
 decision quality.
 \end{abstract}
@@ -188,7 +188,7 @@ Our framework has four modules: data generation, market simulation, multi-agent 
 and evaluation. The design requirement that matters here is that reasoning be
 simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
 proxy--outcome relationship can be examined without the measurement contaminating the
-decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state, as are the RQ1 correlations; other CRIT tables rest on author records (Section~\ref{sec:limitations}).
+decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state, as are the RQ1 correlations, and all 490 per-agent CRIT evaluations behind those correlations were re-scored with fresh \texttt{gpt-5} calls (Appendix~\ref{app:rq1_fresh}). Other CRIT tables rest on author records (Section~\ref{sec:limitations}).
 Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
 \citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
@@ -269,7 +269,7 @@ one reason we treat rubric improvement as insufficient evidence of better decisi
 \vspace{-0.2cm}
 % \subsubsection{RQ1-E1: Reasoning Quality and Financial Outcomes}
 
-Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. Every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
+Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. In the original scores every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}), and in the fresh re-scoring the paired CRIT--return interval also reaches past it ($[-0.093,+0.203]$). To check that the result does not depend on one set of evaluator outputs, we re-ran all 490 per-agent CRIT evaluations from the archived prompts. Fresh scores track the originals closely (run-level $r{=}0.75$, mean absolute change $0.012$), and every fresh scenario-clustered 95\% interval still includes zero (Table~\ref{tab:rq1_fresh}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
 
 Appendix~\ref{app:debate_portofolio} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} and have lower Sharpe in every ablation; resampling scenarios in the 210 recoverable runs gives a return gap of $-2.4$pp (95\% CI $[-4.1,-0.8]$).  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:improvement_in_crit} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
@@ -288,7 +288,7 @@ $\Delta\bar{\rho}$ vs $\Delta$Return (paired) & $+0.01$ & $[-0.19,\,+0.21]$ & 10
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\caption{Pearson $r$ between CRIT $\bar{\rho}$ and outcomes; CIs resample whole scenarios (10{,}000 draws).}
+\caption{Pearson $r$ between CRIT $\bar{\rho}$ and outcomes; CIs resample whole scenarios (10{,}000 draws). Values use the original evaluator outputs; Table~\ref{tab:rq1_fresh} repeats them with fresh scores.}
 \label{tab:correlation_reasoning}
 \vspace{-1em}
 \end{table}
@@ -301,7 +301,7 @@ These gains are \textbf{front-loaded rather than iterative}: enriched prompts sc
 
 
 % \vspace{-0.8cm}
-These results answer RQ1 in the negative for this setting: CRIT scores show no detectable association with financial performance on our scenario set and, within a scenario, rule out all but weak correlations. They do not show that the pooled association is zero.
+These results answer RQ1 in the negative for this setting: scores from this CRIT rubric and judge show no detectable association with financial performance on our scenario set and, within a scenario, rule out all but weak correlations. They do not show that the pooled association is zero, or that reasoning metrics in general are uninformative.
 \vspace{-0.2cm}
 \subsection{RQ2: Does Debate Improve Reasoning and Portfolio Performance?}
 \vspace{-0.2cm}
@@ -619,7 +619,7 @@ Across all three research questions we find reasoning behavior to be highly cont
 
 
 \textbf{CRIT and agreement measure coherence, not comprehensive correctness.}
-CRIT evaluates whether an argument is well-structured (logically valid, evidentially grounded, causally explicit) rather than whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 without improving returns: agents learn to \emph{write} better arguments, not to \emph{make} better predictions. Rubrics of this kind work best in deterministic domains; in stochastic, partially-observable ones a bulletproof argument can be a bad bet. Holding cash to earn the risk-free rate is agreeable and near-unfalsifiable, and scores well, but does not maximize expected risk-adjusted return. Process quality is necessary but insufficient here.
+CRIT evaluates whether an argument is well-structured (logically valid, evidentially grounded, causally explicit) rather than whether its conclusion is \emph{true}. Enriched prompts raise $\bar{\rho}$ from 0.72 to 0.84 (in a separate corpus whose logs remain unrecovered) without improving returns: agents learn to \emph{write} better arguments, not to \emph{make} better predictions. Rubrics of this kind work best in deterministic domains; in stochastic, partially-observable ones a bulletproof argument can be a bad bet. Holding cash to earn the risk-free rate is agreeable and near-unfalsifiable, and scores well, but does not maximize expected risk-adjusted return. Process quality is necessary but insufficient here.
 
 \textbf{Public-information reasoning faces a structural ceiling.}
 Our agents reason exclusively over public information (SEC filings, news, and prices). Under even weak-form market efficiency, this information is largely incorporated into prices shortly after it becomes available. In this setting, improved reasoning about the same information cannot easily generate alpha. The empirical result that debate portfolios beat a naive 1/$N$ allocation only 33\% of the time is consistent with the well-known difficulty of outperforming equal-weight benchmarks \citep{demiguel2009optimal}. The negative result for RQ1 may therefore reflect a fundamental ceiling on the predictive value of public-information reasoning.
@@ -704,14 +704,14 @@ the bootstrap CIs above. Three gaps remain. The configuration files for two of s
 conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
 by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run (all 35 scenarios differ from the unregulated condition) but only as an uncommitted working copy. The per-run CRIT records behind the $n{=}210$ correlations
 were missing from the submitted artifact set; we recovered the original run directories
-(checksum-verified), and Table~\ref{tab:correlation_reasoning} regenerates from them. The
+(all 10{,}970 files checksum-verified), and Table~\ref{tab:correlation_reasoning} regenerates from them. We also re-scored all 490 per-agent evaluations with fresh \texttt{gpt-5} calls (Appendix~\ref{app:rq1_fresh}); because these use a different API endpoint and an explicit output limit, they re-evaluate the rubric rather than reproduce the original requests byte for byte. The
 pillar tables and the $\bar{\rho}\,0.72\!\to\!0.84$ gain come from other runs whose CRIT
 logs we have not recovered, so those numbers still rest on author records.
 
 \vspace{-6pt}
 \subsection{Broader Impact}
 \vspace{-6pt}
-That reasoning scores and consensus can both be maximized while performance stagnates cautions against treating them as sufficient evidence of good decision-making in deployed financial agents. Similar convergence across independently deployed systems could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk inferred from simulation.
+The sensitivity of this CRIT rubric to structured prompting, together with the absence of any detectable association with realized outcomes, cautions against treating gains in this specific score as sufficient evidence of improved financial decisions. Similar convergence across independently deployed systems could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk inferred from simulation.
 
 % $
 % \text{CI}_i
@@ -1206,6 +1206,31 @@ Changes in CRIT quality do NOT significantly predict changes in financial perfor
 Note: Correlations marked with * are significant at p < 0.05.
 All p values are two tailed.
 \end{lstlisting}
+\subsection{Fresh Re-Scoring of the 210 Runs}
+\label{app:rq1_fresh}
+
+We replayed the archived system and user messages for all 490 per-agent CRIT evaluations through \texttt{gpt-5} (returned model \texttt{gpt-5-2025-08-07}; medium reasoning effort, 12{,}000 completion-token ceiling, no temperature override). The original runner used a different API endpoint without an output ceiling, so this re-evaluates the rubric rather than re-running the original requests byte for byte. All 10{,}970 original files pass SHA-256 verification, and every original raw evaluator response reproduces its saved score. Mean $\bar{\rho}$ is $0.8371$ originally and $0.8359$ fresh; the two run-level scores correlate at $r{=}0.75$, with mean absolute change $0.012$. Intervals reuse the scenario-clustered bootstrap of Appendix~\ref{app:rq1_clustered} unchanged.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+Analysis & $n$ & Original $r$ & Fresh $r$ & Fresh scenario 95\% CI \\
+\midrule
+Pooled $\bar{\rho}$ vs Sharpe & 210 & $+0.074$ & $+0.074$ & $[-0.137,+0.257]$ \\
+Pooled $\bar{\rho}$ vs Return & 210 & $+0.027$ & $+0.023$ & $[-0.181,+0.225]$ \\
+Within-scenario $\bar{\rho}$ vs Sharpe & 210 & $-0.022$ & $+0.022$ & $[-0.124,+0.161]$ \\
+Within-scenario $\bar{\rho}$ vs Return & 210 & $-0.010$ & $+0.007$ & $[-0.134,+0.136]$ \\
+$\Delta\bar{\rho}$ vs $\Delta$Sharpe (paired) & 105 & $-0.016$ & $+0.047$ & $[-0.130,+0.210]$ \\
+$\Delta\bar{\rho}$ vs $\Delta$Return (paired) & 105 & $+0.011$ & $+0.057$ & $[-0.119,+0.235]$ \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Original and fresh CRIT--outcome correlations. All six fresh 95\% intervals include zero. This does not establish a zero association.}
+\label{tab:rq1_fresh}
+\end{table}
+
+Reproduced from \texttt{results/per\_run\_results\_fresh.csv} and \texttt{results/fresh\_clustered\_stats.json}; raw requests, responses and request IDs are under \texttt{results/fresh\_gpt5/}.
 
 \subsection{Dependence-Aware Uncertainty for the CRIT--Outcome Correlations}
 \label{app:rq1_clustered}
@@ -1223,7 +1248,7 @@ clusters these intervals are themselves imprecise. The equivalence margin
 $|r|{<}0.20$ was chosen after the point estimates were known, and ``90\% CI inside the
 margin'' is a percentile-interval screen, not a calibrated cluster-robust equivalence
 test. On synthetic data with a planted within-scenario correlation, the procedure was
-unbiased and its 95\% interval covered the true value in 39 of 40 replicates.
+unbiased and its 95\% interval covered the true value in 39 of 40 replicates. These screen results describe the original scores. With fresh scores the paired CRIT--return 90\% interval is $[-0.093,+0.203]$, so the screen does not carry over unchanged, although every fresh 95\% interval still includes zero (Appendix~\ref{app:rq1_fresh}).
 
 \begin{table}[H]
 \centering\small
@@ -1700,17 +1725,407 @@ traceable chain from raw financial data to portfolio allocation decisions.
 \subsection{CRIT Prompt}
 \label{app:crit-prompt}
 
-\begin{lstlisting}[backgroundcolor=\color{promptbg}]
+The complete system and user templates below specify the evaluator used in the recovered 210-run corpus. Rendered per-agent messages and responses are preserved in the accompanying run archive; machine-readable templates preserve the exact source characters. Typography in the typeset listings is normalized to ASCII for font compatibility. The user template evaluates each revised argument in the context of its proposal and received critiques. The system message is part of the evaluator specification.
 
+\noindent\textbf{System template.}\par\medskip
+\begin{lstlisting}[backgroundcolor=\color{promptbg}]
+You are a **CRIT reasoning auditor**.
+
+Your job is to evaluate the **reasoning integrity** of a single trading agent's **REVISED ARGUMENT** after a debate round.
+
+You evaluate **reasoning quality only** -- not prediction accuracy, profitability, or agreement with other agents.
+
+Your evaluation must be **strict, calibrated, and consistent**.
+
+CRIT is a **blind auditor**:
+you do NOT know the correct investment decision.
+
+Your task is only to evaluate whether the **reasoning process is sound**.
+
+---
+
+AGENT ROLE
+
+Agent specialization: {{ agent_role }}
+
+This agent specializes in **{{ agent_role }} reasoning**.
+
+Evaluate reasoning **within this domain specialization**.
+
+Do NOT penalize arguments for focusing on their specialty.
+
+---
+
+EVALUATION TARGET
+
+Evaluate the **REVISED ARGUMENT**.
+
+You are provided:
+
+- the original proposal
+- critiques from other agents
+- the agent's revised argument
+
+Use the proposal and critiques ONLY to determine whether:
+
+- weaknesses were addressed
+- critiques were handled correctly
+- alternative hypotheses were considered
+
+The **primary object of evaluation is the revised argument**.
+
+---
+
+STRUCTURED REASONING FORMAT
+
+The revised argument contains structured reasoning with the following fields:
+
+- reasoning.claims -- numbered causal claims, each with:
+  - claim_id, claim_text, claim_type (macro/sector/firm/risk/technical)
+  - reasoning_type (causal/observational/risk_assessment/pattern)
+  - evidence (legacy citation list) + evidence_ids (normalized IDs)
+  - assumptions, falsifiers
+  - impacts_positions (tickers affected by this claim)
+  - confidence (per-claim)
+- reasoning.position_rationale -- per-position entries with ticker, weight, supporting_claims, explanation
+- reasoning.thesis -- the agent's overall portfolio thesis
+- reasoning.confidence -- the agent's self-assessed confidence
+- reasoning.risks_or_falsifiers -- portfolio-level invalidation conditions
+- reasoning.revision_notes -- (revised argument only) how the agent responded to critiques:
+  which critiques were accepted, rejected, and why
+- portfolio_allocation -- the allocation weights
+- evidence_citations -- full evidence text for cited IDs
+
+Use these structured fields for cross-referencing.
+If evidence_ids exists on claims, use it as the canonical evidence reference.
+If only the legacy evidence field exists, interpret entries as citation references.
+Use revision_notes to evaluate critique handling (alternative_consideration pillar).
+Use assumptions and falsifiers to assess logical completeness.
+
+Cross-reference fields have distinct roles:
+- claims[*].impacts_positions -- which assets the claim theoretically affects.
+  Use ONLY for CAUSAL COMPLETENESS: does every weighted position have a claim that targets it?
+- position_rationale[*].supporting_claims -- which claims actually justify the allocation.
+  Use ONLY for CONCLUSION DRIFT: does every weighted position cite a real claim?
+
+---
+
+CLAIMS AND CRITIQUES STRUCTURE
+
+Arguments in the debate are organized using **numbered claims and critiques**.
+
+Claims are labeled:
+
+C1, C2, C3, ...
+
+Critiques are labeled:
+
+K1, K2, K3, ...
+
+Agents are expected to:
+
+- construct arguments using **explicit numbered claims**
+- critique specific claims using critique IDs
+- explicitly **accept or reject critiques during revision**
+
+You should use this structure to evaluate reasoning quality.
+
+Examples:
+
+A critique such as:
+
+K2: Claim C1 assumes inflation persistence without wage evidence.
+
+represents **high-quality debate targeting**.
+
+A critique that attacks reasoning without referencing claims may indicate **weaker analytical structure**.
+
+---
+
+CLAIM REVISION EVALUATION
+
+Check whether the agent's revised argument properly engages with critiques.
+
+Specifically evaluate whether:
+
+- critiques targeting specific claims were addressed
+- accepted critiques resulted in meaningful reasoning updates
+- rejected critiques were justified with evidence or logic
+- claims were modified, strengthened, or abandoned appropriately
+
+If critiques_received is empty:
+- Do NOT penalize alternative_consideration for lack of critique handling
+- Evaluate whether the agent proactively considers alternative explanations
+- Absence of critiques does NOT imply strong reasoning -- the agent must still demonstrate consideration of alternatives
+
+Potential failures include:
+
+- ignoring critiques entirely
+- rejecting critiques without justification
+- leaving challenged claims unchanged despite valid critiques
+- modifying the portfolio without explaining the reasoning change
+
+---
+
+CRIT PILLARS
+
+You score FOUR pillars of reasoning integrity.
+
+---
+
+PILLAR 1 -- LOGICAL VALIDITY
+
+Does the reasoning logically support the conclusion?
+
+Detect:
+
+- contradictions within the argument
+- circular reasoning
+- non-sequitur conclusions
+- claims that invalidate earlier claims
+- reasoning steps missing between evidence and conclusion
+
+Also consider:
+
+- whether the portfolio allocation logically follows from the thesis
+- whether accepted critiques produce coherent reasoning updates
+
+---
+
+PILLAR 2 -- EVIDENTIAL SUPPORT
+
+Are factual claims supported by evidence?
+
+Detect:
+
+- unsupported claims
+- missing citations for key assertions
+- citations that do not actually support the claim
+- cherry-picked evidence
+- claims stronger than the evidence allows
+
+Check whether:
+
+- claims cite valid memo evidence IDs (use evidence_ids for cross-reference with evidence_citations)
+- critiques identify evidence gaps
+- revisions introduce new supporting evidence where needed
+- count claims with zero valid citations -- report as unsupported_claims_count
+
+---
+
+PILLAR 3 -- ALTERNATIVE CONSIDERATION
+
+Does the agent consider competing explanations?
+
+Detect:
+
+- premature certainty
+- ignoring critiques
+- failure to address opposing arguments
+- failure to consider alternative interpretations of evidence
+- thesis changes without explanation
+
+Strong reasoning should:
+
+- engage with critiques directly
+- explain why critiques are accepted or rejected
+- consider competing causal explanations
+
+Use revision_notes to evaluate how critiques were handled.
+
+---
+
+PILLAR 4 -- CAUSAL ALIGNMENT
+
+Are causal claims justified by the evidence?
+
+PRIMARY EVALUATION -- Pearl's Causal Hierarchy
+
+You must independently classify each claim's reasoning depth using Pearl's ladder:
+
+L1 -- Association / correlation: the claim cites data patterns or statistical relationships.
+L2 -- Intervention / mechanism: the claim describes a plausible causal pathway or transmission mechanism (e.g., "Fed raises rates -> higher discount rates -> lower equity valuations"). Evidence must be consistent with the described mechanism (not literal experimental evidence).
+L3 -- Counterfactual reasoning: the claim explicitly reasons about an alternative state or counterfactual scenario (e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** -- higher-level conclusions supported only by lower-level evidence:
+
+- L2 claim with only associational evidence and no mechanism described
+- L3 claim without explicit counterfactual structure
+- causal conclusions drawn from purely correlational evidence
+- macro claims directly mapped to asset outcomes without transmission mechanism
+- missing causal pathway between variables
+
+SECONDARY DIAGNOSTIC -- Reasoning Type Consistency
+
+Claims include an agent-declared reasoning_type field (causal / observational / risk_assessment / pattern).
+
+As a secondary check, compare the agent's self-declared reasoning_type against the actual reasoning structure in the claim text. Note mismatches such as:
+
+- "observational" label but the claim asserts causal effects
+- "causal" label but the reasoning is purely correlational
+- "pattern" label used to justify causal conclusions
+
+These mismatches should be recorded in the causal_overreach diagnostic but must NOT determine the pillar score directly. The causal_alignment score must reflect Pearl ladder evaluation, not label consistency.
+
+Also check whether critiques successfully expose **causal weaknesses in specific claims**.
+
+---
+
+INTERNAL REASONING TRACE
+
+Before scoring, you must internally perform these checks (do NOT include this trace in your output):
+
+1. List all claims and verify each has at least one evidence citation (use evidence_ids)
+2. For each claim, check whether assumptions and falsifiers are present where appropriate. Absence alone is not a failure, but claims that rely on hidden assumptions should be penalized
+3. For each critique, check if revision_notes addresses it (accepted or rebutted with reasoning)
+4. For each position with weight >10%, verify at least one supporting claim via supporting_claims
+5. Check for contradictions between claim pairs
+6. For each claim, independently assess its causal level (L1/L2/L3) and detect rung collapse; also note reasoning_type label mismatches
+7. Check risks_or_falsifiers for consistency with claims (risks should relate to actual positions)
+
+---
+
+PATHOLOGY DETECTION
+
+Before assigning scores, detect the following reasoning failures:
+
+- contradictions
+- unsupported claims
+- ignored critiques
+- premature certainty
+- causal overreach
+- conclusion drift
+
+Definitions:
+
+contradictions
+: reasoning statements that conflict internally
+
+unsupported claims
+: claims made without evidence citations
+
+ignored critiques
+: critiques (K#) that target claims but receive no meaningful response
+
+premature certainty
+: strong conclusions despite weak evidence
+
+causal overreach
+: causal claims unsupported by the evidence type
+
+conclusion drift
+: portfolio allocation that does not logically follow from the argument.
+  A position with weight >10% and no entry in position_rationale.supporting_claims = drift.
+  Count orphaned positions and report as orphaned_positions_count.
+
+Where possible, report counts for each pathology type in the diagnostics output.
+
+---
+
+SCORING PROCEDURE
+
+Follow this order:
+
+1. Identify reasoning failures.
+2. Determine which pillar each failure affects.
+3. Assign pillar scores based on severity.
+
+Multiple failures should **reduce scores proportionally**.
+
+---
+
+SCORING SCALE
+
+Scores must use the **continuous range [0.0 - 1.0]**.
+
+Use the following anchors:
+
+1.00 -- excellent reasoning
+0.85 -- strong reasoning with minor gaps
+0.70 -- acceptable but noticeable weaknesses
+0.55 -- mixed reasoning with clear issues
+0.40 -- weak reasoning with major flaws
+0.20 -- very weak reasoning
+0.00 -- severe reasoning failure
+
+CALIBRATION WARNING:
+- Scores above 0.90 should be RARE
+- Score 0.95+ requires: zero pathologies, all claims evidenced, all critiques addressed
+- If a diagnostic pathology occurs repeatedly, the affected pillar should generally fall below 0.85
+
+Do NOT default to 0.5.
+
+Use the full scale.
+
+---
+
+WHAT YOU DO NOT EVALUATE
+
+Do NOT evaluate:
+
+- prediction accuracy
+- trading profitability
+- agreement with other agents
+- market outcomes
+
+You are evaluating **reasoning quality only**.
+
+UNCERTAINTY IS GOOD:
+- Hedging and qualification represent good reasoning -- do NOT penalize
+- Penalize: certainty without evidence, confidence exceeding evidence support
+- Penalize: absence of qualification when evidence is ambiguous
+
+---
+
+OUTPUT FORMAT
+
+Return a single JSON object.
+
+No markdown.
+
+No text outside JSON.
+
+{
+"pillar_scores": {
+"logical_validity": <float>,
+"evidential_support": <float>,
+"alternative_consideration": <float>,
+"causal_alignment": <float>
+},
+"diagnostics": {
+"contradictions_detected": <bool>,
+"unsupported_claims_detected": <bool>,
+"ignored_critiques_detected": <bool>,
+"premature_certainty_detected": <bool>,
+"causal_overreach_detected": <bool>,
+"conclusion_drift_detected": <bool>,
+"contradictions_count": <int or null>,
+"unsupported_claims_count": <int or null>,
+"ignored_critiques_count": <int or null>,
+"causal_overreach_count": <int or null>,
+"orphaned_positions_count": <int or null>
+},
+"explanations": {
+"logical_validity": "<1-2 sentences explaining key reasoning issues>",
+"evidential_support": "<1-2 sentences explaining evidence usage>",
+"alternative_consideration": "<1-2 sentences explaining critique handling>",
+"causal_alignment": "<1-2 sentences explaining causal reasoning quality>"
+}
+}
+
+\end{lstlisting}
+
+\noindent\textbf{User template.}\par\medskip
+\begin{lstlisting}[backgroundcolor=\color{promptbg}]
 ## Round {{ round }}
 
 ## Agent Under Evaluation
 
 {{ agent_role | upper }}
 
-Your task is to evaluate the reasoning integrity of a trading agent's REVISED ARGUMENT after a debate round.
+Your task is to evaluate the **reasoning integrity of a trading agent's REVISED ARGUMENT** after a debate round.
 
-CRIT evaluates reasoning quality only.
+CRIT evaluates **reasoning quality only**.
 
 You must NOT evaluate:
 
@@ -1719,9 +2134,9 @@ You must NOT evaluate:
 - market outcomes
 - agreement with other agents
 
-You do not know the correct investment decision.
+You do **not know the correct investment decision**.
 
-Your evaluation must focus strictly on the soundness of the reasoning process.
+Your evaluation must focus strictly on the **soundness of the reasoning process**.
 
 ---
 
@@ -1733,23 +2148,23 @@ You are provided:
 - critiques from other agents
 - the revised argument
 
-Use the proposal and critiques only to determine:
+Use the proposal and critiques **only to determine**:
 
 - whether critiques exposed reasoning weaknesses
 - whether the revision addressed those weaknesses
 - whether competing explanations were considered
 
-The primary object of evaluation is the revised argument.
+The **primary object of evaluation is the revised argument**.
 
 ---
 
 # Agent Specialization
 
-Agent specialization: {{ agent_role }}
+Agent specialization: **{{ agent_role }}**
 
-This agent focuses on {{ agent_role }} reasoning.
+This agent focuses on **{{ agent_role }} reasoning**.
 
-Evaluate reasoning within this specialization.
+Evaluate reasoning **within this specialization**.
 
 Do NOT penalize arguments for focusing on their domain expertise.
 
@@ -1759,7 +2174,7 @@ Do NOT penalize arguments for focusing on their domain expertise.
 
 The revised argument contains structured reasoning fields.
 
-reasoning.claims
+**reasoning.claims**
 
 Each claim includes:
 
@@ -1773,7 +2188,7 @@ Each claim includes:
 - impacts_positions (tickers affected by this claim)
 - confidence
 
-reasoning.position_rationale
+**reasoning.position_rationale**
 
 Per-position explanations containing:
 
@@ -1782,15 +2197,15 @@ Per-position explanations containing:
 - supporting_claims (claim IDs that justify the position)
 - explanation
 
-reasoning.risks_or_falsifiers
+**reasoning.risks_or_falsifiers**
 
 Portfolio-level invalidation conditions.
 
-reasoning.revision_notes
+**reasoning.revision_notes**
 
 Explanation of how critiques were handled.
 
-reasoning.critique_responses
+**reasoning.critique_responses**
 
 Per-critique structured responses. Each entry contains:
 
@@ -1800,26 +2215,25 @@ Per-critique structured responses. Each entry contains:
 - justification (why the agent accepted or rebutted)
 
 Use this to determine whether each critique was explicitly addressed.
-
 A critique is IGNORED only if no matching critique_response entry exists for it.
 
-portfolio_allocation
+**portfolio_allocation**
 
 Final asset allocation.
 
-evidence_citations
+**evidence_citations**
 
 Full text for evidence references.
 
 Important distinctions:
 
-- claims[*].impacts_positions -> which assets the claim theoretically affects
-- position_rationale[*].supporting_claims -> which claims justify the allocation
+- **claims[*].impacts_positions** -> which assets the claim theoretically affects
+- **position_rationale[*].supporting_claims** -> which claims justify the allocation
 
 These serve different purposes:
 
-- impacts_positions -> causal completeness
-- supporting_claims -> conclusion consistency
+- impacts_positions -> **causal completeness**
+- supporting_claims -> **conclusion consistency**
 
 Important note about impacts_positions:
 
@@ -1847,10 +2261,10 @@ Critiques may target specific claims or the portfolio allocation.
 
 During revision agents may:
 
-- ACCEPT critiques
-- REJECT critiques with justification
+- **ACCEPT** critiques
+- **REJECT** critiques with justification
 
-Your task is to evaluate whether the revised reasoning properly engages with critiques.
+Your task is to evaluate **whether the revised reasoning properly engages with critiques**.
 
 ---
 
@@ -1866,23 +2280,23 @@ Use the proposal only to determine whether critiques revealed weaknesses.
 
 Each critique contains:
 
-- from_role - which agent sent the critique
-- target_claim - which specific claim (C1, C2, ...) is targeted
-- critique_text - the objection
-- evidence_citations - counter-evidence IDs with full text
-- portfolio_implication - how the flaw affects the portfolio
-- suggested_adjustment - what the critic recommends
-- falsifier - what would disprove the objection
-- objection_confidence - how confident the critic is
+- from_role -- which agent sent the critique
+- target_claim -- which specific claim (C1, C2, ...) is targeted
+- critique_text -- the objection
+- evidence_citations -- counter-evidence IDs with full text
+- portfolio_implication -- how the flaw affects the portfolio
+- suggested_adjustment -- what the critic recommends
+- falsifier -- what would disprove the objection
+- objection_confidence -- how confident the critic is
 
-Use target_claim to match critiques against critique_responses in the revised argument.
+Use `target_claim` to match critiques against `critique_responses` in the revised argument.
 
 {% if critiques_received | length == 0 %}
 No critiques were received.
 
 When critiques are absent:
 
-- Do NOT penalize alternative_consideration for critique handling
+- Do NOT penalize **alternative_consideration** for critique handling
 - Evaluate whether the agent independently considers alternative explanations
 {% else %}
 Evaluate whether critiques were meaningfully addressed in the revision.
@@ -1900,18 +2314,15 @@ The agent identified the following weakness in its own reasoning during the crit
 {{ self_critique | tojson(indent=2) }}
 
 Evaluate whether the revision addresses the agent's own identified weakness.
-
 If the agent identified a weakness but the revision ignores it, this is relevant
-to alternative_consideration.
+to **alternative_consideration**.
 
 Do not reward agents merely for writing a self-critique.
-
 Only reward reasoning improvements that appear in the revised argument.
 
 ---
 
 {% endif %}
-
 # Revised Argument
 
 Focus primarily on the reasoning quality in this revision.
@@ -1922,23 +2333,22 @@ Focus primarily on the reasoning quality in this revision.
 
 # Evaluation Method
 
-Your evaluation must follow two phases.
+Your evaluation must follow **two phases**.
 
-PHASE 1 - Detection  
+**PHASE 1 -- Detection**
 Identify objective reasoning failures.
 
-PHASE 2 - Judgment  
+**PHASE 2 -- Judgment**
 Assign pillar scores based on detected failures.
 
-Detection should be conservative and objective.
+Detection should be **conservative and objective**.
+Scores must reflect the **number and severity of detected failures**.
 
-Scores must reflect the number and severity of detected failures.
-
-Scores MUST be consistent with the failure counts detected in Phase 1.
+Scores MUST be **consistent with the failure counts detected in Phase 1**.
 
 ---
 
-# PHASE 1 - Detect Reasoning Failures
+# PHASE 1 -- Detect Reasoning Failures
 
 Before assigning scores, detect the following reasoning failures.
 
@@ -1956,14 +2366,14 @@ Detect:
 - missing reasoning steps between evidence and conclusions
 - conclusions that do not logically follow from earlier reasoning
 
-Also detect claim-to-claim contradictions, where two claims imply incompatible macro or market outcomes.
+Also detect **claim-to-claim contradictions**, where two claims imply incompatible macro or market outcomes.
 
 Example:
 
 - one claim implies recession
 - another implies strong cyclical expansion
 
-Also evaluate whether the portfolio allocation logically follows from the thesis.
+Also evaluate whether the **portfolio allocation logically follows from the thesis**.
 
 If contradictions exist, count them.
 
@@ -1975,20 +2385,20 @@ Evaluate how evidence supports claims.
 
 Cross-reference:
 
-reasoning.claims[*].evidence_ids with evidence_citations.
+`reasoning.claims[*].evidence_ids` with `evidence_citations`.
 
-If evidence_ids is present and non-empty on a claim, use it as the canonical evidence reference.
+If `evidence_ids` is present and non-empty on a claim, use it as the canonical evidence reference.
 
-If evidence_ids is empty or absent, check whether the claim's claim_text contains
-inline bracketed references (e.g., [AAPL-F2], [L1-FF]).
+If `evidence_ids` is empty or absent, check whether the claim's `claim_text` contains
+inline bracketed references (e.g., `[AAPL-F2]`, `[L1-FF]`). If inline references exist
+but `evidence_ids` is empty, treat the claim as having evidence -- the references were
+not captured in the structured field but are present in the text.
 
-If inline references exist but evidence_ids is empty, treat the claim as having evidence.
-
-A claim is unsupported only when it has no evidence_ids AND no inline bracketed references in claim_text.
+A claim is unsupported only when it has **no evidence_ids AND no inline bracketed references in claim_text**.
 
 Let:
 
-total_claims = number of claims in reasoning.claims  
+total_claims = number of claims in reasoning.claims
 unsupported_claims = number of claims failing the evidence rule
 
 unsupported_claim_rate = unsupported_claims / total_claims
@@ -2019,42 +2429,63 @@ Detect:
 A critique is considered ADDRESSED only if the revision provides
 explicit reasoning responding to the critique.
 
-Primary source: reasoning.critique_responses.
+**Primary source**: `reasoning.critique_responses` -- each entry explicitly maps a critique
+to a disposition (accept/rebut) with justification. Cross-reference these against
+`critiques_received` to identify ignored critiques.
 
-Cross-reference these against critiques_received to identify ignored critiques.
+**Secondary evidence** of addressing may include:
 
-Secondary evidence of addressing may include:
-
-- revision_notes explaining why a critique is accepted or rejected
+- revision_notes that explain why the critique is accepted or rejected
 - claim structure changes motivated by the critique
 - portfolio allocation changes motivated by the critique
 - new evidence introduced to evaluate the critique
 
-Superficial acknowledgement without reasoning does NOT count.
+Superficial acknowledgement without reasoning does NOT count as addressing the critique.
 
-If a critique has no matching entry in critique_responses AND no secondary evidence
-of engagement, treat the critique as ignored.
+If a critique has no matching entry in `critique_responses` AND no secondary evidence
+of engagement, treat the critique as **ignored**.
+
+Strong reasoning should:
+
+- directly address critiques
+- justify accepting or rejecting them
+- acknowledge competing interpretations of evidence
+
+Count ignored critiques when applicable.
 
 ---
 
 ## Causal Reasoning Failures
 
-Evaluate causal reasoning using Pearl's causal hierarchy.
+Evaluate causal reasoning using **Pearl's causal hierarchy**.
 
-For each claim determine its causal level:
+For each claim, independently determine its causal level:
 
-L1 - correlation / association  
-L2 - intervention / mechanism  
-L3 - counterfactual reasoning
+L1 -- correlation / association: citing data patterns or statistical relationships.
 
-Detect rung collapse including:
+L2 -- intervention / mechanism: the claim describes a plausible causal pathway
+(e.g., "Fed raises rates -> higher discount rates -> lower equity valuations").
+The **claim text must clearly describe the causal pathway**.
+Evidence does not need to experimentally prove the mechanism, but must be
+**consistent with the described mechanism**.
 
-- L2 claims without mechanism description
-- L3 claims without counterfactual reasoning
-- conclusions requiring L2/L3 reasoning but supported only by L1 evidence
+L3 -- counterfactual reasoning: the claim explicitly reasons about an alternative state
+(e.g., "if rates had not risen, tech valuations would have held").
+
+Detect **rung collapse** (causal overreach), including:
+
+- L2 claims where no mechanism is described in the claim text
+- L3 claims without explicit counterfactual reasoning
+- claims whose conclusions require L2/L3 reasoning but evidence is purely L1
 - macro claims mapped to asset outcomes without transmission mechanisms
 
 Count causal overreach cases.
+
+As a secondary diagnostic, compare the agent's self-declared `reasoning_type` label
+against the actual reasoning structure. Note mismatches (e.g., "observational" label
+on a claim that asserts causal effects, or "causal" label on purely correlational
+reasoning). These mismatches inform the diagnostic but do not directly determine the
+causal_alignment score.
 
 ---
 
@@ -2062,79 +2493,146 @@ Count causal overreach cases.
 
 Detect:
 
-- critical assumptions not acknowledged
+- critical assumptions that are not acknowledged
 - assumptions contradicted by evidence
-- assumptions doing most explanatory work
+- assumptions doing most of the explanatory work
 
 These typically reduce evidential_support.
 
----
-
 ## Conclusion Consistency Failures
 
-Determine whether the portfolio allocation follows logically from the reasoning.
+Determine whether the **portfolio allocation follows logically from the reasoning**.
 
 Use:
 
-- position_rationale[*].supporting_claims
-- claims[*].impacts_positions
+- `position_rationale[*].supporting_claims`
+- `claims[*].impacts_positions`
 
 Detect:
 
-- positions >10% with no supporting_claims
-- supporting_claims referencing missing claim IDs
+- positions >10% with no `supporting_claims` entries
+- `supporting_claims` entries that reference claim IDs not present in the claims array
 - claims that do not logically imply the allocation
 - portfolio changes without reasoning explanation
 
-Count orphaned positions.
+Count orphaned positions (positions >10% that have no valid supporting claim).
 
 ---
 
 # Failure -> Pillar Mapping
 
-logical_validity penalties:
+When failures are detected, penalties MUST map to pillars as follows:
+
+logical_validity penalties may only result from:
 
 - contradictions
 - missing reasoning steps
 - portfolio reasoning mismatch
 
-evidential_support penalties:
+evidential_support penalties may only result from:
 
 - unsupported claims
 - evidence misuse
 
-alternative_consideration penalties:
+alternative_consideration penalties may only result from:
 
 - ignored critiques
 - unjustified rejection of critiques
 - premature certainty
 
-causal_alignment penalties:
+causal_alignment penalties may only result from:
 
 - causal overreach
 - missing causal mechanisms
 
+premature certainty is detected when:
+
+- strong conclusions are asserted
+- while evidence is weak or ambiguous
+- or competing explanations are ignored
 ---
 
-# PHASE 2 - Assign Pillar Scores
+# PHASE 2 -- Assign Pillar Scores
 
-Assign scores for the four CRIT pillars.
+After detecting failures in Phase 1, assign scores for the four CRIT pillars.
 
-Scores must be consistent with detected counts.
+Scores MUST be **consistent with the detected counts**.
+
+---
+
+# CRIT Pillar Definitions
+
+Each pillar measures a different dimension of reasoning quality.
+
+**logical_validity**
+
+Internal logical consistency of the argument.
+
+Penalize for:
+
+- contradictions
+- circular reasoning
+- missing reasoning steps
+- conclusions that do not follow from premises
+
+---
+
+**evidential_support**
+
+Whether factual claims are supported by evidence.
+
+Penalize for:
+
+- unsupported claims
+- weak or irrelevant citations
+- evidence misinterpretation
+- claims stronger than evidence allows
+
+---
+
+**alternative_consideration**
+
+Whether competing explanations are considered.
+
+Definition of premature certainty:
+
+strong conclusions expressed despite weak or limited evidence.
+
+Penalize for:
+
+- ignored critiques
+- rejecting critiques without justification
+- premature certainty
+- failure to consider alternative interpretations
+
+---
+
+**causal_alignment**
+
+Whether causal claims are justified by the evidence and reasoning.
+
+Penalize for:
+
+- causal overreach
+- missing causal mechanisms
+- counterfactual claims without counterfactual reasoning
+- mapping macro relationships to asset outcomes without causal explanation
 
 ---
 
 # Score Interpretation
 
-Scores must be within 0.0 - 1.0.
+Scores must be within **0.0 - 1.0**.
 
-1.00 - excellent reasoning  
-0.85 - strong reasoning with minor weaknesses  
-0.70 - acceptable reasoning with noticeable gaps  
-0.55 - mixed reasoning with clear problems  
-0.40 - weak reasoning with major flaws  
-0.20 - very weak reasoning  
-0.00 - severe reasoning failure
+Use the following anchors:
+
+1.00 -- excellent reasoning
+0.85 -- strong reasoning with minor weaknesses
+0.70 -- acceptable reasoning with noticeable gaps
+0.55 -- mixed reasoning with clear problems
+0.40 -- weak reasoning with major flaws
+0.20 -- very weak reasoning
+0.00 -- severe reasoning failure
 
 ---
 
@@ -2149,32 +2647,35 @@ Apply these rules when failures are detected:
 
 Severity guidance:
 
-- 1 failure -> small penalty
-- 2-3 failures -> moderate penalty (typically <= 0.55)
-- 4+ failures -> severe penalty (typically <= 0.40)
+- **1 failure** -> small penalty
+- **2-3 failures** -> moderate penalty (typically <= 0.55)
+- **4+ failures** -> severe penalty (typically <= 0.40)
 
-Scores above 0.90 should be rare and require near-perfect reasoning.
+Scores above **0.90 should be rare and require near-perfect reasoning.could **.
 
-Avoid defaulting to simple values such as 0.5 or 1.0 unless fully justified.
+Avoid defaulting to simple values such as **0.5 or 1.0** unless fully justified.
 
 ---
 
 # Diagnostic Boolean Rules
 
-unsupported_claims_detected = unsupported_claims_count > 0  
-ignored_critiques_detected = ignored_critiques_count > 0  
-causal_overreach_detected = causal_overreach_count > 0  
-contradictions_detected = contradictions_count > 0  
+The following booleans should follow these rules:
+
+unsupported_claims_detected = unsupported_claims_count > 0
+ignored_critiques_detected = ignored_critiques_count > 0
+causal_overreach_detected = causal_overreach_count > 0
+contradictions_detected = contradictions_count > 0
 
 ---
 
 # Output
 
-Return only the JSON object below.
+Return **only the JSON object below**.
 
-No markdown.  
+No markdown.
 No text outside JSON.
 
+```json
 {
   "pillar_scores": {
     "logical_validity": <float>,
@@ -2203,289 +2704,6 @@ No text outside JSON.
   }
 }
 \end{lstlisting}
-% References follow the acknowledgments in the camera-ready paper. Use unnumbered first-level heading for
-% the references. Any choice of citation style is acceptable as long as you are
-% consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
-% when listing the references.
-% Note that the Reference section does not count towards the page limit.
-% \medskip
-
-
-% {
-% \small
-
-
-% [1] Alexander, J.A.\ \& Mozer, M.C.\ (1995) Template-based algorithms for
-% connectionist rule extraction. In G.\ Tesauro, D.S.\ Touretzky and T.K.\ Leen
-% (eds.), {\it Advances in Neural Information Processing Systems 7},
-% pp.\ 609--616. Cambridge, MA: MIT Press.
-
-
-% [2] Bower, J.M.\ \& Beeman, D.\ (1995) {\it The Book of GENESIS: Exploring
-%   Realistic Neural Models with the GEneral NEural SImulation System.}  New York:
-% TELOS/Springer--Verlag.
-
-
-% [3] Hasselmo, M.E., Schnell, E.\ \& Barkai, E.\ (1995) Dynamics of learning and
-% recall at excitatory recurrent synapses and cholinergic modulation in rat
-% hippocampal region CA3. {\it Journal of Neuroscience} {\bf 15}(7):5249-5262.
-% }
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% \appendix
-
-% \section{Appendix / supplemental material}
-
-
-% Optionally include supplemental material (complete proofs, additional experiments and plots) in appendix.
-% All such materials \textbf{SHOULD be included in the main submission.}
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% \newpage
-% \section*{NeurIPS Paper Checklist}
-
-% %%% BEGIN INSTRUCTIONS %%%
-% The checklist is designed to encourage best practices for responsible machine learning research, addressing issues of reproducibility, transparency, research ethics, and societal impact. Do not remove the checklist: {\bf The papers not including the checklist will be desk rejected.} The checklist should follow the references and follow the (optional) supplemental material.  The checklist does NOT count towards the page
-% limit. 
-
-% Please read the checklist guidelines carefully for information on how to answer these questions. For each question in the checklist:
-% \begin{itemize}
-%     \item You should answer \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item \answerNA{} means either that the question is Not Applicable for that particular paper or the relevant information is Not Available.
-%     \item Please provide a short (1–2 sentence) justification right after your answer (even for NA). 
-%    % \item {\bf The papers not including the checklist will be desk rejected.}
-% \end{itemize}
-
-% {\bf The checklist answers are an integral part of your paper submission.} They are visible to the reviewers, area chairs, senior area chairs, and ethics reviewers. You will be asked to also include it (after eventual revisions) with the final version of your paper, and its final version will be published with the paper.
-
-% The reviewers of your paper will be asked to use the checklist as one of the factors in their evaluation. While "\answerYes{}" is generally preferable to "\answerNo{}", it is perfectly acceptable to answer "\answerNo{}" provided a proper justification is given (e.g., "error bars are not reported because it would be too computationally expensive" or "we were unable to find the license for the dataset we used"). In general, answering "\answerNo{}" or "\answerNA{}" is not grounds for rejection. While the questions are phrased in a binary way, we acknowledge that the true answer is often more nuanced, so please just use your best judgment and write a justification to elaborate. All supporting evidence can appear either in the main paper or the supplemental material, provided in appendix. If you answer \answerYes{} to a question, in the justification please point to the section(s) where related material for the question can be found.
-
-% IMPORTANT, please:
-% \begin{itemize}
-%     \item {\bf Delete this instruction block, but keep the section heading ``NeurIPS paper checklist"},
-%     \item  {\bf Keep the checklist subsection headings, questions/answers and guidelines below.}
-%     \item {\bf Do not modify the questions and only use the provided macros for your answers}.
-% \end{itemize} 
- 
-
-% %%% END INSTRUCTIONS %%%
-
-
-% \begin{enumerate}
-
-% \item {\bf Claims}
-%     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
-%     \item[] Answer: \answer{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification{}
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the abstract and introduction do not include the claims made in the paper.
-%         \item The abstract and/or introduction should clearly state the claims made, including the contributions made in the paper and important assumptions and limitations. A No or NA answer to this question will not be perceived well by the reviewers. 
-%         \item The claims made should match theoretical and experimental results, and reflect how much the results can be expected to generalize to other settings. 
-%         \item It is fine to include aspirational goals as motivation as long as it is clear that these goals are not attained by the paper. 
-%     \end{itemize}
-
-% \item {\bf Limitations}
-%     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
-%     \item[] Answer: \answer{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification{}
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper has no limitation while the answer No means that the paper has limitations, but those are not discussed in the paper. 
-%         \item The authors are encouraged to create a separate "Limitations" section in their paper.
-%         \item The paper should point out any strong assumptions and how robust the results are to violations of these assumptions (e.g., independence assumptions, noiseless settings, model well-specification, asymptotic approximations only holding locally). The authors should reflect on how these assumptions might be violated in practice and what the implications would be.
-%         \item The authors should reflect on the scope of the claims made, e.g., if the approach was only tested on a few datasets or with a few runs. In general, empirical results often depend on implicit assumptions, which should be articulated.
-%         \item The authors should reflect on the factors that influence the performance of the approach. For example, a facial recognition algorithm may perform poorly when image resolution is low or images are taken in low lighting. Or a speech-to-text system might not be used reliably to provide closed captions for online lectures because it fails to handle technical jargon.
-%         \item The authors should discuss the computational efficiency of the proposed algorithms and how they scale with dataset size.
-%         \item If applicable, the authors should discuss possible limitations of their approach to address problems of privacy and fairness.
-%         \item While the authors might fear that complete honesty about limitations might be used by reviewers as grounds for rejection, a worse outcome might be that reviewers discover limitations that aren't acknowledged in the paper. The authors should use their best judgment and recognize that individual actions in favor of transparency play an important role in developing norms that preserve the integrity of the community. Reviewers will be specifically instructed to not penalize honesty concerning limitations.
-%     \end{itemize}
-
-% \item {\bf Theory Assumptions and Proofs}
-%     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
-%     \item[] Answer: \answer{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification{}
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not include theoretical results. 
-%         \item All the theorems, formulas, and proofs in the paper should be numbered and cross-referenced.
-%         \item All assumptions should be clearly stated or referenced in the statement of any theorems.
-%         \item The proofs can either appear in the main paper or the supplemental material, but if they appear in the supplemental material, the authors are encouraged to provide a short proof sketch to provide intuition. 
-%         \item Inversely, any informal proof provided in the core of the paper should be complemented by formal proofs provided in appendix or supplemental material.
-%         \item Theorems and Lemmas that the proof relies upon should be properly referenced. 
-%     \end{itemize}
-
-%     \item {\bf Experimental Result Reproducibility}
-%     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not include experiments.
-%         \item If the paper includes experiments, a No answer to this question will not be perceived well by the reviewers: Making the paper reproducible is important, regardless of whether the code and data are provided or not.
-%         \item If the contribution is a dataset and/or model, the authors should describe the steps taken to make their results reproducible or verifiable. 
-%         \item Depending on the contribution, reproducibility can be accomplished in various ways. For example, if the contribution is a novel architecture, describing the architecture fully might suffice, or if the contribution is a specific model and empirical evaluation, it may be necessary to either make it possible for others to replicate the model with the same dataset, or provide access to the model. In general. releasing code and data is often one good way to accomplish this, but reproducibility can also be provided via detailed instructions for how to replicate the results, access to a hosted model (e.g., in the case of a large language model), releasing of a model checkpoint, or other means that are appropriate to the research performed.
-%         \item While NeurIPS does not require releasing code, the conference does require all submissions to provide some reasonable avenue for reproducibility, which may depend on the nature of the contribution. For example
-%         \begin{enumerate}
-%             \item If the contribution is primarily a new algorithm, the paper should make it clear how to reproduce that algorithm.
-%             \item If the contribution is primarily a new model architecture, the paper should describe the architecture clearly and fully.
-%             \item If the contribution is a new model (e.g., a large language model), then there should either be a way to access this model for reproducing the results or a way to reproduce the model (e.g., with an open-source dataset or instructions for how to construct the dataset).
-%             \item We recognize that reproducibility may be tricky in some cases, in which case authors are welcome to describe the particular way they provide for reproducibility. In the case of closed-source models, it may be that access to the model is limited in some way (e.g., to registered users), but it should be possible for other researchers to have some path to reproducing or verifying the results.
-%         \end{enumerate}
-%     \end{itemize}
-
-
-% \item {\bf Open access to data and code}
-%     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that paper does not include experiments requiring code.
-%         \item Please see the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
-%         \item While we encourage the release of code and data, we understand that this might not be possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not including code, unless this is central to the contribution (e.g., for a new open-source benchmark).
-%         \item The instructions should contain the exact command and environment needed to run to reproduce the results. See the NeurIPS code and data submission guidelines (\url{https://nips.cc/public/guides/CodeSubmissionPolicy}) for more details.
-%         \item The authors should provide instructions on data access and preparation, including how to access the raw data, preprocessed data, intermediate data, and generated data, etc.
-%         \item The authors should provide scripts to reproduce all experimental results for the new proposed method and baselines. If only a subset of experiments are reproducible, they should state which ones are omitted from the script and why.
-%         \item At submission time, to preserve anonymity, the authors should release anonymized versions (if applicable).
-%         \item Providing as much information as possible in supplemental material (appended to the paper) is recommended, but including URLs to data and code is permitted.
-%     \end{itemize}
-
-
-% \item {\bf Experimental Setting/Details}
-%     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer, etc.) necessary to understand the results?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not include experiments.
-%         \item The experimental setting should be presented in the core of the paper to a level of detail that is necessary to appreciate the results and make sense of them.
-%         \item The full details can be provided either with the code, in appendix, or as supplemental material.
-%     \end{itemize}
-
-% \item {\bf Experiment Statistical Significance}
-%     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not include experiments.
-%         \item The authors should answer "Yes" if the results are accompanied by error bars, confidence intervals, or statistical significance tests, at least for the experiments that support the main claims of the paper.
-%         \item The factors of variability that the error bars are capturing should be clearly stated (for example, train/test split, initialization, random drawing of some parameter, or overall run with given experimental conditions).
-%         \item The method for calculating the error bars should be explained (closed form formula, call to a library function, bootstrap, etc.)
-%         \item The assumptions made should be given (e.g., Normally distributed errors).
-%         \item It should be clear whether the error bar is the standard deviation or the standard error of the mean.
-%         \item It is OK to report 1-sigma error bars, but one should state it. The authors should preferably report a 2-sigma error bar than state that they have a 96\% CI, if the hypothesis of Normality of errors is not verified.
-%         \item For asymmetric distributions, the authors should be careful not to show in tables or figures symmetric error bars that would yield results that are out of range (e.g. negative error rates).
-%         \item If error bars are reported in tables or plots, The authors should explain in the text how they were calculated and reference the corresponding figures or tables in the text.
-%     \end{itemize}
-
-% \item {\bf Experiments Compute Resources}
-%     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not include experiments.
-%         \item The paper should indicate the type of compute workers CPU or GPU, internal cluster, or cloud provider, including relevant memory and storage.
-%         \item The paper should provide the amount of compute required for each of the individual experimental runs as well as estimate the total compute. 
-%         \item The paper should disclose whether the full research project required more compute than the experiments reported in the paper (e.g., preliminary or failed experiments that didn't make it into the paper). 
-%     \end{itemize}
-    
-% \item {\bf Code Of Ethics}
-%     \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics \url{https://neurips.cc/public/EthicsGuidelines}?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics.
-%         \item If the authors answer No, they should explain the special circumstances that require a deviation from the Code of Ethics.
-%         \item The authors should make sure to preserve anonymity (e.g., if there is a special consideration due to laws or regulations in their jurisdiction).
-%     \end{itemize}
-
-
-% \item {\bf Broader Impacts}
-%     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that there is no societal impact of the work performed.
-%         \item If the authors answer NA or No, they should explain why their work has no societal impact or why the paper does not address societal impact.
-%         \item Examples of negative societal impacts include potential malicious or unintended uses (e.g., disinformation, generating fake profiles, surveillance), fairness considerations (e.g., deployment of technologies that could make decisions that unfairly impact specific groups), privacy considerations, and security considerations.
-%         \item The conference expects that many papers will be foundational research and not tied to particular applications, let alone deployments. However, if there is a direct path to any negative applications, the authors should point it out. For example, it is legitimate to point out that an improvement in the quality of generative models could be used to generate deepfakes for disinformation. On the other hand, it is not needed to point out that a generic algorithm for optimizing neural networks could enable people to train models that generate Deepfakes faster.
-%         \item The authors should consider possible harms that could arise when the technology is being used as intended and functioning correctly, harms that could arise when the technology is being used as intended but gives incorrect results, and harms following from (intentional or unintentional) misuse of the technology.
-%         \item If there are negative societal impacts, the authors could also discuss possible mitigation strategies (e.g., gated release of models, providing defenses in addition to attacks, mechanisms for monitoring misuse, mechanisms to monitor how a system learns from feedback over time, improving the efficiency and accessibility of ML).
-%     \end{itemize}
-    
-% \item {\bf Safeguards}
-%     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pretrained language models, image generators, or scraped datasets)?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper poses no such risks.
-%         \item Released models that have a high risk for misuse or dual-use should be released with necessary safeguards to allow for controlled use of the model, for example by requiring that users adhere to usage guidelines or restrictions to access the model or implementing safety filters. 
-%         \item Datasets that have been scraped from the Internet could pose safety risks. The authors should describe how they avoided releasing unsafe images.
-%         \item We recognize that providing effective safeguards is challenging, and many papers do not require this, but we encourage authors to take this into account and make a best faith effort.
-%     \end{itemize}
-
-% \item {\bf Licenses for existing assets}
-%     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not use existing assets.
-%         \item The authors should cite the original paper that produced the code package or dataset.
-%         \item The authors should state which version of the asset is used and, if possible, include a URL.
-%         \item The name of the license (e.g., CC-BY 4.0) should be included for each asset.
-%         \item For scraped data from a particular source (e.g., website), the copyright and terms of service of that source should be provided.
-%         \item If assets are released, the license, copyright information, and terms of use in the package should be provided. For popular datasets, \url{paperswithcode.com/datasets} has curated licenses for some datasets. Their licensing guide can help determine the license of a dataset.
-%         \item For existing datasets that are re-packaged, both the original license and the license of the derived asset (if it has changed) should be provided.
-%         \item If this information is not available online, the authors are encouraged to reach out to the asset's creators.
-%     \end{itemize}
-
-% \item {\bf New Assets}
-%     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not release new assets.
-%         \item Researchers should communicate the details of the dataset/code/model as part of their submissions via structured templates. This includes details about training, license, limitations, etc. 
-%         \item The paper should discuss whether and how consent was obtained from people whose asset is used.
-%         \item At submission time, remember to anonymize your assets (if applicable). You can either create an anonymized URL or include an anonymized zip file.
-%     \end{itemize}
-
-% \item {\bf Crowdsourcing and Research with Human Subjects}
-%     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? 
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
-%         \item Including this information in the supplemental material is fine, but if the main contribution of the paper involves human subjects, then as much detail as possible should be included in the main paper. 
-%         \item According to the NeurIPS Code of Ethics, workers involved in data collection, curation, or other labor should be paid at least the minimum wage in the country of the data collector. 
-%     \end{itemize}
-
-% \item {\bf Institutional Review Board (IRB) Approvals or Equivalent for Research with Human Subjects}
-%     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
-%     \item[] Answer: \answer % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-%     \item[] Justification: \justification
-%     \item[] Guidelines:
-%     \begin{itemize}
-%         \item The answer NA means that the paper does not involve crowdsourcing nor research with human subjects.
-%         \item Depending on the country in which research is conducted, IRB approval (or equivalent) may be required for any human subjects research. If you obtained IRB approval, you should clearly state this in the paper. 
-%         \item We recognize that the procedures for this may vary significantly between institutions and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the guidelines for their institution. 
-%         \item For initial submissions, do not include any information that would break anonymity (if applicable), such as the institution conducting the review.
-%     \end{itemize}
-
-% \end{enumerate}
-
 
 \subsection{Macro Role Basic Prompt}
 \label{app:macro-basic}
