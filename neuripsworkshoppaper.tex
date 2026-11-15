@@ -1250,6 +1250,7 @@ $|r|{<}0.20$ was chosen after the point estimates were known, and ``90\% CI insi
 margin'' is a percentile-interval screen, not a calibrated cluster-robust equivalence
 test. On synthetic data with a planted within-scenario correlation, the procedure was
 unbiased and its 95\% interval covered the true value in 39 of 40 replicates. These screen results describe the original scores. With fresh scores the paired CRIT--return 90\% interval is $[-0.093,+0.203]$, so the screen does not carry over unchanged, although every fresh 95\% interval still includes zero (Appendix~\ref{app:rq1_fresh}).
+Equivalently, without choosing a margin: a two one-sided test at $\alpha{=}0.05$ using this bootstrap rejects $|r|{\ge}\delta$ exactly when the 90\% interval lies inside $(-\delta,\delta)$, so the smallest bound each statistic supports is the largest $|r|$ in its 90\% interval. With original (fresh) scores these are $0.14$ ($0.14$) for within-scenario CRIT--Sharpe, $0.10$ ($0.12$) for within-scenario CRIT--return, and $0.23$ ($0.23$) for pooled CRIT--Sharpe. Percentile intervals from 35 clusters are approximate, so these bounds are approximate too.
 
 \begin{table}[H]
 \centering\small
