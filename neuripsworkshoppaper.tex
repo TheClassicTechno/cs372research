@@ -144,7 +144,7 @@ $1/N$ baseline only 33\% of the time. Debate's clearest benefits concern risk an
     \item We identify and operationalize \emph{consensus convergence}: agents move
     toward the group position during revision without introducing new evidence, with
     portfolio divergence collapsing after the first revision and no accompanying
-    outcome gain. This coincides with loss of ensemble diversity and no outcome gain.
+    outcome gain.
     \item We show reasoning quality and decision quality can be regulated independently: an intervention that limits consensus collapse improves risk-adjusted outcomes while one that repairs the weakest reasoning pillar does not, though the former also constrains revision size and so does not isolate the mechanism.
 \end{enumerate}
 
@@ -188,7 +188,7 @@ Our framework has four modules: data generation, market simulation, multi-agent 
 and evaluation. The design requirement that matters here is that reasoning be
 simultaneously \emph{producible}, \emph{measurable}, and \emph{regulable}, so the
 proxy--outcome relationship can be examined without the measurement contaminating the
-decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state, as are the RQ1 correlations, and all 490 per-agent CRIT evaluations behind those correlations were re-scored with fresh \texttt{gpt-5} calls (Appendix~\ref{app:rq1_fresh}). Other CRIT tables rest on author records (Section~\ref{sec:limitations}).
+decision. Each subsystem sees the others only through defined interfaces, and each round writes structured artifacts for proposals, critiques, revisions, controller state, and portfolio decisions. The financial analyses reported below are regenerated from these stored artifacts rather than from runtime state, as are the RQ1 correlations (also re-scored fresh, Appendix~\ref{app:rq1_fresh}); other CRIT tables rest on author records (Section~\ref{sec:limitations}).
 Scenario memos are distilled from FRED macro data, SEC EDGAR filings
 \citep{SEC_EDGAR_API}, Yahoo Finance prices \citep{yahoofinance}, FinnHub news sentiment
 \citep{finnhub_api}, and earnings transcripts; each quantitative datum carries a stable
@@ -371,16 +371,12 @@ Debate underperformed the simple average under causal prompts, so we also examin
 No configuration consistently outperforms SPY. The 3-agent enriched debate shows the lowest drawdown ($5.33\%$ vs.\ $9.73\%$) and highest Sharpe ($0.76$ vs.\ $0.35$), but at $N{=}3$ (SEMs $\pm0.71$, $\pm0.48$) these gaps are not separable from zero. The 4-agent 5-round debate returns $-0.27\%$ while holding $\bar{\rho}\approx0.83$--$0.85$ (Appendix~\ref{app:crit-scores}), the clearest single instance of high rubric scores alongside poor outcomes.
 
 \paragraph{Cross-provider robustness (RQ2-E3).}
-To test whether these findings depend on a particular model family, we repeated
-debates with mixed GPT/Gemini and GPT/Anthropic role assignments and with
-phase-level model routing. Returns were comparable across assignments whenever runs
-completed, and in the GPT/Anthropic runs, the only cross-provider runs whose traces we
-analyzed, agents again acknowledged critiques without materially revising, so we see
-no sign that the proxy--outcome findings are specific to one model family. These runs are small
-($N{=}2$--$17$) and one configuration failed in 3 of 6 scenarios when Gemini-2.5-flash
-served as judge and hallucinated a ticker outside the scenario universe; we therefore
-report them as supporting rather than confirmatory evidence, with full per-scenario
-results in Appendix~\ref{app:llm-comparison}--\ref{app:llm_routing_experiments}.
+Debates with mixed GPT/Gemini and GPT/Anthropic roles, and with phase-level model routing,
+gave comparable returns whenever runs completed; in the GPT/Anthropic traces (the only
+cross-provider traces we analyzed) agents again acknowledged critiques without materially
+revising. These runs are small ($N{=}2$--$17$), and with Gemini-2.5-flash as judge one
+configuration failed in 3 of 6 scenarios by hallucinating a ticker, so they are supporting, not
+confirmatory, evidence (Appendix~\ref{app:llm-comparison}--\ref{app:llm_routing_experiments}).
 
 
 \subsection{RQ3: Can Interventions Improve Reasoning and Portfolio Performance?}
@@ -420,14 +416,12 @@ The most consistent failure mode is \emph{consensus convergence}: agents abandon
 Across all experiments, $P_4$ (Causal Alignment) is consistently the lowest-scoring CRIT pillar ($0.65$--$0.81$), with \texttt{causal\_overreach} flagged in most rounds. The Technical agent is the most frequent offender, making L2 (interventional) or L3 (counterfactual) claims supported only by L1 (associational) evidence on Pearl's causal ladder \citep{pearl2009causality}. This aligns with the RAudit framework's prediction that causal reasoning is the hardest dimension to sustain under debate pressure.
 
 \paragraph{Other failure modes.}
-\textbf{Ticker Hallucination.} When Gemini-2.5-flash serves as judge, it hallucinated a ticker (JNJ) not present in the scenario universe in 3 of 6 runs, causing those runs to produce invalid allocations.
-\textbf{Silent Prompt and Template Bugs.} Missing template variables and import errors caused incomplete prompts and hidden quality degradation. These were discovered through the dashboard file explorer, not through runtime errors: the system continued operating with degraded inputs rather than failing.
+Besides ticker hallucination by a Gemini judge (JNJ, 3 of 6 runs; Appendix~\ref{app:llm-comparison}), missing template variables and import errors silently degraded prompts: the system kept running on degraded inputs, and we found them by inspecting files, not through runtime errors.
 
 \vspace{-0.2cm}
 \subsection{Qualitative Failure Case Studies}
 \vspace{-0.2cm}
 
-To ground the quantitative null results in mechanistic terms, we examine three concrete failure patterns identified through trace analysis of ablation logs.
 
 \paragraph{High CRIT, negative returns: convergent portfolio collapse.}
 The 4-agent, 5-round enriched debate achieves the highest reasoning quality scores across all configurations ($\bar{\rho}=0.83$--$0.85$) yet produces negative average returns ($-0.27\%$, Sharpe $-0.05$), with the cash and JSD convergence described above. Crucially, \textbf{the CRIT scorer evaluates the revised arguments after consensus convergence has already occurred}; a well-structured argument for a high-cash allocation can receive a high CRIT score even when that allocation reflects social capitulation rather than genuine inference. The metric certifies argument quality at a point in time but cannot distinguish independently-derived positions from positions copied from a dominant agent. This is one candidate reason (untested; this configuration is not in the 210-run corpus) why $\bar{\rho}$ shows no detectable association with Sharpe there: CRIT measures the quality of the \emph{output} reasoning but not whether that reasoning drove an \emph{independent} allocation decision.
@@ -712,7 +706,7 @@ gain come from runs whose CRIT logs were not recovered and rest on author record
 \vspace{-6pt}
 \subsection{Broader Impact}
 \vspace{-6pt}
-The sensitivity of this CRIT rubric to structured prompting, together with the absence of any detectable association with realized outcomes, cautions against treating gains in this specific score as sufficient evidence of improved financial decisions. Similar convergence across independently deployed systems could amplify correlated positioning under stress rather than supplying the diversity such systems are assumed to provide, a risk inferred from simulation.
+That this CRIT score responds strongly to prompting yet shows no detectable association with realized outcomes cautions against treating its gains as evidence of better financial decisions. Similar convergence across independently deployed systems could amplify correlated positioning under stress instead of adding diversity, a risk inferred only from simulation.
 
 % $
 % \text{CI}_i
