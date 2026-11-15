@@ -200,7 +200,7 @@ Broader Impact end on p. 9.
 | C1 drawdown noise band | ✅ | `seed_variance.py` adds max drawdown (pooled SD 0.96 pp, paired SEM 0.23 pp); `make_effect_figure.py` uses per-metric bands; Fig. 1 caption, noise paragraph and seed-variance caption updated. Same classification as before |
 | C2 agent-level analysis | ✅ | `analysis/agent_level_crit.py` → `analysis/rq1/agent_level_{results.csv,stats.json}`; new App. C.4 (Table 6). Check passed: reproduces all 210 stored judge Sharpe/return exactly. All 12 CIs include 0, so the stated kill criterion is not met |
 | C3 equivalence | ✅ | App. C.3: cluster-bootstrap TOST ⇔ 90% CI inside ±δ; smallest supported bounds 0.14 (within Sharpe), 0.10/0.12 (within return), 0.23 (pooled Sharpe), original/fresh |
-| E1–E4 | — | Post-conference experiments; unchanged |
+| E1–E4 | ◐ | Not run (post-conference). Now listed as "Open controls from review" in App. A (future work), as this plan required |
 
 Extra correction found during the edits: §3.1 said tiers 2–3 both contain the confounder and
 reverse-causation warnings. Per `config/agent_profiles/*_enriched.yaml`, the enriched tier does not
@@ -218,3 +218,8 @@ Multi-agent LLM systems increasingly use structured debate to improve reasoning,
 
 **TL;DR:**
 This CRIT reasoning rubric can be raised by prompting without better decisions: across 210 runs it shows no detectable association with market outcomes, and a convergence-limiting intervention improves Sharpe without isolating the mechanism.
+
+### Commit history (pushed to origin/camera-ready, 2026-11-15)
+Small commits `db6a229`…`a2cc812`: analysis and figures first, then Alanood's paper revision (authored by her), the Nov 10 fixes, one commit per plan item, checklist, sync, plan. Every intermediate paper version compiles with 0 errors and 0 undefined references.
+
+**Not committed:** `neurips_poster_template_for_agentic_financial_one/`. Another session (cs372research-54) was editing the poster at the time, and the current `poster.tex` compiles to 2 pages (footer overflow, an overlapping Macro-agent box, ■ glyph in the RQ3 table). It needs fixing before it is committed or printed.
