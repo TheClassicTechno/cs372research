@@ -269,7 +269,7 @@ one reason we treat rubric improvement as insufficient evidence of better decisi
 \vspace{-0.2cm}
 % \subsubsection{RQ1-E1: Reasoning Quality and Financial Outcomes}
 
-Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. In the original scores every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test (Appendix~\ref{app:rq1_clustered}, Figure~\ref{fig:crit-scatter}), and in the fresh re-scoring the paired CRIT--return interval also reaches past it ($[-0.093,+0.203]$). To check that the result does not depend on one set of evaluator outputs, we re-ran all 490 per-agent CRIT evaluations from the archived prompts. Fresh scores track the originals closely (run-level $r{=}0.75$, mean absolute change $0.012$), and every fresh scenario-clustered 95\% interval still includes zero (Table~\ref{tab:rq1_fresh}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
+Across \textbf{210 runs} spanning three intervention ablations (A7 and A8, JSD-triggered; A10, CRIT-triggered; Appendix~\ref{app:crit_financial}), CRIT reasoning quality ($\bar{\rho}$) shows \textbf{no detectable association with financial performance} (Table~\ref{tab:correlation_reasoning}). The same 35 scenarios appear in all six ablation--condition cells, so runs on one scenario share realized prices; we therefore resample whole scenarios and also correlate within scenarios. Every interval includes zero. Within a scenario the data rule out correlations stronger than about $|r|{=}0.16$ for both outcomes ($0.21$ if calendar quarters are resampled instead), and the pooled $+0.07$ falls to $-0.02$. The pooled CRIT--Sharpe interval reaches $+0.25$, so a modest pooled correlation cannot be excluded. In the original scores every 90\% interval except pooled CRIT--Sharpe lies inside $|r|{<}0.20$, a margin chosen after seeing the estimates; this is a screen, not a formal equivalence test, and it does not fully carry over to fresh scores (Appendix~\ref{app:rq1_clustered}, Figure~\ref{fig:crit-scatter}). Re-running all 490 per-agent CRIT evaluations gives scores that track the originals ($r{=}0.75$) and 95\% intervals that all include zero (Table~\ref{tab:rq1_fresh}); each agent's own score also shows no detectable association with its own portfolio (Table~\ref{tab:agent_level}). Per-agent correlations from a separate 245-run corpus spanning only two market quarters (Appendix~\ref{app:correlation_betwen_agents}) are exploratory and not used as evidence.
 
 Appendix~\ref{app:debate_portofolio} shows that across all experiments the debate system \textbf{underperforms a naïve equal-ticker-weight baseline}. Debate portfolios beat $1/N$ only \textbf{33\% of the time} and have lower Sharpe in every ablation; resampling scenarios in the 210 recoverable runs gives a return gap of $-2.4$pp (95\% CI $[-4.1,-0.8]$).  Despite the weak relationship between reasoning metrics and financial performance, Appendix~\ref{app:improvement_in_crit} shows reasoning quality itself is highly sensitive to prompt structure. \textbf{Structured reasoning prompts substantially improve CRIT scores}. Enriched prompts increase mean reasoning quality from \textbf{0.72 to 0.84} ($+17.7\%$, Cohen’s $d \approx 2.0$). These gains are driven primarily by improvements in evidential grounding and causal reasoning (Appendix~\ref{app:improvement_in_crit}).
 
@@ -1284,6 +1284,42 @@ reproduce to four decimals) and \texttt{analysis/rq1\_clustered\_stats.py}.
 \caption{CRIT $\bar{\rho}$ against Sharpe for the 210 runs of Table~\ref{tab:correlation_reasoning}, one point per run, with a least-squares line. Left: pooled. Right: both variables minus their scenario mean. The $r$ and scenario-cluster 95\% CIs are those of Table~\ref{tab:rq1_clustered} (\texttt{analysis/make\_crit\_scatter\_figure.py}).}
 \label{fig:crit-scatter}
 \end{figure}
+
+\subsection{Agent-Level CRIT and Each Agent's Own Portfolio}
+\label{app:agent_level}
+
+RQ1 relates the group score $\bar{\rho}$ to the portfolio the judge produced, so a valid verifier
+could look uninformative if aggregation broke the link. We therefore backtested each agent's own
+final revision (the last retry, if any) with the same daily prices, risk-free rate and integer-share
+rule as the judge portfolio, and correlated it with that agent's $\rho_i$: 490 agent-runs over 35
+scenarios. The same backtest reproduces the stored judge-portfolio Sharpe and return exactly for all
+210 runs. We stated before running that a CI excluding zero in the positive direction would mean
+the RQ1 null reflects aggregation.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{Original $\rho_i$} & \multicolumn{2}{c}{Fresh $\rho_i$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Own-portfolio outcome & $r$ & Scenario 95\% CI & $r$ & Scenario 95\% CI \\
+\midrule
+Sharpe, pooled          & $+0.056$ & $[-0.074,+0.177]$ & $+0.067$ & $[-0.072,+0.190]$ \\
+Sharpe, within scenario & $-0.003$ & $[-0.094,+0.110]$ & $+0.055$ & $[-0.057,+0.182]$ \\
+Sharpe, within run      & $+0.020$ & $[-0.094,+0.170]$ & $+0.082$ & $[-0.032,+0.214]$ \\
+Return, pooled          & $+0.033$ & $[-0.087,+0.156]$ & $+0.041$ & $[-0.097,+0.171]$ \\
+Return, within scenario & $+0.013$ & $[-0.082,+0.122]$ & $+0.053$ & $[-0.061,+0.166]$ \\
+Return, within run      & $+0.023$ & $[-0.106,+0.184]$ & $+0.076$ & $[-0.047,+0.203]$ \\
+\bottomrule
+\end{tabular}
+\vspace{4pt}
+\caption{Agent-level correlation between each agent's CRIT score $\rho_i$ and the outcome of its own
+final allocation ($n{=}490$ agent-runs; scenario-cluster bootstrap, 10{,}000 draws). \emph{Within run}
+compares agents with their co-agents on the same run. Every interval includes zero, so
+aggregation by the judge does not explain the RQ1 result. Source:
+\texttt{analysis/agent\_level\_crit.py}, \texttt{analysis/rq1/agent\_level\_stats.json}.}
+\label{tab:agent_level}
+\end{table}
 
 \subsection{Causal Debate Baselines \& RCA}
 \label{app:debate_rca}
