@@ -250,15 +250,11 @@ assumptions, falsifiers, and confidence, where critiques must reference claims b
 and each position must cite the claim IDs justifying it
 (Appendix~\ref{app:claim-schema}).
 
-Scaffolding tiers 2--3 require each proposal to make at least one causal or
-risk-assessment claim, state what evidence would change the agent's belief, and name
-potential confounders, with explicit warnings against reverse causation, confounding,
-selection bias, post-hoc narrative construction, and survivorship bias. We flag one
-design property as a limitation on interpretation: the same causal hierarchy is encoded
-in both the generation prompts and the CRIT \textit{Causal Alignment} rubric
-(Appendix~\ref{app:crit-prompt}), so agents are partly scored against the scaffolding
-they were given. This makes CRIT gains from enriched prompting easier to obtain and is
-one reason we treat rubric improvement as insufficient evidence of better decisions.
+The causal tier requires at least one causal or risk-assessment claim, what evidence would
+change the agent's mind, and possible confounders, warning against reverse causation, selection
+bias, post-hoc narratives, and survivorship bias; the enriched tier requires numbered causal claims,
+each with a mechanism and falsifiers. Both ask for what the CRIT \textit{Causal Alignment} rubric
+rewards (Appendix~\ref{app:crit-prompt}), so prompt-driven CRIT gains partly reflect compliance.
 
 
 
@@ -692,9 +688,13 @@ LLM training corpora, so models may recall which stocks performed well, rewardin
 \textbf{Limited realism.} A small ticker universe over a handful of quarters, with no
 transaction costs, spreads, taxes, or liquidity constraints, and no dynamic tool use:
 agents read precomputed memos and cannot compute or fetch live data.
-\textbf{Rubric--prompt coupling.} The causal hierarchy appears in both the generation
-scaffolding and the CRIT rubric, so enriched agents are partly graded on the structure
-they were handed.
+\textbf{Rubric--prompt coupling.} Causal and enriched prompts ask for the mechanisms,
+falsifiers and causal structure the CRIT rubric rewards, so those agents are partly graded on
+the structure they were handed.
+\textbf{One rubric, one judge, one aggregator.} All scores come from one CRIT rubric graded
+by \texttt{gpt-5}; other rubrics, judges, or expert audits may differ. Debate--ensemble comparisons
+also change the aggregator (LLM judge vs.\ mean), though each agent's own score does not track its
+own portfolio either (Appendix~\ref{app:agent_level}).
 \textbf{Stratified analysis not executed.} A role- and regime-stratified re-analysis is
 implemented and unit-tested but has not been run against the full corpus; we report no
 stratified results.
