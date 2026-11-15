@@ -46,3 +46,24 @@ Scenarios         : 5
   could show the effect by chance; the second says whether the paired
   35-scenario design can resolve it. Only the second bears on Table 2.
 
+--- Max drawdown % ---
+  scenario                                  n      mean       sd     range
+  scenario_2022Q1                           6      9.28     1.23      3.36
+  scenario_2022Q3_rand3_1                   6     12.79     0.79      2.21
+  scenario_2022Q4_tech                      6      9.91     0.51      1.40
+  scenario_2023Q2                           6      2.97     0.26      0.70
+  scenario_2025Q1_tech                      6     19.62     1.45      4.41
+
+  pooled within-scenario SD, one run   : 0.96
+  implied SD of a 1-vs-1 paired diff    : 1.35
+  implied SEM of that diff over n=35    : 0.23
+
+  Table 2 between-condition effects vs column A:
+    B  3 Roles Mean, Basic         -0.24   |effect| vs single-run SD = 0.25x   vs n=35 SEM = 1.05x
+    C  3 Roles Mean, Causal        -0.51   |effect| vs single-run SD = 0.53x   vs n=35 SEM = 2.23x
+    D  3 Roles Mean, Enriched      -1.55   |effect| vs single-run SD = 1.62x   vs n=35 SEM = 6.79x
+
+  Reading: the first ratio says whether a SINGLE run at ONE scenario
+  could show the effect by chance; the second says whether the paired
+  35-scenario design can resolve it. Only the second bears on Table 2.
+

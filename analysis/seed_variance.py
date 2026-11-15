@@ -12,7 +12,7 @@ Design
                          evaluation window are all held fixed; the only thing
                          that differs between repeats is the sampling draw at
                          temperature 0.3.
-  Dependent variables  : total return %, annualized Sharpe.
+  Dependent variables  : total return %, annualized Sharpe, max drawdown %.
   Unit of replication  : one (scenario, repeat) run.
 
 Because the configuration is Table 2's column A, the within-scenario spread
@@ -59,11 +59,19 @@ TABLE2_EFFECTS = {
         ("C  3 Roles Mean, Causal",   +0.07),
         ("D  3 Roles Mean, Enriched", +0.04),
     ],
+    # Max drawdown (pp): analysis/verify_paper_tables.csv, tab:prompts, paired_vs=A.
+    # Added for the camera-ready so Figure 1's drawdown panel uses a drawdown noise floor.
+    "max_drawdown_pct": [
+        ("B  3 Roles Mean, Basic",    -0.24),
+        ("C  3 Roles Mean, Causal",   -0.51),
+        ("D  3 Roles Mean, Enriched", -1.55),
+    ],
 }
 
 METRICS = [
     ("total_return_pct", "Total return %", 2),
     ("annualized_sharpe", "Annualized Sharpe", 3),
+    ("max_drawdown_pct", "Max drawdown %", 2),
 ]
 
 
