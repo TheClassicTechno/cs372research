@@ -696,17 +696,18 @@ by \texttt{gpt-5}; other rubrics, judges, or expert audits may differ. Debate--e
 also change the aggregator (LLM judge vs.\ mean), though each agent's own score does not track its
 own portfolio either (Appendix~\ref{app:agent_level}).
 \textbf{Stratified analysis not executed.} A role- and regime-stratified re-analysis is
-implemented and unit-tested but has not been run against the full corpus; we report no
-stratified results.
-\textbf{Uneven reproducibility.} Every cell of Tables~\ref{tab:prompts}
-and~\ref{tab:debate_rca} regenerates exactly from stored per-scenario artifacts, as do
-the bootstrap CIs above. Three gaps remain. The configuration files for two of six
-conditions (causal mean vote, RCA-regulated debate) no longer match any surviving config
-by hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry is absent from our version history: the release contains only a post-hoc consistency evaluator, never invoked from the debate loop. It did run (all 35 scenarios differ from the unregulated condition) but only as an uncommitted working copy. The per-run CRIT records behind the $n{=}210$ correlations
-were missing from the submitted artifact set; we recovered the original run directories
-(all 10{,}970 files checksum-verified), and Table~\ref{tab:correlation_reasoning} regenerates from them. We also re-scored all 490 per-agent evaluations with fresh \texttt{gpt-5} calls (Appendix~\ref{app:rq1_fresh}); because these use a different API endpoint and an explicit output limit, they re-evaluate the rubric rather than reproduce the original requests byte for byte. The
-pillar tables and the $\bar{\rho}\,0.72\!\to\!0.84$ gain come from other runs whose CRIT
-logs we have not recovered, so those numbers still rest on author records.
+implemented but was not run; we report no stratified results.
+\textbf{Uneven reproducibility.} Tables~\ref{tab:prompts} and~\ref{tab:debate_rca} and their
+bootstrap CIs regenerate exactly from stored per-scenario artifacts. The configurations for two of
+six conditions (causal mean vote, RCA-regulated debate) no longer match any surviving file by
+hash, so those runs can be re-analyzed but not re-executed byte-identically. The in-loop RCA retry
+ran only as an uncommitted working copy (all 35 scenarios differ from the unregulated condition);
+the release contains only a post-hoc consistency evaluator. The 210 run directories behind
+Table~\ref{tab:correlation_reasoning}, missing from the submitted artifacts, were recovered
+(10{,}970 files checksum-verified); the per-run table (scenario, ablation, condition, $\bar{\rho}$,
+Sharpe, return) is released as \texttt{analysis/rq1/per\_run\_results.csv}, with fresh scores in
+\texttt{analysis/task1\_camera\_ready/}. The pillar tables and the $\bar{\rho}\,0.72\!\to\!0.84$
+gain come from runs whose CRIT logs were not recovered and rest on author records.
 
 \vspace{-6pt}
 \subsection{Broader Impact}
@@ -1230,7 +1231,7 @@ $\Delta\bar{\rho}$ vs $\Delta$Return (paired) & 105 & $+0.011$ & $+0.057$ & $[-0
 \label{tab:rq1_fresh}
 \end{table}
 
-Reproduced from \texttt{results/per\_run\_results\_fresh.csv} and \texttt{results/fresh\_clustered\_stats.json}; raw requests, responses and request IDs are under \texttt{results/fresh\_gpt5/}.
+Reproduced from \texttt{analysis/task1\_camera\_ready/results/per\_run\_results\_fresh.csv} and \texttt{fresh\_clustered\_stats.json} in the same directory. The raw fresh requests, responses and request IDs are retained by the authors and are not in the public repository.
 
 \subsection{Dependence-Aware Uncertainty for the CRIT--Outcome Correlations}
 \label{app:rq1_clustered}
